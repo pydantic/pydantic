@@ -2,7 +2,7 @@ from collections import OrderedDict
 from types import FunctionType
 
 from .exceptions import ValidationError
-from .fields import Field
+from .fields import Field, dict_validator
 
 
 class BaseConfig:
@@ -23,6 +23,9 @@ def inherit_config(self_config, parent_config) -> BaseConfig:
     return self_config
 
 
+TYPE_BLACKLIST = property, FunctionType, type, classmethod, staticmethod
+
+
 class MetaModel(type):
     @classmethod
     def __prepare__(mcs, *args, **kwargs):
@@ -41,19 +44,23 @@ class MetaModel(type):
         class_validators = {n: f for n, f in namespace.items()
                             if n.startswith('validate_') and isinstance(f, FunctionType)}
 
+        # required = False
         for var_name, value in namespace.items():
-            if var_name.startswith('_') or isinstance(value, (property, FunctionType, type)):
+            if var_name.startswith('_') or isinstance(value, TYPE_BLACKLIST):
                 continue
             field = Field.infer(
                 name=var_name,
                 value=value,
-                annotation=annotations.get(var_name),
+                annotation=annotations and annotations.get(var_name),
                 class_validators=class_validators,
             )
-            fields[field.name] = field
+            fields[var_name] = field
+            # required |= field.required
         namespace.update(
             config=config,
             __fields__=fields,
+            # required=required,
+            # default=None if required else {k: f.default for k, f in fields.items()},
         )
         return super().__new__(mcs, name, bases, namespace)
 
@@ -63,7 +70,8 @@ MISSING_ERROR = {'type': 'Missing', 'msg': 'field required', 'validator': 'field
 
 
 class BaseModel(metaclass=MetaModel):
-    __fields__ = {}  # populated by the metaclass, defined here only to help IDEs etc.
+    # populated by the metaclass, defined here to help IDEs only
+    __fields__ = {}
 
     def __init__(self, **values):
         self.__values__ = {}
@@ -81,6 +89,15 @@ class BaseModel(metaclass=MetaModel):
     @property
     def errors(self):
         return self.__errors__
+
+    @classmethod
+    def get_validators(cls):
+        yield dict_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value):
+        return cls(**value)
 
     def _process_values(self, values):
         for name, field in self.__fields__.items():

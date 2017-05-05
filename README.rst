@@ -9,9 +9,10 @@ Data validation and settings management using python 3.6 type hinting.
 
 TODO:
 
-* sub instances
 * datetime types
+* other types: regex, email field
 * exotic typing: Union, List, Dict
+* more info: alt names and descriptions
 * fields as values
 
 

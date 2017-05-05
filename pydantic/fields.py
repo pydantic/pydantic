@@ -58,6 +58,12 @@ def anystr_length_validator(v, m):
     raise ValueError(f'length not in range {m.config.max_anystr_length} to {m.config.max_anystr_length}')
 
 
+def dict_validator(v) -> dict:
+    if isinstance(v, dict):
+        return v
+    return dict(v)
+
+
 VALIDATORS_LOOKUP = {
     int: [int, number_size_validator],
     float: [float, number_size_validator],
@@ -65,11 +71,14 @@ VALIDATORS_LOOKUP = {
 
     Path: [Path],
 
+    # TODO could do this better by detecting option Unions, removing not_none_validator and dealing with it directly
     Optional[str]: [str_validator, anystr_length_validator],
     str: [not_none_validator, str_validator, anystr_length_validator],
 
     Optional[bytes]: [bytes_validator, anystr_length_validator],
     bytes: [not_none_validator, bytes_validator, anystr_length_validator],
+
+    dict: [not_none_validator, dict_validator]
 
     # TODO list, List, Dict, Union, datetime, date, time, custom types
 }
@@ -93,7 +102,7 @@ class Field:
             description: str=None):
 
         if default and required:
-            raise RuntimeError('It doesn\'t make sense to have `default` set and `required=True`.')
+            raise ConfigError("It doesn't make sense to have `default` set and `required=True`.")
 
         self.type_ = type_
         self.validate_always = getattr(self.type_, 'validate_always', False)
@@ -109,7 +118,7 @@ class Field:
             self.type_ = type(self.default)
 
         if self.type_ is None:
-            raise ConfigError(f'unable to infer type for {self.name}')
+            raise ConfigError(f'unable to infer type for attribute "{self.name}"')
 
         override_validator = class_validators.get(f'validate_{self.name}_override')
         if override_validator:
@@ -187,7 +196,7 @@ class Field:
         return instance
 
     def __repr__(self):
-        return f'<Field: {self}>'
+        return f'<Field {self}>'
 
     def __str__(self):
-        return ', '.join(f'{k}={v!r}' for k, v in self.info.items())
+        return f'{self.name}: ' + ', '.join(f'{k}={v!r}' for k, v in self.info.items())

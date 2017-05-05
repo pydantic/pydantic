@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 import pytest
 
-from pydantic import DSN, BaseModel, NoneBytes, NoneStr, ValidationError
+from pydantic import BaseModel, NoneBytes, NoneStr, ValidationError
 
 
 class UltraSimpleModel(BaseModel):
@@ -37,6 +37,8 @@ def test_ultra_simple_failed():
 def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert repr(m) == '<UltraSimpleModel a=10.2 b=10>'
+    assert repr(m.fields['a']) == ("<Field a: type='float', required=True, "
+                                   "validators=['float', 'number_size_validator']>")
 
 
 class ConfigModel(UltraSimpleModel):
@@ -49,26 +51,6 @@ def test_config_doesnt_raise():
     assert m.errors == OrderedDict([('a', {'type': 'Missing', 'msg': 'field required', "validator": "field_required"})])
     assert m.config.raise_exception is False
     assert m.config.max_anystr_length == 65536
-
-
-class DsnModel(BaseModel):
-    db_name = 'foobar'
-    db_user = 'postgres'
-    db_password: str = None
-    db_host = 'localhost'
-    db_port = '5432'
-    db_driver = 'postgres'
-    dsn: DSN = None
-
-
-def test_dsn_compute():
-    m = DsnModel()
-    assert m.dsn == 'postgres://postgres@localhost:5432/foobar'
-
-
-def test_dsn_define():
-    m = DsnModel(dsn='postgres://postgres@localhost:5432/different')
-    assert m.dsn == 'postgres://postgres@localhost:5432/different'
 
 
 class NoneCheckModel(BaseModel):
@@ -110,3 +92,21 @@ def test_nullable_strings_fails():
             ('required_bytes_value', {'type': 'TypeError', 'msg': 'None is not an allow value',
                                       'validator': 'not_none_validator'})
         ])
+
+
+class RecursiveModel(BaseModel):
+    grape: bool = ...
+    banana: UltraSimpleModel = ...
+
+
+def test_recursion():
+    m = RecursiveModel(grape=1, banana={'a': 1})
+    assert m.grape is True
+    assert m.banana.a == 1.0
+    assert m.banana.b == 10
+    assert repr(m) == '<RecursiveModel grape=True banana=<UltraSimpleModel a=1.0 b=10>>'
+
+
+def test_recursion_fails():
+    with pytest.raises(ValidationError):
+        RecursiveModel(grape=1, banana=123)

@@ -52,6 +52,8 @@ def constr(*, min_length=0, max_length=2**16, curtail_length=None) -> Type[str]:
 
 
 class Module:
+    validate_always = True
+
     @classmethod
     def get_validators(cls):
         yield str_validator
