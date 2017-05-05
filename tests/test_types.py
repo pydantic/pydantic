@@ -5,7 +5,7 @@ from enum import Enum, IntEnum
 
 import pytest
 
-from pydantic import DSN, BaseModel, Module, ValidationError, constr
+from pydantic import DSN, BaseModel, EmailStr, Module, NameEmail, ValidationError, constr
 
 
 class ConStringModel(BaseModel):
@@ -202,3 +202,49 @@ def test_enum_fails():
     assert exc_info.value.message == '1 error validating input'
     assert exc_info.value.pretty_errors == ('{"tool": {"msg": "3 is not a valid ToolEnum", "type": "ValueError", '
                                             '"validator": "enum_validator"}}')
+
+
+class MoreStringsModel(BaseModel):
+    str_regex: constr(regex=r'^xxx\d{3}$') = ...
+    str_min_length: constr(min_length=5) = ...
+    str_curtailed: constr(curtail_length=5) = ...
+    str_email: EmailStr = ...
+    name_email: NameEmail = ...
+
+
+def test_string_success():
+    m = MoreStringsModel(
+        str_regex='xxx123',
+        str_min_length='12345',
+        str_curtailed='123456',
+        str_email='foobar@example.com  ',
+        name_email='foo bar  <foobaR@example.com>',
+    )
+    assert m.str_regex == 'xxx123'
+    assert m.str_curtailed == '12345'
+    assert m.str_email == 'foobar@example.com'
+    assert m.name_email.name == 'foo bar'
+    assert m.name_email.email == 'foobar@example.com'
+
+
+def test_string_fails():
+    with pytest.raises(ValidationError) as exc_info:
+        MoreStringsModel(
+            str_regex='xxx123  ',
+            str_min_length='1234',
+            str_curtailed='123',  # doesn't fail
+            str_email='foobar\n@example.com',
+            name_email='foobar @example.com',
+        )
+    assert exc_info.value.message == '4 errors validating input'
+    assert exc_info.value.errors == OrderedDict(
+        [
+            ('str_regex', {'type': 'ValueError', 'msg': 'string does not match regex "^xxx\\d{3}$"',
+                           'validator': 'ConstrainedStr.validate'}),
+            ('str_min_length', {'msg': 'length less than minimum allowed: 5', 'type': 'ValueError',
+                    'validator': 'ConstrainedStr.validate'}),
+            ('str_email', {'type': 'ValueError', 'msg': 'Email address is not valid',
+                           'validator': 'EmailStr.validate'}),
+            ('name_email', {'type': 'ValueError', 'msg': 'Email address is not valid',
+                            'validator': 'NameEmail.validate'})
+        ])

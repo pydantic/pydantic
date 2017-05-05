@@ -1,5 +1,38 @@
 import re
 from importlib import import_module
+from typing import Tuple
+
+PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
+
+# max length for domain name labels is 63 characters per RFC 1034
+EMAIL_REGEX = re.compile(
+    r'[^\s@\u0000-\u0020"\'`,]+@'
+    r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z0-9]{2,63})',
+    re.I
+)
+
+
+def validate_email(value) -> Tuple[str, str]:
+    """
+    Brutally simple email address validation. Note unlike most email address validation
+    * raw ip address (literal) domain parts are not allowed.
+    * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed
+    * the local part check is extremely basic. This raises the possibility of unicode spoofing, but no better
+        solution is really possible.
+    * spaces are striped from the beginning and end of addresses but no error is raised
+
+    See RFC 5322 but treat it with suspicion, there seems to exist no universally acknowledged test for a valid email!
+    """
+    m = PRETTY_REGEX.fullmatch(value)
+    if m:
+        name, value = m.groups()
+    else:
+        name = None
+
+    email = value.strip()
+    if not EMAIL_REGEX.fullmatch(email):
+        raise ValueError('Email address is not valid')
+    return name or email[:email.index('@')], email.lower()
 
 
 def _rfc_1738_quote(text):

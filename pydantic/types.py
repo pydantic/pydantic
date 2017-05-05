@@ -1,6 +1,7 @@
+import re
 from typing import Optional, Type
 
-from .utils import import_string, make_dsn
+from .utils import import_string, make_dsn, validate_email
 from .validators import str_validator
 
 __all__ = [
@@ -8,6 +9,8 @@ __all__ = [
     'NoneBytes',
     'ConstrainedStr',
     'constr',
+    'EmailStr',
+    'NameEmail',
     'Module',
     'DSN',
 ]
@@ -17,9 +20,10 @@ NoneBytes = Optional[bytes]
 
 
 class ConstrainedStr(str):
-    min_length = None
-    max_length = None
-    curtail_length = None
+    min_length: int = None
+    max_length: int = None
+    curtail_length: int = None
+    regex = None
 
     @classmethod
     def get_validators(cls):
@@ -38,15 +42,47 @@ class ConstrainedStr(str):
         elif cls.max_length and l > cls.max_length:
             raise ValueError(f'length greater than maximum allowed: {cls.max_length}')
 
+        if cls.regex:
+            if not cls.regex.match(value):
+                raise ValueError(f'string does not match regex "{cls.regex.pattern}"')
         return value
 
 
-def constr(*, min_length=0, max_length=2**16, curtail_length=None) -> Type[str]:
+class EmailStr(str):
+    @classmethod
+    def get_validators(cls):
+        yield str_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value):
+        return validate_email(value)[1]
+
+
+class NameEmail:
+    __slots__ = 'name', 'email'
+
+    def __init__(self, name, email):
+        self.name = name
+        self.email = email
+
+    @classmethod
+    def get_validators(cls):
+        yield str_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value):
+        return cls(*validate_email(value))
+
+
+def constr(*, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
+        regex=regex and re.compile(regex)
     )
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
 

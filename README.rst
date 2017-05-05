@@ -9,10 +9,8 @@ Data validation and settings management using python 3.6 type hinting.
 
 TODO:
 
-* other types: regex, email field
 * exotic typing: Union, List, Dict
 * more info: alt names and descriptions
-* fields as values
 
 
 .. |Build Status| image:: https://travis-ci.org/samuelcolvin/pydantic.svg?branch=master
