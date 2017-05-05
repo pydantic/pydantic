@@ -24,7 +24,7 @@ def test_constrained_str_default():
 def test_constrained_str_too_long():
     with pytest.raises(ValidationError) as exc_info:
         ConStringModel(v='this is too long')
-    assert exc_info.value.args[0] == ('1 errors validating input: {"v": {'
+    assert exc_info.value.args[0] == ('1 error validating input: {"v": {'
                                       '"msg": "length greater than maximum allowed: 10", '
                                       '"type": "ValueError", '
                                       '"validator": "ConstrainedStr.validate"}}')

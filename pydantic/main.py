@@ -13,6 +13,7 @@ class BaseConfig:
     max_number_size = 2 ** 64
     raise_exception = True
     validate_all = False
+    allow_extra = True
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
@@ -67,7 +68,7 @@ class MetaModel(type):
 
 
 MISSING = object()
-MISSING_ERROR = {'type': 'Missing', 'msg': 'field required', 'validator': 'field_required'}
+MISSING_ERROR = {'type': 'Missing', 'msg': 'field required'}
 
 
 class BaseModel(metaclass=MetaModel):
@@ -104,6 +105,15 @@ class BaseModel(metaclass=MetaModel):
         for name, field in self.__fields__.items():
             value = values.get(name, MISSING)
             self._process_value(name, field, value)
+
+        if not self.config.allow_extra:
+            extra = values.keys() - self.__fields__.keys()
+            if extra:
+                self.__errors__['_extra'] = {
+                    'type': 'Extra',
+                    'msg': f'{len(extra)} extra values in provided data',
+                    'fields': sorted(extra),
+                }
 
         if self.config.raise_exception and self.__errors__:
             raise ValidationError(self.__errors__)

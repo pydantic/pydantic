@@ -19,8 +19,7 @@ def test_ultra_simple_success():
 def test_ultra_simple_missing():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
-    assert exc_info.value.args[0] == ('1 errors validating input: {"a": {"msg": "field required", '
-                                      '"type": "Missing", "validator": "field_required"}}')
+    assert exc_info.value.args[0] == '1 error validating input: {"a": {"msg": "field required", "type": "Missing"}}'
 
 
 def test_ultra_simple_failed():
@@ -48,7 +47,7 @@ class ConfigModel(UltraSimpleModel):
 
 def test_config_doesnt_raise():
     m = ConfigModel()
-    assert m.errors == OrderedDict([('a', {'type': 'Missing', 'msg': 'field required', "validator": "field_required"})])
+    assert m.errors == OrderedDict([('a', {'type': 'Missing', 'msg': 'field required'})])
     assert m.config.raise_exception is False
     assert m.config.max_anystr_length == 65536
 
@@ -110,3 +109,25 @@ def test_recursion():
 def test_recursion_fails():
     with pytest.raises(ValidationError):
         RecursiveModel(grape=1, banana=123)
+
+
+class PreventExtraModel(BaseModel):
+    foo = 'whatever'
+
+    class Config:
+        allow_extra = False
+
+
+def test_prevent_extra_success():
+    m = PreventExtraModel()
+    assert m.foo == 'whatever'
+    m = PreventExtraModel(foo=1)
+    assert m.foo == '1'
+
+
+def test_prevent_extra_fails():
+    with pytest.raises(ValidationError) as exc_info:
+        PreventExtraModel(foo='ok', bar='wrong', spam='xx')
+    assert exc_info.value.message == '1 error validating input'
+    assert exc_info.value.pretty_errors == ('{"_extra": {"fields": ["bar", "spam"], '
+                                            '"msg": "2 extra values in provided data", "type": "Extra"}}')
