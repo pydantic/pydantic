@@ -6,3 +6,5 @@ build/
 dist/
 .cache/
 test.py
+.coverage
+htmlcov/

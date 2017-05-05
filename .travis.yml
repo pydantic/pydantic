@@ -19,12 +19,12 @@ install:
 
 script:
 - make lint
-#- make test
+- make test
 - ./tests/check_tag.py
 
 after_success:
 - ls -lha
-#- bash <(curl -s https://codecov.io/bash)
+- bash <(curl -s https://codecov.io/bash)
 
 deploy:
   provider: pypi

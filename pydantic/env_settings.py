@@ -13,18 +13,23 @@ class BaseSettings(BaseModel):
     """
 
     def __init__(self, **values):
-        values.update(self._substitute_environ())
+        values = {
+            **self._substitute_environ(),
+            **values,
+        }
         super().__init__(**values)
 
     def _substitute_environ(self):
         """
         Substitute environment variables into values.
         """
-        env_prefix = getattr(self.config, 'env_prefix', 'APP_')
         d = {}
         for name, field in self.__fields__.items():
-            env_name = env_prefix + field.name.upper()
+            env_name = self.config.env_prefix + field.name.upper()
             env_var = os.getenv(env_name, None)
             if env_var:
                 d[name] = env_var
         return d
+
+    class Config:
+        env_prefix = 'APP_'

@@ -17,11 +17,11 @@ lint:
 
 .PHONY: test
 test:
-	pytest --cov=pydantic && coverage combine
+	pytest --cov=pydantic
 
 .PHONY: testcov
 testcov:
-	pytest --cov=pydantic && (echo "building coverage html"; coverage combine; coverage html)
+	pytest --cov=pydantic && (echo "building coverage html"; coverage html)
 
 .PHONY: all
 all: testcov lint

@@ -3,6 +3,13 @@ from typing import Type
 from .fields import str_validator
 from .utils import import_string, make_dsn
 
+__all__ = [
+    'ConstrainedStr',
+    'constr',
+    'Module',
+    'DSN',
+]
+
 
 class ConstrainedStr(str):
     min_length = None
@@ -18,13 +25,13 @@ class ConstrainedStr(str):
     def validate(cls, value):
         l = len(value)
         if cls.min_length and l < cls.min_length:
-            raise ValueError(f'length less than minimum allowed length {cls.min_length}')
+            raise ValueError(f'length less than minimum allowed: {cls.min_length}')
 
         if cls.curtail_length:
             if l > cls.curtail_length:
                 value = value[:cls.curtail_length]
         elif cls.max_length and l > cls.max_length:
-            raise ValueError(f'length greater than maximum allowed length {cls.max_length}')
+            raise ValueError(f'length greater than maximum allowed: {cls.max_length}')
 
         return value
 

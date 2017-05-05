@@ -3,6 +3,7 @@ from collections import OrderedDict
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, Callable, List, Type
+from .exceptions import ConfigError
 
 
 def str_validator(v) -> str:
@@ -38,14 +39,14 @@ def bool_validator(v) -> bool:
 
 def number_size_validator(v, m):
     if m.config.min_number_size <= v <= m.config.max_number_size:
-        raise ValueError(f'size not in range {m.config.min_number_size} to {m.config.max_number_size}')
-    return v
+        return v
+    raise ValueError(f'size not in range {m.config.min_number_size} to {m.config.max_number_size}')
 
 
-def anystr_length_validator(v, *, m):
-    if m.config.max_anystr_length <= len(v) <= m.config.max_anystr_length:
-        raise ValueError(f'length not in range {m.config.max_anystr_length} to {m.config.max_anystr_length}')
-    return v
+def anystr_length_validator(v, m):
+    if m.config.min_anystr_length <= len(v) <= m.config.max_anystr_length:
+        return v
+    raise ValueError(f'length not in range {m.config.max_anystr_length} to {m.config.max_anystr_length}')
 
 
 class ValidatorsLookup:
@@ -65,7 +66,7 @@ class ValidatorsLookup:
         try:
             return self._validators_lookup[type_]
         except KeyError:
-            raise RuntimeError(f'no validator found for {type_}')
+            raise ConfigError(f'no validator found for {type_}')
 
     def register(self, type_, *validators_):
         self._validators_lookup[type_] = list(validators_)
@@ -148,16 +149,19 @@ class Field:
         try:
             return ValidatorSignature(len(signature.parameters)), validator
         except ValueError as e:
-            raise RuntimeError(f'Invalid signature for validator {validator}: {signature}, should be: '
-                               f'(value), (value, model)') from e
+            raise ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
+                              f'(value), (value, model)') from e
 
     def validate(self, v, model):
         for signature, validator in self.validators:
-            if signature == ValidatorSignature.JUST_VALUE:
-                v = validator(v)
-            else:
-                v = validator(v, model)
-        return v
+            try:
+                if signature == ValidatorSignature.JUST_VALUE:
+                    v = validator(v)
+                else:
+                    v = validator(v, model)
+            except (ValueError, TypeError, ImportError) as e:
+                return v, validator, e
+        return v, None, None
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators):

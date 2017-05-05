@@ -1,28 +1,26 @@
-import json
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 from types import FunctionType
-from typing import Any, Dict
 
+from .exceptions import ValidationError
 from .fields import Field
 
 
-DEFAULT_CONFIG: Dict[str, Any] = dict(
-    min_anystr_length=0,
-    max_anystr_length=2**16,
-    min_number_size=-2**64,
-    max_number_size=2**64,
-)
-Config = namedtuple('Config', list(DEFAULT_CONFIG.keys()))
+class BaseConfig:
+    min_anystr_length = 0
+    max_anystr_length = 2 ** 16
+    min_number_size = -2 ** 64
+    max_number_size = 2 ** 64
+    raise_exception = True
+    validate_all = True
 
 
-def get_config(config_class):
-    if config_class:
-        for k, v in DEFAULT_CONFIG.items():
-            if not hasattr(config_class, k):
-                setattr(config_class, k, v)
-    else:
-        config_class = Config(**DEFAULT_CONFIG)
-    return config_class
+def inherit_config(self_config, parent_config):
+    if not self_config:
+        return parent_config
+    for k, v in parent_config.__dict__.items():
+        if not (k.startswith('_') or hasattr(self_config, k)):
+            setattr(self_config, k, v)
+    return self_config
 
 
 class MetaModel(type):
@@ -32,14 +30,14 @@ class MetaModel(type):
 
     def __new__(mcs, name, bases, namespace):
         fields = OrderedDict()
-        base_config = None
+        config = BaseConfig
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(base.__fields__)
-                base_config = base.config
+                config = inherit_config(base.config, config)
 
         annotations = namespace.get('__annotations__')
-        config = get_config(namespace.get('Config', base_config))
+        config = inherit_config(namespace.get('Config'), config)
         class_validators = {n: f for n, f in namespace.items()
                             if n.startswith('validate_') and isinstance(f, FunctionType)}
 
@@ -60,33 +58,13 @@ class MetaModel(type):
         return super().__new__(mcs, name, bases, namespace)
 
 
-class ValidationError(ValueError):
-    def __init__(self, errors):
-        self.errors = errors
-        super().__init__(f'{len(self.errors)} errors validating input: {json.dumps(errors)}')
-
-
 class BaseModel(metaclass=MetaModel):
-    __fields__ = {}  # populated by the metaclass
-    __values__ = {}
+    __fields__ = {}  # populated by the metaclass, defined here only to help IDEs etc.
 
     def __init__(self, **values):
-        errors = OrderedDict()
-        for name, field in self.__fields__.items():
-            value = values.get(name)
-            if not value:
-                if field.required:
-                    errors[name] = {'type': 'Missing', 'msg': 'field required'}
-                continue
-            try:
-                value = field.validate(value, self)
-            except (ValueError, TypeError, ImportError) as e:
-                errors[name] = {'type': e.__class__.__name__, 'msg': str(e)}
-            else:
-                self.__values__[name] = value
-                setattr(self, name, value)
-        if errors:
-            raise ValidationError(errors)
+        self.__values__ = {}
+        self.__errors__ = OrderedDict()
+        self._process_values(values)
 
     @property
     def values(self):
@@ -96,13 +74,31 @@ class BaseModel(metaclass=MetaModel):
     def fields(self):
         return self.__fields__
 
-    def _get_custom_settings(self, custom_settings):
-        d = {}
-        for name, value in custom_settings.items():
-            if not hasattr(self, name):
-                raise TypeError('{} is not a valid setting name'.format(name))
-            d[name] = value
-        return d
+    @property
+    def errors(self):
+        return self.__errors__
+
+    def _process_values(self, values):
+        for name, field in self.__fields__.items():
+            value = values.get(name)
+            if not value:
+                if field.required:
+                    self.__errors__[name] = {'type': 'Missing', 'msg': 'field required'}
+                else:
+                    self.__values__[name] = field.default
+                continue
+            value, validator, error = field.validate(value, self)
+            if error:
+                self.__errors__[name] = {
+                    'type': error.__class__.__name__,
+                    'msg': str(error),
+                    'validator': validator.__qualname__,
+                }
+            self.__values__[name] = value
+            setattr(self, name, value)
+
+        if self.config.raise_exception and self.__errors__:
+            raise ValidationError(self.__errors__)
 
     def __iter__(self):
         # so `dict(model)` works
