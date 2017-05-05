@@ -25,7 +25,7 @@ def inherit_config(self_config, parent_config) -> BaseConfig:
     return self_config
 
 
-TYPE_BLACKLIST = property, FunctionType, type, classmethod, staticmethod
+TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
 class MetaModel(type):
@@ -46,7 +46,6 @@ class MetaModel(type):
         class_validators = {n: f for n, f in namespace.items()
                             if n.startswith('validate_') and isinstance(f, FunctionType)}
 
-        # required = False
         for var_name, value in namespace.items():
             if var_name.startswith('_') or isinstance(value, TYPE_BLACKLIST):
                 continue
@@ -57,12 +56,9 @@ class MetaModel(type):
                 class_validators=class_validators,
             )
             fields[var_name] = field
-            # required |= field.required
         namespace.update(
             config=config,
             __fields__=fields,
-            # required=required,
-            # default=None if required else {k: f.default for k, f in fields.items()},
         )
         return super().__new__(mcs, name, bases, namespace)
 

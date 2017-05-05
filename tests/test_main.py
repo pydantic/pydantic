@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 import pytest
 
-from pydantic import BaseModel, NoneBytes, NoneStr, ValidationError
+from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, ValidationError
 
 
 class UltraSimpleModel(BaseModel):
@@ -131,3 +131,27 @@ def test_prevent_extra_fails():
     assert exc_info.value.message == '1 error validating input'
     assert exc_info.value.pretty_errors == ('{"_extra": {"fields": ["bar", "spam"], '
                                             '"msg": "2 extra values in provided data", "type": "Extra"}}')
+
+
+class InvalidValidator:
+    @classmethod
+    def get_validators(cls):
+        yield cls.has_wrong_arguments
+
+    @classmethod
+    def has_wrong_arguments(cls, value, bar):
+        pass
+
+
+def test_invalid_validator():
+    with pytest.raises(ConfigError) as exc_info:
+        class InvalidValidatorModel(BaseModel):
+            x: InvalidValidator = ...
+    assert exc_info.value.args[0].startswith('Invalid signature for validator')
+
+
+def test_no_validator():
+    with pytest.raises(ConfigError) as exc_info:
+        class NoValidatorModel(BaseModel):
+            x: object = ...
+    assert exc_info.value.args[0] == "no validator found for <class 'object'>"

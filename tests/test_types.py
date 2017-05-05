@@ -1,6 +1,7 @@
 import os
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
+from enum import Enum, IntEnum
 
 import pytest
 
@@ -163,7 +164,7 @@ def test_datetime_errors():
             time_='25:20:30.400',
             duration='15:30.0001 broken',
         )
-    assert exc_info.value.args[0].startswith('4 errors validating input:')
+    assert exc_info.value.message == '4 errors validating input'
     assert exc_info.value.errors == OrderedDict(
         [
             ('dt', {'type': 'ValueError', 'msg': 'month must be in 1..12', 'validator': 'parse_datetime'}),
@@ -171,3 +172,33 @@ def test_datetime_errors():
             ('time_', {'type': 'ValueError', 'msg': 'hour must be in 0..23', 'validator': 'parse_time'}),
             ('duration', {'type': 'ValueError', 'msg': 'Invalid duration format', 'validator': 'parse_duration'})
         ])
+
+
+class FruitEnum(str, Enum):
+    pear = 'pear'
+    banana = 'banana'
+
+
+class ToolEnum(IntEnum):
+    spanner = 1
+    wrench = 2
+
+
+class CookingModel(BaseModel):
+    fruit: FruitEnum = FruitEnum.pear
+    tool: ToolEnum = ToolEnum.spanner
+
+
+def test_enum_successful():
+    m = CookingModel(tool=2)
+    assert m.fruit == FruitEnum.pear
+    assert m.tool == ToolEnum.wrench
+    assert repr(m.tool) == '<ToolEnum.wrench: 2>'
+
+
+def test_enum_fails():
+    with pytest.raises(ValueError) as exc_info:
+        CookingModel(tool=3)
+    assert exc_info.value.message == '1 error validating input'
+    assert exc_info.value.pretty_errors == ('{"tool": {"msg": "3 is not a valid ToolEnum", "type": "ValueError", '
+                                            '"validator": "enum_validator"}}')

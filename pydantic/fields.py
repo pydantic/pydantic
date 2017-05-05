@@ -4,12 +4,12 @@ from enum import IntEnum
 from typing import Any, Callable, List, Type
 
 from .exceptions import ConfigError
-from .validators import VALIDATORS_LOOKUP
+from .validators import find_validator
 
 
 class ValidatorSignature(IntEnum):
     JUST_VALUE = 1
-    VALUE_MODEL = 2
+    VALUE_KWARGS = 2
 
 
 class Field:
@@ -77,10 +77,7 @@ class Field:
         get_validators = getattr(self.type_, 'get_validators', None)
         if get_validators:
             return list(get_validators())
-        try:
-            return VALIDATORS_LOOKUP[self.type_]
-        except KeyError:
-            raise ConfigError(f'no validator found for {self.type_}')
+        return find_validator(self.type_)
 
     @classmethod
     def _process_validator(cls, validator):
@@ -90,11 +87,20 @@ class Field:
             # happens on builtins like float
             return ValidatorSignature.JUST_VALUE, validator
 
+        if len(signature.parameters) == 1:
+            val_sig = ValidatorSignature.JUST_VALUE
+        else:
+            val_sig = ValidatorSignature.VALUE_KWARGS
+
         try:
-            return ValidatorSignature(len(signature.parameters)), validator
-        except ValueError as e:
+            if val_sig == ValidatorSignature.JUST_VALUE:
+                signature.bind(1)
+            else:
+                signature.bind(1, model=2, field=3)
+        except TypeError as e:
             raise ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
-                              f'(value), (value, model)') from e
+                              f'(value), (value, *, model, field)') from e
+        return val_sig, validator
 
     def validate(self, v, model):
         for signature, validator in self.validators:
@@ -102,7 +108,7 @@ class Field:
                 if signature == ValidatorSignature.JUST_VALUE:
                     v = validator(v)
                 else:
-                    v = validator(v, model)
+                    v = validator(v, model=model, field=self)
             except (ValueError, TypeError, ImportError) as e:
                 return v, validator, e
         return v, None, None

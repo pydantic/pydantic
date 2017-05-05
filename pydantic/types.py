@@ -74,7 +74,7 @@ class DSN(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value, model):
+    def validate(cls, value, model, **kwarg):
         if value:
             return value
         d = model.__values__
