@@ -6,6 +6,4 @@ pyflakes==1.5.0
 pytest==3.0.7
 pytest-cov==2.4.0
 pytest-isort==0.1.0
-pytest-mock==1.5.0
 pytest-sugar==0.8.0
-pytest-toolbox==0.2
