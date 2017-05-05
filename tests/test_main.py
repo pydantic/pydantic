@@ -52,19 +52,15 @@ def test_config_doesnt_raise():
     assert m.config.max_anystr_length == 65536
 
 
-class NoneCheckModel(BaseModel):
-    existing_str_value = 'foo'
-    required_str_value: str = ...
-    required_str_none_value: NoneStr = ...
-    existing_bytes_value = b'foo'
-    required_bytes_value: bytes = ...
-    required_bytes_none_value: NoneBytes = ...
-
-    class Config:
-        raise_exception = False
-
-
 def test_nullable_strings_success():
+    class NoneCheckModel(BaseModel):
+        existing_str_value = 'foo'
+        required_str_value: str = ...
+        required_str_none_value: NoneStr = ...
+        existing_bytes_value = b'foo'
+        required_bytes_value: bytes = ...
+        required_bytes_none_value: NoneBytes = ...
+
     m = NoneCheckModel(
         required_str_value='v1',
         required_str_none_value=None,
@@ -78,6 +74,16 @@ def test_nullable_strings_success():
 
 
 def test_nullable_strings_fails():
+    class NoneCheckModel(BaseModel):
+        existing_str_value = 'foo'
+        required_str_value: str = ...
+        required_str_none_value: NoneStr = ...
+        existing_bytes_value = b'foo'
+        required_bytes_value: bytes = ...
+        required_bytes_none_value: NoneBytes = ...
+
+        class Config:
+            raise_exception = False
     m = NoneCheckModel(
         required_str_value=None,
         required_str_none_value=None,
@@ -128,9 +134,9 @@ def test_prevent_extra_success():
 def test_prevent_extra_fails():
     with pytest.raises(ValidationError) as exc_info:
         PreventExtraModel(foo='ok', bar='wrong', spam='xx')
-    assert exc_info.value.message == '1 error validating input'
-    assert exc_info.value.pretty_errors == ('{"_extra": {"fields": ["bar", "spam"], '
-                                            '"msg": "2 extra values in provided data", "type": "Extra"}}')
+    assert exc_info.value.message == '2 errors validating input'
+    assert exc_info.value.pretty_errors == ('{"bar": {"msg": "extra field not permitted", "type": "Extra"}, '
+                                            '"spam": {"msg": "extra field not permitted", "type": "Extra"}}')
 
 
 class InvalidValidator:

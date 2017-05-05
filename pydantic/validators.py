@@ -1,7 +1,6 @@
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .exceptions import ConfigError
@@ -69,17 +68,11 @@ def enum_validator(v, field, **kwargs) -> Enum:
     return field.type_(v)
 
 
-VALIDATORS_LOOKUP = {
-    # TODO could do this better by detecting option Unions, removing not_none_validator and dealing with it directly
-    Optional[str]: [str_validator, anystr_length_validator],
-    str: [not_none_validator, str_validator, anystr_length_validator],
-
-    Optional[bytes]: [bytes_validator, anystr_length_validator],
-    bytes: [not_none_validator, bytes_validator, anystr_length_validator],
-}
-
 # order is important here, for example: bool is a subclass of int, datetime is a subclass of date
-VALIDATORS_LIST = [
+_VALIDATORS = [
+    (str, [not_none_validator, str_validator, anystr_length_validator]),
+    (bytes, [not_none_validator, bytes_validator, anystr_length_validator]),
+
     (Enum, [enum_validator]),
 
     (bool, [bool_validator]),
@@ -87,24 +80,19 @@ VALIDATORS_LIST = [
     (float, [float, number_size_validator]),
 
     (Path, [Path]),
-    (dict, [not_none_validator, dict_validator]),
 
     (datetime, [parse_datetime]),
     (date, [parse_date]),
     (time, [parse_time]),
     (timedelta, [parse_duration]),
+
+    (dict, [not_none_validator, dict_validator]),
 ]
-# TODO list, List, Dict, Union
+# TODO list, List, Dict
 
 
 def find_validator(type_):
-    try:
-        return VALIDATORS_LOOKUP[type_]
-    except KeyError:
-        pass
-
-    for val_type, validators in VALIDATORS_LIST:
+    for val_type, validators in _VALIDATORS:
         if issubclass(type_, val_type):
             return validators
-
     raise ConfigError(f'no validator found for {type_}')

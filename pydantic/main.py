@@ -2,7 +2,7 @@ from collections import OrderedDict
 from types import FunctionType
 
 from .exceptions import ValidationError
-from .fields import Field
+from .fields import Field, type_str
 from .validators import dict_validator
 
 
@@ -65,6 +65,7 @@ class MetaModel(type):
 
 MISSING = object()
 MISSING_ERROR = {'type': 'Missing', 'msg': 'field required'}
+EXTRA_ERROR = {'type': 'Extra', 'msg': 'extra field not permitted'}
 
 
 class BaseModel(metaclass=MetaModel):
@@ -105,11 +106,8 @@ class BaseModel(metaclass=MetaModel):
         if not self.config.allow_extra:
             extra = values.keys() - self.__fields__.keys()
             if extra:
-                self.__errors__['_extra'] = {
-                    'type': 'Extra',
-                    'msg': f'{len(extra)} extra values in provided data',
-                    'fields': sorted(extra),
-                }
+                for field in sorted(extra):
+                    self.__errors__[field] = EXTRA_ERROR
 
         if self.config.raise_exception and self.__errors__:
             raise ValidationError(self.__errors__)
@@ -127,13 +125,22 @@ class BaseModel(metaclass=MetaModel):
                     setattr(self, name, field.default)
                 return
 
-        value, validator, error = field.validate(value, self)
-        if error:
-            self.__errors__[name] = {
-                'type': error.__class__.__name__,
-                'msg': str(error),
-                'validator': validator.__qualname__,
-            }
+        value, errors = field.validate(value, self)
+        if errors:
+            if len(errors) == 1:
+                error, validator, _ = errors[0]
+                self.__errors__[name] = {
+                    'type': error.__class__.__name__,
+                    'msg': str(error),
+                    'validator': validator.__qualname__,
+                }
+            else:
+                self.__errors__[name] = [{
+                    'type': error.__class__.__name__,
+                    'route': type_str(type_),
+                    'msg': str(error),
+                    'validator': validator.__qualname__,
+                } for error, validator, type_ in errors]
         self.__values__[name] = value
         setattr(self, name, value)
 
@@ -142,5 +149,8 @@ class BaseModel(metaclass=MetaModel):
         yield from self.__values__.items()
 
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__, ' '.join('{}={!r}'.format(k, v)
-                                                                  for k, v in self.__values__.items()))
+        return f'<{self}>'
+
+    def __str__(self):
+        return '{} {}'.format(self.__class__.__name__, ' '.join('{}={!r}'.format(k, v)
+                                                                for k, v in self.__values__.items()))

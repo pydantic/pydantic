@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Type
+from typing import Optional, Type, Union
 
 from .utils import import_string, make_dsn, validate_email
 from .validators import str_validator
@@ -7,6 +7,8 @@ from .validators import str_validator
 __all__ = [
     'NoneStr',
     'NoneBytes',
+    'StrBytes',
+    'NoneStrBytes',
     'ConstrainedStr',
     'constr',
     'EmailStr',
@@ -17,6 +19,8 @@ __all__ = [
 
 NoneStr = Optional[str]
 NoneBytes = Optional[bytes]
+StrBytes = Union[str, bytes]
+NoneStrBytes = Optional[StrBytes]
 
 
 class ConstrainedStr(str):

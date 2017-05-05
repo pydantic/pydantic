@@ -242,7 +242,7 @@ def test_string_fails():
             ('str_regex', {'type': 'ValueError', 'msg': 'string does not match regex "^xxx\\d{3}$"',
                            'validator': 'ConstrainedStr.validate'}),
             ('str_min_length', {'msg': 'length less than minimum allowed: 5', 'type': 'ValueError',
-                    'validator': 'ConstrainedStr.validate'}),
+                                'validator': 'ConstrainedStr.validate'}),
             ('str_email', {'type': 'ValueError', 'msg': 'Email address is not valid',
                            'validator': 'EmailStr.validate'}),
             ('name_email', {'type': 'ValueError', 'msg': 'Email address is not valid',

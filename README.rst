@@ -9,7 +9,9 @@ Data validation and settings management using python 3.6 type hinting.
 
 TODO:
 
-* exotic typing: Union, List, Dict
+* Unions
+* exotic typing: List, Dict
+* tests for validation methods
 * more info: alt names and descriptions
 
 
