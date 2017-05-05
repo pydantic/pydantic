@@ -6,7 +6,6 @@ services:
 - postgresql
 
 python:
-- '3.5'
 - '3.6'
 - 'nightly'  # currently 3.7
 
