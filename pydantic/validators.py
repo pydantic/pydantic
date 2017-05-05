@@ -1,5 +1,8 @@
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Optional
+
+from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 
 NoneType = type(None)
 
@@ -73,7 +76,12 @@ VALIDATORS_LOOKUP = {
     Optional[bytes]: [bytes_validator, anystr_length_validator],
     bytes: [not_none_validator, bytes_validator, anystr_length_validator],
 
-    dict: [not_none_validator, dict_validator]
+    dict: [not_none_validator, dict_validator],
 
-    # TODO list, List, Dict, Union, datetime, date, time, custom types
+    date: [parse_date],
+    time: [parse_time],
+    datetime: [parse_datetime],
+    timedelta: [parse_duration],
+
+    # TODO list, List, Dict, Union
 }

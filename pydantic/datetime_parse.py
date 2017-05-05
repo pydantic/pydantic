@@ -12,7 +12,7 @@ Stolen from https://raw.githubusercontent.com/django/django/master/django/utils/
 Changed to:
 * use standard python datetime types not django.utils.timezone
 * raise ValueError when regex doesn't match rather than returning None
-* support parsing unix timestamps
+* support parsing unix timestamps for dates and datetimes
 """
 import re
 from datetime import date, datetime, time, timedelta, timezone
@@ -42,8 +42,7 @@ standard_duration_re = re.compile(
     r'$'
 )
 
-# Support the sections of ISO 8601 date representation that are accepted by
-# timedelta
+# Support the sections of ISO 8601 date representation that are accepted by timedelta
 iso8601_duration_re = re.compile(
     r'^(?P<sign>[-+]?)'
     r'P'

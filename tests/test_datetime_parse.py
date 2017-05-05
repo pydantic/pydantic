@@ -17,55 +17,72 @@ def create_tz(minutes):
     return timezone(timedelta(minutes=minutes))
 
 
-@pytest.mark.parametrize('func,value,result', [
+@pytest.mark.parametrize('value,result', [
     # Valid inputs
-    (parse_date, '1494012444.883309', date(2017, 5, 5)),
-    (parse_date, 1494012444.883309, date(2017, 5, 5)),
-    (parse_date, '1494012444', date(2017, 5, 5)),
-    (parse_date, 1494012444, date(2017, 5, 5)),
-    (parse_date, '2012-04-23', date(2012, 4, 23)),
-    (parse_date, '2012-4-9', date(2012, 4, 9)),
+    ('1494012444.883309', date(2017, 5, 5)),
+    (1494012444.883309, date(2017, 5, 5)),
+    ('1494012444', date(2017, 5, 5)),
+    (1494012444, date(2017, 5, 5)),
+    ('2012-04-23', date(2012, 4, 23)),
+    ('2012-4-9', date(2012, 4, 9)),
     # Invalid inputs
-    (parse_date, 'x20120423', ValueError),
-    (parse_date, '2012-04-56', ValueError),
+    ('x20120423', ValueError),
+    ('2012-04-56', ValueError),
+])
+def test_date_parsing(value, result):
+    if result == ValueError:
+        with pytest.raises(ValueError):
+            parse_date(value)
+    else:
+        assert parse_date(value) == result
 
+
+@pytest.mark.parametrize('value,result', [
     # Valid inputs
-    (parse_time, '09:15:00', time(9, 15)),
-    (parse_time, '10:10', time(10, 10)),
-    (parse_time, '10:20:30.400', time(10, 20, 30, 400000)),
-    (parse_time, '4:8:16', time(4, 8, 16)),
+    ('09:15:00', time(9, 15)),
+    ('10:10', time(10, 10)),
+    ('10:20:30.400', time(10, 20, 30, 400000)),
+    ('4:8:16', time(4, 8, 16)),
     # Invalid inputs
-    (parse_time, '091500', ValueError),
-    (parse_time, '09:15:90', ValueError),
+    ('091500', ValueError),
+    ('09:15:90', ValueError),
+])
+def test_time_parsing(value, result):
+    if result == ValueError:
+        with pytest.raises(ValueError):
+            parse_time(value)
+    else:
+        assert parse_time(value) == result
 
+
+@pytest.mark.parametrize('value,result', [
     # Valid inputs
     # values in seconds
-    (parse_datetime, '1494012444.883309', datetime(2017, 5, 5, 19, 27, 24, 883309, tzinfo=timezone.utc)),
-    (parse_datetime, 1494012444.883309, datetime(2017, 5, 5, 19, 27, 24, 883309, tzinfo=timezone.utc)),
-    (parse_datetime, '1494012444', datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
-    (parse_datetime, 1494012444, datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
+    ('1494012444.883309', datetime(2017, 5, 5, 19, 27, 24, 883309, tzinfo=timezone.utc)),
+    (1494012444.883309, datetime(2017, 5, 5, 19, 27, 24, 883309, tzinfo=timezone.utc)),
+    ('1494012444', datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
+    (1494012444, datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
     # values in ms
-    (parse_datetime, '1494012444000.883309', datetime(2017, 5, 5, 19, 27, 24, 883, tzinfo=timezone.utc)),
-    (parse_datetime, 1494012444000, datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
+    ('1494012444000.883309', datetime(2017, 5, 5, 19, 27, 24, 883, tzinfo=timezone.utc)),
+    (1494012444000, datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
 
-    (parse_datetime, '2012-04-23T09:15:00', datetime(2012, 4, 23, 9, 15)),
-    (parse_datetime, '2012-4-9 4:8:16', datetime(2012, 4, 9, 4, 8, 16)),
-    (parse_datetime, '2012-04-23T09:15:00Z', datetime(2012, 4, 23, 9, 15, 0, 0, timezone.utc)),
-    (parse_datetime, '2012-4-9 4:8:16-0320', datetime(2012, 4, 9, 4, 8, 16, 0, create_tz(-200))),
-    (parse_datetime, '2012-04-23T10:20:30.400+02:30', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(150))),
-    (parse_datetime, '2012-04-23T10:20:30.400+02', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(120))),
-    (parse_datetime, '2012-04-23T10:20:30.400-02', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(-120))),
+    ('2012-04-23T09:15:00', datetime(2012, 4, 23, 9, 15)),
+    ('2012-4-9 4:8:16', datetime(2012, 4, 9, 4, 8, 16)),
+    ('2012-04-23T09:15:00Z', datetime(2012, 4, 23, 9, 15, 0, 0, timezone.utc)),
+    ('2012-4-9 4:8:16-0320', datetime(2012, 4, 9, 4, 8, 16, 0, create_tz(-200))),
+    ('2012-04-23T10:20:30.400+02:30', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(150))),
+    ('2012-04-23T10:20:30.400+02', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(120))),
+    ('2012-04-23T10:20:30.400-02', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(-120))),
     # Invalid inputs
-    (parse_datetime, 'x20120423091500', ValueError),
-    (parse_datetime, '2012-04-56T09:15:90', ValueError),
+    ('x20120423091500', ValueError),
+    ('2012-04-56T09:15:90', ValueError),
 ])
-def test_parsing(func, value, result):
-    if isinstance(result, type) and issubclass(result, BaseException):
-        with pytest.raises(result):
-            func(value)
+def test_datetime_parsing(value, result):
+    if result == ValueError:
+        with pytest.raises(ValueError):
+            parse_datetime(value)
     else:
-        print(repr(func(value)))
-        assert func(value) == result
+        assert parse_datetime(value) == result
 
 
 @pytest.mark.parametrize('delta', [
@@ -121,8 +138,8 @@ def test_parse_python_format(delta):
     ('PT0.000005S', timedelta(microseconds=5)),
 ])
 def test_parse_durations(value, result):
-    if isinstance(result, type) and issubclass(result, BaseException):
-        with pytest.raises(result):
+    if result == ValueError:
+        with pytest.raises(ValueError):
             parse_duration(value)
     else:
         assert parse_duration(value) == result

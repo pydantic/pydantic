@@ -1,4 +1,6 @@
 import os
+from collections import OrderedDict
+from datetime import date, datetime, time, timedelta
 
 import pytest
 
@@ -123,10 +125,48 @@ class CheckModel(BaseModel):
     ('float_check', '123', ValidationError),
     ('float_check', b'123', ValidationError),
 ])
-def test_bool_validation(field, value, result):
+def test_default_validators(field, value, result):
     kwargs = {field: value}
     if result == ValidationError:
         with pytest.raises(ValidationError):
             CheckModel(**kwargs)
     else:
         assert CheckModel(**kwargs).values[field] == result
+
+
+class DatetimeModel(BaseModel):
+    dt: datetime = ...
+    date_: date = ...
+    time_: time = ...
+    duration: timedelta = ...
+
+
+def test_datetime_successful():
+    m = DatetimeModel(
+        dt='2017-10-5T19:47:07',
+        date_=1494012000,
+        time_='10:20:30.400',
+        duration='15:30.0001',
+    )
+    assert m.dt == datetime(2017, 10, 5, 19, 47, 7)
+    assert m.date_ == date(2017, 5, 5)
+    assert m.time_ == time(10, 20, 30, 400000)
+    assert m.duration == timedelta(minutes=15, seconds=30, microseconds=100)
+
+
+def test_datetime_errors():
+    with pytest.raises(ValueError) as exc_info:
+        DatetimeModel(
+            dt='2017-13-5T19:47:07',
+            date_='XX1494012000',
+            time_='25:20:30.400',
+            duration='15:30.0001 broken',
+        )
+    assert exc_info.value.args[0].startswith('4 errors validating input:')
+    assert exc_info.value.errors == OrderedDict(
+        [
+            ('dt', {'type': 'ValueError', 'msg': 'month must be in 1..12', 'validator': 'parse_datetime'}),
+            ('date_', {'type': 'ValueError', 'msg': 'Invalid date format', 'validator': 'parse_date'}),
+            ('time_', {'type': 'ValueError', 'msg': 'hour must be in 0..23', 'validator': 'parse_time'}),
+            ('duration', {'type': 'ValueError', 'msg': 'Invalid duration format', 'validator': 'parse_duration'})
+        ])
