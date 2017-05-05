@@ -9,7 +9,7 @@ Data validation and settings management using python 3.6 type hinting.
 
 TODO:
 
-* datetime types
+* datetime types, enums
 * other types: regex, email field
 * exotic typing: Union, List, Dict
 * more info: alt names and descriptions

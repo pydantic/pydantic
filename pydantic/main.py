@@ -2,7 +2,8 @@ from collections import OrderedDict
 from types import FunctionType
 
 from .exceptions import ValidationError
-from .fields import Field, dict_validator
+from .fields import Field
+from .validators import dict_validator
 
 
 class BaseConfig:

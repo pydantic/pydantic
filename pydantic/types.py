@@ -1,7 +1,7 @@
 from typing import Optional, Type
 
-from .fields import str_validator
 from .utils import import_string, make_dsn
+from .validators import str_validator
 
 __all__ = [
     'NoneStr',
