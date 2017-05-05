@@ -5,9 +5,11 @@ from pathlib import Path
 from typing import Any, Callable, List, Type
 from .exceptions import ConfigError
 
+NoneType = type(None)
+
 
 def str_validator(v) -> str:
-    if isinstance(v, str):
+    if isinstance(v, (str, NoneType)):
         return v
     elif isinstance(v, bytes):
         return v.decode()
@@ -15,7 +17,7 @@ def str_validator(v) -> str:
 
 
 def bytes_validator(v) -> bytes:
-    if isinstance(v, bytes):
+    if isinstance(v, (bytes, NoneType)):
         return v
     return str_validator(v).encode()
 
@@ -44,7 +46,7 @@ def number_size_validator(v, m):
 
 
 def anystr_length_validator(v, m):
-    if m.config.min_anystr_length <= len(v) <= m.config.max_anystr_length:
+    if v is None or m.config.min_anystr_length <= len(v) <= m.config.max_anystr_length:
         return v
     raise ValueError(f'length not in range {m.config.max_anystr_length} to {m.config.max_anystr_length}')
 
@@ -108,7 +110,7 @@ class Field:
             self.type_ = type(self.default)
 
         if self.type_ is None:
-            raise RuntimeError(f'unable to infer type for {self.name}')
+            raise ConfigError(f'unable to infer type for {self.name}')
 
         override_validator = class_validators.get(f'validate_{self.name}_override')
         if override_validator:

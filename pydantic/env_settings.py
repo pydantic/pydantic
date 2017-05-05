@@ -33,3 +33,4 @@ class BaseSettings(BaseModel):
 
     class Config:
         env_prefix = 'APP_'
+        validate_all = True

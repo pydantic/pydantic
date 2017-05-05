@@ -1,12 +1,24 @@
 pydantic
 ========
 
+|Build Status| |Coverage| |pypi|
+
+
 Data validation and settings management using python 3.6 type hinting
 
 
 TODO:
-* testing
-* fields as values
+
+* sort behaviour with ``None``
 * sub instances
 * datetime types
 * exotic typing: Union, List, Dict
+* fields as values
+
+
+.. |Build Status| image:: https://travis-ci.org/samuelcolvin/pydantic.svg?branch=master
+   :target: https://travis-ci.org/samuelcolvin/pydantic
+.. |Coverage| image:: https://codecov.io/gh/samuelcolvin/pydantic/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/samuelcolvin/pydantic
+.. |pypi| image:: https://img.shields.io/pypi/v/pydantic.svg
+   :target: https://pypi.python.org/pypi/pydantic

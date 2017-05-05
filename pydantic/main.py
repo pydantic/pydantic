@@ -11,10 +11,10 @@ class BaseConfig:
     min_number_size = -2 ** 64
     max_number_size = 2 ** 64
     raise_exception = True
-    validate_all = True
+    validate_all = False
 
 
-def inherit_config(self_config, parent_config):
+def inherit_config(self_config, parent_config) -> BaseConfig:
     if not self_config:
         return parent_config
     for k, v in parent_config.__dict__.items():
@@ -58,6 +58,9 @@ class MetaModel(type):
         return super().__new__(mcs, name, bases, namespace)
 
 
+MISSING = object()
+
+
 class BaseModel(metaclass=MetaModel):
     __fields__ = {}  # populated by the metaclass, defined here only to help IDEs etc.
 
@@ -80,13 +83,16 @@ class BaseModel(metaclass=MetaModel):
 
     def _process_values(self, values):
         for name, field in self.__fields__.items():
-            value = values.get(name)
-            if not value:
-                if field.required:
-                    self.__errors__[name] = {'type': 'Missing', 'msg': 'field required'}
+            value = values.get(name, MISSING)
+            if value is MISSING:
+                if self.config.validate_all:
+                    value = field.default
                 else:
-                    self.__values__[name] = field.default
-                continue
+                    if field.required:
+                        self.__errors__[name] = {'type': 'Missing', 'msg': 'field required'}
+                    else:
+                        self.__values__[name] = field.default
+                    continue
             value, validator, error = field.validate(value, self)
             if error:
                 self.__errors__[name] = {
