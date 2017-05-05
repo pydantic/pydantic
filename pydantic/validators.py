@@ -31,6 +31,7 @@ BOOL_STRINGS = {
     '1',
     'TRUE',
     'ON',
+    'YES',
 }
 
 

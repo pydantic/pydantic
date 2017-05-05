@@ -88,8 +88,9 @@ class CheckModel(BaseModel):
     ('bool_check', 'true', True),
     ('bool_check', '1', True),
     ('bool_check', '2', False),
-    ('bool_check', 'yes', False),
     ('bool_check', 2, True),
+    ('bool_check', 'on', True),
+    ('bool_check', 'yes', True),
 
     ('str_check', 's', 's'),
     ('str_check', b's', 's'),
