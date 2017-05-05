@@ -1,11 +1,7 @@
-"""
-json
-JsonList
-JsonDict
-"""
 from typing import Type
 
-from pydantic.fields import str_validator
+from .fields import str_validator
+from .utils import import_string, make_dsn
 
 
 class ConstrainedStr(str):
@@ -42,3 +38,32 @@ def constr(*, min_length=0, max_length=2**16, curtail_length=None) -> Type[str]:
     )
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
 
+
+class Module:
+    @classmethod
+    def get_validators(cls):
+        yield str_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value):
+        return import_string(value)
+
+
+class DSN(str):
+    prefix = 'db_'
+
+    @classmethod
+    def get_validators(cls):
+        yield str_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value, model):
+        if value:
+            return value
+        d = model.__values__
+        return make_dsn(**{f: d[cls.prefix + f] for f in ('name', 'password', 'host', 'port', 'user', 'driver')})
+
+
+# TODO, JsonEither, JsonList, JsonDict

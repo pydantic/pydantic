@@ -1,9 +1,9 @@
 import json
-from types import FunctionType
 from collections import OrderedDict, namedtuple
+from types import FunctionType
 from typing import Any, Dict
 
-from pydantic.fields import Field
+from .fields import Field
 
 
 DEFAULT_CONFIG: Dict[str, Any] = dict(
@@ -50,7 +50,6 @@ class MetaModel(type):
                 name=var_name,
                 value=value,
                 annotation=annotations.get(var_name),
-                config=config,
                 class_validators=class_validators,
             )
             fields[field.name] = field
@@ -80,8 +79,8 @@ class BaseModel(metaclass=MetaModel):
                     errors[name] = {'type': 'Missing', 'msg': 'field required'}
                 continue
             try:
-                value = field.validate(value)
-            except (ValueError, TypeError) as e:
+                value = field.validate(value, self)
+            except (ValueError, TypeError, ImportError) as e:
                 errors[name] = {'type': e.__class__.__name__, 'msg': str(e)}
             else:
                 self.__values__[name] = value

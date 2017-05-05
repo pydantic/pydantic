@@ -1,0 +1,38 @@
+language: python
+
+cache: pip
+
+services:
+- postgresql
+
+python:
+- '3.5'
+- '3.6'
+- 'nightly'  # currently 3.7
+
+matrix:
+  allow_failures:
+  - python: 'nightly'
+
+install:
+- make install
+- pip freeze
+
+script:
+- make lint
+#- make test
+- ./tests/check_tag.py
+
+after_success:
+- ls -lha
+#- bash <(curl -s https://codecov.io/bash)
+
+deploy:
+  provider: pypi
+  user: samuelcolvin
+  password:
+    secure: QbXFF2puEWjhFUpD0yu2R+wP4QI1IKIomBkMizsiCyMutlexERElranyYB8bsakvjPaJ+zU14ufffh2u7UA7Zhep/iE4skRHq4XWxnnRLHGu5nyGf3+zSM3F9MOzV32eZ4CDLJtFb6I0ensjTpodJH2EsIYHYxTgndIZn56Qbh6CStj7Xg1zm0Ujxdzm4ZLgcS28SOF/tpjsDW9+GXwc6L1mAZWYiS98gVgzL1vBd9tL9uFbbuFwGz9uhFMzFJko7vXSl8urWB4qeCspKXa9iKH7/AOYSwXTCwcg8U2hhC9UsOapnga2BubZKlU5HRfSs9fQcpnzcP2lwhSmkrEFa8VOw83hX6+bL564xK1Q4kanfGZ1fLU4FYge3iOnqjH7ajO7xEcUrcOEYUPfxM4EfdiDw0xnAzE1ITGH1/pZikF+wjlu+ez7RmmnejgK7quT1WU7keo7pSlRSfQtNgNl6xu818x0xZ1TScfN6e9npNy4TYyIooMOOeI4tMdfcR4JClkjGKhAtBk81DH7isZgPv3uwocGnKZ2S7La97CE3ADzU3MTA9xVIOSOjzwuvAe72uS2nwzqXkS9KATdATkC9QCvheJ9jIBB4UcqnHbD8L1gkqdmZwXZqHZldq8wcqNYZb+81lumy5EZ6xSoEzlLDpXHe80EjMUOBkb5fz3D44s=
+  distributions: sdist bdist_wheel
+  on:
+    tags: true
+    python: 3.6

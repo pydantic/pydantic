@@ -2,7 +2,7 @@
 import os
 import sys
 
-from aiohttp_prodtools.version import VERSION
+from pydantic.version import VERSION
 
 git_tag = os.getenv('TRAVIS_TAG')
 if git_tag:

@@ -33,9 +33,6 @@ setup(
     author_email='s@muelcolvin.com',
     url='https://github.com/samuelcolvin/pydantic',
     license='MIT',
-    packages=[
-        'pydantic',
-        'pydantic.utils',
-    ],
+    packages=['pydantic'],
     zip_safe=True,
 )

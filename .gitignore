@@ -4,3 +4,5 @@ env/
 *.egg-info/
 build/
 dist/
+.cache/
+test.py

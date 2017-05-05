@@ -1,11 +1,11 @@
+import inspect
 from collections import OrderedDict
-from functools import partial, wraps
-from inspect import signature
+from enum import IntEnum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Type
+from typing import Any, Callable, List, Type
 
 
-def str_validator(v) -> str:  # TODO config
+def str_validator(v) -> str:
     if isinstance(v, str):
         return v
     elif isinstance(v, bytes):
@@ -36,21 +36,21 @@ def bool_validator(v) -> bool:
     return bool(v)
 
 
-def number_size_validator(v, *, config):
-    if config.min_number_size <= v <= config.max_number_size:
-        raise ValueError(f'size not in range {config.min_number_size} to {config.max_number_size}')
+def number_size_validator(v, m):
+    if m.config.min_number_size <= v <= m.config.max_number_size:
+        raise ValueError(f'size not in range {m.config.min_number_size} to {m.config.max_number_size}')
     return v
 
 
-def anystr_length_validator(v, *, config):
-    if config.max_anystr_length <= len(v) <= config.max_anystr_length:
-        raise ValueError(f'length not in range {config.max_anystr_length} to {config.max_anystr_length}')
+def anystr_length_validator(v, *, m):
+    if m.config.max_anystr_length <= len(v) <= m.config.max_anystr_length:
+        raise ValueError(f'length not in range {m.config.max_anystr_length} to {m.config.max_anystr_length}')
     return v
 
 
 class ValidatorsLookup:
     def __init__(self):
-        self._validators_lookup: Dict[Type, List[Callable]] = {
+        self._validators_lookup = {
             int: [int, number_size_validator],
             float: [float, number_size_validator],
             Path: [Path],
@@ -74,16 +74,9 @@ class ValidatorsLookup:
 validators_lookup = ValidatorsLookup()
 
 
-def wrap_validator(func, config):
-    multi = False
-    try:
-        multi = len(signature(func).parameters) > 1
-    except ValueError:
-        # happens on builtins like float
-        pass
-    if multi:
-        return wraps(func)(partial(func, config=config))
-    return func
+class ValidatorSignature(IntEnum):
+    JUST_VALUE = 1
+    VALUE_MODEL = 2
 
 
 class Field:
@@ -108,7 +101,7 @@ class Field:
         self.name = name
         self.description = description
 
-    def prepare(self, name, config, class_validators):
+    def prepare(self, name, class_validators):
         self.name = self.name or name
         if self.default and self.type_ is None:
             self.type_ = type(self.default)
@@ -126,12 +119,12 @@ class Field:
         self.validators.append(class_validators.get(f'validate_{self.name}'))
         self.validators.append(class_validators.get(f'validate_{self.name}_post'))
 
-        self.validators = tuple(wrap_validator(v, config) for v in self.validators if v)
+        self.validators = tuple(self._process_validator(v) for v in self.validators if v)
         self.info = OrderedDict([
             ('type', self.type_.__name__),
             ('default', self.default),
             ('required', self.required),
-            ('validators', [f.__qualname__ for f in self.validators])
+            ('validators', [f[1].__qualname__ for f in self.validators])
         ])
         if self.required:
             self.info.pop('default')
@@ -144,20 +137,37 @@ class Field:
             return list(get_validators())
         return validators_lookup.find(self.type_)
 
-    def validate(self, v):
-        for validator in self.validators:
-            v = validator(v)
+    @classmethod
+    def _process_validator(cls, validator):
+        try:
+            signature = inspect.signature(validator)
+        except ValueError:
+            # happens on builtins like float
+            return ValidatorSignature.JUST_VALUE, validator
+
+        try:
+            return ValidatorSignature(len(signature.parameters)), validator
+        except ValueError as e:
+            raise RuntimeError(f'Invalid signature for validator {validator}: {signature}, should be: '
+                               f'(value), (value, model)') from e
+
+    def validate(self, v, model):
+        for signature, validator in self.validators:
+            if signature == ValidatorSignature.JUST_VALUE:
+                v = validator(v)
+            else:
+                v = validator(v, model)
         return v
 
     @classmethod
-    def infer(cls, *, name, value, annotation, config, class_validators):
+    def infer(cls, *, name, value, annotation, class_validators):
         required = value == Ellipsis
         instance = cls(
             type_=annotation,
             default=None if required else value,
             required=required
         )
-        instance.prepare(name, config, class_validators)
+        instance.prepare(name, class_validators)
         return instance
 
     def __repr__(self):
@@ -165,9 +175,3 @@ class Field:
 
     def __str__(self):
         return ', '.join(f'{k}={v!r}' for k, v in self.info.items())
-
-
-class EnvField(Field):
-    def __init__(self, *, env=None, **kwargs):
-        super().__init__(**kwargs)
-        self.env_var_name = env
