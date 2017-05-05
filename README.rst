@@ -4,12 +4,11 @@ pydantic
 |Build Status| |Coverage| |pypi|
 
 
-Data validation and settings management using python 3.6 type hinting
+Data validation and settings management using python 3.6 type hinting.
 
 
 TODO:
 
-* sort behaviour with ``None``
 * sub instances
 * datetime types
 * exotic typing: Union, List, Dict

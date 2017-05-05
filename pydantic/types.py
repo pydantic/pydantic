@@ -1,14 +1,19 @@
-from typing import Type
+from typing import Optional, Type
 
 from .fields import str_validator
 from .utils import import_string, make_dsn
 
 __all__ = [
+    'NoneStr',
+    'NoneBytes',
     'ConstrainedStr',
     'constr',
     'Module',
     'DSN',
 ]
+
+NoneStr = Optional[str]
+NoneBytes = Optional[bytes]
 
 
 class ConstrainedStr(str):
@@ -59,6 +64,7 @@ class Module:
 
 class DSN(str):
     prefix = 'db_'
+    validate_always = True
 
     @classmethod
     def get_validators(cls):
@@ -70,7 +76,10 @@ class DSN(str):
         if value:
             return value
         d = model.__values__
-        return make_dsn(**{f: d[cls.prefix + f] for f in ('name', 'password', 'host', 'port', 'user', 'driver')})
+        kwargs = {f: d.get(cls.prefix + f) for f in ('driver', 'user', 'password', 'host', 'port', 'name', 'query')}
+        if kwargs['driver'] is None:
+            raise ValueError(f'"{cls.prefix}driver" field may not be missing or None')
+        return make_dsn(**kwargs)
 
 
 # TODO, JsonEither, JsonList, JsonDict

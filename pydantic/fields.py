@@ -2,10 +2,17 @@ import inspect
 from collections import OrderedDict
 from enum import IntEnum
 from pathlib import Path
-from typing import Any, Callable, List, Type
+from typing import Any, Callable, List, Optional, Type
+
 from .exceptions import ConfigError
 
 NoneType = type(None)
+
+
+def not_none_validator(v):
+    if v is None:
+        raise TypeError('None is not an allow value')
+    return v
 
 
 def str_validator(v) -> str:
@@ -51,30 +58,21 @@ def anystr_length_validator(v, m):
     raise ValueError(f'length not in range {m.config.max_anystr_length} to {m.config.max_anystr_length}')
 
 
-class ValidatorsLookup:
-    def __init__(self):
-        self._validators_lookup = {
-            int: [int, number_size_validator],
-            float: [float, number_size_validator],
-            Path: [Path],
-            str: [str_validator, anystr_length_validator],
-            bytes: [bytes_validator, anystr_length_validator],
-            bool: [bool_validator],
-            # TODO list, List, Dict, Union, datetime, date, time, custom types
-        }
-        self._validators_lookup_subclasses = []
+VALIDATORS_LOOKUP = {
+    int: [int, number_size_validator],
+    float: [float, number_size_validator],
+    bool: [bool_validator],
 
-    def find(self, type_):
-        try:
-            return self._validators_lookup[type_]
-        except KeyError:
-            raise ConfigError(f'no validator found for {type_}')
+    Path: [Path],
 
-    def register(self, type_, *validators_):
-        self._validators_lookup[type_] = list(validators_)
+    Optional[str]: [str_validator, anystr_length_validator],
+    str: [not_none_validator, str_validator, anystr_length_validator],
 
+    Optional[bytes]: [bytes_validator, anystr_length_validator],
+    bytes: [not_none_validator, bytes_validator, anystr_length_validator],
 
-validators_lookup = ValidatorsLookup()
+    # TODO list, List, Dict, Union, datetime, date, time, custom types
+}
 
 
 class ValidatorSignature(IntEnum):
@@ -83,7 +81,7 @@ class ValidatorSignature(IntEnum):
 
 
 class Field:
-    __slots__ = 'type_', 'validators', 'default', 'required', 'name', 'description', 'info'
+    __slots__ = 'type_', 'validators', 'default', 'required', 'name', 'description', 'info', 'validate_always'
 
     def __init__(
             self, *,
@@ -98,6 +96,7 @@ class Field:
             raise RuntimeError('It doesn\'t make sense to have `default` set and `required=True`.')
 
         self.type_ = type_
+        self.validate_always = getattr(self.type_, 'validate_always', False)
         self.validators = validators
         self.default = default
         self.required = required
@@ -124,7 +123,7 @@ class Field:
 
         self.validators = tuple(self._process_validator(v) for v in self.validators if v)
         self.info = OrderedDict([
-            ('type', self.type_.__name__),
+            ('type', self._type_name),
             ('default', self.default),
             ('required', self.required),
             ('validators', [f[1].__qualname__ for f in self.validators])
@@ -134,11 +133,22 @@ class Field:
         if self.description:
             self.info['description'] = self.description
 
+    @property
+    def _type_name(self):
+        try:
+            return self.type_.__name__
+        except AttributeError:
+            # happens with unions
+            return str(self.type_)
+
     def _find_validator(self):
         get_validators = getattr(self.type_, 'get_validators', None)
         if get_validators:
             return list(get_validators())
-        return validators_lookup.find(self.type_)
+        try:
+            return VALIDATORS_LOOKUP[self.type_]
+        except KeyError:
+            raise ConfigError(f'no validator found for {self.type_}')
 
     @classmethod
     def _process_validator(cls, validator):

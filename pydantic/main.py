@@ -59,6 +59,7 @@ class MetaModel(type):
 
 
 MISSING = object()
+MISSING_ERROR = {'type': 'Missing', 'msg': 'field required', 'validator': 'field_required'}
 
 
 class BaseModel(metaclass=MetaModel):
@@ -84,27 +85,33 @@ class BaseModel(metaclass=MetaModel):
     def _process_values(self, values):
         for name, field in self.__fields__.items():
             value = values.get(name, MISSING)
-            if value is MISSING:
-                if self.config.validate_all:
-                    value = field.default
-                else:
-                    if field.required:
-                        self.__errors__[name] = {'type': 'Missing', 'msg': 'field required'}
-                    else:
-                        self.__values__[name] = field.default
-                    continue
-            value, validator, error = field.validate(value, self)
-            if error:
-                self.__errors__[name] = {
-                    'type': error.__class__.__name__,
-                    'msg': str(error),
-                    'validator': validator.__qualname__,
-                }
-            self.__values__[name] = value
-            setattr(self, name, value)
+            self._process_value(name, field, value)
 
         if self.config.raise_exception and self.__errors__:
             raise ValidationError(self.__errors__)
+
+    def _process_value(self, name, field, value):
+        if value is MISSING:
+            if self.config.validate_all or field.validate_always:
+                value = field.default
+            else:
+                if field.required:
+                    self.__errors__[name] = MISSING_ERROR
+                else:
+                    self.__values__[name] = field.default
+                    # could skip this if the attributes equals field.default, would it be quicker?
+                    setattr(self, name, field.default)
+                return
+
+        value, validator, error = field.validate(value, self)
+        if error:
+            self.__errors__[name] = {
+                'type': error.__class__.__name__,
+                'msg': str(error),
+                'validator': validator.__qualname__,
+            }
+        self.__values__[name] = value
+        setattr(self, name, value)
 
     def __iter__(self):
         # so `dict(model)` works

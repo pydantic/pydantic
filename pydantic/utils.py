@@ -6,14 +6,14 @@ def _rfc_1738_quote(text):
     return re.sub(r'[:@/]', lambda m: '%{:X}'.format(ord(m.group(0))), text)
 
 
-def make_dsn(
-        driver: str = None,
-        user: str = None,
-        password: str = None,
-        host: str = None,
-        port: str = None,
-        name: str = None,
-        query: str = None):
+def make_dsn(*,
+             driver: str,
+             user: str=None,
+             password: str=None,
+             host: str=None,
+             port: str=None,
+             name: str=None,
+             query: str=None):
     """
     Create a DSN from from connection settings.
 
