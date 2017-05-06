@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Dict, List, Union
 
 import pytest
 
@@ -151,3 +151,65 @@ def test_typed_list():
     "validator": "iter"
   }
 }""" == exc_info.value.json(2)
+
+
+class DictModel(BaseModel):
+    v: Dict[str, int] = ...
+
+
+@pytest.mark.parametrize('value,result', [
+    ({'a': 2, 'b': 4}, {'a': 2, 'b': 4}),
+    ({1: '2', 'b': 4}, {'1': 2, 'b': 4}),
+    ([('a', 2), ('b', 4)], {'a': 2, 'b': 4}),
+])
+def test_typed_dict(value, result):
+    assert DictModel(v=value).v == result
+
+
+@pytest.mark.parametrize('value,error', [
+    (
+        1,
+        """{
+  "v": {
+    "error_msg": "'int' object is not iterable",
+    "error_type": "TypeError",
+    "index": null,
+    "track": null,
+    "validator": "dict"
+  }
+}"""
+    ),
+    (
+        {'a': 'b'},
+        """{
+  "v": [
+    [
+      null,
+      {
+        "error_msg": "invalid literal for int() with base 10: 'b'",
+        "error_type": "ValueError",
+        "index": "a",
+        "track": "int",
+        "validator": "int"
+      }
+    ]
+  ]
+}"""
+    ),
+    (
+        [1, 2, 3],
+        """{
+  "v": {
+    "error_msg": "cannot convert dictionary update sequence element #0 to a sequence",
+    "error_type": "TypeError",
+    "index": null,
+    "track": null,
+    "validator": "dict"
+  }
+}""",
+    )
+])
+def test_typed_dict_error(value, error):
+    with pytest.raises(ValidationError) as exc_info:
+        DictModel(v=value)
+    assert error == exc_info.value.json(2)

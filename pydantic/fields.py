@@ -1,7 +1,7 @@
 import inspect
 from collections import OrderedDict
 from enum import IntEnum
-from typing import Any, List, Sequence, Type, Union  # noqa
+from typing import Any, List, Mapping, Sequence, Type, Union  # noqa
 
 from .exceptions import ConfigError, Error, type_json
 from .validators import NoneType, find_validator, not_none_validator
@@ -19,8 +19,8 @@ class Shape(IntEnum):
 
 
 class Field:
-    __slots__ = ('type_', 'validator_tracks', 'track_count', 'default', 'required', 'name', 'description',
-                 'info', 'validate_always', 'allow_none', 'shape')
+    __slots__ = ('type_', 'key_type_', 'validator_tracks', 'key_validator_tracks', 'track_count', 'default',
+                 'required', 'name', 'description', 'info', 'validate_always', 'allow_none', 'shape')
 
     def __init__(
             self, *,
@@ -31,8 +31,10 @@ class Field:
             description: str=None):
 
         self.type_: type = type_
+        self.key_type_: type = None
         self.validate_always: bool = getattr(self.type_, 'validate_always', False)
         self.validator_tracks: List[ValidatorRoute] = []
+        self.key_validator_tracks: List[ValidatorRoute] = []
         self.default: Any = default
         self.required: bool = required
         self.name: str = name
@@ -54,9 +56,14 @@ class Field:
             if issubclass(origin, Sequence):
                 self.type_ = self.type_.__args__[0]
                 self.shape = Shape.SEQUENCE
-            # TODO mapping
+            elif issubclass(origin, Mapping):
+                self.key_type_ = self.type_.__args__[0]
+                self.type_ = self.type_.__args__[1]
+                self.shape = Shape.MAPPING
 
-        self._populate_validator_tracks(class_validators)
+        self.validator_tracks = self._populate_validator_tracks(self.type_, class_validators)
+        if self.key_type_:
+            self.key_validator_tracks = self._populate_validator_tracks(self.key_type_, class_validators, 'key_')
         validators = {
             type_json(r.type_): [v[1].__qualname__ for v in r.validators] for r in self.validator_tracks
         }
@@ -73,58 +80,84 @@ class Field:
         if self.description:
             self.info['description'] = self.description
 
-    def _populate_validator_tracks(self, class_validators):
-        override_validator = class_validators.get(f'validate_{self.name}_override')
+    def _populate_validator_tracks(self, type_, class_validators, prefix=''):
+        override_validator = class_validators.get(f'validate_{prefix}{self.name}_override')
         if override_validator:
-            self.validator_tracks = [ValidatorRoute(self.type_, override_validator)]
+            tracks = [ValidatorRoute(self.type_, override_validator)]
         else:
+            tracks = []
             if getattr(self.type_, '__origin__', None) is Union:
-                types = self.type_.__args__
+                types = type_.__args__
             else:
-                types = [self.type_]
+                types = [type_]
 
             for type_ in types:
                 if type_ is NoneType:
                     self.allow_none = True
                 else:
-                    self.validator_tracks.append(ValidatorRoute(type_))
+                    tracks.append(ValidatorRoute(type_))
 
-        for track in self.validator_tracks:
-            track.prepend(class_validators.get(f'validate_{self.name}_pre'))
-            track.append(class_validators.get(f'validate_{self.name}'))
-            track.append(class_validators.get(f'validate_{self.name}_post'))
+        for track in tracks:
+            track.prepend(class_validators.get(f'validate_{prefix}{self.name}_pre'))
+            track.append(class_validators.get(f'validate_{prefix}{self.name}'))
+            track.append(class_validators.get(f'validate_{prefix}{self.name}_post'))
             track.freeze(none_track=self.allow_none)
+        return tracks
 
     def validate(self, v, model):
         if self.allow_none and v is None:
             return None, None
 
         if self.shape == Shape.SINGLETON:
-            return self._validate_singleton(v, model)
+            return self._validate_singleton(self.validator_tracks, v, model)
         elif self.shape == Shape.SEQUENCE:
-            result, errors = [], []
-            try:
-                v_iter = enumerate(v)
-            except TypeError as exc:
-                return v, Error(exc, iter, None, None)
-            for i, v_ in v_iter:
-                single_result, single_errors = self._validate_singleton(v_, model, i)
-                if errors or single_errors:
-                    errors.append(single_errors)
-                else:
-                    result.append(single_result)
-            if errors:
-                return v, errors
-            else:
-                return result, None
+            return self._validate_sequence(v, model)
         else:
-            # mapping
-            raise NotImplemented('TODO')
+            return self._validate_mapping(v, model)
 
-    def _validate_singleton(self, v, model, index=None):
-        errors = []
-        result = ...
-        for track in self.validator_tracks:
+    def _validate_sequence(self, v, model):
+        result, errors = [], []
+        try:
+            v_iter = enumerate(v)
+        except TypeError as exc:
+            return v, Error(exc, iter, None, None)
+        for i, v_ in v_iter:
+            single_result, single_errors = self._validate_singleton(self.validator_tracks, v_, model, i)
+            if errors or single_errors:
+                errors.append(single_errors)
+            else:
+                result.append(single_result)
+        if errors:
+            return v, errors
+        else:
+            return result, None
+
+    def _validate_mapping(self, v, model):
+        if isinstance(v, dict):
+            v_iter = v
+        else:
+            try:
+                v_iter = dict(v)
+            except TypeError as exc:
+                return v, Error(exc, dict, None, None)
+
+        result, errors = {}, []
+        for k, v_ in v_iter.items():
+            key_result, key_errors = self._validate_singleton(self.key_validator_tracks, k, model)
+            value_result, value_errors = self._validate_singleton(self.validator_tracks, v_, model, k)
+
+            if errors or value_errors or key_errors:
+                errors.append([key_errors, value_errors])
+            else:
+                result[key_result] = value_result
+        if errors:
+            return v, errors
+        else:
+            return result, None
+
+    def _validate_singleton(self, tracks, v, model, index=None):
+        result, errors = ..., []
+        for track in tracks:
             value, exc, validator = track.validate(v, model, self)
             if exc:
                 errors.append(Error(exc, validator, track.type_, index))
@@ -135,10 +168,8 @@ class Field:
                 result = value
         if result is not ...:
             return result, None
-        elif len(self.validator_tracks) == 1:
-            return v, errors[0]
         else:
-            return v, errors
+            return v, errors[0] if len(tracks) == 1 else errors
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators):

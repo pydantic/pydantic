@@ -15,7 +15,9 @@ Error = namedtuple('Error', ['exc', 'validator', 'track_type', 'index'])
 
 
 def jsonify_errors(e):
-    if isinstance(e, Error):
+    if not e:
+        return e
+    elif isinstance(e, Error):
         return {
             'error_type': e.exc.__class__.__name__,
             'error_msg': str(e.exc),

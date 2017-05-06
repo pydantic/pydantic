@@ -13,7 +13,7 @@ isort:
 lint:
 	python setup.py check -rms
 	flake8 pydantic/ tests/
-	pytest pydantic -p no:sugar -q --cache-clear
+	pytest pydantic -p no:sugar -q
 
 .PHONY: test
 test:
