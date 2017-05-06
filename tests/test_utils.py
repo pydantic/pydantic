@@ -1,6 +1,7 @@
+import os
 import pytest
 
-from pydantic.utils import validate_email
+from pydantic.utils import import_string, make_dsn, validate_email
 
 
 @pytest.mark.parametrize('value,name,email', [
@@ -55,3 +56,27 @@ def test_address_valid(value, name, email):
 def test_address_invalid(value):
     with pytest.raises(ValueError):
         validate_email(value)
+
+
+def test_empty_dsn():
+    assert make_dsn(driver='foobar') == 'foobar://'
+
+
+def test_dsn_odd_user():
+    assert make_dsn(driver='foobar', user='foo@bar') == 'foobar://foo%40bar@'
+
+
+def test_import_module():
+    assert import_string('os.path') == os.path
+
+
+def test_import_module_invalid():
+    with pytest.raises(ImportError) as exc_info:
+        import_string('xx')
+    assert exc_info.value.args[0] == '"xx" doesn\'t look like a module path'
+
+
+def test_import_no_attr():
+    with pytest.raises(ImportError) as exc_info:
+        import_string('os.foobar')
+    assert exc_info.value.args[0] == 'Module "os" does not define a "foobar" attribute'

@@ -213,3 +213,33 @@ def test_typed_dict_error(value, error):
     with pytest.raises(ValidationError) as exc_info:
         DictModel(v=value)
     assert error == exc_info.value.json(2)
+
+
+def test_override_validator():
+    class OverModel(BaseModel):
+        a: int = ...
+
+        def validate_a_override(self, v):
+            return 321
+
+    m = OverModel(a=1)
+    assert m.a == 321
+
+
+def test_all_model_validator():
+    class OverModel(BaseModel):
+        a: int = ...
+
+        def validate_a_pre(self, v):
+            return f'{v}1'
+
+        def validate_a(self, v):
+            assert isinstance(v, int)
+            return f'{v}_main'
+
+        def validate_a_post(self, v):
+            assert isinstance(v, str)
+            return f'{v}_post'
+
+    m = OverModel(a=1)
+    assert m.a == '11_main_post'

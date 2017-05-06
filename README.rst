@@ -10,8 +10,8 @@ Data validation and settings management using python 3.6 type hinting.
 TODO:
 
 * tests for validation methods
-* length limits for lists, dicts etc.
 * more info: alt names and descriptions
+* length limits for lists, dicts etc.
 * better info: eg. choices, str length range
 
 

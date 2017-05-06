@@ -10,6 +10,7 @@ from .validators import NoneType, find_validator, not_none_validator
 class ValidatorSignature(IntEnum):
     JUST_VALUE = 1
     VALUE_KWARGS = 2
+    BOUND_METHOD = 3
 
 
 class Shape(IntEnum):
@@ -24,12 +25,14 @@ class Field:
 
     def __init__(
             self, *,
+            name: str=None,
             type_: Type,
+            class_validators: dict=None,
             default: Any=None,
             required: bool=False,
-            name: str=None,
             description: str=None):
 
+        self.name: str = name
         self.type_: type = type_
         self.key_type_: type = None
         self.validate_always: bool = getattr(self.type_, 'validate_always', False)
@@ -37,13 +40,23 @@ class Field:
         self.key_validator_tracks: List[ValidatorRoute] = []
         self.default: Any = default
         self.required: bool = required
-        self.name: str = name
         self.description: str = description
         self.allow_none: bool = False
         self.shape: Shape = Shape.SINGLETON
+        self._prepare(class_validators)
 
-    def prepare(self, name, class_validators):
-        self.name = self.name or name
+    @classmethod
+    def infer(cls, *, name, value, annotation, class_validators):
+        required = value == Ellipsis
+        return cls(
+            type_=annotation,
+            class_validators=class_validators,
+            default=None if required else value,
+            required=required,
+            name=name
+        )
+
+    def _prepare(self, class_validators):
         if self.default and self.type_ is None:
             self.type_ = type(self.default)
 
@@ -56,7 +69,8 @@ class Field:
             if issubclass(origin, Sequence):
                 self.type_ = self.type_.__args__[0]
                 self.shape = Shape.SEQUENCE
-            elif issubclass(origin, Mapping):
+            else:
+                assert issubclass(origin, Mapping)
                 self.key_type_ = self.type_.__args__[0]
                 self.type_ = self.type_.__args__[1]
                 self.shape = Shape.MAPPING
@@ -81,6 +95,7 @@ class Field:
             self.info['description'] = self.description
 
     def _populate_validator_tracks(self, type_, class_validators, prefix=''):
+        class_validators = class_validators or {}
         override_validator = class_validators.get(f'validate_{prefix}{self.name}_override')
         if override_validator:
             tracks = [ValidatorRoute(self.type_, override_validator)]
@@ -171,17 +186,6 @@ class Field:
         else:
             return v, errors[0] if len(tracks) == 1 else errors
 
-    @classmethod
-    def infer(cls, *, name, value, annotation, class_validators):
-        required = value == Ellipsis
-        instance = cls(
-            type_=annotation,
-            default=None if required else value,
-            required=required
-        )
-        instance.prepare(name, class_validators)
-        return instance
-
     def __repr__(self):
         return f'<Field {self}>'
 
@@ -221,8 +225,10 @@ class ValidatorRoute:
             try:
                 if signature == ValidatorSignature.JUST_VALUE:
                     v = validator(v)
-                else:
+                elif signature == ValidatorSignature.VALUE_KWARGS:
                     v = validator(v, model=model, field=field)
+                else:
+                    v = validator(model, v)
             except (ValueError, TypeError, ImportError) as e:
                 return v, e, validator
         return v, None, None
@@ -245,7 +251,10 @@ class ValidatorRoute:
         # 1. we can deal with it before validation begins
         # 2. (more importantly) it doesn't get confused with a TypeError when evaluating the validator
         try:
-            if len(signature.parameters) == 1:
+            if list(signature.parameters)[0] == 'self':
+                signature.bind(object(), 1)
+                return ValidatorSignature.BOUND_METHOD
+            elif len(signature.parameters) == 1:
                 signature.bind(1)
                 return ValidatorSignature.JUST_VALUE
             else:

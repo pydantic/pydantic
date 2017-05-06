@@ -83,10 +83,10 @@ def import_string(dotted_path):
     try:
         module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
     except ValueError as e:
-        raise ImportError("{} doesn't look like a module path".format(dotted_path)) from e
+        raise ImportError(f'"{dotted_path}" doesn\'t look like a module path') from e
 
     module = import_module(module_path)
     try:
         return getattr(module, class_name)
     except AttributeError as e:
-        raise ImportError('Module "{}" does not define a "{}" attribute'.format(module_path, class_name)) from e
+        raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
