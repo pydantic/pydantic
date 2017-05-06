@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from pathlib import Path
@@ -58,10 +59,22 @@ def anystr_length_validator(v, model, **kwargs):
     raise ValueError(f'length not in range {model.config.max_anystr_length} to {model.config.max_anystr_length}')
 
 
+def ordered_dict_validator(v) -> OrderedDict:
+    if isinstance(v, OrderedDict):
+        return v
+    return OrderedDict(v)
+
+
 def dict_validator(v) -> dict:
     if isinstance(v, dict):
         return v
     return dict(v)
+
+
+def list_validator(v) -> list:
+    if isinstance(v, list):
+        return v
+    return list(v)
 
 
 def enum_validator(v, field, **kwargs) -> Enum:
@@ -86,9 +99,10 @@ _VALIDATORS = [
     (time, [parse_time]),
     (timedelta, [parse_duration]),
 
-    (dict, [not_none_validator, dict_validator]),
+    (OrderedDict, [ordered_dict_validator]),
+    (dict, [dict_validator]),
+    (list, [list_validator]),
 ]
-# TODO list, List, Dict
 
 
 def find_validator(type_):

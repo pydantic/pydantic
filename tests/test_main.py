@@ -1,8 +1,8 @@
-from collections import OrderedDict
+import json
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, ValidationError
+from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, ValidationError, jsonify_errors
 
 
 class UltraSimpleModel(BaseModel):
@@ -19,18 +19,40 @@ def test_ultra_simple_success():
 def test_ultra_simple_missing():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
-    assert exc_info.value.args[0] == '1 error validating input: {"a": {"msg": "field required", "type": "Missing"}}'
+    assert exc_info.value.message == '1 error validating input'
+    assert """\
+{
+  "a": {
+    "error_msg": "field required",
+    "error_type": "Missing",
+    "index": null,
+    "track": null,
+    "validator": null
+  }
+}""" == exc_info.value.json(2)
 
 
 def test_ultra_simple_failed():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel(a='x', b='x')
-    assert exc_info.value.errors == OrderedDict(
-        [
-            ('a', {'type': 'ValueError', 'msg': "could not convert string to float: 'x'", 'validator': 'float'}),
-            ('b', {'type': 'ValueError', 'msg': "invalid literal for int() with base 10: 'x'", 'validator': 'int'})
-        ]
-    )
+    assert exc_info.value.message == '2 errors validating input'
+    assert """\
+{
+  "a": {
+    "error_msg": "could not convert string to float: 'x'",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "float",
+    "validator": "float"
+  },
+  "b": {
+    "error_msg": "invalid literal for int() with base 10: 'x'",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "int",
+    "validator": "int"
+  }
+}""" == exc_info.value.json(2)
 
 
 def test_ultra_simple_repr():
@@ -47,7 +69,8 @@ class ConfigModel(UltraSimpleModel):
 
 def test_config_doesnt_raise():
     m = ConfigModel()
-    assert m.errors == OrderedDict([('a', {'type': 'Missing', 'msg': 'field required'})])
+    assert len(m.errors) == 1
+    assert m.errors['a'].exc.args[0] == 'field required'
     assert m.config.raise_exception is False
     assert m.config.max_anystr_length == 65536
 
@@ -90,13 +113,23 @@ def test_nullable_strings_fails():
         required_bytes_value=None,
         required_bytes_none_value=None,
     )
-    assert m.errors == OrderedDict(
-        [
-            ('required_str_value', {'type': 'TypeError', 'msg': 'None is not an allow value',
-                                    'validator': 'not_none_validator'}),
-            ('required_bytes_value', {'type': 'TypeError', 'msg': 'None is not an allow value',
-                                      'validator': 'not_none_validator'})
-        ])
+    assert """\
+{
+  "required_bytes_value": {
+    "error_msg": "None is not an allow value",
+    "error_type": "TypeError",
+    "index": null,
+    "track": "bytes",
+    "validator": "not_none_validator"
+  },
+  "required_str_value": {
+    "error_msg": "None is not an allow value",
+    "error_type": "TypeError",
+    "index": null,
+    "track": "str",
+    "validator": "not_none_validator"
+  }
+}""" == json.dumps(jsonify_errors(m.errors), indent=2, sort_keys=True)
 
 
 class RecursiveModel(BaseModel):
@@ -121,7 +154,7 @@ class PreventExtraModel(BaseModel):
     foo = 'whatever'
 
     class Config:
-        allow_extra = False
+        ignore_extra = False
 
 
 def test_prevent_extra_success():
@@ -135,8 +168,23 @@ def test_prevent_extra_fails():
     with pytest.raises(ValidationError) as exc_info:
         PreventExtraModel(foo='ok', bar='wrong', spam='xx')
     assert exc_info.value.message == '2 errors validating input'
-    assert exc_info.value.pretty_errors == ('{"bar": {"msg": "extra field not permitted", "type": "Extra"}, '
-                                            '"spam": {"msg": "extra field not permitted", "type": "Extra"}}')
+    assert """\
+{
+  "bar": {
+    "error_msg": "extra fields not permitted",
+    "error_type": "Extra",
+    "index": null,
+    "track": null,
+    "validator": null
+  },
+  "spam": {
+    "error_msg": "extra fields not permitted",
+    "error_type": "Extra",
+    "index": null,
+    "track": null,
+    "validator": null
+  }
+}""" == exc_info.value.json(2)
 
 
 class InvalidValidator:

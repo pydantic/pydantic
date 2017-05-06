@@ -1,5 +1,4 @@
-from collections import OrderedDict
-from typing import Union
+from typing import List, Union
 
 import pytest
 
@@ -24,13 +23,25 @@ def test_str_bytes():
     with pytest.raises(ValidationError) as exc_info:
         StrBytesModel(v=None)
     assert exc_info.value.message == '1 error validating input'
-    assert exc_info.value.errors == OrderedDict(
-        [
-            ('v', [{'type': 'TypeError', 'route': 'str', 'msg': 'None is not an allow value',
-                    'validator': 'not_none_validator'},
-                   {'type': 'TypeError', 'route': 'bytes', 'msg': 'None is not an allow value',
-                    'validator': 'not_none_validator'}])
-        ])
+    assert """\
+{
+  "v": [
+    {
+      "error_msg": "None is not an allow value",
+      "error_type": "TypeError",
+      "index": null,
+      "track": "str",
+      "validator": "not_none_validator"
+    },
+    {
+      "error_msg": "None is not an allow value",
+      "error_type": "TypeError",
+      "index": null,
+      "track": "bytes",
+      "validator": "not_none_validator"
+    }
+  ]
+}""" == exc_info.value.json(2)
 
 
 def test_str_bytes_none():
@@ -76,10 +87,67 @@ def test_union_int_str():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
     assert exc_info.value.message == '1 error validating input'
-    assert exc_info.value.errors == OrderedDict(
-        [
-            ('v', [{'type': 'TypeError', 'route': 'int', 'validator': 'int',
-                    'msg': "int() argument must be a string, a bytes-like object or a number, not 'NoneType'"},
-                   {'type': 'TypeError', 'route': 'str', 'msg': 'None is not an allow value',
-                    'validator': 'not_none_validator'}])
-        ])
+    assert """\
+{
+  "v": [
+    {
+      "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
+      "error_type": "TypeError",
+      "index": null,
+      "track": "int",
+      "validator": "int"
+    },
+    {
+      "error_msg": "None is not an allow value",
+      "error_type": "TypeError",
+      "index": null,
+      "track": "str",
+      "validator": "not_none_validator"
+    }
+  ]
+}""" == exc_info.value.json(2)
+
+
+def test_typed_list():
+    class Model(BaseModel):
+        v: List[int] = ...
+
+    m = Model(v=[1, 2, '3'])
+    assert m.v == [1, 2, 3]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[1, 'x', 'y'])
+    assert exc_info.value.message == '1 error validating input'
+    assert """\
+{
+  "v": [
+    {
+      "error_msg": "invalid literal for int() with base 10: 'x'",
+      "error_type": "ValueError",
+      "index": 1,
+      "track": "int",
+      "validator": "int"
+    },
+    {
+      "error_msg": "invalid literal for int() with base 10: 'y'",
+      "error_type": "ValueError",
+      "index": 2,
+      "track": "int",
+      "validator": "int"
+    }
+  ]
+}""" == exc_info.value.json(2)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=1)
+    assert exc_info.value.message == '1 error validating input'
+    assert """\
+{
+  "v": {
+    "error_msg": "'int' object is not iterable",
+    "error_type": "TypeError",
+    "index": null,
+    "track": null,
+    "validator": "iter"
+  }
+}""" == exc_info.value.json(2)

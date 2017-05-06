@@ -1,9 +1,9 @@
 import inspect
 from collections import OrderedDict
 from enum import IntEnum
-from typing import Any, List, Type, Union  # noqa
+from typing import Any, List, Sequence, Type, Union  # noqa
 
-from .exceptions import ConfigError
+from .exceptions import ConfigError, Error, type_json
 from .validators import NoneType, find_validator, not_none_validator
 
 
@@ -12,17 +12,15 @@ class ValidatorSignature(IntEnum):
     VALUE_KWARGS = 2
 
 
-def type_str(type_: type):
-    try:
-        return type_.__name__
-    except AttributeError:
-        # happens with unions
-        return str(type_)
+class Shape(IntEnum):
+    SINGLETON = 1
+    SEQUENCE = 2
+    MAPPING = 3
 
 
 class Field:
-    __slots__ = ('type_', 'validator_tracks', 'default', 'required', 'name', 'description',
-                 'info', 'validate_always', 'allow_none')
+    __slots__ = ('type_', 'validator_tracks', 'track_count', 'default', 'required', 'name', 'description',
+                 'info', 'validate_always', 'allow_none', 'shape')
 
     def __init__(
             self, *,
@@ -40,6 +38,7 @@ class Field:
         self.name: str = name
         self.description: str = description
         self.allow_none: bool = False
+        self.shape: Shape = Shape.SINGLETON
 
     def prepare(self, name, class_validators):
         self.name = self.name or name
@@ -49,14 +48,22 @@ class Field:
         if self.type_ is None:
             raise ConfigError(f'unable to infer type for attribute "{self.name}"')
 
+        # typing interface is horrible, we have to do some ugly checks
+        origin = getattr(self.type_, '__origin__', None)
+        if origin not in (None, Union):
+            if issubclass(origin, Sequence):
+                self.type_ = self.type_.__args__[0]
+                self.shape = Shape.SEQUENCE
+            # TODO mapping
+
         self._populate_validator_tracks(class_validators)
         validators = {
-            type_str(r.type_): [v[1].__qualname__ for v in r.validators] for r in self.validator_tracks
+            type_json(r.type_): [v[1].__qualname__ for v in r.validators] for r in self.validator_tracks
         }
         if len(validators) == 1:
             validators = list(validators.values())[0]
         self.info = OrderedDict([
-            ('type', type_str(self.type_)),
+            ('type', type_json(self.type_)),
             ('default', self.default),
             ('required', self.required),
             ('validators', validators)
@@ -92,12 +99,35 @@ class Field:
         if self.allow_none and v is None:
             return None, None
 
+        if self.shape == Shape.SINGLETON:
+            return self._validate_singleton(v, model)
+        elif self.shape == Shape.SEQUENCE:
+            result, errors = [], []
+            try:
+                v_iter = enumerate(v)
+            except TypeError as exc:
+                return v, Error(exc, iter, None, None)
+            for i, v_ in v_iter:
+                single_result, single_errors = self._validate_singleton(v_, model, i)
+                if errors or single_errors:
+                    errors.append(single_errors)
+                else:
+                    result.append(single_result)
+            if errors:
+                return v, errors
+            else:
+                return result, None
+        else:
+            # mapping
+            raise NotImplemented('TODO')
+
+    def _validate_singleton(self, v, model, index=None):
         errors = []
         result = ...
         for track in self.validator_tracks:
-            value, error, validator = track.validate(v, model, self)
-            if error:
-                errors.append((error, validator, track.type_))
+            value, exc, validator = track.validate(v, model, self)
+            if exc:
+                errors.append(Error(exc, validator, track.type_, index))
             elif isinstance(v, track.type_):
                 # exact match: return immediately
                 return value, None
@@ -105,7 +135,10 @@ class Field:
                 result = value
         if result is not ...:
             return result, None
-        return v, errors
+        elif len(self.validator_tracks) == 1:
+            return v, errors[0]
+        else:
+            return v, errors
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators):

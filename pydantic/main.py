@@ -1,8 +1,8 @@
 from collections import OrderedDict
 from types import FunctionType
 
-from .exceptions import ValidationError
-from .fields import Field, type_str
+from .exceptions import Error, ValidationError
+from .fields import Field
 from .validators import dict_validator
 
 
@@ -13,7 +13,7 @@ class BaseConfig:
     max_number_size = 2 ** 64
     raise_exception = True
     validate_all = False
-    allow_extra = True
+    ignore_extra = True
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
@@ -63,9 +63,17 @@ class MetaModel(type):
         return super().__new__(mcs, name, bases, namespace)
 
 
-MISSING = object()
-MISSING_ERROR = {'type': 'Missing', 'msg': 'field required'}
-EXTRA_ERROR = {'type': 'Extra', 'msg': 'extra field not permitted'}
+class Missing(ValueError):
+    pass
+
+
+class Extra(ValueError):
+    pass
+
+
+MISSING = Missing('field required')
+MISSING_ERROR = Error(MISSING, None, None, None)
+EXTRA_ERROR = Error(Extra('extra fields not permitted'), None, None, None)
 
 
 class BaseModel(metaclass=MetaModel):
@@ -103,7 +111,7 @@ class BaseModel(metaclass=MetaModel):
             value = values.get(name, MISSING)
             self._process_value(name, field, value)
 
-        if not self.config.allow_extra:
+        if not self.config.ignore_extra:
             extra = values.keys() - self.__fields__.keys()
             if extra:
                 for field in sorted(extra):
@@ -127,20 +135,7 @@ class BaseModel(metaclass=MetaModel):
 
         value, errors = field.validate(value, self)
         if errors:
-            if len(errors) == 1:
-                error, validator, _ = errors[0]
-                self.__errors__[name] = {
-                    'type': error.__class__.__name__,
-                    'msg': str(error),
-                    'validator': validator.__qualname__,
-                }
-            else:
-                self.__errors__[name] = [{
-                    'type': error.__class__.__name__,
-                    'route': type_str(type_),
-                    'msg': str(error),
-                    'validator': validator.__qualname__,
-                } for error, validator, type_ in errors]
+            self.__errors__[name] = errors
         self.__values__[name] = value
         setattr(self, name, value)
 

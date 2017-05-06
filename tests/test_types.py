@@ -1,5 +1,4 @@
 import os
-from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from enum import Enum, IntEnum
 
@@ -25,10 +24,16 @@ def test_constrained_str_default():
 def test_constrained_str_too_long():
     with pytest.raises(ValidationError) as exc_info:
         ConStringModel(v='this is too long')
-    assert exc_info.value.args[0] == ('1 error validating input: {"v": {'
-                                      '"msg": "length greater than maximum allowed: 10", '
-                                      '"type": "ValueError", '
-                                      '"validator": "ConstrainedStr.validate"}}')
+    assert """\
+{
+  "v": {
+    "error_msg": "length greater than maximum allowed: 10",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "ConstrainedStrValue",
+    "validator": "ConstrainedStr.validate"
+  }
+}""" == exc_info.value.json(2)
 
 
 class DsnModel(BaseModel):
@@ -165,13 +170,37 @@ def test_datetime_errors():
             duration='15:30.0001 broken',
         )
     assert exc_info.value.message == '4 errors validating input'
-    assert exc_info.value.errors == OrderedDict(
-        [
-            ('dt', {'type': 'ValueError', 'msg': 'month must be in 1..12', 'validator': 'parse_datetime'}),
-            ('date_', {'type': 'ValueError', 'msg': 'Invalid date format', 'validator': 'parse_date'}),
-            ('time_', {'type': 'ValueError', 'msg': 'hour must be in 0..23', 'validator': 'parse_time'}),
-            ('duration', {'type': 'ValueError', 'msg': 'Invalid duration format', 'validator': 'parse_duration'})
-        ])
+    assert """\
+{
+  "date_": {
+    "error_msg": "Invalid date format",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "date",
+    "validator": "parse_date"
+  },
+  "dt": {
+    "error_msg": "month must be in 1..12",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "datetime",
+    "validator": "parse_datetime"
+  },
+  "duration": {
+    "error_msg": "Invalid duration format",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "timedelta",
+    "validator": "parse_duration"
+  },
+  "time_": {
+    "error_msg": "hour must be in 0..23",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "time",
+    "validator": "parse_time"
+  }
+}""" == exc_info.value.json(2)
 
 
 class FruitEnum(str, Enum):
@@ -200,8 +229,16 @@ def test_enum_fails():
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
     assert exc_info.value.message == '1 error validating input'
-    assert exc_info.value.pretty_errors == ('{"tool": {"msg": "3 is not a valid ToolEnum", "type": "ValueError", '
-                                            '"validator": "enum_validator"}}')
+    assert """\
+{
+  "tool": {
+    "error_msg": "3 is not a valid ToolEnum",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "ToolEnum",
+    "validator": "enum_validator"
+  }
+}""" == exc_info.value.json(2)
 
 
 class MoreStringsModel(BaseModel):
@@ -237,14 +274,34 @@ def test_string_fails():
             name_email='foobar @example.com',
         )
     assert exc_info.value.message == '4 errors validating input'
-    assert exc_info.value.errors == OrderedDict(
-        [
-            ('str_regex', {'type': 'ValueError', 'msg': 'string does not match regex "^xxx\\d{3}$"',
-                           'validator': 'ConstrainedStr.validate'}),
-            ('str_min_length', {'msg': 'length less than minimum allowed: 5', 'type': 'ValueError',
-                                'validator': 'ConstrainedStr.validate'}),
-            ('str_email', {'type': 'ValueError', 'msg': 'Email address is not valid',
-                           'validator': 'EmailStr.validate'}),
-            ('name_email', {'type': 'ValueError', 'msg': 'Email address is not valid',
-                            'validator': 'NameEmail.validate'})
-        ])
+    assert """\
+{
+  "name_email": {
+    "error_msg": "Email address is not valid",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "NameEmail",
+    "validator": "NameEmail.validate"
+  },
+  "str_email": {
+    "error_msg": "Email address is not valid",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "EmailStr",
+    "validator": "EmailStr.validate"
+  },
+  "str_min_length": {
+    "error_msg": "length less than minimum allowed: 5",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "ConstrainedStrValue",
+    "validator": "ConstrainedStr.validate"
+  },
+  "str_regex": {
+    "error_msg": "string does not match regex \\"^xxx\\\\d{3}$\\"",
+    "error_type": "ValueError",
+    "index": null,
+    "track": "ConstrainedStrValue",
+    "validator": "ConstrainedStr.validate"
+  }
+}""" == exc_info.value.json(2)
