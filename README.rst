@@ -9,10 +9,10 @@ Data validation and settings management using python 3.6 type hinting.
 
 TODO:
 
-* Unions
 * exotic typing: List, Dict
 * tests for validation methods
 * more info: alt names and descriptions
+* better info: eg. choices, str length range
 
 
 .. |Build Status| image:: https://travis-ci.org/samuelcolvin/pydantic.svg?branch=master

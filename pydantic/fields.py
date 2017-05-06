@@ -6,8 +6,6 @@ from typing import Any, List, Type, Union  # noqa
 from .exceptions import ConfigError
 from .validators import NoneType, find_validator, not_none_validator
 
-NO_RESULT = object()
-
 
 class ValidatorSignature(IntEnum):
     JUST_VALUE = 1
@@ -23,7 +21,7 @@ def type_str(type_: type):
 
 
 class Field:
-    __slots__ = ('type_', 'validator_routes', 'default', 'required', 'name', 'description',
+    __slots__ = ('type_', 'validator_tracks', 'default', 'required', 'name', 'description',
                  'info', 'validate_always', 'allow_none')
 
     def __init__(
@@ -34,12 +32,9 @@ class Field:
             name: str=None,
             description: str=None):
 
-        if default and required:
-            raise ConfigError("It doesn't make sense to have `default` set and `required=True`.")
-
         self.type_: type = type_
         self.validate_always: bool = getattr(self.type_, 'validate_always', False)
-        self.validator_routes: List[ValidatorRoute] = []
+        self.validator_tracks: List[ValidatorRoute] = []
         self.default: Any = default
         self.required: bool = required
         self.name: str = name
@@ -54,9 +49,9 @@ class Field:
         if self.type_ is None:
             raise ConfigError(f'unable to infer type for attribute "{self.name}"')
 
-        self._populate_validator_routes(class_validators)
+        self._populate_validator_tracks(class_validators)
         validators = {
-            type_str(r.type_): [v[1].__qualname__ for v in r.validators] for r in self.validator_routes
+            type_str(r.type_): [v[1].__qualname__ for v in r.validators] for r in self.validator_tracks
         }
         if len(validators) == 1:
             validators = list(validators.values())[0]
@@ -71,10 +66,10 @@ class Field:
         if self.description:
             self.info['description'] = self.description
 
-    def _populate_validator_routes(self, class_validators):
+    def _populate_validator_tracks(self, class_validators):
         override_validator = class_validators.get(f'validate_{self.name}_override')
         if override_validator:
-            self.validator_routes = [ValidatorRoute(self.type_, override_validator)]
+            self.validator_tracks = [ValidatorRoute(self.type_, override_validator)]
         else:
             if getattr(self.type_, '__origin__', None) is Union:
                 types = self.type_.__args__
@@ -85,30 +80,30 @@ class Field:
                 if type_ is NoneType:
                     self.allow_none = True
                 else:
-                    self.validator_routes.append(ValidatorRoute(type_))
+                    self.validator_tracks.append(ValidatorRoute(type_))
 
-        for route in self.validator_routes:
-            route.prepend(class_validators.get(f'validate_{self.name}_pre'))
-            route.append(class_validators.get(f'validate_{self.name}'))
-            route.append(class_validators.get(f'validate_{self.name}_post'))
-            route.freeze(none_route=self.allow_none)
+        for track in self.validator_tracks:
+            track.prepend(class_validators.get(f'validate_{self.name}_pre'))
+            track.append(class_validators.get(f'validate_{self.name}'))
+            track.append(class_validators.get(f'validate_{self.name}_post'))
+            track.freeze(none_track=self.allow_none)
 
     def validate(self, v, model):
         if self.allow_none and v is None:
             return None, None
 
         errors = []
-        result = NO_RESULT
-        for route in self.validator_routes:
-            value, error, validator = route.validate(v, model, self)
+        result = ...
+        for track in self.validator_tracks:
+            value, error, validator = track.validate(v, model, self)
             if error:
-                errors.append((error, validator, route.type_))
-            elif isinstance(v, route.type_):
+                errors.append((error, validator, track.type_))
+            elif isinstance(v, track.type_):
                 # exact match: return immediately
                 return value, None
             else:
                 result = value
-        if result != NO_RESULT:
+        if result is not ...:
             return result, None
         return v, errors
 
@@ -131,31 +126,26 @@ class Field:
 
 
 class ValidatorRoute:
-    __slots__ = 'type_', 'validators', '_frozen', '_none_route'
+    __slots__ = 'type_', 'validators', '_none_track'
 
     def __init__(self, type_, *validators):
         self.type_ = type_
         self.validators = list(validators or self._find_validator())
-        self._frozen = False
-        self._none_route = None
+        self._none_track = None
 
     def prepend(self, validator):
-        assert not self._frozen
         self.validators.insert(0, validator)
 
     def append(self, validator):
-        assert not self._frozen
         self.validators.append(validator)
 
-    def freeze(self, none_route):
-        assert not self._frozen
-        self._none_route = none_route
-        self._frozen = True
+    def freeze(self, none_track):
+        self._none_track = none_track
         tmp_validators = []
         for validator in self.validators:
             if not validator:
                 continue
-            if none_route and validator is not_none_validator:
+            if none_track and validator is not_none_validator:
                 continue
             signature = self._get_validator_signature(validator)
             tmp_validators.append((signature, validator))
