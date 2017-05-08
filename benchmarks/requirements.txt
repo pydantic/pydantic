@@ -1,2 +1,2 @@
 python-dateutil
-trafaret
+trafaret==0.9.1
