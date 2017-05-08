@@ -18,13 +18,20 @@ def jsonify_errors(e):
     if not e:
         return e
     elif isinstance(e, Error):
-        return {
+        d = {
             'error_type': e.exc.__class__.__name__,
-            'error_msg': str(e.exc),
             'validator': e.validator and e.validator.__qualname__,
             'track': type_json(e.track_type),
             'index': e.index,
         }
+        if isinstance(e.exc, ValidationError):
+            d.update(
+                error_msg=e.exc.message,
+                error_details=e.exc.errors_jsonable,
+            )
+        else:
+            d['error_msg'] = str(e.exc)
+        return d
     elif isinstance(e, OrderedDict):
         return OrderedDict([(k, jsonify_errors(v)) for k, v in e.items()])
     else:

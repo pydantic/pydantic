@@ -243,3 +243,48 @@ def test_all_model_validator():
 
     m = OverModel(a=1)
     assert m.a == '11_main_post'
+
+
+def test_recursive_list():
+    class SubModel(BaseModel):
+        name: str = ...
+        count: int = None
+
+    class Model(BaseModel):
+        v: List[SubModel] = []
+
+    m = Model(v=[])
+    assert m.v == []
+
+    m = Model(v=[{'name': 'testing', 'count': 4}])
+    assert repr(m) == "<Model v=[<SubModel name='testing' count=4>]>"
+    assert m.v[0].name == 'testing'
+    assert m.v[0].count == 4
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=['x'])
+    assert 'dictionary update sequence element #0 has length 1; 2 is required' in exc_info.value.args[0]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[{}])
+    assert """\
+{
+  "v": [
+    {
+      "error_details": {
+        "name": {
+          "error_msg": "field required",
+          "error_type": "Missing",
+          "index": null,
+          "track": null,
+          "validator": null
+        }
+      },
+      "error_msg": "1 error validating input",
+      "error_type": "ValidationError",
+      "index": 0,
+      "track": "SubModel",
+      "validator": "BaseModel.validate"
+    }
+  ]
+}""" == exc_info.value.json(2)

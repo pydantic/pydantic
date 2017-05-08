@@ -11,7 +11,8 @@ TODO:
 
 * performance benchmarks
 * make fields truly recursive
-* more info: alt names and descriptions
+* more info: alt names and descriptions, eg. for OPTIONS requests
+* range integer and positive integer
 * length limits for lists, dicts etc.
 * better info: eg. choices, str length range
 
