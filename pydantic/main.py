@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from types import FunctionType
 
-from .exceptions import Error, ValidationError
+from .exceptions import Error, Extra, Missing, ValidationError
 from .fields import Field
 from .validators import dict_validator
 
@@ -14,6 +14,7 @@ class BaseConfig:
     raise_exception = True
     validate_all = False
     ignore_extra = True
+    # TODO allow extra
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
@@ -61,14 +62,6 @@ class MetaModel(type):
             __fields__=fields,
         )
         return super().__new__(mcs, name, bases, namespace)
-
-
-class Missing(ValueError):
-    pass
-
-
-class Extra(ValueError):
-    pass
 
 
 MISSING = Missing('field required')

@@ -81,7 +81,7 @@ def enum_validator(v, field, **kwargs) -> Enum:
     return field.type_(v)
 
 
-# order is important here, for example: bool is a subclass of int, datetime is a subclass of date
+# order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (str, [not_none_validator, str_validator, anystr_length_validator]),
     (bytes, [not_none_validator, bytes_validator, anystr_length_validator]),

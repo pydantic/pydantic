@@ -53,3 +53,11 @@ class ValidationError(ValueError):
 
 class ConfigError(RuntimeError):
     pass
+
+
+class Missing(ValueError):
+    pass
+
+
+class Extra(ValueError):
+    pass
