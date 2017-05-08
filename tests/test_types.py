@@ -76,6 +76,9 @@ class ModuleModel(BaseModel):
 def test_module_import():
     m = ModuleModel()
     assert m.module == os.path
+    with pytest.raises(ValidationError) as exc_info:
+        ModuleModel(module='foobar')
+    assert '"\\"foobar\\" doesn\'t look like a module path"' in exc_info.value.args[0]
 
 
 class CheckModel(BaseModel):

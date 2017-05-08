@@ -18,7 +18,7 @@ def test_str_bytes():
     )
 
     m = StrBytesModel(v=b'b')
-    assert m.v == b'b'
+    assert m.v == 'b'
 
     with pytest.raises(ValidationError) as exc_info:
         StrBytesModel(v=None)
@@ -50,7 +50,7 @@ def test_str_bytes_none():
     assert m.v == 's'
 
     m = StrBytesModel(v=b'b')
-    assert m.v == b'b'
+    assert m.v == 'b'
 
     m = StrBytesModel(v=None)
     assert m.v is None
@@ -73,14 +73,14 @@ def test_union_int_str():
     assert m.v == 123
 
     m = Model(v='123')
-    assert m.v == '123'
+    assert m.v == 123
 
     m = Model(v=b'foobar')
     assert m.v == 'foobar'
 
     # here both validators work and it's impossible to work out which value "closer"
     m = Model(v=12.2)
-    assert m.v == '12.2'
+    assert m.v == 12
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
@@ -102,6 +102,17 @@ def test_union_int_str():
     }
   ]
 }""" == exc_info.value.json(2)
+
+
+def test_union_priority():
+    class ModelOne(BaseModel):
+        v: Union[int, str] = ...
+
+    class ModelTwo(BaseModel):
+        v: Union[str, int] = ...
+
+    assert ModelOne(v='123').v == 123
+    assert ModelTwo(v='123').v == '123'
 
 
 def test_typed_list():

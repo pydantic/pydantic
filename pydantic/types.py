@@ -105,7 +105,11 @@ class Module:
 
     @classmethod
     def validate(cls, value):
-        return import_string(value)
+        try:
+            return import_string(value)
+        except ImportError as e:
+            # errors must be TypeError or ValueError
+            raise ValueError(str(e)) from e
 
 
 class DSN(str):

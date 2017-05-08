@@ -175,20 +175,14 @@ class Field:
             return result, None
 
     def _validate_singleton(self, tracks, v, model, index=None):
-        result, errors = ..., []
+        errors = []
         for track in tracks:
             value, exc = track.validate(v, model, self)
             if exc:
                 errors.append(Error(exc, track.type_, index))
-            elif isinstance(v, track.type_):
-                # exact match: return immediately
-                return value, None
             else:
-                result = value
-        if result is not ...:
-            return result, None
-        else:
-            return v, errors[0] if len(tracks) == 1 else errors
+                return value, None
+        return v, errors[0] if len(tracks) == 1 else errors
 
     def __repr__(self):
         return f'<Field {self}>'
@@ -233,7 +227,7 @@ class ValidatorRoute:
                     v = validator(v, model=model, field=field)
                 else:
                     v = validator(model, v)
-            except (ValueError, TypeError, ImportError) as e:
+            except (ValueError, TypeError) as e:
                 return v, e
         return v, None
 
