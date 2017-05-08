@@ -63,6 +63,12 @@ def test_ultra_simple_repr():
     assert dict(m) == {'a': 10.2, 'b': 10}
 
 
+def test_comparing():
+    m = UltraSimpleModel(a=10.2, b='100')
+    assert m == {'a': 10.2, 'b': 100}
+    assert m == UltraSimpleModel(a=10.2, b=100)
+
+
 class ConfigModel(UltraSimpleModel):
     class Config:
         raise_exception = False

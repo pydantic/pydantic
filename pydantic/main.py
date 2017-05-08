@@ -143,6 +143,12 @@ class BaseModel(metaclass=MetaModel):
         # so `dict(model)` works
         yield from self.__values__.items()
 
+    def __eq__(self, other):
+        if isinstance(other, BaseModel):
+            return self.values == other.values
+        else:
+            return self.values == other
+
     def __repr__(self):
         return f'<{self}>'
 
