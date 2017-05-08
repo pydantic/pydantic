@@ -20,6 +20,7 @@ install:
 script:
 - make lint
 - make test
+- make benchmark
 - ./tests/check_tag.py
 
 after_success:

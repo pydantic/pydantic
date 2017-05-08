@@ -8,3 +8,4 @@ dist/
 test.py
 .coverage
 htmlcov/
+benchmarks/cases.json

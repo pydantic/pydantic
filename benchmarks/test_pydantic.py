@@ -1,0 +1,47 @@
+from datetime import datetime
+from typing import List
+
+from pydantic import BaseModel, constr, EmailStr
+
+
+class TestPydantic:
+    package = 'pydantic'
+
+    def __init__(self, allow_extra):
+
+        class Model(BaseModel):
+            id: int = ...
+            client_name: constr(max_length=255) = ...
+            sort_index: float = ...
+            client_email: EmailStr = None
+            client_phone: constr(max_length=255) = None
+
+            class Location(BaseModel):
+                latitude: float = None
+                longitude: float = None
+            location: Location = None
+
+            contractor: int = None
+            upstream_http_referrer: constr(max_length=1023) = None
+            grecaptcha_response: constr(min_length=20, max_length=1000) = ...
+            last_updated: datetime = None
+
+            class Skill(BaseModel):
+                subject: str = ...
+                subject_id: int = ...
+                category: str = ...
+                qual_level: str = ...
+                qual_level_id: int = ...
+                qual_level_ranking: float = 0
+            skills: List[Skill] = []
+
+            class Config:
+                ignore_extra = allow_extra
+
+        self.model = Model
+
+    def validate(self, data):
+        try:
+            return True, self.model(**data)
+        except ValueError:
+            return False, None

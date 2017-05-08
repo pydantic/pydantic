@@ -3,6 +3,7 @@ install:
 	pip install -U setuptools pip
 	pip install -U .
 	pip install -r tests/requirements.txt
+	pip install -r benchmarks/requirements.txt
 
 .PHONY: isort
 isort:
@@ -25,6 +26,10 @@ testcov:
 
 .PHONY: all
 all: testcov lint
+
+.PHONY: benchmark
+benchmark:
+	python benchmarks/run.py
 
 .PHONY: clean
 clean:
