@@ -63,6 +63,9 @@ class Field:
         if self.type_ is None:
             raise ConfigError(f'unable to infer type for attribute "{self.name}"')
 
+        if not self.required and not self.validate_always and self.default is None:
+            self.allow_none = True
+
         # typing interface is horrible, we have to do some ugly checks
         origin = getattr(self.type_, '__origin__', None)
         if origin not in (None, Union):

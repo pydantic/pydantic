@@ -223,3 +223,11 @@ def test_unable_to_infer():
         class InvalidDefinitionModel(BaseModel):
             x = None
     assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
+
+
+def test_not_required():
+    class Model(BaseModel):
+        a: float = None
+    assert Model(a=12.2).a == 12.2
+    assert Model().a is None
+    assert Model(a=None).a is None
