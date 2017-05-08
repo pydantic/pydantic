@@ -1,2 +1,2 @@
-python-dateutil
-trafaret
+python-dateutil   # pyup: ignore
+trafaret          # pyup: ignore
