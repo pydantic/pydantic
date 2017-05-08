@@ -91,8 +91,9 @@ class Field:
         ])
         if self.required:
             self.info.pop('default')
-        if self.description:
-            self.info['description'] = self.description
+        # TODO
+        # if self.description:
+        #     self.info['description'] = self.description
 
     def _populate_validator_tracks(self, type_, class_validators, prefix=''):
         class_validators = class_validators or {}

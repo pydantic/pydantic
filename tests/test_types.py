@@ -63,6 +63,12 @@ def test_dsn_pw_host():
     assert m.dsn == 'postgres://postgres:pword@[before:after]:5432/foobar?v=1'
 
 
+def test_dsn_no_driver():
+    with pytest.raises(ValidationError) as exc_info:
+        DsnModel(db_driver=None)
+    assert '"\\"db_driver\\" field may not be missing or None"' in exc_info.value.args[0]
+
+
 class ModuleModel(BaseModel):
     module: Module = 'os.path'
 

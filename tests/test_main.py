@@ -60,6 +60,7 @@ def test_ultra_simple_repr():
     assert repr(m) == '<UltraSimpleModel a=10.2 b=10>'
     assert repr(m.fields['a']) == ("<Field a: type='float', required=True, "
                                    "validators=['float', 'number_size_validator']>")
+    assert dict(m) == {'a': 10.2, 'b': 10}
 
 
 class ConfigModel(UltraSimpleModel):
@@ -209,3 +210,10 @@ def test_no_validator():
         class NoValidatorModel(BaseModel):
             x: object = ...
     assert exc_info.value.args[0] == "no validator found for <class 'object'>"
+
+
+def test_unable_to_infer():
+    with pytest.raises(ConfigError) as exc_info:
+        class InvalidDefinitionModel(BaseModel):
+            x = None
+    assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
