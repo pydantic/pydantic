@@ -80,7 +80,7 @@ def generate_case():
             latitude=random.random() * 180 - 90,
             longitude=random.random() * 180,
         ),
-        contractor=str(random.randrange(5, 2000)),  # TODO negative checks
+        contractor=str(random.randrange(50, 2000)),
         upstream_http_referrer=null_missing_string(10, 1050),
         grecaptcha_response=null_missing_string(10, 1050, null_chance=0.05, missing_chance=0.05),
         last_updated=rand_date(),
@@ -122,9 +122,9 @@ def main():
                     pass_count += passed
             time = (datetime.now() - start).total_seconds()
             success = pass_count / count * 100
-            print(f'{p:>20}: time={time:0.2f}s, success={success:0.2f}%')
+            print(f'{p:10} time={time:0.3f}s, success={success:0.2f}%')
             times.append(time)
-        print(f'{p:>20}: best={min(times):0.2f}s, avg={mean(times):0.2f}s, stdev={stdev(times):0.2f}s')
+        print(f'{p:10} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
 
 
 if __name__ == '__main__':

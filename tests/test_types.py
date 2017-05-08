@@ -5,7 +5,8 @@ from enum import Enum, IntEnum
 
 import pytest
 
-from pydantic import DSN, BaseModel, EmailStr, Module, NameEmail, ValidationError, constr
+from pydantic import (DSN, BaseModel, EmailStr, Module, NameEmail, NegativeInt, PositiveInt, ValidationError,
+                      conint, constr)
 
 
 class ConStringModel(BaseModel):
@@ -353,3 +354,17 @@ def test_ordered_dict():
     with pytest.raises(ValidationError) as exc_info:
         ListDictModel(c=[1, 2, 3])
     assert '"\'int\' object is not iterable"' in exc_info.value.args[0]
+
+
+class IntModel(BaseModel):
+    a: PositiveInt = None
+    b: NegativeInt = None
+    c: conint(gt=4, lt=10) = None
+
+
+def test_int_validation():
+    m = IntModel(a=5, b=-5, c=5)
+    assert m == {'a': 5, 'b': -5, 'c': 5}
+    with pytest.raises(ValidationError) as exc_info:
+        IntModel(a=-5, b=5, c=-5)
+    assert exc_info.value.message == '3 errors validating input'
