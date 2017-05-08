@@ -221,9 +221,9 @@ class ValidatorRoute:
     def validate(self, v, model, field):
         for signature, validator in self.validators:
             try:
-                if signature == ValidatorSignature.JUST_VALUE:
+                if signature is ValidatorSignature.JUST_VALUE:
                     v = validator(v)
-                elif signature == ValidatorSignature.VALUE_KWARGS:
+                elif signature is ValidatorSignature.VALUE_KWARGS:
                     v = validator(v, model=model, field=field)
                 else:
                     v = validator(model, v)
