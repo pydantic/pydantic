@@ -30,15 +30,13 @@ def test_str_bytes():
       "error_msg": "None is not an allow value",
       "error_type": "TypeError",
       "index": null,
-      "track": "str",
-      "validator": "not_none_validator"
+      "track": "str"
     },
     {
       "error_msg": "None is not an allow value",
       "error_type": "TypeError",
       "index": null,
-      "track": "bytes",
-      "validator": "not_none_validator"
+      "track": "bytes"
     }
   ]
 }""" == exc_info.value.json(2)
@@ -94,15 +92,13 @@ def test_union_int_str():
       "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
       "error_type": "TypeError",
       "index": null,
-      "track": "int",
-      "validator": "int"
+      "track": "int"
     },
     {
       "error_msg": "None is not an allow value",
       "error_type": "TypeError",
       "index": null,
-      "track": "str",
-      "validator": "not_none_validator"
+      "track": "str"
     }
   ]
 }""" == exc_info.value.json(2)
@@ -125,15 +121,13 @@ def test_typed_list():
       "error_msg": "invalid literal for int() with base 10: 'x'",
       "error_type": "ValueError",
       "index": 1,
-      "track": "int",
-      "validator": "int"
+      "track": "int"
     },
     {
       "error_msg": "invalid literal for int() with base 10: 'y'",
       "error_type": "ValueError",
       "index": 2,
-      "track": "int",
-      "validator": "int"
+      "track": "int"
     }
   ]
 }""" == exc_info.value.json(2)
@@ -147,8 +141,7 @@ def test_typed_list():
     "error_msg": "'int' object is not iterable",
     "error_type": "TypeError",
     "index": null,
-    "track": null,
-    "validator": "iter"
+    "track": null
   }
 }""" == exc_info.value.json(2)
 
@@ -174,8 +167,7 @@ def test_typed_dict(value, result):
     "error_msg": "'int' object is not iterable",
     "error_type": "TypeError",
     "index": null,
-    "track": null,
-    "validator": "dict"
+    "track": null
   }
 }"""
     ),
@@ -189,8 +181,7 @@ def test_typed_dict(value, result):
         "error_msg": "invalid literal for int() with base 10: 'b'",
         "error_type": "ValueError",
         "index": "a",
-        "track": "int",
-        "validator": "int"
+        "track": "int"
       }
     ]
   ]
@@ -203,8 +194,7 @@ def test_typed_dict(value, result):
     "error_msg": "cannot convert dictionary update sequence element #0 to a sequence",
     "error_type": "TypeError",
     "index": null,
-    "track": null,
-    "validator": "dict"
+    "track": null
   }
 }""",
     )
@@ -276,15 +266,13 @@ def test_recursive_list():
           "error_msg": "field required",
           "error_type": "Missing",
           "index": null,
-          "track": null,
-          "validator": null
+          "track": null
         }
       },
       "error_msg": "1 error validating input",
       "error_type": "ValidationError",
       "index": 0,
-      "track": "SubModel",
-      "validator": "BaseModel.validate"
+      "track": "SubModel"
     }
   ]
 }""" == exc_info.value.json(2)

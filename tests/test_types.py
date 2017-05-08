@@ -32,8 +32,7 @@ def test_constrained_str_too_long():
     "error_msg": "length greater than maximum allowed: 10",
     "error_type": "ValueError",
     "index": null,
-    "track": "ConstrainedStrValue",
-    "validator": "ConstrainedStr.validate"
+    "track": "ConstrainedStrValue"
   }
 }""" == exc_info.value.json(2)
 
@@ -184,29 +183,25 @@ def test_datetime_errors():
     "error_msg": "Invalid date format",
     "error_type": "ValueError",
     "index": null,
-    "track": "date",
-    "validator": "parse_date"
+    "track": "date"
   },
   "dt": {
     "error_msg": "month must be in 1..12",
     "error_type": "ValueError",
     "index": null,
-    "track": "datetime",
-    "validator": "parse_datetime"
+    "track": "datetime"
   },
   "duration": {
     "error_msg": "Invalid duration format",
     "error_type": "ValueError",
     "index": null,
-    "track": "timedelta",
-    "validator": "parse_duration"
+    "track": "timedelta"
   },
   "time_": {
     "error_msg": "hour must be in 0..23",
     "error_type": "ValueError",
     "index": null,
-    "track": "time",
-    "validator": "parse_time"
+    "track": "time"
   }
 }""" == exc_info.value.json(2)
 
@@ -243,8 +238,7 @@ def test_enum_fails():
     "error_msg": "3 is not a valid ToolEnum",
     "error_type": "ValueError",
     "index": null,
-    "track": "ToolEnum",
-    "validator": "enum_validator"
+    "track": "ToolEnum"
   }
 }""" == exc_info.value.json(2)
 
@@ -288,29 +282,25 @@ def test_string_fails():
     "error_msg": "Email address is not valid",
     "error_type": "ValueError",
     "index": null,
-    "track": "NameEmail",
-    "validator": "NameEmail.validate"
+    "track": "NameEmail"
   },
   "str_email": {
     "error_msg": "Email address is not valid",
     "error_type": "ValueError",
     "index": null,
-    "track": "EmailStr",
-    "validator": "EmailStr.validate"
+    "track": "EmailStr"
   },
   "str_min_length": {
     "error_msg": "length less than minimum allowed: 5",
     "error_type": "ValueError",
     "index": null,
-    "track": "ConstrainedStrValue",
-    "validator": "ConstrainedStr.validate"
+    "track": "ConstrainedStrValue"
   },
   "str_regex": {
     "error_msg": "string does not match regex \\"^xxx\\\\d{3}$\\"",
     "error_type": "ValueError",
     "index": null,
-    "track": "ConstrainedStrValue",
-    "validator": "ConstrainedStr.validate"
+    "track": "ConstrainedStrValue"
   }
 }""" == exc_info.value.json(2)
 

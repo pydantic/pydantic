@@ -65,8 +65,8 @@ class MetaModel(type):
 
 
 MISSING = Missing('field required')
-MISSING_ERROR = Error(MISSING, None, None, None)
-EXTRA_ERROR = Error(Extra('extra fields not permitted'), None, None, None)
+MISSING_ERROR = Error(MISSING, None, None)
+EXTRA_ERROR = Error(Extra('extra fields not permitted'), None, None)
 
 
 class BaseModel(metaclass=MetaModel):

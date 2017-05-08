@@ -23,5 +23,4 @@ def test_sub_env_missing():
     with pytest.raises(ValidationError) as exc_info:
         SimpleSettings()
     assert exc_info.value.args[0] == ('1 error validating input: {"apple": {"error_msg": "None is not an allow value", '
-                                      '"error_type": "TypeError", "index": null, "track": "str", '
-                                      '"validator": "not_none_validator"}}')
+                                      '"error_type": "TypeError", "index": null, "track": "str"}}')

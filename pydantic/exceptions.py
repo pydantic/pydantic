@@ -11,7 +11,7 @@ def type_json(type_: type):
             return str(type_)
 
 
-Error = namedtuple('Error', ['exc', 'validator', 'track_type', 'index'])
+Error = namedtuple('Error', ['exc', 'track_type', 'index'])
 
 
 def jsonify_errors(e):
@@ -20,7 +20,6 @@ def jsonify_errors(e):
     elif isinstance(e, Error):
         d = {
             'error_type': e.exc.__class__.__name__,
-            'validator': e.validator and e.validator.__qualname__,
             'track': type_json(e.track_type),
             'index': e.index,
         }

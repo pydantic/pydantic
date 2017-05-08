@@ -26,8 +26,7 @@ def test_ultra_simple_missing():
     "error_msg": "field required",
     "error_type": "Missing",
     "index": null,
-    "track": null,
-    "validator": null
+    "track": null
   }
 }""" == exc_info.value.json(2)
 
@@ -42,15 +41,13 @@ def test_ultra_simple_failed():
     "error_msg": "could not convert string to float: 'x'",
     "error_type": "ValueError",
     "index": null,
-    "track": "float",
-    "validator": "float"
+    "track": "float"
   },
   "b": {
     "error_msg": "invalid literal for int() with base 10: 'x'",
     "error_type": "ValueError",
     "index": null,
-    "track": "int",
-    "validator": "int"
+    "track": "int"
   }
 }""" == exc_info.value.json(2)
 
@@ -126,15 +123,13 @@ def test_nullable_strings_fails():
     "error_msg": "None is not an allow value",
     "error_type": "TypeError",
     "index": null,
-    "track": "bytes",
-    "validator": "not_none_validator"
+    "track": "bytes"
   },
   "required_str_value": {
     "error_msg": "None is not an allow value",
     "error_type": "TypeError",
     "index": null,
-    "track": "str",
-    "validator": "not_none_validator"
+    "track": "str"
   }
 }""" == json.dumps(jsonify_errors(m.errors), indent=2, sort_keys=True)
 
@@ -181,15 +176,13 @@ def test_prevent_extra_fails():
     "error_msg": "extra fields not permitted",
     "error_type": "Extra",
     "index": null,
-    "track": null,
-    "validator": null
+    "track": null
   },
   "spam": {
     "error_msg": "extra fields not permitted",
     "error_type": "Extra",
     "index": null,
-    "track": null,
-    "validator": null
+    "track": null
   }
 }""" == exc_info.value.json(2)
 

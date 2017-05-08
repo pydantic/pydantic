@@ -139,7 +139,7 @@ class Field:
         try:
             v_iter = enumerate(v)
         except TypeError as exc:
-            return v, Error(exc, iter, None, None)
+            return v, Error(exc, None, None)
         for i, v_ in v_iter:
             single_result, single_errors = self._validate_singleton(self.validator_tracks, v_, model, i)
             if errors or single_errors:
@@ -158,7 +158,7 @@ class Field:
             try:
                 v_iter = dict(v)
             except TypeError as exc:
-                return v, Error(exc, dict, None, None)
+                return v, Error(exc, None, None)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
@@ -177,9 +177,9 @@ class Field:
     def _validate_singleton(self, tracks, v, model, index=None):
         result, errors = ..., []
         for track in tracks:
-            value, exc, validator = track.validate(v, model, self)
+            value, exc = track.validate(v, model, self)
             if exc:
-                errors.append(Error(exc, validator, track.type_, index))
+                errors.append(Error(exc, track.type_, index))
             elif isinstance(v, track.type_):
                 # exact match: return immediately
                 return value, None
@@ -234,8 +234,8 @@ class ValidatorRoute:
                 else:
                     v = validator(model, v)
             except (ValueError, TypeError, ImportError) as e:
-                return v, e, validator
-        return v, None, None
+                return v, e
+        return v, None
 
     def _find_validator(self):
         get_validators = getattr(self.type_, 'get_validators', None)
