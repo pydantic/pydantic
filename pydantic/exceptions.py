@@ -2,7 +2,7 @@ import json
 from collections import OrderedDict, namedtuple
 
 
-def type_json(type_: type):
+def type_display(type_: type):
     if type_:
         try:
             return type_.__name__
@@ -20,7 +20,7 @@ def jsonify_errors(e):
     elif isinstance(e, Error):
         d = {
             'error_type': e.exc.__class__.__name__,
-            'track': type_json(e.track),
+            'track': type_display(e.track),
             'index': e.index,
         }
         if isinstance(e.exc, ValidationError):

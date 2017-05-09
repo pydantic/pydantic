@@ -3,7 +3,7 @@ from collections import OrderedDict
 from enum import IntEnum
 from typing import Any, Mapping, Sequence, Type, Union  # noqa
 
-from .exceptions import ConfigError, Error, type_json
+from .exceptions import ConfigError, Error, type_display
 from .validators import NoneType, find_validators, not_none_validator
 
 
@@ -14,7 +14,7 @@ class ValidatorSignature(IntEnum):
 
 
 class Shape(IntEnum):
-    SINGLETON = 1
+    SIMPLE = 1
     MULTIPART = 2
     SEQUENCE = 3
     MAPPING = 4
@@ -45,7 +45,7 @@ class Field:
         self.required: bool = required
         self.description: str = description
         self.allow_none: bool = allow_none
-        self.shape: Shape = Shape.SINGLETON
+        self.shape: Shape = Shape.SIMPLE
         self.info = {}
         self._prepare(class_validators or {})
 
@@ -75,14 +75,14 @@ class Field:
             self._populate_validators(class_validators)
 
         self.info = OrderedDict([
-            ('type', type_json(self.type_)),
+            ('type', type_display(self.type_)),
             ('default', self.default),
             ('required', self.required)
         ])
         if self.required:
             self.info.pop('default')
         if self.shape == Shape.MULTIPART:
-            self.info['sub_fields'] = [f for f in self.sub_fields]
+            self.info['sub_fields'] = self.sub_fields
         else:
             self.info['validators'] = [v[1].__qualname__ for v in self.validators]
 
@@ -103,10 +103,14 @@ class Field:
                     self.allow_none = True
                 else:
                     types_.append(type_)
-            self.sub_fields = [
-                self._get_sub_field(t, class_validators=class_validators, name=f'{self.name}_{type_json(t)}')
-                for t in types_
-            ]
+            self.sub_fields = [Field(
+                type_=t,
+                class_validators=class_validators,
+                default=self.default,
+                required=self.required,
+                allow_none=self.allow_none,
+                name=f'{self.name}_{type_display(t)}'
+            ) for t in types_]
             self.shape = Shape.MULTIPART
         elif issubclass(origin, Sequence):
             self.type_ = self.type_.__args__[0]
@@ -116,9 +120,12 @@ class Field:
             self.key_type_ = self.type_.__args__[0]
             self.type_ = self.type_.__args__[1]
             self.shape = Shape.MAPPING
-            self.key_field = self._get_sub_field(
-                self.key_type_,
+            self.key_field = Field(
+                type_=self.key_type_,
                 class_validators=class_validators,
+                default=self.default,
+                required=self.required,
+                allow_none=self.allow_none,
                 name=f'key_{self.name}'
             )
 
@@ -154,8 +161,10 @@ class Field:
         if self.allow_none and v is None:
             return None, None
 
-        if self.shape is Shape.SINGLETON or self.shape is Shape.MULTIPART:
-            return self._validate_singleton(v, model)
+        if self.shape is Shape.SIMPLE:
+            return self._validate_simple(v, model)
+        elif self.shape is Shape.MULTIPART:
+            return self._validate_multipart(v, model)
         elif self.shape is Shape.SEQUENCE:
             return self._validate_sequence(v, model)
         else:
@@ -202,19 +211,12 @@ class Field:
             return result, None
 
     def _validate_singleton(self, v, model, index=None):
-        if self.shape is not Shape.MULTIPART:
-            for signature, validator in self.validators:
-                try:
-                    if signature is ValidatorSignature.JUST_VALUE:
-                        v = validator(v)
-                    elif signature is ValidatorSignature.VALUE_KWARGS:
-                        v = validator(v, model=model, field=self)
-                    else:
-                        v = validator(model, v)
-                except (ValueError, TypeError) as exc:
-                    return v, Error(exc, self.type_, index)
-            return v, None
+        if self.shape is Shape.MULTIPART:
+            return self._validate_multipart(v, model, index)
+        else:
+            return self._validate_simple(v, model, index)
 
+    def _validate_multipart(self, v, model, index=None):
         errors = []
         for field in self.sub_fields:
             value, error = field.validate(v, model)
@@ -223,6 +225,19 @@ class Field:
             else:
                 return value, None
         return v, errors
+
+    def _validate_simple(self, v, model, index=None):
+        for signature, validator in self.validators:
+            try:
+                if signature is ValidatorSignature.JUST_VALUE:
+                    v = validator(v)
+                elif signature is ValidatorSignature.VALUE_KWARGS:
+                    v = validator(v, model=model, field=self)
+                else:
+                    v = validator(model, v)
+            except (ValueError, TypeError) as exc:
+                return v, Error(exc, self.type_, index)
+        return v, None
 
     def __repr__(self):
         return f'<Field {self}>'
