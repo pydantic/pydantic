@@ -279,3 +279,39 @@ def test_recursive_list():
     }
   ]
 }""" == exc_info.value.json(2)
+
+
+def test_list_unions():
+    class Model(BaseModel):
+        v: List[Union[int, str]] = ...
+
+    assert Model(v=[123, '456', 'foobar']).v == [123, 456, 'foobar']
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[1, 2, None])
+    assert """\
+{
+  "v": [
+    [
+      {
+        "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
+        "error_type": "TypeError",
+        "index": 2,
+        "track": "int"
+      },
+      {
+        "error_msg": "None is not an allow value",
+        "error_type": "TypeError",
+        "index": 2,
+        "track": "str"
+      }
+    ]
+  ]
+}""" == exc_info.value.json(2)
+
+
+def test_recursive_lists():
+    class Model(BaseModel):
+        v: List[List[Union[float, int]]] = ...
+
+    assert Model(v=[[1, 2], [3, '4', 4.1]]).v == [[1, 2], [3, 4, 4.1]]
