@@ -11,13 +11,14 @@ def test_str_bytes():
 
     m = StrBytesModel(v='s')
     assert m.v == 's'
-    assert repr(m.fields['v']) == (
-        "<Field v: type='typing.Union[str, bytes]', required=True, sub_fields=["
-        "<Field v: type='str', required=True, validators=['not_none_validator', 'str_validator', "
-        "'anystr_length_validator']>, "
-        "<Field v: type='bytes', required=True, validators=['not_none_validator', 'bytes_validator', "
-        "'anystr_length_validator']>]>"
-    )
+    assert ("<Field v: "
+            "type='typing.Union[str, bytes]', "
+            "required=True, "
+            "sub_fields=["
+            "<Field v_str: type='str', required=True, validators=['not_none_validator', 'str_validator', "
+            "'anystr_length_validator']>, "
+            "<Field v_bytes: type='bytes', required=True, validators=['not_none_validator', 'bytes_validator', "
+            "'anystr_length_validator']>]>") == repr(m.fields['v'])
 
     m = StrBytesModel(v=b'b')
     assert m.v == 'b'
@@ -57,14 +58,14 @@ def test_str_bytes_none():
     m = StrBytesModel(v=None)
     assert m.v is None
 
+    # NOTE not_none_validator removed
     assert ("OrderedDict(["
             "('type', 'typing.Union[str, bytes, NoneType]'), "
             "('required', True), "
-            "('sub_fields', [<Field v: type='str', required=True, validators=['not_none_validator', "
-            "'str_validator', 'anystr_length_validator']>, "
-            "<Field v: type='bytes', required=True, validators=['not_none_validator', 'bytes_validator', "
-            "'anystr_length_validator']>])"
-            "])") == repr(m.fields['v'].info)
+            "('sub_fields', ["
+            "<Field v_str: type='str', required=True, validators=['str_validator', 'anystr_length_validator']>, "
+            "<Field v_bytes: type='bytes', required=True, validators=['bytes_validator', 'anystr_length_validator']>"
+            "])])") == repr(m.fields['v'].info)
 
 
 def test_union_int_str():
@@ -218,17 +219,6 @@ def test_typed_dict_error(value, error):
     assert error == exc_info.value.json(2)
 
 
-def test_override_validator():
-    class OverModel(BaseModel):
-        a: int = ...
-
-        def validate_a_override(self, v):
-            return 321
-
-    m = OverModel(a=1)
-    assert m.a == 321
-
-
 def test_all_model_validator():
     class OverModel(BaseModel):
         a: int = ...
@@ -260,7 +250,7 @@ def test_recursive_list():
     assert m.v == []
 
     m = Model(v=[{'name': 'testing', 'count': 4}])
-    assert repr(m) == "<Model v=[<SubModel name='testing' count=4>]>"
+    assert "<Model v=[<SubModel name='testing' count=4>]>" == repr(m)
     assert m.v[0].name == 'testing'
     assert m.v[0].count == 4
 

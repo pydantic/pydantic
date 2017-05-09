@@ -31,20 +31,22 @@ class Field:
             class_validators: dict=None,
             default: Any=None,
             required: bool=False,
+            allow_none: bool=False,
             description: str=None):
 
         self.name: str = name
         self.type_: type = type_
         self.key_type_: type = None
         self.validate_always: bool = getattr(self.type_, 'validate_always', False)
-        self.sub_fields = []
+        self.sub_fields = None
         self.key_field: Field = None
         self.validators = []
         self.default: Any = default
         self.required: bool = required
         self.description: str = description
-        self.allow_none: bool = False
+        self.allow_none: bool = allow_none
         self.shape: Shape = Shape.SINGLETON
+        self.info = {}
         self._prepare(class_validators or {})
 
     @classmethod
@@ -68,13 +70,9 @@ class Field:
         if not self.required and not self.validate_always and self.default is None:
             self.allow_none = True
 
-        self._populate_sub_fields(self.type_, class_validators)
-        if self.key_type_:
-            self.key_field = self._get_sub_field(
-                self.key_type_,
-                class_validators=class_validators,
-                name=f'key_{self.name}'
-            )
+        self._populate_sub_fields(class_validators)
+        if self.sub_fields is None:
+            self._populate_validators(class_validators)
 
         self.info = OrderedDict([
             ('type', type_json(self.type_)),
@@ -92,62 +90,65 @@ class Field:
         # if self.description:
         #     self.info['description'] = self.description
 
-    def _populate_sub_fields(self, type_, class_validators):
+    def _populate_sub_fields(self, class_validators):
         # typing interface is horrible, we have to do some ugly checks
         origin = getattr(self.type_, '__origin__', None)
-        if origin:
-            if origin is Union:
-                types_ = []
-                for type_ in type_.__args__:
-                    if type_ is NoneType:
-                        self.allow_none = True
-                    else:
-                        types_.append(type_)
-                self.sub_fields = [self._get_sub_field(t, class_validators=class_validators) for t in types_]
-                self.shape = Shape.MULTIPART
-                return
-            elif issubclass(origin, Sequence):
-                self.type_ = self.type_.__args__[0]
-                self.shape = Shape.SEQUENCE
-            else:
-                assert issubclass(origin, Mapping)
-                self.key_type_ = self.type_.__args__[0]
-                self.type_ = self.type_.__args__[1]
-                self.shape = Shape.MAPPING
+        if origin is None:
+            return
 
-        get_validators = getattr(self.type_, 'get_validators', None)
-        if get_validators:
-            v_funcs = list(get_validators())
+        if origin is Union:
+            types_ = []
+            for type_ in self.type_.__args__:
+                if type_ is NoneType:
+                    self.allow_none = True
+                else:
+                    types_.append(type_)
+            self.sub_fields = [
+                self._get_sub_field(t, class_validators=class_validators, name=f'{self.name}_{type_json(t)}')
+                for t in types_
+            ]
+            self.shape = Shape.MULTIPART
+        elif issubclass(origin, Sequence):
+            self.type_ = self.type_.__args__[0]
+            self.shape = Shape.SEQUENCE
         else:
-            v_funcs = find_validators(self.type_)
+            assert issubclass(origin, Mapping)
+            self.key_type_ = self.type_.__args__[0]
+            self.type_ = self.type_.__args__[1]
+            self.shape = Shape.MAPPING
+            self.key_field = self._get_sub_field(
+                self.key_type_,
+                class_validators=class_validators,
+                name=f'key_{self.name}'
+            )
 
-        v_funcs.insert(0, class_validators.get(f'validate_{self.name}_pre'))
-        v_funcs.append(class_validators.get(f'validate_{self.name}'))
-        v_funcs.append(class_validators.get(f'validate_{self.name}_post'))
+    def _populate_validators(self, class_validators):
+        get_validators = getattr(self.type_, 'get_validators', None)
+        v_funcs = (
+            class_validators.get(f'validate_{self.name}_pre'),
+
+            *(get_validators() if get_validators else find_validators(self.type_)),
+
+            class_validators.get(f'validate_{self.name}'),
+            class_validators.get(f'validate_{self.name}_post'),
+        )
         for f in v_funcs:
-            if not f:
-                continue
-            if self.allow_none and f is not_none_validator:
+            if not f or (self.allow_none and f is not_none_validator):
                 continue
             self.validators.append((
                 _get_validator_signature(f),
                 f,
             ))
 
-    def _get_sub_field(self, type_, class_validators, name=None):
+    def _get_sub_field(self, type_, class_validators, name):
         return Field(
             type_=type_,
             class_validators=class_validators,
             default=self.default,
             required=self.required,
-            name=name or self.name
+            allow_none=self.allow_none,
+            name=name
         )
-
-    def _find_validators(self):
-        get_validators = getattr(self.type_, 'get_validators', None)
-        if get_validators:
-            return list(get_validators())
-        return find_validators(self.type_)
 
     def validate(self, v, model):
         if self.allow_none and v is None:
@@ -188,7 +189,7 @@ class Field:
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
-            key_result, key_errors = self.key_field.validate(v, model)
+            key_result, key_errors = self.key_field.validate(k, model)
             value_result, value_errors = self._validate_singleton(v_, model, k)
 
             if errors or value_errors or key_errors:
@@ -201,7 +202,7 @@ class Field:
             return result, None
 
     def _validate_singleton(self, v, model, index=None):
-        if self.shape == Shape.SINGLETON:
+        if self.shape is not Shape.MULTIPART:
             for signature, validator in self.validators:
                 try:
                     if signature is ValidatorSignature.JUST_VALUE:
