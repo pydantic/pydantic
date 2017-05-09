@@ -12,9 +12,11 @@ def test_str_bytes():
     m = StrBytesModel(v='s')
     assert m.v == 's'
     assert repr(m.fields['v']) == (
-        "<Field v: type='typing.Union[str, bytes]', required=True, "
-        "validators={'str': ['not_none_validator', 'str_validator', 'anystr_length_validator'], "
-        "'bytes': ['not_none_validator', 'bytes_validator', 'anystr_length_validator']}>"
+        "<Field v: type='typing.Union[str, bytes]', required=True, sub_fields=["
+        "<Field v: type='str', required=True, validators=['not_none_validator', 'str_validator', "
+        "'anystr_length_validator']>, "
+        "<Field v: type='bytes', required=True, validators=['not_none_validator', 'bytes_validator', "
+        "'anystr_length_validator']>]>"
     )
 
     m = StrBytesModel(v=b'b')
@@ -55,14 +57,14 @@ def test_str_bytes_none():
     m = StrBytesModel(v=None)
     assert m.v is None
 
-    assert m.fields['v'].info == {
-        'required': True,
-        'type': 'typing.Union[str, bytes, NoneType]',
-        'validators': {
-            'bytes': ['bytes_validator', 'anystr_length_validator'],
-            'str': ['str_validator', 'anystr_length_validator']
-        }
-    }
+    assert ("OrderedDict(["
+            "('type', 'typing.Union[str, bytes, NoneType]'), "
+            "('required', True), "
+            "('sub_fields', [<Field v: type='str', required=True, validators=['not_none_validator', "
+            "'str_validator', 'anystr_length_validator']>, "
+            "<Field v: type='bytes', required=True, validators=['not_none_validator', 'bytes_validator', "
+            "'anystr_length_validator']>])"
+            "])") == repr(m.fields['v'].info)
 
 
 def test_union_int_str():
