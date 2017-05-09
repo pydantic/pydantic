@@ -96,7 +96,6 @@ class Field:
         if origin is None:
             return
 
-        self.multipart = True
         if origin is Union:
             types_ = []
             for type_ in self.type_.__args__:
@@ -112,6 +111,7 @@ class Field:
                 allow_none=self.allow_none,
                 name=f'{self.name}_{type_display(t)}'
             ) for t in types_]
+            self.multipart = True
         elif issubclass(origin, Sequence):
             self.type_ = self.type_.__args__[0]
             self.shape = Shape.SEQUENCE
@@ -129,49 +129,16 @@ class Field:
                 name=f'key_{self.name}'
             )
 
-        self.sub_fields = self.sub_fields or [Field(
-            type_=self.type_,
-            class_validators=class_validators,
-            default=self.default,
-            required=self.required,
-            allow_none=self.allow_none,
-            name=f'_{self.name}'
-        )]
-
-        # if origin is not Union:
-        #     if issubclass(origin, Sequence):
-        #         self.type_ = self.type_.__args__[0]
-        #         self.shape = Shape.SEQUENCE
-        #     else:
-        #         assert issubclass(origin, Mapping)
-        #         self.key_type_ = self.type_.__args__[0]
-        #         self.type_ = self.type_.__args__[1]
-        #         self.shape = Shape.MAPPING
-        #         self.key_field = Field(
-        #             type_=self.key_type_,
-        #             class_validators=class_validators,
-        #             default=self.default,
-        #             required=self.required,
-        #             name=f'key_{self.name}'
-        #         )
-        #
-        # origin = getattr(self.type_, '__origin__', None)
-        # if origin is Union:
-        #     types_ = []
-        #     for type_ in self.type_.__args__:
-        #         if type_ is NoneType:
-        #             self.allow_none = True
-        #         else:
-        #             types_.append(type_)
-        #     self.multipart = True
-        #     self.sub_fields = [Field(
-        #         type_=t,
-        #         class_validators=class_validators,
-        #         default=self.default,
-        #         required=self.required,
-        #         allow_none=self.allow_none,
-        #         name=f'{self.name}_{type_display(t)}'
-        #     ) for t in types_]
+        if self.sub_fields is None and getattr(self.type_, '__origin__', None):
+            self.multipart = True
+            self.sub_fields = self.sub_fields or [Field(
+                type_=self.type_,
+                class_validators=class_validators,
+                default=self.default,
+                required=self.required,
+                allow_none=self.allow_none,
+                name=f'_{self.name}'
+            )]
 
     def _populate_validators(self, class_validators):
         get_validators = getattr(self.type_, 'get_validators', None)
@@ -281,7 +248,7 @@ def _get_validator_signature(validator):
 
     # bind here will raise a TypeError so:
     # 1. we can deal with it before validation begins
-    # 2. (more importantly) it doesn't get confused with a TypeError when evaluating the validator
+    # 2. (more importantly) it doesn't get confused with a TypeError when executing the validator
     try:
         if list(signature.parameters)[0] == 'self':
             signature.bind(object(), 1)

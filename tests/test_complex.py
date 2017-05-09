@@ -312,6 +312,12 @@ def test_list_unions():
 
 def test_recursive_lists():
     class Model(BaseModel):
-        v: List[List[Union[float, int]]] = ...
+        v: List[List[Union[int, float]]] = ...
 
-    assert Model(v=[[1, 2], [3, '4', 4.1]]).v == [[1, 2], [3, 4, 4.1]]
+    assert Model(v=[[1, 2], [3, '4', '4.1']]).v == [[1, 2], [3, 4, 4.1]]
+    assert Model.__fields__['v'].sub_fields[0].name == '_v'
+    assert len(Model.__fields__['v'].sub_fields) == 1
+    assert Model.__fields__['v'].sub_fields[0].sub_fields[0].name == '__v'
+    assert len(Model.__fields__['v'].sub_fields[0].sub_fields) == 1
+    assert Model.__fields__['v'].sub_fields[0].sub_fields[0].sub_fields[1].name == '__v_float'
+    assert len(Model.__fields__['v'].sub_fields[0].sub_fields[0].sub_fields) == 2
