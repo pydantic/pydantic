@@ -11,11 +11,14 @@ def test_str_bytes():
 
     m = StrBytesModel(v='s')
     assert m.v == 's'
-    assert repr(m.fields['v']) == (
-        "<Field v: type='typing.Union[str, bytes]', required=True, "
-        "validators={'str': ['not_none_validator', 'str_validator', 'anystr_length_validator'], "
-        "'bytes': ['not_none_validator', 'bytes_validator', 'anystr_length_validator']}>"
-    )
+    assert ("<Field v: "
+            "type='typing.Union[str, bytes]', "
+            "required=True, "
+            "sub_fields=["
+            "<Field v_str: type='str', required=True, validators=['not_none_validator', 'str_validator', "
+            "'anystr_length_validator']>, "
+            "<Field v_bytes: type='bytes', required=True, validators=['not_none_validator', 'bytes_validator', "
+            "'anystr_length_validator']>]>") == repr(m.fields['v'])
 
     m = StrBytesModel(v=b'b')
     assert m.v == 'b'
@@ -55,14 +58,14 @@ def test_str_bytes_none():
     m = StrBytesModel(v=None)
     assert m.v is None
 
-    assert m.fields['v'].info == {
-        'required': True,
-        'type': 'typing.Union[str, bytes, NoneType]',
-        'validators': {
-            'bytes': ['bytes_validator', 'anystr_length_validator'],
-            'str': ['str_validator', 'anystr_length_validator']
-        }
-    }
+    # NOTE not_none_validator removed
+    assert ("OrderedDict(["
+            "('type', 'typing.Union[str, bytes, NoneType]'), "
+            "('required', True), "
+            "('sub_fields', ["
+            "<Field v_str: type='str', required=True, validators=['str_validator', 'anystr_length_validator']>, "
+            "<Field v_bytes: type='bytes', required=True, validators=['bytes_validator', 'anystr_length_validator']>"
+            "])])") == repr(m.fields['v'].info)
 
 
 def test_union_int_str():
@@ -216,17 +219,6 @@ def test_typed_dict_error(value, error):
     assert error == exc_info.value.json(2)
 
 
-def test_override_validator():
-    class OverModel(BaseModel):
-        a: int = ...
-
-        def validate_a_override(self, v):
-            return 321
-
-    m = OverModel(a=1)
-    assert m.a == 321
-
-
 def test_all_model_validator():
     class OverModel(BaseModel):
         a: int = ...
@@ -258,7 +250,7 @@ def test_recursive_list():
     assert m.v == []
 
     m = Model(v=[{'name': 'testing', 'count': 4}])
-    assert repr(m) == "<Model v=[<SubModel name='testing' count=4>]>"
+    assert "<Model v=[<SubModel name='testing' count=4>]>" == repr(m)
     assert m.v[0].name == 'testing'
     assert m.v[0].count == 4
 
@@ -287,3 +279,45 @@ def test_recursive_list():
     }
   ]
 }""" == exc_info.value.json(2)
+
+
+def test_list_unions():
+    class Model(BaseModel):
+        v: List[Union[int, str]] = ...
+
+    assert Model(v=[123, '456', 'foobar']).v == [123, 456, 'foobar']
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[1, 2, None])
+    assert """\
+{
+  "v": [
+    [
+      {
+        "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
+        "error_type": "TypeError",
+        "index": 2,
+        "track": "int"
+      },
+      {
+        "error_msg": "None is not an allow value",
+        "error_type": "TypeError",
+        "index": 2,
+        "track": "str"
+      }
+    ]
+  ]
+}""" == exc_info.value.json(2)
+
+
+def test_recursive_lists():
+    class Model(BaseModel):
+        v: List[List[Union[int, float]]] = ...
+
+    assert Model(v=[[1, 2], [3, '4', '4.1']]).v == [[1, 2], [3, 4, 4.1]]
+    assert Model.__fields__['v'].sub_fields[0].name == '_v'
+    assert len(Model.__fields__['v'].sub_fields) == 1
+    assert Model.__fields__['v'].sub_fields[0].sub_fields[0].name == '__v'
+    assert len(Model.__fields__['v'].sub_fields[0].sub_fields) == 1
+    assert Model.__fields__['v'].sub_fields[0].sub_fields[0].sub_fields[1].name == '__v_float'
+    assert len(Model.__fields__['v'].sub_fields[0].sub_fields[0].sub_fields) == 2

@@ -105,7 +105,7 @@ _VALIDATORS = [
 ]
 
 
-def find_validator(type_):
+def find_validators(type_):
     for val_type, validators in _VALIDATORS:
         if issubclass(type_, val_type):
             return validators

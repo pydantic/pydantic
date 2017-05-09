@@ -9,7 +9,6 @@ Data validation and settings management using python 3.6 type hinting.
 
 TODO:
 
-* make fields truly recursive
 * more info: alt names and descriptions, eg. for OPTIONS requests
 * length limits for lists, dicts etc.
 * better info: eg. choices, str length range
