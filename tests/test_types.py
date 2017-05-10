@@ -66,7 +66,7 @@ def test_dsn_pw_host():
 def test_dsn_no_driver():
     with pytest.raises(ValidationError) as exc_info:
         DsnModel(db_driver=None)
-    assert '"\\"db_driver\\" field may not be missing or None"' in exc_info.value.args[0]
+    assert '"db_driver" field may not be missing or None' in str(exc_info.value)
 
 
 class ModuleModel(BaseModel):
@@ -78,7 +78,7 @@ def test_module_import():
     assert m.module == os.path
     with pytest.raises(ValidationError) as exc_info:
         ModuleModel(module='foobar')
-    assert '"\\"foobar\\" doesn\'t look like a module path"' in exc_info.value.args[0]
+    assert '"foobar" doesn\'t look like a module path' in str(exc_info.value)
 
 
 class CheckModel(BaseModel):
@@ -320,7 +320,7 @@ def test_dict():
     assert ListDictTupleModel(a=[(1, 2), (3, 4)]).a == {1: 2, 3: 4}
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(a=[1, 2, 3])
-    assert 'cannot convert dictionary update sequence element #0 to a sequence' in exc_info.value.args[0]
+    assert 'cannot convert dictionary update sequence element #0 to a sequence' in str(exc_info.value)
 
 
 def test_list():
@@ -331,7 +331,7 @@ def test_list():
     assert ListDictTupleModel(b=(i**2 for i in range(5))).b == [0, 1, 4, 9, 16]
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(b=1)
-    assert '"\'int\' object is not iterable"' in exc_info.value.args[0]
+    assert "'int' object is not iterable" in str(exc_info.value)
 
 
 def test_ordered_dict():
@@ -340,7 +340,7 @@ def test_ordered_dict():
     assert ListDictTupleModel(c=[(1, 2), (3, 4)]).c == OrderedDict([(1, 2), (3, 4)])
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(c=[1, 2, 3])
-    assert '"\'int\' object is not iterable"' in exc_info.value.args[0]
+    assert "'int' object is not iterable" in str(exc_info.value)
 
 
 def test_tuple():
@@ -351,7 +351,7 @@ def test_tuple():
     assert ListDictTupleModel(d=(i**2 for i in range(5))).d == (0, 1, 4, 9, 16)
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(d=1)
-    assert '"\'int\' object is not iterable"' in exc_info.value.args[0]
+    assert "'int' object is not iterable" in str(exc_info.value)
 
 
 class IntModel(BaseModel):

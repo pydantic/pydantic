@@ -176,47 +176,42 @@ def test_typed_dict(value, result):
 @pytest.mark.parametrize('value,error', [
     (
         1,
-        """{
-  "v": {
-    "error_msg": "'int' object is not iterable",
-    "error_type": "TypeError",
-    "index": null,
-    "track": null
-  }
-}"""
+        """\
+1 error validating input
+v:
+  'int' object is not iterable (error_type=TypeError)"""
     ),
     (
         {'a': 'b'},
-        """{
-  "v": [
-    [
-      null,
-      {
-        "error_msg": "invalid literal for int() with base 10: 'b'",
-        "error_type": "ValueError",
-        "index": "a",
-        "track": "int"
-      }
-    ]
-  ]
-}"""
+        """\
+1 error validating input
+v:
+  invalid literal for int() with base 10: 'b' (error_type=ValueError track=int index=a)"""
     ),
     (
         [1, 2, 3],
-        """{
-  "v": {
-    "error_msg": "cannot convert dictionary update sequence element #0 to a sequence",
-    "error_type": "TypeError",
-    "index": null,
-    "track": null
-  }
-}""",
+        """\
+1 error validating input
+v:
+  cannot convert dictionary update sequence element #0 to a sequence (error_type=TypeError)""",
     )
 ])
 def test_typed_dict_error(value, error):
     with pytest.raises(ValidationError) as exc_info:
         DictModel(v=value)
-    assert error == exc_info.value.json(2)
+    assert error == str(exc_info.value)
+
+
+def test_dict_key_error():
+    class DictIntModel(BaseModel):
+        v: Dict[int, int] = ...
+    assert DictIntModel(v={1: 2, '3': '4'}).v == {1: 2, 3: 4}
+    with pytest.raises(ValidationError) as exc_info:
+        DictIntModel(v={'foo': 2, '3': '4'})
+    assert """\
+1 error validating input
+v:
+  invalid literal for int() with base 10: 'foo' (error_type=ValueError track=int index=key)""" == str(exc_info.value)
 
 
 def test_all_model_validator():
@@ -256,10 +251,19 @@ def test_recursive_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=['x'])
-    assert 'dictionary update sequence element #0 has length 1; 2 is required' in exc_info.value.args[0]
+    print(exc_info.value.json())
+    assert 'dictionary update sequence element #0 has length 1; 2 is required' in str(exc_info.value)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[{}])
+
+    assert """\
+1 error validating input
+v:
+  1 error validating input (error_type=ValidationError track=SubModel)
+    name:
+      field required (error_type=Missing)\
+""" == str(exc_info.value)
     assert """\
 {
   "v": [
@@ -290,24 +294,12 @@ def test_list_unions():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
     assert """\
-{
-  "v": [
-    [
-      {
-        "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
-        "error_type": "TypeError",
-        "index": 2,
-        "track": "int"
-      },
-      {
-        "error_msg": "None is not an allow value",
-        "error_type": "TypeError",
-        "index": 2,
-        "track": "str"
-      }
-    ]
-  ]
-}""" == exc_info.value.json(2)
+1 error validating input
+v:
+  int() argument must be a string, a bytes-like object or a number, not 'NoneType' \
+(error_type=TypeError track=int index=2)
+  None is not an allow value (error_type=TypeError track=str index=2)\
+""" == str(exc_info.value)
 
 
 def test_recursive_lists():

@@ -177,7 +177,7 @@ class Field:
             return v, Error(exc, None, None)
         for i, v_ in v_iter:
             single_result, single_errors = self._validate_singleton(v_, model, i)
-            if errors or single_errors:
+            if single_errors:
                 errors.append(single_errors)
             else:
                 result.append(single_result)
@@ -197,13 +197,15 @@ class Field:
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
-            key_result, key_errors = self.key_field.validate(k, model)
+            key_result, key_errors = self.key_field.validate(k, model, 'key')
+            if key_errors:
+                errors.append(key_errors)
+                continue
             value_result, value_errors = self._validate_singleton(v_, model, k)
-
-            if errors or value_errors or key_errors:
-                errors.append([key_errors, value_errors])
-            else:
-                result[key_result] = value_result
+            if value_errors:
+                errors.append(value_errors)
+                continue
+            result[key_result] = value_result
         if errors:
             return v, errors
         else:

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, ValidationError, jsonify_errors
+from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, ValidationError, pretty_errors
 
 
 class UltraSimpleModel(BaseModel):
@@ -19,37 +19,22 @@ def test_ultra_simple_success():
 def test_ultra_simple_missing():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
-    assert exc_info.value.message == '1 error validating input'
     assert """\
-{
-  "a": {
-    "error_msg": "field required",
-    "error_type": "Missing",
-    "index": null,
-    "track": null
-  }
-}""" == exc_info.value.json(2)
+1 error validating input
+a:
+  field required (error_type=Missing)""" == str(exc_info.value)
 
 
 def test_ultra_simple_failed():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel(a='x', b='x')
-    assert exc_info.value.message == '2 errors validating input'
     assert """\
-{
-  "a": {
-    "error_msg": "could not convert string to float: 'x'",
-    "error_type": "ValueError",
-    "index": null,
-    "track": "float"
-  },
-  "b": {
-    "error_msg": "invalid literal for int() with base 10: 'x'",
-    "error_type": "ValueError",
-    "index": null,
-    "track": "int"
-  }
-}""" == exc_info.value.json(2)
+2 errors validating input
+a:
+  could not convert string to float: 'x' (error_type=ValueError track=float)
+b:
+  invalid literal for int() with base 10: 'x' (error_type=ValueError track=int)\
+""" == str(exc_info.value)
 
 
 def test_ultra_simple_repr():
@@ -131,7 +116,7 @@ def test_nullable_strings_fails():
     "index": null,
     "track": "str"
   }
-}""" == json.dumps(jsonify_errors(m.errors), indent=2, sort_keys=True)
+}""" == json.dumps(pretty_errors(m.errors), indent=2, sort_keys=True)
 
 
 class RecursiveModel(BaseModel):
@@ -171,20 +156,10 @@ def test_prevent_extra_fails():
         PreventExtraModel(foo='ok', bar='wrong', spam='xx')
     assert exc_info.value.message == '2 errors validating input'
     assert """\
-{
-  "bar": {
-    "error_msg": "extra fields not permitted",
-    "error_type": "Extra",
-    "index": null,
-    "track": null
-  },
-  "spam": {
-    "error_msg": "extra fields not permitted",
-    "error_type": "Extra",
-    "index": null,
-    "track": null
-  }
-}""" == exc_info.value.json(2)
+bar:
+  extra fields not permitted (error_type=Extra)
+spam:
+  extra fields not permitted (error_type=Extra)""" == exc_info.value.display_errors
 
 
 class InvalidValidator:
