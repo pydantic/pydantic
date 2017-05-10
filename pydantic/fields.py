@@ -61,7 +61,7 @@ class Field:
         )
 
     def _prepare(self, class_validators):
-        if self.default and self.type_ is None:
+        if self.default is not None and self.type_ is None:
             self.type_ = type(self.default)
 
         if self.type_ is None:

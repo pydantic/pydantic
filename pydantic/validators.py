@@ -77,6 +77,12 @@ def list_validator(v) -> list:
     return list(v)
 
 
+def tuple_validator(v) -> tuple:
+    if isinstance(v, tuple):
+        return v
+    return tuple(v)
+
+
 def enum_validator(v, field, **kwargs) -> Enum:
     return field.type_(v)
 
@@ -102,6 +108,7 @@ _VALIDATORS = [
     (OrderedDict, [ordered_dict_validator]),
     (dict, [dict_validator]),
     (list, [list_validator]),
+    (tuple, [tuple_validator]),
 ]
 
 

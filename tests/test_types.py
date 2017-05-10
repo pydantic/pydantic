@@ -308,44 +308,49 @@ def test_string_fails():
 }""" == exc_info.value.json(2)
 
 
-class ListDictModel(BaseModel):
+class ListDictTupleModel(BaseModel):
     a: dict = None
     b: list = None
     c: OrderedDict = None
+    d: tuple = None
 
 
 def test_dict():
-    m = ListDictModel(a={1: 10, 2: 20})
-    assert m.a == {1: 10, 2: 20}
-    m = ListDictModel(a=[(1, 2), (3, 4)])
-    assert m.a == {1: 2, 3: 4}
+    assert ListDictTupleModel(a={1: 10, 2: 20}).a == {1: 10, 2: 20}
+    assert ListDictTupleModel(a=[(1, 2), (3, 4)]).a == {1: 2, 3: 4}
     with pytest.raises(ValidationError) as exc_info:
-        ListDictModel(a=[1, 2, 3])
+        ListDictTupleModel(a=[1, 2, 3])
     assert 'cannot convert dictionary update sequence element #0 to a sequence' in exc_info.value.args[0]
 
 
 def test_list():
-    m = ListDictModel(b=[1, 2, '3'])
+    m = ListDictTupleModel(b=[1, 2, '3'])
     assert m.a is None
     assert m.b == [1, 2, '3']
-    m = ListDictModel(b='xyz')
-    assert m.b == ['x', 'y', 'z']
-    m = ListDictModel(b=(i**2 for i in range(5)))
-    assert m.b == [0, 1, 4, 9, 16]
+    assert ListDictTupleModel(b='xyz').b == ['x', 'y', 'z']
+    assert ListDictTupleModel(b=(i**2 for i in range(5))).b == [0, 1, 4, 9, 16]
     with pytest.raises(ValidationError) as exc_info:
-        ListDictModel(b=1)
+        ListDictTupleModel(b=1)
     assert '"\'int\' object is not iterable"' in exc_info.value.args[0]
 
 
 def test_ordered_dict():
-    m = ListDictModel(c=OrderedDict([(1, 10), (2, 20)]))
-    assert m.c == OrderedDict([(1, 10), (2, 20)])
-    m = ListDictModel(c={1: 10, 2: 20})
-    assert m.c in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
-    m = ListDictModel(c=[(1, 2), (3, 4)])
-    assert m.c == OrderedDict([(1, 2), (3, 4)])
+    assert ListDictTupleModel(c=OrderedDict([(1, 10), (2, 20)])).c == OrderedDict([(1, 10), (2, 20)])
+    assert ListDictTupleModel(c={1: 10, 2: 20}).c in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
+    assert ListDictTupleModel(c=[(1, 2), (3, 4)]).c == OrderedDict([(1, 2), (3, 4)])
     with pytest.raises(ValidationError) as exc_info:
-        ListDictModel(c=[1, 2, 3])
+        ListDictTupleModel(c=[1, 2, 3])
+    assert '"\'int\' object is not iterable"' in exc_info.value.args[0]
+
+
+def test_tuple():
+    m = ListDictTupleModel(d=(1, 2, '3'))
+    assert m.a is None
+    assert m.d == (1, 2, '3')
+    assert ListDictTupleModel(d='xyz').d == ('x', 'y', 'z')
+    assert ListDictTupleModel(d=(i**2 for i in range(5))).d == (0, 1, 4, 9, 16)
+    with pytest.raises(ValidationError) as exc_info:
+        ListDictTupleModel(d=1)
     assert '"\'int\' object is not iterable"' in exc_info.value.args[0]
 
 

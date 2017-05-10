@@ -224,3 +224,13 @@ def test_not_required():
     assert Model(a=12.2).a == 12.2
     assert Model().a is None
     assert Model(a=None).a is None
+
+
+def test_infer_type():
+    class Model(BaseModel):
+        a = False
+        b = ''
+        c = 0
+    assert Model().a is False
+    assert Model().b == ''
+    assert Model().c == 0
