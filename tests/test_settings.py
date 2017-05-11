@@ -27,3 +27,8 @@ def test_sub_env_missing():
 apple:
   None is not an allow value (error_type=TypeError track=str)\
 """ == str(exc_info.value)
+
+
+def test_other_setting(env):
+    with pytest.raises(ValidationError):
+        SimpleSettings(apple='a', foobar=42)

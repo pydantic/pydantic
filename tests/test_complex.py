@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Dict, List, Union
 
 import pytest
@@ -313,3 +314,17 @@ def test_recursive_lists():
     assert len(Model.__fields__['v'].sub_fields[0].sub_fields) == 1
     assert Model.__fields__['v'].sub_fields[0].sub_fields[0].sub_fields[1].name == '__v_float'
     assert len(Model.__fields__['v'].sub_fields[0].sub_fields[0].sub_fields) == 2
+
+
+def test_str_enum():
+    class StrEnum(str, Enum):
+        a = 'a10'
+        b = 'b10'
+
+    class Model(BaseModel):
+        v: StrEnum = ...
+
+    assert Model(v='a10').v is StrEnum.a
+
+    with pytest.raises(ValidationError):
+        Model(v='different')
