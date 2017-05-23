@@ -1,4 +1,4 @@
-coverage==4.4
+coverage==4.4.1
 docutils==0.13.1
 flake8==3.3.0
 pycodestyle==2.3.1
