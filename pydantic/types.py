@@ -13,7 +13,7 @@ __all__ = [
     'constr',
     'EmailStr',
     'NameEmail',
-    'Module',
+    'PyObject',
     'DSN',
     'ConstrainedInt',
     'conint',
@@ -95,7 +95,7 @@ def constr(*, min_length=0, max_length=2**16, curtail_length=None, regex=None) -
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
 
 
-class Module:
+class PyObject:
     validate_always = True
 
     @classmethod

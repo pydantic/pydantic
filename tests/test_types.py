@@ -5,7 +5,7 @@ from enum import Enum, IntEnum
 
 import pytest
 
-from pydantic import (DSN, BaseModel, EmailStr, Module, NameEmail, NegativeInt, PositiveInt, ValidationError,
+from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeInt, PositiveInt, PyObject, ValidationError,
                       conint, constr)
 
 
@@ -69,15 +69,15 @@ def test_dsn_no_driver():
     assert '"db_driver" field may not be missing or None' in str(exc_info.value)
 
 
-class ModuleModel(BaseModel):
-    module: Module = 'os.path'
+class PyObjectModel(BaseModel):
+    module: PyObject = 'os.path'
 
 
 def test_module_import():
-    m = ModuleModel()
+    m = PyObjectModel()
     assert m.module == os.path
     with pytest.raises(ValidationError) as exc_info:
-        ModuleModel(module='foobar')
+        PyObjectModel(module='foobar')
     assert '"foobar" doesn\'t look like a module path' in str(exc_info.value)
 
 

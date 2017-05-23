@@ -5,6 +5,7 @@ env/
 build/
 dist/
 .cache/
+.mypy_cache/
 test.py
 .coverage
 htmlcov/
