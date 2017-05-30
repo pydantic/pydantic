@@ -108,6 +108,7 @@ def main():
         with json_path.open() as f:
             cases = json.load(f)
     tests = [TestTrafaret, TestPydantic]
+    tests = [TestPydantic]
     for test_class in tests:
         times = []
         p = test_class.package

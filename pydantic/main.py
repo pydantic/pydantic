@@ -14,7 +14,7 @@ class BaseConfig:
     raise_exception = True
     validate_all = False
     ignore_extra = True
-    # TODO allow extra
+    allow_extra = False
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
@@ -78,6 +78,18 @@ class BaseModel(metaclass=MetaModel):
         self.__errors__ = OrderedDict()
         self._process_values(values)
 
+    # def __setattr__(self, name, value):
+    #     self.set_value(name, value)
+
+    def set_attr(self, name, value):
+        """
+        alternative to setattr() which checks the field exists
+        """
+        if not self.config.allow_extra and name not in self.__fields__:
+            raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
+        setattr(self, name, value)
+        self.__values__[name] = value
+
     @property
     def values(self):
         return self.__values__
@@ -104,11 +116,18 @@ class BaseModel(metaclass=MetaModel):
             value = values.get(name, MISSING)
             self._process_value(name, field, value)
 
-        if not self.config.ignore_extra:
+        if not self.config.ignore_extra or self.config.allow_extra:
             extra = values.keys() - self.__fields__.keys()
             if extra:
-                for field in sorted(extra):
-                    self.__errors__[field] = EXTRA_ERROR
+                if self.config.allow_extra:
+                    for field in extra:
+                        value = values[field]
+                        self.__values__[field] = value
+                        setattr(self, field, value)
+                else:
+                    # config.ignore_extra is False
+                    for field in sorted(extra):
+                        self.__errors__[field] = EXTRA_ERROR
 
         if self.config.raise_exception and self.__errors__:
             raise ValidationError(self.__errors__)
