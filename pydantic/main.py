@@ -78,12 +78,11 @@ class BaseModel(metaclass=MetaModel):
         self.__errors__ = OrderedDict()
         self._process_values(values)
 
-    # def __setattr__(self, name, value):
-    #     self.set_value(name, value)
-
-    def set_attr(self, name, value):
+    def setattr(self, name, value):
         """
-        alternative to setattr() which checks the field exists
+        alternative to setattr() which checks the field exists and updates __values__.
+
+        This exists instead of overriding __setattr__ as that seems to cause a universal 10% slow down.
         """
         if not self.config.allow_extra and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')

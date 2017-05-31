@@ -209,3 +209,28 @@ def test_infer_type():
     assert Model().a is False
     assert Model().b == ''
     assert Model().c == 0
+
+
+def test_allow_extra():
+    class Model(BaseModel):
+        a: float = ...
+
+        class Config:
+            allow_extra = True
+
+    assert Model(a='10.2', b=12).values == {'a': 10.2, 'b': 12}
+
+
+def test_set_attr():
+    m = UltraSimpleModel(a=10.2)
+    assert m.values == {'a': 10.2, 'b': 10}
+    m.setattr('b', 20)
+    assert m.values == {'a': 10.2, 'b': 20}
+
+
+def test_set_attr_invalid():
+    m = UltraSimpleModel(a=10.2)
+    assert m.values == {'a': 10.2, 'b': 10}
+    with pytest.raises(ValueError) as exc_info:
+        m.setattr('c', 20)
+    assert '"UltraSimpleModel" object has no field "c"' in str(exc_info)
