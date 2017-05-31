@@ -2,6 +2,7 @@ from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .exceptions import ConfigError
@@ -120,6 +121,8 @@ _VALIDATORS = [
 
 
 def find_validators(type_):
+    if type_ is Any:
+        return []
     for val_type, validators in _VALIDATORS:
         if issubclass(type_, val_type):
             return validators

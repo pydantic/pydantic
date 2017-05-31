@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Set, Union
+from typing import Any, Dict, List, Set, Union
 
 import pytest
 
@@ -351,3 +351,11 @@ def test_str_enum():
 
     with pytest.raises(ValidationError):
         Model(v='different')
+
+
+def test_any_dict():
+    class Model(BaseModel):
+        v: Dict[int, Any] = ...
+    assert Model(v={1: 'foobar'}).values == {'v': {1: 'foobar'}}
+    assert Model(v={123: 456}).values == {'v': {123: 456}}
+    assert Model(v={2: [1, 2, 3]}).values == {'v': {2: [1, 2, 3]}}

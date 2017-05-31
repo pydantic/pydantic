@@ -235,3 +235,11 @@ def test_set_attr_invalid():
     with pytest.raises(ValueError) as exc_info:
         m.setattr('c', 20)
     assert '"UltraSimpleModel" object has no field "c"' in str(exc_info)
+
+
+def test_any():
+    class AnyModel(BaseModel):
+        a: Any = 10
+
+    assert AnyModel().a == 10
+    assert AnyModel(a='foobar').a == 'foobar'
