@@ -347,6 +347,7 @@ def test_tuple():
     m = ListDictTupleModel(d=(1, 2, '3'))
     assert m.a is None
     assert m.d == (1, 2, '3')
+    assert m.values == {'a': None, 'b': None, 'c': None, 'd': (1, 2, '3')}
     assert ListDictTupleModel(d='xyz').d == ('x', 'y', 'z')
     assert ListDictTupleModel(d=(i**2 for i in range(5))).d == (0, 1, 4, 9, 16)
     with pytest.raises(ValidationError) as exc_info:
@@ -366,3 +367,13 @@ def test_int_validation():
     with pytest.raises(ValidationError) as exc_info:
         IntModel(a=-5, b=5, c=-5)
     assert exc_info.value.message == '3 errors validating input'
+
+
+def test_set():
+    class SetModel(BaseModel):
+        v: set = ...
+
+    m = SetModel(v=[1, 2, 3])
+    assert m.v == {1, 2, 3}
+    assert m.values == {'v': {1, 2, 3}}
+    assert SetModel(v={'a', 'b', 'c'}).v == {'a', 'b', 'c'}

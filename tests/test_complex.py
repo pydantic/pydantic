@@ -165,6 +165,10 @@ class DictModel(BaseModel):
     v: Dict[str, int] = ...
 
 
+def test_dict_values():
+    assert DictModel(v={'foo': 1}).values == {'v': {'foo': 1}}
+
+
 @pytest.mark.parametrize('value,result', [
     ({'a': 2, 'b': 4}, {'a': 2, 'b': 4}),
     ({1: '2', 'b': 4}, {'1': 2, 'b': 4}),
@@ -234,29 +238,34 @@ def test_all_model_validator():
     assert m.a == '11_main_post'
 
 
+class SubModel(BaseModel):
+    name: str = ...
+    count: int = None
+
+
+class MasterListModel(BaseModel):
+    v: List[SubModel] = []
+
+
 def test_recursive_list():
-    class SubModel(BaseModel):
-        name: str = ...
-        count: int = None
-
-    class Model(BaseModel):
-        v: List[SubModel] = []
-
-    m = Model(v=[])
+    m = MasterListModel(v=[])
     assert m.v == []
 
-    m = Model(v=[{'name': 'testing', 'count': 4}])
-    assert "<Model v=[<SubModel name='testing' count=4>]>" == repr(m)
+    m = MasterListModel(v=[{'name': 'testing', 'count': 4}])
+    assert "<MasterListModel v=[<SubModel name='testing' count=4>]>" == repr(m)
     assert m.v[0].name == 'testing'
     assert m.v[0].count == 4
+    assert m.values == {'v': [{'count': 4, 'name': 'testing'}]}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=['x'])
+        MasterListModel(v=['x'])
     print(exc_info.value.json())
     assert 'dictionary update sequence element #0 has length 1; 2 is required' in str(exc_info.value)
 
+
+def test_recursive_list_error():
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=[{}])
+        MasterListModel(v=[{}])
 
     assert """\
 1 error validating input

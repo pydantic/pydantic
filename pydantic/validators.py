@@ -83,6 +83,12 @@ def tuple_validator(v) -> tuple:
     return tuple(v)
 
 
+def set_validator(v) -> set:
+    if isinstance(v, set):
+        return v
+    return set(v)
+
+
 def enum_validator(v, field, **kwargs) -> Enum:
     return field.type_(v)
 
@@ -109,6 +115,7 @@ _VALIDATORS = [
     (dict, [dict_validator]),
     (list, [list_validator]),
     (tuple, [tuple_validator]),
+    (set, [set_validator]),
 ]
 
 
