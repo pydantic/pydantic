@@ -1,7 +1,7 @@
 import inspect
 from collections import OrderedDict
 from enum import IntEnum
-from typing import Any, Mapping, Sequence, Type, Union  # noqa
+from typing import Any, List, Mapping, Set, Type, Union
 
 from .exceptions import ConfigError, Error, type_display
 from .validators import NoneType, find_validators, not_none_validator
@@ -15,8 +15,9 @@ class ValidatorSignature(IntEnum):
 
 class Shape(IntEnum):
     SINGLETON = 1
-    SEQUENCE = 2
-    MAPPING = 3
+    LIST = 2
+    SET = 3
+    MAPPING = 4
 
 
 class Field:
@@ -94,6 +95,7 @@ class Field:
         # typing interface is horrible, we have to do some ugly checks
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
+            # field is not "typing" object eg. Union, Dict, List etc.
             return
 
         if origin is Union:
@@ -112,9 +114,12 @@ class Field:
                 name=f'{self.name}_{type_display(t)}'
             ) for t in types_]
             self.multipart = True
-        elif issubclass(origin, Sequence):
+        elif issubclass(origin, List):
             self.type_ = self.type_.__args__[0]
-            self.shape = Shape.SEQUENCE
+            self.shape = Shape.LIST
+        elif issubclass(origin, Set):
+            self.type_ = self.type_.__args__[0]
+            self.shape = Shape.SET
         else:
             assert issubclass(origin, Mapping)
             self.key_type_ = self.type_.__args__[0]
@@ -164,10 +169,14 @@ class Field:
 
         if self.shape is Shape.SINGLETON:
             return self._validate_singleton(v, model, index)
-        elif self.shape is Shape.SEQUENCE:
-            return self._validate_sequence(v, model)
-        else:
+        elif self.shape is Shape.MAPPING:
             return self._validate_mapping(v, model)
+        else:
+            # list or set
+            result, errors = self._validate_sequence(v, model)
+            if not errors and self.shape is Shape.SET:
+                return set(result), errors
+            return result, errors
 
     def _validate_sequence(self, v, model):
         result, errors = [], []

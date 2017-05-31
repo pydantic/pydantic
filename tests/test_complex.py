@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Set, Union
 
 import pytest
 
@@ -159,6 +159,20 @@ def test_typed_list():
     "track": null
   }
 }""" == exc_info.value.json(2)
+
+
+def test_typed_set():
+    class Model(BaseModel):
+        v: Set[int] = ...
+
+    assert Model(v={1, 2, '3'}).v == {1, 2, 3}
+    assert Model(v=[1, 2, '3']).v == {1, 2, 3}
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[1, 'x'])
+    assert """\
+1 error validating input
+v:
+  invalid literal for int() with base 10: 'x' (error_type=ValueError track=int index=1)""" == str(exc_info.value)
 
 
 class DictModel(BaseModel):
