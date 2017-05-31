@@ -32,3 +32,15 @@ apple:
 def test_other_setting(env):
     with pytest.raises(ValidationError):
         SimpleSettings(apple='a', foobar=42)
+
+
+def test_env_with_aliass(env):
+    class Settings(BaseSettings):
+        apple: str = ...
+
+        class Config:
+            fields = {
+                'apple': 'BOOM'
+            }
+    env.set('BOOM', 'hello')
+    assert Settings().apple == 'hello'

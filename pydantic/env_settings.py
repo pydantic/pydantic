@@ -25,10 +25,13 @@ class BaseSettings(BaseModel):
         """
         d = {}
         for name, field in self.__fields__.items():
-            env_name = self.config.env_prefix + field.name.upper()
+            if field.alt_alias:
+                env_name = field.alias
+            else:
+                env_name = self.config.env_prefix + field.name.upper()
             env_var = os.getenv(env_name, None)
             if env_var:
-                d[name] = env_var
+                d[field.alias] = env_var
         return d
 
     class Config:

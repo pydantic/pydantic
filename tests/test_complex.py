@@ -359,3 +359,29 @@ def test_any_dict():
     assert Model(v={1: 'foobar'}).values == {'v': {1: 'foobar'}}
     assert Model(v={123: 456}).values == {'v': {123: 456}}
     assert Model(v={2: [1, 2, 3]}).values == {'v': {2: [1, 2, 3]}}
+
+
+def test_infer_alias():
+    class Model(BaseModel):
+        a = 'foobar'
+
+        class Config:
+            fields = {'a': '_a'}
+
+    assert Model(_a='different').a == 'different'
+
+
+def test_alias_error():
+    class Model(BaseModel):
+        a = 123
+
+        class Config:
+            fields = {'a': '_a'}
+
+    assert Model(_a='123').a == 123
+    with pytest.raises(ValidationError) as exc_info:
+        Model(_a='foo')
+    assert """\
+1 error validating input
+_a:
+  invalid literal for int() with base 10: 'foo' (error_type=ValueError track=int)""" == str(exc_info.value)

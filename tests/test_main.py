@@ -243,3 +243,18 @@ def test_any():
 
     assert AnyModel().a == 10
     assert AnyModel(a='foobar').a == 'foobar'
+
+
+def test_alias():
+    class Model(BaseModel):
+        a = 'foobar'
+
+        class Config:
+            fields = {
+                'a': {'alias': '_a'}
+            }
+
+    assert Model().a == 'foobar'
+    assert Model().values == {'a': 'foobar'}
+    assert Model(_a='different').a == 'different'
+    assert Model(_a='different').values == {'a': 'different'}

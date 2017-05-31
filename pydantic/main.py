@@ -15,6 +15,7 @@ class BaseConfig:
     validate_all = False
     ignore_extra = True
     allow_extra = False
+    fields = None
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
@@ -47,14 +48,19 @@ class MetaModel(type):
         class_validators = {n: f for n, f in namespace.items()
                             if n.startswith('validate_') and isinstance(f, FunctionType)}
 
+        config_fields = config.fields or {}
         for var_name, value in namespace.items():
             if var_name.startswith('_') or isinstance(value, TYPE_BLACKLIST):
                 continue
+            field_config = config_fields.get(var_name)
+            if isinstance(field_config, str):
+                field_config = {'alias': field_config}
             field = Field.infer(
                 name=var_name,
                 value=value,
                 annotation=annotations and annotations.get(var_name),
                 class_validators=class_validators,
+                field_config=field_config,
             )
             fields[var_name] = field
         namespace.update(
@@ -112,11 +118,11 @@ class BaseModel(metaclass=MetaModel):
 
     def _process_values(self, values):
         for name, field in self.__fields__.items():
-            value = values.get(name, MISSING)
-            self._process_value(name, field, value)
+            value = values.get(field.alias, MISSING)
+            self._process_value(name, field.alias, field, value)
 
         if not self.config.ignore_extra or self.config.allow_extra:
-            extra = values.keys() - self.__fields__.keys()
+            extra = values.keys() - {f.alias for f in self.__fields__.values()}
             if extra:
                 if self.config.allow_extra:
                     for field in extra:
@@ -131,13 +137,13 @@ class BaseModel(metaclass=MetaModel):
         if self.config.raise_exception and self.__errors__:
             raise ValidationError(self.__errors__)
 
-    def _process_value(self, name, field, value):
+    def _process_value(self, name, alias, field, value):
         if value is MISSING:
             if self.config.validate_all or field.validate_always:
                 value = field.default
             else:
                 if field.required:
-                    self.__errors__[name] = MISSING_ERROR
+                    self.__errors__[alias] = MISSING_ERROR
                 else:
                     self.__values__[name] = field.default
                     # could skip this if the attributes equals field.default, would it be quicker?
@@ -146,7 +152,7 @@ class BaseModel(metaclass=MetaModel):
 
         value, errors = field.validate(value, self)
         if errors:
-            self.__errors__[name] = errors
+            self.__errors__[alias] = errors
         self.__values__[name] = value
         setattr(self, name, value)
 

@@ -21,13 +21,14 @@ class Shape(IntEnum):
 
 
 class Field:
-    __slots__ = ('type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'default',
-                 'required', 'name', 'description', 'info', 'validate_always', 'allow_none', 'shape', 'multipart')
+    __slots__ = ('type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'default', 'required',
+                 'name', 'alias', 'description', 'info', 'validate_always', 'allow_none', 'shape', 'multipart')
 
     def __init__(
             self, *,
-            name: str=None,
+            name: str,
             type_: Type,
+            alias: str=None,
             class_validators: dict=None,
             default: Any=None,
             required: bool=False,
@@ -35,6 +36,7 @@ class Field:
             description: str=None):
 
         self.name: str = name
+        self.alias: str = alias or name
         self.type_: type = type_
         self.key_type_: type = None
         self.validate_always: bool = getattr(self.type_, 'validate_always', False)
@@ -51,15 +53,21 @@ class Field:
         self._prepare(class_validators or {})
 
     @classmethod
-    def infer(cls, *, name, value, annotation, class_validators):
+    def infer(cls, *, name, value, annotation, class_validators, field_config):
         required = value == Ellipsis
         return cls(
+            name=name,
             type_=annotation,
+            alias=field_config and field_config.get('alias'),
             class_validators=class_validators,
             default=None if required else value,
             required=required,
-            name=name
+            description=field_config and field_config.get('description'),
         )
+
+    @property
+    def alt_alias(self):
+        return self.name != self.alias
 
     def _prepare(self, class_validators):
         if self.default is not None and self.type_ is None:
@@ -134,9 +142,9 @@ class Field:
                 name=f'key_{self.name}'
             )
 
-        if self.sub_fields is None and getattr(self.type_, '__origin__', None):
+        if self.sub_fields is None and getattr(self.type_, '__origin__', False):
             self.multipart = True
-            self.sub_fields = self.sub_fields or [Field(
+            self.sub_fields = [Field(
                 type_=self.type_,
                 class_validators=class_validators,
                 default=self.default,
