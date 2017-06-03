@@ -10,3 +10,4 @@ test.py
 .coverage
 htmlcov/
 benchmarks/cases.json
+docs/_build/

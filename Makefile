@@ -44,3 +44,9 @@ clean:
 	rm -f .coverage.*
 	rm -rf build
 	python setup.py clean
+	make -C docs clean
+
+.PHONY: docs
+docs:
+	make -C docs html
+	@echo "open file://`pwd`/docs/_build/html/index.html"
