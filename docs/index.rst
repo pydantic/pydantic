@@ -135,7 +135,7 @@ Settings
 ........
 
 One of pydantics most useful applications is to define default settings, allow them to be overridden by
-environment variables are keyword arguments (eg. in unit tests).
+environment variables or keyword arguments (eg. in unit tests).
 
 This usage example comes last as it uses numerous concepts described above.
 
