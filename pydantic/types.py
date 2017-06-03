@@ -83,6 +83,12 @@ class NameEmail:
     def validate(cls, value):
         return cls(*validate_email(value))
 
+    def __str__(self):
+        return f'{self.name} <{self.email}>'
+
+    def __repr__(self):
+        return f'<NameEmail("{self}")>'
+
 
 def constr(*, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting

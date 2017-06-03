@@ -106,39 +106,45 @@ More complex hierarchical data structures can be defined using models as types i
 Error Handling
 ..............
 
-TODO
+.. literalinclude:: usage_errors.py
 
-Clean Methods
-.............
-
-TODO
+(This script is complete, it should run "as is")
 
 Exotic Types
 ............
 
-TODO
+pydantic comes with a number of utilities for parsing or validating common objects.
+
+.. literalinclude:: usage_exotic.py
+
+(This script is complete, it should run "as is")
+
 
 Model Config
 ............
 
-TODO
+Behaviour of pydantic can be controlled via the ``Config`` class on a model.
+
+Here default for config parameter are shown together with their meaning.
+
+.. literalinclude:: usage_config.py
 
 .. _settings:
 
 Settings
 ........
 
+One of pydantics most useful applications is to define default settings, allow them to be overridden by
+environment variables are keyword arguments (eg. in unit tests).
+
+This usage example comes last as it uses numerous concepts described above.
+
 .. literalinclude:: usage_settings.py
 
+Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` or ``auth_key`` by
+``export my_api_key=6380``.
 
 .. include:: ../HISTORY.rst
-
-Indices and tables
-------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 .. |pypi| image:: https://img.shields.io/pypi/v/pydantic.svg
    :target: https://pypi.python.org/pypi/pydantic

@@ -21,8 +21,9 @@ class Settings(BaseSettings):
     dsn: DSN = None
 
     class Config:
+        env_prefix = 'MY_PREFIX_'  # defaults to 'APP_'
         fields = {
             'auth_key': {
-                'alias': 'API_KEY'
+                'alias': 'my_api_key'
             }
         }

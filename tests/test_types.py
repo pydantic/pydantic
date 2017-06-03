@@ -265,6 +265,7 @@ def test_string_success():
     assert m.str_regex == 'xxx123'
     assert m.str_curtailed == '12345'
     assert m.str_email == 'foobar@example.com'
+    assert repr(m.name_email) == '<NameEmail("foo bar <foobar@example.com>")>'
     assert m.name_email.name == 'foo bar'
     assert m.name_email.email == 'foobar@example.com'
 
