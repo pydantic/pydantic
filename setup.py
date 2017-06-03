@@ -18,6 +18,7 @@ setup(
         'Environment :: Console',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.6',
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',
@@ -34,5 +35,6 @@ setup(
     url='https://github.com/samuelcolvin/pydantic',
     license='MIT',
     packages=['pydantic'],
+    python_requires='>=3.6',
     zip_safe=True,
 )
