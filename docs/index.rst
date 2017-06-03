@@ -16,21 +16,23 @@ Define how data should be in pure canonical python, validate it with *pydantic*.
 `PEP 526 <https://www.python.org/dev/peps/pep-0526/>`_ extended that with syntax for variable annotation in 3.6.
 *pydantic* uses those annotations to validate that untrusted data takes the form you want.
 
-A very simple example:
+Simple example:
 
 .. literalinclude:: example1.py
 
+(This script is complete, it should run "as is")
+
 What's going on here:
 
-* ``id`` is of type int and the elipisis tells pydantic it's required. Strings, bytes or floats will be converted to
-  ints if possible, otherwise an exception would be raised.
+* ``id`` is of type int, the elipisis tells pydantic this field is required. Strings, bytes or floats will be
+  converted to ints if possible, otherwise an exception would be raised.
 * ``name`` pydantic infers is a string from the default, it is not required as it has a default
 * ``signup_ts`` is a datetime field which is not required (``None`` if it's not supplied), pydantic will process
   either a unix timestamp int (eg. ``1496498400``) or a string representing the date & time.
 
 If validation fails pydantic with raise an error with a breakdown of what was wrong:
 
-.. literalinclude:: example2.txt
+.. literalinclude:: example2.py
 
 Rationale
 ---------
@@ -74,39 +76,59 @@ pydantic has no dependencies except python 3.6+. If you've got python 3.6 and ``
 Usage
 -----
 
-Model Definitions
-.................
+Compound Types
+..............
 
-TODO
+pyandtic uses ``typing`` types to define more complex objects.
 
-.. _settings:
+.. literalinclude:: usage_compound.py
 
-Settings
---------
+(This script is complete, it should run "as is")
 
-TODO
+Choices
+.......
+
+pyandtic uses python's standard ``enum`` classes to define value chocies.
+
+.. literalinclude:: usage_choices.py
+
+(This script is complete, it should run "as is")
 
 Recursive Models
 ................
 
-TODO
+More complex hierarchical data structures can be defined using models as types in annotations themselves.
 
+.. literalinclude:: usage_recursive.py
+
+(This script is complete, it should run "as is")
 
 Error Handling
 ..............
 
 TODO
 
-
 Clean Methods
 .............
 
 TODO
 
-Custom Types
+Exotic Types
 ............
 
 TODO
+
+Model Config
+............
+
+TODO
+
+.. _settings:
+
+Settings
+........
+
+.. literalinclude:: usage_settings.py
 
 
 .. include:: ../HISTORY.rst
