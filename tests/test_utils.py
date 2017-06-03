@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 from pydantic.utils import import_string, make_dsn, validate_email

@@ -5,8 +5,8 @@ from enum import Enum, IntEnum
 
 import pytest
 
-from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeInt, PositiveInt, PyObject, ValidationError,
-                      conint, constr)
+from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeInt, PositiveInt, PyObject, ValidationError, conint,
+                      constr)
 
 
 class ConStringModel(BaseModel):
