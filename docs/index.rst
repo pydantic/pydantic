@@ -79,7 +79,7 @@ Usage
 Compound Types
 ..............
 
-pyandtic uses ``typing`` types to define more complex objects.
+pydantic uses ``typing`` types to define more complex objects.
 
 .. literalinclude:: usage_compound.py
 
@@ -88,7 +88,7 @@ pyandtic uses ``typing`` types to define more complex objects.
 Choices
 .......
 
-pyandtic uses python's standard ``enum`` classes to define value choices.
+pydantic uses python's standard ``enum`` classes to define value choices.
 
 .. literalinclude:: usage_choices.py
 
