@@ -2,9 +2,6 @@ language: python
 
 cache: pip
 
-services:
-- postgresql
-
 python:
 - '3.6'
 - 'nightly'  # currently 3.7
@@ -26,9 +23,9 @@ install:
 script:
 - make lint
 - make test
-- make benchmark
 - make docs-lint
 - make docs
+- make benchmark
 - ./tests/check_tag.py
 
 after_success:

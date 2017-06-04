@@ -29,7 +29,7 @@ What's going on here:
 * ``name`` pydantic infers as a string from the default, it is not required as it has a default
 * ``signup_ts`` is a datetime field which is not required (``None`` if it's not supplied), pydantic will process
   either a unix timestamp int (e.g. ``1496498400``) or a string representing the date & time.
-* ``friends`` uses python's typing system, it is required to be a list of ints,
+* ``friends`` uses python's typing system, it is required to be a list of integers.
 
 If validation fails pydantic with raise an error with a breakdown of what was wrong:
 

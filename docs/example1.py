@@ -11,6 +11,7 @@ class UserModel(BaseModel):
 external_data = {'id': '123', 'signup_ts': '2017-06-01 12:22', 'friends': [1, '2', b'3']}
 user = UserModel(**external_data)
 print(user)
-# > UserModel id=123 name='John Doe' signup_ts=datetime.datetime(2017, 6, 1, 12, 22) friends=[1, 2, 3]
+# > UserModel id=123 name='John Doe'
+#             signup_ts=datetime.datetime(2017, 6, 1, 12, 22) friends=[1, 2, 3]
 print(user.id)
 # > 123
