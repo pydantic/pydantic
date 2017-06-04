@@ -88,7 +88,7 @@ pyandtic uses ``typing`` types to define more complex objects.
 Choices
 .......
 
-pyandtic uses python's standard ``enum`` classes to define value chocies.
+pyandtic uses python's standard ``enum`` classes to define value choices.
 
 .. literalinclude:: usage_choices.py
 
