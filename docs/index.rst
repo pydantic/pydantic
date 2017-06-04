@@ -10,13 +10,14 @@ Current Version: |version|
 
 Data validation and settings management using python 3.6 type hinting.
 
-Define how data should be in pure canonical python, validate it with *pydantic*.
+Define how data should be in pure, canonical python; validate it with *pydantic*.
 
-`PEP 484 <https://www.python.org/dev/peps/pep-0484/>`_ introduced typing hinting into python in 3.5 and
-`PEP 526 <https://www.python.org/dev/peps/pep-0526/>`_ extended that with syntax for variable annotation in 3.6.
+`PEP 484 <https://www.python.org/dev/peps/pep-0484/>`_ introduced type hinting into python 3.5,
+`PEP 526 <https://www.python.org/dev/peps/pep-0526/>`_ extended that with syntax for variable annotation in python 3.6.
+
 *pydantic* uses those annotations to validate that untrusted data takes the form you want.
 
-Simple example:
+A simple example:
 
 .. literalinclude:: example1.py
 
@@ -24,12 +25,13 @@ Simple example:
 
 What's going on here:
 
-* ``id`` is of type int, the ellipsis tells pydantic this field is required. Strings, bytes or floats will be
+* ``id`` is of type int, the ellipsis tells pydantic that this field is required. Strings, bytes or floats will be
   converted to ints if possible, otherwise an exception would be raised.
-* ``name`` pydantic infers as a string from the default, it is not required as it has a default
+* ``name`` is inferred as a string from the default, it is not required as it has a default.
 * ``signup_ts`` is a datetime field which is not required (``None`` if it's not supplied), pydantic will process
   either a unix timestamp int (e.g. ``1496498400``) or a string representing the date & time.
-* ``friends`` uses python's typing system, it is required to be a list of integers.
+* ``friends`` uses python's typing system, it is required to be a list of integers, as with ``id`` integer-like objects
+  will be converted to integers.
 
 If validation fails pydantic with raise an error with a breakdown of what was wrong:
 
@@ -46,16 +48,17 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
 
 **plays nicely with your IDE/linter/brain**
     because pydantic data structures are just instances of classes you define; auto-completion, linting,
-    `mypy <http://mypy-lang.org/>`_ your intuition should all work properly with your validated data.
+    `mypy <http://mypy-lang.org/>`_ and your intuition should all work properly with your validated data.
 
 **dual use**
     pydantic's :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data" context
     and "load my system settings" context. The main difference being that system settings can can have defaults changed
-    by environment variables and are otherwise only changed in unit tests.
+    by environment variables and more complex objects like DSNs and python objects often required.
 
 **fast**
     In `benchmarks <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_ pydantic is around twice as
-    fast as `trafaret <https://github.com/tailhook/trafaret>`_. Other comparisons to cerberus, DRF, jsonmodels to come.
+    fast as `trafaret <https://github.com/tailhook/trafaret>`_. Other comparisons to cerberus, marshmallow,
+    DRF, jsonmodels etc. to come.
 
 **validate complex structures**
     use of recursive pydantic models and ``typing``'s ``List`` and ``Dict`` etc. allow complex data schemas to be
@@ -77,19 +80,19 @@ pydantic has no dependencies except python 3.6+. If you've got python 3.6 and ``
 Usage
 -----
 
-Compound Types
-..............
+PEP 484 Types
+.............
 
 pydantic uses ``typing`` types to define more complex objects.
 
-.. literalinclude:: usage_compound.py
+.. literalinclude:: usage_typing.py
 
 (This script is complete, it should run "as is")
 
 Choices
 .......
 
-pydantic uses python's standard ``enum`` classes to define value choices.
+pydantic uses python's standard ``enum`` classes to define choices.
 
 .. literalinclude:: usage_choices.py
 
