@@ -6,6 +6,8 @@ from typing import Any, List, Mapping, Set, Type, Union
 from .exceptions import ConfigError, Error, type_display
 from .validators import NoneType, find_validators, not_none_validator
 
+REQUIRED: Any = Ellipsis
+
 
 class ValidatorSignature(IntEnum):
     JUST_VALUE = 1
@@ -54,7 +56,7 @@ class Field:
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, field_config):
-        required = value == Ellipsis
+        required = value == REQUIRED
         return cls(
             name=name,
             type_=annotation,
