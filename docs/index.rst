@@ -24,8 +24,9 @@ Simple example:
 
 What's going on here:
 
-* ``id`` is of type int, the elipisis tells pydantic this field is required. Strings, bytes or floats will be
+* ``id`` is of type int, the ellipisis tells pydantic this field is required. Strings, bytes or floats will be
   converted to ints if possible, otherwise an exception would be raised.
+  Note: instead of ellipisis you can use pydantic.REQUIRED
 * ``name`` pydantic infers is a string from the default, it is not required as it has a default
 * ``signup_ts`` is a datetime field which is not required (``None`` if it's not supplied), pydantic will process
   either a unix timestamp int (eg. ``1496498400``) or a string representing the date & time.

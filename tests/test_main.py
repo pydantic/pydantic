@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, ValidationError, pretty_errors
+from pydantic import REQUIRED, BaseModel, ConfigError, NoneBytes, NoneStr, ValidationError, pretty_errors
 
 
 class UltraSimpleModel(BaseModel):
@@ -20,6 +20,19 @@ def test_ultra_simple_success():
 def test_ultra_simple_missing():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
+    assert """\
+1 error validating input
+a:
+  field required (error_type=Missing)""" == str(exc_info.value)
+
+
+def test_ultra_simple_missing_via_required():
+    class UltraSimpleModelRequired(BaseModel):
+        a: float = REQUIRED
+        b: int = 10
+
+    with pytest.raises(ValidationError) as exc_info:
+        UltraSimpleModelRequired()
     assert """\
 1 error validating input
 a:
