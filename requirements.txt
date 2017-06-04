@@ -1,0 +1,3 @@
+-r benchmarks/requirements.txt
+-r docs/requirements.txt
+-r tests/requirements.txt

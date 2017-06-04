@@ -13,11 +13,11 @@ clean:
 	rm -rf $(BUILDDIR)
 
 .PHONY: html
-html:
+html: clean
 	mkdir -p $(STATICDIR)
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
-	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+	@echo "Build finished. open file://`pwd`/_build/html/index.html"
 
 .PHONY: linkcheck
 linkcheck:
@@ -27,9 +27,12 @@ linkcheck:
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in $(BUILDDIR)/linkcheck/output.txt."
 
-.PHONY: doctest
-doctest:
+.PHONY: spelling
+spelling:
 	mkdir -p $(STATICDIR)
-	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
-	@echo "Testing of doctests in the sources finished, look at the " \
-	      "results in $(BUILDDIR)/doctest/output.txt."
+	$(SPHINXBUILD) -b spelling $(ALLSPHINXOPTS) $(BUILDDIR)/spelling
+
+.PHONY: lint
+lint: linkcheck spelling
+	@echo
+	@echo "linting complete"

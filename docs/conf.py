@@ -37,7 +37,10 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'sphinxcontrib.spelling',
 ]
+spelling_lang = 'en_GB'
+spelling_word_list_filename = 'spelling_wordlist.txt'
 
 autoclass_content = 'both'
 autodoc_member_order = 'bysource'

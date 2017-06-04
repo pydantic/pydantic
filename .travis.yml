@@ -13,6 +13,12 @@ matrix:
   allow_failures:
   - python: 'nightly'
 
+addons:
+  apt:
+    packages:
+    - libenchant-dev
+    - c2hs
+
 install:
 - make install
 - pip freeze
@@ -21,6 +27,7 @@ script:
 - make lint
 - make test
 - make benchmark
+- make docs-lint
 - make docs
 - ./tests/check_tag.py
 

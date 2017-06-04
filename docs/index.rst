@@ -24,11 +24,12 @@ Simple example:
 
 What's going on here:
 
-* ``id`` is of type int, the elipsis tells pydantic this field is required. Strings, bytes or floats will be
+* ``id`` is of type int, the ellipsis tells pydantic this field is required. Strings, bytes or floats will be
   converted to ints if possible, otherwise an exception would be raised.
-* ``name`` pydantic infers is a string from the default, it is not required as it has a default
+* ``name`` pydantic infers as a string from the default, it is not required as it has a default
 * ``signup_ts`` is a datetime field which is not required (``None`` if it's not supplied), pydantic will process
-  either a unix timestamp int (eg. ``1496498400``) or a string representing the date & time.
+  either a unix timestamp int (e.g. ``1496498400``) or a string representing the date & time.
+* ``friends`` uses python's typing system, it is required to be a list of ints,
 
 If validation fails pydantic with raise an error with a breakdown of what was wrong:
 
@@ -44,7 +45,7 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
     `type hinting docs <https://docs.python.org/3/library/typing.html>`_) you know how to use pydantic.
 
 **plays nicely with your IDE/linter/brain**
-    because pydantic data structures are just instances of classes you define; autocompleting, linting,
+    because pydantic data structures are just instances of classes you define; auto-completion, linting,
     `mypy <http://mypy-lang.org/>`_ your intuition should all work properly with your validated data.
 
 **dual use**
@@ -134,8 +135,8 @@ Here default for config parameter are shown together with their meaning.
 Settings
 ........
 
-One of pydantics most useful applications is to define default settings, allow them to be overridden by
-environment variables or keyword arguments (eg. in unit tests).
+One of pydantic's most useful applications is to define default settings, allow them to be overridden by
+environment variables or keyword arguments (e.g. in unit tests).
 
 This usage example comes last as it uses numerous concepts described above.
 
