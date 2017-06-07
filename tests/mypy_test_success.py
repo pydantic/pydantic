@@ -3,7 +3,6 @@ Test pydantic's compliance with mypy.
 
 Do a little skipping about with types to demonstrate its usage.
 """
-
 from datetime import datetime
 from typing import List, Optional
 

@@ -174,8 +174,8 @@ for all fields with ``None`` default, this is standard with mypy.
 
 Pydantic provides a few useful optional or union types:
 
-* ``NodeStr`` aka. ``Optional[str]``
-* ``NodeBytes`` aka. ``Optional[bytes]``
+* ``NoneStr`` aka. ``Optional[str]``
+* ``NoneBytes`` aka. ``Optional[bytes]``
 * ``StrBytes`` aka. ``Union[str, bytes]``
 * ``NoneStrBytes`` aka. ``Optional[StrBytes]``
 

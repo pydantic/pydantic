@@ -24,8 +24,11 @@ test:
 .PHONY: mypy
 mypy:
 	@echo "testing simple example with mypy (and python to check it's sane)..."
-	mypy --ignore-missing-imports --follow-imports=skip --strict-optional tests/mypy_test.py
-	python tests/mypy_test.py
+	mypy --ignore-missing-imports --follow-imports=skip --strict-optional tests/mypy_test_success.py
+	python tests/mypy_test_success.py
+	@echo "checking code with bad type annotations fails..."
+	mypy --ignore-missing-imports --follow-imports=skip tests/mypy_test_fails.py 1>/dev/null; test $$? -eq 1
+	python tests/mypy_test_fails.py
 
 .PHONY: testcov
 testcov:
