@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from types import FunctionType
+from typing import Any, Dict, Set
 
 from .exceptions import Error, Extra, Missing, ValidationError
 from .fields import Field
@@ -96,7 +97,7 @@ class BaseModel(metaclass=MetaModel):
     Config = BaseConfig
 
     def __init__(self, **values):
-        self.__values__ = {}
+        self.__values__ = OrderedDict()
         self.__errors__ = OrderedDict()
         self._process_values(values)
 
@@ -111,9 +112,16 @@ class BaseModel(metaclass=MetaModel):
         setattr(self, name, value)
         self.__values__[name] = value
 
-    @property
-    def values(self):
-        return dict(self)
+    def values(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
+        """
+        Get a dict of the values processed by the model, optionally specifying which fields to include or exclude.
+
+        This is NOT equivalent to the values() method on a dict.
+        """
+        return {
+            k: v for k, v in self
+            if k not in exclude and (not include or k in include)
+        }
 
     @property
     def fields(self):
@@ -175,7 +183,7 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def _get_value(cls, v):
         if isinstance(v, BaseModel):
-            return v.values
+            return v.values()
         elif isinstance(v, list):
             return [cls._get_value(v_) for v_ in v]
         elif isinstance(v, dict):
@@ -194,9 +202,9 @@ class BaseModel(metaclass=MetaModel):
 
     def __eq__(self, other):
         if isinstance(other, BaseModel):
-            return self.values == other.values
+            return self.values() == other.values()
         else:
-            return self.values == other
+            return self.values() == other
 
     def __repr__(self):
         return f'<{self}>'

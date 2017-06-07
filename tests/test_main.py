@@ -224,19 +224,19 @@ def test_allow_extra():
         class Config:
             allow_extra = True
 
-    assert Model(a='10.2', b=12).values == {'a': 10.2, 'b': 12}
+    assert Model(a='10.2', b=12).values() == {'a': 10.2, 'b': 12}
 
 
 def test_set_attr():
     m = UltraSimpleModel(a=10.2)
-    assert m.values == {'a': 10.2, 'b': 10}
+    assert m.values() == {'a': 10.2, 'b': 10}
     m.setattr('b', 20)
-    assert m.values == {'a': 10.2, 'b': 20}
+    assert m.values() == {'a': 10.2, 'b': 20}
 
 
 def test_set_attr_invalid():
     m = UltraSimpleModel(a=10.2)
-    assert m.values == {'a': 10.2, 'b': 10}
+    assert m.values() == {'a': 10.2, 'b': 10}
     with pytest.raises(ValueError) as exc_info:
         m.setattr('c', 20)
     assert '"UltraSimpleModel" object has no field "c"' in str(exc_info)
@@ -260,9 +260,9 @@ def test_alias():
             }
 
     assert Model().a == 'foobar'
-    assert Model().values == {'a': 'foobar'}
+    assert Model().values() == {'a': 'foobar'}
     assert Model(_a='different').a == 'different'
-    assert Model(_a='different').values == {'a': 'different'}
+    assert Model(_a='different').values() == {'a': 'different'}
 
 
 def test_field_order():
@@ -283,7 +283,7 @@ def test_required():
         b: int = 10
 
     m = Model(a=10.2)
-    assert m.values == dict(a=10.2, b=10)
+    assert m.values() == dict(a=10.2, b=10)
 
     with pytest.raises(ValidationError) as exc_info:
         Model()

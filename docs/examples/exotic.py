@@ -37,7 +37,7 @@ m = Model(
     email_address='Samuel Colvin <s@muelcolvin.com >',
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
 )
-print(m.values)
+print(m.values())
 """
 {
     'cos_function': <built-in function cos>,

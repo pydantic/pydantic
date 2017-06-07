@@ -180,7 +180,7 @@ class DictModel(BaseModel):
 
 
 def test_dict_values():
-    assert DictModel(v={'foo': 1}).values == {'v': {'foo': 1}}
+    assert DictModel(v={'foo': 1}).values() == {'v': {'foo': 1}}
 
 
 @pytest.mark.parametrize('value,result', [
@@ -269,7 +269,7 @@ def test_recursive_list():
     assert "<MasterListModel v=[<SubModel name='testing' count=4>]>" == repr(m)
     assert m.v[0].name == 'testing'
     assert m.v[0].count == 4
-    assert m.values == {'v': [{'count': 4, 'name': 'testing'}]}
+    assert m.values() == {'v': [{'count': 4, 'name': 'testing'}]}
 
     with pytest.raises(ValidationError) as exc_info:
         MasterListModel(v=['x'])
@@ -356,9 +356,9 @@ def test_str_enum():
 def test_any_dict():
     class Model(BaseModel):
         v: Dict[int, Any] = ...
-    assert Model(v={1: 'foobar'}).values == {'v': {1: 'foobar'}}
-    assert Model(v={123: 456}).values == {'v': {123: 456}}
-    assert Model(v={2: [1, 2, 3]}).values == {'v': {2: [1, 2, 3]}}
+    assert Model(v={1: 'foobar'}).values() == {'v': {1: 'foobar'}}
+    assert Model(v={123: 456}).values() == {'v': {123: 456}}
+    assert Model(v={2: [1, 2, 3]}).values() == {'v': {2: [1, 2, 3]}}
 
 
 def test_infer_alias():
@@ -402,3 +402,26 @@ def test_annotation_config():
     assert list(Model.__fields__.keys()) == ['b', 'a']
     assert [f.alias for f in Model.__fields__.values()] == ['b', 'foobar']
     assert Model(foobar='123').a == 123.0
+
+
+def test_success_values_include():
+    class Model(BaseModel):
+        a: int = 1
+        b: int = 2
+        c: int = 3
+
+    m = Model()
+    assert m.values() == {'a': 1, 'b': 2, 'c': 3}
+    assert m.values(include={'a'}) == {'a': 1}
+    assert m.values(exclude={'a'}) == {'b': 2, 'c': 3}
+    assert m.values(include={'a', 'b'}, exclude={'a'}) == {'b': 2}
+
+
+def test_values_order():
+    class Model(BaseModel):
+        a: int = 1
+        b: int = 2
+        c: int = 3
+
+    m = Model(c=30, b=20, a=10)
+    assert list(m) == [('a', 10), ('b', 20), ('c', 30)]
