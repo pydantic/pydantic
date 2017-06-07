@@ -2,7 +2,7 @@ from collections import OrderedDict
 from types import FunctionType
 
 from .exceptions import Error, Extra, Missing, ValidationError
-from .fields import Field
+from .fields import Field, Required
 from .validators import dict_validator
 
 
@@ -16,6 +16,9 @@ class BaseConfig:
     ignore_extra = True
     allow_extra = False
     fields = None
+
+    # tagged on here to make avoid the need for extra imports, e.g. you can just use `BaseModel.Config.Required`
+    Required = Required
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
@@ -55,17 +58,32 @@ class MetaModel(type):
             field_config = config_fields.get(var_name)
             if isinstance(field_config, str):
                 field_config = {'alias': field_config}
-            field = Field.infer(
+            fields[var_name] = Field.infer(
                 name=var_name,
                 value=value,
-                annotation=annotations and annotations.get(var_name),
+                annotation=annotations and annotations.pop(var_name, None),
                 class_validators=class_validators,
                 field_config=field_config,
             )
-            fields[var_name] = field
+
+        if annotations:
+            for ann_name, ann_type in annotations.items():
+                if ann_name.startswith('_'):
+                    continue
+                field_config = config_fields.get(ann_name)
+                if isinstance(field_config, str):
+                    field_config = {'alias': field_config}
+                fields[ann_name] = Field.infer(
+                    name=ann_name,
+                    value=...,
+                    annotation=ann_type,
+                    class_validators=class_validators,
+                    field_config=field_config,
+                )
+
         namespace.update(
             config=config,
-            __fields__=fields,
+            __fields__=fields
         )
         return super().__new__(mcs, name, bases, namespace)
 
@@ -78,6 +96,7 @@ EXTRA_ERROR = Error(Extra('extra fields not permitted'), None, None)
 class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
     __fields__ = {}
+    Config = BaseConfig
 
     def __init__(self, **values):
         self.__values__ = {}
