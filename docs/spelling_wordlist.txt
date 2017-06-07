@@ -5,9 +5,11 @@ config
 ints
 jsonmodels
 pydantic
+pypi
 metadata
 schemas
 timestamp
+travis
 unix
 untrusted
 ve
