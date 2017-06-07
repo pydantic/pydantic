@@ -25,8 +25,10 @@ def day_of_week(dt: datetime) -> int:
     return dt.date().isoweekday()
 
 
-m = Model(age=42, list_of_ints=[1, '2', b'3'])
+m = Model(age=21, list_of_ints=[1, '2', b'3'])
 
+assert m.age == 21, m.age
+m.age = 42
 assert m.age == 42, m.age
 assert m.first_name == 'John', m.first_name
 assert m.last_name is None, m.last_name
