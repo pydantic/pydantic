@@ -19,7 +19,7 @@ Define how data should be in pure, canonical python; validate it with *pydantic*
 
 A simple example:
 
-.. literalinclude:: example1.py
+.. literalinclude:: examples/example1.py
 
 (This script is complete, it should run "as is")
 
@@ -35,7 +35,7 @@ What's going on here:
 
 If validation fails pydantic with raise an error with a breakdown of what was wrong:
 
-.. literalinclude:: example2.py
+.. literalinclude:: examples/example2.py
 
 Rationale
 ---------
@@ -48,7 +48,7 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
 
 **plays nicely with your IDE/linter/brain**
     because pydantic data structures are just instances of classes you define; auto-completion, linting,
-    `mypy <http://mypy-lang.org/>`_ and your intuition should all work properly with your validated data.
+    :ref:`mypy <usage_mypy>` and your intuition should all work properly with your validated data.
 
 **dual use**
     pydantic's :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data" context
@@ -85,7 +85,7 @@ PEP 484 Types
 
 pydantic uses ``typing`` types to define more complex objects.
 
-.. literalinclude:: usage_typing.py
+.. literalinclude:: examples/ex_typing.py
 
 (This script is complete, it should run "as is")
 
@@ -94,7 +94,7 @@ Choices
 
 pydantic uses python's standard ``enum`` classes to define choices.
 
-.. literalinclude:: usage_choices.py
+.. literalinclude:: examples/choices.py
 
 (This script is complete, it should run "as is")
 
@@ -103,14 +103,14 @@ Recursive Models
 
 More complex hierarchical data structures can be defined using models as types in annotations themselves.
 
-.. literalinclude:: usage_recursive.py
+.. literalinclude:: examples/recursive.py
 
 (This script is complete, it should run "as is")
 
 Error Handling
 ..............
 
-.. literalinclude:: usage_errors.py
+.. literalinclude:: examples/errors.py
 
 (This script is complete, it should run "as is")
 
@@ -119,10 +119,9 @@ Exotic Types
 
 pydantic comes with a number of utilities for parsing or validating common objects.
 
-.. literalinclude:: usage_exotic.py
+.. literalinclude:: examples/exotic.py
 
 (This script is complete, it should run "as is")
-
 
 Model Config
 ............
@@ -131,7 +130,7 @@ Behaviour of pydantic can be controlled via the ``Config`` class on a model.
 
 Here default for config parameter are shown together with their meaning.
 
-.. literalinclude:: usage_config.py
+.. literalinclude:: examples/config.py
 
 .. _settings:
 
@@ -143,14 +142,57 @@ environment variables or keyword arguments (e.g. in unit tests).
 
 This usage example comes last as it uses numerous concepts described above.
 
-.. literalinclude:: usage_settings.py
+.. literalinclude:: examples/settings.py
 
 Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` or ``auth_key`` by
 ``export my_api_key=6380``.
-
-.. include:: ../HISTORY.rst
 
 .. |pypi| image:: https://img.shields.io/pypi/v/pydantic.svg
    :target: https://pypi.python.org/pypi/pydantic
 .. |license| image:: https://img.shields.io/pypi/l/pydantic.svg
    :target: https://github.com/samuelcolvin/pydantic
+
+.. _usage_mypy:
+
+Usage with mypy
+...............
+
+Pydantic works with `mypy <http://mypy-lang.org/>`_ provided you use the "annotation only" version of
+required variables:
+
+.. literalinclude:: examples/mypy.py
+
+This script is complete, it should run "as is". You can also run it through mypy with::
+
+    mypy --ignore-missing-imports --follow-imports=skip --strict-optional pydantic_mypy_test.py
+
+Strict Optional
+~~~~~~~~~~~~~~~
+
+For your code to pass with ``--strict-optional`` you need to to use ``Optional[]`` or an alias of ``Optional[]``
+for all fields with ``None`` default, this is standard with mypy.
+
+Pydantic provides a few useful optional or union types:
+
+* ``NodeStr`` aka. ``Optional[str]``
+* ``NodeBytes`` aka. ``Optional[bytes]``
+* ``StrBytes`` aka. ``Union[str, bytes]``
+* ``NoneStrBytes`` aka. ``Optional[StrBytes]``
+
+If these aren't sufficient you can of course define your own.
+
+Required Fields and mypy
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ellipsis notation ``...`` will not work with mypy, you need to use annotation only fields as in the example above.
+
+.. warning::
+
+   Be aware that using annotation only fields will alter the order of your fields in metadata and errors:
+   annotation only fields will always come last, but still in the order they were defined.
+
+To get round this you can use the ``Required`` (via ``from pydantic import Required``) field as an alias for
+ellipses or annotation only.
+
+
+.. include:: ../HISTORY.rst

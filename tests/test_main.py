@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, ValidationError, pretty_errors
+from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError, pretty_errors
 
 
 def test_success():
@@ -279,7 +279,7 @@ def test_field_order():
 def test_required():
     # same as below but defined here so class definition occurs inside the test
     class Model(BaseModel):
-        a: float = BaseModel.Config.Required
+        a: float = Required
         b: int = 10
 
     m = Model(a=10.2)

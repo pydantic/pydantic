@@ -2,7 +2,7 @@ from collections import OrderedDict
 from types import FunctionType
 
 from .exceptions import Error, Extra, Missing, ValidationError
-from .fields import Field, Required
+from .fields import Field
 from .validators import dict_validator
 
 
@@ -16,9 +16,6 @@ class BaseConfig:
     ignore_extra = True
     allow_extra = False
     fields = None
-
-    # tagged on here to make avoid the need for extra imports, e.g. you can just use `BaseModel.Config.Required`
-    Required = Required
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
