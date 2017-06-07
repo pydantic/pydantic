@@ -369,6 +369,9 @@ def test_infer_alias():
             fields = {'a': '_a'}
 
     assert Model(_a='different').a == 'different'
+    assert repr(Model.__fields__['a']) == ("<Field a (alias '_a'): type='str', default='foobar',"
+                                           " required=False, validators=['not_none_validator', 'str_validator',"
+                                           " 'anystr_length_validator']>")
 
 
 def test_alias_error():
@@ -385,3 +388,17 @@ def test_alias_error():
 1 error validating input
 _a:
   invalid literal for int() with base 10: 'foo' (error_type=ValueError track=int)""" == str(exc_info.value)
+
+
+def test_annotation_config():
+    class Model(BaseModel):
+        a: float
+        b: int = 10
+        _c: str
+
+        class Config:
+            fields = {'a': 'foobar'}
+
+    assert list(Model.__fields__.keys()) == ['b', 'a']
+    assert [f.alias for f in Model.__fields__.values()] == ['b', 'foobar']
+    assert Model(foobar='123').a == 123.0

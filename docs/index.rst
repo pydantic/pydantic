@@ -147,11 +147,6 @@ This usage example comes last as it uses numerous concepts described above.
 Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` or ``auth_key`` by
 ``export my_api_key=6380``.
 
-.. |pypi| image:: https://img.shields.io/pypi/v/pydantic.svg
-   :target: https://pypi.python.org/pypi/pydantic
-.. |license| image:: https://img.shields.io/pypi/l/pydantic.svg
-   :target: https://github.com/samuelcolvin/pydantic
-
 .. _usage_mypy:
 
 Usage with mypy
@@ -194,5 +189,9 @@ The ellipsis notation ``...`` will not work with mypy, you need to use annotatio
 To get round this you can use the ``Required`` (via ``from pydantic import Required``) field as an alias for
 ellipses or annotation only.
 
-
 .. include:: ../HISTORY.rst
+
+.. |pypi| image:: https://img.shields.io/pypi/v/pydantic.svg
+   :target: https://pypi.python.org/pypi/pydantic
+.. |license| image:: https://img.shields.io/pypi/l/pydantic.svg
+   :target: https://github.com/samuelcolvin/pydantic
