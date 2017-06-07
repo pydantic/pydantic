@@ -10,6 +10,4 @@ if git_tag:
         print('✖ "TRAVIS_TAG" environment variable does not match package version: "%s" vs. "%s"' % (git_tag, VERSION))
         sys.exit(1)
     else:
-        print('✓ "TRAVIS_TAG" environment variable matches package version: "{}" vs. "%s"'.format(git_tag, VERSION))
-else:
-    print('✓ "TRAVIS_TAG" not defined')
+        print('✓ "TRAVIS_TAG" environment variable matches package version: "%s" vs. "%s"' % (git_tag, VERSION))
