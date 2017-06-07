@@ -290,5 +290,5 @@ def test_required():
     assert """\
 1 error validating input
 a:
-  field required (error_type=Missing)
+  field required (error_type=Missing)\
 """ == str(exc_info.value)

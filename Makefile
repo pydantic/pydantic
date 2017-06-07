@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := all
+
 .PHONY: install
 install:
 	pip install -U setuptools pip
@@ -19,12 +21,20 @@ lint:
 test:
 	pytest --cov=pydantic
 
+.PHONY: mypy
+mypy:
+	@echo "testing simple example with mypy (and python to check it's sane)..."
+	mypy --ignore-missing-imports --follow-imports=skip --strict-optional tests/mypy_test.py
+	python tests/mypy_test.py
+
 .PHONY: testcov
 testcov:
-	pytest --cov=pydantic && (echo "building coverage html"; coverage html)
+	pytest --cov=pydantic
+	@echo "building coverage html"
+	@coverage html
 
 .PHONY: all
-all: testcov lint
+all: testcov mypy lint
 
 .PHONY: benchmark
 benchmark:

@@ -83,7 +83,7 @@ class MetaModel(type):
 
         namespace.update(
             config=config,
-            __fields__=fields
+            __fields__=fields,
         )
         return super().__new__(mcs, name, bases, namespace)
 
