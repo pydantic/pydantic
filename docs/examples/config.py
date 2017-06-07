@@ -9,7 +9,6 @@ class UserModel(BaseModel):
         max_anystr_length = 2 ** 16  # max length for str & byte types
         min_number_size = -2 ** 64  # min size for numbers
         max_number_size = 2 ** 64  # max size for numbers
-        raise_exception = True  # whether or not to raise an exception if the data is invalid
         validate_all = False  # whether or not to validate field defaults
         ignore_extra = True  # whether to ignore any extra values in input data
         allow_extra = False  # whether or not too allow (and include on the model) any extra values in input data

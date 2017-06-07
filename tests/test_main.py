@@ -77,19 +77,6 @@ def test_comparing():
     assert m == UltraSimpleModel(a=10.2, b=100)
 
 
-class ConfigModel(UltraSimpleModel):
-    class Config:
-        raise_exception = False
-
-
-def test_config_doesnt_raise():
-    m = ConfigModel()
-    assert len(m.errors) == 1
-    assert m.errors['a'].exc.args[0] == 'field required'
-    assert m.config.raise_exception is False
-    assert m.config.max_anystr_length == 65536
-
-
 def test_nullable_strings_success():
     class NoneCheckModel(BaseModel):
         existing_str_value = 'foo'
@@ -120,15 +107,15 @@ def test_nullable_strings_fails():
         required_bytes_value: bytes = ...
         required_bytes_none_value: NoneBytes = ...
 
-        class Config:
-            raise_exception = False
-    m = NoneCheckModel(
-        required_str_value=None,
-        required_str_none_value=None,
-        required_bytes_value=None,
-        required_bytes_none_value=None,
-    )
-    assert """\
+    try:
+        NoneCheckModel(
+            required_str_value=None,
+            required_str_none_value=None,
+            required_bytes_value=None,
+            required_bytes_none_value=None,
+        )
+    except ValidationError as e:
+        assert """\
 {
   "required_bytes_value": {
     "error_msg": "None is not an allow value",
@@ -142,7 +129,7 @@ def test_nullable_strings_fails():
     "index": null,
     "track": "str"
   }
-}""" == json.dumps(pretty_errors(m.errors), indent=2, sort_keys=True)
+}""" == json.dumps(pretty_errors(e.errors_raw), indent=2, sort_keys=True)
 
 
 class RecursiveModel(BaseModel):
@@ -250,15 +237,19 @@ def test_allow_extra():
 def test_set_attr():
     m = UltraSimpleModel(a=10.2)
     assert m.values() == {'a': 10.2, 'b': 10}
-    m.setattr('b', 20)
+    m.b = 20
     assert m.values() == {'a': 10.2, 'b': 20}
 
 
 def test_set_attr_invalid():
+
+    class UltraSimpleModel(BaseModel):
+        a: float = ...
+        b: int = 10
     m = UltraSimpleModel(a=10.2)
     assert m.values() == {'a': 10.2, 'b': 10}
     with pytest.raises(ValueError) as exc_info:
-        m.setattr('c', 20)
+        m.c = 20
     assert '"UltraSimpleModel" object has no field "c"' in str(exc_info)
 
 
