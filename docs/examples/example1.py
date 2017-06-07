@@ -3,7 +3,7 @@ from typing import List
 from pydantic import BaseModel
 
 class User(BaseModel):
-    id: int = ...
+    id: int
     name = 'John Doe'
     signup_ts: datetime = None
     friends: List[int] = []

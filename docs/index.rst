@@ -17,7 +17,7 @@ Define how data should be in pure, canonical python; validate it with *pydantic*
 
 *pydantic* uses those annotations to validate that untrusted data takes the form you want.
 
-A simple example:
+Example:
 
 .. literalinclude:: examples/example1.py
 
@@ -25,8 +25,8 @@ A simple example:
 
 What's going on here:
 
-* ``id`` is of type int, the ellipsis tells pydantic that this field is required. Strings, bytes or floats will be
-  converted to ints if possible, otherwise an exception would be raised.
+* ``id`` is of type int; the annotation only declaration tells pydantic that this field is required. Strings,
+  bytes or floats will be coerced to ints if possible, otherwise an exception would be raised.
 * ``name`` is inferred as a string from the default, it is not required as it has a default.
 * ``signup_ts`` is a datetime field which is not required (``None`` if it's not supplied), pydantic will process
   either a unix timestamp int (e.g. ``1496498400``) or a string representing the date & time.
@@ -102,6 +102,8 @@ Recursive Models
 ................
 
 More complex hierarchical data structures can be defined using models as types in annotations themselves.
+
+The ellipsis ``...`` just means "Required" same as annotation only declarations above.
 
 .. literalinclude:: examples/recursive.py
 
@@ -190,6 +192,7 @@ To get round this you can use the ``Required`` (via ``from pydantic import Requi
 ellipses or annotation only.
 
 .. include:: ../HISTORY.rst
+
 
 .. |pypi| image:: https://img.shields.io/pypi/v/pydantic.svg
    :target: https://pypi.python.org/pypi/pydantic
