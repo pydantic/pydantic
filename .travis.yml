@@ -23,6 +23,7 @@ install:
 script:
 - make lint
 - make test
+- make mypy
 - make docs-lint
 - make docs
 - make benchmark

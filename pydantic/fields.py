@@ -6,6 +6,8 @@ from typing import Any, List, Mapping, Set, Type, Union
 from .exceptions import ConfigError, Error, type_display
 from .validators import NoneType, find_validators, not_none_validator
 
+Required: Any = Ellipsis
+
 
 class ValidatorSignature(IntEnum):
     JUST_VALUE = 1
@@ -54,7 +56,7 @@ class Field:
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, field_config):
-        required = value == Ellipsis
+        required = value == Required
         return cls(
             name=name,
             type_=annotation,
@@ -255,7 +257,10 @@ class Field:
         return f'<Field {self}>'
 
     def __str__(self):
-        return f'{self.name}: ' + ', '.join(f'{k}={v!r}' for k, v in self.info.items())
+        if self.alt_alias:
+            return f"{self.name} (alias '{self.alias}'): " + ', '.join(f'{k}={v!r}' for k, v in self.info.items())
+        else:
+            return f'{self.name}: ' + ', '.join(f'{k}={v!r}' for k, v in self.info.items())
 
 
 def _get_validator_signature(validator):

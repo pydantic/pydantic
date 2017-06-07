@@ -3,18 +3,23 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, ValidationError, pretty_errors
+from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError, pretty_errors
+
+
+def test_success():
+    # same as below but defined here so class definition occurs inside the test
+    class Model(BaseModel):
+        a: float
+        b: int = 10
+
+    m = Model(a=10.2)
+    assert m.a == 10.2
+    assert m.b == 10
 
 
 class UltraSimpleModel(BaseModel):
     a: float = ...
     b: int = 10
-
-
-def test_ultra_simple_success():
-    m = UltraSimpleModel(a=10.2)
-    assert m.a == 10.2
-    assert m.b == 10
 
 
 def test_ultra_simple_missing():
@@ -258,3 +263,32 @@ def test_alias():
     assert Model().values == {'a': 'foobar'}
     assert Model(_a='different').a == 'different'
     assert Model(_a='different').values == {'a': 'different'}
+
+
+def test_field_order():
+    class Model(BaseModel):
+        c: float
+        b: int = 10
+        a: str
+        d: dict = {}
+
+    # fields are ordered as defined except annotation-only fields come last
+    assert list(Model.__fields__.keys()) == ['b', 'd', 'c', 'a']
+
+
+def test_required():
+    # same as below but defined here so class definition occurs inside the test
+    class Model(BaseModel):
+        a: float = Required
+        b: int = 10
+
+    m = Model(a=10.2)
+    assert m.values == dict(a=10.2, b=10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+    assert """\
+1 error validating input
+a:
+  field required (error_type=Missing)\
+""" == str(exc_info.value)
