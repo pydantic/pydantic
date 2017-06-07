@@ -201,6 +201,24 @@ class BaseModel(metaclass=MetaModel):
     def __repr__(self):
         return f'<{self}>'
 
+    @classmethod
+    def _truncate(cls, v):
+        max_len = 80
+        if isinstance(v, str) and len(v) > (max_len - 2):
+            # 45 so quote + string + ... + quote has length 50
+            return repr(v[:(max_len - 5)] + '...')
+        v = repr(v)
+        if len(v) > max_len:
+            v = v[:max_len - 3] + '...'
+        return v
+
+    def to_string(self, pretty=False):
+        divider = '\n  ' if pretty else ' '
+        return '{}{}{}'.format(
+            self.__class__.__name__,
+            divider,
+            divider.join('{}={}'.format(k, self._truncate(v)) for k, v in self.__values__.items()),
+        )
+
     def __str__(self):
-        return '{} {}'.format(self.__class__.__name__, ' '.join('{}={!r}'.format(k, v)
-                                                                for k, v in self.__values__.items()))
+        return self.to_string()

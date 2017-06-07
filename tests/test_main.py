@@ -51,6 +51,26 @@ def test_ultra_simple_repr():
     assert dict(m) == {'a': 10.2, 'b': 10}
 
 
+def test_str_truncate():
+    class Model(BaseModel):
+        s1: str
+        s2: str
+        b1: bytes
+        b2: bytes
+    m = Model(s1='132', s2='x' * 100, b1='123', b2='x' * 100)
+    print(repr(m.to_string()))
+    assert m.to_string() == ("Model s1='132' "
+                             "s2='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...' "
+                             "b1=b'123' "
+                             "b2=b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...")
+    assert """\
+Model
+  s1='132'
+  s2='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...'
+  b1=b'123'
+  b2=b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...""" == m.to_string(pretty=True)
+
+
 def test_comparing():
     m = UltraSimpleModel(a=10.2, b='100')
     assert m == {'a': 10.2, 'b': 100}
