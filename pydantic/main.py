@@ -15,7 +15,7 @@ class BaseConfig:
     validate_all = False
     ignore_extra = True
     allow_extra = False
-    fields = None
+    fields = {}
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
@@ -48,34 +48,27 @@ class MetaModel(type):
         class_validators = {n: f for n, f in namespace.items()
                             if n.startswith('validate_') and isinstance(f, FunctionType)}
 
-        config_fields = config.fields or {}
         for var_name, value in namespace.items():
             if var_name.startswith('_') or isinstance(value, TYPE_BLACKLIST):
                 continue
-            field_config = config_fields.get(var_name)
-            if isinstance(field_config, str):
-                field_config = {'alias': field_config}
             fields[var_name] = Field.infer(
                 name=var_name,
                 value=value,
                 annotation=annotations and annotations.pop(var_name, None),
                 class_validators=class_validators,
-                field_config=field_config,
+                config=config,
             )
 
         if annotations:
             for ann_name, ann_type in annotations.items():
                 if ann_name.startswith('_'):
                     continue
-                field_config = config_fields.get(ann_name)
-                if isinstance(field_config, str):
-                    field_config = {'alias': field_config}
                 fields[ann_name] = Field.infer(
                     name=ann_name,
                     value=...,
                     annotation=ann_type,
                     class_validators=class_validators,
-                    field_config=field_config,
+                    config=config,
                 )
 
         new_namespace = {
@@ -101,6 +94,9 @@ class BaseModel(metaclass=MetaModel):
         object.__setattr__(self, '__values__', self._process_values(data))
 
     def __getattr__(self, name):
+        if name == '__values__':
+            # this prevents an ugly recursion error
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '__values__'")
         try:
             return self.__values__[name]
         except KeyError:
@@ -154,7 +150,7 @@ class BaseModel(metaclass=MetaModel):
                         values[name] = field.default
                     continue
 
-            values[name], errors_ = field.validate(value, self)
+            values[name], errors_ = field.validate(value, values)
             if errors_:
                 errors[field.alias] = errors_
 
