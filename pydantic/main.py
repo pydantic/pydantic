@@ -159,7 +159,7 @@ class BaseModel(metaclass=MetaModel):
                         value = input_data[field]
                         values[field] = value
                 else:
-                    # self.config.ignore_extra is False
+                    # config.ignore_extra is False
                     for field in sorted(extra):
                         errors[field] = EXTRA_ERROR
 

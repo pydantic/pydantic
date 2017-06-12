@@ -12,4 +12,5 @@ class UserModel(BaseModel):
         validate_all = False  # whether or not to validate field defaults
         ignore_extra = True  # whether to ignore any extra values in input data
         allow_extra = False  # whether or not too allow (and include on the model) any extra values in input data
+        allow_mutation = True  # whether or not models are faux-immutable, eg. setattr fails on model fields
         fields = None  # extra information on each field, currently just "alias is allowed"

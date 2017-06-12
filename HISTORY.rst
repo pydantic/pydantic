@@ -3,6 +3,14 @@
 History
 -------
 
+v0.3.0 (TBC)
+............
+* immutable models via ``config.allow_mutation = False``, associated cleanup and performance improvement #44
+* ``setatt`` is removed as ``__setattr__`` is not intelligent #44
+* ``raise_exception`` removed, Models now always raise exceptions #44
+* instance method validators removed TODO
+* django-restful-framework benchmarks added #47
+
 v0.2.1 (2017-06-07)
 ...................
 * pypi and travis together messed up the deploy of ``v0.2`` this should fix it

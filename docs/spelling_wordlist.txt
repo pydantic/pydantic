@@ -2,6 +2,7 @@ aren
 cerberus
 Config
 config
+django
 ints
 jsonmodels
 pydantic
