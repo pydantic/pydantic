@@ -8,6 +8,7 @@ from statistics import mean, stdev
 
 from test_trafaret import TestTrafaret
 from test_pydantic import TestPydantic
+from test_drf import TestDRF
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
@@ -107,7 +108,7 @@ def main():
     else:
         with json_path.open() as f:
             cases = json.load(f)
-    tests = [TestTrafaret, TestPydantic]
+    tests = [TestTrafaret, TestDRF, TestPydantic]
     for test_class in tests:
         times = []
         p = test_class.package
