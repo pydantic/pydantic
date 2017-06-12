@@ -138,7 +138,7 @@ class BaseModel(metaclass=MetaModel):
     def validate(cls, value):
         return cls(**value)
 
-    def _process_values(self, input_data: dict) -> OrderedDict:
+    def _process_values(self, input_data: dict) -> OrderedDict:  # noqa: C901
         values = OrderedDict()
         errors = OrderedDict()
 
