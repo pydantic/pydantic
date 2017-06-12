@@ -15,6 +15,7 @@ class BaseConfig:
     validate_all = False
     ignore_extra = True
     allow_extra = False
+    allow_mutation = True
     fields = {}
 
 
@@ -94,21 +95,17 @@ class BaseModel(metaclass=MetaModel):
         object.__setattr__(self, '__values__', self._process_values(data))
 
     def __getattr__(self, name):
-        if name == '__values__':
-            # this prevents an ugly recursion error
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '__values__'")
         try:
             return self.__values__[name]
         except KeyError:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
-        if name.startswith('_'):
-            object.__setattr__(self, name, value)
-        else:
-            if not self.config.allow_extra and name not in self.__fields__:
-                raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-            self.__values__[name] = value
+        if not self.config.allow_extra and name not in self.__fields__:
+            raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
+        elif not self.config.allow_mutation:
+            raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
+        self.__values__[name] = value
 
     def values(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
         """

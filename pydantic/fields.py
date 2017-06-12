@@ -47,7 +47,6 @@ class Field:
         self.validators = []
         self.default: Any = default
         self.required: bool = required
-        self.required: bool = required
         self.model_config = model_config
         self.description: str = description
         self.allow_none: bool = allow_none
