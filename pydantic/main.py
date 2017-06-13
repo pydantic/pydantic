@@ -12,11 +12,11 @@ class BaseConfig:
     max_anystr_length = 2 ** 16
     min_number_size = -2 ** 64
     max_number_size = 2 ** 64
-    raise_exception = True
     validate_all = False
     ignore_extra = True
     allow_extra = False
-    fields = None
+    allow_mutation = True
+    fields = {}
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
@@ -49,41 +49,35 @@ class MetaModel(type):
         class_validators = {n: f for n, f in namespace.items()
                             if n.startswith('validate_') and isinstance(f, FunctionType)}
 
-        config_fields = config.fields or {}
         for var_name, value in namespace.items():
             if var_name.startswith('_') or isinstance(value, TYPE_BLACKLIST):
                 continue
-            field_config = config_fields.get(var_name)
-            if isinstance(field_config, str):
-                field_config = {'alias': field_config}
             fields[var_name] = Field.infer(
                 name=var_name,
                 value=value,
                 annotation=annotations and annotations.pop(var_name, None),
                 class_validators=class_validators,
-                field_config=field_config,
+                config=config,
             )
 
         if annotations:
             for ann_name, ann_type in annotations.items():
                 if ann_name.startswith('_'):
                     continue
-                field_config = config_fields.get(ann_name)
-                if isinstance(field_config, str):
-                    field_config = {'alias': field_config}
                 fields[ann_name] = Field.infer(
                     name=ann_name,
                     value=...,
                     annotation=ann_type,
                     class_validators=class_validators,
-                    field_config=field_config,
+                    config=config,
                 )
 
-        namespace.update(
-            config=config,
-            __fields__=fields,
-        )
-        return super().__new__(mcs, name, bases, namespace)
+        new_namespace = {
+            'config': config,
+            '__fields__': fields,
+            **{n: v for n, v in namespace.items() if n not in fields}
+        }
+        return super().__new__(mcs, name, bases, new_namespace)
 
 
 MISSING = Missing('field required')
@@ -95,21 +89,22 @@ class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
     __fields__ = {}
     Config = BaseConfig
+    __slots__ = '__values__',
 
-    def __init__(self, **values):
-        self.__values__ = OrderedDict()
-        self.__errors__ = OrderedDict()
-        self._process_values(values)
+    def __init__(self, **data):
+        object.__setattr__(self, '__values__', self._process_values(data))
 
-    def setattr(self, name, value):
-        """
-        alternative to setattr() which checks the field exists and updates __values__.
+    def __getattr__(self, name):
+        try:
+            return self.__values__[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
-        This exists instead of overriding __setattr__ as that seems to cause a universal 10% slow down.
-        """
+    def __setattr__(self, name, value):
         if not self.config.allow_extra and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-        setattr(self, name, value)
+        elif not self.config.allow_mutation:
+            raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         self.__values__[name] = value
 
     def values(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
@@ -127,10 +122,6 @@ class BaseModel(metaclass=MetaModel):
     def fields(self):
         return self.__fields__
 
-    @property
-    def errors(self):
-        return self.__errors__
-
     @classmethod
     def get_validators(cls):
         yield dict_validator
@@ -140,45 +131,40 @@ class BaseModel(metaclass=MetaModel):
     def validate(cls, value):
         return cls(**value)
 
-    def _process_values(self, values):
-        for name, field in self.__fields__.items():
-            value = values.get(field.alias, MISSING)
-            self._process_value(name, field.alias, field, value)
+    def _process_values(self, input_data: dict) -> OrderedDict:  # noqa: C901
+        values = OrderedDict()
+        errors = OrderedDict()
 
-        if not self.config.ignore_extra or self.config.allow_extra:
-            extra = values.keys() - {f.alias for f in self.__fields__.values()}
+        for name, field in self.__fields__.items():
+            value = input_data.get(field.alias, MISSING)
+            if value is MISSING:
+                if self.config.validate_all or field.validate_always:
+                    value = field.default
+                else:
+                    if field.required:
+                        errors[field.alias] = MISSING_ERROR
+                    else:
+                        values[name] = field.default
+                    continue
+
+            values[name], errors_ = field.validate(value, values)
+            if errors_:
+                errors[field.alias] = errors_
+
+        if (not self.config.ignore_extra) or self.config.allow_extra:
+            extra = input_data.keys() - {f.alias for f in self.__fields__.values()}
             if extra:
                 if self.config.allow_extra:
                     for field in extra:
-                        value = values[field]
-                        self.__values__[field] = value
-                        setattr(self, field, value)
+                        values[field] = input_data[field]
                 else:
                     # config.ignore_extra is False
                     for field in sorted(extra):
-                        self.__errors__[field] = EXTRA_ERROR
+                        errors[field] = EXTRA_ERROR
 
-        if self.config.raise_exception and self.__errors__:
-            raise ValidationError(self.__errors__)
-
-    def _process_value(self, name, alias, field, value):
-        if value is MISSING:
-            if self.config.validate_all or field.validate_always:
-                value = field.default
-            else:
-                if field.required:
-                    self.__errors__[alias] = MISSING_ERROR
-                else:
-                    self.__values__[name] = field.default
-                    # could skip this if the attributes equals field.default, would it be quicker?
-                    setattr(self, name, field.default)
-                return
-
-        value, errors = field.validate(value, self)
         if errors:
-            self.__errors__[alias] = errors
-        self.__values__[name] = value
-        setattr(self, name, value)
+            raise ValidationError(errors)
+        return values
 
     @classmethod
     def _get_value(cls, v):

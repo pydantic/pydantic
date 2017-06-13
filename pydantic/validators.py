@@ -48,16 +48,16 @@ def bool_validator(v) -> bool:
     return bool(v)
 
 
-def number_size_validator(v, model, **kwargs):
-    if model.config.min_number_size <= v <= model.config.max_number_size:
+def number_size_validator(v, config, **kwargs):
+    if config.min_number_size <= v <= config.max_number_size:
         return v
-    raise ValueError(f'size not in range {model.config.min_number_size} to {model.config.max_number_size}')
+    raise ValueError(f'size not in range {config.min_number_size} to {config.max_number_size}')
 
 
-def anystr_length_validator(v, model, **kwargs):
-    if v is None or model.config.min_anystr_length <= len(v) <= model.config.max_anystr_length:
+def anystr_length_validator(v, config, **kwargs):
+    if v is None or config.min_anystr_length <= len(v) <= config.max_anystr_length:
         return v
-    raise ValueError(f'length not in range {model.config.max_anystr_length} to {model.config.max_anystr_length}')
+    raise ValueError(f'length not in range {config.max_anystr_length} to {config.max_anystr_length}')
 
 
 def ordered_dict_validator(v) -> OrderedDict:

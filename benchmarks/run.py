@@ -1,13 +1,14 @@
 import json
 import random
 import string
+import sys
 from datetime import datetime
 from functools import partial
 from pathlib import Path
 from statistics import mean, stdev
 
-from test_trafaret import TestTrafaret
 from test_pydantic import TestPydantic
+from test_trafaret import TestTrafaret
 from test_drf import TestDRF
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
@@ -108,7 +109,10 @@ def main():
     else:
         with json_path.open() as f:
             cases = json.load(f)
-    tests = [TestTrafaret, TestDRF, TestPydantic]
+    if 'pydantic-only' in sys.argv:
+        tests = [TestPydantic]
+    else:
+        tests = [TestPydantic, TestTrafaret, TestDRF]
     for test_class in tests:
         times = []
         p = test_class.package

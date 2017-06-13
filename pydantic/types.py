@@ -120,6 +120,7 @@ class PyObject:
 
 class DSN(str):
     prefix = 'db_'
+    fields = 'driver', 'user', 'password', 'host', 'port', 'name', 'query'
     validate_always = True
 
     @classmethod
@@ -128,11 +129,10 @@ class DSN(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value, model, **kwarg):
+    def validate(cls, value, values, **kwarg):
         if value:
             return value
-        d = model.__values__
-        kwargs = {f: d.get(cls.prefix + f) for f in ('driver', 'user', 'password', 'host', 'port', 'name', 'query')}
+        kwargs = {f: values.get(cls.prefix + f) for f in cls.fields}
         if kwargs['driver'] is None:
             raise ValueError(f'"{cls.prefix}driver" field may not be missing or None')
         return make_dsn(**kwargs)

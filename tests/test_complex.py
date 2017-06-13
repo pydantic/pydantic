@@ -233,23 +233,24 @@ v:
   invalid literal for int() with base 10: 'foo' (error_type=ValueError track=int index=key)""" == str(exc_info.value)
 
 
-def test_all_model_validator():
-    class OverModel(BaseModel):
-        a: int = ...
-
-        def validate_a_pre(self, v):
-            return f'{v}1'
-
-        def validate_a(self, v):
-            assert isinstance(v, int)
-            return f'{v}_main'
-
-        def validate_a_post(self, v):
-            assert isinstance(v, str)
-            return f'{v}_post'
-
-    m = OverModel(a=1)
-    assert m.a == '11_main_post'
+# TODO re-add when implementing better model validators
+# def test_all_model_validator():
+#     class OverModel(BaseModel):
+#         a: int = ...
+#
+#         def validate_a_pre(self, v):
+#             return f'{v}1'
+#
+#         def validate_a(self, v):
+#             assert isinstance(v, int)
+#             return f'{v}_main'
+#
+#         def validate_a_post(self, v):
+#             assert isinstance(v, str)
+#             return f'{v}_post'
+#
+#     m = OverModel(a=1)
+#     assert m.a == '11_main_post'
 
 
 class SubModel(BaseModel):
