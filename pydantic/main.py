@@ -151,13 +151,12 @@ class BaseModel(metaclass=MetaModel):
             if errors_:
                 errors[field.alias] = errors_
 
-        if not self.config.ignore_extra or self.config.allow_extra:
+        if (not self.config.ignore_extra) or self.config.allow_extra:
             extra = input_data.keys() - {f.alias for f in self.__fields__.values()}
             if extra:
                 if self.config.allow_extra:
                     for field in extra:
-                        value = input_data[field]
-                        values[field] = value
+                        values[field] = input_data[field]
                 else:
                     # config.ignore_extra is False
                     for field in sorted(extra):

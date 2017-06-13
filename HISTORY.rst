@@ -6,7 +6,7 @@ History
 v0.3.0 (TBC)
 ............
 * immutable models via ``config.allow_mutation = False``, associated cleanup and performance improvement #44
-* ``setatt`` is removed as ``__setattr__`` is not intelligent #44
+* ``setattr`` is removed as ``__setattr__`` is now intelligent #44
 * ``raise_exception`` removed, Models now always raise exceptions #44
 * instance method validators removed TODO
 * django-restful-framework benchmarks added #47
