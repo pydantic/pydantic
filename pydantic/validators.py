@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -19,9 +20,13 @@ def not_none_validator(v):
 def str_validator(v) -> str:
     if isinstance(v, (str, NoneType)):
         return v
-    elif isinstance(v, bytes):
+    elif isinstance(v, (bytes, bytearray)):
         return v.decode()
-    return str(v)
+    elif isinstance(v, (float, int, Decimal)):
+        # is there anything else we want to add here? If you think so, create an issue.
+        return str(v)
+    else:
+        raise ValueError(f'str or byte type expected not {type(v)}')
 
 
 def bytes_validator(v) -> bytes:

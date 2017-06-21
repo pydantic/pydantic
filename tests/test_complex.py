@@ -1,3 +1,4 @@
+from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Set, Union
 
@@ -340,10 +341,12 @@ def test_recursive_lists():
     assert len(Model.__fields__['v'].sub_fields[0].sub_fields[0].sub_fields) == 2
 
 
+class StrEnum(str, Enum):
+    a = 'a10'
+    b = 'b10'
+
+
 def test_str_enum():
-    class StrEnum(str, Enum):
-        a = 'a10'
-        b = 'b10'
 
     class Model(BaseModel):
         v: StrEnum = ...
@@ -445,3 +448,35 @@ def test_invalid_type():
             x: 43 = 123
 
     assert "error checking inheritance of 43 (type: <class 'int'>)" in str(exc_info)
+
+
+@pytest.mark.parametrize('value,expected', [
+    ('a string', 'a string'),
+    (b'some bytes', 'some bytes'),
+    (bytearray('foobar', encoding='utf8'), 'foobar'),
+    (123, '123'),
+    (123.45, '123.45'),
+    (Decimal('12.45'), '12.45'),
+    (True, 'True'),
+    (False, 'False'),
+    (StrEnum.a, 'a10'),
+])
+def test_valid_string_types(value, expected):
+    class Model(BaseModel):
+        v: str
+
+    assert Model(v=value).v == expected
+
+
+@pytest.mark.parametrize('value', [
+    {'foo': 'bar'},
+    {'foo', 'bar'},
+    [1, 2, 3],
+])
+def test_invalid_string_types(value):
+    class Model(BaseModel):
+        v: str
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=value)
+    assert 'str or byte type expected' in str(exc_info.value)
