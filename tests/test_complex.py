@@ -1,3 +1,4 @@
+from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Set, Union
 
@@ -445,3 +446,32 @@ def test_invalid_type():
             x: 43 = 123
 
     assert "error checking inheritance of 43 (type: <class 'int'>)" in str(exc_info)
+
+
+@pytest.mark.parametrize('value,expected', [
+    ('a string', 'a string'),
+    (b'some bytes', 'some bytes'),
+    (123, '123'),
+    (123.45, '123.45'),
+    (Decimal('12.45'), '12.45'),
+    (True, 'True'),
+    (False, 'False'),
+])
+def test_valid_string_types(value, expected):
+    class Model(BaseModel):
+        v: str
+
+    assert Model(v=value).v == expected
+
+
+@pytest.mark.parametrize('value', [
+    {'foo': 'bar'},
+    {'foo', 'bar'},
+    [1, 2, 3],
+])
+def test_invalid_string_types(value):
+    class Model(BaseModel):
+        v: str
+
+    with pytest.raises(ValidationError):
+        Model(v=value)

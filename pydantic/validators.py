@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -21,7 +22,11 @@ def str_validator(v) -> str:
         return v
     elif isinstance(v, bytes):
         return v.decode()
-    return str(v)
+    elif isinstance(v, (float, int, Decimal)):
+        # is there anything else we want to add here?
+        return str(v)
+    else:
+        raise ValueError(f'str type expected not {type(v)}')
 
 
 def bytes_validator(v) -> bytes:
