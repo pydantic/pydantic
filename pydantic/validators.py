@@ -62,7 +62,7 @@ def number_size_validator(v, config, **kwargs):
 def anystr_length_validator(v, config, **kwargs):
     if v is None or config.min_anystr_length <= len(v) <= config.max_anystr_length:
         return v
-    raise ValueError(f'length not in range {config.max_anystr_length} to {config.max_anystr_length}')
+    raise ValueError(f'length not in range {config.min_anystr_length} to {config.max_anystr_length}')
 
 
 def ordered_dict_validator(v) -> OrderedDict:

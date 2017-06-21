@@ -130,7 +130,17 @@ Model Config
 
 Behaviour of pydantic can be controlled via the ``Config`` class on a model.
 
-Here default for config parameter are shown together with their meaning.
+Options:
+
+:min_anystr_length: min length for str & byte types (default: ``0``)
+:max_anystr_length: max length for str & byte types (default: ``2 ** 16``)
+:min_number_size: min size for numbers (default: ``-2 ** 64``)
+:max_number_size: max size for numbers (default: ``2 ** 64``)
+:validate_all: whether or not to validate field defaults (default: ``False``)
+:ignore_extra: whether to ignore any extra values in input data (default: ``True``)
+:allow_extra: whether or not too allow (and include on the model) any extra values in input data (default: ``False``)
+:allow_mutation: whether or not models are faux-immutable, e.g. __setattr__ fails (default: ``True``)
+:fields: extra information on each field, currently just "alias" is allowed (default: ``None``)
 
 .. literalinclude:: examples/config.py
 
@@ -190,6 +200,43 @@ The ellipsis notation ``...`` will not work with mypy, you need to use annotatio
 
 To get round this you can use the ``Required`` (via ``from pydantic import Required``) field as an alias for
 ellipses or annotation only.
+
+Faux Immutability
+.................
+
+Models can be configured to be immutable via ``allow_mutation = False`` this will prevent changing attributes of
+a model.
+
+.. warning::
+
+   However be warned: immutability in python is never strict. If developers are determined/stupid they can always
+   modify a so called "immutable" object
+
+.. literalinclude:: examples/mutation.py
+
+Trying to change ``a`` caused an error and it remains unchanged, however the dict ``b`` is mutable and the
+immutability of ``foobar`` doesn't stop being changed.
+
+Copy and Values
+...............
+
+The ``values`` function returns a dict containing the attributes of a model sub-model are recursively
+converted to dicts.
+
+While ``copy`` allows models to be duplicated, this is particularly useful for immutable models.
+
+Both ``values`` and ``copy`` take the optional ``include`` and ``exclude`` keyword arguments to control which attributes
+are return/copied. ``copy`` allows an extra keyword argument ``update`` allowing attributes to be modified as the model
+is duplicated.
+
+.. literalinclude:: examples/copy_values.py
+
+Pickle
+......
+
+Using the same plumbing as ``copy()`` pydantic models support efficient pickling and unpicking.
+
+.. literalinclude:: examples/ex_pickle.py
 
 .. include:: ../HISTORY.rst
 

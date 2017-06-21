@@ -92,7 +92,7 @@ class BaseModel(metaclass=MetaModel):
     __slots__ = '__values__',
 
     def __init__(self, **data):
-        object.__setattr__(self, '__values__', self._process_values(data))
+        self.__setstate__(self._process_values(data))
 
     def __getattr__(self, name):
         try:
@@ -107,6 +107,12 @@ class BaseModel(metaclass=MetaModel):
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         self.__values__[name] = value
 
+    def __getstate__(self):
+        return self.__values__
+
+    def __setstate__(self, state):
+        object.__setattr__(self, '__values__', state)
+
     def values(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
         """
         Get a dict of the values processed by the model, optionally specifying which fields to include or exclude.
@@ -117,6 +123,37 @@ class BaseModel(metaclass=MetaModel):
             k: v for k, v in self
             if k not in exclude and (not include or k in include)
         }
+
+    @classmethod
+    def construct(cls, **values):
+        """
+        Creates a new model and set __values__ without any validation, thus values should be trusted
+        data. Chances are you don't want to use this method directly.
+        """
+        m = cls.__new__(cls)
+        m.__setstate__(values)
+        return m
+
+    def copy(self, *, include: Set[str]=None, exclude: Set[str]=None, update: Dict[str, Any]=None):
+        """
+        Duplicate a model, optionally choose which fields to include, exclude and change.
+
+        :param include: fields to include in new model
+        :param exclude: fields to exclude from new model, as with values this takes precedence over include
+        :param update: values to change/add in the new model. Note: the data is not validated before creating
+            the new model: you should trust this data
+        :return: new model instance
+        """
+        if include is None and exclude is None and update is None:
+            # skip constructing values if no arguments are passed
+            v = self.__values__
+        else:
+            exclude = exclude or set()
+            v = {
+                **{k: v for k, v in self.__values__.items() if k not in exclude and (not include or k in include)},
+                **(update or {})
+            }
+        return self.__class__.construct(**v)
 
     @property
     def fields(self):
