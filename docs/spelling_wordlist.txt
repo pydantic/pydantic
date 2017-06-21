@@ -2,6 +2,8 @@ aren
 cerberus
 Config
 config
+doesn
+dicts
 django
 ints
 jsonmodels

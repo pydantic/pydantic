@@ -109,3 +109,20 @@ def test_recursive_pickle():
     assert m.d.a == 123.45
     assert m2.d.a == 123.45
     assert m.__fields__ == m2.__fields__
+
+
+def test_immutable_copy():
+    class Model(BaseModel):
+        a: int
+        b: int
+
+        class Config:
+            allow_mutation = False
+
+    m = Model(a=40, b=10)
+    assert m == m.copy()
+
+    m2 = m.copy(update={'b': 12})
+    assert str(m2) == 'Model a=40 b=12'
+    with pytest.raises(TypeError):
+        m2.b = 13

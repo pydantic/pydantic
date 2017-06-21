@@ -1,16 +1,19 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
-class UserModel(BaseModel):
-    id: int = ...
+class Model(BaseModel):
+    v: str
 
     class Config:
-        min_anystr_length = 0  # min length for str & byte types
-        max_anystr_length = 2 ** 16  # max length for str & byte types
-        min_number_size = -2 ** 64  # min size for numbers
-        max_number_size = 2 ** 64  # max size for numbers
-        validate_all = False  # whether or not to validate field defaults
-        ignore_extra = True  # whether to ignore any extra values in input data
-        allow_extra = False  # whether or not too allow (and include on the model) any extra values in input data
-        allow_mutation = True  # whether or not models are faux-immutable, eg. setattr fails on model fields
-        fields = None  # extra information on each field, currently just "alias is allowed"
+        max_anystr_length = 10
+
+
+try:
+    Model(v='x' * 20)
+except ValidationError as e:
+    print(e)
+"""
+1 error validating input
+v:
+  length not in range 0 to 10 (error_type=ValueError track=str)
+"""
