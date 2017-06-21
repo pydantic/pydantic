@@ -32,6 +32,7 @@ def test_simple_copy():
     assert m.a == m2.a == 24
     assert m.b == m2.b == 10
     assert m == m2
+    assert m.__fields__ == m2.__fields__
 
 
 class ModelTwo(BaseModel):
@@ -97,6 +98,7 @@ def test_simple_pickle():
     assert m is not m2
     assert tuple(m) == (('a', 24.0), ('b', 10))
     assert tuple(m2) == (('a', 24.0), ('b', 10))
+    assert m.__fields__ == m2.__fields__
 
 
 def test_recursive_pickle():
@@ -106,3 +108,4 @@ def test_recursive_pickle():
 
     assert m.d.a == 123.45
     assert m2.d.a == 123.45
+    assert m.__fields__ == m2.__fields__
