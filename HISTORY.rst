@@ -7,6 +7,7 @@ v0.3.0 (TBC)
 ............
 * immutable models via ``config.allow_mutation = False``, associated cleanup and performance improvement #44
 * immutable helper methods ``construct()`` and ``copy()`` #53
+* allow pickling of models #53
 * ``setattr`` is removed as ``__setattr__`` is now intelligent #44
 * ``raise_exception`` removed, Models now always raise exceptions #44
 * instance method validators removed TODO

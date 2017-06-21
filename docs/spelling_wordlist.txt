@@ -5,6 +5,8 @@ config
 doesn
 dicts
 django
+faux
+Faux
 ints
 jsonmodels
 pydantic

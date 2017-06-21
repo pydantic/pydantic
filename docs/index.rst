@@ -231,6 +231,13 @@ is duplicated.
 
 .. literalinclude:: examples/copy_values.py
 
+Pickle
+......
+
+Using the same plumbing as ``copy()`` pydantic models support efficient pickling and unpicking.
+
+.. literalinclude:: examples/ex_pickle.py
+
 .. include:: ../HISTORY.rst
 
 
