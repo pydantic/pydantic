@@ -1,10 +1,12 @@
+import pickle
+
 import pytest
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    a: float
+    a: float = ...
     b: int = 10
 
 
@@ -83,3 +85,24 @@ def test_copy_update():
     assert set(m.values().keys()) == set(m2.values().keys()) == {'a', 'b', 'c', 'd'}
 
     assert m != m2
+
+
+def test_simple_pickle():
+    m = Model(a='24')
+    b = pickle.dumps(m)
+    m2 = pickle.loads(b)
+    assert m.a == m2.a == 24
+    assert m.b == m2.b == 10
+    assert m == m2
+    assert m is not m2
+    assert tuple(m) == (('a', 24.0), ('b', 10))
+    assert tuple(m2) == (('a', 24.0), ('b', 10))
+
+
+def test_recursive_pickle():
+    m = ModelTwo(a=24, d=Model(a='123.45'))
+    m2 = pickle.loads(pickle.dumps(m))
+    assert m == m2
+
+    assert m.d.a == 123.45
+    assert m2.d.a == 123.45
