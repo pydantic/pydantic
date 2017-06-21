@@ -9,6 +9,7 @@ __all__ = [
     'NoneBytes',
     'StrBytes',
     'NoneStrBytes',
+    'StrictStr',
     'ConstrainedStr',
     'constr',
     'EmailStr',
@@ -25,6 +26,18 @@ NoneStr = Optional[str]
 NoneBytes = Optional[bytes]
 StrBytes = Union[str, bytes]
 NoneStrBytes = Optional[StrBytes]
+
+
+class StrictStr(str):
+    @classmethod
+    def get_validators(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, str):
+            raise ValueError(f'strict string: str expected not {type(v)}')
+        return v
 
 
 class ConstrainedStr(str):

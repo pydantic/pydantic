@@ -11,7 +11,8 @@ v0.3.0 (TBC)
 * instance method validators removed TODO
 * django-restful-framework benchmarks added #47
 * fix inheritance bug #49
-* make str type stricter so list, dict etc are not coerced to strings #52
+* make str type stricter so list, dict etc are not coerced to strings. #52
+* add ``StrictStr`` which only always strings as input #52
 
 v0.2.1 (2017-06-07)
 ...................

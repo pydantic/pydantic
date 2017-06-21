@@ -5,8 +5,8 @@ from enum import Enum, IntEnum
 
 import pytest
 
-from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeInt, PositiveInt, PyObject, ValidationError, conint,
-                      constr)
+from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeInt, PositiveInt, PyObject, StrictStr,
+                      ValidationError, conint, constr)
 
 
 class ConStringModel(BaseModel):
@@ -378,3 +378,15 @@ def test_set():
     assert m.v == {1, 2, 3}
     assert m.values() == {'v': {1, 2, 3}}
     assert SetModel(v={'a', 'b', 'c'}).v == {'a', 'b', 'c'}
+
+
+def test_strict_str():
+    class Model(BaseModel):
+        v: StrictStr
+
+    assert Model(v='foobar').v == 'foobar'
+    with pytest.raises(ValidationError):
+        Model(v=123)
+
+    with pytest.raises(ValidationError):
+        Model(v=b'foobar')
