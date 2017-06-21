@@ -95,12 +95,6 @@ class BaseModel(metaclass=MetaModel):
     def __init__(self, **data):
         object.__setattr__(self, '__values__', self._process_values(data))
 
-    @classmethod
-    def construct(cls, **values):
-        m = cls.__new__(cls)
-        object.__setattr__(m, '__values__', values)
-        return m
-
     def __getattr__(self, name):
         try:
             return self.__values__[name]
@@ -124,6 +118,39 @@ class BaseModel(metaclass=MetaModel):
             k: v for k, v in self
             if k not in exclude and (not include or k in include)
         }
+
+    @classmethod
+    def construct(cls, **values):
+        """
+        Creates a new model and set __values__ without any validation, thus values should be trusted
+        data. Chances are you don't want to use this method directly.
+        """
+        m = cls.__new__(cls)
+        object.__setattr__(m, '__values__', values)
+        return m
+
+    def copy(self, *, include: Set[str]=None, exclude: Set[str]=None, update: Dict[str, Any]=None):
+        """
+        Duplicate a model, optionally choose which fields to include, exclude and change
+        :param include: fields to include in new model.
+        :param exclude: fields to exclude from new model, as with values this takes precedence over include
+        :param update: values to changed/update in the new model. Note: the data is not validated before creating
+            the new model, so you should trust this data.
+        :return: new model instance
+        """
+        if include is None and exclude is None and update is None:
+            # skip constructing values if no arguments are set
+            v = self.__values__
+        else:
+            exclude = exclude or set()
+            v = {
+                **{
+                    k: v for k, v in self.__values__.items()
+                    if k not in exclude and (not include or k in include)
+                },
+                **(update or {})
+            }
+        return self.__class__.construct(**v)
 
     @property
     def fields(self):

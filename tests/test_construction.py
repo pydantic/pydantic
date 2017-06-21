@@ -21,3 +21,65 @@ def test_construct_missing():
         print(m.b)
 
     assert "'Model' object has no attribute 'b'" in str(exc_info)
+
+
+def test_simple_copy():
+    m = Model(a=24)
+    m2 = m.copy()
+
+    assert m.a == m2.a == 24
+    assert m.b == m2.b == 10
+    assert m == m2
+
+
+class ModelTwo(BaseModel):
+    a: float
+    b: int = 10
+    c: str = 'foobar'
+    d: Model
+
+
+def test_copy_exclude():
+    m = ModelTwo(a=24, d=Model(a='12'))
+    m2 = m.copy(exclude={'b'})
+
+    assert m.a == m2.a == 24
+    assert isinstance(m2.d, Model)
+    assert m2.d.a == 12
+
+    assert hasattr(m2, 'c')
+    assert not hasattr(m2, 'b')
+    assert set(m.values().keys()) == {'a', 'b', 'c', 'd'}
+    assert set(m2.values().keys()) == {'a', 'c', 'd'}
+
+    assert m != m2
+
+
+def test_copy_include():
+    m = ModelTwo(a=24, d=Model(a='12'))
+    m2 = m.copy(include={'a'})
+
+    assert m.a == m2.a == 24
+    assert set(m.values().keys()) == {'a', 'b', 'c', 'd'}
+    assert set(m2.values().keys()) == {'a'}
+
+    assert m != m2
+
+
+def test_copy_include_exclude():
+    m = ModelTwo(a=24, d=Model(a='12'))
+    m2 = m.copy(include={'a', 'b', 'c'}, exclude={'c'})
+
+    assert set(m.values().keys()) == {'a', 'b', 'c', 'd'}
+    assert set(m2.values().keys()) == {'a', 'b'}
+
+
+def test_copy_update():
+    m = ModelTwo(a=24, d=Model(a='12'))
+    m2 = m.copy(update={'a': 'different'})
+
+    assert m.a == 24
+    assert m2.a == 'different'
+    assert set(m.values().keys()) == set(m2.values().keys()) == {'a', 'b', 'c', 'd'}
+
+    assert m != m2
