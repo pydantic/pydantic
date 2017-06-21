@@ -64,7 +64,6 @@ class MetaModel(type):
             for ann_name, ann_type in annotations.items():
                 if ann_name.startswith('_'):
                     continue
-                print(ann_type)
                 fields[ann_name] = Field.infer(
                     name=ann_name,
                     value=...,

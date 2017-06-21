@@ -20,13 +20,13 @@ def not_none_validator(v):
 def str_validator(v) -> str:
     if isinstance(v, (str, NoneType)):
         return v
-    elif isinstance(v, bytes):
+    elif isinstance(v, (bytes, bytearray)):
         return v.decode()
     elif isinstance(v, (float, int, Decimal)):
-        # is there anything else we want to add here?
+        # is there anything else we want to add here? If you think so, create an issue.
         return str(v)
     else:
-        raise ValueError(f'str type expected not {type(v)}')
+        raise ValueError(f'str or byte type expected not {type(v)}')
 
 
 def bytes_validator(v) -> bytes:
