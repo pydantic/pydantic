@@ -33,6 +33,6 @@ spelling:
 	$(SPHINXBUILD) -b spelling $(ALLSPHINXOPTS) $(BUILDDIR)/spelling
 
 .PHONY: lint
-lint: linkcheck spelling
+lint: spelling
 	@echo
 	@echo "linting complete"
