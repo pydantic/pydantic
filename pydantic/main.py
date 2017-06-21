@@ -95,6 +95,12 @@ class BaseModel(metaclass=MetaModel):
     def __init__(self, **data):
         object.__setattr__(self, '__values__', self._process_values(data))
 
+    @classmethod
+    def construct(cls, **values):
+        m = cls.__new__(cls)
+        object.__setattr__(m, '__values__', values)
+        return m
+
     def __getattr__(self, name):
         try:
             return self.__values__[name]
