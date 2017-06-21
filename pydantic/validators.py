@@ -124,6 +124,9 @@ def find_validators(type_):
     if type_ is Any:
         return []
     for val_type, validators in _VALIDATORS:
-        if issubclass(type_, val_type):
-            return validators
+        try:
+            if issubclass(type_, val_type):
+                return validators
+        except TypeError as e:
+            raise TypeError(f'error checking inheritance of {type_!r} (type: {type(type_)})') from e
     raise ConfigError(f'no validator found for {type_}')

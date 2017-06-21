@@ -10,6 +10,7 @@ v0.3.0 (TBC)
 * ``raise_exception`` removed, Models now always raise exceptions #44
 * instance method validators removed TODO
 * django-restful-framework benchmarks added #47
+* fix inheritance bug #49
 
 v0.2.1 (2017-06-07)
 ...................

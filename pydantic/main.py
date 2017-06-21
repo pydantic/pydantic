@@ -55,7 +55,7 @@ class MetaModel(type):
             fields[var_name] = Field.infer(
                 name=var_name,
                 value=value,
-                annotation=annotations and annotations.pop(var_name, None),
+                annotation=annotations.pop(var_name, None) if annotations else None,
                 class_validators=class_validators,
                 config=config,
             )

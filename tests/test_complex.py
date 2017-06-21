@@ -426,3 +426,22 @@ def test_values_order():
 
     m = Model(c=30, b=20, a=10)
     assert list(m) == [('a', 10), ('b', 20), ('c', 30)]
+
+
+def test_inheritance():
+    class Foo(BaseModel):
+        a: float = ...
+
+    class Bar(Foo):
+        x: float = 12.3
+        a = 123
+
+    assert Bar().values() == {'x': 12.3, 'a': 123}
+
+
+def test_invalid_type():
+    with pytest.raises(TypeError) as exc_info:
+        class Model(BaseModel):
+            x: 43 = 123
+
+    assert "error checking inheritance of 43 (type: <class 'int'>)" in str(exc_info)
