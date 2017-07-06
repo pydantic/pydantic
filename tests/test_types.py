@@ -151,6 +151,12 @@ def test_default_validators(field, value, result):
         assert CheckModel(**kwargs).values()[field] == result
 
 
+def test_string_too_long():
+    with pytest.raises(ValidationError) as exc_info:
+        CheckModel(str_check='x' * 150)
+    assert 'length 150 not in range 0 to 10 (error_type=ValueError track=str)' in exc_info.value.display_errors
+
+
 class DatetimeModel(BaseModel):
     dt: datetime = ...
     date_: date = ...

@@ -3,6 +3,10 @@
 History
 -------
 
+v0.4.0 (2017-XX-XX)
+...................
+* show incorrect length in string validation error
+
 v0.3.0 (2017-06-21)
 ...................
 * immutable models via ``config.allow_mutation = False``, associated cleanup and performance improvement #44
