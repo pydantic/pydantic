@@ -78,13 +78,13 @@ def generate_case():
         id=random.randrange(1, 2000),
         client_name=null_missing_string(10, 280, null_chance=0.05, missing_chance=0.05),
         sort_index=random.random() * 200,
-        client_email=null_missing_email(),  # email checks differ with different frameworks
+        # client_email=null_missing_email(),  # email checks differ with different frameworks
         client_phone=null_missing_string(5, 15),
         location=dict(
             latitude=random.random() * 180 - 90,
             longitude=random.random() * 180,
         ),
-        contractor=str(random.randrange(50, 2000)),
+        contractor=str(random.randrange(-100, 2000)),
         upstream_http_referrer=null_missing_string(10, 1050),
         grecaptcha_response=null_missing_string(10, 1050, null_chance=0.05, missing_chance=0.05),
         last_updated=rand_date(),
@@ -132,7 +132,7 @@ def main():
         for i in range(repeats):
             count, pass_count = 0, 0
             start = datetime.now()
-            test = test_class(False)
+            test = test_class(True)
             for i in range(3):
                 for case in cases:
                     passed, result = test.validate(case)
@@ -153,5 +153,30 @@ def main():
         print(r)
 
 
+def diff():
+    json_path = THIS_DIR / 'cases.json'
+    with json_path.open() as f:
+        cases = json.load(f)
+
+    allow_extra = True
+    pydantic = TestPydantic(allow_extra)
+    others = [TestTrafaret(allow_extra), TestDRF(allow_extra)]
+
+    for case in cases:
+        pydantic_passed, pydantic_result = pydantic.validate(case)
+        for other in others:
+            other_passed, other_result = other.validate(case)
+            if other_passed != pydantic_passed:
+                print(f'⨯ pydantic {pydantic_passed} != {other.package} {other_passed}')
+                print(json.dumps(case, indent=2))
+                print(f'pydantic result: {pydantic_result}')
+                print(f'{other.package} result: {other_result}')
+                return
+    print('✓ data passes match for all packages')
+
+
 if __name__ == '__main__':
-    main()
+    if 'diff' in sys.argv:
+        diff()
+    else:
+        main()

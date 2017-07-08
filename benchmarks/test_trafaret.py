@@ -10,7 +10,7 @@ class TestTrafaret:
             'id': t.Int(),
             'client_name': t.String(max_length=255),
             'sort_index': t.Float,
-            t.Key('client_email', optional=True): t.Or(t.Null | t.Email()),
+            # t.Key('client_email', optional=True): t.Or(t.Null | t.Email()),
             t.Key('client_phone', optional=True): t.Or(t.Null | t.String(max_length=255)),
 
             t.Key('location', optional=True): t.Or(t.Null | t.Dict({

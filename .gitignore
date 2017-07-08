@@ -9,5 +9,5 @@ dist/
 test.py
 .coverage
 htmlcov/
-benchmarks/cases.json
+benchmarks/*.json
 docs/_build/
