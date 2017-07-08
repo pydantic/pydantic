@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Set, Union
 import pytest
 
 from pydantic import BaseModel, NoneStrBytes, StrBytes, ValidationError, constr
+from pydantic.exceptions import pretty_errors
 
 
 def test_str_bytes():
@@ -530,3 +531,8 @@ def test_string_none():
     with pytest.raises(ValidationError) as exc_info:
         Model(a=None)
     assert 'None is not an allow value' in str(exc_info.value)
+
+
+def test_pretty_error_no_recursion():
+    with pytest.raises(TypeError):
+        pretty_errors('foobar')

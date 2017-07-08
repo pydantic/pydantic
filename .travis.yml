@@ -22,7 +22,13 @@ install:
 
 script:
 - make lint
-- make test
+
+# test with and without msgpack and ujson then combine coverage
+- make test && mv .coverage .coverage.extra
+- pip uninstall -y msgpack-python ujson
+- make test && mv .coverage .coverage.no-extra
+- coverage combine
+
 - make mypy
 - make docs-lint
 - make docs

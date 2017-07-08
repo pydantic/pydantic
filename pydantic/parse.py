@@ -4,8 +4,6 @@ from enum import IntEnum
 from pathlib import Path
 from typing import Any, Union
 
-logger = logging.getLogger('pydantic')
-
 from .types import StrBytes
 
 try:
@@ -18,6 +16,8 @@ try:
 except ImportError:
     msgpack = None
 
+logger = logging.getLogger('pydantic')
+
 
 class Protocol(IntEnum):
     json = 1
@@ -25,7 +25,7 @@ class Protocol(IntEnum):
     pickle = 3
 
 
-def load_str_bytes(b: StrBytes, *,
+def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
                    proto: Protocol=None,
                    content_type: str=None,
                    encoding: str='utf8',

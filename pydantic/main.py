@@ -1,9 +1,12 @@
 from collections import OrderedDict
+from pathlib import Path
 from types import FunctionType
-from typing import Any, Dict, Set
+from typing import Any, Dict, Set, Union
 
 from .exceptions import Error, Extra, Missing, ValidationError
 from .fields import Field
+from .parse import Protocol, load_file, load_str_bytes
+from .types import StrBytes
 from .utils import truncate
 from .validators import dict_validator
 
@@ -129,6 +132,31 @@ class BaseModel(metaclass=MetaModel):
         }
 
     @classmethod
+    def parse_obj(cls, obj):
+        if not isinstance(obj, dict):
+            exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+            raise ValidationError([Error(exc, None, None)])
+        return cls(**obj)
+
+    @classmethod
+    def parse_raw(cls, b: StrBytes, *,
+                  proto: Protocol=None,
+                  content_type: str=None,
+                  encoding: str='utf8',
+                  allow_pickle: bool=False):
+        obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
+        return cls.parse_obj(obj)
+
+    @classmethod
+    def parse_file(cls, path: Union[str, Path], *,
+                   proto: Protocol=None,
+                   content_type: str=None,
+                   encoding: str='utf8',
+                   allow_pickle: bool=False):
+        obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
+        return cls.parse_obj(obj)
+
+    @classmethod
     def construct(cls, **values):
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
@@ -172,7 +200,7 @@ class BaseModel(metaclass=MetaModel):
     def validate(cls, value):
         return cls(**value)
 
-    def _process_values(self, input_data: dict) -> OrderedDict:  # noqa: C901
+    def _process_values(self, input_data: dict) -> OrderedDict:  # noqa: C901 (ignore complexity)
         values = OrderedDict()
         errors = OrderedDict()
 
