@@ -24,7 +24,7 @@ def test_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj([1, 2, 3])
     assert """\
-1 error validating input
+error validating input
 Model expected dict not list (error_type=TypeError)""" == str(exc_info.value)
 
 
@@ -59,7 +59,7 @@ def test_msgpack_not_installed_ct():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw(b'\x82\xa1a\x0c\xa1b\x08', content_type='application/msgpack')
     assert """\
-1 error validating input
+error validating input
 Unknown content-type: application/msgpack (error_type=TypeError)""" == str(exc_info.value)
 
 
@@ -83,7 +83,7 @@ def test_bad_ct():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', content_type='application/missing')
     assert """\
-1 error validating input
+error validating input
 Unknown content-type: application/missing (error_type=TypeError)""" == str(exc_info.value)
 
 
@@ -91,7 +91,7 @@ def test_bad_proto():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', proto='foobar')
     assert """\
-1 error validating input
+error validating input
 Unknown protocol: foobar (error_type=TypeError)""" == str(exc_info.value)
 
 
