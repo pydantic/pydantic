@@ -5,7 +5,8 @@ History
 
 v0.4.0 (2017-XX-XX)
 ...................
-* show incorrect length in string validation error
+* show length in string validation error
+* fix aliases in config during inheritance #55
 
 v0.3.0 (2017-06-21)
 ...................

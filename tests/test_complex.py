@@ -480,3 +480,41 @@ def test_invalid_string_types(value):
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
     assert 'str or byte type expected' in str(exc_info.value)
+
+
+def test_inheritance_config():
+    class Parent(BaseModel):
+        a: int
+
+    class Child(Parent):
+        b: str
+
+        class Config:
+            fields = {
+                'a': 'aaa',
+                'b': 'bbb',
+            }
+
+    m = Child(aaa=1, bbb='s')
+    assert str(m) == "Child a=1 b='s'"
+
+
+def test_partial_inheritance_config():
+    class Parent(BaseModel):
+        a: int
+
+        class Config:
+            fields = {
+                'a': 'aaa',
+            }
+
+    class Child(Parent):
+        b: str
+
+        class Config:
+            fields = {
+                'b': 'bbb',
+            }
+
+    m = Child(aaa=1, bbb='s')
+    assert str(m) == "Child a=1 b='s'"

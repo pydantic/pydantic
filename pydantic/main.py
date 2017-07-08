@@ -49,6 +49,9 @@ class MetaModel(type):
         class_validators = {n: f for n, f in namespace.items()
                             if n.startswith('validate_') and isinstance(f, FunctionType)}
 
+        for f in fields.values():
+            f.set_config(config)
+
         for var_name, value in namespace.items():
             if var_name.startswith('_') or isinstance(value, TYPE_BLACKLIST):
                 continue
