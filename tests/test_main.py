@@ -285,7 +285,7 @@ def test_field_order():
         d: dict = {}
 
     # fields are ordered as defined except annotation-only fields come last
-    assert list(Model.__fields__.keys()) == ['b', 'd', 'c', 'a']
+    assert list(Model.__fields__.keys()) == ['c', 'a', 'b', 'd']
 
 
 def test_required():

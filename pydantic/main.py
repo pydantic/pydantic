@@ -48,33 +48,32 @@ class MetaModel(type):
                 fields.update(base.__fields__)
                 config = inherit_config(base.config, config)
 
-        annotations = namespace.get('__annotations__')
         config = inherit_config(namespace.get('Config'), config)
-        class_validators = {n: f for n, f in namespace.items()
-                            if n.startswith('validate_') and isinstance(f, FunctionType)}
+        class_validators = {
+            n: f for n, f in namespace.items() if n.startswith('validate_') and isinstance(f, FunctionType)
+        }
 
         for f in fields.values():
             f.set_config(config)
 
-        for var_name, value in namespace.items():
-            if var_name.startswith('_') or isinstance(value, TYPE_BLACKLIST):
-                continue
-            fields[var_name] = Field.infer(
-                name=var_name,
-                value=value,
-                annotation=annotations.pop(var_name, None) if annotations else None,
-                class_validators=class_validators,
-                config=config,
-            )
-
-        if annotations:
-            for ann_name, ann_type in annotations.items():
-                if ann_name.startswith('_'):
-                    continue
+        annotations = namespace.get('__annotations__', {})
+        # annotation only fields need to come first in fields
+        for ann_name, ann_type in annotations.items():
+            if not ann_name.startswith('_') and ann_name not in namespace:
                 fields[ann_name] = Field.infer(
                     name=ann_name,
                     value=...,
                     annotation=ann_type,
+                    class_validators=class_validators,
+                    config=config,
+                )
+
+        for var_name, value in namespace.items():
+            if not var_name.startswith('_') and not isinstance(value, TYPE_BLACKLIST):
+                fields[var_name] = Field.infer(
+                    name=var_name,
+                    value=value,
+                    annotation=annotations.get(var_name),
                     class_validators=class_validators,
                     config=config,
                 )

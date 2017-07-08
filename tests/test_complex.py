@@ -397,16 +397,16 @@ _a:
 
 def test_annotation_config():
     class Model(BaseModel):
-        a: float
-        b: int = 10
+        b: float
+        a: int = 10
         _c: str
 
         class Config:
-            fields = {'a': 'foobar'}
+            fields = {'b': 'foobar'}
 
     assert list(Model.__fields__.keys()) == ['b', 'a']
-    assert [f.alias for f in Model.__fields__.values()] == ['b', 'foobar']
-    assert Model(foobar='123').a == 123.0
+    assert [f.alias for f in Model.__fields__.values()] == ['foobar', 'a']
+    assert Model(foobar='123').b == 123.0
 
 
 def test_success_values_include():

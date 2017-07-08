@@ -234,7 +234,7 @@ The ellipsis notation ``...`` will not work with mypy, you need to use annotatio
 .. warning::
 
    Be aware that using annotation only fields will alter the order of your fields in metadata and errors:
-   annotation only fields will always come last, but still in the order they were defined.
+   annotation only fields will always come first, but still in the order they were defined.
 
 To get round this you can use the ``Required`` (via ``from pydantic import Required``) field as an alias for
 ellipses or annotation only.
@@ -247,8 +247,8 @@ a model.
 
 .. warning::
 
-   However be warned: immutability in python is never strict. If developers are determined/stupid they can always
-   modify a so called "immutable" object
+   Immutability in python is never strict. If developers are determined/stupid they can always
+   modify a so-called "immutable" object.
 
 .. literalinclude:: examples/mutation.py
 

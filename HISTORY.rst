@@ -10,6 +10,7 @@ v0.4.0 (2017-XX-XX)
 * simplify error display
 * use unicode ellipsis in ``truncate``
 * add ``parse_obj``, ``parse_raw`` and ``parse_file`` helper functions #58
+* switch annotation only fields to come first in fields list not last
 
 v0.3.0 (2017-06-21)
 ...................
