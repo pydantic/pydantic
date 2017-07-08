@@ -23,7 +23,7 @@ def test_sub_env_missing():
     with pytest.raises(ValidationError) as exc_info:
         SimpleSettings()
     assert """\
-1 error validating input
+error validating input
 apple:
   None is not an allow value (error_type=TypeError track=str)\
 """ == str(exc_info.value)

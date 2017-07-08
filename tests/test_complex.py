@@ -27,7 +27,7 @@ def test_str_bytes():
 
     with pytest.raises(ValidationError) as exc_info:
         StrBytesModel(v=None)
-    assert exc_info.value.message == '1 error validating input'
+    assert exc_info.value.message == 'error validating input'
     assert """\
 {
   "v": [
@@ -89,7 +89,7 @@ def test_union_int_str():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
-    assert exc_info.value.message == '1 error validating input'
+    assert exc_info.value.message == 'error validating input'
     assert """\
 {
   "v": [
@@ -129,7 +129,7 @@ def test_typed_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 'x', 'y'])
-    assert exc_info.value.message == '1 error validating input'
+    assert exc_info.value.message == 'error validating input'
     assert """\
 {
   "v": [
@@ -150,7 +150,7 @@ def test_typed_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1)
-    assert exc_info.value.message == '1 error validating input'
+    assert exc_info.value.message == 'error validating input'
     assert """\
 {
   "v": {
@@ -171,7 +171,7 @@ def test_typed_set():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 'x'])
     assert """\
-1 error validating input
+error validating input
 v:
   invalid literal for int() with base 10: 'x' (error_type=ValueError track=int index=1)""" == str(exc_info.value)
 
@@ -197,21 +197,21 @@ def test_typed_dict(value, result):
     (
         1,
         """\
-1 error validating input
+error validating input
 v:
   'int' object is not iterable (error_type=TypeError)"""
     ),
     (
         {'a': 'b'},
         """\
-1 error validating input
+error validating input
 v:
   invalid literal for int() with base 10: 'b' (error_type=ValueError track=int index=a)"""
     ),
     (
         [1, 2, 3],
         """\
-1 error validating input
+error validating input
 v:
   cannot convert dictionary update sequence element #0 to a sequence (error_type=TypeError)""",
     )
@@ -229,7 +229,7 @@ def test_dict_key_error():
     with pytest.raises(ValidationError) as exc_info:
         DictIntModel(v={'foo': 2, '3': '4'})
     assert """\
-1 error validating input
+error validating input
 v:
   invalid literal for int() with base 10: 'foo' (error_type=ValueError track=int index=key)""" == str(exc_info.value)
 
@@ -284,9 +284,9 @@ def test_recursive_list_error():
         MasterListModel(v=[{}])
 
     assert """\
-1 error validating input
+error validating input
 v:
-  1 error validating input (error_type=ValidationError track=SubModel)
+  error validating input (error_type=ValidationError track=SubModel)
     name:
       field required (error_type=Missing)\
 """ == str(exc_info.value)
@@ -302,7 +302,7 @@ v:
           "track": null
         }
       },
-      "error_msg": "1 error validating input",
+      "error_msg": "error validating input",
       "error_type": "ValidationError",
       "index": 0,
       "track": "SubModel"
@@ -320,7 +320,7 @@ def test_list_unions():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
     assert """\
-1 error validating input
+error validating input
 v:
   int() argument must be a string, a bytes-like object or a number, not 'NoneType' \
 (error_type=TypeError track=int index=2)
@@ -389,7 +389,7 @@ def test_alias_error():
     with pytest.raises(ValidationError) as exc_info:
         Model(_a='foo')
     assert """\
-1 error validating input
+error validating input
 _a:
   invalid literal for int() with base 10: 'foo' (error_type=ValueError track=int)""" == str(exc_info.value)
 

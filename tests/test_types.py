@@ -240,7 +240,7 @@ def test_enum_successful():
 def test_enum_fails():
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
-    assert exc_info.value.message == '1 error validating input'
+    assert exc_info.value.message == 'error validating input'
     assert """\
 {
   "tool": {

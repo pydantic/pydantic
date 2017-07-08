@@ -26,7 +26,7 @@ def test_ultra_simple_missing():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
     assert """\
-1 error validating input
+error validating input
 a:
   field required (error_type=Missing)""" == str(exc_info.value)
 
@@ -299,7 +299,7 @@ def test_required():
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert """\
-1 error validating input
+error validating input
 a:
   field required (error_type=Missing)\
 """ == str(exc_info.value)
