@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Set, Union
 
 import pytest
 
-from pydantic import BaseModel, NoneStrBytes, StrBytes, ValidationError
+from pydantic import BaseModel, NoneStrBytes, StrBytes, ValidationError, constr
 
 
 def test_str_bytes():
@@ -518,3 +518,15 @@ def test_partial_inheritance_config():
 
     m = Child(aaa=1, bbb='s')
     assert str(m) == "Child a=1 b='s'"
+
+
+def test_string_none():
+    class Model(BaseModel):
+        a: constr(min_length=20, max_length=1000) = ...
+
+        class Config:
+            ignore_extra = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=None)
+    assert 'None is not an allow value' in str(exc_info.value)

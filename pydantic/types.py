@@ -53,6 +53,9 @@ class ConstrainedStr(str):
 
     @classmethod
     def validate(cls, value: str) -> str:
+        if value is None:
+            raise TypeError('None is not an allow value')
+
         l = len(value)
         if cls.min_length is not None and l < cls.min_length:
             raise ValueError(f'length less than minimum allowed: {cls.min_length}')
