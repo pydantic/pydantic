@@ -38,7 +38,7 @@ setup(
     python_requires='>=3.6',
     zip_safe=True,
     extras_require={
-        'msgpack': ['msgpack-python==0.4.8'],
-        'ujson': ['ujson==1.35'],
+        'msgpack': ['msgpack-python>=0.4.8'],
+        'ujson': ['ujson>=1.35'],
     }
 )

@@ -1,6 +1,5 @@
-import logging
 import pickle
-from enum import IntEnum
+from enum import Enum
 from pathlib import Path
 from typing import Any, Union
 
@@ -16,13 +15,11 @@ try:
 except ImportError:
     msgpack = None
 
-logger = logging.getLogger('pydantic')
 
-
-class Protocol(IntEnum):
-    json = 1
-    msgpack = 2
-    pickle = 3
+class Protocol(str, Enum):
+    json = 'json'
+    msgpack = 'msgpack'
+    pickle = 'pickle'
 
 
 def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
@@ -33,12 +30,12 @@ def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
     if proto is None and content_type:
         if content_type.endswith(('json', 'javascript')):
             pass
-        elif content_type.endswith('msgpack'):
+        elif msgpack and content_type.endswith('msgpack'):
             proto = Protocol.msgpack
-        elif content_type.endswith('pickle'):
+        elif allow_pickle and content_type.endswith('pickle'):
             proto = Protocol.pickle
         else:
-            logger.warning('content-type "%s" not recognized, trying json', content_type)
+            raise TypeError(f'Unknown content-type: {content_type}')
 
     proto = proto or Protocol.json
 
@@ -48,15 +45,14 @@ def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
         return json.loads(b)
     elif proto == Protocol.msgpack:
         if msgpack is None:
-            raise ImportError('Trying to decode with msgpack without msgpack installed, '
-                              'run `pip install python-msgpack`')
-        return msgpack.packb(b, encoding=encoding)
+            raise ImportError("msgpack not installed, can't parse data")
+        return msgpack.unpackb(b, encoding=encoding)
     elif proto == Protocol.pickle:
         if not allow_pickle:
             raise RuntimeError('Trying to decode with pickle with allow_pickle=False')
         return pickle.loads(b)
     else:
-        raise ValueError('Unknown protocol: %s', proto)
+        raise TypeError(f'Unknown protocol: {proto}')
 
 
 def load_file(path: Union[str, Path], *,
@@ -67,11 +63,11 @@ def load_file(path: Union[str, Path], *,
     path = Path(path)
     b = path.read_bytes()
     if content_type is None:
-        if path.suffix in ('js', 'json'):
+        if path.suffix in ('.js', '.json'):
             proto = Protocol.json
-        elif path.suffix in ('mp', 'msgpack'):
+        elif path.suffix in ('.mp', '.msgpack'):
             proto = Protocol.msgpack
-        elif path.suffix == 'pkl':
+        elif path.suffix == '.pkl':
             proto = Protocol.pickle
 
-    return load_str_bytes(b, proto=proto, encoding=encoding, allow_pickle=allow_pickle)
+    return load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)

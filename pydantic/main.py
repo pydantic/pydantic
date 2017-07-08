@@ -144,7 +144,11 @@ class BaseModel(metaclass=MetaModel):
                   content_type: str=None,
                   encoding: str='utf8',
                   allow_pickle: bool=False):
-        obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
+        try:
+            obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding,
+                                 allow_pickle=allow_pickle)
+        except (ValueError, TypeError, UnicodeDecodeError) as e:
+            raise ValidationError([Error(e, None, None)])
         return cls.parse_obj(obj)
 
     @classmethod
