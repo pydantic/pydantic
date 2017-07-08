@@ -4,6 +4,7 @@ from typing import Any, Dict, Set
 
 from .exceptions import Error, Extra, Missing, ValidationError
 from .fields import Field
+from .utils import truncate
 from .validators import dict_validator
 
 
@@ -130,8 +131,8 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def construct(cls, **values):
         """
-        Creates a new model and set __values__ without any validation, thus values should be trusted
-        data. Chances are you don't want to use this method directly.
+        Creates a new model and set __values__ without any validation, thus values should already be trusted.
+        Chances are you don't want to use this method directly.
         """
         m = cls.__new__(cls)
         m.__setstate__(values)
@@ -222,7 +223,9 @@ class BaseModel(metaclass=MetaModel):
             return v
 
     def __iter__(self):
-        # so `dict(model)` works
+        """
+        so `dict(model)` works
+        """
         for k, v in self.__values__.items():
             yield k, self._get_value(v)
 
@@ -235,23 +238,12 @@ class BaseModel(metaclass=MetaModel):
     def __repr__(self):
         return f'<{self}>'
 
-    @classmethod
-    def _truncate(cls, v):
-        max_len = 80
-        if isinstance(v, str) and len(v) > (max_len - 2):
-            # 45 so quote + string + ... + quote has length 50
-            return repr(v[:(max_len - 5)] + '...')
-        v = repr(v)
-        if len(v) > max_len:
-            v = v[:max_len - 3] + '...'
-        return v
-
     def to_string(self, pretty=False):
         divider = '\n  ' if pretty else ' '
         return '{}{}{}'.format(
             self.__class__.__name__,
             divider,
-            divider.join('{}={}'.format(k, self._truncate(v)) for k, v in self.__values__.items()),
+            divider.join('{}={}'.format(k, truncate(v)) for k, v in self.__values__.items()),
         )
 
     def __str__(self):

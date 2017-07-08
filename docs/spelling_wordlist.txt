@@ -15,6 +15,7 @@ metadata
 schemas
 timestamp
 travis
+unicode
 unix
 untrusted
 ve

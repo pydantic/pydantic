@@ -78,7 +78,7 @@ def make_dsn(*,
 def import_string(dotted_path):
     """
     Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
-    last name in the path. Raise ImportError if the import failed.
+    last name in the path. Raise ImportError if the import fails.
     """
     try:
         module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
@@ -90,3 +90,16 @@ def import_string(dotted_path):
         return getattr(module, class_name)
     except AttributeError as e:
         raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
+
+
+def truncate(v, *, max_len=80):
+    """
+    Truncate a value and add a unicode ellipsis (three dots) to the end if it was too long
+    """
+    if isinstance(v, str) and len(v) > (max_len - 2):
+        # -3 so quote + string + … + quote has correct length
+        return repr(v[:(max_len - 3)] + '…')
+    v = repr(v)
+    if len(v) > max_len:
+        v = v[:max_len - 1] + '…'
+    return v
