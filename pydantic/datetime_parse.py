@@ -129,6 +129,9 @@ def parse_datetime(value: StrIntFloat) -> datetime:
     Raise ValueError if the input is well formatted but not a valid datetime.
     Raise ValueError if the input isn't well formatted.
     """
+    if isinstance(value, datetime):
+        return value
+
     number = get_numeric(value)
     if number:
         return from_unix_seconds(number)

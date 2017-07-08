@@ -140,9 +140,9 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_raw(cls, b: StrBytes, *,
-                  proto: Protocol=None,
                   content_type: str=None,
                   encoding: str='utf8',
+                  proto: Protocol=None,
                   allow_pickle: bool=False):
         try:
             obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding,
@@ -153,9 +153,9 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_file(cls, path: Union[str, Path], *,
-                   proto: Protocol=None,
                    content_type: str=None,
                    encoding: str='utf8',
+                   proto: Protocol=None,
                    allow_pickle: bool=False):
         obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
         return cls.parse_obj(obj)

@@ -23,9 +23,9 @@ class Protocol(str, Enum):
 
 
 def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
-                   proto: Protocol=None,
                    content_type: str=None,
                    encoding: str='utf8',
+                   proto: Protocol=None,
                    allow_pickle: bool=False) -> Any:
     if proto is None and content_type:
         if content_type.endswith(('json', 'javascript')):
@@ -56,9 +56,9 @@ def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
 
 
 def load_file(path: Union[str, Path], *,
-              proto: Protocol=None,
               content_type: str=None,
               encoding: str='utf8',
+              proto: Protocol=None,
               allow_pickle: bool=False) -> Any:
     path = Path(path)
     b = path.read_bytes()
