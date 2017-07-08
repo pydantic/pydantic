@@ -13,6 +13,13 @@ m = User.parse_obj({'id': 123, 'name': 'James'})
 print(m)
 # > User id=123 name='James' signup_ts=None
 
+try:
+    User.parse_obj(['not', 'a', 'dict'])
+except ValidationError as e:
+    print(e)
+# > 1 error validating input
+# > User expected dict not list (error_type=TypeError)
+
 m = User.parse_raw('{"id": 123, "name": "James"}')  # assumes json as no content type passed
 print(m)
 # > User id=123 name='James' signup_ts=None
@@ -34,10 +41,3 @@ Path('/tmp/data.mp').write_bytes(msgpack_data)
 m = User.parse_file('/tmp/data.mp')
 print(m)
 # > User id=123 name='James' signup_ts=datetime.datetime(2017, 7, 14, 2, 40, tzinfo=datetime.timezone.utc)
-
-try:
-    User.parse_obj(['not', 'a', 'dict'])
-except ValidationError as e:
-    print(e)
-# 1 error validating input
-# User expected dict not list (error_type=TypeError)

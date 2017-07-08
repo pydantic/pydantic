@@ -12,6 +12,7 @@ jsonmodels
 pydantic
 pypi
 metadata
+msgpack
 schemas
 timestamp
 travis

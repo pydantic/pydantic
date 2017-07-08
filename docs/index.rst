@@ -142,9 +142,9 @@ Helper Functions
 
 :parse_obj: this is almost identical to the ``__init__`` method of the model except if the object passed is not
   a dict ``ValidationError`` will be raised (rather than python raising a ``TypeError``).
-:parse_raw: takes a ``str`` or ``bytes`` parses it as ``json``, ``msgpack`` or ``pickle`` data and then passes
+:parse_raw: takes a *str* or *bytes* parses it as *json*, *msgpack* or *pickle* data and then passes
   the result to ``parse_obj``. The data type is inferred from the ``content_type`` argument,
-  otherwise ``json`` is assumed.
+  otherwise *json* is assumed.
 :parse_file: reads a file and passes the contents to ``parse_raw``, if ``content_type`` is omitted it is inferred
   from the file's extension.
 
