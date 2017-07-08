@@ -27,7 +27,7 @@ a_float:
 is_required:
   field required (error_type=Missing)
 recursive_model:
-  1 error validating input (error_type=ValidationError track=Location)
+  error validating input (error_type=ValidationError track=Location)
     lng:
       could not convert string to float: 'New York' (error_type=ValueError track=float
 """

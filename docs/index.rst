@@ -75,7 +75,17 @@ Just::
 
     pip install pydantic
 
-pydantic has no dependencies except python 3.6+. If you've got python 3.6 and ``pip`` installed - you're good to go.
+pydantic has no required dependencies except python 3.6+. If you've got python 3.6 and ``pip`` installed -
+you're good to go.
+
+If you want *pydantic* to parse msgpack you can add `msgpack-python <https://pypi.python.org/pypi/msgpack-python>`_
+as an optional dependency, same goes for reading json faster with `ujson <https://pypi.python.org/pypi/ujson>`_::
+
+    pip install pydantic[msgpack]
+    # or
+    pip install pydantic[ujson]
+    # or just
+    pip install pydantic[msgpack,ujson]
 
 Usage
 -----
@@ -125,6 +135,28 @@ pydantic comes with a number of utilities for parsing or validating common objec
 
 (This script is complete, it should run "as is")
 
+Helper Functions
+................
+
+*Pydantic* provides three ``classmethod`` helper functions on models for parsing data:
+
+:parse_obj: this is almost identical to the ``__init__`` method of the model except if the object passed is not
+  a dict ``ValidationError`` will be raised (rather than python raising a ``TypeError``).
+:parse_raw: takes a *str* or *bytes* parses it as *json*, *msgpack* or *pickle* data and then passes
+  the result to ``parse_obj``. The data type is inferred from the ``content_type`` argument,
+  otherwise *json* is assumed.
+:parse_file: reads a file and passes the contents to ``parse_raw``, if ``content_type`` is omitted it is inferred
+  from the file's extension.
+
+.. literalinclude:: examples/parse.py
+
+(This script is complete, it should run "as is" provided ``msgpack-python`` is installed)
+
+.. note::
+
+   Since ``pickle`` allows complex objects to be encoded, to use it you need to explicitly pass ``allow_pickle`` to
+   the parsing function.
+
 Model Config
 ............
 
@@ -144,6 +176,8 @@ Options:
 
 .. literalinclude:: examples/config.py
 
+(This script is complete, it should run "as is")
+
 .. _settings:
 
 Settings
@@ -155,6 +189,8 @@ environment variables or keyword arguments (e.g. in unit tests).
 This usage example comes last as it uses numerous concepts described above.
 
 .. literalinclude:: examples/settings.py
+
+(This script is complete, it should run "as is")
 
 Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` or ``auth_key`` by
 ``export my_api_key=6380``.
@@ -168,6 +204,8 @@ Pydantic works with `mypy <http://mypy-lang.org/>`_ provided you use the "annota
 required variables:
 
 .. literalinclude:: examples/mypy.py
+
+(This script is complete, it should run "as is")
 
 This script is complete, it should run "as is". You can also run it through mypy with::
 

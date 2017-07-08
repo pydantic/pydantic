@@ -1,3 +1,6 @@
 -r benchmarks/requirements.txt
 -r docs/requirements.txt
 -r tests/requirements.txt
+
+msgpack-python==0.4.8
+ujson==1.35

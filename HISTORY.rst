@@ -9,6 +9,7 @@ v0.4.0 (2017-XX-XX)
 * fix aliases in config during inheritance #55
 * simplify error display
 * use unicode ellipsis in ``truncate``
+* add ``parse_obj``, ``parse_raw`` and ``parse_file`` helper functions #58
 
 v0.3.0 (2017-06-21)
 ...................

@@ -2,6 +2,14 @@ import json
 from collections import OrderedDict, namedtuple
 from itertools import chain
 
+__all__ = (
+    'Error',
+    'ValidationError',
+    'ConfigError',
+    'Missing',
+    'Extra',
+)
+
 
 def type_display(type_: type):
     if type_:
@@ -32,8 +40,10 @@ def pretty_errors(e):
         return d
     elif isinstance(e, dict):
         return OrderedDict([(k, pretty_errors(v)) for k, v in e.items()])
-    else:
+    elif isinstance(e, (list, tuple)):
         return [pretty_errors(e_) for e_ in e]
+    else:
+        raise TypeError(f'Unknown error object: {e}')
 
 
 E_KEYS = 'error_type', 'track', 'index'

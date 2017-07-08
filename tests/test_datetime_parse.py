@@ -73,6 +73,7 @@ def test_time_parsing(value, result):
     ('2012-04-23T10:20:30.400+02:30', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(150))),
     ('2012-04-23T10:20:30.400+02', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(120))),
     ('2012-04-23T10:20:30.400-02', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(-120))),
+    (datetime(2017, 5, 5), datetime(2017, 5, 5)),
     # Invalid inputs
     ('x20120423091500', ValueError),
     ('2012-04-56T09:15:90', ValueError),

@@ -3,7 +3,8 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError, pretty_errors
+from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError
+from pydantic.exceptions import pretty_errors
 
 
 def test_success():
