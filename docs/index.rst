@@ -84,7 +84,7 @@ as an optional dependency, same goes for reading json faster with `ujson <https:
     pip install pydantic[msgpack]
     # or
     pip install pydantic[ujson]
-    # or
+    # or just
     pip install pydantic[msgpack,ujson]
 
 Usage

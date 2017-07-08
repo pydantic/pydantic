@@ -13,7 +13,7 @@ try:
 except ValidationError as e:
     print(e)
 """
-1 error validating input
+error validating input
 v:
   length not in range 0 to 10 (error_type=ValueError track=str)
 """

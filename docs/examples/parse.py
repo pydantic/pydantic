@@ -17,7 +17,7 @@ try:
     User.parse_obj(['not', 'a', 'dict'])
 except ValidationError as e:
     print(e)
-# > 1 error validating input
+# > error validating input
 # > User expected dict not list (error_type=TypeError)
 
 m = User.parse_raw('{"id": 123, "name": "James"}')  # assumes json as no content type passed
