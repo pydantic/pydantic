@@ -3,7 +3,7 @@
 History
 -------
 
-v0.4.0 (2017-XX-XX)
+v0.4.0 (2017-07-08)
 ...................
 * show length in string validation error
 * fix aliases in config during inheritance #55
