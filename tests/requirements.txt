@@ -1,5 +1,5 @@
 coverage==4.4.1
-flake8==3.4.0
+flake8==3.4.1
 isort==4.2.15
 mypy==0.521
 pycodestyle==2.3.1
