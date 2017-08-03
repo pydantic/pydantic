@@ -1,4 +1,4 @@
-docutils==0.13.1
+docutils==0.14
 Pygments==2.2.0
 Sphinx==1.6.3
 sphinxcontrib-spelling==2.3.0
