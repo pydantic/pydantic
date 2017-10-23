@@ -3,6 +3,10 @@
 History
 -------
 
+v0.5.0 (2017-10-XX)
+...................
+* add ``UUID`` validation
+
 v0.4.0 (2017-07-08)
 ...................
 * show length in string validation error
