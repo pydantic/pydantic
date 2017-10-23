@@ -35,13 +35,11 @@ def test_str_bytes():
     {
       "error_msg": "None is not an allow value",
       "error_type": "TypeError",
-      "index": null,
       "track": "str"
     },
     {
       "error_msg": "None is not an allow value",
       "error_type": "TypeError",
-      "index": null,
       "track": "bytes"
     }
   ]
@@ -97,13 +95,11 @@ def test_union_int_str():
     {
       "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
       "error_type": "TypeError",
-      "index": null,
       "track": "int"
     },
     {
       "error_msg": "None is not an allow value",
       "error_type": "TypeError",
-      "index": null,
       "track": "str"
     }
   ]
@@ -157,7 +153,6 @@ def test_typed_list():
   "v": {
     "error_msg": "'int' object is not iterable",
     "error_type": "TypeError",
-    "index": null,
     "track": null
   }
 }""" == exc_info.value.json(2)
@@ -299,7 +294,6 @@ v:
         "name": {
           "error_msg": "field required",
           "error_type": "Missing",
-          "index": null,
           "track": null
         }
       },

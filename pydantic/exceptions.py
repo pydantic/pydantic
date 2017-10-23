@@ -28,8 +28,9 @@ def pretty_errors(e):
         d = {
             'error_type': e.exc.__class__.__name__,
             'track': type_display(e.track),
-            'index': e.index,
         }
+        if e.index is not None:
+            d['index'] = e.index
         if isinstance(e.exc, ValidationError):
             d.update(
                 error_msg=e.exc.message,
