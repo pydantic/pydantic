@@ -325,7 +325,7 @@ def test_dict():
     assert ListDictTupleModel(a=[(1, 2), (3, 4)]).a == {1: 2, 3: 4}
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(a=[1, 2, 3])
-    assert 'cannot convert dictionary update sequence element #0 to a sequence' in str(exc_info.value)
+    assert 'value is not a valid dict, got list' in str(exc_info.value)
 
 
 def test_list():

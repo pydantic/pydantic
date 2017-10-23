@@ -194,7 +194,7 @@ def test_typed_dict(value, result):
         """\
 error validating input
 v:
-  'int' object is not iterable (error_type=TypeError)"""
+  value is not a valid dict, got int (error_type=TypeError)"""
     ),
     (
         {'a': 'b'},
@@ -208,7 +208,7 @@ v:
         """\
 error validating input
 v:
-  cannot convert dictionary update sequence element #0 to a sequence (error_type=TypeError)""",
+  value is not a valid dict, got list (error_type=TypeError)""",
     )
 ])
 def test_typed_dict_error(value, error):
@@ -440,7 +440,7 @@ def test_invalid_type():
         class Model(BaseModel):
             x: 43 = 123
 
-    assert "error checking inheritance of 43 (type: <class 'int'>)" in str(exc_info)
+    assert "error checking inheritance of 43 (type: int)" in str(exc_info)
 
 
 @pytest.mark.parametrize('value,expected', [
@@ -528,3 +528,14 @@ def test_string_none():
 def test_pretty_error_no_recursion():
     with pytest.raises(TypeError):
         pretty_errors('foobar')
+
+
+def test_dict_list_error():
+    with pytest.raises(ValidationError) as exc_info:
+        assert DictModel(v=[1, 2, 3])
+    assert {
+        'v': {
+            'error_type': 'TypeError',
+            'error_msg': 'value is not a valid dict, got list',
+        }
+    } == dict(exc_info.value.errors_dict)

@@ -7,9 +7,13 @@ from typing import Any
 from uuid import UUID
 
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .exceptions import ConfigError
+from .exceptions import ConfigError, type_display
 
 NoneType = type(None)
+
+
+def display_as_type(v):
+    return type_display(type(v))
 
 
 def not_none_validator(v):
@@ -27,7 +31,7 @@ def str_validator(v) -> str:
         # is there anything else we want to add here? If you think so, create an issue.
         return str(v)
     else:
-        raise TypeError(f'str or byte type expected not {type(v)}')
+        raise TypeError(f'str or byte type expected not {display_as_type(v)}')
 
 
 def bytes_validator(v) -> bytes:
@@ -75,7 +79,10 @@ def ordered_dict_validator(v) -> OrderedDict:
 def dict_validator(v) -> dict:
     if isinstance(v, dict):
         return v
-    return dict(v)
+    try:
+        return dict(v)
+    except TypeError as e:
+        raise TypeError(f'value is not a valid dict, got {display_as_type(v)}') from e
 
 
 def list_validator(v) -> list:
@@ -146,5 +153,5 @@ def find_validators(type_):
             if issubclass(type_, val_type):
                 return validators
         except TypeError as e:
-            raise TypeError(f'error checking inheritance of {type_!r} (type: {type(type_)})') from e
+            raise TypeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
     raise ConfigError(f'no validator found for {type_}')
