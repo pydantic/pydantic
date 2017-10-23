@@ -3,11 +3,12 @@
 History
 -------
 
-v0.5.0 (2017-10-XX)
+v0.5.0 (2017-10-23)
 ...................
 * add ``UUID`` validation #89
 * remove ``index`` and ``track`` from error object (json) if they're null #90
 * improve the error text when a list is provided rather than a dict #90
+* add benchmarks table to docs #91
 
 v0.4.0 (2017-07-08)
 ...................
