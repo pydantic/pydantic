@@ -1,6 +1,8 @@
 from pathlib import Path
+from uuid import UUID
 
-from pydantic import DSN, BaseModel, EmailStr, NameEmail, PyObject, conint, constr, PositiveInt, NegativeInt
+from pydantic import (DSN, BaseModel, EmailStr, NameEmail, PyObject, conint,
+                      constr, PositiveInt, NegativeInt)
 
 
 class Model(BaseModel):
@@ -25,6 +27,7 @@ class Model(BaseModel):
     db_driver = 'postgres'
     db_query: dict = None
     dsn: DSN = None
+    uuid: UUID = None
 
 m = Model(
     cos_function='math.cos',
@@ -36,6 +39,7 @@ m = Model(
     neg_int=-1,
     email_address='Samuel Colvin <s@muelcolvin.com >',
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
+    uuid='ebcdab58-6eb8-46fb-a190-d07a33e9eac8'
 )
 print(m.values())
 """
@@ -49,6 +53,7 @@ print(m.values())
     'email_address': 's@muelcolvin.com',
     'email_and_name': <NameEmail("Samuel Colvin <s@muelcolvin.com>")>,
     ...
-    'dsn': 'postgres://postgres@localhost:5432/foobar'
+    'dsn': 'postgres://postgres@localhost:5432/foobar',
+    ' uuid': UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'),
 }
 """
