@@ -2,6 +2,7 @@ import os
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from enum import Enum, IntEnum
+from uuid import UUID
 
 import pytest
 
@@ -87,6 +88,7 @@ class CheckModel(BaseModel):
     bytes_check = b's'
     int_check = 1
     float_check = 1.0
+    uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
 
     class Config:
         max_anystr_length = 10
@@ -141,6 +143,12 @@ class CheckModel(BaseModel):
     ('float_check', 123, ValidationError),
     ('float_check', '123', ValidationError),
     ('float_check', b'123', ValidationError),
+
+    ('uuid_check', 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
+    ('uuid_check', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
+    ('uuid_check', b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
+    ('uuid_check', 'ebcdab58-6eb8-46fb-a190-', ValidationError),
+    ('uuid_check', 123, ValidationError),
 ])
 def test_default_validators(field, value, result):
     kwargs = {field: value}
@@ -396,3 +404,18 @@ def test_strict_str():
 
     with pytest.raises(ValidationError):
         Model(v=b'foobar')
+
+
+def test_uuid_error():
+    class Model(BaseModel):
+        v: UUID
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='ebcdab58-6eb8-46fb-a190-d07a3')
+    assert """\
+error validating input
+v:
+  badly formed hexadecimal UUID string (error_type=ValueError track=UUID)""" == str(exc_info.value)
+
+    with pytest.raises(ValidationError):
+        Model(v=None)

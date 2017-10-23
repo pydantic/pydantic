@@ -4,6 +4,7 @@ from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .exceptions import ConfigError
@@ -26,7 +27,7 @@ def str_validator(v) -> str:
         # is there anything else we want to add here? If you think so, create an issue.
         return str(v)
     else:
-        raise ValueError(f'str or byte type expected not {type(v)}')
+        raise TypeError(f'str or byte type expected not {type(v)}')
 
 
 def bytes_validator(v) -> bytes:
@@ -99,6 +100,17 @@ def enum_validator(v, field, **kwargs) -> Enum:
     return field.type_(v)
 
 
+def uuid_validator(v) -> UUID:
+    if isinstance(v, UUID):
+        return v
+    elif isinstance(v, str):
+        return UUID(v)
+    elif isinstance(v, (bytes, bytearray)):
+        return UUID(v.decode())
+    else:
+        raise ValueError(f'str, byte or native UUID type expected not {type(v)}')
+
+
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (Enum, [enum_validator]),
@@ -122,6 +134,7 @@ _VALIDATORS = [
     (list, [list_validator]),
     (tuple, [tuple_validator]),
     (set, [set_validator]),
+    (UUID, [not_none_validator, uuid_validator]),
 ]
 
 
