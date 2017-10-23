@@ -148,8 +148,8 @@ def main():
             times.append(time)
         print(f'{p:>40} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
         model_count = repeats * 3 * len(cases)
-        results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter, '
-                       f'avg={mean(times) / model_count * 1e6:0.3f}μs/iter, '
+        results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter '
+                       f'avg={mean(times) / model_count * 1e6:0.3f}μs/iter '
                        f'stdev={stdev(times) / model_count * 1e6:0.3f}μs/iter')
         print()
 
