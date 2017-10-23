@@ -5,7 +5,9 @@ History
 
 v0.5.0 (2017-10-XX)
 ...................
-* add ``UUID`` validation
+* add ``UUID`` validation #89
+* remove ``index`` and ``track`` from error object (json) if they're null #90
+* improve the error text when a list is provided rather than a dict #90
 
 v0.4.0 (2017-07-08)
 ...................

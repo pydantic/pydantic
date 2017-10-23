@@ -54,6 +54,6 @@ print(m.values())
     'email_and_name': <NameEmail("Samuel Colvin <s@muelcolvin.com>")>,
     ...
     'dsn': 'postgres://postgres@localhost:5432/foobar',
-    ' uuid': UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'),
+    'uuid': UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'),
 }
 """
