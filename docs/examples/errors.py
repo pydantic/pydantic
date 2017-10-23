@@ -41,20 +41,15 @@ except ValidationError as e:
 {
   "is_required": {
     "error_msg": "field required",
-    "error_type": "Missing",
-    "index": null,
-    "track": null
+    "error_type": "Missing"
   },
   "list_of_ints": {
     "error_msg": "'int' object is not iterable",
-    "error_type": "TypeError",
-    "index": null,
-    "track": null
+    "error_type": "TypeError"
   },
   "recursive_model": {
     "error_msg": "cannot convert dictionary update sequence element #0 to a sequence",
     "error_type": "TypeError",
-    "index": null,
     "track": "Location"
   }
 }

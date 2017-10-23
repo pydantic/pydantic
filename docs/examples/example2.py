@@ -16,14 +16,11 @@ except ValidationError as e:
   ],
   "id": {
     "error_msg": "field required",
-    "error_type": "Missing",
-    "index": null,
-    "track": null
+    "error_type": "Missing"
   },
   "signup_ts": {
     "error_msg": "Invalid datetime format",
     "error_type": "ValueError",
-    "index": null,
     "track": "datetime"
   }
 }
