@@ -1,9 +1,11 @@
+import csv
 import json
 import os
 import random
 import string
 import sys
 from datetime import datetime
+from io import StringIO
 
 from devtools import debug
 from functools import partial
@@ -126,10 +128,13 @@ def main():
     if 'pydantic-only' in sys.argv:
         tests = [TestPydantic]
     else:
-        tests = [TestPydantic, TestTrafaret, TestDRF, TestMarshmallow, TestToastedMarshmallow]
+        # in order of performance for csv
+        tests = [TestPydantic, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
 
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     results = []
+    csv_file = StringIO()
+    csv_writer = csv.writer(csv_file)
     for test_class in tests:
         times = []
         p = test_class.package
@@ -148,13 +153,20 @@ def main():
             times.append(time)
         print(f'{p:>40} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
         model_count = repeats * 3 * len(cases)
+        avg = mean(times) / model_count * 1e6
+        sd = stdev(times) / model_count * 1e6
         results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter '
-                       f'avg={mean(times) / model_count * 1e6:0.3f}μs/iter '
-                       f'stdev={stdev(times) / model_count * 1e6:0.3f}μs/iter')
+                       f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter')
+        csv_writer.writerow([p, f'{avg:0.1f}μs', f'{sd:0.3f}μs'])
         print()
 
     for r in results:
         print(r)
+
+    if 'SAVE' in os.environ:
+        p = Path(THIS_DIR / '../docs/benchmarks.csv')
+        print(f'saving results to {p}')
+        p.write_text(csv_file.getvalue())
 
 
 def diff():
