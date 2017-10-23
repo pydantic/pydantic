@@ -3,7 +3,11 @@ from pathlib import Path
 from setuptools import setup
 
 THIS_DIR = Path(__file__).resolve().parent
-long_description = THIS_DIR.joinpath('README.rst').read_text()
+long_description = (
+    THIS_DIR.joinpath('README.rst').read_text() +
+    '\n\n' +
+    THIS_DIR.joinpath('HISTORY.rst').read_text()
+)
 
 # avoid loading the package before requirements are installed:
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
