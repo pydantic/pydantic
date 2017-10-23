@@ -144,13 +144,13 @@ def main():
                     pass_count += passed
             time = (datetime.now() - start).total_seconds()
             success = pass_count / count * 100
-            print(f'{p:10} time={time:0.3f}s, success={success:0.2f}%')
+            print(f'{p:>40} time={time:0.3f}s, success={success:0.2f}%')
             times.append(time)
-        print(f'{p:10} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
+        print(f'{p:>40} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
         model_count = repeats * 3 * len(cases)
-        results.append(f'{p:20} per iteration: best={min(times) / model_count * 1e6:0.3f}μs, '
-                       f'avg={mean(times) / model_count * 1e6:0.3f}μs, '
-                       f'stdev={stdev(times) / model_count * 1e6:0.3f}μs')
+        results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter, '
+                       f'avg={mean(times) / model_count * 1e6:0.3f}μs/iter, '
+                       f'stdev={stdev(times) / model_count * 1e6:0.3f}μs/iter')
         print()
 
     for r in results:
