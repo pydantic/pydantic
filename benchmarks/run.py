@@ -1,9 +1,13 @@
+import csv
 import json
 import os
 import random
 import string
 import sys
 from datetime import datetime
+from io import StringIO
+
+from devtools import debug
 from functools import partial
 from pathlib import Path
 from statistics import StatisticsError, mean
@@ -12,6 +16,7 @@ from statistics import stdev as stdev_
 from test_pydantic import TestPydantic
 from test_trafaret import TestTrafaret
 from test_drf import TestDRF
+from test_marshmallow import TestMarshmallow
 from test_toasted_marshmallow import TestToastedMarshmallow
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
@@ -123,10 +128,13 @@ def main():
     if 'pydantic-only' in sys.argv:
         tests = [TestPydantic]
     else:
-        tests = [TestPydantic, TestTrafaret, TestDRF, TestToastedMarshmallow]
+        # in order of performance for csv
+        tests = [TestPydantic, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
 
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     results = []
+    csv_file = StringIO()
+    csv_writer = csv.writer(csv_file)
     for test_class in tests:
         times = []
         p = test_class.package
@@ -141,17 +149,24 @@ def main():
                     pass_count += passed
             time = (datetime.now() - start).total_seconds()
             success = pass_count / count * 100
-            print(f'{p:10} time={time:0.3f}s, success={success:0.2f}%')
+            print(f'{p:>40} time={time:0.3f}s, success={success:0.2f}%')
             times.append(time)
-        print(f'{p:10} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
+        print(f'{p:>40} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
         model_count = repeats * 3 * len(cases)
-        results.append(f'{p:10} per iteration: best={min(times) / model_count * 1e6:0.3f}μs, '
-                       f'avg={mean(times) / model_count * 1e6:0.3f}μs, '
-                       f'stdev={stdev(times) / model_count * 1e6:0.3f}μs')
+        avg = mean(times) / model_count * 1e6
+        sd = stdev(times) / model_count * 1e6
+        results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter '
+                       f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter')
+        csv_writer.writerow([p, f'{avg:0.1f}μs', f'{sd:0.3f}μs'])
         print()
 
     for r in results:
         print(r)
+
+    if 'SAVE' in os.environ:
+        p = Path(THIS_DIR / '../docs/benchmarks.csv')
+        print(f'saving results to {p}')
+        p.write_text(csv_file.getvalue())
 
 
 def diff():
@@ -161,7 +176,12 @@ def diff():
 
     allow_extra = True
     pydantic = TestPydantic(allow_extra)
-    others = [TestTrafaret(allow_extra), TestDRF(allow_extra), TestToastedMarshmallow(allow_extra)]
+    others = [
+        TestTrafaret(allow_extra),
+        TestDRF(allow_extra),
+        TestMarshmallow(allow_extra),
+        TestToastedMarshmallow(allow_extra)
+    ]
 
     for case in cases:
         pydantic_passed, pydantic_result = pydantic.validate(case)
@@ -169,9 +189,7 @@ def diff():
             other_passed, other_result = other.validate(case)
             if other_passed != pydantic_passed:
                 print(f'⨯ pydantic {pydantic_passed} != {other.package} {other_passed}')
-                print(json.dumps(case, indent=2))
-                print(f'pydantic result: {pydantic_result}')
-                print(f'{other.package} result: {other_result}')
+                debug(case, pydantic_result, other_result)
                 return
     print('✓ data passes match for all packages')
 

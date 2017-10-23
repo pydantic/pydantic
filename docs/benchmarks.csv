@@ -1,0 +1,5 @@
+pydantic,25.5μs,0.313μs
+toasted-marshmallow,38.2μs,0.153μs
+marshmallow,47.3μs,0.256μs
+trafaret,50.7μs,0.201μs
+django-restful-framework,207.5μs,3.252μs

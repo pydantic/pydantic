@@ -8,7 +8,7 @@ from rest_framework import serializers
 
 
 class TestDRF:
-    package = 'drf'
+    package = 'django-restful-framework'
 
     def __init__(self, allow_extra):
         class Model(serializers.Serializer):

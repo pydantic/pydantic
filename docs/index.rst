@@ -56,9 +56,7 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
     by environment variables and more complex objects like DSNs and python objects often required.
 
 **fast**
-    In `benchmarks <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_ pydantic is around twice as
-    fast as `trafaret <https://github.com/tailhook/trafaret>`_. Other comparisons to cerberus, marshmallow,
-    DRF, jsonmodels etc. to come.
+    In :ref:`benchmarks <benchmarks_tag>` pydantic is faster than all other tested libraries.
 
 **validate complex structures**
     use of recursive pydantic models and ``typing``'s ``List`` and ``Dict`` etc. allow complex data schemas to be
@@ -275,6 +273,21 @@ Pickle
 Using the same plumbing as ``copy()`` pydantic models support efficient pickling and unpicking.
 
 .. literalinclude:: examples/ex_pickle.py
+
+.. _benchmarks_tag:
+
+Benchmarks
+----------
+
+Below are the results of crude benchmarks comparing *pydantic* to other validation libraries.
+
+.. csv-table::
+   :header: "Package", "Mean deserialization time", "std. dev."
+   :align: center
+   :file: benchmarks.csv
+
+(See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
+for more details on the test case. Feel free to submit more benchmarks or improve an existing one.)
 
 .. include:: ../HISTORY.rst
 

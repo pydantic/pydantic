@@ -26,13 +26,3 @@ linkcheck:
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in $(BUILDDIR)/linkcheck/output.txt."
-
-.PHONY: spelling
-spelling:
-	mkdir -p $(STATICDIR)
-	$(SPHINXBUILD) -b spelling $(ALLSPHINXOPTS) $(BUILDDIR)/spelling
-
-.PHONY: lint
-lint: spelling
-	@echo
-	@echo "linting complete"
