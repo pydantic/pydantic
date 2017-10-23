@@ -4,6 +4,8 @@ import random
 import string
 import sys
 from datetime import datetime
+
+from devtools import debug
 from functools import partial
 from pathlib import Path
 from statistics import StatisticsError, mean
@@ -12,6 +14,7 @@ from statistics import stdev as stdev_
 from test_pydantic import TestPydantic
 from test_trafaret import TestTrafaret
 from test_drf import TestDRF
+from test_marshmallow import TestMarshmallow
 from test_toasted_marshmallow import TestToastedMarshmallow
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
@@ -123,7 +126,7 @@ def main():
     if 'pydantic-only' in sys.argv:
         tests = [TestPydantic]
     else:
-        tests = [TestPydantic, TestTrafaret, TestDRF, TestToastedMarshmallow]
+        tests = [TestPydantic, TestTrafaret, TestDRF, TestMarshmallow, TestToastedMarshmallow]
 
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     results = []
@@ -145,7 +148,7 @@ def main():
             times.append(time)
         print(f'{p:10} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
         model_count = repeats * 3 * len(cases)
-        results.append(f'{p:10} per iteration: best={min(times) / model_count * 1e6:0.3f}μs, '
+        results.append(f'{p:20} per iteration: best={min(times) / model_count * 1e6:0.3f}μs, '
                        f'avg={mean(times) / model_count * 1e6:0.3f}μs, '
                        f'stdev={stdev(times) / model_count * 1e6:0.3f}μs')
         print()
@@ -161,7 +164,12 @@ def diff():
 
     allow_extra = True
     pydantic = TestPydantic(allow_extra)
-    others = [TestTrafaret(allow_extra), TestDRF(allow_extra), TestToastedMarshmallow(allow_extra)]
+    others = [
+        TestTrafaret(allow_extra),
+        TestDRF(allow_extra),
+        TestMarshmallow(allow_extra),
+        TestToastedMarshmallow(allow_extra)
+    ]
 
     for case in cases:
         pydantic_passed, pydantic_result = pydantic.validate(case)
@@ -169,9 +177,7 @@ def diff():
             other_passed, other_result = other.validate(case)
             if other_passed != pydantic_passed:
                 print(f'⨯ pydantic {pydantic_passed} != {other.package} {other_passed}')
-                print(json.dumps(case, indent=2))
-                print(f'pydantic result: {pydantic_result}')
-                print(f'{other.package} result: {other_result}')
+                debug(case, pydantic_result, other_result)
                 return
     print('✓ data passes match for all packages')
 
