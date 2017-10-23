@@ -1,5 +1,5 @@
 docutils==0.14
 Pygments==2.2.0
 Sphinx==1.6.5
-sphinxcontrib-spelling==4.0.1
+#sphinxcontrib-spelling==4.0.1
 sphinxcontrib-websupport==1.0.1
