@@ -152,8 +152,7 @@ def test_typed_list():
 {
   "v": {
     "error_msg": "'int' object is not iterable",
-    "error_type": "TypeError",
-    "track": null
+    "error_type": "TypeError"
   }
 }""" == exc_info.value.json(2)
 
@@ -293,8 +292,7 @@ v:
       "error_details": {
         "name": {
           "error_msg": "field required",
-          "error_type": "Missing",
-          "track": null
+          "error_type": "Missing"
         }
       },
       "error_msg": "error validating input",

@@ -12,12 +12,11 @@ __all__ = (
 
 
 def type_display(type_: type):
-    if type_:
-        try:
-            return type_.__name__
-        except AttributeError:
-            # happens with unions
-            return str(type_)
+    try:
+        return type_.__name__
+    except AttributeError:
+        # happens with unions
+        return str(type_)
 
 
 Error = namedtuple('Error', ['exc', 'track', 'index'])
@@ -25,10 +24,9 @@ Error = namedtuple('Error', ['exc', 'track', 'index'])
 
 def pretty_errors(e):
     if isinstance(e, Error):
-        d = {
-            'error_type': e.exc.__class__.__name__,
-            'track': type_display(e.track),
-        }
+        d = {'error_type': e.exc.__class__.__name__}
+        if e.track is not None:
+            d['track'] = type_display(e.track)
         if e.index is not None:
             d['index'] = e.index
         if isinstance(e.exc, ValidationError):
