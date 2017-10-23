@@ -12,6 +12,7 @@ from statistics import stdev as stdev_
 from test_pydantic import TestPydantic
 from test_trafaret import TestTrafaret
 from test_drf import TestDRF
+from test_toasted_marshmallow import TestToastedMarshmallow
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
@@ -122,7 +123,7 @@ def main():
     if 'pydantic-only' in sys.argv:
         tests = [TestPydantic]
     else:
-        tests = [TestPydantic, TestTrafaret, TestDRF]
+        tests = [TestPydantic, TestTrafaret, TestDRF, TestToastedMarshmallow]
 
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     results = []
@@ -160,7 +161,7 @@ def diff():
 
     allow_extra = True
     pydantic = TestPydantic(allow_extra)
-    others = [TestTrafaret(allow_extra), TestDRF(allow_extra)]
+    others = [TestTrafaret(allow_extra), TestDRF(allow_extra), TestToastedMarshmallow(allow_extra)]
 
     for case in cases:
         pydantic_passed, pydantic_result = pydantic.validate(case)

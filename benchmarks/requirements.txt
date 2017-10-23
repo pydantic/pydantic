@@ -2,3 +2,4 @@ python-dateutil      # pyup: ignore
 trafaret             # pyup: ignore
 django               # pyup: ignore
 djangorestframework  # pyup: ignore
+toastedmarshmallow   # pyup: ignore
