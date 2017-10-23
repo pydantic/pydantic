@@ -32,7 +32,6 @@ def test_constrained_str_too_long():
   "v": {
     "error_msg": "length greater than maximum allowed: 10",
     "error_type": "ValueError",
-    "index": null,
     "track": "ConstrainedStrValue"
   }
 }""" == exc_info.value.json(2)
@@ -199,25 +198,21 @@ def test_datetime_errors():
   "date_": {
     "error_msg": "Invalid date format",
     "error_type": "ValueError",
-    "index": null,
     "track": "date"
   },
   "dt": {
     "error_msg": "month must be in 1..12",
     "error_type": "ValueError",
-    "index": null,
     "track": "datetime"
   },
   "duration": {
     "error_msg": "Invalid duration format",
     "error_type": "ValueError",
-    "index": null,
     "track": "timedelta"
   },
   "time_": {
     "error_msg": "hour must be in 0..23",
     "error_type": "ValueError",
-    "index": null,
     "track": "time"
   }
 }""" == exc_info.value.json(2)
@@ -254,7 +249,6 @@ def test_enum_fails():
   "tool": {
     "error_msg": "3 is not a valid ToolEnum",
     "error_type": "ValueError",
-    "index": null,
     "track": "ToolEnum"
   }
 }""" == exc_info.value.json(2)
@@ -299,25 +293,21 @@ def test_string_fails():
   "name_email": {
     "error_msg": "Email address is not valid",
     "error_type": "ValueError",
-    "index": null,
     "track": "NameEmail"
   },
   "str_email": {
     "error_msg": "Email address is not valid",
     "error_type": "ValueError",
-    "index": null,
     "track": "EmailStr"
   },
   "str_min_length": {
     "error_msg": "length less than minimum allowed: 5",
     "error_type": "ValueError",
-    "index": null,
     "track": "ConstrainedStrValue"
   },
   "str_regex": {
     "error_msg": "string does not match regex \\"^xxx\\\\d{3}$\\"",
     "error_type": "ValueError",
-    "index": null,
     "track": "ConstrainedStrValue"
   }
 }""" == exc_info.value.json(2)
@@ -335,7 +325,7 @@ def test_dict():
     assert ListDictTupleModel(a=[(1, 2), (3, 4)]).a == {1: 2, 3: 4}
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(a=[1, 2, 3])
-    assert 'cannot convert dictionary update sequence element #0 to a sequence' in str(exc_info.value)
+    assert 'value is not a valid dict, got list' in str(exc_info.value)
 
 
 def test_list():

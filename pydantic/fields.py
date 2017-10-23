@@ -224,8 +224,8 @@ class Field:
         else:
             try:
                 v_iter = dict(v)
-            except TypeError as exc:
-                return v, Error(exc, None, None)
+            except TypeError:
+                return v, Error(TypeError(f'value is not a valid dict, got {type_display(type(v))}'), None, None)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():

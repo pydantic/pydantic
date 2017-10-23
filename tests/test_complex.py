@@ -35,13 +35,11 @@ def test_str_bytes():
     {
       "error_msg": "None is not an allow value",
       "error_type": "TypeError",
-      "index": null,
       "track": "str"
     },
     {
       "error_msg": "None is not an allow value",
       "error_type": "TypeError",
-      "index": null,
       "track": "bytes"
     }
   ]
@@ -97,13 +95,11 @@ def test_union_int_str():
     {
       "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
       "error_type": "TypeError",
-      "index": null,
       "track": "int"
     },
     {
       "error_msg": "None is not an allow value",
       "error_type": "TypeError",
-      "index": null,
       "track": "str"
     }
   ]
@@ -156,9 +152,7 @@ def test_typed_list():
 {
   "v": {
     "error_msg": "'int' object is not iterable",
-    "error_type": "TypeError",
-    "index": null,
-    "track": null
+    "error_type": "TypeError"
   }
 }""" == exc_info.value.json(2)
 
@@ -200,7 +194,7 @@ def test_typed_dict(value, result):
         """\
 error validating input
 v:
-  'int' object is not iterable (error_type=TypeError)"""
+  value is not a valid dict, got int (error_type=TypeError)"""
     ),
     (
         {'a': 'b'},
@@ -214,7 +208,7 @@ v:
         """\
 error validating input
 v:
-  cannot convert dictionary update sequence element #0 to a sequence (error_type=TypeError)""",
+  value is not a valid dict, got list (error_type=TypeError)""",
     )
 ])
 def test_typed_dict_error(value, error):
@@ -298,9 +292,7 @@ v:
       "error_details": {
         "name": {
           "error_msg": "field required",
-          "error_type": "Missing",
-          "index": null,
-          "track": null
+          "error_type": "Missing"
         }
       },
       "error_msg": "error validating input",
@@ -448,7 +440,7 @@ def test_invalid_type():
         class Model(BaseModel):
             x: 43 = 123
 
-    assert "error checking inheritance of 43 (type: <class 'int'>)" in str(exc_info)
+    assert "error checking inheritance of 43 (type: int)" in str(exc_info)
 
 
 @pytest.mark.parametrize('value,expected', [
@@ -536,3 +528,14 @@ def test_string_none():
 def test_pretty_error_no_recursion():
     with pytest.raises(TypeError):
         pretty_errors('foobar')
+
+
+def test_dict_list_error():
+    with pytest.raises(ValidationError) as exc_info:
+        assert DictModel(v=[1, 2, 3])
+    assert {
+        'v': {
+            'error_type': 'TypeError',
+            'error_msg': 'value is not a valid dict, got list',
+        }
+    } == dict(exc_info.value.errors_dict)
