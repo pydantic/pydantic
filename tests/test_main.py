@@ -337,3 +337,44 @@ def test_immutability():
     with pytest.raises(ValueError) as exc_info:
         m.b = 11
     assert '"TestModel" object has no field "b"' in str(exc_info)
+
+
+def test_validating_assignment():
+    import pydantic
+
+    class Pedantic(BaseModel):
+        a: int
+        b: pydantic.constr(min_length=1)
+
+        class Config:
+            validate_assignment = True
+
+    p = Pedantic(a=5, b="hello")
+    p.a = 2
+    assert p.a == 2
+    assert p.values() == {"a": 2, "b": "hello"}
+    p.b = "hi"
+    assert p.b == "hi"
+    assert p.values() == {"a": 2, "b": "hi"}
+    with pytest.raises(ValidationError) as exc_info:
+        p.a = "b"
+    assert "error validating input" in str(exc_info)
+    with pytest.raises(ValidationError) as exc_info:
+        p.b = ""
+    assert "error validating input" in str(exc_info)
+
+    class Permissive(BaseModel):
+        a: int
+        b: pydantic.constr(min_length=1)
+
+        class Config:
+            validate_assignment = False
+
+    p = Permissive(a=6, b="hi")
+    p.a = 10
+    assert p.a == 10
+    p.a = "nope"
+    assert p.a == "nope"
+    p.b = ""
+    assert p.b == ""
+    assert p.values() == {"a": "nope", "b": ""}
