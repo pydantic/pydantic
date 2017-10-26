@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError
+from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError, constr
 from pydantic.exceptions import pretty_errors
 
 
@@ -339,42 +339,53 @@ def test_immutability():
     assert '"TestModel" object has no field "b"' in str(exc_info)
 
 
+class ValidateAssignmentModel(BaseModel):
+    a: int = 2
+    b: constr(min_length=1)
+    c: constr(min_length=a)
+
+    class Config:
+        validate_assignment = True
+
+
 def test_validating_assignment():
-    import pydantic
-
-    class Pedantic(BaseModel):
-        a: int
-        b: pydantic.constr(min_length=1)
-
-        class Config:
-            validate_assignment = True
-
-    p = Pedantic(a=5, b="hello")
+    p = ValidateAssignmentModel(a=5, b='hello', c='testing')
     p.a = 2
     assert p.a == 2
-    assert p.values() == {"a": 2, "b": "hello"}
-    p.b = "hi"
-    assert p.b == "hi"
-    assert p.values() == {"a": 2, "b": "hi"}
+    assert p.values() == {'a': 2, 'b': 'hello', 'c': 'testing'}
+    p.b = 'hi'
+    assert p.b == 'hi'
+    assert p.values() == {'a': 2, 'b': 'hi', 'c': 'testing'}
     with pytest.raises(ValidationError) as exc_info:
-        p.a = "b"
-    assert "error validating input" in str(exc_info)
+        p.a = 'b'
+    assert 'error validating input' in str(exc_info)
     with pytest.raises(ValidationError) as exc_info:
-        p.b = ""
-    assert "error validating input" in str(exc_info)
+        p.b = ''
+    assert 'error validating input' in str(exc_info)
+    with pytest.raises(ValidationError) as exc_info:
+        p.c = 'c'
+    assert 'error validating input' in str(exc_info)
+    p.a = 100
+    p.c = 'why?'
+    print(p.values())
+    # with pytest.raises(ValidationError) as exc_info:
+    #    p.a = 100
+    # assert 'error validating input' in str(exc_info)
 
-    class Permissive(BaseModel):
+
+def test_nonvalidating_assignment():
+    class DoNotValidateAssignmentModel(BaseModel):
         a: int
-        b: pydantic.constr(min_length=1)
+        b: constr(min_length=1)
 
         class Config:
             validate_assignment = False
 
-    p = Permissive(a=6, b="hi")
+    p = DoNotValidateAssignmentModel(a=6, b='hi')
     p.a = 10
     assert p.a == 10
-    p.a = "nope"
-    assert p.a == "nope"
-    p.b = ""
-    assert p.b == ""
-    assert p.values() == {"a": "nope", "b": ""}
+    p.a = 'nope'
+    assert p.a == 'nope'
+    p.b = ''
+    assert p.b == ''
+    assert p.values() == {'a': 'nope', 'b': ''}

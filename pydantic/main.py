@@ -112,11 +112,12 @@ class BaseModel(metaclass=MetaModel):
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.config.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
-        if self.config.validate_assignment:
-            value_, error_ = self.fields[name].validate(value, {})
+        elif self.config.validate_assignment:
+            value_, error_ = self.fields[name].validate(value, self.values(exclude={name}))
             if error_:
                 raise ValidationError({name: error_})
-            self.__values__[name] = value_
+            else:
+                self.__values__[name] = value_
         else:
             self.__values__[name] = value
 
