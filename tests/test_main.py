@@ -342,50 +342,30 @@ def test_immutability():
 class ValidateAssignmentModel(BaseModel):
     a: int = 2
     b: constr(min_length=1)
-    c: constr(min_length=a)
 
     class Config:
         validate_assignment = True
 
 
-def test_validating_assignment():
-    p = ValidateAssignmentModel(a=5, b='hello', c='testing')
+def test_validating_assignment_pass():
+    p = ValidateAssignmentModel(a=5, b='hello')
     p.a = 2
     assert p.a == 2
-    assert p.values() == {'a': 2, 'b': 'hello', 'c': 'testing'}
+    assert p.values() == {'a': 2, 'b': 'hello'}
     p.b = 'hi'
     assert p.b == 'hi'
-    assert p.values() == {'a': 2, 'b': 'hi', 'c': 'testing'}
+    assert p.values() == {'a': 2, 'b': 'hi'}
+
+
+def test_validating_assignment_fail():
+    p = ValidateAssignmentModel(a=5, b='hello')
     with pytest.raises(ValidationError) as exc_info:
         p.a = 'b'
-    assert 'error validating input' in str(exc_info)
+    assert """error validating input
+a:
+  invalid literal for int() with base 10: 'b' (error_type=ValueError track=int)""" == str(exc_info.value)
     with pytest.raises(ValidationError) as exc_info:
         p.b = ''
-    assert 'error validating input' in str(exc_info)
-    with pytest.raises(ValidationError) as exc_info:
-        p.c = 'c'
-    assert 'error validating input' in str(exc_info)
-    p.a = 100
-    p.c = 'why?'
-    print(p.values())
-    # with pytest.raises(ValidationError) as exc_info:
-    #    p.a = 100
-    # assert 'error validating input' in str(exc_info)
-
-
-def test_nonvalidating_assignment():
-    class DoNotValidateAssignmentModel(BaseModel):
-        a: int
-        b: constr(min_length=1)
-
-        class Config:
-            validate_assignment = False
-
-    p = DoNotValidateAssignmentModel(a=6, b='hi')
-    p.a = 10
-    assert p.a == 10
-    p.a = 'nope'
-    assert p.a == 'nope'
-    p.b = ''
-    assert p.b == ''
-    assert p.values() == {'a': 'nope', 'b': ''}
+    assert """error validating input
+b:
+  length less than minimum allowed: 1 (error_type=ValueError track=ConstrainedStrValue)""" == str(exc_info.value)
