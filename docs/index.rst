@@ -171,6 +171,7 @@ Options:
 :allow_extra: whether or not too allow (and include on the model) any extra values in input data (default: ``False``)
 :allow_mutation: whether or not models are faux-immutable, e.g. __setattr__ fails (default: ``True``)
 :fields: extra information on each field, currently just "alias" is allowed (default: ``None``)
+:validate_assignment: whether to perform validation on assignment to attributes or not (default: ``False``)
 
 .. literalinclude:: examples/config.py
 
