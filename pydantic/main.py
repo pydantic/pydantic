@@ -21,6 +21,7 @@ class BaseConfig:
     allow_extra = False
     allow_mutation = True
     fields = {}
+    validate_assignment = False
 
 
 def inherit_config(self_config, parent_config) -> BaseConfig:
@@ -111,7 +112,14 @@ class BaseModel(metaclass=MetaModel):
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.config.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
-        self.__values__[name] = value
+        elif self.config.validate_assignment:
+            value_, error_ = self.fields[name].validate(value, self.values(exclude={name}))
+            if error_:
+                raise ValidationError({name: error_})
+            else:
+                self.__values__[name] = value_
+        else:
+            self.__values__[name] = value
 
     def __getstate__(self):
         return self.__values__

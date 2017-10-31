@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError
+from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError, constr
 from pydantic.exceptions import pretty_errors
 
 
@@ -337,3 +337,35 @@ def test_immutability():
     with pytest.raises(ValueError) as exc_info:
         m.b = 11
     assert '"TestModel" object has no field "b"' in str(exc_info)
+
+
+class ValidateAssignmentModel(BaseModel):
+    a: int = 2
+    b: constr(min_length=1)
+
+    class Config:
+        validate_assignment = True
+
+
+def test_validating_assignment_pass():
+    p = ValidateAssignmentModel(a=5, b='hello')
+    p.a = 2
+    assert p.a == 2
+    assert p.values() == {'a': 2, 'b': 'hello'}
+    p.b = 'hi'
+    assert p.b == 'hi'
+    assert p.values() == {'a': 2, 'b': 'hi'}
+
+
+def test_validating_assignment_fail():
+    p = ValidateAssignmentModel(a=5, b='hello')
+    with pytest.raises(ValidationError) as exc_info:
+        p.a = 'b'
+    assert """error validating input
+a:
+  invalid literal for int() with base 10: 'b' (error_type=ValueError track=int)""" == str(exc_info.value)
+    with pytest.raises(ValidationError) as exc_info:
+        p.b = ''
+    assert """error validating input
+b:
+  length less than minimum allowed: 1 (error_type=ValueError track=ConstrainedStrValue)""" == str(exc_info.value)
