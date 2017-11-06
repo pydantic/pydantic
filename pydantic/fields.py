@@ -50,8 +50,8 @@ class Field:
         self.sub_fields = None
         self.key_field: Field = None
         self.validators = []
-        self.whole_pre_validators = []
-        self.whole_post_validators = []
+        self.whole_pre_validators = None
+        self.whole_post_validators = None
         self.default: Any = default
         self.required: bool = required
         self.model_config = model_config
@@ -183,8 +183,10 @@ class Field:
                 *tuple(f for f, pre, whole in class_validators if not whole and not pre),
             )
             self.validators = self._prep_vals(v_funcs)
-        self.whole_pre_validators = self._prep_vals(f for f, pre, whole in class_validators if whole and pre)
-        self.whole_post_validators = self._prep_vals(f for f, pre, whole in class_validators if whole and not pre)
+
+        if class_validators:
+            self.whole_pre_validators = self._prep_vals(f for f, pre, whole in class_validators if whole and pre)
+            self.whole_post_validators = self._prep_vals(f for f, pre, whole in class_validators if whole and not pre)
 
     def _prep_vals(self, v_funcs):
         v = []
@@ -305,6 +307,7 @@ def _get_validator_signature(validator):
     try:
         signature = inspect.signature(validator)
     except ValueError:
+        # TODO we should probably have a white list of allowed validators here, rather than assuming
         # happens on builtins like float
         return ValidatorSignature.JUST_VALUE
 
