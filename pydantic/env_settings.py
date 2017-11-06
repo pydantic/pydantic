@@ -1,5 +1,5 @@
-import os
 import json
+import os
 
 from .fields import Shape
 from .main import BaseModel

@@ -2,7 +2,7 @@ from typing import List, Set
 
 import pytest
 
-from pydantic import BaseSettings, ValidationError
+from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.env_settings import SettingsError
 
 
@@ -49,30 +49,46 @@ def test_env_with_aliass(env):
     assert Settings().apple == 'hello'
 
 
+class DateModel(BaseModel):
+    pips: bool = False
+
+
 class ComplexSettings(BaseSettings):
     apples: List[str] = []
     bananas: Set[int] = set()
     carrots: dict = {}
-    dates: SimpleSettings = SimpleSettings(apple='foobar')
+    date: DateModel = DateModel()
 
 
 def test_list(env):
     env.set('APP_APPLES', '["russet", "granny smith"]')
     s = ComplexSettings()
     assert s.apples == ['russet', 'granny smith']
+    assert s.date.pips is False
 
 
 def test_set_dict_model(env):
     env.set('APP_BANANAS', '[1, 2, 3, 3]')
     env.set('APP_CARROTS', '{"a": null, "b": 4}')
-    env.set('APP_DATES', '{"apple": "snap"}')
+    env.set('APP_DATE', '{"pips": true}')
     s = ComplexSettings()
     assert s.bananas == {1, 2, 3}
     assert s.carrots == {'a': None, 'b': 4}
-    assert s.dates.apple == 'snap'
+    assert s.date.pips is True
 
 
 def test_invalid_json(env):
     env.set('APP_APPLES', '["russet", "granny smith",]')
     with pytest.raises(SettingsError):
         ComplexSettings()
+
+
+def test_required_sub_model(env):
+    class Settings(BaseSettings):
+        foobar: DateModel
+
+    with pytest.raises(ValidationError):
+        Settings()
+    env.set('APP_FOOBAR', '{"pips": "TRUE"}')
+    s = Settings()
+    assert s.foobar.pips is True
