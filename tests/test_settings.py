@@ -1,6 +1,9 @@
+from typing import List, Set
+
 import pytest
 
 from pydantic import BaseSettings, ValidationError
+from pydantic.env_settings import SettingsError
 
 
 class SimpleSettings(BaseSettings):
@@ -44,3 +47,32 @@ def test_env_with_aliass(env):
             }
     env.set('BOOM', 'hello')
     assert Settings().apple == 'hello'
+
+
+class ComplexSettings(BaseSettings):
+    apples: List[str] = []
+    bananas: Set[int] = set()
+    carrots: dict = {}
+    dates: SimpleSettings = SimpleSettings(apple='foobar')
+
+
+def test_list(env):
+    env.set('APP_APPLES', '["russet", "granny smith"]')
+    s = ComplexSettings()
+    assert s.apples == ['russet', 'granny smith']
+
+
+def test_set_dict_model(env):
+    env.set('APP_BANANAS', '[1, 2, 3, 3]')
+    env.set('APP_CARROTS', '{"a": null, "b": 4}')
+    env.set('APP_DATES', '{"apple": "snap"}')
+    s = ComplexSettings()
+    assert s.bananas == {1, 2, 3}
+    assert s.carrots == {'a': None, 'b': 4}
+    assert s.dates.apple == 'snap'
+
+
+def test_invalid_json(env):
+    env.set('APP_APPLES', '["russet", "granny smith",]')
+    with pytest.raises(SettingsError):
+        ComplexSettings()
