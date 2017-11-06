@@ -217,7 +217,7 @@ class Field:
                 v = set(v)
 
         if not errors and self.whole_post_validators:
-            v, errors = self._apply_validators(v, values, index, cls, self.whole_pre_validators)
+            v, errors = self._apply_validators(v, values, index, cls, self.whole_post_validators)
         return v, errors
 
     def _validate_sequence(self, v, values, cls):

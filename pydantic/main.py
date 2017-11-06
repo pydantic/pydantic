@@ -36,6 +36,20 @@ def inherit_config(self_config, parent_config) -> BaseConfig:
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
+def _extract_validators(namespace):
+    validators = {}
+    for var_name, value in namespace.items():
+        validator_config = getattr(value, '__validator_config', None)
+        if validator_config:
+            v = (value, validator_config['pre'], validator_config['whole'])
+            for field in validator_config['fields']:
+                if field in validators:
+                    validators[field].append(v)
+                else:
+                    validators[field] = [v]
+    return validators
+
+
 class MetaModel(type):
     @classmethod
     def __prepare__(mcs, *args, **kwargs):
@@ -50,16 +64,7 @@ class MetaModel(type):
                 config = inherit_config(base.config, config)
 
         config = inherit_config(namespace.get('Config'), config)
-        validators = {}
-        for var_name, value in namespace.items():
-            validator_config = getattr(value, '__validator_config', None)
-            if validator_config:
-                v = (value, validator_config['pre'], validator_config['whole'])
-                for field in validator_config['fields']:
-                    if field in validators:
-                        validators[field].append(v)
-                    else:
-                        validators[field] = [v]
+        validators = _extract_validators(namespace)
 
         for f in fields.values():
             f.set_config(config)
