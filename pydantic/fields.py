@@ -12,6 +12,8 @@ Required: Any = Ellipsis
 class ValidatorSignature(IntEnum):
     JUST_VALUE = 1
     VALUE_KWARGS = 2
+    CLS_JUST_VALUE = 3
+    CLS_VALUE_KWARGS = 4
 
 
 class Shape(IntEnum):
@@ -22,8 +24,11 @@ class Shape(IntEnum):
 
 
 class Field:
-    __slots__ = ('type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'default', 'required', 'model_config',
-                 'name', 'alias', 'description', 'info', 'validate_always', 'allow_none', 'shape', 'multipart')
+    __slots__ = (
+        'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
+        'default', 'required', 'model_config', 'name', 'alias', 'description', 'info', 'validate_always',
+        'allow_none', 'shape', 'multipart'
+    )
 
     def __init__(
             self, *,
@@ -45,6 +50,8 @@ class Field:
         self.sub_fields = None
         self.key_field: Field = None
         self.validators = []
+        self.whole_pre_validators = []
+        self.whole_post_validators = []
         self.default: Any = default
         self.required: bool = required
         self.model_config = model_config
@@ -92,8 +99,7 @@ class Field:
             self.allow_none = True
 
         self._populate_sub_fields(class_validators)
-        if self.sub_fields is None:
-            self._populate_validators(class_validators)
+        self._populate_validators(class_validators)
 
         self.info = OrderedDict([
             ('type', type_display(self.type_)),
@@ -169,46 +175,59 @@ class Field:
             )]
 
     def _populate_validators(self, class_validators):
-        get_validators = getattr(self.type_, 'get_validators', None)
-        v_funcs = (
-            class_validators.get(f'validate_{self.name}_pre'),
+        if self.sub_fields is None:
+            get_validators = getattr(self.type_, 'get_validators', None)
+            v_funcs = (
+                *tuple(f for f, pre, whole in class_validators if not whole and pre),
+                *(get_validators() if get_validators else find_validators(self.type_)),
+                *tuple(f for f, pre, whole in class_validators if not whole and not pre),
+            )
+            self.validators = self._prep_vals(v_funcs)
+        self.whole_pre_validators = self._prep_vals(f for f, pre, whole in class_validators if whole and pre)
+        self.whole_post_validators = self._prep_vals(f for f, pre, whole in class_validators if whole and not pre)
 
-            *(get_validators() if get_validators else find_validators(self.type_)),
-
-            class_validators.get(f'validate_{self.name}'),
-            class_validators.get(f'validate_{self.name}_post'),
-        )
+    def _prep_vals(self, v_funcs):
+        v = []
         for f in v_funcs:
             if not f or (self.allow_none and f is not_none_validator):
                 continue
-            self.validators.append((
+            v.append((
                 _get_validator_signature(f),
                 f,
             ))
+        return tuple(v)
 
-    def validate(self, v, values, index=None):
+    def validate(self, v, values, index=None, cls=None):
         if self.allow_none and v is None:
             return None, None
 
+        if self.whole_pre_validators:
+            v, errors = self._apply_validators(v, values, index, cls, self.whole_pre_validators)
+            if errors:
+                return v, errors
+
         if self.shape is Shape.SINGLETON:
-            return self._validate_singleton(v, values, index)
+            v, errors = self._validate_singleton(v, values, index, cls)
         elif self.shape is Shape.MAPPING:
-            return self._validate_mapping(v, values)
+            v, errors = self._validate_mapping(v, values, cls)
         else:
             # list or set
-            result, errors = self._validate_sequence(v, values)
+            v, errors = self._validate_sequence(v, values, cls)
             if not errors and self.shape is Shape.SET:
-                return set(result), errors
-            return result, errors
+                v = set(v)
 
-    def _validate_sequence(self, v, values):
+        if not errors and self.whole_post_validators:
+            v, errors = self._apply_validators(v, values, index, cls, self.whole_pre_validators)
+        return v, errors
+
+    def _validate_sequence(self, v, values, cls):
         result, errors = [], []
         try:
             v_iter = enumerate(v)
         except TypeError as exc:
             return v, Error(exc, None, None)
         for i, v_ in v_iter:
-            single_result, single_errors = self._validate_singleton(v_, values, i)
+            single_result, single_errors = self._validate_singleton(v_, values, i, cls)
             if single_errors:
                 errors.append(single_errors)
             else:
@@ -218,7 +237,7 @@ class Field:
         else:
             return result, None
 
-    def _validate_mapping(self, v, values):
+    def _validate_mapping(self, v, values, cls):
         if isinstance(v, dict):
             v_iter = v
         else:
@@ -229,11 +248,11 @@ class Field:
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
-            key_result, key_errors = self.key_field.validate(k, values, 'key')
+            key_result, key_errors = self.key_field.validate(k, values, 'key', cls)
             if key_errors:
                 errors.append(key_errors)
                 continue
-            value_result, value_errors = self._validate_singleton(v_, values, k)
+            value_result, value_errors = self._validate_singleton(v_, values, k, cls)
             if value_errors:
                 errors.append(value_errors)
                 continue
@@ -243,27 +262,34 @@ class Field:
         else:
             return result, None
 
-    def _validate_singleton(self, v, values, index):
+    def _validate_singleton(self, v, values, index, cls):
         if self.multipart:
             errors = []
             for field in self.sub_fields:
-                value, error = field.validate(v, values, index)
+                value, error = field.validate(v, values, index, cls)
                 if error:
                     errors.append(error)
                 else:
                     return value, None
             return v, errors[0] if len(self.sub_fields) == 1 else errors
         else:
-            for signature, validator in self.validators:
-                try:
-                    if signature is ValidatorSignature.JUST_VALUE:
-                        v = validator(v)
-                    else:
-                        # ValidatorSignature.VALUE_KWARGS
-                        v = validator(v, values=values, config=self.model_config, field=self)
-                except (ValueError, TypeError) as exc:
-                    return v, Error(exc, self.type_, index)
-            return v, None
+            return self._apply_validators(v, values, index, cls, self.validators)
+
+    def _apply_validators(self, v, values, index, cls, validators):
+        for signature, validator in validators:
+            try:
+                if signature is ValidatorSignature.JUST_VALUE:
+                    v = validator(v)
+                elif signature is ValidatorSignature.VALUE_KWARGS:
+                    v = validator(v, values=values, config=self.model_config, field=self)
+                elif signature is ValidatorSignature.CLS_JUST_VALUE:
+                    v = validator(cls, v)
+                else:
+                    # ValidatorSignature.CLS_VALUE_KWARGS
+                    v = validator(cls, v, values=values, config=self.model_config, field=self)
+            except (ValueError, TypeError) as exc:
+                return v, Error(exc, self.type_, index)
+        return v, None
 
     def __repr__(self):
         return f'<Field {self}>'
@@ -286,15 +312,24 @@ def _get_validator_signature(validator):
     # 1. we can deal with it before validation begins
     # 2. (more importantly) it doesn't get confused with a TypeError when executing the validator
     try:
-        if len(signature.parameters) == 1:
-            signature.bind(1)
-            return ValidatorSignature.JUST_VALUE
+        if 'cls' in signature._parameters:
+            if len(signature.parameters) == 2:
+                signature.bind(object(), 1)
+                return ValidatorSignature.CLS_JUST_VALUE
+            else:
+                signature.bind(object(), 1, values=2, config=3, field=4)
+                return ValidatorSignature.CLS_VALUE_KWARGS
         else:
-            signature.bind(1, values=2, config=3, field=4)
-            return ValidatorSignature.VALUE_KWARGS
+            if len(signature.parameters) == 1:
+                signature.bind(1)
+                return ValidatorSignature.JUST_VALUE
+            else:
+                signature.bind(1, values=2, config=3, field=4)
+                return ValidatorSignature.VALUE_KWARGS
     except TypeError as e:
         raise ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
-                          f'(value) or (value, *, values, config, field)') from e
+                          f'(value) or (value, *, values, config, field) or for class validators '
+                          f'(cls, value) or (cls, value, *, values, config, field)') from e
 
 
 def _get_field_config(config, name):

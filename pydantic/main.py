@@ -50,9 +50,16 @@ class MetaModel(type):
                 config = inherit_config(base.config, config)
 
         config = inherit_config(namespace.get('Config'), config)
-        class_validators = {
-            n: f for n, f in namespace.items() if n.startswith('validate_') and isinstance(f, FunctionType)
-        }
+        validators = {}
+        for var_name, value in namespace.items():
+            validator_config = getattr(value, '__validator_config', None)
+            if validator_config:
+                v = (value, validator_config['pre'], validator_config['whole'])
+                for field in validator_config['fields']:
+                    if field in validators:
+                        validators[field].append(v)
+                    else:
+                        validators[field] = [v]
 
         for f in fields.values():
             f.set_config(config)
@@ -65,7 +72,7 @@ class MetaModel(type):
                     name=ann_name,
                     value=...,
                     annotation=ann_type,
-                    class_validators=class_validators,
+                    class_validators=validators.get(ann_name),
                     config=config,
                 )
 
@@ -75,7 +82,7 @@ class MetaModel(type):
                     name=var_name,
                     value=value,
                     annotation=annotations.get(var_name),
-                    class_validators=class_validators,
+                    class_validators=validators.get(var_name),
                     config=config,
                 )
 
@@ -227,7 +234,7 @@ class BaseModel(metaclass=MetaModel):
                         values[name] = field.default
                     continue
 
-            values[name], errors_ = field.validate(value, values)
+            values[name], errors_ = field.validate(value, values, cls=self.__class__)
             if errors_:
                 errors[field.alias] = errors_
 
@@ -287,3 +294,16 @@ class BaseModel(metaclass=MetaModel):
 
     def __str__(self):
         return self.to_string()
+
+
+def validator(*fields, pre=False, whole=False):
+    """
+    Decorate methods on the class indicating that they should be used to validate fields
+    :param fields: which field(s) the method should be called on
+    :param pre: whether or not this validator should be called before the standard validators (else after)
+    :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
+    """
+    def dec(f):
+        f.__validator_config = {'fields': fields, 'pre': pre, 'whole': whole}
+        return f
+    return dec
