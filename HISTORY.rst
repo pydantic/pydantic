@@ -3,6 +3,10 @@
 History
 -------
 
+v0.6.0 (2017-11-XX)
+...................
+* assignment validation #94, thanks petroswork!
+
 v0.5.0 (2017-10-23)
 ...................
 * add ``UUID`` validation #89
