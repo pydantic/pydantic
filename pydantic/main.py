@@ -36,6 +36,20 @@ def inherit_config(self_config, parent_config) -> BaseConfig:
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
+def _extract_validators(namespace):
+    validators = {}
+    for var_name, value in namespace.items():
+        validator_config = getattr(value, '__validator_config', None)
+        if validator_config:
+            fields, *v = validator_config
+            for field in fields:
+                if field in validators:
+                    validators[field].append(v)
+                else:
+                    validators[field] = [v]
+    return validators
+
+
 class MetaModel(type):
     @classmethod
     def __prepare__(mcs, *args, **kwargs):
@@ -50,9 +64,7 @@ class MetaModel(type):
                 config = inherit_config(base.config, config)
 
         config = inherit_config(namespace.get('Config'), config)
-        class_validators = {
-            n: f for n, f in namespace.items() if n.startswith('validate_') and isinstance(f, FunctionType)
-        }
+        validators = _extract_validators(namespace)
 
         for f in fields.values():
             f.set_config(config)
@@ -65,7 +77,7 @@ class MetaModel(type):
                     name=ann_name,
                     value=...,
                     annotation=ann_type,
-                    class_validators=class_validators,
+                    class_validators=validators.get(ann_name),
                     config=config,
                 )
 
@@ -75,7 +87,7 @@ class MetaModel(type):
                     name=var_name,
                     value=value,
                     annotation=annotations.get(var_name),
-                    class_validators=class_validators,
+                    class_validators=validators.get(var_name),
                     config=config,
                 )
 
@@ -227,9 +239,11 @@ class BaseModel(metaclass=MetaModel):
                         values[name] = field.default
                     continue
 
-            values[name], errors_ = field.validate(value, values)
+            v_, errors_ = field.validate(value, values, cls=self.__class__)
             if errors_:
                 errors[field.alias] = errors_
+            else:
+                values[name] = v_
 
         if (not self.config.ignore_extra) or self.config.allow_extra:
             extra = input_data.keys() - {f.alias for f in self.__fields__.values()}
@@ -287,3 +301,17 @@ class BaseModel(metaclass=MetaModel):
 
     def __str__(self):
         return self.to_string()
+
+
+def validator(*fields, pre=False, whole=False):
+    """
+    Decorate methods on the class indicating that they should be used to validate fields
+    :param fields: which field(s) the method should be called on
+    :param pre: whether or not this validator should be called before the standard validators (else after)
+    :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
+    """
+    def dec(f):
+        f_cls = classmethod(f)
+        f_cls.__validator_config = fields, f, pre, whole
+        return f_cls
+    return dec
