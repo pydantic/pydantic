@@ -27,7 +27,7 @@ class Field:
     __slots__ = (
         'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
         'default', 'required', 'model_config', 'name', 'alias', 'description', 'info', 'validate_always',
-        'allow_none', 'shape', 'multipart'
+        'allow_none', 'shape'
     )
 
     def __init__(
@@ -47,7 +47,7 @@ class Field:
         self.type_: type = type_
         self.key_type_: type = None
         self.validate_always: bool = getattr(self.type_, 'validate_always', False)
-        self.sub_fields = None
+        self.sub_fields: List[Field] = None
         self.key_field: Field = None
         self.validators = []
         self.whole_pre_validators = None
@@ -58,7 +58,6 @@ class Field:
         self.description: str = description
         self.allow_none: bool = allow_none
         self.shape: Shape = Shape.SINGLETON
-        self.multipart = False
         self.info = {}
         self._prepare(class_validators or {})
 
@@ -108,7 +107,7 @@ class Field:
         ])
         if self.required:
             self.info.pop('default')
-        if self.multipart:
+        if self.sub_fields:
             self.info['sub_fields'] = self.sub_fields
         else:
             self.info['validators'] = [v[1].__qualname__ for v in self.validators]
@@ -119,7 +118,7 @@ class Field:
 
     def _populate_sub_fields(self, class_validators):
         # typing interface is horrible, we have to do some ugly checks
-        origin = getattr(self.type_, '__origin__', None)
+        origin = _get_type_origin(self.type_)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
@@ -140,7 +139,6 @@ class Field:
                 name=f'{self.name}_{type_display(t)}',
                 model_config=self.model_config,
             ) for t in types_]
-            self.multipart = True
         elif issubclass(origin, List):
             self.type_ = self.type_.__args__[0]
             self.shape = Shape.LIST
@@ -162,8 +160,8 @@ class Field:
                 model_config=self.model_config,
             )
 
-        if self.sub_fields is None and getattr(self.type_, '__origin__', False):
-            self.multipart = True
+        if not self.sub_fields and _get_type_origin(self.type_):
+            # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
             self.sub_fields = [self.__class__(
                 type_=self.type_,
                 class_validators=class_validators,
@@ -175,7 +173,7 @@ class Field:
             )]
 
     def _populate_validators(self, class_validators):
-        if self.sub_fields is None:
+        if not self.sub_fields:
             get_validators = getattr(self.type_, 'get_validators', None)
             v_funcs = (
                 *tuple(f for f, pre, whole in class_validators if not whole and pre),
@@ -265,7 +263,7 @@ class Field:
             return result, None
 
     def _validate_singleton(self, v, values, index, cls):
-        if self.multipart:
+        if self.sub_fields:
             errors = []
             for field in self.sub_fields:
                 value, error = field.validate(v, values, index, cls)
@@ -340,3 +338,10 @@ def _get_field_config(config, name):
     if isinstance(field_config, str):
         field_config = {'alias': field_config}
     return field_config
+
+
+def _get_type_origin(obj):
+    """
+    Like obj.__class__ or type(obj) but for typing objects
+    """
+    return getattr(obj, '__origin__', None)
