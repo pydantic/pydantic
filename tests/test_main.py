@@ -230,14 +230,14 @@ def test_allow_extra():
         class Config:
             allow_extra = True
 
-    assert Model(a='10.2', b=12).values() == {'a': 10.2, 'b': 12}
+    assert Model(a='10.2', b=12).dict() == {'a': 10.2, 'b': 12}
 
 
 def test_set_attr():
     m = UltraSimpleModel(a=10.2)
-    assert m.values() == {'a': 10.2, 'b': 10}
+    assert m.dict() == {'a': 10.2, 'b': 10}
     m.b = 20
-    assert m.values() == {'a': 10.2, 'b': 20}
+    assert m.dict() == {'a': 10.2, 'b': 20}
 
 
 def test_set_attr_invalid():
@@ -246,7 +246,7 @@ def test_set_attr_invalid():
         a: float = ...
         b: int = 10
     m = UltraSimpleModel(a=10.2)
-    assert m.values() == {'a': 10.2, 'b': 10}
+    assert m.dict() == {'a': 10.2, 'b': 10}
     with pytest.raises(ValueError) as exc_info:
         m.c = 20
     assert '"UltraSimpleModel" object has no field "c"' in str(exc_info)
@@ -270,9 +270,9 @@ def test_alias():
             }
 
     assert Model().a == 'foobar'
-    assert Model().values() == {'a': 'foobar'}
+    assert Model().dict() == {'a': 'foobar'}
     assert Model(_a='different').a == 'different'
-    assert Model(_a='different').values() == {'a': 'different'}
+    assert Model(_a='different').dict() == {'a': 'different'}
 
 
 def test_field_order():
@@ -293,7 +293,7 @@ def test_required():
         b: int = 10
 
     m = Model(a=10.2)
-    assert m.values() == dict(a=10.2, b=10)
+    assert m.dict() == dict(a=10.2, b=10)
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -351,10 +351,10 @@ def test_validating_assignment_pass():
     p = ValidateAssignmentModel(a=5, b='hello')
     p.a = 2
     assert p.a == 2
-    assert p.values() == {'a': 2, 'b': 'hello'}
+    assert p.dict() == {'a': 2, 'b': 'hello'}
     p.b = 'hi'
     assert p.b == 'hi'
-    assert p.values() == {'a': 2, 'b': 'hi'}
+    assert p.dict() == {'a': 2, 'b': 'hi'}
 
 
 def test_validating_assignment_fail():

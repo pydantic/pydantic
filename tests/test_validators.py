@@ -114,7 +114,7 @@ def test_validating_assignment_fail():
         p.b = 'x'
 
 
-def test_validating_assignment_values():
+def test_validating_assignment_dict():
     with pytest.raises(ValidationError) as exc_info:
         ValidateAssignmentModel(a='x', b='xx')
     assert """\
@@ -135,7 +135,7 @@ def test_validate_multiple():
                 raise TypeError(f'{field.alias} is too short')
             return v + 'x'
 
-    assert Model(a='1234', b='5678').values() == {'a': '1234x', 'b': '5678x'}
+    assert Model(a='1234', b='5678').dict() == {'a': '1234x', 'b': '5678x'}
     with pytest.raises(ValidationError) as exc_info:
         Model(a='x', b='x')
     assert """\

@@ -175,8 +175,8 @@ class DictModel(BaseModel):
     v: Dict[str, int] = ...
 
 
-def test_dict_values():
-    assert DictModel(v={'foo': 1}).values() == {'v': {'foo': 1}}
+def test_dict_dict():
+    assert DictModel(v={'foo': 1}).dict() == {'v': {'foo': 1}}
 
 
 @pytest.mark.parametrize('value,result', [
@@ -266,7 +266,7 @@ def test_recursive_list():
     assert "<MasterListModel v=[<SubModel name='testing' count=4>]>" == repr(m)
     assert m.v[0].name == 'testing'
     assert m.v[0].count == 4
-    assert m.values() == {'v': [{'count': 4, 'name': 'testing'}]}
+    assert m.dict() == {'v': [{'count': 4, 'name': 'testing'}]}
 
     with pytest.raises(ValidationError) as exc_info:
         MasterListModel(v=['x'])
@@ -353,9 +353,9 @@ def test_str_enum():
 def test_any_dict():
     class Model(BaseModel):
         v: Dict[int, Any] = ...
-    assert Model(v={1: 'foobar'}).values() == {'v': {1: 'foobar'}}
-    assert Model(v={123: 456}).values() == {'v': {123: 456}}
-    assert Model(v={2: [1, 2, 3]}).values() == {'v': {2: [1, 2, 3]}}
+    assert Model(v={1: 'foobar'}).dict() == {'v': {1: 'foobar'}}
+    assert Model(v={123: 456}).dict() == {'v': {123: 456}}
+    assert Model(v={2: [1, 2, 3]}).dict() == {'v': {2: [1, 2, 3]}}
 
 
 def test_infer_alias():
@@ -408,10 +408,10 @@ def test_success_values_include():
         c: int = 3
 
     m = Model()
-    assert m.values() == {'a': 1, 'b': 2, 'c': 3}
-    assert m.values(include={'a'}) == {'a': 1}
-    assert m.values(exclude={'a'}) == {'b': 2, 'c': 3}
-    assert m.values(include={'a', 'b'}, exclude={'a'}) == {'b': 2}
+    assert m.dict() == {'a': 1, 'b': 2, 'c': 3}
+    assert m.dict(include={'a'}) == {'a': 1}
+    assert m.dict(exclude={'a'}) == {'b': 2, 'c': 3}
+    assert m.dict(include={'a', 'b'}, exclude={'a'}) == {'b': 2}
 
 
 def test_values_order():
@@ -432,7 +432,7 @@ def test_inheritance():
         x: float = 12.3
         a = 123
 
-    assert Bar().values() == {'x': 12.3, 'a': 123}
+    assert Bar().dict() == {'x': 12.3, 'a': 123}
 
 
 def test_invalid_type():
