@@ -13,13 +13,13 @@ class FooBarModel(BaseModel):
 
 m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
 
-print(m.values())
+print(m.dict())
 # > {'banana': 3.14, 'foo': 'hello', 'bar': {'whatever': 123}}
 
-print(m.values(include={'foo', 'bar'}))
+print(m.dict(include={'foo', 'bar'}))
 # > {'foo': 'hello', 'bar': {'whatever': 123}}
 
-print(m.values(exclude={'foo', 'bar'}))
+print(m.dict(exclude={'foo', 'bar'}))
 # > {'banana': 3.14}
 
 print(m.copy())

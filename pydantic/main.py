@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict
 from pathlib import Path
 from types import FunctionType
@@ -125,7 +126,7 @@ class BaseModel(metaclass=MetaModel):
         elif not self.config.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.config.validate_assignment:
-            value_, error_ = self.fields[name].validate(value, self.values(exclude={name}))
+            value_, error_ = self.fields[name].validate(value, self.dict(exclude={name}))
             if error_:
                 raise ValidationError({name: error_})
             else:
@@ -139,16 +140,19 @@ class BaseModel(metaclass=MetaModel):
     def __setstate__(self, state):
         object.__setattr__(self, '__values__', state)
 
-    def values(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
+    def dict(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
         """
         Get a dict of the values processed by the model, optionally specifying which fields to include or exclude.
-
-        This is NOT equivalent to the values() method on a dict.
         """
         return {
             k: v for k, v in self
             if k not in exclude and (not include or k in include)
         }
+
+    def values(self, **kwargs):
+        warnings.warn('.values(...) is depreciated and will be removed in future, '
+                      'it has been replaced by .dict(...)', DeprecationWarning)
+        return self.dict(**kwargs)
 
     @classmethod
     def parse_obj(cls, obj):
@@ -263,7 +267,7 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def _get_value(cls, v):
         if isinstance(v, BaseModel):
-            return v.values()
+            return v.dict()
         elif isinstance(v, list):
             return [cls._get_value(v_) for v_ in v]
         elif isinstance(v, dict):
@@ -284,9 +288,9 @@ class BaseModel(metaclass=MetaModel):
 
     def __eq__(self, other):
         if isinstance(other, BaseModel):
-            return self.values() == other.values()
+            return self.dict() == other.dict()
         else:
-            return self.values() == other
+            return self.dict() == other
 
     def __repr__(self):
         return f'<{self}>'
