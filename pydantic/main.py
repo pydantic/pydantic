@@ -239,9 +239,11 @@ class BaseModel(metaclass=MetaModel):
                         values[name] = field.default
                     continue
 
-            values[name], errors_ = field.validate(value, values, cls=self.__class__)
+            v_, errors_ = field.validate(value, values, cls=self.__class__)
             if errors_:
                 errors[field.alias] = errors_
+            else:
+                values[name] = v_
 
         if (not self.config.ignore_extra) or self.config.allow_extra:
             extra = input_data.keys() - {f.alias for f in self.__fields__.values()}

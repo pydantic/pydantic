@@ -106,6 +106,44 @@ pydantic uses python's standard ``enum`` classes to define choices.
 
 (This script is complete, it should run "as is")
 
+Validators
+..........
+
+Custom validation and complex relationships between objects can achieved using the ``validator`` decorator.
+
+.. literalinclude:: examples/validators_simple.py
+
+(This script is complete, it should run "as is")
+
+A few things to note on validators:
+
+* validators are "class methods", the first value they receive here will be the ``UserModel`` not an instance
+  of ``UserModel``
+* their signature can with be ``(cls, value)`` or ``(cls, value, *, values, config, field)``
+* validator should either return the new value or raise a ``ValueError`` or ``TypeError``
+* where validators rely on other values, you should be aware that:
+
+  - Validation is done in the order fields are defined, eg. here ``password2`` has access to ``password1``
+    (and ``name``), but ``password1`` does not have access to ``password2``. You should heed the warning
+    :ref:`below <usage_mypy_required>` regarding field order and required fields.
+
+  - If validation fails on another field (or that field is missing) it will not be included in ``values``, hence
+    ``if 'password1' in values and ...`` in this example.
+
+Validators can do a few more complex things:
+
+.. literalinclude:: examples/validators_complex.py
+
+(This script is complete, it should run "as is")
+
+A few more things to note:
+
+* a single validator can apply to multiple fields
+* the keyword argument ``pre`` will cause validators to be called prior to other validation
+* the ``whole`` keyword argument will mean validators are applied to entire objects rather than individual values
+  (applies for complex typing objects eg. ``List``, ``Dict``, ``Set``)
+
+
 Recursive Models
 ................
 
@@ -226,6 +264,8 @@ Pydantic provides a few useful optional or union types:
 * ``NoneStrBytes`` aka. ``Optional[StrBytes]``
 
 If these aren't sufficient you can of course define your own.
+
+.. _usage_mypy_required:
 
 Required Fields and mypy
 ~~~~~~~~~~~~~~~~~~~~~~~~

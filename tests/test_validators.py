@@ -84,3 +84,63 @@ def test_validate_whole_error():
         Model(a=[5, 10])
     assert 'a2 broken' in str(exc_info.value)
     assert calls == ['check_a1 [5, 10]', 'check_a2 [6, 10]']
+
+
+class ValidateAssignmentModel(BaseModel):
+    a: int = 4
+    b: str = ...
+
+    @validator('b')
+    def b_length(cls, v, values, **kwargs):
+        if 'a' in values and len(v) < values['a']:
+            raise ValueError('b too short')
+        return v
+
+    class Config:
+        validate_assignment = True
+
+
+def test_validating_assignment_ok():
+    p = ValidateAssignmentModel(b='hello')
+    assert p.b == 'hello'
+
+
+def test_validating_assignment_fail():
+    with pytest.raises(ValidationError):
+        ValidateAssignmentModel(a=10, b='hello')
+
+    p = ValidateAssignmentModel(b='hello')
+    with pytest.raises(ValidationError):
+        p.b = 'x'
+
+
+def test_validating_assignment_values():
+    with pytest.raises(ValidationError) as exc_info:
+        ValidateAssignmentModel(a='x', b='xx')
+    assert """\
+error validating input
+a:
+  invalid literal for int() with base 10: 'x' (error_type=ValueError track=int)""" == str(exc_info.value)
+
+
+def test_validate_multiple():
+    # also test TypeError
+    class Model(BaseModel):
+        a: str
+        b: str
+
+        @validator('a', 'b')
+        def check_a_and_b(cls, v, field, **kwargs):
+            if len(v) < 4:
+                raise TypeError(f'{field.alias} is too short')
+            return v + 'x'
+
+    assert Model(a='1234', b='5678').values() == {'a': '1234x', 'b': '5678x'}
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='x', b='x')
+    assert """\
+2 errors validating input
+a:
+  a is too short (error_type=TypeError track=str)
+b:
+  b is too short (error_type=TypeError track=str)""" == str(exc_info.value)
