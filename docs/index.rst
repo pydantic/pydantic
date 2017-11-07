@@ -194,6 +194,8 @@ This usage example comes last as it uses numerous concepts described above.
 Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` or ``auth_key`` by
 ``export my_api_key=6380``.
 
+Complex types like ``list``, ``set``, ``dict`` and submodels can be set by using JSON environment variables.
+
 .. _usage_mypy:
 
 Usage with mypy
