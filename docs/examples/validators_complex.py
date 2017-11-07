@@ -27,6 +27,7 @@ class DemoModel(BaseModel):
     def check_sum_numbers_low(cls, v):
         if sum(v) > 8:
             raise ValueError(f'sum of numbers greater than 8')
+        return v
 
 
 print(DemoModel(numbers='[1, 1, 2, 2]'))

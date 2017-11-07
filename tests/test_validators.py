@@ -144,3 +144,17 @@ a:
   a is too short (error_type=TypeError track=str)
 b:
   b is too short (error_type=TypeError track=str)""" == str(exc_info.value)
+
+
+def test_classmethod():
+    class Model(BaseModel):
+        a: str
+
+        @validator('a')
+        def check_a(cls, v):
+            assert cls is Model
+            return v
+
+    m = Model(a='this is foobar good')
+    assert m.a == 'this is foobar good'
+    m.check_a('x')

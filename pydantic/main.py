@@ -41,8 +41,8 @@ def _extract_validators(namespace):
     for var_name, value in namespace.items():
         validator_config = getattr(value, '__validator_config', None)
         if validator_config:
-            v = (value, validator_config['pre'], validator_config['whole'])
-            for field in validator_config['fields']:
+            fields, *v = validator_config
+            for field in fields:
                 if field in validators:
                     validators[field].append(v)
                 else:
@@ -311,6 +311,7 @@ def validator(*fields, pre=False, whole=False):
     :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
     """
     def dec(f):
-        f.__validator_config = {'fields': fields, 'pre': pre, 'whole': whole}
-        return f
+        f_cls = classmethod(f)
+        f_cls.__validator_config = fields, f, pre, whole
+        return f_cls
     return dec
