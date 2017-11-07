@@ -52,18 +52,19 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
 
 **dual use**
     pydantic's :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data" context
-    and "load my system settings" context. The main difference being that system settings can can have defaults changed
-    by environment variables and more complex objects like DSNs and python objects often required.
+    and "load my system settings" context. The main difference being that system settings can have defaults changed
+    by environment variables and more complex objects like DSNs and python objects are often required.
 
 **fast**
     In :ref:`benchmarks <benchmarks_tag>` pydantic is faster than all other tested libraries.
 
 **validate complex structures**
-    use of recursive pydantic models and ``typing``'s ``List`` and ``Dict`` etc. allow complex data schemas to be
-    clearly and easily defined.
+    use of recursive pydantic models, ``typing``'s ``List`` and ``Dict`` etc. and validators allow
+    complex data schemas to be clearly and easily defined can then checked.
 
 **extendible**
-    pydantic allows custom data types to be defined or you can extend validation with the `clean_*` methods on a model.
+    pydantic allows custom data types to be defined or you can extend validation with methods on a model decorated
+    with the ``validator`` decorator.
 
 
 Install
