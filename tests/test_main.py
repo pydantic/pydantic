@@ -240,6 +240,13 @@ def test_set_attr():
     assert m.dict() == {'a': 10.2, 'b': 20}
 
 
+def test_values_depreciated():
+    m = UltraSimpleModel(a=10.2)
+    assert m.dict() == {'a': 10.2, 'b': 10}
+    with pytest.warns(DeprecationWarning):
+        assert m.values() == {'a': 10.2, 'b': 10}
+
+
 def test_set_attr_invalid():
 
     class UltraSimpleModel(BaseModel):

@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict
 from pathlib import Path
 from types import FunctionType
@@ -142,13 +143,16 @@ class BaseModel(metaclass=MetaModel):
     def dict(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
         """
         Get a dict of the values processed by the model, optionally specifying which fields to include or exclude.
-
-        This is NOT equivalent to the values() method on a dict.
         """
         return {
             k: v for k, v in self
             if k not in exclude and (not include or k in include)
         }
+
+    def values(self, **kwargs):
+        warnings.warn('.values(...) is depreciated and will be removed in future, '
+                      'it has been replaced by .dict(...)', DeprecationWarning)
+        return self.dict(**kwargs)
 
     @classmethod
     def parse_obj(cls, obj):
