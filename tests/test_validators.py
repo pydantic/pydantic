@@ -178,23 +178,25 @@ def test_duplicates():
 
 
 def test_use_bare():
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigError) as exc_info:
         class Model(BaseModel):
             a: str
 
             @validator
             def checker(cls, v):
                 return v
+    assert 'validators should be used with fields' in str(exc_info.value)
 
 
 def test_use_no_fields():
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigError) as exc_info:
         class Model(BaseModel):
             a: str
 
             @validator()
             def checker(cls, v):
                 return v
+    assert 'validator with no fields specified' in str(exc_info.value)
 
 
 def test_validate_always():
