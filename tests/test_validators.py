@@ -175,3 +175,39 @@ def test_duplicates():
                 return v
     assert str(exc_info.value) == ('duplicate validator function '
                                    '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"')
+
+
+def test_validate_always():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: str = None
+
+        @validator('a', pre=True, always=True)
+        def check_a(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v or 'xxx'
+
+    assert Model().a == 'xxx'
+    assert check_calls == 1
+    assert Model(a='y').a == 'y'
+    assert check_calls == 2
+
+
+def test_validate_not_always():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: str = None
+
+        @validator('a', pre=True)
+        def check_a(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v or 'xxx'
+
+    assert Model().a is None
+    assert check_calls == 0
+    assert Model(a='y').a == 'y'
+    assert check_calls == 1

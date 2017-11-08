@@ -310,13 +310,13 @@ class BaseModel(metaclass=MetaModel):
 _FUNCS = set()
 
 
-def validator(*fields, pre: bool=False, whole: bool=False, validate_always: bool=False):
+def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False):
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
     :param pre: whether or not this validator should be called before the standard validators (else after)
     :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
-    :param validate_always: whether this method and other validators should be called even if this field is missing
+    :param always: whether this method and other validators should be called even if the value is missing
     """
     def dec(f):
         ref = f.__module__ + '.' + f.__qualname__
@@ -324,6 +324,6 @@ def validator(*fields, pre: bool=False, whole: bool=False, validate_always: bool
             raise ConfigError(f'duplicate validator function "{ref}"')
         _FUNCS.add(ref)
         f_cls = classmethod(f)
-        f_cls.__validator_config = fields, Validator(f, pre, whole, validate_always)
+        f_cls.__validator_config = fields, Validator(f, pre, whole, always)
         return f_cls
     return dec

@@ -27,7 +27,7 @@ class Validator(NamedTuple):
     func: Callable
     pre: bool
     whole: bool
-    validate_always: bool
+    always: bool
 
 
 class Field:
@@ -55,7 +55,7 @@ class Field:
         self.key_type_: type = None
         class_validators = class_validators or []
         self.validate_always: bool = (
-            getattr(self.type_, 'validate_always', False) or any(v.validate_always for v in class_validators)
+            getattr(self.type_, 'validate_always', False) or any(v.always for v in class_validators)
         )
         self.sub_fields: List[Field] = None
         self.key_field: Field = None
