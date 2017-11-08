@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ConfigError, ValidationError, validator
 
 
 def test_simple():
@@ -158,3 +158,20 @@ def test_classmethod():
     m = Model(a='this is foobar good')
     assert m.a == 'this is foobar good'
     m.check_a('x')
+
+
+def test_duplicates():
+    with pytest.raises(ConfigError) as exc_info:
+        class Model(BaseModel):
+            a: str
+            b: str
+
+            @validator('a')
+            def duplicate_name(cls, v):
+                return v
+
+            @validator('b')  # noqa
+            def duplicate_name(cls, v):
+                return v
+    assert str(exc_info.value) == ('duplicate validator function '
+                                   '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"')

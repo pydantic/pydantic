@@ -4,7 +4,7 @@ from pathlib import Path
 from types import FunctionType
 from typing import Any, Dict, Set, Union
 
-from .exceptions import Error, Extra, Missing, ValidationError
+from .exceptions import ConfigError, Error, Extra, Missing, ValidationError
 from .fields import Field
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
@@ -307,6 +307,9 @@ class BaseModel(metaclass=MetaModel):
         return self.to_string()
 
 
+_FUNCS = set()
+
+
 def validator(*fields, pre=False, whole=False):
     """
     Decorate methods on the class indicating that they should be used to validate fields
@@ -315,6 +318,10 @@ def validator(*fields, pre=False, whole=False):
     :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
     """
     def dec(f):
+        ref = f.__module__ + '.' + f.__qualname__
+        if ref in _FUNCS:
+            raise ConfigError(f'duplicate validator function "{ref}"')
+        _FUNCS.add(ref)
         f_cls = classmethod(f)
         f_cls.__validator_config = fields, f, pre, whole
         return f_cls
