@@ -3,6 +3,10 @@
 History
 -------
 
+v0.6.1 (2017-11-08)
+...................
+* prevent duplicate validators, #101
+
 v0.6.0 (2017-11-07)
 ...................
 * assignment validation #94, thanks petroswork!
