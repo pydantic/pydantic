@@ -5,7 +5,7 @@ from types import FunctionType
 from typing import Any, Dict, Set, Union
 
 from .exceptions import ConfigError, Error, Extra, Missing, ValidationError
-from .fields import Field
+from .fields import Field, Validator
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
 from .utils import truncate
@@ -42,7 +42,7 @@ def _extract_validators(namespace):
     for var_name, value in namespace.items():
         validator_config = getattr(value, '__validator_config', None)
         if validator_config:
-            fields, *v = validator_config
+            fields, v = validator_config
             for field in fields:
                 if field in validators:
                     validators[field].append(v)
@@ -310,12 +310,13 @@ class BaseModel(metaclass=MetaModel):
 _FUNCS = set()
 
 
-def validator(*fields, pre=False, whole=False):
+def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False):
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
     :param pre: whether or not this validator should be called before the standard validators (else after)
     :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
+    :param always: whether this method and other validators should be called even if the value is missing
     """
     def dec(f):
         ref = f.__module__ + '.' + f.__qualname__
@@ -323,6 +324,6 @@ def validator(*fields, pre=False, whole=False):
             raise ConfigError(f'duplicate validator function "{ref}"')
         _FUNCS.add(ref)
         f_cls = classmethod(f)
-        f_cls.__validator_config = fields, f, pre, whole
+        f_cls.__validator_config = fields, Validator(f, pre, whole, always)
         return f_cls
     return dec

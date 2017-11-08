@@ -1,7 +1,7 @@
 import inspect
 from collections import OrderedDict
 from enum import IntEnum
-from typing import Any, List, Mapping, Set, Type, Union
+from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
 from .exceptions import ConfigError, Error, type_display
 from .validators import NoneType, find_validators, not_none_validator
@@ -23,6 +23,13 @@ class Shape(IntEnum):
     MAPPING = 4
 
 
+class Validator(NamedTuple):
+    func: Callable
+    pre: bool
+    whole: bool
+    always: bool
+
+
 class Field:
     __slots__ = (
         'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
@@ -35,7 +42,7 @@ class Field:
             name: str,
             type_: Type,
             alias: str=None,
-            class_validators: dict=None,
+            class_validators: List[Validator]=None,
             default: Any=None,
             required: bool=False,
             allow_none: bool=False,
@@ -46,7 +53,10 @@ class Field:
         self.alias: str = alias or name
         self.type_: type = type_
         self.key_type_: type = None
-        self.validate_always: bool = getattr(self.type_, 'validate_always', False)
+        class_validators = class_validators or []
+        self.validate_always: bool = (
+            getattr(self.type_, 'validate_always', False) or any(v.always for v in class_validators)
+        )
         self.sub_fields: List[Field] = None
         self.key_field: Field = None
         self.validators = []
@@ -59,7 +69,7 @@ class Field:
         self.allow_none: bool = allow_none
         self.shape: Shape = Shape.SINGLETON
         self.info = {}
-        self._prepare(class_validators or {})
+        self._prepare(class_validators)
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, config):
@@ -176,15 +186,15 @@ class Field:
         if not self.sub_fields:
             get_validators = getattr(self.type_, 'get_validators', None)
             v_funcs = (
-                *tuple(f for f, pre, whole in class_validators if not whole and pre),
+                *tuple(v.func for v in class_validators if not v.whole and v.pre),
                 *(get_validators() if get_validators else find_validators(self.type_)),
-                *tuple(f for f, pre, whole in class_validators if not whole and not pre),
+                *tuple(v.func for v in class_validators if not v.whole and not v.pre),
             )
             self.validators = self._prep_vals(v_funcs)
 
         if class_validators:
-            self.whole_pre_validators = self._prep_vals(f for f, pre, whole in class_validators if whole and pre)
-            self.whole_post_validators = self._prep_vals(f for f, pre, whole in class_validators if whole and not pre)
+            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators if v.whole and v.pre)
+            self.whole_post_validators = self._prep_vals(v.func for v in class_validators if v.whole and not v.pre)
 
     def _prep_vals(self, v_funcs):
         v = []

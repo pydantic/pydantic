@@ -131,9 +131,12 @@ A few things to note on validators:
   - If validation fails on another field (or that field is missing) it will not be included in ``values``, hence
     ``if 'password1' in values and ...`` in this example.
 
+Pre and Whole Validators
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 Validators can do a few more complex things:
 
-.. literalinclude:: examples/validators_complex.py
+.. literalinclude:: examples/validators_pre_whole.py
 
 (This script is complete, it should run "as is")
 
@@ -143,6 +146,20 @@ A few more things to note:
 * the keyword argument ``pre`` will cause validators to be called prior to other validation
 * the ``whole`` keyword argument will mean validators are applied to entire objects rather than individual values
   (applies for complex typing objects eg. ``List``, ``Dict``, ``Set``)
+
+Validate Always
+~~~~~~~~~~~~~~~
+
+For performance reasons by default validators are not called for fields where the value is not supplied.
+However there are situations where it's useful or required to always call the validator, e.g.
+to set a dynamic default value.
+
+.. literalinclude:: examples/validators_always.py
+
+(This script is complete, it should run "as is")
+
+You'll often want to use this together with ``pre`` since otherwise the with ``always=True``
+_pydantic_ would try to validate the default ``None`` which would cause an error.
 
 
 Recursive Models
