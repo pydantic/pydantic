@@ -3,6 +3,10 @@
 History
 -------
 
+v0.6.2 (2017-11-XX)
+...................
+* errors for invalid validator use
+
 v0.6.1 (2017-11-08)
 ...................
 * prevent duplicate validators, #101

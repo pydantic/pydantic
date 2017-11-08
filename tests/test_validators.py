@@ -177,6 +177,26 @@ def test_duplicates():
                                    '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"')
 
 
+def test_use_bare():
+    with pytest.raises(ConfigError):
+        class Model(BaseModel):
+            a: str
+
+            @validator
+            def checker(cls, v):
+                return v
+
+
+def test_use_no_fields():
+    with pytest.raises(ConfigError):
+        class Model(BaseModel):
+            a: str
+
+            @validator()
+            def checker(cls, v):
+                return v
+
+
 def test_validate_always():
     check_calls = 0
 

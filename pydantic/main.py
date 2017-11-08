@@ -318,6 +318,12 @@ def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False):
     :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
     :param always: whether this method and other validators should be called even if the value is missing
     """
+    if not fields:
+        raise ConfigError('validator with no fields specified')
+    elif isinstance(fields[0], FunctionType):
+        raise ConfigError("validators should be used with fields and keyword arguments, not bare. "
+                          "E.g. usage should be `@validator('<field_name>', ...)`")
+
     def dec(f):
         ref = f.__module__ + '.' + f.__qualname__
         if ref in _FUNCS:
