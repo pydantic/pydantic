@@ -9,6 +9,14 @@ class SettingsError(ValueError):
     pass
 
 
+def _complex_field(field):
+    try:
+        return field and (field.shape != Shape.SINGLETON or issubclass(field.type_, (BaseModel, list, set, dict)))
+    except TypeError:
+        # if field.type_ is not a class
+        return False
+
+
 class BaseSettings(BaseModel):
     """
     Base class for settings, allowing values to be overridden by environment variables.
@@ -38,7 +46,7 @@ class BaseSettings(BaseModel):
                 env_name = self.config.env_prefix + field.name.upper()
             env_var = os.getenv(env_name, None)
             if env_var:
-                if field and (field.shape != Shape.SINGLETON or issubclass(field.type_, (BaseModel, list, set, dict))):
+                if _complex_field(field):
                     try:
                         env_var = json.loads(env_var)
                     except ValueError as e:

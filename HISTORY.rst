@@ -3,9 +3,10 @@
 History
 -------
 
-v0.6.2 (2017-11-XX)
+v0.6.2 (2017-11-13)
 ...................
 * errors for invalid validator use
+* safer check for complex models in ``Settings``
 
 v0.6.1 (2017-11-08)
 ...................

@@ -2,7 +2,7 @@ from typing import List, Set
 
 import pytest
 
-from pydantic import BaseModel, BaseSettings, ValidationError
+from pydantic import BaseModel, BaseSettings, NoneStr, ValidationError
 from pydantic.env_settings import SettingsError
 
 
@@ -92,3 +92,12 @@ def test_required_sub_model(env):
     env.set('APP_FOOBAR', '{"pips": "TRUE"}')
     s = Settings()
     assert s.foobar.pips is True
+
+
+def test_non_class(env):
+    class Settings(BaseSettings):
+        foobar: NoneStr
+
+    env.set('APP_FOOBAR', 'xxx')
+    s = Settings()
+    assert s.foobar == 'xxx'
