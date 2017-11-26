@@ -2,12 +2,15 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 from setuptools import setup
 
+description = 'Data validation and settings management using python 3.6 type hinting'
 THIS_DIR = Path(__file__).resolve().parent
-long_description = (
-    THIS_DIR.joinpath('README.rst').read_text() +
-    '\n\n' +
-    THIS_DIR.joinpath('HISTORY.rst').read_text()
-)
+try:
+    long_description = '\n\n'.join([
+        THIS_DIR.joinpath('README.rst').read_text(),
+        THIS_DIR.joinpath('HISTORY.rst').read_text()
+    ])
+except FileNotFoundError:
+    long_description = description + '.\n\nSee https://pydantic-docs.helpmanual.io/ for documentation.'
 
 # avoid loading the package before requirements are installed:
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
@@ -15,7 +18,7 @@ version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 setup(
     name='pydantic',
     version=str(version.VERSION),
-    description='Data validation and settings management using python 3.6 type hinting',
+    description=description,
     long_description=long_description,
     classifiers=[
         'Development Status :: 4 - Beta',
