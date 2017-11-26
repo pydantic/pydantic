@@ -3,7 +3,7 @@
 History
 -------
 
-v0.6.3 (2017-11-XX)
+v0.6.3 (2017-11-26)
 ...................
 * fix direct install without ``README.rst`` present
 

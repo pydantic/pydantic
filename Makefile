@@ -64,7 +64,7 @@ clean:
 docs:
 	make -C docs html
 
-.PHONY: deploy-docs
+.PHONY: publish
 publish: docs
 	cd docs/_build/ && cp -r html site && zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
