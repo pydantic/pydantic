@@ -1,4 +1,4 @@
-coverage==4.4.1
+coverage==4.4.2
 flake8==3.5.0
 isort==4.2.15
 mypy==0.540
