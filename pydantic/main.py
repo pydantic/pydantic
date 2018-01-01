@@ -1,10 +1,11 @@
+import warnings
 from collections import OrderedDict
 from pathlib import Path
 from types import FunctionType
 from typing import Any, Dict, Set, Union
 
-from .exceptions import Error, Extra, Missing, ValidationError
-from .fields import Field
+from .exceptions import ConfigError, Error, Extra, Missing, ValidationError
+from .fields import Field, Validator
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
 from .utils import truncate
@@ -36,6 +37,20 @@ def inherit_config(self_config, parent_config) -> BaseConfig:
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
+def _extract_validators(namespace):
+    validators = {}
+    for var_name, value in namespace.items():
+        validator_config = getattr(value, '__validator_config', None)
+        if validator_config:
+            fields, v = validator_config
+            for field in fields:
+                if field in validators:
+                    validators[field].append(v)
+                else:
+                    validators[field] = [v]
+    return validators
+
+
 class MetaModel(type):
     @classmethod
     def __prepare__(mcs, *args, **kwargs):
@@ -50,9 +65,7 @@ class MetaModel(type):
                 config = inherit_config(base.config, config)
 
         config = inherit_config(namespace.get('Config'), config)
-        class_validators = {
-            n: f for n, f in namespace.items() if n.startswith('validate_') and isinstance(f, FunctionType)
-        }
+        validators = _extract_validators(namespace)
 
         for f in fields.values():
             f.set_config(config)
@@ -65,7 +78,7 @@ class MetaModel(type):
                     name=ann_name,
                     value=...,
                     annotation=ann_type,
-                    class_validators=class_validators,
+                    class_validators=validators.get(ann_name),
                     config=config,
                 )
 
@@ -75,7 +88,7 @@ class MetaModel(type):
                     name=var_name,
                     value=value,
                     annotation=annotations.get(var_name),
-                    class_validators=class_validators,
+                    class_validators=validators.get(var_name),
                     config=config,
                 )
 
@@ -113,7 +126,7 @@ class BaseModel(metaclass=MetaModel):
         elif not self.config.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.config.validate_assignment:
-            value_, error_ = self.fields[name].validate(value, self.values(exclude={name}))
+            value_, error_ = self.fields[name].validate(value, self.dict(exclude={name}))
             if error_:
                 raise ValidationError({name: error_})
             else:
@@ -127,16 +140,19 @@ class BaseModel(metaclass=MetaModel):
     def __setstate__(self, state):
         object.__setattr__(self, '__values__', state)
 
-    def values(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
+    def dict(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
         """
         Get a dict of the values processed by the model, optionally specifying which fields to include or exclude.
-
-        This is NOT equivalent to the values() method on a dict.
         """
         return {
             k: v for k, v in self
             if k not in exclude and (not include or k in include)
         }
+
+    def values(self, **kwargs):
+        warnings.warn('.values(...) is depreciated and will be removed in future, '
+                      'it has been replaced by .dict(...)', DeprecationWarning)
+        return self.dict(**kwargs)
 
     @classmethod
     def parse_obj(cls, obj):
@@ -227,9 +243,11 @@ class BaseModel(metaclass=MetaModel):
                         values[name] = field.default
                     continue
 
-            values[name], errors_ = field.validate(value, values)
+            v_, errors_ = field.validate(value, values, cls=self.__class__)
             if errors_:
                 errors[field.alias] = errors_
+            else:
+                values[name] = v_
 
         if (not self.config.ignore_extra) or self.config.allow_extra:
             extra = input_data.keys() - {f.alias for f in self.__fields__.values()}
@@ -249,7 +267,7 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def _get_value(cls, v):
         if isinstance(v, BaseModel):
-            return v.values()
+            return v.dict()
         elif isinstance(v, list):
             return [cls._get_value(v_) for v_ in v]
         elif isinstance(v, dict):
@@ -270,9 +288,9 @@ class BaseModel(metaclass=MetaModel):
 
     def __eq__(self, other):
         if isinstance(other, BaseModel):
-            return self.values() == other.values()
+            return self.dict() == other.dict()
         else:
-            return self.values() == other
+            return self.dict() == other
 
     def __repr__(self):
         return f'<{self}>'
@@ -287,3 +305,31 @@ class BaseModel(metaclass=MetaModel):
 
     def __str__(self):
         return self.to_string()
+
+
+_FUNCS = set()
+
+
+def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False):
+    """
+    Decorate methods on the class indicating that they should be used to validate fields
+    :param fields: which field(s) the method should be called on
+    :param pre: whether or not this validator should be called before the standard validators (else after)
+    :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
+    :param always: whether this method and other validators should be called even if the value is missing
+    """
+    if not fields:
+        raise ConfigError('validator with no fields specified')
+    elif isinstance(fields[0], FunctionType):
+        raise ConfigError("validators should be used with fields and keyword arguments, not bare. "
+                          "E.g. usage should be `@validator('<field_name>', ...)`")
+
+    def dec(f):
+        ref = f.__module__ + '.' + f.__qualname__
+        if ref in _FUNCS:
+            raise ConfigError(f'duplicate validator function "{ref}"')
+        _FUNCS.add(ref)
+        f_cls = classmethod(f)
+        f_cls.__validator_config = fields, Validator(f, pre, whole, always)
+        return f_cls
+    return dec

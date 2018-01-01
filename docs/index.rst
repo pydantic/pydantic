@@ -52,18 +52,19 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
 
 **dual use**
     pydantic's :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data" context
-    and "load my system settings" context. The main difference being that system settings can can have defaults changed
-    by environment variables and more complex objects like DSNs and python objects often required.
+    and "load my system settings" context. The main difference being that system settings can have defaults changed
+    by environment variables and more complex objects like DSNs and python objects are often required.
 
 **fast**
     In :ref:`benchmarks <benchmarks_tag>` pydantic is faster than all other tested libraries.
 
 **validate complex structures**
-    use of recursive pydantic models and ``typing``'s ``List`` and ``Dict`` etc. allow complex data schemas to be
-    clearly and easily defined.
+    use of recursive pydantic models, ``typing``'s ``List`` and ``Dict`` etc. and validators allow
+    complex data schemas to be clearly and easily defined can then checked.
 
 **extendible**
-    pydantic allows custom data types to be defined or you can extend validation with the `clean_*` methods on a model.
+    pydantic allows custom data types to be defined or you can extend validation with methods on a model decorated
+    with the ``validator`` decorator.
 
 
 Install
@@ -105,6 +106,61 @@ pydantic uses python's standard ``enum`` classes to define choices.
 .. literalinclude:: examples/choices.py
 
 (This script is complete, it should run "as is")
+
+Validators
+..........
+
+Custom validation and complex relationships between objects can achieved using the ``validator`` decorator.
+
+.. literalinclude:: examples/validators_simple.py
+
+(This script is complete, it should run "as is")
+
+A few things to note on validators:
+
+* validators are "class methods", the first value they receive here will be the ``UserModel`` not an instance
+  of ``UserModel``
+* their signature can with be ``(cls, value)`` or ``(cls, value, *, values, config, field)``
+* validator should either return the new value or raise a ``ValueError`` or ``TypeError``
+* where validators rely on other values, you should be aware that:
+
+  - Validation is done in the order fields are defined, eg. here ``password2`` has access to ``password1``
+    (and ``name``), but ``password1`` does not have access to ``password2``. You should heed the warning
+    :ref:`below <usage_mypy_required>` regarding field order and required fields.
+
+  - If validation fails on another field (or that field is missing) it will not be included in ``values``, hence
+    ``if 'password1' in values and ...`` in this example.
+
+Pre and Whole Validators
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Validators can do a few more complex things:
+
+.. literalinclude:: examples/validators_pre_whole.py
+
+(This script is complete, it should run "as is")
+
+A few more things to note:
+
+* a single validator can apply to multiple fields
+* the keyword argument ``pre`` will cause validators to be called prior to other validation
+* the ``whole`` keyword argument will mean validators are applied to entire objects rather than individual values
+  (applies for complex typing objects eg. ``List``, ``Dict``, ``Set``)
+
+Validate Always
+~~~~~~~~~~~~~~~
+
+For performance reasons by default validators are not called for fields where the value is not supplied.
+However there are situations where it's useful or required to always call the validator, e.g.
+to set a dynamic default value.
+
+.. literalinclude:: examples/validators_always.py
+
+(This script is complete, it should run "as is")
+
+You'll often want to use this together with ``pre`` since otherwise the with ``always=True``
+_pydantic_ would try to validate the default ``None`` which would cause an error.
+
 
 Recursive Models
 ................
@@ -194,6 +250,8 @@ This usage example comes last as it uses numerous concepts described above.
 Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` or ``auth_key`` by
 ``export my_api_key=6380``.
 
+Complex types like ``list``, ``set``, ``dict`` and submodels can be set by using JSON environment variables.
+
 .. _usage_mypy:
 
 Usage with mypy
@@ -224,6 +282,8 @@ Pydantic provides a few useful optional or union types:
 * ``NoneStrBytes`` aka. ``Optional[StrBytes]``
 
 If these aren't sufficient you can of course define your own.
+
+.. _usage_mypy_required:
 
 Required Fields and mypy
 ~~~~~~~~~~~~~~~~~~~~~~~~

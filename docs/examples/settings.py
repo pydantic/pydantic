@@ -1,4 +1,11 @@
-from pydantic import DSN, BaseSettings, PyObject
+from typing import Set
+
+from pydantic import BaseModel, DSN, BaseSettings, PyObject
+
+
+class SubModel(BaseModel):
+    foo = 'bar'
+    apple = 1
 
 
 class Settings(BaseSettings):
@@ -19,6 +26,14 @@ class Settings(BaseSettings):
     db_driver = 'postgres'
     db_query: dict = None
     dsn: DSN = None
+
+    # to override domains:
+    # export MY_PREFIX_DOMAINS = '["foo.com", "bar.com"]'
+    domains: Set[str] = set()
+
+    # to override more_settings:
+    # export MY_PREFIX_MORE_SETTINGS = '{"foo": "x", "apple": 1}'
+    more_settings: SubModel = SubModel()
 
     class Config:
         env_prefix = 'MY_PREFIX_'  # defaults to 'APP_'

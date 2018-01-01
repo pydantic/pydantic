@@ -41,7 +41,7 @@ m = Model(
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
     uuid='ebcdab58-6eb8-46fb-a190-d07a33e9eac8'
 )
-print(m.values())
+print(m.dict())
 """
 {
     'cos_function': <built-in function cos>,

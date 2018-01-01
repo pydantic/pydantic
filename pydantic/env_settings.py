@@ -1,6 +1,20 @@
+import json
 import os
 
+from .fields import Shape
 from .main import BaseModel
+
+
+class SettingsError(ValueError):
+    pass
+
+
+def _complex_field(field):
+    try:
+        return field and (field.shape != Shape.SINGLETON or issubclass(field.type_, (BaseModel, list, set, dict)))
+    except TypeError:
+        # if field.type_ is not a class
+        return False
 
 
 class BaseSettings(BaseModel):
@@ -25,13 +39,18 @@ class BaseSettings(BaseModel):
         Substitute environment variables into values.
         """
         d = {}
-        for name, field in self.__fields__.items():
+        for field in self.__fields__.values():
             if field.alt_alias:
                 env_name = field.alias
             else:
                 env_name = self.config.env_prefix + field.name.upper()
             env_var = os.getenv(env_name, None)
             if env_var:
+                if _complex_field(field):
+                    try:
+                        env_var = json.loads(env_var)
+                    except ValueError as e:
+                        raise SettingsError(f'error parsing JSON for "{env_name}"') from e
                 d[field.alias] = env_var
         return d
 

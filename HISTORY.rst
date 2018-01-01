@@ -3,6 +3,27 @@
 History
 -------
 
+v0.6.3 (2017-11-26)
+...................
+* fix direct install without ``README.rst`` present
+
+v0.6.2 (2017-11-13)
+...................
+* errors for invalid validator use
+* safer check for complex models in ``Settings``
+
+v0.6.1 (2017-11-08)
+...................
+* prevent duplicate validators, #101
+* add ``always`` kwarg to validators, #102
+
+v0.6.0 (2017-11-07)
+...................
+* assignment validation #94, thanks petroswork!
+* JSON in environment variables for complex types, #96
+* add ``validator`` decorators for complex validation, #97
+* depreciate ``values(...)`` and replace with ``.dict(...)``, #99
+
 v0.5.0 (2017-10-23)
 ...................
 * add ``UUID`` validation #89

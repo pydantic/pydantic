@@ -1,7 +1,9 @@
 import django
 from django.conf import settings
 
-settings.configure()
+settings.configure(
+    INSTALLED_APPS=['django.contrib.auth', 'django.contrib.contenttypes']
+)
 django.setup()
 
 from rest_framework import serializers
