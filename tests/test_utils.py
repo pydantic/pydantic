@@ -25,6 +25,7 @@ from pydantic.utils import import_string, make_dsn, validate_email
     ('उदाहरण.परीक्ष@domain.with.idn.tld', 'उदाहरण.परीक्ष', 'उदाहरण.परीक्ष@domain.with.idn.tld'),
     ('foo.bar@example.com', 'foo.bar', 'foo.bar@example.com'),
     ('foo.bar@exam-ple.com ', 'foo.bar', 'foo.bar@exam-ple.com'),
+    ('ιωάννης@εεττ.gr', 'ιωάννης', 'ιωάννης@εεττ.gr'),
 ])
 def test_address_valid(value, name, email):
     assert validate_email(value) == (name, email)
@@ -36,10 +37,8 @@ def test_address_valid(value, name, email):
     'foobar',
     'foobar <foobar@example.com',
     '@example.com',
-    'foobar@example.co-m',
     'foobar@.example.com',
     'foobar@.com',
-    'test@domain.with.idn.tld.उदाहरण.परीक्षा',
     'foo bar@example.com',
     'foo@bar@example.com',
     '\n@example.com',
@@ -50,9 +49,7 @@ def test_address_valid(value, name, email):
     '\u001f@example.com',
     '"@example.com',
     '\"@example.com',
-    '`@example.com',
     ',@example.com',
-    'foobar <foobar`@example.com>',
 ])
 def test_address_invalid(value):
     with pytest.raises(ValueError):
