@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import pytest
 
@@ -233,3 +233,21 @@ def test_validate_not_always():
     assert check_calls == 0
     assert Model(a='y').a == 'y'
     assert check_calls == 1
+
+
+def test_validator_always_optional():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: Optional[str] = None
+
+        @validator('a', pre=True, always=True)
+        def check_a(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v or 'xxx'
+
+    assert Model(a='y').a == 'y'
+    assert check_calls == 1
+    assert Model().a == 'xxx'
+    assert check_calls == 2

@@ -137,7 +137,8 @@ class Field:
             types_ = []
             for type_ in self.type_.__args__:
                 if type_ is NoneType:
-                    self.allow_none = True
+                    if not self.validate_always:
+                        self.allow_none = True
                 else:
                     types_.append(type_)
             self.sub_fields = [self.__class__(
