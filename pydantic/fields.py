@@ -30,6 +30,9 @@ class Validator(NamedTuple):
     always: bool
 
 
+_ALLOW_NONE = object()
+
+
 class Field:
     __slots__ = (
         'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
@@ -108,7 +111,8 @@ class Field:
             self.allow_none = True
 
         self._populate_sub_fields(class_validators)
-        self._populate_validators(class_validators)
+        if not self.sub_fields:
+            self._populate_validators(class_validators)
 
         self.info = OrderedDict([
             ('type', type_display(self.type_)),
@@ -120,7 +124,7 @@ class Field:
         if self.sub_fields:
             self.info['sub_fields'] = self.sub_fields
         else:
-            self.info['validators'] = [v[1].__qualname__ for v in self.validators]
+            self.info['validators'] = [v[1].__qualname__ for v in self.validators if v[0] is not _ALLOW_NONE]
 
         # TODO
         # if self.description:
@@ -135,10 +139,10 @@ class Field:
 
         if origin is Union:
             types_ = []
+            allow_none = self.allow_none
             for type_ in self.type_.__args__:
                 if type_ is NoneType:
-                    if not self.validate_always:
-                        self.allow_none = True
+                    allow_none = True
                 else:
                     types_.append(type_)
             self.sub_fields = [self.__class__(
@@ -146,7 +150,7 @@ class Field:
                 class_validators=class_validators,
                 default=self.default,
                 required=self.required,
-                allow_none=self.allow_none,
+                allow_none=allow_none,
                 name=f'{self.name}_{type_display(t)}',
                 model_config=self.model_config,
             ) for t in types_]
@@ -184,34 +188,39 @@ class Field:
             )]
 
     def _populate_validators(self, class_validators):
-        if not self.sub_fields:
-            get_validators = getattr(self.type_, 'get_validators', None)
-            v_funcs = (
-                *tuple(v.func for v in class_validators if not v.whole and v.pre),
-                *(get_validators() if get_validators else find_validators(self.type_)),
-                *tuple(v.func for v in class_validators if not v.whole and not v.pre),
-            )
-            self.validators = self._prep_vals(v_funcs)
+        self.whole_pre_validators = self._prep_validators(v.func for v in class_validators if v.whole and v.pre)
 
-        if class_validators:
-            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators if v.whole and v.pre)
-            self.whole_post_validators = self._prep_vals(v.func for v in class_validators if v.whole and not v.pre)
+        v_funcs = [v.func for v in class_validators if not v.whole and v.pre]
 
-    def _prep_vals(self, v_funcs):
+        if self.allow_none:
+            v_funcs.append(_ALLOW_NONE)
+
+        get_validators = getattr(self.type_, 'get_validators', None)
+        if get_validators:
+            v_funcs += list(get_validators())
+        else:
+            v_funcs += list(find_validators(self.type_))
+
+        v_funcs += [v.func for v in class_validators if not v.whole and not v.pre]
+        self.validators = self._prep_validators(v_funcs)
+
+        self.whole_post_validators = self._prep_validators(v.func for v in class_validators if v.whole and not v.pre)
+
+    def _prep_validators(self, v_funcs):
         v = []
         for f in v_funcs:
             if not f or (self.allow_none and f is not_none_validator):
-                continue
-            v.append((
-                _get_validator_signature(f),
-                f,
-            ))
+                pass
+            elif f is _ALLOW_NONE:
+                v.append((_ALLOW_NONE, None))
+            else:
+                v.append((
+                    _get_validator_signature(f),
+                    f,
+                ))
         return tuple(v)
 
     def validate(self, v, values, index=None, cls=None):
-        if self.allow_none and v is None:
-            return None, None
-
         if self.whole_pre_validators:
             v, errors = self._apply_validators(v, values, index, cls, self.whole_pre_validators)
             if errors:
@@ -288,6 +297,11 @@ class Field:
 
     def _apply_validators(self, v, values, index, cls, validators):
         for signature, validator in validators:
+            if signature is _ALLOW_NONE:
+                if v is None:
+                    return None, None
+                else:
+                    continue
             try:
                 if signature is ValidatorSignature.JUST_VALUE:
                     v = validator(v)
