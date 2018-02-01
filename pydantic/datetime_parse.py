@@ -80,13 +80,16 @@ def from_unix_seconds(seconds: int) -> datetime:
     return dt.replace(tzinfo=timezone.utc)
 
 
-def parse_date(value: StrIntFloat) -> date:
+def parse_date(value: Union[date, StrIntFloat]) -> date:
     """
     Parse a string and return a datetime.date.
 
     Raise ValueError if the input is well formatted but not a valid date.
     Raise ValueError if the input isn't well formatted.
     """
+    if isinstance(value, date):
+        return value
+
     number = get_numeric(value)
     if number:
         return from_unix_seconds(number).date()
@@ -99,7 +102,7 @@ def parse_date(value: StrIntFloat) -> date:
     return date(**kw)
 
 
-def parse_time(value: StrIntFloat) -> time:
+def parse_time(value: Union[time, StrIntFloat]) -> time:
     """
     Parse a string and return a datetime.time.
 
@@ -108,6 +111,9 @@ def parse_time(value: StrIntFloat) -> time:
     Raise ValueError if the input is well formatted but not a valid time.
     Raise ValueError if the input isn't well formatted, in particular if it contains an offset.
     """
+    if isinstance(value, time):
+        return value
+
     match = time_re.match(value)
     if not match:
         raise ValueError('Invalid time format')
@@ -119,7 +125,7 @@ def parse_time(value: StrIntFloat) -> time:
     return time(**kw)
 
 
-def parse_datetime(value: StrIntFloat) -> datetime:
+def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
     """
     Parse a string and return a datetime.datetime.
 
