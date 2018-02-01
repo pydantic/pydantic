@@ -2,5 +2,5 @@
 -r docs/requirements.txt
 -r tests/requirements.txt
 
-msgpack-python==0.4.8
+msgpack-python==0.5.1
 ujson==1.35
