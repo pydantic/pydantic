@@ -3,6 +3,10 @@
 History
 -------
 
+v0.6.4 (2018-02-01)
+...................
+* allow python date and times objects #122
+
 v0.6.3 (2017-11-26)
 ...................
 * fix direct install without ``README.rst`` present
