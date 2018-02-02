@@ -338,7 +338,8 @@ Using the same plumbing as ``copy()`` pydantic models support efficient pickling
 Abstract Base Classes
 .....................
 
-Pydantic models can be used alongside Python's Abstract Base Classes (ABCs).
+Pydantic models can be used alongside Python's
+`Abstract Base Classes <https://docs.python.org/3/library/abc.html>`_ (ABCs).
 
 .. literalinclude:: examples/ex_abc.py
 
