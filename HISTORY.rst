@@ -3,6 +3,10 @@
 History
 -------
 
+v0.6.5 (2018-02-XX)
+...................
+* added compatibility with abstract base classes (ABCs) #123
+
 v0.6.4 (2018-02-01)
 ...................
 * allow python date and times objects #122
