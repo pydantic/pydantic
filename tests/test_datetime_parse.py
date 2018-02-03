@@ -25,6 +25,7 @@ def create_tz(minutes):
     (1494012444, date(2017, 5, 5)),
     ('2012-04-23', date(2012, 4, 23)),
     ('2012-4-9', date(2012, 4, 9)),
+    (date(2018, 1, 31), date(2018, 1, 31)),
     # Invalid inputs
     ('x20120423', ValueError),
     ('2012-04-56', ValueError),
@@ -43,6 +44,7 @@ def test_date_parsing(value, result):
     ('10:10', time(10, 10)),
     ('10:20:30.400', time(10, 20, 30, 400000)),
     ('4:8:16', time(4, 8, 16)),
+    (time(20, 8, 16), time(20, 8, 16)),
     # Invalid inputs
     ('091500', ValueError),
     ('09:15:90', ValueError),
