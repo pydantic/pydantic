@@ -87,6 +87,8 @@ def parse_date(value: StrIntFloat) -> date:
     Raise ValueError if the input is well formatted but not a valid date.
     Raise ValueError if the input isn't well formatted.
     """
+    if isinstance(value, date):
+        return value
     number = get_numeric(value)
     if number:
         return from_unix_seconds(number).date()
@@ -108,6 +110,8 @@ def parse_time(value: StrIntFloat) -> time:
     Raise ValueError if the input is well formatted but not a valid time.
     Raise ValueError if the input isn't well formatted, in particular if it contains an offset.
     """
+    if isinstance(value, time):
+        return value
     match = time_re.match(value)
     if not match:
         raise ValueError('Invalid time format')
