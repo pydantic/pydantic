@@ -1,9 +1,8 @@
 from pydantic import BaseModel, create_model
 
+DynamicFoobarModel = create_model('DynamicFoobarModel', foo=(str, ...), bar=123)
 
-class StaticModel(BaseModel):
+
+class StaticFoobarModel(BaseModel):
     foo: str
     bar: int = 123
-
-
-DynamicModel = create_model('DynamicModel', foo=(str, ...), bar=123)
