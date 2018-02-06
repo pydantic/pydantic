@@ -327,6 +327,8 @@ def create_model(
     if __base__:
         fields = __base__.__fields__
         validators = __base__.__validators__
+        if __config__ is not None:
+            raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
         __base__ = BaseModel
         fields = OrderedDict()

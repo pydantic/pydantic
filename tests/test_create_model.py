@@ -35,6 +35,11 @@ def test_field_wrong_tuple():
         create_model('FooModel', foo=(1, 2, 3))
 
 
+def test_config_and_base():
+    with pytest.raises(ConfigError):
+        create_model('FooModel', __config__=BaseModel.Config, __base__=BaseModel)
+
+
 def test_inheritance():
     class BarModel(BaseModel):
         x = 1
