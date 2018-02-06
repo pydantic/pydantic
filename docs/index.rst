@@ -377,7 +377,7 @@ Below are the results of crude benchmarks comparing *pydantic* to other validati
 (See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
 for more details on the test case. Feel free to submit more benchmarks or improve an existing one.)
 
-.. include:: ../HISTORY.rst
+.. include:: .TMP_HISTORY.rst
 
 
 .. |pypi| image:: https://img.shields.io/pypi/v/pydantic.svg

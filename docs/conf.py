@@ -17,8 +17,21 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import re
 import sys
 sys.path.append(os.path.abspath('../pydantic'))
+
+THIS_DIR = os.path.dirname(__file__)
+REAL_HISTORY_FILE = os.path.join(THIS_DIR, '../HISTORY.rst')
+TMP_HISTORY_FILE = os.path.join(THIS_DIR, '.TMP_HISTORY.rst')
+
+with open(REAL_HISTORY_FILE) as f:
+    history = f.read()
+    history = re.sub('#(\d+)', r'`#\1 <https://github.com/samuelcolvin/pydantic/issues/\1>`_', history)
+
+with open(TMP_HISTORY_FILE, 'w') as f:
+    f.write(history)
+
 
 # -- General configuration ------------------------------------------------
 
