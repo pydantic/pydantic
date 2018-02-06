@@ -3,7 +3,7 @@ from abc import ABCMeta
 from collections import OrderedDict
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Dict, Set, Union, Type
+from typing import Any, Dict, Set, Type, Union
 
 from .exceptions import ConfigError, Error, Extra, Missing, ValidationError
 from .fields import Field, Validator
@@ -313,38 +313,43 @@ class BaseModel(metaclass=MetaModel):
 
 def create_model(
         model_name: str, *,
-        config: Type[BaseConfig]=None,
-        base: Type[BaseModel]=None,
+        __config__: Type[BaseConfig]=None,
+        __base__: Type[BaseModel]=None,
         **field_definitions):
     """
     Dynamically create a model.
     :param model_name: name of the created model
-    :param config: config class to use for the new model
-    :param base: base class for the new model to inherit from
+    :param __config__: config class to use for the new model
+    :param __base__: base class for the new model to inherit from
     :param field_definitions: fields of the model (or extra fields if a base is supplied) in the format
         `<name>=(<type>, <default>)` eg. `foobar=(str, ...)`
     """
-    if base:
-        fields = base.__fields__
-        validators = base.__validators__
-
-        if config:
-            for f in fields.values():
-                f.set_config(config)
+    if __base__:
+        fields = __base__.__fields__
+        validators = __base__.__validators__
     else:
-        base = BaseModel
-        validators = {}
+        __base__ = BaseModel
         fields = OrderedDict()
+        validators = {}
 
-    config = config or BaseConfig
+    config = __config__ or BaseConfig
 
-    for f_name, (f_type, f_default) in field_definitions.items():
+    for f_name, f_def in field_definitions.items():
+        if isinstance(f_def, tuple):
+            try:
+                f_annotation, f_value = f_def
+            except ValueError as e:
+                raise ConfigError(f'field definitions should either be a tuple of (<type>, <default>) or just a '
+                                  f'default value, unfortunately this means tuples as '
+                                  f'default values are not allowed') from e
+        else:
+            f_annotation, f_value = None, f_def
         if f_name.startswith('_'):
             raise ConfigError(f'fields may not start with an underscore "{f_name}"')
         fields[f_name] = Field.infer(
             name=f_name,
-            value=f_default,
-            annotation=f_type,
+            value=f_value,
+            annotation=f_annotation,
             class_validators=validators.get(f_name),
             config=config,
         )
@@ -352,7 +357,7 @@ def create_model(
         'config': config,
         '__fields__': fields,
     }
-    return type(model_name, (base,), namespace)
+    return type(model_name, (__base__,), namespace)
 
 
 _FUNCS = set()
