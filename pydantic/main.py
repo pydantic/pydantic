@@ -3,7 +3,7 @@ from abc import ABCMeta
 from collections import OrderedDict
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Dict, Set, Union
+from typing import Any, Dict, Set, Type, Union
 
 from .exceptions import ConfigError, Error, Extra, Missing, ValidationError
 from .fields import Field, Validator
@@ -96,6 +96,7 @@ class MetaModel(ABCMeta):
         new_namespace = {
             'config': config,
             '__fields__': fields,
+            '__validators__': validators,
             **{n: v for n, v in namespace.items() if n not in fields}
         }
         return super().__new__(mcs, name, bases, new_namespace)
@@ -109,6 +110,8 @@ EXTRA_ERROR = Error(Extra('extra fields not permitted'), None, None)
 class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
     __fields__ = {}
+    __validators__ = {}
+
     Config = BaseConfig
     __slots__ = '__values__',
 
@@ -306,6 +309,58 @@ class BaseModel(metaclass=MetaModel):
 
     def __str__(self):
         return self.to_string()
+
+
+def create_model(
+        model_name: str, *,
+        __config__: Type[BaseConfig]=None,
+        __base__: Type[BaseModel]=None,
+        **field_definitions):
+    """
+    Dynamically create a model.
+    :param model_name: name of the created model
+    :param __config__: config class to use for the new model
+    :param __base__: base class for the new model to inherit from
+    :param **field_definitions: fields of the model (or extra fields if a base is supplied) in the format
+        `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
+    """
+    if __base__:
+        fields = __base__.__fields__
+        validators = __base__.__validators__
+        if __config__ is not None:
+            raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
+    else:
+        __base__ = BaseModel
+        fields = OrderedDict()
+        validators = {}
+
+    config = __config__ or BaseConfig
+
+    for f_name, f_def in field_definitions.items():
+        if isinstance(f_def, tuple):
+            try:
+                f_annotation, f_value = f_def
+            except ValueError as e:
+                raise ConfigError(f'field definitions should either be a tuple of (<type>, <default>) or just a '
+                                  f'default value, unfortunately this means tuples as '
+                                  f'default values are not allowed') from e
+        else:
+            f_annotation, f_value = None, f_def
+        if f_name.startswith('_'):
+            warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
+        else:
+            fields[f_name] = Field.infer(
+                name=f_name,
+                value=f_value,
+                annotation=f_annotation,
+                class_validators=validators.get(f_name),
+                config=config,
+            )
+    namespace = {
+        'config': config,
+        '__fields__': fields,
+    }
+    return type(model_name, (__base__,), namespace)
 
 
 _FUNCS = set()
