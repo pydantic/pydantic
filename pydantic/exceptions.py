@@ -1,5 +1,5 @@
 import json
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 from itertools import chain
 
 __all__ = (
@@ -22,9 +22,13 @@ def type_display(type_: type):
 Error = namedtuple('Error', ['exc', 'track', 'index'])
 
 
+class ErrorDict(dict):
+    pass
+
+
 def pretty_errors(e):
     if isinstance(e, Error):
-        d = {'error_type': e.exc.__class__.__name__}
+        d = ErrorDict(error_type=e.exc.__class__.__name__)
         if e.track is not None:
             d['track'] = type_display(e.track)
         if e.index is not None:
@@ -38,7 +42,7 @@ def pretty_errors(e):
             d['error_msg'] = str(e.exc)
         return d
     elif isinstance(e, dict):
-        return OrderedDict([(k, pretty_errors(v)) for k, v in e.items()])
+        return {k: pretty_errors(v) for k, v in e.items()}
     elif isinstance(e, (list, tuple)):
         return [pretty_errors(e_) for e_ in e]
     else:
@@ -51,18 +55,19 @@ E_KEYS = 'error_type', 'track', 'index'
 def _render_errors(e, indent=0):
     if isinstance(e, list):
         return list(chain(*(_render_errors(error, indent) for error in e)))
-    elif isinstance(e, OrderedDict):
-        r = []
-        for key, error in e.items():
-            r.append((indent, key + ':'))
-            r.extend(_render_errors(error, indent=indent + 1))
-        return r
-    else:
+    elif isinstance(e, ErrorDict):
         v = ' '.join(f'{k}={e.get(k)}' for k in E_KEYS if e.get(k))
         r = [(indent, f'{e["error_msg"]} ({v})')]
         error_details = e.get('error_details')
         if error_details:
             r.extend(_render_errors(error_details, indent=indent + 1))
+        return r
+    else:
+        # assumes e is a dict
+        r = []
+        for key, error in e.items():
+            r.append((indent, key + ':'))
+            r.extend(_render_errors(error, indent=indent + 1))
         return r
 
 

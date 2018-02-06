@@ -60,13 +60,13 @@ def test_str_bytes_none():
     assert m.v is None
 
     # NOTE not_none_validator removed
-    assert ("OrderedDict(["
-            "('type', 'typing.Union[str, bytes, NoneType]'), "
-            "('required', True), "
-            "('sub_fields', ["
-            "<Field v_str: type='str', required=True, validators=['str_validator', 'anystr_length_validator']>, "
-            "<Field v_bytes: type='bytes', required=True, validators=['bytes_validator', 'anystr_length_validator']>"
-            "])])") == repr(m.fields['v'].info)
+    assert ("{'type': 'typing.Union[str, bytes, NoneType]', "
+            "'required': True, "
+            "'sub_fields': [<Field v_str: type='str', "
+            "required=True, "
+            "validators=['str_validator', 'anystr_length_validator']>, "
+            "<Field v_bytes: type='bytes', required=True, validators=['bytes_validator', "
+            "'anystr_length_validator']>]}") == repr(m.fields['v'].info)
 
 
 def test_union_int_str():
