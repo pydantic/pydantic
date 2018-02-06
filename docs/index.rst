@@ -252,6 +252,22 @@ Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` o
 
 Complex types like ``list``, ``set``, ``dict`` and submodels can be set by using JSON environment variables.
 
+Dynamic model creation
+......................
+
+There are some occasions where the shape of a model is not known until runtime, for this *pydantic* provides
+the ``create_model`` method to allow models to be created on the fly.
+
+.. literalinclude:: examples/dynamic_model_creation.py
+
+Here ``StaticModel`` and ``DynamicModel`` are identical.
+
+Fields are defined by either a a tuple of the form ``(<type>, <default value>)`` or just a default value. The
+special key word arguments ``__config__`` and ``__base__`` can be used to customise the new model. This includes
+extending a base model with extra fields.
+
+.. literalinclude:: examples/dynamic_inheritance.py
+
 .. _usage_mypy:
 
 Usage with mypy

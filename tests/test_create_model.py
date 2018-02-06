@@ -1,10 +1,12 @@
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError, create_model
+from pydantic import BaseModel, ConfigError, ValidationError, create_model, validator
 
 
 def test_create_model():
     model = create_model('FooModel', foo=(str, ...), bar=123)
+    assert issubclass(model, BaseModel)
+    assert issubclass(model.config, BaseModel.Config)
     assert model.__name__ == 'FooModel'
     assert model.__fields__.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
@@ -23,8 +25,9 @@ def test_create_model_usage():
 
 
 def test_invalid_name():
-    with pytest.raises(ConfigError):
-        create_model('FooModel', _foo=(str, ...))
+    with pytest.warns(RuntimeWarning):
+        model = create_model('FooModel', _foo=(str, ...))
+    assert len(model.__fields__) == 0
 
 
 def test_field_wrong_tuple():
@@ -32,7 +35,7 @@ def test_field_wrong_tuple():
         create_model('FooModel', foo=(1, 2, 3))
 
 
-def test_create_model_inheritance():
+def test_inheritance():
     class BarModel(BaseModel):
         x = 1
         y = 2
@@ -51,3 +54,17 @@ def test_custom_config():
     assert model(**{'api-foo-field': '987'}).foo == 987
     with pytest.raises(ValidationError):
         model(foo=654)
+
+
+def test_inheritance_validators():
+    class BarModel(BaseModel):
+        @validator('a')
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    model = create_model('FooModel', a='cake', __base__=BarModel)
+    assert model().a == 'cake'
+    with pytest.raises(ValidationError):
+        model(a='something else')

@@ -321,8 +321,8 @@ def create_model(
     :param model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
-    :param field_definitions: fields of the model (or extra fields if a base is supplied) in the format
-        `<name>=(<type>, <default>)` eg. `foobar=(str, ...)`
+    :param **field_definitions: fields of the model (or extra fields if a base is supplied) in the format
+        `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
     if __base__:
         fields = __base__.__fields__
@@ -345,14 +345,15 @@ def create_model(
         else:
             f_annotation, f_value = None, f_def
         if f_name.startswith('_'):
-            raise ConfigError(f'fields may not start with an underscore "{f_name}"')
-        fields[f_name] = Field.infer(
-            name=f_name,
-            value=f_value,
-            annotation=f_annotation,
-            class_validators=validators.get(f_name),
-            config=config,
-        )
+            warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
+        else:
+            fields[f_name] = Field.infer(
+                name=f_name,
+                value=f_value,
+                annotation=f_annotation,
+                class_validators=validators.get(f_name),
+                config=config,
+            )
     namespace = {
         'config': config,
         '__fields__': fields,
