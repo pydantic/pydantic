@@ -233,3 +233,28 @@ def test_validate_not_always():
     assert check_calls == 0
     assert Model(a='y').a == 'y'
     assert check_calls == 1
+
+
+def test_general_validators():
+    calls = []
+
+    class Model(BaseModel):
+        a: str
+        b: int
+
+        @validator('a')
+        def check_a(cls, v, field, **kwargs):
+            calls.append(('check_a', v, field.name))
+            return v
+
+        @validator('*')
+        def check_all(cls, v, field, **kwargs):
+            calls.append(('check_all', v, field.name))
+            return v
+
+    assert Model(a='abc', b='123').dict() == dict(a='abc', b=123)
+    assert calls == [
+        ('check_a', 'abc', 'a'),
+        ('check_all', 'abc', 'a'),
+        ('check_all', 123, 'b'),
+    ]
