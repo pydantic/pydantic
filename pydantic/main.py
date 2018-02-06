@@ -1,6 +1,5 @@
 import warnings
 from abc import ABCMeta
-from collections import OrderedDict
 from pathlib import Path
 from types import FunctionType
 from typing import Any, Dict, Set, Type, Union
@@ -53,12 +52,9 @@ def _extract_validators(namespace):
 
 
 class MetaModel(ABCMeta):
-    @classmethod
-    def __prepare__(mcs, *args, **kwargs):
-        return OrderedDict()
 
     def __new__(mcs, name, bases, namespace):
-        fields = OrderedDict()
+        fields = {}
         config = BaseConfig
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
@@ -226,9 +222,9 @@ class BaseModel(metaclass=MetaModel):
     def validate(cls, value):
         return cls(**value)
 
-    def _process_values(self, input_data: dict) -> OrderedDict:  # noqa: C901 (ignore complexity)
-        values = OrderedDict()
-        errors = OrderedDict()
+    def _process_values(self, input_data: dict) -> Dict[str, Any]:  # noqa: C901 (ignore complexity)
+        values = {}
+        errors = {}
 
         for name, field in self.__fields__.items():
             value = input_data.get(field.alias, MISSING)
@@ -326,7 +322,7 @@ def create_model(
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
         __base__ = BaseModel
-        fields = OrderedDict()
+        fields = {}
         validators = {}
 
     config = __config__ or BaseConfig

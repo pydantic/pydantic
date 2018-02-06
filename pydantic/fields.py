@@ -1,5 +1,4 @@
 import inspect
-from collections import OrderedDict
 from enum import IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
@@ -110,11 +109,11 @@ class Field:
         self._populate_sub_fields(class_validators)
         self._populate_validators(class_validators)
 
-        self.info = OrderedDict([
-            ('type', type_display(self.type_)),
-            ('default', self.default),
-            ('required', self.required)
-        ])
+        self.info = {
+            'type': type_display(self.type_),
+            'default': self.default,
+            'required': self.required,
+        }
         if self.required:
             self.info.pop('default')
         if self.sub_fields:
