@@ -52,6 +52,13 @@ def _extract_validators(namespace):
     return validators
 
 
+def _get_validators(validators, name):
+    specific_validators = validators.get(name)
+    wildcard_validators = validators.get('*')
+    if specific_validators or wildcard_validators:
+        return (specific_validators or []) + (wildcard_validators or [])
+
+
 class MetaModel(ABCMeta):
 
     def __new__(mcs, name, bases, namespace):
@@ -76,7 +83,7 @@ class MetaModel(ABCMeta):
                     name=ann_name,
                     value=...,
                     annotation=ann_type,
-                    class_validators=validators.get(ann_name),
+                    class_validators=_get_validators(validators, ann_name),
                     config=config,
                 )
 
@@ -86,7 +93,7 @@ class MetaModel(ABCMeta):
                     name=var_name,
                     value=value,
                     annotation=annotations.get(var_name),
-                    class_validators=validators.get(var_name),
+                    class_validators=_get_validators(validators, var_name),
                     config=config,
                 )
 
@@ -345,7 +352,7 @@ def create_model(
                 name=f_name,
                 value=f_value,
                 annotation=f_annotation,
-                class_validators=validators.get(f_name),
+                class_validators=_get_validators(validators, f_name),
                 config=config,
             )
     namespace = {

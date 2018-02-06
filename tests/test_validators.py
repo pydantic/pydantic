@@ -233,3 +233,47 @@ def test_validate_not_always():
     assert check_calls == 0
     assert Model(a='y').a == 'y'
     assert check_calls == 1
+
+
+def test_wildcard_validators():
+    calls = []
+
+    class Model(BaseModel):
+        a: str
+        b: int
+
+        @validator('a')
+        def check_a(cls, v, field, **kwargs):
+            calls.append(('check_a', v, field.name))
+            return v
+
+        @validator('*')
+        def check_all(cls, v, field, **kwargs):
+            calls.append(('check_all', v, field.name))
+            return v
+
+    assert Model(a='abc', b='123').dict() == dict(a='abc', b=123)
+    assert calls == [
+        ('check_a', 'abc', 'a'),
+        ('check_all', 'abc', 'a'),
+        ('check_all', 123, 'b'),
+    ]
+
+
+def test_wildcard_validator_error():
+    class Model(BaseModel):
+        a: str
+        b: str
+
+        @validator('*')
+        def check_all(cls, v, field, **kwargs):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    assert Model(a='foobar a', b='foobar b').b == 'foobar b'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='snap')
+    assert '"foobar" not found in a' in str(exc_info.value)
+    assert len(exc_info.value.errors_dict) == 2

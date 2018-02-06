@@ -75,6 +75,16 @@ def test_inheritance_validators():
         model(a='something else')
 
 
+def test_inheritance_validators_all():
+    class BarModel(BaseModel):
+        @validator('*')
+        def check_all(cls, v):
+            return v * 2
+
+    model = create_model('FooModel', a=(int, ...), b=(int, ...), __base__=BarModel)
+    assert model(a=2, b=6).dict() == {'a': 4, 'b': 12}
+
+
 def test_funky_name():
     model = create_model('FooModel', **{'this-is-funky': (int, ...)})
     m = model(**{'this-is-funky': '123'})
