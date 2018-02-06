@@ -1,4 +1,5 @@
 import warnings
+from abc import ABCMeta
 from collections import OrderedDict
 from pathlib import Path
 from types import FunctionType
@@ -51,7 +52,7 @@ def _extract_validators(namespace):
     return validators
 
 
-class MetaModel(type):
+class MetaModel(ABCMeta):
     @classmethod
     def __prepare__(mcs, *args, **kwargs):
         return OrderedDict()
