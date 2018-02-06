@@ -103,8 +103,9 @@ def set_validator(v) -> set:
     return set(v)
 
 
-def enum_validator(v, field, **kwargs) -> Enum:
-    return field.type_(v)
+def enum_validator(v, field, config, **kwargs) -> Enum:
+    enum_v = field.type_(v)
+    return enum_v.value if config.use_enum_values else enum_v
 
 
 def uuid_validator(v) -> UUID:
