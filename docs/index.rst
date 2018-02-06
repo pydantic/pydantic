@@ -142,7 +142,8 @@ Validators can do a few more complex things:
 
 A few more things to note:
 
-* a single validator can apply to multiple fields
+* a single validator can apply to multiple fields, either by defining multiple fields or by the special value ``'*'``
+  which means that validator will be called for all fields.
 * the keyword argument ``pre`` will cause validators to be called prior to other validation
 * the ``whole`` keyword argument will mean validators are applied to entire objects rather than individual values
   (applies for complex typing objects eg. ``List``, ``Dict``, ``Set``)
