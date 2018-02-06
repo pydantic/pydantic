@@ -73,3 +73,12 @@ def test_inheritance_validators():
     assert model().a == 'cake'
     with pytest.raises(ValidationError):
         model(a='something else')
+
+
+def test_funky_name():
+    model = create_model('FooModel', **{'this-is-funky': (int, ...)})
+    m = model(**{'this-is-funky': '123'})
+    assert m.dict() == {'this-is-funky': 123}
+    with pytest.raises(ValidationError) as exc_info:
+        model()
+    assert exc_info.value.errors_dict == {'this-is-funky': {'error_msg': 'field required', 'error_type': 'Missing'}}
