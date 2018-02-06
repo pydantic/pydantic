@@ -8,4 +8,4 @@ pytest==3.4.0
 pytest-cov==2.5.1
 pytest-isort==0.1.0
 pytest-mock==1.6.3
-pytest-sugar==0.9.0
+pytest-sugar==0.9.1
