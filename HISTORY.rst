@@ -3,10 +3,11 @@
 History
 -------
 
-v0.7.0 (2018-02-XX)
+v0.7.0 (2018-02-06)
 ...................
 * added compatibility with abstract base classes (ABCs) #123
 * add ``create_model`` method #113 #125
+* **breaking change**: rename ``model.config`` to ``model.__config__``
 
 v0.6.4 (2018-02-01)
 ...................

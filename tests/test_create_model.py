@@ -6,11 +6,11 @@ from pydantic import BaseModel, ConfigError, ValidationError, create_model, vali
 def test_create_model():
     model = create_model('FooModel', foo=(str, ...), bar=123)
     assert issubclass(model, BaseModel)
-    assert issubclass(model.config, BaseModel.Config)
+    assert issubclass(model.__config__, BaseModel.Config)
     assert model.__name__ == 'FooModel'
     assert model.__fields__.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
-    assert model.config.__name__ == 'BaseConfig'
+    assert model.__config__.__name__ == 'BaseConfig'
 
 
 def test_create_model_usage():

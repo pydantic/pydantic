@@ -63,7 +63,7 @@ class MetaModel(ABCMeta):
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(base.__fields__)
-                config = inherit_config(base.config, config)
+                config = inherit_config(base.__config__, config)
 
         config = inherit_config(namespace.get('Config'), config)
         validators = _extract_validators(namespace)
@@ -94,7 +94,7 @@ class MetaModel(ABCMeta):
                 )
 
         new_namespace = {
-            'config': config,
+            '__config__': config,
             '__fields__': fields,
             '__validators__': validators,
             **{n: v for n, v in namespace.items() if n not in fields}
@@ -125,11 +125,11 @@ class BaseModel(metaclass=MetaModel):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
-        if not self.config.allow_extra and name not in self.__fields__:
+        if not self.__config__.allow_extra and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-        elif not self.config.allow_mutation:
+        elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
-        elif self.config.validate_assignment:
+        elif self.__config__.validate_assignment:
             value_, error_ = self.fields[name].validate(value, self.dict(exclude={name}))
             if error_:
                 raise ValidationError({name: error_})
@@ -238,7 +238,7 @@ class BaseModel(metaclass=MetaModel):
         for name, field in self.__fields__.items():
             value = input_data.get(field.alias, MISSING)
             if value is MISSING:
-                if self.config.validate_all or field.validate_always:
+                if self.__config__.validate_all or field.validate_always:
                     value = field.default
                 else:
                     if field.required:
@@ -253,10 +253,10 @@ class BaseModel(metaclass=MetaModel):
             else:
                 values[name] = v_
 
-        if (not self.config.ignore_extra) or self.config.allow_extra:
+        if (not self.__config__.ignore_extra) or self.__config__.allow_extra:
             extra = input_data.keys() - {f.alias for f in self.__fields__.values()}
             if extra:
-                if self.config.allow_extra:
+                if self.__config__.allow_extra:
                     for field in extra:
                         values[field] = input_data[field]
                 else:
