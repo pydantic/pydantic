@@ -153,11 +153,6 @@ class BaseModel(metaclass=MetaModel):
             if k not in exclude and (not include or k in include)
         }
 
-    def values(self, **kwargs):
-        warnings.warn('.values(...) is depreciated and will be removed in future, '
-                      'it has been replaced by .dict(...)', DeprecationWarning)
-        return self.dict(**kwargs)
-
     @classmethod
     def parse_obj(cls, obj):
         if not isinstance(obj, dict):
