@@ -235,7 +235,7 @@ def test_validate_not_always():
     assert check_calls == 1
 
 
-def test_general_validators():
+def test_wildcard_validators():
     calls = []
 
     class Model(BaseModel):
@@ -258,3 +258,22 @@ def test_general_validators():
         ('check_all', 'abc', 'a'),
         ('check_all', 123, 'b'),
     ]
+
+
+def test_wildcard_validator_error():
+    class Model(BaseModel):
+        a: str
+        b: str
+
+        @validator('*')
+        def check_all(cls, v, field, **kwargs):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    assert Model(a='foobar a', b='foobar b').b == 'foobar b'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='snap')
+    assert '"foobar" not found in a' in str(exc_info.value)
+    assert len(exc_info.value.errors_dict) == 2
