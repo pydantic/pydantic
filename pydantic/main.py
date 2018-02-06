@@ -21,6 +21,7 @@ class BaseConfig:
     ignore_extra = True
     allow_extra = False
     allow_mutation = True
+    use_enum_values = False
     fields = {}
     validate_assignment = False
 

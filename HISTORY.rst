@@ -9,7 +9,8 @@ v0.7.0 (2018-02-06)
 * add ``create_model`` method #113 #125
 * **breaking change**: rename ``.config`` to ``.__config__`` on a model
 * **breaking change**: remove deprecated ``.values()`` on a model, use ``.dict()`` instead
-* remove use of `OrderedDict` and use simple dict #126
+* remove use of ``OrderedDict`` and use simple dict #126
+* add ``Config.use_enum_values`` #127
 
 v0.6.4 (2018-02-01)
 ...................

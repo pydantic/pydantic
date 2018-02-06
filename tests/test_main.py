@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from typing import Any
 
 import pytest
@@ -369,3 +370,29 @@ a:
     assert """error validating input
 b:
   length less than minimum allowed: 1 (error_type=ValueError track=ConstrainedStrValue)""" == str(exc_info.value)
+
+
+def test_enum_values():
+    FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
+
+    class Model(BaseModel):
+        foo: FooEnum = None
+
+        class Config:
+            use_enum_values = True
+
+    m = Model(foo='foo')
+    # this is the actual value, so has not "values" field
+    assert not isinstance(m.foo, FooEnum)
+    assert m.foo == 'foo'
+
+
+def test_enum_raw():
+    FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
+
+    class Model(BaseModel):
+        foo: FooEnum = None
+    m = Model(foo='foo')
+    assert isinstance(m.foo, FooEnum)
+    assert m.foo != 'foo'
+    assert m.foo.value == 'foo'
