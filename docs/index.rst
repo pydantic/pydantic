@@ -226,6 +226,8 @@ Options:
 :ignore_extra: whether to ignore any extra values in input data (default: ``True``)
 :allow_extra: whether or not too allow (and include on the model) any extra values in input data (default: ``False``)
 :allow_mutation: whether or not models are faux-immutable, e.g. __setattr__ fails (default: ``True``)
+:use_enum_values: whether to populate models with the ``value`` property of enums,
+    rather than the raw enum - useful if you want to serialise ``model.dict()`` later (default: ``False``)
 :fields: extra information on each field, currently just "alias" is allowed (default: ``None``)
 :validate_assignment: whether to perform validation on assignment to attributes or not (default: ``False``)
 
