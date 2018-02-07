@@ -3,6 +3,10 @@
 History
 -------
 
+v0.7.1 (2018-02-07)
+...................
+* fix bug with ``create_model`` modifying the base class
+
 v0.7.0 (2018-02-06)
 ...................
 * added compatibility with abstract base classes (ABCs) #123

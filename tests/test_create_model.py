@@ -92,3 +92,28 @@ def test_funky_name():
     with pytest.raises(ValidationError) as exc_info:
         model()
     assert exc_info.value.errors_dict == {'this-is-funky': {'error_msg': 'field required', 'error_type': 'Missing'}}
+
+
+def test_repeat_base_usage():
+    class Model(BaseModel):
+        a: str
+
+    assert Model.__fields__.keys() == {'a'}
+
+    model = create_model('FooModel', b=1, __base__=Model)
+
+    assert Model.__fields__.keys() == {'a'}
+    assert model.__fields__.keys() == {'a', 'b'}
+
+    model2 = create_model('Foo2Model', c=1, __base__=Model)
+
+    assert Model.__fields__.keys() == {'a'}
+    assert model.__fields__.keys() == {'a', 'b'}
+    assert model2.__fields__.keys() == {'a', 'c'}
+
+    model3 = create_model('Foo2Model', d=1, __base__=model)
+
+    assert Model.__fields__.keys() == {'a'}
+    assert model.__fields__.keys() == {'a', 'b'}
+    assert model2.__fields__.keys() == {'a', 'c'}
+    assert model3.__fields__.keys() == {'a', 'b', 'd'}

@@ -1,5 +1,6 @@
 import warnings
 from abc import ABCMeta
+from copy import deepcopy
 from pathlib import Path
 from types import FunctionType
 from typing import Any, Dict, Set, Type, Union
@@ -324,7 +325,7 @@ def create_model(
         `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
     if __base__:
-        fields = __base__.__fields__
+        fields = deepcopy(__base__.__fields__)
         validators = __base__.__validators__
         if __config__ is not None:
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
