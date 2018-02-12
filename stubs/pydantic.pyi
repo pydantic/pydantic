@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Any, Dict, Generator, Set, Union, Optional, Type
 import pathlib
 
@@ -8,7 +7,7 @@ class Required:
 
 
 class BaseModel(object):
-    fields: OrderedDict
+    fields: Dict
     config: type
 
     def __init__(self, **values: Any) -> None: ...
