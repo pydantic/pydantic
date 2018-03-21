@@ -27,7 +27,7 @@ class BaseConfig:
     validate_assignment = False
 
 
-def inherit_config(self_config, parent_config) -> BaseConfig:
+def inherit_config(self_config, parent_config) -> Type[BaseConfig]:
     if not self_config:
         return parent_config
     for k, v in parent_config.__dict__.items():
