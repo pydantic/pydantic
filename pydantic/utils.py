@@ -2,14 +2,12 @@ import re
 from importlib import import_module
 from typing import Tuple
 
-PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
+try:
+    import email_validator
+except ImportError:
+    email_validator = None
 
-# max length for domain name labels is 63 characters per RFC 1034
-EMAIL_REGEX = re.compile(
-    r'[^\s@\u0000-\u0020"\'`,]+@'
-    r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z0-9]{2,63})',
-    re.I
-)
+PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
 
 
 def validate_email(value) -> Tuple[str, str]:
@@ -23,15 +21,16 @@ def validate_email(value) -> Tuple[str, str]:
 
     See RFC 5322 but treat it with suspicion, there seems to exist no universally acknowledged test for a valid email!
     """
+    if email_validator is None:
+        raise ImportError('email-validator is not installed, run `pip install email-validator`')
+
     m = PRETTY_REGEX.fullmatch(value)
     if m:
         name, value = m.groups()
     else:
         name = None
-
     email = value.strip()
-    if not EMAIL_REGEX.fullmatch(email):
-        raise ValueError('Email address is not valid')
+    email_validator.validate_email(email, check_deliverability=False)
     return name or email[:email.index('@')], email.lower()
 
 

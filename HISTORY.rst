@@ -8,6 +8,7 @@ v0.8.0 (2018-03-25)
 * fix type annotation for ``inherit_config`` #139
 * **breaking change**: check for invalid field names in validators #140
 * validate attributes of parent models #141
+* email validation using `email-validator <https://github.com/JoshData/python-email-validator>`_ #142
 
 v0.7.1 (2018-02-07)
 ...................
