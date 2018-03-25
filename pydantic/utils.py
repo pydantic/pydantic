@@ -30,10 +30,7 @@ def validate_email(value) -> Tuple[str, str]:
     else:
         name = None
     email = value.strip()
-    try:
-        email_validator.validate_email(email, check_deliverability=False)
-    except email_validator.EmailNotValidError as e:
-        raise ValueError(str(e)) from e
+    email_validator.validate_email(email, check_deliverability=False)
     return name or email[:email.index('@')], email.lower()
 
 

@@ -303,12 +303,12 @@ def test_string_fails():
 {
   "name_email": {
     "error_msg": "The email address contains invalid characters before the @-sign:  .",
-    "error_type": "ValueError",
+    "error_type": "EmailSyntaxError",
     "track": "NameEmail"
   },
   "str_email": {
     "error_msg": "The email address contains invalid characters before the @-sign: <.",
-    "error_type": "ValueError",
+    "error_type": "EmailSyntaxError",
     "track": "EmailStr"
   },
   "str_min_length": {
@@ -325,10 +325,17 @@ def test_string_fails():
 
 
 @pytest.mark.skipif(email_validator, reason='email_validator is installed')
-def test_email_validator_not_installed():
+def test_email_validator_not_installed_email_str():
     with pytest.raises(ImportError):
-        class MoreStringsModel(BaseModel):
+        class Model(BaseModel):
             str_email: EmailStr = ...
+
+
+@pytest.mark.skipif(email_validator, reason='email_validator is installed')
+def test_email_validator_not_installed_name_email():
+    with pytest.raises(ImportError):
+        class Model(BaseModel):
+            str_email: NameEmail = ...
 
 
 class ListDictTupleModel(BaseModel):

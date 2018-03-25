@@ -47,6 +47,6 @@ setup(
     extras_require={
         'msgpack': ['msgpack-python>=0.4.8'],
         'ujson': ['ujson>=1.35'],
-        'email': ['email-validator>=1.0.3']
+        'email': ['email-validator>=1.0.3'],
     }
 )
