@@ -12,3 +12,4 @@ htmlcov/
 benchmarks/*.json
 docs/_build/
 docs/.TMP_HISTORY.rst
+.pytest_cache/

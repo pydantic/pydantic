@@ -63,7 +63,7 @@ def test_custom_config():
 
 def test_inheritance_validators():
     class BarModel(BaseModel):
-        @validator('a')
+        @validator('a', check_fields=False)
         def check_a(cls, v):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
