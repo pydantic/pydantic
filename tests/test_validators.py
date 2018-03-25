@@ -277,3 +277,15 @@ def test_wildcard_validator_error():
         Model(a='snap')
     assert '"foobar" not found in a' in str(exc_info.value)
     assert len(exc_info.value.errors_dict) == 2
+
+
+def test_invalid_field():
+    with pytest.raises(ConfigError) as exc_info:
+        class Model(BaseModel):
+            a: str
+
+            @validator('b')
+            def check_b(cls, v):
+                return v
+    assert str(exc_info.value) == ("Validators defined with incorrect fields: check_b "
+                                   "(use check_fields=True if you're inheriting from the model and intended this)")

@@ -1,6 +1,7 @@
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
+from itertools import chain
 from pathlib import Path
 from types import FunctionType
 from typing import Any, Dict, Set, Type, Union
@@ -39,6 +40,27 @@ def inherit_config(self_config, parent_config) -> Type[BaseConfig]:
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
+class ValidatorGroup:
+    def __init__(self, validators):
+        self.validators = validators
+        self.used_validators = {'*'}
+
+    def get_validators(self, name):
+        self.used_validators.add(name)
+        specific_validators = self.validators.get(name)
+        wildcard_validators = self.validators.get('*')
+        if specific_validators or wildcard_validators:
+            return (specific_validators or []) + (wildcard_validators or [])
+
+    def check_for_unused(self):
+        unused_validators = set(chain(*[(v.func.__name__ for v in self.validators[f] if v.check_fields)
+                                        for f in (self.validators.keys() - self.used_validators)]))
+        if unused_validators:
+            fn = ', '.join(unused_validators)
+            raise ConfigError(f"Validators defined with incorrect fields: {fn} "
+                              f"(use check_fields=True if you're inheriting from the model and intended this)")
+
+
 def _extract_validators(namespace):
     validators = {}
     for var_name, value in namespace.items():
@@ -53,15 +75,7 @@ def _extract_validators(namespace):
     return validators
 
 
-def _get_validators(validators, name):
-    specific_validators = validators.get(name)
-    wildcard_validators = validators.get('*')
-    if specific_validators or wildcard_validators:
-        return (specific_validators or []) + (wildcard_validators or [])
-
-
 class MetaModel(ABCMeta):
-
     def __new__(mcs, name, bases, namespace):
         fields = {}
         config = BaseConfig
@@ -71,7 +85,7 @@ class MetaModel(ABCMeta):
                 config = inherit_config(base.__config__, config)
 
         config = inherit_config(namespace.get('Config'), config)
-        validators = _extract_validators(namespace)
+        vg = ValidatorGroup(_extract_validators(namespace))
 
         for f in fields.values():
             f.set_config(config)
@@ -84,7 +98,7 @@ class MetaModel(ABCMeta):
                     name=ann_name,
                     value=...,
                     annotation=ann_type,
-                    class_validators=_get_validators(validators, ann_name),
+                    class_validators=vg.get_validators(ann_name),
                     config=config,
                 )
 
@@ -94,14 +108,15 @@ class MetaModel(ABCMeta):
                     name=var_name,
                     value=value,
                     annotation=annotations.get(var_name),
-                    class_validators=_get_validators(validators, var_name),
+                    class_validators=vg.get_validators(var_name),
                     config=config,
                 )
 
+        vg.check_for_unused()
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
-            '__validators__': validators,
+            '__validators__': vg.validators,
             **{n: v for n, v in namespace.items() if n not in fields}
         }
         return super().__new__(mcs, name, bases, new_namespace)
@@ -335,6 +350,7 @@ def create_model(
         validators = {}
 
     config = __config__ or BaseConfig
+    vg = ValidatorGroup(validators)
 
     for f_name, f_def in field_definitions.items():
         if isinstance(f_def, tuple):
@@ -353,9 +369,10 @@ def create_model(
                 name=f_name,
                 value=f_value,
                 annotation=f_annotation,
-                class_validators=_get_validators(validators, f_name),
+                class_validators=vg.get_validators(f_name),
                 config=config,
             )
+    vg.check_for_unused()
     namespace = {
         'config': config,
         '__fields__': fields,
@@ -366,7 +383,7 @@ def create_model(
 _FUNCS = set()
 
 
-def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False):
+def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False, check_fields: bool=True):
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
@@ -386,6 +403,6 @@ def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False):
             raise ConfigError(f'duplicate validator function "{ref}"')
         _FUNCS.add(ref)
         f_cls = classmethod(f)
-        f_cls.__validator_config = fields, Validator(f, pre, whole, always)
+        f_cls.__validator_config = fields, Validator(f, pre, whole, always, check_fields)
         return f_cls
     return dec

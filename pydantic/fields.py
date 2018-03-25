@@ -27,6 +27,7 @@ class Validator(NamedTuple):
     pre: bool
     whole: bool
     always: bool
+    check_fields: bool
 
 
 class Field:
