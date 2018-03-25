@@ -25,7 +25,7 @@ Example:
 
 What's going on here:
 
-* ``id`` is of type int; the annotation only declaration tells pydantic that this field is required. Strings,
+* ``id`` is of type int; the annotation only declaration tells *pydantic* that this field is required. Strings,
   bytes or floats will be coerced to ints if possible, otherwise an exception would be raised.
 * ``name`` is inferred as a string from the default, it is not required as it has a default.
 * ``signup_ts`` is a datetime field which is not required (``None`` if it's not supplied), pydantic will process
@@ -40,30 +40,30 @@ If validation fails pydantic with raise an error with a breakdown of what was wr
 Rationale
 ---------
 
-So *pydantic* uses some cool new language feature, but why should I actually go an use it?
+So *pydantic* uses some cool new language feature, but why should I actually go and use it?
 
 **no brainfuck**
     no new schema definition micro-language to learn. If you know python (and perhaps skim read the
-    `type hinting docs <https://docs.python.org/3/library/typing.html>`_) you know how to use pydantic.
+    `type hinting docs <https://docs.python.org/3/library/typing.html>`_) you know how to use *pydantic*.
 
 **plays nicely with your IDE/linter/brain**
-    because pydantic data structures are just instances of classes you define; auto-completion, linting,
+    because *pydantic* data structures are just instances of classes you define; auto-completion, linting,
     :ref:`mypy <usage_mypy>` and your intuition should all work properly with your validated data.
 
 **dual use**
-    pydantic's :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data" context
+    *pydantic's* :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data" context
     and "load my system settings" context. The main difference being that system settings can have defaults changed
     by environment variables and more complex objects like DSNs and python objects are often required.
 
 **fast**
-    In :ref:`benchmarks <benchmarks_tag>` pydantic is faster than all other tested libraries.
+    In :ref:`benchmarks <benchmarks_tag>` *pydantic* is faster than all other tested libraries.
 
 **validate complex structures**
-    use of recursive pydantic models, ``typing``'s ``List`` and ``Dict`` etc. and validators allow
-    complex data schemas to be clearly and easily defined can then checked.
+    use of recursive *pydantic* models, ``typing``'s ``List`` and ``Dict`` etc. and validators allow
+    complex data schemas to be clearly and easily defined and then checked.
 
 **extendible**
-    pydantic allows custom data types to be defined or you can extend validation with methods on a model decorated
+    *pydantic* allows custom data types to be defined or you can extend validation with methods on a model decorated
     with the ``validator`` decorator.
 
 
@@ -74,17 +74,24 @@ Just::
 
     pip install pydantic
 
-pydantic has no required dependencies except python 3.6+. If you've got python 3.6 and ``pip`` installed -
+*pydantic* has no required dependencies except python 3.6+. If you've got python 3.6 and ``pip`` installed -
 you're good to go.
 
 If you want *pydantic* to parse msgpack you can add `msgpack-python <https://pypi.python.org/pypi/msgpack-python>`_
-as an optional dependency, same goes for reading json faster with `ujson <https://pypi.python.org/pypi/ujson>`_::
+as an optional dependency, same goes for reading json faster with `ujson <https://pypi.python.org/pypi/ujson>`_.
+
+Similarly if *pydantic's* email validation relies on
+`email-validator <https://github.com/JoshData/python-email-validator>`_ ::
 
     pip install pydantic[msgpack]
     # or
     pip install pydantic[ujson]
+    # or
+    pip install pydantic[email]
     # or just
-    pip install pydantic[msgpack,ujson]
+    pip install pydantic[msgpack,ujson,email]
+
+Of course you can also install these requirements manually with ``pip install ...``.
 
 Usage
 -----
@@ -92,7 +99,7 @@ Usage
 PEP 484 Types
 .............
 
-pydantic uses ``typing`` types to define more complex objects.
+*pydantic* uses ``typing`` types to define more complex objects.
 
 .. literalinclude:: examples/ex_typing.py
 
@@ -101,7 +108,7 @@ pydantic uses ``typing`` types to define more complex objects.
 Choices
 .......
 
-pydantic uses python's standard ``enum`` classes to define choices.
+*pydantic* uses python's standard ``enum`` classes to define choices.
 
 .. literalinclude:: examples/choices.py
 
