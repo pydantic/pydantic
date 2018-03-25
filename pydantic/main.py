@@ -372,7 +372,7 @@ def create_model(
                 class_validators=vg.get_validators(f_name),
                 config=config,
             )
-    vg.check_for_unused()
+
     namespace = {
         'config': config,
         '__fields__': fields,
@@ -390,6 +390,7 @@ def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False, c
     :param pre: whether or not this validator should be called before the standard validators (else after)
     :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
     :param always: whether this method and other validators should be called even if the value is missing
+    :param check_fields: whether to check that the fields actually exist on the model
     """
     if not fields:
         raise ConfigError('validator with no fields specified')

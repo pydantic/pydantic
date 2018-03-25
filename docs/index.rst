@@ -160,7 +160,20 @@ to set a dynamic default value.
 (This script is complete, it should run "as is")
 
 You'll often want to use this together with ``pre`` since otherwise the with ``always=True``
-_pydantic_ would try to validate the default ``None`` which would cause an error.
+*pydantic* would try to validate the default ``None`` which would cause an error.
+
+
+Field Checks
+~~~~~~~~~~~~
+
+.. note::
+
+   New in version ``v0.8.0``.
+
+On class creation validators are checked to confirm that the fields they specify actually exist on the model.
+
+Occasionally however this is not wanted: when you define a validator to validate fields on inheriting models.
+In this case you should set ``check_fields=False`` on the validator.
 
 
 Recursive Models
