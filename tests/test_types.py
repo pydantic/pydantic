@@ -9,6 +9,11 @@ import pytest
 from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeInt, PositiveInt, PyObject, StrictStr,
                       ValidationError, conint, constr)
 
+try:
+    import email_validator
+except ImportError:
+    email_validator = None
+
 
 class ConStringModel(BaseModel):
     v: constr(max_length=10) = 'foobar'
@@ -254,15 +259,14 @@ def test_enum_fails():
 }""" == exc_info.value.json(2)
 
 
-class MoreStringsModel(BaseModel):
-    str_regex: constr(regex=r'^xxx\d{3}$') = ...
-    str_min_length: constr(min_length=5) = ...
-    str_curtailed: constr(curtail_length=5) = ...
-    str_email: EmailStr = ...
-    name_email: NameEmail = ...
-
-
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
+    class MoreStringsModel(BaseModel):
+        str_regex: constr(regex=r'^xxx\d{3}$') = ...
+        str_min_length: constr(min_length=5) = ...
+        str_curtailed: constr(curtail_length=5) = ...
+        str_email: EmailStr = ...
+        name_email: NameEmail = ...
     m = MoreStringsModel(
         str_regex='xxx123',
         str_min_length='12345',
@@ -278,25 +282,32 @@ def test_string_success():
     assert m.name_email.email == 'foobar@example.com'
 
 
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_fails():
+    class MoreStringsModel(BaseModel):
+        str_regex: constr(regex=r'^xxx\d{3}$') = ...
+        str_min_length: constr(min_length=5) = ...
+        str_curtailed: constr(curtail_length=5) = ...
+        str_email: EmailStr = ...
+        name_email: NameEmail = ...
     with pytest.raises(ValidationError) as exc_info:
         MoreStringsModel(
             str_regex='xxx123  ',
             str_min_length='1234',
             str_curtailed='123',  # doesn't fail
-            str_email='foobar\n@example.com',
+            str_email='foobar<@example.com',
             name_email='foobar @example.com',
         )
     assert exc_info.value.message == '4 errors validating input'
     assert """\
 {
   "name_email": {
-    "error_msg": "Email address is not valid",
+    "error_msg": "The email address contains invalid characters before the @-sign:  .",
     "error_type": "ValueError",
     "track": "NameEmail"
   },
   "str_email": {
-    "error_msg": "Email address is not valid",
+    "error_msg": "The email address contains invalid characters before the @-sign: <.",
     "error_type": "ValueError",
     "track": "EmailStr"
   },
@@ -311,6 +322,13 @@ def test_string_fails():
     "track": "ConstrainedStrValue"
   }
 }""" == exc_info.value.json(2)
+
+
+@pytest.mark.skipif(email_validator, reason='email_validator is installed')
+def test_email_validator_not_installed():
+    with pytest.raises(ImportError):
+        class MoreStringsModel(BaseModel):
+            str_email: EmailStr = ...
 
 
 class ListDictTupleModel(BaseModel):

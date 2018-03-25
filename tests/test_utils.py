@@ -4,7 +4,13 @@ import pytest
 
 from pydantic.utils import import_string, make_dsn, validate_email
 
+try:
+    import email_validator
+except ImportError:
+    email_validator = None
 
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 @pytest.mark.parametrize('value,name,email', [
     ('foobar@example.com', 'foobar', 'foobar@example.com'),
     ('s@muelcolvin.com', 's', 's@muelcolvin.com'),
@@ -25,21 +31,21 @@ from pydantic.utils import import_string, make_dsn, validate_email
     ('उदाहरण.परीक्ष@domain.with.idn.tld', 'उदाहरण.परीक्ष', 'उदाहरण.परीक्ष@domain.with.idn.tld'),
     ('foo.bar@example.com', 'foo.bar', 'foo.bar@example.com'),
     ('foo.bar@exam-ple.com ', 'foo.bar', 'foo.bar@exam-ple.com'),
+    ('ιωάννης@εεττ.gr', 'ιωάννης', 'ιωάννης@εεττ.gr'),
 ])
 def test_address_valid(value, name, email):
     assert validate_email(value) == (name, email)
 
 
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 @pytest.mark.parametrize('value', [
     'f oo.bar@example.com ',
     'foo.bar@exam\nple.com ',
     'foobar',
     'foobar <foobar@example.com',
     '@example.com',
-    'foobar@example.co-m',
     'foobar@.example.com',
     'foobar@.com',
-    'test@domain.with.idn.tld.उदाहरण.परीक्षा',
     'foo bar@example.com',
     'foo@bar@example.com',
     '\n@example.com',
@@ -50,13 +56,18 @@ def test_address_valid(value, name, email):
     '\u001f@example.com',
     '"@example.com',
     '\"@example.com',
-    '`@example.com',
     ',@example.com',
-    'foobar <foobar`@example.com>',
+    'foobar <foobar<@example.com>',
 ])
 def test_address_invalid(value):
     with pytest.raises(ValueError):
         validate_email(value)
+
+
+@pytest.mark.skipif(email_validator, reason='email_validator is installed')
+def test_email_validator_not_installed():
+    with pytest.raises(ImportError):
+        validate_email('s@muelcolvin.com')
 
 
 def test_empty_dsn():

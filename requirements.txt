@@ -4,3 +4,4 @@
 
 msgpack-python==0.5.5
 ujson==1.35
+email-validator==1.0.3

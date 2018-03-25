@@ -4,6 +4,11 @@ from typing import Optional, Type, Union
 from .utils import import_string, make_dsn, validate_email
 from .validators import str_validator
 
+try:
+    import email_validator
+except ImportError:
+    email_validator = None
+
 __all__ = [
     'NoneStr',
     'NoneBytes',
@@ -75,6 +80,9 @@ class ConstrainedStr(str):
 class EmailStr(str):
     @classmethod
     def get_validators(cls):
+        # included here and below so the error happens straight away
+        if email_validator is None:
+            raise ImportError('email-validator is not installed, run `pip install email-validator`')
         yield str_validator
         yield cls.validate
 
@@ -92,6 +100,8 @@ class NameEmail:
 
     @classmethod
     def get_validators(cls):
+        if email_validator is None:
+            raise ImportError('email-validator is not installed, run `pip install email-validator`')
         yield str_validator
         yield cls.validate
 
