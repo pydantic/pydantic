@@ -3,6 +3,10 @@
 History
 -------
 
+v0.8.0 (2018-03-XX)
+...................
+* fix type annotation for ``inherit_config`` #139
+
 v0.7.1 (2018-02-07)
 ...................
 * fix bug with ``create_model`` modifying the base class
