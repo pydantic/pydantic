@@ -34,29 +34,27 @@ class Field:
     __slots__ = (
         'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
         'default', 'required', 'model_config', 'name', 'alias', 'description', 'info', 'validate_always',
-        'allow_none', 'shape'
+        'allow_none', 'shape', 'class_validators'
     )
 
     def __init__(
             self, *,
             name: str,
             type_: Type,
+            class_validators: List[Validator],
+            default: Any,
+            required: bool,
+            model_config: Any,
             alias: str=None,
-            class_validators: List[Validator]=None,
-            default: Any=None,
-            required: bool=False,
             allow_none: bool=False,
-            model_config: Any=None,
             description: str=None):
 
         self.name: str = name
         self.alias: str = alias or name
         self.type_: type = type_
         self.key_type_: type = None
-        class_validators = class_validators or []
-        self.validate_always: bool = (
-            getattr(self.type_, 'validate_always', False) or any(v.always for v in class_validators)
-        )
+        self.class_validators = class_validators or []
+        self.validate_always: bool = False
         self.sub_fields: List[Field] = None
         self.key_field: Field = None
         self.validators = []
@@ -69,7 +67,7 @@ class Field:
         self.allow_none: bool = allow_none
         self.shape: Shape = Shape.SINGLETON
         self.info = {}
-        self._prepare(class_validators)
+        self.prepare()
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, config):
@@ -97,18 +95,22 @@ class Field:
     def alt_alias(self):
         return self.name != self.alias
 
-    def _prepare(self, class_validators):
+    def prepare(self):
         if self.default is not None and self.type_ is None:
             self.type_ = type(self.default)
 
         if self.type_ is None:
             raise ConfigError(f'unable to infer type for attribute "{self.name}"')
 
+        self.validate_always: bool = (
+            getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators)
+        )
+
         if not self.required and not self.validate_always and self.default is None:
             self.allow_none = True
 
-        self._populate_sub_fields(class_validators)
-        self._populate_validators(class_validators)
+        self._populate_sub_fields()
+        self._populate_validators()
 
         self.info = {
             'type': type_display(self.type_),
@@ -126,7 +128,7 @@ class Field:
         # if self.description:
         #     self.info['description'] = self.description
 
-    def _populate_sub_fields(self, class_validators):
+    def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
         origin = _get_type_origin(self.type_)
         if origin is None:
@@ -142,7 +144,7 @@ class Field:
                     types_.append(type_)
             self.sub_fields = [self.__class__(
                 type_=t,
-                class_validators=class_validators,
+                class_validators=self.class_validators,
                 default=self.default,
                 required=self.required,
                 allow_none=self.allow_none,
@@ -162,7 +164,7 @@ class Field:
             self.shape = Shape.MAPPING
             self.key_field = self.__class__(
                 type_=self.key_type_,
-                class_validators=class_validators,
+                class_validators=self.class_validators,
                 default=self.default,
                 required=self.required,
                 allow_none=self.allow_none,
@@ -174,7 +176,7 @@ class Field:
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
             self.sub_fields = [self.__class__(
                 type_=self.type_,
-                class_validators=class_validators,
+                class_validators=self.class_validators,
                 default=self.default,
                 required=self.required,
                 allow_none=self.allow_none,
@@ -182,19 +184,19 @@ class Field:
                 model_config=self.model_config,
             )]
 
-    def _populate_validators(self, class_validators):
+    def _populate_validators(self):
         if not self.sub_fields:
             get_validators = getattr(self.type_, 'get_validators', None)
             v_funcs = (
-                *tuple(v.func for v in class_validators if not v.whole and v.pre),
+                *tuple(v.func for v in self.class_validators if not v.whole and v.pre),
                 *(get_validators() if get_validators else find_validators(self.type_)),
-                *tuple(v.func for v in class_validators if not v.whole and not v.pre),
+                *tuple(v.func for v in self.class_validators if not v.whole and not v.pre),
             )
             self.validators = self._prep_vals(v_funcs)
 
-        if class_validators:
-            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators if v.whole and v.pre)
-            self.whole_post_validators = self._prep_vals(v.func for v in class_validators if v.whole and not v.pre)
+        if self.class_validators:
+            self.whole_pre_validators = self._prep_vals(v.func for v in self.class_validators if v.whole and v.pre)
+            self.whole_post_validators = self._prep_vals(v.func for v in self.class_validators if v.whole and not v.pre)
 
     def _prep_vals(self, v_funcs):
         v = []

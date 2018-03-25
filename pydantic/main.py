@@ -77,7 +77,7 @@ def _extract_validators(namespace):
 
 class MetaModel(ABCMeta):
     def __new__(mcs, name, bases, namespace):
-        fields = {}
+        fields: Dict[name, Field] = {}
         config = BaseConfig
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
@@ -89,6 +89,11 @@ class MetaModel(ABCMeta):
 
         for f in fields.values():
             f.set_config(config)
+            extra_validators = vg.get_validators(f.name)
+            if extra_validators:
+                f.class_validators += extra_validators
+                # re-run prepare to add extra validators
+                f.prepare()
 
         annotations = namespace.get('__annotations__', {})
         # annotation only fields need to come first in fields
