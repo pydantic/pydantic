@@ -289,3 +289,39 @@ def test_invalid_field():
                 return v
     assert str(exc_info.value) == ("Validators defined with incorrect fields: check_b "
                                    "(use check_fields=True if you're inheriting from the model and intended this)")
+
+
+def test_validate_parent():
+    class Parent(BaseModel):
+        a: str
+
+    class Child(Parent):
+        @validator('a')
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Child(a='snap')
+
+
+def test_validate_parent_extra():
+    class Parent(BaseModel):
+        a: str
+
+        @validator('a')
+        def check_a_one(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    class Child(Parent):
+        @validator('a')
+        def check_a_two(cls, v):
+            return v.upper()
+
+    assert Child(a='this is foobar good').a == 'THIS IS FOOBAR GOOD'
+    with pytest.raises(ValidationError):
+        Child(a='snap')

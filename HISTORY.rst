@@ -6,7 +6,8 @@ History
 v0.8.0 (2018-03-25)
 ...................
 * fix type annotation for ``inherit_config`` #139
-* **breaking change**: vheck for invalid field names in validators #140
+* **breaking change**: check for invalid field names in validators #140
+* validate attributes of parent models #141
 
 v0.7.1 (2018-02-07)
 ...................
