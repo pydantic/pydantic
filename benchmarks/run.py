@@ -1,5 +1,7 @@
 import csv
 import json
+from operator import itemgetter
+
 import os
 import random
 import string
@@ -133,8 +135,7 @@ def main():
 
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     results = []
-    csv_file = StringIO()
-    csv_writer = csv.writer(csv_file)
+    csv_results = []
     for test_class in tests:
         times = []
         p = test_class.package
@@ -157,13 +158,23 @@ def main():
         sd = stdev(times) / model_count * 1e6
         results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter '
                        f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter')
-        csv_writer.writerow([p, f'{avg:0.1f}μs', f'{sd:0.3f}μs'])
+        csv_results.append([p, avg, sd])
         print()
 
     for r in results:
         print(r)
 
     if 'SAVE' in os.environ:
+        csv_file = StringIO()
+        csv_writer = csv.writer(csv_file)
+        first_avg = None
+        for p, avg, sd in sorted(csv_results, key=itemgetter(1)):
+            if first_avg:
+                relative = f'{avg / first_avg:0.1f}x slower'
+            else:
+                relative = ''
+                first_avg = avg
+            csv_writer.writerow([p, relative, f'{avg:0.1f}μs', f'{sd:0.3f}μs'])
         p = Path(THIS_DIR / '../docs/benchmarks.csv')
         print(f'saving results to {p}')
         p.write_text(csv_file.getvalue())

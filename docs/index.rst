@@ -390,7 +390,7 @@ Benchmarks
 Below are the results of crude benchmarks comparing *pydantic* to other validation libraries.
 
 .. csv-table::
-   :header: "Package", "Mean deserialization time", "std. dev."
+   :header: "Package", "Relative Performance", "Mean validation time", "std. dev."
    :align: center
    :file: benchmarks.csv
 
