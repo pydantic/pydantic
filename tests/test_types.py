@@ -284,7 +284,7 @@ def test_string_fails():
             str_regex='xxx123  ',
             str_min_length='1234',
             str_curtailed='123',  # doesn't fail
-            str_email='foobar\n@example.com',
+            str_email='foobar<@example.com',
             name_email='foobar @example.com',
         )
     assert exc_info.value.message == '4 errors validating input'
