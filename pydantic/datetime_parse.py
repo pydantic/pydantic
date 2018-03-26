@@ -91,7 +91,7 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
         return value
 
     number = get_numeric(value)
-    if number:
+    if number is not None:
         return from_unix_seconds(number).date()
 
     match = date_re.match(value)
@@ -139,7 +139,7 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
         return value
 
     number = get_numeric(value)
-    if number:
+    if number is not None:
         return from_unix_seconds(number)
 
     match = datetime_re.match(value)
