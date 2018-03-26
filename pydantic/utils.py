@@ -22,7 +22,7 @@ def validate_email(value) -> Tuple[str, str]:
     See RFC 5322 but treat it with suspicion, there seems to exist no universally acknowledged test for a valid email!
     """
     if email_validator is None:
-        raise ImportError('email-validator is not installed, run `pip install email-validator`')
+        raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
     m = PRETTY_REGEX.fullmatch(value)
     if m:
