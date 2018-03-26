@@ -23,6 +23,7 @@ def create_tz(minutes):
     (1494012444.883309, date(2017, 5, 5)),
     ('1494012444', date(2017, 5, 5)),
     (1494012444, date(2017, 5, 5)),
+    (0, date(1970, 1, 1)),
     ('2012-04-23', date(2012, 4, 23)),
     ('2012-4-9', date(2012, 4, 9)),
     (date(2012, 4, 9), date(2012, 4, 9)),
@@ -76,6 +77,7 @@ def test_time_parsing(value, result):
     ('2012-04-23T10:20:30.400+02', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(120))),
     ('2012-04-23T10:20:30.400-02', datetime(2012, 4, 23, 10, 20, 30, 400000, create_tz(-120))),
     (datetime(2017, 5, 5), datetime(2017, 5, 5)),
+    (0, datetime(1970, 1, 1, 0, 0, 0, tzinfo=timezone.utc)),
     # Invalid inputs
     ('x20120423091500', ValueError),
     ('2012-04-56T09:15:90', ValueError),
