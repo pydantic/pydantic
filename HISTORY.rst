@@ -3,6 +3,10 @@
 History
 -------
 
+v0.8.1 (2018-XX-XX)
+...................
+* tweak email-validator import error message #145
+
 v0.8.0 (2018-03-25)
 ...................
 * fix type annotation for ``inherit_config`` #139
