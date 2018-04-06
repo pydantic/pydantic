@@ -27,7 +27,7 @@ TMP_HISTORY_FILE = os.path.join(THIS_DIR, '.TMP_HISTORY.rst')
 
 with open(REAL_HISTORY_FILE) as f:
     history = f.read()
-    history = re.sub('#(\d+)', r'`#\1 <https://github.com/samuelcolvin/pydantic/issues/\1>`_', history)
+    history = re.sub('#(\d+)', r'`#\1 <https://github.com/samuelcolvin/pydantic/pull/\1>`_', history)
 
 with open(TMP_HISTORY_FILE, 'w') as f:
     f.write(history)
