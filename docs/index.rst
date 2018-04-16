@@ -210,6 +210,16 @@ pydantic comes with a number of utilities for parsing or validating common objec
 
 (This script is complete, it should run "as is")
 
+Custom Data Types
+.................
+
+You can also define your own data types. Class method ``get_validators`` will be called to get validators to parse and
+validate the input data.
+
+.. literalinclude:: examples/custom_data_types.py
+
+(This script is complete, it should run "as is")
+
 Helper Functions
 ................
 
