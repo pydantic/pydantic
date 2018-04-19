@@ -257,6 +257,9 @@ class BaseModel(metaclass=MetaModel):
 
         for name, field in self.__fields__.items():
             value = input_data.get(field.alias, MISSING)
+            if value is MISSING and field.alt_alias:
+                value = input_data.get(field.name, MISSING)
+
             if value is MISSING:
                 if self.__config__.validate_all or field.validate_always:
                     value = field.default

@@ -276,6 +276,19 @@ def test_alias():
     assert Model(_a='different').dict() == {'a': 'different'}
 
 
+def test_load_by_alias():
+    class Model(BaseModel):
+        a: str
+
+        class Config:
+            fields = {
+                'a': {'alias': '_a'}
+            }
+
+    assert Model(a='different').a == 'different'
+    assert Model(a='different').dict() == {'a': 'different'}
+
+
 def test_field_order():
     class Model(BaseModel):
         c: float
