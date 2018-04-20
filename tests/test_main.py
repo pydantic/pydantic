@@ -276,11 +276,12 @@ def test_alias():
     assert Model(_a='different').dict() == {'a': 'different'}
 
 
-def test_load_by_alias():
+def test_population_by_alias():
     class Model(BaseModel):
         a: str
 
         class Config:
+            allow_population_by_alias = True
             fields = {
                 'a': {'alias': '_a'}
             }
