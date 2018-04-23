@@ -70,6 +70,12 @@ def anystr_length_validator(v, config, **kwargs):
     raise ValueError(f'length {len(v)} not in range {config.min_anystr_length} to {config.max_anystr_length}')
 
 
+def anystr_strip_whitespace(v, config, **kwargs):
+    if v and config.anystr_strip_whitespace:
+        v = v.strip()
+    return v
+
+
 def ordered_dict_validator(v) -> OrderedDict:
     if isinstance(v, OrderedDict):
         return v
@@ -123,8 +129,8 @@ def uuid_validator(v) -> UUID:
 _VALIDATORS = [
     (Enum, [enum_validator]),
 
-    (str, [not_none_validator, str_validator, anystr_length_validator]),
-    (bytes, [not_none_validator, bytes_validator, anystr_length_validator]),
+    (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
+    (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
 
     (bool, [bool_validator]),
     (int, [int, number_size_validator]),
