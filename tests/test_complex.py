@@ -559,3 +559,27 @@ def test_alias_camel_case():
     assert v.one_thing == 123
     assert v.another_thing == 321
     assert v == {'one_thing': 123, 'another_thing': 321}
+
+
+def test_get_field_config_inherit():
+    class ModelOne(BaseModel):
+        class Config(BaseConfig):
+            @classmethod
+            def get_field_config(cls, name):
+                field_config = super().get_field_config(name) or {}
+                if 'alias' not in field_config:
+                    field_config['alias'] = re.sub(r'_([a-z])', lambda m: m.group(1).upper(), name)
+                return field_config
+
+    class ModelTwo(ModelOne):
+        one_thing: int
+        another_thing: int
+        third_thing: int
+
+        class Config:
+            fields = {
+                'third_thing': 'Banana'
+            }
+
+    v = ModelTwo(**{'oneThing': 123, 'anotherThing': '321', 'Banana': 1})
+    assert v == {'one_thing': 123, 'another_thing': 321, 'third_thing': 1}

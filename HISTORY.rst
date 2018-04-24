@@ -5,12 +5,12 @@ History
 
 v0.9.1 (2018-XX-XX)
 ...................
+* allow custom ``get_field_config`` on config classes #159
 * add ``UUID1``, ``UUID3``, ``UUID4`` and ``UUID5`` types #167
 * modify some inconsistent docstrings and annotations #173
 
 v0.9.0 (2018-04-28)
 ...................
-* allow custom ``get_field_config`` on config classes #159
 * tweak email-validator import error message #145
 * fix parse error of ``parse_date()`` and ``parse_datetime()`` when input is 0 #144, thanks @YannLuo
 * add ``Config.anystr_strip_whitespace`` and ``strip_whitespace`` kwarg to ``constr``,

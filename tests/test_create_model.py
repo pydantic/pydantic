@@ -10,7 +10,7 @@ def test_create_model():
     assert model.__name__ == 'FooModel'
     assert model.__fields__.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
-    assert model.__config__.__name__ == 'BaseConfig'
+    assert model.__config__.__name__ == 'Config'
 
 
 def test_create_model_usage():
