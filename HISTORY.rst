@@ -7,6 +7,7 @@ v0.8.1 (2018-XX-XX)
 ...................
 * tweak email-validator import error message #145
 * fix parse error of parse_date() and parse_datetime() when input is 0 #144
+* add ``Config.anystr_strip_whitespace`` and ``strip_whitespace`` kwarg to ``constr``, by default values is `False` #163
 
 v0.8.0 (2018-03-25)
 ...................

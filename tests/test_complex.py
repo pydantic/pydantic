@@ -19,9 +19,9 @@ def test_str_bytes():
             "required=True, "
             "sub_fields=["
             "<Field v_str: type='str', required=True, validators=['not_none_validator', 'str_validator', "
-            "'anystr_length_validator']>, "
+            "'anystr_strip_whitespace', 'anystr_length_validator']>, "
             "<Field v_bytes: type='bytes', required=True, validators=['not_none_validator', 'bytes_validator', "
-            "'anystr_length_validator']>]>") == repr(m.fields['v'])
+            "'anystr_strip_whitespace', 'anystr_length_validator']>]>") == repr(m.fields['v'])
 
     m = StrBytesModel(v=b'b')
     assert m.v == 'b'
@@ -64,9 +64,9 @@ def test_str_bytes_none():
             "'required': True, "
             "'sub_fields': [<Field v_str: type='str', "
             "required=True, "
-            "validators=['str_validator', 'anystr_length_validator']>, "
+            "validators=['str_validator', 'anystr_strip_whitespace', 'anystr_length_validator']>, "
             "<Field v_bytes: type='bytes', required=True, validators=['bytes_validator', "
-            "'anystr_length_validator']>]}") == repr(m.fields['v'].info)
+            "'anystr_strip_whitespace', 'anystr_length_validator']>]}") == repr(m.fields['v'].info)
 
 
 def test_union_int_str():
@@ -368,7 +368,7 @@ def test_infer_alias():
     assert Model(_a='different').a == 'different'
     assert repr(Model.__fields__['a']) == ("<Field a (alias '_a'): type='str', default='foobar',"
                                            " required=False, validators=['not_none_validator', 'str_validator',"
-                                           " 'anystr_length_validator']>")
+                                           " 'anystr_strip_whitespace', 'anystr_length_validator']>")
 
 
 def test_alias_error():

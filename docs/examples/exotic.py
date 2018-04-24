@@ -11,6 +11,7 @@ class Model(BaseModel):
 
     short_str: constr(min_length=2, max_length=10) = None
     regex_str: constr(regex='apple (pie|tart|sandwich)') = None
+    strip_str: constr(strip_whitespace=True)
 
     big_int: conint(gt=1000, lt=1024) = None
     pos_int: PositiveInt = None
@@ -34,6 +35,7 @@ m = Model(
     path_to_something='/home',
     short_str='foo',
     regex_str='apple pie',
+    strip_str='   bar',
     big_int=1001,
     pos_int=1,
     neg_int=-1,
@@ -46,7 +48,9 @@ print(m.dict())
 {
     'cos_function': <built-in function cos>,
     'path_to_something': PosixPath('/home'),
-    'short_str': 'foo', 'regex_str': 'apple pie',
+    'short_str': 'foo',
+    'regex_str': 'apple pie',
+    'strip_str': 'bar',
     'big_int': 1001,
     'pos_int': 1,
     'neg_int': -1,

@@ -46,6 +46,7 @@ class StrictStr(str):
 
 
 class ConstrainedStr(str):
+    strip_whitespace: bool = None
     min_length: int = None
     max_length: int = None
     curtail_length: int = None
@@ -60,6 +61,9 @@ class ConstrainedStr(str):
     def validate(cls, value: str) -> str:
         if value is None:
             raise TypeError('None is not an allow value')
+
+        if cls.strip_whitespace:
+            value = value.strip()
 
         v_len = len(value)
         if cls.min_length is not None and v_len < cls.min_length:
@@ -116,9 +120,10 @@ class NameEmail:
         return f'<NameEmail("{self}")>'
 
 
-def constr(*, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
+def constr(*, strip_whitespace=False, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
+        strip_whitespace=strip_whitespace,
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
