@@ -169,14 +169,21 @@ class BaseModel(metaclass=MetaModel):
     def __setstate__(self, state):
         object.__setattr__(self, '__values__', state)
 
-    def dict(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
+    def dict(self, *, include: Set[str]=None, exclude: Set[str]=set(), use_aliases: bool=False) -> Dict[str, Any]:
         """
-        Get a dict of the values processed by the model, optionally specifying which fields to include or exclude.
+        Get a dict of the values processed by the model, optionally specifying which fields to include or exclude
+        and whether to use field name or field aliases.
         """
-        return {
-            k: v for k, v in self
-            if k not in exclude and (not include or k in include)
-        }
+        if use_aliases:
+            return {
+                self.__fields__[k].alias: v for k, v in self
+                if k not in exclude and (not include or k in include)
+            }
+        else:
+            return {
+                k: v for k, v in self
+                if k not in exclude and (not include or k in include)
+            }
 
     @classmethod
     def parse_obj(cls, obj):

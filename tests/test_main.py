@@ -272,8 +272,11 @@ def test_alias():
 
     assert Model().a == 'foobar'
     assert Model().dict() == {'a': 'foobar'}
-    assert Model(_a='different').a == 'different'
-    assert Model(_a='different').dict() == {'a': 'different'}
+    m = Model(_a='different')
+    assert m.a == 'different'
+    assert m.dict() == {'a': 'different'}
+    assert m.dict(use_aliases=True) == {'_a': 'different'}
+    assert m == Model(**m.dict(use_aliases=True))
 
 
 def test_field_order():
