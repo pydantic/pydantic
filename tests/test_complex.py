@@ -1,10 +1,11 @@
+import re
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Set, Union
 
 import pytest
 
-from pydantic import BaseModel, NoneStrBytes, StrBytes, ValidationError, constr
+from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr
 from pydantic.exceptions import pretty_errors
 
 
@@ -539,3 +540,22 @@ def test_dict_list_error():
             'error_msg': 'value is not a valid dict, got list',
         }
     } == dict(exc_info.value.errors_dict)
+
+
+def test_alias_camel_case():
+    class Model(BaseModel):
+        one_thing: int
+        another_thing: int
+
+        class Config(BaseConfig):
+            @classmethod
+            def get_field_config(cls, name):
+                field_config = super().get_field_config(name) or {}
+                if 'alias' not in field_config:
+                    field_config['alias'] = re.sub(r'(?:^|_)([a-z])', lambda m: m.group(1).upper(), name)
+                return field_config
+
+    v = Model(**{'OneThing': 123, 'AnotherThing': '321'})
+    assert v.one_thing == 123
+    assert v.another_thing == 321
+    assert v == {'one_thing': 123, 'another_thing': 321}

@@ -28,6 +28,13 @@ class BaseConfig:
     fields = {}
     validate_assignment = False
 
+    @classmethod
+    def get_field_config(cls, name):
+        field_config = cls.fields.get(name) or {}
+        if isinstance(field_config, str):
+            field_config = {'alias': field_config}
+        return field_config
+
 
 def inherit_config(self_config, parent_config) -> Type[BaseConfig]:
     if not self_config:
