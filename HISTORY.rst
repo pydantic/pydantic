@@ -6,7 +6,8 @@ History
 v0.8.1 (2018-XX-XX)
 ...................
 * tweak email-validator import error message #145
-* fix parse error of parse_date() and parse_datetime() when input is 0 #144
+* fix parse error of ``parse_date()`` and ``parse_datetime()`` when input is 0 #144
+* add ``user_aliases`` argument to ``dict()`` #164
 
 v0.8.0 (2018-03-25)
 ...................
