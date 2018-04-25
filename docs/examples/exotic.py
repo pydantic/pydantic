@@ -1,8 +1,8 @@
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import (DSN, BaseModel, EmailStr, NameEmail, PyObject, conint,
-                      constr, PositiveInt, NegativeInt)
+from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt, PositiveFloat, PositiveInt,
+                      PyObject, confloat, conint, constr)
 
 
 class Model(BaseModel):
@@ -16,6 +16,10 @@ class Model(BaseModel):
     big_int: conint(gt=1000, lt=1024) = None
     pos_int: PositiveInt = None
     neg_int: NegativeInt = None
+
+    big_float: confloat(gt=1000, lt=1024) = None
+    pos_float: PositiveFloat = None
+    neg_float: NegativeFloat = None
 
     email_address: EmailStr = None
     email_and_name: NameEmail = None
@@ -39,6 +43,9 @@ m = Model(
     big_int=1001,
     pos_int=1,
     neg_int=-1,
+    big_float=1002.1,
+    pos_float=2.2,
+    neg_float=-2.3,
     email_address='Samuel Colvin <s@muelcolvin.com >',
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
     uuid='ebcdab58-6eb8-46fb-a190-d07a33e9eac8'
@@ -54,6 +61,9 @@ print(m.dict())
     'big_int': 1001,
     'pos_int': 1,
     'neg_int': -1,
+    'big_float': 1002.1,
+    'pos_float': 2.2,
+    'neg_float': -2.3,
     'email_address': 's@muelcolvin.com',
     'email_and_name': <NameEmail("Samuel Colvin <s@muelcolvin.com>")>,
     ...

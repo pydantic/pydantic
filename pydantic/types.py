@@ -25,6 +25,10 @@ __all__ = [
     'conint',
     'PositiveInt',
     'NegativeInt',
+    'ConstrainedFloat',
+    'confloat',
+    'PositiveFloat',
+    'NegativeFloat',
 ]
 
 NoneStr = Optional[str]
@@ -198,6 +202,38 @@ class PositiveInt(ConstrainedInt):
 
 
 class NegativeInt(ConstrainedInt):
+    lt = 0
+
+
+class ConstrainedFloat(float):
+    gt: Union[int, float] = None
+    lt: Union[int, float] = None
+
+    @classmethod
+    def get_validators(cls):
+        yield float
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: float) -> float:
+        if cls.gt is not None and value <= cls.gt:
+            raise ValueError(f'size less than minimum allowed: {cls.gt}')
+        elif cls.lt is not None and value >= cls.lt:
+            raise ValueError(f'size greater than maximum allowed: {cls.lt}')
+        return value
+
+
+def confloat(*, gt=None, lt=None) -> Type[float]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(gt=gt, lt=lt)
+    return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
+
+
+class PositiveFloat(ConstrainedFloat):
+    gt = 0
+
+
+class NegativeFloat(ConstrainedFloat):
     lt = 0
 
 
