@@ -28,6 +28,7 @@ TMP_HISTORY_FILE = os.path.join(THIS_DIR, '.TMP_HISTORY.rst')
 with open(REAL_HISTORY_FILE) as f:
     history = f.read()
     history = re.sub('#(\d+)', r'`#\1 <https://github.com/samuelcolvin/pydantic/pull/\1>`_', history)
+    history = re.sub('(thanks(?: to)? *)@(\S+)', r'\1`@\2 <https://github.com/\2>`_', history, flags=re.I)
 
 with open(TMP_HISTORY_FILE, 'w') as f:
     f.write(history)
