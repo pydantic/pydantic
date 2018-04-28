@@ -6,8 +6,8 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeInt, PositiveInt, PyObject, StrictStr,
-                      ValidationError, conint, constr)
+from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt, PositiveFloat, PositiveInt,
+                      PyObject, StrictStr, ValidationError, confloat, conint, constr)
 
 try:
     import email_validator
@@ -407,6 +407,20 @@ def test_int_validation():
     assert m == {'a': 5, 'b': -5, 'c': 5}
     with pytest.raises(ValidationError) as exc_info:
         IntModel(a=-5, b=5, c=-5)
+    assert exc_info.value.message == '3 errors validating input'
+
+
+class FloatModel(BaseModel):
+    a: PositiveFloat = None
+    b: NegativeFloat = None
+    c: confloat(gt=4, lt=12.2) = None
+
+
+def test_float_validation():
+    m = FloatModel(a=5.1, b=-5.2, c=5.3)
+    assert m == {'a': 5.1, 'b': -5.2, 'c': 5.3}
+    with pytest.raises(ValidationError) as exc_info:
+        FloatModel(a=-5.1, b=5.2, c=-5.3)
     assert exc_info.value.message == '3 errors validating input'
 
 
