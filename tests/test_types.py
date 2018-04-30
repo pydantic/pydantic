@@ -1,4 +1,5 @@
 import os
+import uuid
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from enum import Enum, IntEnum
@@ -6,8 +7,8 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt, PositiveFloat, PositiveInt,
-                      PyObject, StrictStr, ValidationError, confloat, conint, constr)
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt,
+                      PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, confloat, conint, constr)
 
 try:
     import email_validator
@@ -459,6 +460,32 @@ v:
 
     with pytest.raises(ValidationError):
         Model(v=None)
+
+
+class UUIDModel(BaseModel):
+    a: UUID1
+    b: UUID3
+    c: UUID4
+    d: UUID5
+
+
+def test_uuid_validation():
+    a = uuid.uuid1()
+    b = uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
+    c = uuid.uuid4()
+    d = uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
+
+    m = UUIDModel(a=a, b=b, c=c, d=d)
+    assert m.dict() == {
+        'a': a,
+        'b': b,
+        'c': c,
+        'd': d,
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        UUIDModel(a=d, b=c, c=b, d=a)
+    assert exc_info.value.message == '4 errors validating input'
 
 
 def test_anystr_strip_whitespace_enabled():

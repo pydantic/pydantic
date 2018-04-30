@@ -1,5 +1,6 @@
 import re
 from typing import Optional, Type, Union
+from uuid import UUID
 
 from .utils import import_string, make_dsn, validate_email
 from .validators import str_validator
@@ -29,6 +30,10 @@ __all__ = [
     'confloat',
     'PositiveFloat',
     'NegativeFloat',
+    'UUID1',
+    'UUID3',
+    'UUID4',
+    'UUID5',
 ]
 
 NoneStr = Optional[str]
@@ -235,6 +240,22 @@ class PositiveFloat(ConstrainedFloat):
 
 class NegativeFloat(ConstrainedFloat):
     lt = 0
+
+
+class UUID1(UUID):
+    _required_version = 1
+
+
+class UUID3(UUID):
+    _required_version = 3
+
+
+class UUID4(UUID):
+    _required_version = 4
+
+
+class UUID5(UUID):
+    _required_version = 5
 
 
 # TODO, JsonEither, JsonList, JsonDict
