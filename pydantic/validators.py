@@ -114,15 +114,19 @@ def enum_validator(v, field, config, **kwargs) -> Enum:
     return enum_v.value if config.use_enum_values else enum_v
 
 
-def uuid_validator(v) -> UUID:
-    if isinstance(v, UUID):
-        return v
-    elif isinstance(v, str):
-        return UUID(v)
+def uuid_validator(v, field, config, **kwargs) -> UUID:
+    if isinstance(v, str):
+        v = UUID(v)
     elif isinstance(v, (bytes, bytearray)):
-        return UUID(v.decode())
-    else:
+        v = UUID(v.decode())
+    elif not isinstance(v, UUID):
         raise ValueError(f'str, byte or native UUID type expected not {type(v)}')
+
+    required_version = getattr(field.type_, '_required_version', None)
+    if required_version and v.version != required_version:
+        raise ValueError(f'uuid version {required_version} expected, not {v.version}')
+
+    return v
 
 
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
