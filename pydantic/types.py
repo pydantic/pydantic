@@ -1,9 +1,10 @@
 import re
-from typing import Optional, Type, Union
+from typing import Optional, Pattern, Type, Union
 from uuid import UUID
 
 from .utils import import_string, make_dsn, validate_email
-from .validators import str_validator
+from .validators import (anystr_length_validator, anystr_strip_whitespace, not_none_validator, number_size_validator,
+                         str_validator)
 
 try:
     import email_validator
@@ -55,38 +56,29 @@ class StrictStr(str):
 
 
 class ConstrainedStr(str):
-    strip_whitespace: bool = None
-    min_length: int = None
-    max_length: int = None
-    curtail_length: int = None
-    regex = None
+    strip_whitespace = False
+    min_length: Optional[int] = None
+    max_length: Optional[int] = None
+    curtail_length: Optional[int] = None
+    regex: Optional[Pattern] = None
 
     @classmethod
     def get_validators(cls):
+        yield not_none_validator
         yield str_validator
+        yield anystr_strip_whitespace
+        yield anystr_length_validator
         yield cls.validate
 
     @classmethod
     def validate(cls, value: str) -> str:
-        if value is None:
-            raise TypeError('None is not an allow value')
-
-        if cls.strip_whitespace:
-            value = value.strip()
-
-        v_len = len(value)
-        if cls.min_length is not None and v_len < cls.min_length:
-            raise ValueError(f'length less than minimum allowed: {cls.min_length}')
-
-        if cls.curtail_length:
-            if v_len > cls.curtail_length:
-                value = value[:cls.curtail_length]
-        elif cls.max_length is not None and v_len > cls.max_length:
-            raise ValueError(f'length greater than maximum allowed: {cls.max_length}')
+        if cls.curtail_length and len(value) > cls.curtail_length:
+            value = value[:cls.curtail_length]
 
         if cls.regex:
             if not cls.regex.match(value):
                 raise ValueError(f'string does not match regex "{cls.regex.pattern}"')
+
         return value
 
 
@@ -179,21 +171,13 @@ class DSN(str):
 
 
 class ConstrainedInt(int):
-    gt: int = None
-    lt: int = None
+    gt: Optional[int] = None
+    lt: Optional[int] = None
 
     @classmethod
     def get_validators(cls):
         yield int
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: int) -> int:
-        if cls.gt is not None and value <= cls.gt:
-            raise ValueError(f'size less than minimum allowed: {cls.gt}')
-        elif cls.lt is not None and value >= cls.lt:
-            raise ValueError(f'size greater than maximum allowed: {cls.lt}')
-        return value
+        yield number_size_validator
 
 
 def conint(*, gt=None, lt=None) -> Type[int]:
@@ -211,21 +195,13 @@ class NegativeInt(ConstrainedInt):
 
 
 class ConstrainedFloat(float):
-    gt: Union[int, float] = None
-    lt: Union[int, float] = None
+    gt: Union[None, int, float] = None
+    lt: Union[None, int, float] = None
 
     @classmethod
     def get_validators(cls):
         yield float
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: float) -> float:
-        if cls.gt is not None and value <= cls.gt:
-            raise ValueError(f'size less than minimum allowed: {cls.gt}')
-        elif cls.lt is not None and value >= cls.lt:
-            raise ValueError(f'size greater than maximum allowed: {cls.lt}')
-        return value
+        yield number_size_validator
 
 
 def confloat(*, gt=None, lt=None) -> Type[float]:
