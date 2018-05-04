@@ -70,6 +70,12 @@ def anystr_length_validator(v, config, **kwargs):
     raise ValueError(f'length {len(v)} not in range {config.min_anystr_length} to {config.max_anystr_length}')
 
 
+def anystr_strip_whitespace(v, config, **kwargs):
+    if v and config.anystr_strip_whitespace:
+        v = v.strip()
+    return v
+
+
 def ordered_dict_validator(v) -> OrderedDict:
     if isinstance(v, OrderedDict):
         return v
@@ -108,23 +114,27 @@ def enum_validator(v, field, config, **kwargs) -> Enum:
     return enum_v.value if config.use_enum_values else enum_v
 
 
-def uuid_validator(v) -> UUID:
-    if isinstance(v, UUID):
-        return v
-    elif isinstance(v, str):
-        return UUID(v)
+def uuid_validator(v, field, config, **kwargs) -> UUID:
+    if isinstance(v, str):
+        v = UUID(v)
     elif isinstance(v, (bytes, bytearray)):
-        return UUID(v.decode())
-    else:
+        v = UUID(v.decode())
+    elif not isinstance(v, UUID):
         raise ValueError(f'str, byte or native UUID type expected not {type(v)}')
+
+    required_version = getattr(field.type_, '_required_version', None)
+    if required_version and v.version != required_version:
+        raise ValueError(f'uuid version {required_version} expected, not {v.version}')
+
+    return v
 
 
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (Enum, [enum_validator]),
 
-    (str, [not_none_validator, str_validator, anystr_length_validator]),
-    (bytes, [not_none_validator, bytes_validator, anystr_length_validator]),
+    (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
+    (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
 
     (bool, [bool_validator]),
     (int, [int, number_size_validator]),

@@ -1,4 +1,5 @@
 import os
+import uuid
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from enum import Enum, IntEnum
@@ -6,8 +7,8 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import (DSN, BaseModel, EmailStr, NameEmail, NegativeInt, PositiveInt, PyObject, StrictStr,
-                      ValidationError, conint, constr)
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt,
+                      PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, confloat, conint, constr)
 
 try:
     import email_validator
@@ -95,6 +96,7 @@ class CheckModel(BaseModel):
     uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
 
     class Config:
+        anystr_strip_whitespace = True
         max_anystr_length = 10
         max_number_size = 100
 
@@ -115,13 +117,17 @@ class CheckModel(BaseModel):
     ('bool_check', 'yes', True),
 
     ('str_check', 's', 's'),
+    ('str_check', '  s  ', 's'),
     ('str_check', b's', 's'),
+    ('str_check', b'  s  ', 's'),
     ('str_check', 1, '1'),
     ('str_check', 'x' * 11, ValidationError),
     ('str_check', b'x' * 11, ValidationError),
 
     ('bytes_check', 's', b's'),
+    ('bytes_check', '  s  ', b's'),
     ('bytes_check', b's', b's'),
+    ('bytes_check', b'  s  ', b's'),
     ('bytes_check', 1, b'1'),
     ('bytes_check', 'x' * 11, ValidationError),
     ('bytes_check', b'x' * 11, ValidationError),
@@ -262,18 +268,24 @@ def test_enum_fails():
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):
+        str_strip_enabled: constr(strip_whitespace=True)
+        str_strip_disabled: constr(strip_whitespace=False)
         str_regex: constr(regex=r'^xxx\d{3}$') = ...
         str_min_length: constr(min_length=5) = ...
         str_curtailed: constr(curtail_length=5) = ...
         str_email: EmailStr = ...
         name_email: NameEmail = ...
     m = MoreStringsModel(
+        str_strip_enabled='   xxx123   ',
+        str_strip_disabled='   xxx123   ',
         str_regex='xxx123',
         str_min_length='12345',
         str_curtailed='123456',
         str_email='foobar@example.com  ',
         name_email='foo bar  <foobaR@example.com>',
     )
+    assert m.str_strip_enabled == 'xxx123'
+    assert m.str_strip_disabled == '   xxx123   '
     assert m.str_regex == 'xxx123'
     assert m.str_curtailed == '12345'
     assert m.str_email == 'foobar@example.com'
@@ -292,7 +304,7 @@ def test_string_fails():
         name_email: NameEmail = ...
     with pytest.raises(ValidationError) as exc_info:
         MoreStringsModel(
-            str_regex='xxx123  ',
+            str_regex='xxx123xxx',
             str_min_length='1234',
             str_curtailed='123',  # doesn't fail
             str_email='foobar<@example.com',
@@ -399,6 +411,20 @@ def test_int_validation():
     assert exc_info.value.message == '3 errors validating input'
 
 
+class FloatModel(BaseModel):
+    a: PositiveFloat = None
+    b: NegativeFloat = None
+    c: confloat(gt=4, lt=12.2) = None
+
+
+def test_float_validation():
+    m = FloatModel(a=5.1, b=-5.2, c=5.3)
+    assert m == {'a': 5.1, 'b': -5.2, 'c': 5.3}
+    with pytest.raises(ValidationError) as exc_info:
+        FloatModel(a=-5.1, b=5.2, c=-5.3)
+    assert exc_info.value.message == '3 errors validating input'
+
+
 def test_set():
     class SetModel(BaseModel):
         v: set = ...
@@ -434,3 +460,55 @@ v:
 
     with pytest.raises(ValidationError):
         Model(v=None)
+
+
+class UUIDModel(BaseModel):
+    a: UUID1
+    b: UUID3
+    c: UUID4
+    d: UUID5
+
+
+def test_uuid_validation():
+    a = uuid.uuid1()
+    b = uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
+    c = uuid.uuid4()
+    d = uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
+
+    m = UUIDModel(a=a, b=b, c=c, d=d)
+    assert m.dict() == {
+        'a': a,
+        'b': b,
+        'c': c,
+        'd': d,
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        UUIDModel(a=d, b=c, c=b, d=a)
+    assert exc_info.value.message == '4 errors validating input'
+
+
+def test_anystr_strip_whitespace_enabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_strip_whitespace = True
+
+    m = Model(str_check='  123  ', bytes_check=b'  456  ')
+    assert m.str_check == '123'
+    assert m.bytes_check == b'456'
+
+
+def test_anystr_strip_whitespace_disabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_strip_whitespace = False
+
+    m = Model(str_check='  123  ', bytes_check=b'  456  ')
+    assert m.str_check == '  123  '
+    assert m.bytes_check == b'  456  '

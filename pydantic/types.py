@@ -1,5 +1,6 @@
 import re
 from typing import Optional, Type, Union
+from uuid import UUID
 
 from .utils import import_string, make_dsn, validate_email
 from .validators import str_validator
@@ -25,6 +26,14 @@ __all__ = [
     'conint',
     'PositiveInt',
     'NegativeInt',
+    'ConstrainedFloat',
+    'confloat',
+    'PositiveFloat',
+    'NegativeFloat',
+    'UUID1',
+    'UUID3',
+    'UUID4',
+    'UUID5',
 ]
 
 NoneStr = Optional[str]
@@ -46,6 +55,7 @@ class StrictStr(str):
 
 
 class ConstrainedStr(str):
+    strip_whitespace: bool = None
     min_length: int = None
     max_length: int = None
     curtail_length: int = None
@@ -60,6 +70,9 @@ class ConstrainedStr(str):
     def validate(cls, value: str) -> str:
         if value is None:
             raise TypeError('None is not an allow value')
+
+        if cls.strip_whitespace:
+            value = value.strip()
 
         v_len = len(value)
         if cls.min_length is not None and v_len < cls.min_length:
@@ -116,9 +129,10 @@ class NameEmail:
         return f'<NameEmail("{self}")>'
 
 
-def constr(*, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
+def constr(*, strip_whitespace=False, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
+        strip_whitespace=strip_whitespace,
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
@@ -194,6 +208,54 @@ class PositiveInt(ConstrainedInt):
 
 class NegativeInt(ConstrainedInt):
     lt = 0
+
+
+class ConstrainedFloat(float):
+    gt: Union[int, float] = None
+    lt: Union[int, float] = None
+
+    @classmethod
+    def get_validators(cls):
+        yield float
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: float) -> float:
+        if cls.gt is not None and value <= cls.gt:
+            raise ValueError(f'size less than minimum allowed: {cls.gt}')
+        elif cls.lt is not None and value >= cls.lt:
+            raise ValueError(f'size greater than maximum allowed: {cls.lt}')
+        return value
+
+
+def confloat(*, gt=None, lt=None) -> Type[float]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(gt=gt, lt=lt)
+    return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
+
+
+class PositiveFloat(ConstrainedFloat):
+    gt = 0
+
+
+class NegativeFloat(ConstrainedFloat):
+    lt = 0
+
+
+class UUID1(UUID):
+    _required_version = 1
+
+
+class UUID3(UUID):
+    _required_version = 3
+
+
+class UUID4(UUID):
+    _required_version = 4
+
+
+class UUID5(UUID):
+    _required_version = 5
 
 
 # TODO, JsonEither, JsonList, JsonDict

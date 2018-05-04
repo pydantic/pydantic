@@ -210,6 +210,16 @@ pydantic comes with a number of utilities for parsing or validating common objec
 
 (This script is complete, it should run "as is")
 
+Custom Data Types
+.................
+
+You can also define your own data types. Class method ``get_validators`` will be called to get validators to parse and
+validate the input data.
+
+.. literalinclude:: examples/custom_data_types.py
+
+(This script is complete, it should run "as is")
+
 Helper Functions
 ................
 
@@ -239,6 +249,7 @@ Behaviour of pydantic can be controlled via the ``Config`` class on a model.
 
 Options:
 
+:anystr_strip_whitespace: strip or not trailing and leading whitespace for str & byte types (default: ``False``)
 :min_anystr_length: min length for str & byte types (default: ``0``)
 :max_anystr_length: max length for str & byte types (default: ``2 ** 16``)
 :min_number_size: min size for numbers (default: ``-2 ** 64``)
