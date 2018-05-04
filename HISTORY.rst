@@ -6,6 +6,7 @@ History
 v0.9.1 (2018-XX-XX)
 ...................
 * add ``UUID1``, ``UUID3``, ``UUID4`` and ``UUID5`` types #167
+* modify some inconsistent docstrings and annotations #172
 
 v0.9.0 (2018-04-28)
 ...................
