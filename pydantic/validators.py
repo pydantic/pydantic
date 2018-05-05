@@ -58,21 +58,37 @@ def bool_validator(v) -> bool:
     return bool(v)
 
 
-def number_size_validator(v, config, **kwargs):
-    if config.min_number_size <= v <= config.max_number_size:
-        return v
-    raise ValueError(f'size not in range {config.min_number_size} to {config.max_number_size}')
+def number_size_validator(v, field, config, **kwargs):
+    min_size = getattr(field.type_, 'gt', config.min_number_size)
+    if min_size is not None and v <= min_size:
+        raise ValueError(f'size less than minimum allowed: {min_size}')
+
+    max_size = getattr(field.type_, 'lt', config.max_number_size)
+    if max_size is not None and v >= max_size:
+        raise ValueError(f'size greater than maximum allowed: {max_size}')
+
+    return v
 
 
-def anystr_length_validator(v, config, **kwargs):
-    if v is None or config.min_anystr_length <= len(v) <= config.max_anystr_length:
-        return v
-    raise ValueError(f'length {len(v)} not in range {config.min_anystr_length} to {config.max_anystr_length}')
+def anystr_length_validator(v, field, config, **kwargs):
+    v_len = len(v)
+
+    min_length = getattr(field.type_, 'min_length', config.min_anystr_length)
+    if min_length is not None and v_len < min_length:
+        raise ValueError(f'length less than minimum allowed: {min_length}')
+
+    max_length = getattr(field.type_, 'max_length', config.max_anystr_length)
+    if max_length is not None and v_len > max_length:
+        raise ValueError(f'length greater than maximum allowed: {max_length}')
+
+    return v
 
 
-def anystr_strip_whitespace(v, config, **kwargs):
-    if v and config.anystr_strip_whitespace:
+def anystr_strip_whitespace(v, field, config, **kwargs):
+    strip_whitespace = getattr(field.type_, 'strip_whitespace', config.anystr_strip_whitespace)
+    if strip_whitespace:
         v = v.strip()
+
     return v
 
 

@@ -7,6 +7,8 @@ v0.9.1 (2018-XX-XX)
 ...................
 * add ``UUID1``, ``UUID3``, ``UUID4`` and ``UUID5`` types #167
 * modify some inconsistent docstrings and annotations #173
+* fix type annotations for exotic types #171
+* re-use type validators in exotic types #171
 
 v0.9.0 (2018-04-28)
 ...................

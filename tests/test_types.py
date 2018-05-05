@@ -169,10 +169,47 @@ def test_default_validators(field, value, result):
         assert CheckModel(**kwargs).dict()[field] == result
 
 
+class StrModel(BaseModel):
+    str_check: str
+
+    class Config:
+        min_anystr_length = 5
+        max_anystr_length = 10
+
+
 def test_string_too_long():
     with pytest.raises(ValidationError) as exc_info:
-        CheckModel(str_check='x' * 150)
-    assert 'length 150 not in range 0 to 10 (error_type=ValueError track=str)' in exc_info.value.display_errors
+        StrModel(str_check='x' * 150)
+    assert 'length greater than maximum allowed: 10 (error_type=ValueError track=str)' in exc_info.value.display_errors
+
+
+def test_string_too_short():
+    with pytest.raises(ValidationError) as exc_info:
+        StrModel(str_check='x')
+    assert 'length less than minimum allowed: 5 (error_type=ValueError track=str)' in exc_info.value.display_errors
+
+
+class NumberModel(BaseModel):
+    int_check: int
+    float_check: float
+
+    class Config:
+        min_number_size = 5
+        max_number_size = 10
+
+
+def test_number_too_big():
+    with pytest.raises(ValidationError) as exc_info:
+        NumberModel(int_check=50, float_check=150)
+    assert 'size greater than maximum allowed: 10 (error_type=ValueError track=int)' in exc_info.value.display_errors
+    assert 'size greater than maximum allowed: 10 (error_type=ValueError track=float)' in exc_info.value.display_errors
+
+
+def test_number_too_small():
+    with pytest.raises(ValidationError) as exc_info:
+        NumberModel(int_check=1, float_check=2.5)
+    assert 'size less than minimum allowed: 5 (error_type=ValueError track=int)' in exc_info.value.display_errors
+    assert 'size less than minimum allowed: 5 (error_type=ValueError track=float)' in exc_info.value.display_errors
 
 
 class DatetimeModel(BaseModel):
