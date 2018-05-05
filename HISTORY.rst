@@ -9,6 +9,7 @@ v0.9.1 (2018-XX-XX)
 * modify some inconsistent docstrings and annotations #173
 * fix type annotations for exotic types #171
 * re-use type validators in exotic types #171
+* scheduled monthly requirements updates #168
 
 v0.9.0 (2018-04-28)
 ...................
