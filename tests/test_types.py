@@ -2,13 +2,15 @@ import os
 import uuid
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from enum import Enum, IntEnum
 from uuid import UUID
 
 import pytest
 
 from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt,
-                      PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, confloat, conint, constr)
+                      PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, condecimal, confloat, conint,
+                      constr, create_model)
 
 try:
     import email_validator
@@ -94,6 +96,7 @@ class CheckModel(BaseModel):
     int_check = 1
     float_check = 1.0
     uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
+    decimal_check: Decimal = Decimal('42.24')
 
     class Config:
         anystr_strip_whitespace = True
@@ -159,6 +162,14 @@ class CheckModel(BaseModel):
     ('uuid_check', b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
     ('uuid_check', 'ebcdab58-6eb8-46fb-a190-', ValidationError),
     ('uuid_check', 123, ValidationError),
+
+    ('decimal_check', 42.24, Decimal('42.24')),
+    ('decimal_check', '42.24', Decimal('42.24')),
+    ('decimal_check', b'42.24', Decimal('42.24')),
+    ('decimal_check', '  42.24  ', Decimal('42.24')),
+    ('decimal_check', Decimal('42.24'), Decimal('42.24')),
+    ('decimal_check', 'not a valid decimal', ValidationError),
+    ('decimal_check', 'NaN', ValidationError),
 ])
 def test_default_validators(field, value, result):
     kwargs = {field: value}
@@ -549,3 +560,38 @@ def test_anystr_strip_whitespace_disabled():
     m = Model(str_check='  123  ', bytes_check=b'  456  ')
     assert m.str_check == '  123  '
     assert m.bytes_check == b'  456  '
+
+
+@pytest.mark.parametrize('type_,value,result', [
+    (condecimal(gt=Decimal('42.24')), Decimal('43'), Decimal('43')),
+    (condecimal(gt=Decimal('42.24')), Decimal('42'), ValidationError),
+    (condecimal(lt=Decimal('42.24')), Decimal('42'), Decimal('42')),
+    (condecimal(lt=Decimal('42.24')), Decimal('43'), ValidationError),
+    (condecimal(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
+    (condecimal(max_digits=2, decimal_places=1), Decimal('0.99'), ValidationError),
+    (condecimal(max_digits=3, decimal_places=1), Decimal('999'), ValidationError),
+    (condecimal(max_digits=4, decimal_places=1), Decimal('999'), Decimal('999')),
+    (condecimal(max_digits=20, decimal_places=2), Decimal('742403889818000000'), Decimal('742403889818000000')),
+    (condecimal(max_digits=20, decimal_places=2), Decimal('7.42403889818E+17'), Decimal('7.42403889818E+17')),
+    (condecimal(max_digits=20, decimal_places=2), Decimal('7424742403889818000000'), ValidationError),
+    (condecimal(max_digits=5, decimal_places=2), Decimal('7304E-1'), Decimal('7304E-1')),
+    (condecimal(max_digits=5, decimal_places=2), Decimal('7304E-3'), ValidationError),
+    (condecimal(max_digits=5, decimal_places=5), Decimal('70E-5'), Decimal('70E-5')),
+    (condecimal(max_digits=5, decimal_places=5), Decimal('70E-6'), ValidationError),
+    *[
+        (condecimal(decimal_places=2, max_digits=10), Decimal(value), ValidationError)
+        for value in (
+            'NaN', '-NaN', '+NaN', 'sNaN', '-sNaN', '+sNaN',
+            'Inf', '-Inf', '+Inf', 'Infinity', '-Infinity', '-Infinity',
+        )
+    ],
+])
+def test_decimal_validation(type_, value, result):
+    model = create_model('DecimalModel', foo=(type_, ...))
+    kwargs = {'foo': value}
+
+    if result == ValidationError:
+        with pytest.raises(ValidationError):
+            model(**kwargs)
+    else:
+        assert model(**kwargs).dict()['foo'] == result

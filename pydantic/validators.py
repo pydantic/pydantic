@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
-from decimal import Decimal
+from decimal import Decimal, DecimalException
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -145,6 +145,25 @@ def uuid_validator(v, field, config, **kwargs) -> UUID:
     return v
 
 
+def decimal_validator(v) -> Decimal:
+    if isinstance(v, Decimal):
+        return v
+    elif isinstance(v, (bytes, bytearray)):
+        v = v.decode()
+
+    v = str(v).strip()
+
+    try:
+        v = Decimal(v)
+    except DecimalException as e:
+        raise TypeError(f'value is not a valid decimal, got {display_as_type(v)}') from e
+
+    if not v.is_finite():
+        raise TypeError(f'value is not a valid decimal, got {display_as_type(v)}')
+
+    return v
+
+
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (Enum, [enum_validator]),
@@ -169,6 +188,7 @@ _VALIDATORS = [
     (tuple, [tuple_validator]),
     (set, [set_validator]),
     (UUID, [not_none_validator, uuid_validator]),
+    (Decimal, [not_none_validator, decimal_validator]),
 ]
 
 

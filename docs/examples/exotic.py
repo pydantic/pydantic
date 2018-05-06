@@ -1,9 +1,10 @@
 import uuid
+from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
 
 from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt,
-                      PositiveFloat, PositiveInt, PyObject, confloat, conint, constr)
+                      PositiveFloat, PositiveInt, PyObject, condecimal, confloat, conint, constr)
 
 
 class Model(BaseModel):
@@ -33,6 +34,10 @@ class Model(BaseModel):
     db_driver = 'postgres'
     db_query: dict = None
     dsn: DSN = None
+    decimal: Decimal = None
+    decimal_positive: condecimal(gt=0) = None
+    decimal_negative: condecimal(lt=0) = None
+    decimal_max_digits_and_places: condecimal(max_digits=2, decimal_places=2) = None
     uuid_any: UUID = None
     uuid_v1: UUID1 = None
     uuid_v3: UUID3 = None
@@ -53,6 +58,10 @@ m = Model(
     neg_float=-2.3,
     email_address='Samuel Colvin <s@muelcolvin.com >',
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
+    decimal=Decimal('42.24'),
+    decimal_positive=Decimal('21.12'),
+    decimal_negative=Decimal('-21.12'),
+    decimal_max_digits_and_places=Decimal('0.99'),
     uuid_any=uuid.uuid4(),
     uuid_v1=uuid.uuid1(),
     uuid_v3=uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org'),
@@ -77,6 +86,10 @@ print(m.dict())
     'email_and_name': <NameEmail("Samuel Colvin <s@muelcolvin.com>")>,
     ...
     'dsn': 'postgres://postgres@localhost:5432/foobar',
+    'decimal': Decimal('42.24'),
+    'decimal_positive': Decimal('21.12'),
+    'decimal_negative': Decimal('-21.12'),
+    'decimal_max_digits_and_places': Decimal('0.99'),
     'uuid_any': UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'),
     'uuid_v1': UUID('c96e505c-4c62-11e8-a27c-dca90496b483'),
     'uuid_v3': UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e'),

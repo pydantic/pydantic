@@ -10,6 +10,7 @@ v0.9.1 (2018-XX-XX)
 * fix type annotations for exotic types #171
 * re-use type validators in exotic types #171
 * scheduled monthly requirements updates #168
+* add ``Decimal``, ``ConstrainedDecimal`` and ``condecimal`` types #170
 
 v0.9.0 (2018-04-28)
 ...................
