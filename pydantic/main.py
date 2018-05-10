@@ -28,14 +28,22 @@ class BaseConfig:
     fields = {}
     validate_assignment = False
 
+    @classmethod
+    def get_field_config(cls, name):
+        field_config = cls.fields.get(name) or {}
+        if isinstance(field_config, str):
+            field_config = {'alias': field_config}
+        return field_config
 
-def inherit_config(self_config, parent_config) -> Type[BaseConfig]:
+
+def inherit_config(self_config: Type[BaseConfig], parent_config: Type[BaseConfig]) -> Type[BaseConfig]:
     if not self_config:
-        return parent_config
-    for k, v in parent_config.__dict__.items():
-        if not (k.startswith('_') or hasattr(self_config, k)):
-            setattr(self_config, k, v)
-    return self_config
+        base_classes = parent_config,
+    elif self_config == parent_config:
+        base_classes = self_config,
+    else:
+        base_classes = self_config, parent_config
+    return type('Config', base_classes, {})
 
 
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod

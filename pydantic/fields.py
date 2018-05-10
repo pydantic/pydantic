@@ -72,7 +72,7 @@ class Field:
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, config):
         required = value == Required
-        field_config = _get_field_config(config, name)
+        field_config = config.get_field_config(name)
         return cls(
             name=name,
             type_=annotation,
@@ -86,7 +86,7 @@ class Field:
 
     def set_config(self, config):
         self.model_config = config
-        field_config = _get_field_config(config, self.name)
+        field_config = config.get_field_config(self.name)
         if field_config:
             self.alias = field_config.get('alias') or self.alias
             self.description = field_config.get('description') or self.description
@@ -343,13 +343,6 @@ def _get_validator_signature(validator):
         raise ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
                           f'(value) or (value, *, values, config, field) or for class validators '
                           f'(cls, value) or (cls, value, *, values, config, field)') from e
-
-
-def _get_field_config(config, name):
-    field_config = config.fields.get(name)
-    if isinstance(field_config, str):
-        field_config = {'alias': field_config}
-    return field_config
 
 
 def _get_type_origin(obj):

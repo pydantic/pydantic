@@ -5,6 +5,7 @@ History
 
 v0.9.1 (2018-XX-XX)
 ...................
+* allow custom ``get_field_config`` on config classes #159
 * add ``UUID1``, ``UUID3``, ``UUID4`` and ``UUID5`` types #167
 * modify some inconsistent docstrings and annotations #173
 * fix type annotations for exotic types #171
