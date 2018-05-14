@@ -1,6 +1,6 @@
 import json
-from collections import namedtuple
 from itertools import chain
+from typing import Union
 
 __all__ = (
     'Error',
@@ -11,7 +11,15 @@ __all__ = (
 )
 
 
-Error = namedtuple('Error', ['exc', 'index'])
+class Error:
+    __slots__ = (
+        'exc',
+        'index',
+    )
+
+    def __init__(self, exc: Exception, *, index: Union[str, int] = None) -> None:
+        self.exc = exc
+        self.index = index
 
 
 class ErrorDict(dict):
