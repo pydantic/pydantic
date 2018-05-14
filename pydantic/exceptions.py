@@ -19,7 +19,7 @@ def type_display(type_: type):
         return str(type_)
 
 
-Error = namedtuple('Error', ['exc', 'track', 'index'])
+Error = namedtuple('Error', ['exc', 'index'])
 
 
 class ErrorDict(dict):
@@ -29,8 +29,6 @@ class ErrorDict(dict):
 def pretty_errors(e):
     if isinstance(e, Error):
         d = ErrorDict(error_type=e.exc.__class__.__name__)
-        if e.track is not None:
-            d['track'] = type_display(e.track)
         if e.index is not None:
             d['index'] = e.index
         if isinstance(e.exc, ValidationError):
@@ -49,7 +47,7 @@ def pretty_errors(e):
         raise TypeError(f'Unknown error object: {e}')
 
 
-E_KEYS = 'error_type', 'track', 'index'
+E_KEYS = 'error_type', 'index'
 
 
 def _render_errors(e, indent=0):

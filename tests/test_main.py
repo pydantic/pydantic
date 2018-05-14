@@ -39,9 +39,9 @@ def test_ultra_simple_failed():
     assert """\
 2 errors validating input
 a:
-  could not convert string to float: 'x' (error_type=ValueError track=float)
+  could not convert string to float: 'x' (error_type=ValueError)
 b:
-  invalid literal for int() with base 10: 'x' (error_type=ValueError track=int)\
+  invalid literal for int() with base 10: 'x' (error_type=ValueError)\
 """ == str(exc_info.value)
 
 
@@ -121,13 +121,11 @@ def test_nullable_strings_fails():
 {
   "required_bytes_value": {
     "error_msg": "None is not an allow value",
-    "error_type": "TypeError",
-    "track": "bytes"
+    "error_type": "TypeError"
   },
   "required_str_value": {
     "error_msg": "None is not an allow value",
-    "error_type": "TypeError",
-    "track": "str"
+    "error_type": "TypeError"
   }
 }""" == json.dumps(pretty_errors(e.errors_raw), indent=2, sort_keys=True)
 
@@ -364,12 +362,12 @@ def test_validating_assignment_fail():
         p.a = 'b'
     assert """error validating input
 a:
-  invalid literal for int() with base 10: 'b' (error_type=ValueError track=int)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'b' (error_type=ValueError)""" == str(exc_info.value)
     with pytest.raises(ValidationError) as exc_info:
         p.b = ''
     assert """error validating input
 b:
-  length less than minimum allowed: 1 (error_type=ValueError track=ConstrainedStrValue)""" == str(exc_info.value)
+  length less than minimum allowed: 1 (error_type=ValueError)""" == str(exc_info.value)
 
 
 def test_enum_values():

@@ -39,8 +39,7 @@ def test_constrained_str_too_long():
 {
   "v": {
     "error_msg": "length greater than maximum allowed: 10",
-    "error_type": "ValueError",
-    "track": "ConstrainedStrValue"
+    "error_type": "ValueError"
   }
 }""" == exc_info.value.json(2)
 
@@ -191,13 +190,13 @@ class StrModel(BaseModel):
 def test_string_too_long():
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x' * 150)
-    assert 'length greater than maximum allowed: 10 (error_type=ValueError track=str)' in exc_info.value.display_errors
+    assert 'length greater than maximum allowed: 10 (error_type=ValueError)' in exc_info.value.display_errors
 
 
 def test_string_too_short():
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x')
-    assert 'length less than minimum allowed: 5 (error_type=ValueError track=str)' in exc_info.value.display_errors
+    assert 'length less than minimum allowed: 5 (error_type=ValueError)' in exc_info.value.display_errors
 
 
 class NumberModel(BaseModel):
@@ -212,15 +211,15 @@ class NumberModel(BaseModel):
 def test_number_too_big():
     with pytest.raises(ValidationError) as exc_info:
         NumberModel(int_check=50, float_check=150)
-    assert 'size greater than maximum allowed: 10 (error_type=ValueError track=int)' in exc_info.value.display_errors
-    assert 'size greater than maximum allowed: 10 (error_type=ValueError track=float)' in exc_info.value.display_errors
+    assert 'size greater than maximum allowed: 10 (error_type=ValueError)' in exc_info.value.display_errors
+    assert 'size greater than maximum allowed: 10 (error_type=ValueError)' in exc_info.value.display_errors
 
 
 def test_number_too_small():
     with pytest.raises(ValidationError) as exc_info:
         NumberModel(int_check=1, float_check=2.5)
-    assert 'size less than minimum allowed: 5 (error_type=ValueError track=int)' in exc_info.value.display_errors
-    assert 'size less than minimum allowed: 5 (error_type=ValueError track=float)' in exc_info.value.display_errors
+    assert 'size less than minimum allowed: 5 (error_type=ValueError)' in exc_info.value.display_errors
+    assert 'size less than minimum allowed: 5 (error_type=ValueError)' in exc_info.value.display_errors
 
 
 class DatetimeModel(BaseModel):
@@ -256,23 +255,19 @@ def test_datetime_errors():
 {
   "date_": {
     "error_msg": "Invalid date format",
-    "error_type": "ValueError",
-    "track": "date"
+    "error_type": "ValueError"
   },
   "dt": {
     "error_msg": "month must be in 1..12",
-    "error_type": "ValueError",
-    "track": "datetime"
+    "error_type": "ValueError"
   },
   "duration": {
     "error_msg": "Invalid duration format",
-    "error_type": "ValueError",
-    "track": "timedelta"
+    "error_type": "ValueError"
   },
   "time_": {
     "error_msg": "hour must be in 0..23",
-    "error_type": "ValueError",
-    "track": "time"
+    "error_type": "ValueError"
   }
 }""" == exc_info.value.json(2)
 
@@ -307,8 +302,7 @@ def test_enum_fails():
 {
   "tool": {
     "error_msg": "3 is not a valid ToolEnum",
-    "error_type": "ValueError",
-    "track": "ToolEnum"
+    "error_type": "ValueError"
   }
 }""" == exc_info.value.json(2)
 
@@ -363,23 +357,19 @@ def test_string_fails():
 {
   "name_email": {
     "error_msg": "The email address contains invalid characters before the @-sign:  .",
-    "error_type": "EmailSyntaxError",
-    "track": "NameEmail"
+    "error_type": "EmailSyntaxError"
   },
   "str_email": {
     "error_msg": "The email address contains invalid characters before the @-sign: <.",
-    "error_type": "EmailSyntaxError",
-    "track": "EmailStr"
+    "error_type": "EmailSyntaxError"
   },
   "str_min_length": {
     "error_msg": "length less than minimum allowed: 5",
-    "error_type": "ValueError",
-    "track": "ConstrainedStrValue"
+    "error_type": "ValueError"
   },
   "str_regex": {
     "error_msg": "string does not match regex \\"^xxx\\\\d{3}$\\"",
-    "error_type": "ValueError",
-    "track": "ConstrainedStrValue"
+    "error_type": "ValueError"
   }
 }""" == exc_info.value.json(2)
 
@@ -504,7 +494,7 @@ def test_uuid_error():
     assert """\
 error validating input
 v:
-  badly formed hexadecimal UUID string (error_type=ValueError track=UUID)""" == str(exc_info.value)
+  badly formed hexadecimal UUID string (error_type=ValueError)""" == str(exc_info.value)
 
     with pytest.raises(ValidationError):
         Model(v=None)

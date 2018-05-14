@@ -35,13 +35,11 @@ def test_str_bytes():
   "v": [
     {
       "error_msg": "None is not an allow value",
-      "error_type": "TypeError",
-      "track": "str"
+      "error_type": "TypeError"
     },
     {
       "error_msg": "None is not an allow value",
-      "error_type": "TypeError",
-      "track": "bytes"
+      "error_type": "TypeError"
     }
   ]
 }""" == exc_info.value.json(2)
@@ -95,13 +93,11 @@ def test_union_int_str():
   "v": [
     {
       "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
-      "error_type": "TypeError",
-      "track": "int"
+      "error_type": "TypeError"
     },
     {
       "error_msg": "None is not an allow value",
-      "error_type": "TypeError",
-      "track": "str"
+      "error_type": "TypeError"
     }
   ]
 }""" == exc_info.value.json(2)
@@ -134,14 +130,12 @@ def test_typed_list():
     {
       "error_msg": "invalid literal for int() with base 10: 'x'",
       "error_type": "ValueError",
-      "index": 1,
-      "track": "int"
+      "index": 1
     },
     {
       "error_msg": "invalid literal for int() with base 10: 'y'",
       "error_type": "ValueError",
-      "index": 2,
-      "track": "int"
+      "index": 2
     }
   ]
 }""" == exc_info.value.json(2)
@@ -169,7 +163,7 @@ def test_typed_set():
     assert """\
 error validating input
 v:
-  invalid literal for int() with base 10: 'x' (error_type=ValueError track=int index=1)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'x' (error_type=ValueError index=1)""" == str(exc_info.value)
 
 
 class DictModel(BaseModel):
@@ -202,7 +196,7 @@ v:
         """\
 error validating input
 v:
-  invalid literal for int() with base 10: 'b' (error_type=ValueError track=int index=a)"""
+  invalid literal for int() with base 10: 'b' (error_type=ValueError index=a)"""
     ),
     (
         [1, 2, 3],
@@ -227,7 +221,7 @@ def test_dict_key_error():
     assert """\
 error validating input
 v:
-  invalid literal for int() with base 10: 'foo' (error_type=ValueError track=int index=key)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'foo' (error_type=ValueError index=key)""" == str(exc_info.value)
 
 
 # TODO re-add when implementing better model validators
@@ -282,7 +276,7 @@ def test_recursive_list_error():
     assert """\
 error validating input
 v:
-  error validating input (error_type=ValidationError track=SubModel)
+  error validating input (error_type=ValidationError)
     name:
       field required (error_type=Missing)\
 """ == str(exc_info.value)
@@ -298,8 +292,7 @@ v:
       },
       "error_msg": "error validating input",
       "error_type": "ValidationError",
-      "index": 0,
-      "track": "SubModel"
+      "index": 0
     }
   ]
 }""" == exc_info.value.json(2)
@@ -317,8 +310,8 @@ def test_list_unions():
 error validating input
 v:
   int() argument must be a string, a bytes-like object or a number, not 'NoneType' \
-(error_type=TypeError track=int index=2)
-  None is not an allow value (error_type=TypeError track=str index=2)\
+(error_type=TypeError index=2)
+  None is not an allow value (error_type=TypeError index=2)\
 """ == str(exc_info.value)
 
 
@@ -385,7 +378,7 @@ def test_alias_error():
     assert """\
 error validating input
 _a:
-  invalid literal for int() with base 10: 'foo' (error_type=ValueError track=int)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'foo' (error_type=ValueError)""" == str(exc_info.value)
 
 
 def test_annotation_config():

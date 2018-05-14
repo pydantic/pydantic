@@ -237,7 +237,7 @@ class Field:
         try:
             v_iter = enumerate(v)
         except TypeError as exc:
-            return v, Error(exc, None, None)
+            return v, Error(exc, None)
         for i, v_ in v_iter:
             single_result, single_errors = self._validate_singleton(v_, values, i, cls)
             if single_errors:
@@ -256,7 +256,7 @@ class Field:
             try:
                 v_iter = dict(v)
             except TypeError:
-                return v, Error(TypeError(f'value is not a valid dict, got {type_display(type(v))}'), None, None)
+                return v, Error(TypeError(f'value is not a valid dict, got {type_display(type(v))}'), None)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
@@ -300,7 +300,7 @@ class Field:
                     # ValidatorSignature.CLS_VALUE_KWARGS
                     v = validator(cls, v, values=values, config=self.model_config, field=self)
             except (ValueError, TypeError) as exc:
-                return v, Error(exc, self.type_, index)
+                return v, Error(exc, index)
         return v, None
 
     def __repr__(self):

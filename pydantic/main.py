@@ -137,8 +137,8 @@ class MetaModel(ABCMeta):
 
 
 MISSING = Missing('field required')
-MISSING_ERROR = Error(MISSING, None, None)
-EXTRA_ERROR = Error(Extra('extra fields not permitted'), None, None)
+MISSING_ERROR = Error(MISSING, None)
+EXTRA_ERROR = Error(Extra('extra fields not permitted'), None)
 
 
 class BaseModel(metaclass=MetaModel):
@@ -191,7 +191,7 @@ class BaseModel(metaclass=MetaModel):
     def parse_obj(cls, obj):
         if not isinstance(obj, dict):
             exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-            raise ValidationError([Error(exc, None, None)])
+            raise ValidationError([Error(exc, None)])
         return cls(**obj)
 
     @classmethod
@@ -204,7 +204,7 @@ class BaseModel(metaclass=MetaModel):
             obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding,
                                  allow_pickle=allow_pickle)
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([Error(e, None, None)])
+            raise ValidationError([Error(e, None)])
         return cls.parse_obj(obj)
 
     @classmethod
