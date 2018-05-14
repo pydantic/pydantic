@@ -2,7 +2,8 @@ import inspect
 from enum import IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
-from .exceptions import ConfigError, Error, type_display
+from .exceptions import ConfigError, Error
+from .utils import display_as_type
 from .validators import NoneType, find_validators, not_none_validator
 
 Required: Any = Ellipsis
@@ -113,7 +114,7 @@ class Field:
         self._populate_validators()
 
         self.info = {
-            'type': type_display(self.type_),
+            'type': display_as_type(self.type_),
             'default': self.default,
             'required': self.required,
         }
@@ -148,7 +149,7 @@ class Field:
                 default=self.default,
                 required=self.required,
                 allow_none=self.allow_none,
-                name=f'{self.name}_{type_display(t)}',
+                name=f'{self.name}_{display_as_type(t)}',
                 model_config=self.model_config,
             ) for t in types_]
         elif issubclass(origin, List):
@@ -256,7 +257,7 @@ class Field:
             try:
                 v_iter = dict(v)
             except TypeError:
-                return v, Error(TypeError(f'value is not a valid dict, got {type_display(type(v))}'), None)
+                return v, Error(TypeError(f'value is not a valid dict, got {display_as_type(v)}'), None)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():

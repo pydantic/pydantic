@@ -11,14 +11,6 @@ __all__ = (
 )
 
 
-def type_display(type_: type):
-    try:
-        return type_.__name__
-    except AttributeError:
-        # happens with unions
-        return str(type_)
-
-
 Error = namedtuple('Error', ['exc', 'index'])
 
 

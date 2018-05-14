@@ -1,6 +1,6 @@
 import re
 from importlib import import_module
-from typing import Tuple
+from typing import Tuple, _TypingBase
 
 try:
     import email_validator
@@ -102,3 +102,14 @@ def truncate(v, *, max_len=80):
     if len(v) > max_len:
         v = v[:max_len - 1] + '…'
     return v
+
+
+def display_as_type(v):
+    if not isinstance(v, _TypingBase) and not isinstance(v, type):
+        v = type(v)
+
+    try:
+        return v.__name__
+    except AttributeError:
+        # happens with unions
+        return str(v)
