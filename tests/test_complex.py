@@ -34,11 +34,11 @@ def test_str_bytes():
 {
   "v": [
     {
-      "error_msg": "None is not an allow value",
+      "msg": "None is not an allow value",
       "type": "type_error"
     },
     {
-      "error_msg": "None is not an allow value",
+      "msg": "None is not an allow value",
       "type": "type_error"
     }
   ]
@@ -92,11 +92,11 @@ def test_union_int_str():
 {
   "v": [
     {
-      "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
+      "msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
       "type": "type_error"
     },
     {
-      "error_msg": "None is not an allow value",
+      "msg": "None is not an allow value",
       "type": "type_error"
     }
   ]
@@ -128,13 +128,13 @@ def test_typed_list():
 {
   "v": [
     {
-      "error_msg": "invalid literal for int() with base 10: 'x'",
       "loc": 1,
+      "msg": "invalid literal for int() with base 10: 'x'",
       "type": "value_error"
     },
     {
-      "error_msg": "invalid literal for int() with base 10: 'y'",
       "loc": 2,
+      "msg": "invalid literal for int() with base 10: 'y'",
       "type": "value_error"
     }
   ]
@@ -146,7 +146,7 @@ def test_typed_list():
     assert """\
 {
   "v": {
-    "error_msg": "'int' object is not iterable",
+    "msg": "'int' object is not iterable",
     "type": "type_error"
   }
 }""" == exc_info.value.json(2)
@@ -286,12 +286,12 @@ v:
     {
       "error_details": {
         "name": {
-          "error_msg": "field required",
+          "msg": "field required",
           "type": "value_error.missing"
         }
       },
-      "error_msg": "error validating input",
       "loc": 0,
+      "msg": "error validating input",
       "type": "value_error.validation_error"
     }
   ]
@@ -530,7 +530,7 @@ def test_dict_list_error():
     assert {
         'v': {
             'type': 'type_error',
-            'error_msg': 'value is not a valid dict, got list',
+            'msg': 'value is not a valid dict, got list',
         }
     } == dict(exc_info.value.errors_dict)
 

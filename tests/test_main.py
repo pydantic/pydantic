@@ -120,11 +120,11 @@ def test_nullable_strings_fails():
         assert """\
 {
   "required_bytes_value": {
-    "error_msg": "None is not an allow value",
+    "msg": "None is not an allow value",
     "type": "type_error"
   },
   "required_str_value": {
-    "error_msg": "None is not an allow value",
+    "msg": "None is not an allow value",
     "type": "type_error"
   }
 }""" == json.dumps(pretty_errors(e.errors_raw), indent=2, sort_keys=True)

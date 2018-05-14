@@ -38,7 +38,7 @@ def test_constrained_str_too_long():
     assert """\
 {
   "v": {
-    "error_msg": "length greater than maximum allowed: 10",
+    "msg": "length greater than maximum allowed: 10",
     "type": "value_error"
   }
 }""" == exc_info.value.json(2)
@@ -254,19 +254,19 @@ def test_datetime_errors():
     assert """\
 {
   "date_": {
-    "error_msg": "Invalid date format",
+    "msg": "Invalid date format",
     "type": "value_error"
   },
   "dt": {
-    "error_msg": "month must be in 1..12",
+    "msg": "month must be in 1..12",
     "type": "value_error"
   },
   "duration": {
-    "error_msg": "Invalid duration format",
+    "msg": "Invalid duration format",
     "type": "value_error"
   },
   "time_": {
-    "error_msg": "hour must be in 0..23",
+    "msg": "hour must be in 0..23",
     "type": "value_error"
   }
 }""" == exc_info.value.json(2)
@@ -301,7 +301,7 @@ def test_enum_fails():
     assert """\
 {
   "tool": {
-    "error_msg": "3 is not a valid ToolEnum",
+    "msg": "3 is not a valid ToolEnum",
     "type": "value_error"
   }
 }""" == exc_info.value.json(2)
@@ -356,19 +356,19 @@ def test_string_fails():
     assert """\
 {
   "name_email": {
-    "error_msg": "The email address contains invalid characters before the @-sign:  .",
+    "msg": "The email address contains invalid characters before the @-sign:  .",
     "type": "value_error.email_not_valid_error.email_syntax_error"
   },
   "str_email": {
-    "error_msg": "The email address contains invalid characters before the @-sign: <.",
+    "msg": "The email address contains invalid characters before the @-sign: <.",
     "type": "value_error.email_not_valid_error.email_syntax_error"
   },
   "str_min_length": {
-    "error_msg": "length less than minimum allowed: 5",
+    "msg": "length less than minimum allowed: 5",
     "type": "value_error"
   },
   "str_regex": {
-    "error_msg": "string does not match regex \\"^xxx\\\\d{3}$\\"",
+    "msg": "string does not match regex \\"^xxx\\\\d{3}$\\"",
     "type": "value_error"
   }
 }""" == exc_info.value.json(2)

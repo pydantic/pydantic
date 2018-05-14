@@ -27,6 +27,13 @@ class Error:
         self.loc = loc
 
     @property
+    def msg(self) -> str:
+        if isinstance(self.exc_info, ValidationError):
+            return self.exc_info.message
+
+        return str(self.exc_info)
+
+    @property
     def type_(self) -> str:
         bases = []
         for b in inspect.getmro(self.exc_type):
@@ -43,16 +50,16 @@ class ErrorDict(dict):
 
 def pretty_errors(e):
     if isinstance(e, Error):
-        d = ErrorDict(type=e.type_)
+        d = ErrorDict(
+            msg=e.msg,
+            type=e.type_
+        )
+
         if e.loc is not None:
             d['loc'] = e.loc
         if isinstance(e.exc_info, ValidationError):
-            d.update(
-                error_msg=e.exc_info.message,
-                error_details=e.exc_info.errors_dict,
-            )
-        else:
-            d['error_msg'] = str(e.exc_info)
+            d.update(error_details=e.exc_info.errors_dict)
+
         return d
     elif isinstance(e, dict):
         return {k: pretty_errors(v) for k, v in e.items()}
@@ -70,7 +77,7 @@ def _render_errors(e, indent=0):
         return list(chain(*(_render_errors(error, indent) for error in e)))
     elif isinstance(e, ErrorDict):
         v = ' '.join(f'{k}={e.get(k)}' for k in E_KEYS if e.get(k))
-        r = [(indent, f'{e["error_msg"]} ({v})')]
+        r = [(indent, f'{e["msg"]} ({v})')]
         error_details = e.get('error_details')
         if error_details:
             r.extend(_render_errors(error_details, indent=indent + 1))
