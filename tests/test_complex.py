@@ -130,12 +130,12 @@ def test_typed_list():
     {
       "error_msg": "invalid literal for int() with base 10: 'x'",
       "error_type": "ValueError",
-      "index": 1
+      "loc": 1
     },
     {
       "error_msg": "invalid literal for int() with base 10: 'y'",
       "error_type": "ValueError",
-      "index": 2
+      "loc": 2
     }
   ]
 }""" == exc_info.value.json(2)
@@ -163,7 +163,7 @@ def test_typed_set():
     assert """\
 error validating input
 v:
-  invalid literal for int() with base 10: 'x' (error_type=ValueError index=1)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'x' (error_type=ValueError loc=1)""" == str(exc_info.value)
 
 
 class DictModel(BaseModel):
@@ -196,7 +196,7 @@ v:
         """\
 error validating input
 v:
-  invalid literal for int() with base 10: 'b' (error_type=ValueError index=a)"""
+  invalid literal for int() with base 10: 'b' (error_type=ValueError loc=a)"""
     ),
     (
         [1, 2, 3],
@@ -221,7 +221,7 @@ def test_dict_key_error():
     assert """\
 error validating input
 v:
-  invalid literal for int() with base 10: 'foo' (error_type=ValueError index=key)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'foo' (error_type=ValueError loc=key)""" == str(exc_info.value)
 
 
 # TODO re-add when implementing better model validators
@@ -292,7 +292,7 @@ v:
       },
       "error_msg": "error validating input",
       "error_type": "ValidationError",
-      "index": 0
+      "loc": 0
     }
   ]
 }""" == exc_info.value.json(2)
@@ -310,8 +310,8 @@ def test_list_unions():
 error validating input
 v:
   int() argument must be a string, a bytes-like object or a number, not 'NoneType' \
-(error_type=TypeError index=2)
-  None is not an allow value (error_type=TypeError index=2)\
+(error_type=TypeError loc=2)
+  None is not an allow value (error_type=TypeError loc=2)\
 """ == str(exc_info.value)
 
 

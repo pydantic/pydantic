@@ -14,12 +14,12 @@ __all__ = (
 class Error:
     __slots__ = (
         'exc',
-        'index',
+        'loc',
     )
 
-    def __init__(self, exc: Exception, *, index: Union[str, int] = None) -> None:
+    def __init__(self, exc: Exception, *, loc: Union[str, int] = None) -> None:
         self.exc = exc
-        self.index = index
+        self.loc = loc
 
 
 class ErrorDict(dict):
@@ -29,8 +29,8 @@ class ErrorDict(dict):
 def pretty_errors(e):
     if isinstance(e, Error):
         d = ErrorDict(error_type=e.exc.__class__.__name__)
-        if e.index is not None:
-            d['index'] = e.index
+        if e.loc is not None:
+            d['loc'] = e.loc
         if isinstance(e.exc, ValidationError):
             d.update(
                 error_msg=e.exc.message,
@@ -47,7 +47,7 @@ def pretty_errors(e):
         raise TypeError(f'Unknown error object: {e}')
 
 
-E_KEYS = 'error_type', 'index'
+E_KEYS = 'error_type', 'loc'
 
 
 def _render_errors(e, indent=0):
