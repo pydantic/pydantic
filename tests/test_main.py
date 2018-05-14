@@ -30,7 +30,7 @@ def test_ultra_simple_missing():
     assert """\
 error validating input
 a:
-  field required (error_type=Missing)""" == str(exc_info.value)
+  field required (type=value_error.missing)""" == str(exc_info.value)
 
 
 def test_ultra_simple_failed():
@@ -39,9 +39,9 @@ def test_ultra_simple_failed():
     assert """\
 2 errors validating input
 a:
-  could not convert string to float: 'x' (error_type=ValueError)
+  could not convert string to float: 'x' (type=value_error)
 b:
-  invalid literal for int() with base 10: 'x' (error_type=ValueError)\
+  invalid literal for int() with base 10: 'x' (type=value_error)\
 """ == str(exc_info.value)
 
 
@@ -121,11 +121,11 @@ def test_nullable_strings_fails():
 {
   "required_bytes_value": {
     "error_msg": "None is not an allow value",
-    "error_type": "TypeError"
+    "type": "type_error"
   },
   "required_str_value": {
     "error_msg": "None is not an allow value",
-    "error_type": "TypeError"
+    "type": "type_error"
   }
 }""" == json.dumps(pretty_errors(e.errors_raw), indent=2, sort_keys=True)
 
@@ -168,9 +168,9 @@ def test_prevent_extra_fails():
     assert exc_info.value.message == '2 errors validating input'
     assert """\
 bar:
-  extra fields not permitted (error_type=Extra)
+  extra fields not permitted (type=value_error.extra)
 spam:
-  extra fields not permitted (error_type=Extra)""" == exc_info.value.display_errors
+  extra fields not permitted (type=value_error.extra)""" == exc_info.value.display_errors
 
 
 class InvalidValidator:
@@ -299,7 +299,7 @@ def test_required():
     assert """\
 error validating input
 a:
-  field required (error_type=Missing)\
+  field required (type=value_error.missing)\
 """ == str(exc_info.value)
 
 
@@ -362,12 +362,12 @@ def test_validating_assignment_fail():
         p.a = 'b'
     assert """error validating input
 a:
-  invalid literal for int() with base 10: 'b' (error_type=ValueError)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'b' (type=value_error)""" == str(exc_info.value)
     with pytest.raises(ValidationError) as exc_info:
         p.b = ''
     assert """error validating input
 b:
-  length less than minimum allowed: 1 (error_type=ValueError)""" == str(exc_info.value)
+  length less than minimum allowed: 1 (type=value_error)""" == str(exc_info.value)
 
 
 def test_enum_values():

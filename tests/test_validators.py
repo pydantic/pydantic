@@ -120,7 +120,7 @@ def test_validating_assignment_dict():
     assert """\
 error validating input
 a:
-  invalid literal for int() with base 10: 'x' (error_type=ValueError)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'x' (type=value_error)""" == str(exc_info.value)
 
 
 def test_validate_multiple():
@@ -141,9 +141,9 @@ def test_validate_multiple():
     assert """\
 2 errors validating input
 a:
-  a is too short (error_type=TypeError)
+  a is too short (type=type_error)
 b:
-  b is too short (error_type=TypeError)""" == str(exc_info.value)
+  b is too short (type=type_error)""" == str(exc_info.value)
 
 
 def test_classmethod():

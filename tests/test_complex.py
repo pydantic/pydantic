@@ -35,11 +35,11 @@ def test_str_bytes():
   "v": [
     {
       "error_msg": "None is not an allow value",
-      "error_type": "TypeError"
+      "type": "type_error"
     },
     {
       "error_msg": "None is not an allow value",
-      "error_type": "TypeError"
+      "type": "type_error"
     }
   ]
 }""" == exc_info.value.json(2)
@@ -93,11 +93,11 @@ def test_union_int_str():
   "v": [
     {
       "error_msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
-      "error_type": "TypeError"
+      "type": "type_error"
     },
     {
       "error_msg": "None is not an allow value",
-      "error_type": "TypeError"
+      "type": "type_error"
     }
   ]
 }""" == exc_info.value.json(2)
@@ -129,13 +129,13 @@ def test_typed_list():
   "v": [
     {
       "error_msg": "invalid literal for int() with base 10: 'x'",
-      "error_type": "ValueError",
-      "loc": 1
+      "loc": 1,
+      "type": "value_error"
     },
     {
       "error_msg": "invalid literal for int() with base 10: 'y'",
-      "error_type": "ValueError",
-      "loc": 2
+      "loc": 2,
+      "type": "value_error"
     }
   ]
 }""" == exc_info.value.json(2)
@@ -147,7 +147,7 @@ def test_typed_list():
 {
   "v": {
     "error_msg": "'int' object is not iterable",
-    "error_type": "TypeError"
+    "type": "type_error"
   }
 }""" == exc_info.value.json(2)
 
@@ -163,7 +163,7 @@ def test_typed_set():
     assert """\
 error validating input
 v:
-  invalid literal for int() with base 10: 'x' (error_type=ValueError loc=1)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'x' (type=value_error loc=1)""" == str(exc_info.value)
 
 
 class DictModel(BaseModel):
@@ -189,21 +189,21 @@ def test_typed_dict(value, result):
         """\
 error validating input
 v:
-  value is not a valid dict, got int (error_type=TypeError)"""
+  value is not a valid dict, got int (type=type_error)"""
     ),
     (
         {'a': 'b'},
         """\
 error validating input
 v:
-  invalid literal for int() with base 10: 'b' (error_type=ValueError loc=a)"""
+  invalid literal for int() with base 10: 'b' (type=value_error loc=a)"""
     ),
     (
         [1, 2, 3],
         """\
 error validating input
 v:
-  value is not a valid dict, got list (error_type=TypeError)""",
+  value is not a valid dict, got list (type=type_error)""",
     )
 ])
 def test_typed_dict_error(value, error):
@@ -221,7 +221,7 @@ def test_dict_key_error():
     assert """\
 error validating input
 v:
-  invalid literal for int() with base 10: 'foo' (error_type=ValueError loc=key)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'foo' (type=value_error loc=key)""" == str(exc_info.value)
 
 
 # TODO re-add when implementing better model validators
@@ -276,9 +276,9 @@ def test_recursive_list_error():
     assert """\
 error validating input
 v:
-  error validating input (error_type=ValidationError)
+  error validating input (type=value_error.validation_error)
     name:
-      field required (error_type=Missing)\
+      field required (type=value_error.missing)\
 """ == str(exc_info.value)
     assert """\
 {
@@ -287,12 +287,12 @@ v:
       "error_details": {
         "name": {
           "error_msg": "field required",
-          "error_type": "Missing"
+          "type": "value_error.missing"
         }
       },
       "error_msg": "error validating input",
-      "error_type": "ValidationError",
-      "loc": 0
+      "loc": 0,
+      "type": "value_error.validation_error"
     }
   ]
 }""" == exc_info.value.json(2)
@@ -310,8 +310,8 @@ def test_list_unions():
 error validating input
 v:
   int() argument must be a string, a bytes-like object or a number, not 'NoneType' \
-(error_type=TypeError loc=2)
-  None is not an allow value (error_type=TypeError loc=2)\
+(type=type_error loc=2)
+  None is not an allow value (type=type_error loc=2)\
 """ == str(exc_info.value)
 
 
@@ -378,7 +378,7 @@ def test_alias_error():
     assert """\
 error validating input
 _a:
-  invalid literal for int() with base 10: 'foo' (error_type=ValueError)""" == str(exc_info.value)
+  invalid literal for int() with base 10: 'foo' (type=value_error)""" == str(exc_info.value)
 
 
 def test_annotation_config():
@@ -529,7 +529,7 @@ def test_dict_list_error():
         assert DictModel(v=[1, 2, 3])
     assert {
         'v': {
-            'error_type': 'TypeError',
+            'type': 'type_error',
             'error_msg': 'value is not a valid dict, got list',
         }
     } == dict(exc_info.value.errors_dict)

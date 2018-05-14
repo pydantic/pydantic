@@ -113,3 +113,7 @@ def display_as_type(v):
     except AttributeError:
         # happens with unions
         return str(v)
+
+
+def to_snake_case(v: str) -> str:
+    return re.sub(r'([a-z])([A-Z])', r'\1_\2', v).lower()

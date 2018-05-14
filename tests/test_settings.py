@@ -28,7 +28,7 @@ def test_sub_env_missing():
     assert """\
 error validating input
 apple:
-  None is not an allow value (error_type=TypeError)\
+  None is not an allow value (type=type_error)\
 """ == str(exc_info.value)
 
 

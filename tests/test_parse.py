@@ -25,7 +25,7 @@ def test_fails():
         Model.parse_obj([1, 2, 3])
     assert """\
 error validating input
-Model expected dict not list (error_type=TypeError)""" == str(exc_info.value)
+Model expected dict not list (type=type_error)""" == str(exc_info.value)
 
 
 def test_json():
@@ -60,7 +60,7 @@ def test_msgpack_not_installed_ct():
         Model.parse_raw(b'\x82\xa1a\x0c\xa1b\x08', content_type='application/msgpack')
     assert """\
 error validating input
-Unknown content-type: application/msgpack (error_type=TypeError)""" == str(exc_info.value)
+Unknown content-type: application/msgpack (type=type_error)""" == str(exc_info.value)
 
 
 def test_pickle_ct():
@@ -84,7 +84,7 @@ def test_bad_ct():
         Model.parse_raw('{"a": 12, "b": 8}', content_type='application/missing')
     assert """\
 error validating input
-Unknown content-type: application/missing (error_type=TypeError)""" == str(exc_info.value)
+Unknown content-type: application/missing (type=type_error)""" == str(exc_info.value)
 
 
 def test_bad_proto():
@@ -92,7 +92,7 @@ def test_bad_proto():
         Model.parse_raw('{"a": 12, "b": 8}', proto='foobar')
     assert """\
 error validating input
-Unknown protocol: foobar (error_type=TypeError)""" == str(exc_info.value)
+Unknown protocol: foobar (type=type_error)""" == str(exc_info.value)
 
 
 def test_file_json(tmpdir):

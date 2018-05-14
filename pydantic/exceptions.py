@@ -1,6 +1,9 @@
+import inspect
 import json
 from itertools import chain
 from typing import Union
+
+from .utils import to_snake_case
 
 __all__ = (
     'Error',
@@ -13,13 +16,25 @@ __all__ = (
 
 class Error:
     __slots__ = (
-        'exc',
+        'exc_info',
+        'exc_type',
         'loc',
     )
 
     def __init__(self, exc: Exception, *, loc: Union[str, int] = None) -> None:
-        self.exc = exc
+        self.exc_info = exc
+        self.exc_type = type(exc)
         self.loc = loc
+
+    @property
+    def type_(self) -> str:
+        bases = []
+        for b in inspect.getmro(self.exc_type):
+            bases.append(b.__name__)
+            if b in (ValueError, TypeError):
+                break
+
+        return to_snake_case('.'.join(bases[::-1]))
 
 
 class ErrorDict(dict):
@@ -28,16 +43,16 @@ class ErrorDict(dict):
 
 def pretty_errors(e):
     if isinstance(e, Error):
-        d = ErrorDict(error_type=e.exc.__class__.__name__)
+        d = ErrorDict(type=e.type_)
         if e.loc is not None:
             d['loc'] = e.loc
-        if isinstance(e.exc, ValidationError):
+        if isinstance(e.exc_info, ValidationError):
             d.update(
-                error_msg=e.exc.message,
-                error_details=e.exc.errors_dict,
+                error_msg=e.exc_info.message,
+                error_details=e.exc_info.errors_dict,
             )
         else:
-            d['error_msg'] = str(e.exc)
+            d['error_msg'] = str(e.exc_info)
         return d
     elif isinstance(e, dict):
         return {k: pretty_errors(v) for k, v in e.items()}
@@ -47,7 +62,7 @@ def pretty_errors(e):
         raise TypeError(f'Unknown error object: {e}')
 
 
-E_KEYS = 'error_type', 'loc'
+E_KEYS = 'type', 'loc'
 
 
 def _render_errors(e, indent=0):
