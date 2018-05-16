@@ -1,6 +1,5 @@
 import inspect
 import json
-from itertools import chain
 from typing import Union
 
 from .utils import to_snake_case
@@ -15,12 +14,6 @@ __all__ = (
 
 
 class Error:
-    __slots__ = (
-        'exc_info',
-        'exc_type',
-        'loc',
-    )
-
     def __init__(self, exc: Exception, *, loc: Union[str, int] = None) -> None:
         self.exc_info = exc
         self.exc_type = type(exc)
@@ -28,9 +21,6 @@ class Error:
 
     @property
     def msg(self) -> str:
-        if isinstance(self.exc_info, ValidationError):
-            return self.exc_info.message
-
         return str(self.exc_info)
 
     @property
@@ -44,73 +34,26 @@ class Error:
         return to_snake_case('.'.join(bases[::-1]))
 
 
-class ErrorDict(dict):
-    pass
-
-
-def pretty_errors(e):
-    if isinstance(e, Error):
-        d = ErrorDict(
-            msg=e.msg,
-            type=e.type_
-        )
-
-        if e.loc is not None:
-            d['loc'] = e.loc
-        if isinstance(e.exc_info, ValidationError):
-            d.update(error_details=e.exc_info.errors_dict)
-
-        return d
-    elif isinstance(e, dict):
-        return {k: pretty_errors(v) for k, v in e.items()}
-    elif isinstance(e, (list, tuple)):
-        return [pretty_errors(e_) for e_ in e]
-    else:
-        raise TypeError(f'Unknown error object: {e}')
-
-
-E_KEYS = 'type', 'loc'
-
-
-def _render_errors(e, indent=0):
-    if isinstance(e, list):
-        return list(chain(*(_render_errors(error, indent) for error in e)))
-    elif isinstance(e, ErrorDict):
-        v = ' '.join(f'{k}={e.get(k)}' for k in E_KEYS if e.get(k))
-        r = [(indent, f'{e["msg"]} ({v})')]
-        error_details = e.get('error_details')
-        if error_details:
-            r.extend(_render_errors(error_details, indent=indent + 1))
-        return r
-    else:
-        # assumes e is a dict
-        r = []
-        for key, error in e.items():
-            r.append((indent, key + ':'))
-            r.extend(_render_errors(error, indent=indent + 1))
-        return r
-
-
 class ValidationError(ValueError):
     def __init__(self, errors):
-        self.errors_raw = errors
-        e_count = len(errors)
-        self.message = 'error validating input' if e_count == 1 else f'{e_count} errors validating input'
+        self.errors = errors
+        self.message = 'validation errors'
+
         super().__init__(self.message)
-
-    def json(self, indent=2):
-        return json.dumps(self.errors_dict, indent=indent, sort_keys=True)
-
-    @property
-    def errors_dict(self):
-        return pretty_errors(self.errors_raw)
 
     @property
     def display_errors(self):
-        return '\n'.join('  ' * i + msg for i, msg in _render_errors(self.errors_dict))
+        return display_errors(self.flatten_errors)
+
+    @property
+    def flatten_errors(self):
+        return flatten_errors(self.errors)
 
     def __str__(self):
         return f'{self.message}\n{self.display_errors}'
+
+    def json(self, *, indent=2):
+        return json.dumps(self.flatten_errors, indent=indent, sort_keys=True)
 
 
 class ConfigError(RuntimeError):
@@ -123,3 +66,36 @@ class Missing(ValueError):
 
 class Extra(ValueError):
     pass
+
+
+def display_errors(errors):
+    display = []
+
+    for error in errors:
+        display.extend([
+            error['loc'],
+            f'  {error["msg"]} (type={error["type"]})',
+        ])
+
+    return '\n'.join(display)
+
+
+def flatten_errors(errors, *, loc=None):
+    flatten = []
+
+    for error in errors:
+        if isinstance(error, Error):
+            if isinstance(error.exc_info, ValidationError):
+                flatten.extend(flatten_errors(error.exc_info.errors, loc=error.loc))
+            else:
+                flatten.append({
+                    'loc': error.loc if loc is None else f'{loc}.{error.loc}',
+                    'msg': error.msg,
+                    'type': error.type_,
+                })
+        elif isinstance(error, list):
+            flatten.extend(flatten_errors(error))
+        else:
+            raise TypeError(f'Unknown error object: {error}')
+
+    return flatten

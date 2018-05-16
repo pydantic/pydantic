@@ -35,13 +35,13 @@ def test_constrained_str_default():
 def test_constrained_str_too_long():
     with pytest.raises(ValidationError) as exc_info:
         ConStringModel(v='this is too long')
-    assert """\
-{
-  "v": {
-    "msg": "length greater than maximum allowed: 10",
-    "type": "value_error"
-  }
-}""" == exc_info.value.json(2)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v',
+            'msg': 'length greater than maximum allowed: 10',
+            'type': 'value_error',
+        },
+    ]
 
 
 class DsnModel(BaseModel):
@@ -73,7 +73,18 @@ def test_dsn_pw_host():
 def test_dsn_no_driver():
     with pytest.raises(ValidationError) as exc_info:
         DsnModel(db_driver=None)
-    assert '"db_driver" field may not be missing or None' in str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'db_driver',
+            'msg': 'None is not an allow value',
+            'type': 'type_error',
+        },
+        {
+            'loc': 'dsn',
+            'msg': '"db_driver" field may not be missing or None',
+            'type': 'value_error',
+        },
+    ]
 
 
 class PyObjectModel(BaseModel):
@@ -85,7 +96,13 @@ def test_module_import():
     assert m.module == os.path
     with pytest.raises(ValidationError) as exc_info:
         PyObjectModel(module='foobar')
-    assert '"foobar" doesn\'t look like a module path' in str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'module',
+            'msg': '"foobar" doesn\'t look like a module path',
+            'type': 'value_error',
+        },
+    ]
 
 
 class CheckModel(BaseModel):
@@ -190,13 +207,25 @@ class StrModel(BaseModel):
 def test_string_too_long():
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x' * 150)
-    assert 'length greater than maximum allowed: 10 (type=value_error)' in exc_info.value.display_errors
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'str_check',
+            'msg': 'length greater than maximum allowed: 10',
+            'type': 'value_error',
+        },
+    ]
 
 
 def test_string_too_short():
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x')
-    assert 'length less than minimum allowed: 5 (type=value_error)' in exc_info.value.display_errors
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'str_check',
+            'msg': 'length less than minimum allowed: 5',
+            'type': 'value_error',
+        },
+    ]
 
 
 class NumberModel(BaseModel):
@@ -211,15 +240,35 @@ class NumberModel(BaseModel):
 def test_number_too_big():
     with pytest.raises(ValidationError) as exc_info:
         NumberModel(int_check=50, float_check=150)
-    assert 'size greater than maximum allowed: 10 (type=value_error)' in exc_info.value.display_errors
-    assert 'size greater than maximum allowed: 10 (type=value_error)' in exc_info.value.display_errors
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'int_check',
+            'msg': 'size greater than maximum allowed: 10',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'float_check',
+            'msg': 'size greater than maximum allowed: 10',
+            'type': 'value_error',
+        },
+    ]
 
 
 def test_number_too_small():
     with pytest.raises(ValidationError) as exc_info:
         NumberModel(int_check=1, float_check=2.5)
-    assert 'size less than minimum allowed: 5 (type=value_error)' in exc_info.value.display_errors
-    assert 'size less than minimum allowed: 5 (type=value_error)' in exc_info.value.display_errors
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'int_check',
+            'msg': 'size less than minimum allowed: 5',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'float_check',
+            'msg': 'size less than minimum allowed: 5',
+            'type': 'value_error',
+        },
+    ]
 
 
 class DatetimeModel(BaseModel):
@@ -250,26 +299,28 @@ def test_datetime_errors():
             time_='25:20:30.400',
             duration='15:30.0001 broken',
         )
-    assert exc_info.value.message == '4 errors validating input'
-    assert """\
-{
-  "date_": {
-    "msg": "Invalid date format",
-    "type": "value_error"
-  },
-  "dt": {
-    "msg": "month must be in 1..12",
-    "type": "value_error"
-  },
-  "duration": {
-    "msg": "Invalid duration format",
-    "type": "value_error"
-  },
-  "time_": {
-    "msg": "hour must be in 0..23",
-    "type": "value_error"
-  }
-}""" == exc_info.value.json(2)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': "dt",
+            'msg': 'month must be in 1..12',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'date_',
+            'msg': 'Invalid date format',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'time_',
+            'msg': 'hour must be in 0..23',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'duration',
+            'msg': 'Invalid duration format',
+            'type': 'value_error',
+        },
+    ]
 
 
 class FruitEnum(str, Enum):
@@ -297,14 +348,13 @@ def test_enum_successful():
 def test_enum_fails():
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
-    assert exc_info.value.message == 'error validating input'
-    assert """\
-{
-  "tool": {
-    "msg": "3 is not a valid ToolEnum",
-    "type": "value_error"
-  }
-}""" == exc_info.value.json(2)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'tool',
+            'msg': '3 is not a valid ToolEnum',
+            'type': 'value_error',
+        }
+    ]
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -352,26 +402,28 @@ def test_string_fails():
             str_email='foobar<@example.com',
             name_email='foobar @example.com',
         )
-    assert exc_info.value.message == '4 errors validating input'
-    assert """\
-{
-  "name_email": {
-    "msg": "The email address contains invalid characters before the @-sign:  .",
-    "type": "value_error.email_not_valid_error.email_syntax_error"
-  },
-  "str_email": {
-    "msg": "The email address contains invalid characters before the @-sign: <.",
-    "type": "value_error.email_not_valid_error.email_syntax_error"
-  },
-  "str_min_length": {
-    "msg": "length less than minimum allowed: 5",
-    "type": "value_error"
-  },
-  "str_regex": {
-    "msg": "string does not match regex \\"^xxx\\\\d{3}$\\"",
-    "type": "value_error"
-  }
-}""" == exc_info.value.json(2)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'str_regex',
+            'msg': 'string does not match regex "^xxx\\d{3}$"',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'str_min_length',
+            'msg': 'length less than minimum allowed: 5',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'str_email',
+            'msg': 'The email address contains invalid characters before the @-sign: <.',
+            'type': 'value_error.email_not_valid_error.email_syntax_error',
+        },
+        {
+            'loc': 'name_email',
+            'msg': 'The email address contains invalid characters before the @-sign:  .',
+            'type': 'value_error.email_not_valid_error.email_syntax_error',
+        },
+    ]
 
 
 @pytest.mark.skipif(email_validator, reason='email_validator is installed')
@@ -398,9 +450,16 @@ class ListDictTupleModel(BaseModel):
 def test_dict():
     assert ListDictTupleModel(a={1: 10, 2: 20}).a == {1: 10, 2: 20}
     assert ListDictTupleModel(a=[(1, 2), (3, 4)]).a == {1: 2, 3: 4}
+
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(a=[1, 2, 3])
-    assert 'value is not a valid dict, got list' in str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'a',
+            'msg': 'value is not a valid dict, got list',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_list():
@@ -409,18 +468,32 @@ def test_list():
     assert m.b == [1, 2, '3']
     assert ListDictTupleModel(b='xyz').b == ['x', 'y', 'z']
     assert ListDictTupleModel(b=(i**2 for i in range(5))).b == [0, 1, 4, 9, 16]
+
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(b=1)
-    assert "'int' object is not iterable" in str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'b',
+            'msg': '\'int\' object is not iterable',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_ordered_dict():
     assert ListDictTupleModel(c=OrderedDict([(1, 10), (2, 20)])).c == OrderedDict([(1, 10), (2, 20)])
     assert ListDictTupleModel(c={1: 10, 2: 20}).c in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
     assert ListDictTupleModel(c=[(1, 2), (3, 4)]).c == OrderedDict([(1, 2), (3, 4)])
+
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(c=[1, 2, 3])
-    assert "'int' object is not iterable" in str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'c',
+            'msg': '\'int\' object is not iterable',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_tuple():
@@ -430,9 +503,16 @@ def test_tuple():
     assert m.dict() == {'a': None, 'b': None, 'c': None, 'd': (1, 2, '3')}
     assert ListDictTupleModel(d='xyz').d == ('x', 'y', 'z')
     assert ListDictTupleModel(d=(i**2 for i in range(5))).d == (0, 1, 4, 9, 16)
+
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(d=1)
-    assert "'int' object is not iterable" in str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'd',
+            'msg': '\'int\' object is not iterable',
+            'type': 'type_error',
+        },
+    ]
 
 
 class IntModel(BaseModel):
@@ -444,9 +524,26 @@ class IntModel(BaseModel):
 def test_int_validation():
     m = IntModel(a=5, b=-5, c=5)
     assert m == {'a': 5, 'b': -5, 'c': 5}
+
     with pytest.raises(ValidationError) as exc_info:
         IntModel(a=-5, b=5, c=-5)
-    assert exc_info.value.message == '3 errors validating input'
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'a',
+            'msg': 'size less than minimum allowed: 0',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'b',
+            'msg': 'size greater than maximum allowed: 0',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'c',
+            'msg': 'size less than minimum allowed: 4',
+            'type': 'value_error',
+        },
+    ]
 
 
 class FloatModel(BaseModel):
@@ -458,9 +555,26 @@ class FloatModel(BaseModel):
 def test_float_validation():
     m = FloatModel(a=5.1, b=-5.2, c=5.3)
     assert m == {'a': 5.1, 'b': -5.2, 'c': 5.3}
+
     with pytest.raises(ValidationError) as exc_info:
         FloatModel(a=-5.1, b=5.2, c=-5.3)
-    assert exc_info.value.message == '3 errors validating input'
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'a',
+            'msg': 'size less than minimum allowed: 0',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'b',
+            'msg': 'size greater than maximum allowed: 0',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'c',
+            'msg': 'size less than minimum allowed: 4',
+            'type': 'value_error',
+        },
+    ]
 
 
 def test_set():
@@ -478,6 +592,7 @@ def test_strict_str():
         v: StrictStr
 
     assert Model(v='foobar').v == 'foobar'
+
     with pytest.raises(ValidationError):
         Model(v=123)
 
@@ -491,10 +606,13 @@ def test_uuid_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='ebcdab58-6eb8-46fb-a190-d07a3')
-    assert """\
-error validating input
-v:
-  badly formed hexadecimal UUID string (type=value_error)""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v',
+            'msg': 'badly formed hexadecimal UUID string',
+            'type': 'value_error',
+        },
+    ]
 
     with pytest.raises(ValidationError):
         Model(v=None)
@@ -523,7 +641,28 @@ def test_uuid_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         UUIDModel(a=d, b=c, c=b, d=a)
-    assert exc_info.value.message == '4 errors validating input'
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'a',
+            'msg': 'uuid version 1 expected, not 5',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'b',
+            'msg': 'uuid version 3 expected, not 4',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'c',
+            'msg': 'uuid version 4 expected, not 3',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'd',
+            'msg': 'uuid version 5 expected, not 1',
+            'type': 'value_error',
+        },
+    ]
 
 
 def test_anystr_strip_whitespace_enabled():

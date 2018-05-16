@@ -6,14 +6,13 @@ from typing import Any, Dict, List, Set, Union
 import pytest
 
 from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr
-from pydantic.exceptions import pretty_errors
 
 
 def test_str_bytes():
-    class StrBytesModel(BaseModel):
+    class Model(BaseModel):
         v: StrBytes = ...
 
-    m = StrBytesModel(v='s')
+    m = Model(v='s')
     assert m.v == 's'
     assert ("<Field v: "
             "type='typing.Union[str, bytes]', "
@@ -24,38 +23,36 @@ def test_str_bytes():
             "<Field v_bytes: type='bytes', required=True, validators=['not_none_validator', 'bytes_validator', "
             "'anystr_strip_whitespace', 'anystr_length_validator']>]>") == repr(m.fields['v'])
 
-    m = StrBytesModel(v=b'b')
+    m = Model(v=b'b')
     assert m.v == 'b'
 
     with pytest.raises(ValidationError) as exc_info:
-        StrBytesModel(v=None)
-    assert exc_info.value.message == 'error validating input'
-    assert """\
-{
-  "v": [
-    {
-      "msg": "None is not an allow value",
-      "type": "type_error"
-    },
-    {
-      "msg": "None is not an allow value",
-      "type": "type_error"
-    }
-  ]
-}""" == exc_info.value.json(2)
+        Model(v=None)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v',
+            'msg': 'None is not an allow value',
+            'type': 'type_error',
+        },
+        {
+            'loc': 'v',
+            'msg': 'None is not an allow value',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_str_bytes_none():
-    class StrBytesModel(BaseModel):
+    class Model(BaseModel):
         v: NoneStrBytes = ...
 
-    m = StrBytesModel(v='s')
+    m = Model(v='s')
     assert m.v == 's'
 
-    m = StrBytesModel(v=b'b')
+    m = Model(v=b'b')
     assert m.v == 'b'
 
-    m = StrBytesModel(v=None)
+    m = Model(v=None)
     assert m.v is None
 
     # NOTE not_none_validator removed
@@ -87,20 +84,18 @@ def test_union_int_str():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
-    assert exc_info.value.message == 'error validating input'
-    assert """\
-{
-  "v": [
-    {
-      "msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
-      "type": "type_error"
-    },
-    {
-      "msg": "None is not an allow value",
-      "type": "type_error"
-    }
-  ]
-}""" == exc_info.value.json(2)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v',
+            'msg': 'int() argument must be a string, a bytes-like object or a number, not \'NoneType\'',
+            'type': 'type_error',
+        },
+        {
+            'loc': 'v',
+            'msg': 'None is not an allow value',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_union_priority():
@@ -123,33 +118,28 @@ def test_typed_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 'x', 'y'])
-    assert exc_info.value.message == 'error validating input'
-    assert """\
-{
-  "v": [
-    {
-      "loc": 1,
-      "msg": "invalid literal for int() with base 10: 'x'",
-      "type": "value_error"
-    },
-    {
-      "loc": 2,
-      "msg": "invalid literal for int() with base 10: 'y'",
-      "type": "value_error"
-    }
-  ]
-}""" == exc_info.value.json(2)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v.1',
+            'msg': 'invalid literal for int() with base 10: \'x\'',
+            'type': 'value_error',
+        },
+        {
+            'loc': 'v.2',
+            'msg': 'invalid literal for int() with base 10: \'y\'',
+            'type': 'value_error',
+        },
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1)
-    assert exc_info.value.message == 'error validating input'
-    assert """\
-{
-  "v": {
-    "msg": "'int' object is not iterable",
-    "type": "type_error"
-  }
-}""" == exc_info.value.json(2)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v',
+            'msg': '\'int\' object is not iterable',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_typed_set():
@@ -158,20 +148,23 @@ def test_typed_set():
 
     assert Model(v={1, 2, '3'}).v == {1, 2, 3}
     assert Model(v=[1, 2, '3']).v == {1, 2, 3}
+
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 'x'])
-    assert """\
-error validating input
-v:
-  invalid literal for int() with base 10: 'x' (type=value_error loc=1)""" == str(exc_info.value)
-
-
-class DictModel(BaseModel):
-    v: Dict[str, int] = ...
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v.1',
+            'msg': 'invalid literal for int() with base 10: \'x\'',
+            'type': 'value_error',
+        },
+    ]
 
 
 def test_dict_dict():
-    assert DictModel(v={'foo': 1}).dict() == {'v': {'foo': 1}}
+    class Model(BaseModel):
+        v: Dict[str, int] = ...
+
+    assert Model(v={'foo': 1}).dict() == {'v': {'foo': 1}}
 
 
 @pytest.mark.parametrize('value,result', [
@@ -180,48 +173,68 @@ def test_dict_dict():
     ([('a', 2), ('b', 4)], {'a': 2, 'b': 4}),
 ])
 def test_typed_dict(value, result):
-    assert DictModel(v=value).v == result
+    class Model(BaseModel):
+        v: Dict[str, int] = ...
+
+    assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value,error', [
+@pytest.mark.parametrize('value,errors', [
     (
         1,
-        """\
-error validating input
-v:
-  value is not a valid dict, got int (type=type_error)"""
+        [
+            {
+                'loc': 'v',
+                'msg': 'value is not a valid dict, got int',
+                'type': 'type_error',
+            },
+        ],
     ),
     (
         {'a': 'b'},
-        """\
-error validating input
-v:
-  invalid literal for int() with base 10: 'b' (type=value_error loc=a)"""
+        [
+            {
+                'loc': 'v.a',
+                'msg': 'invalid literal for int() with base 10: \'b\'',
+                'type': 'value_error',
+            },
+        ],
     ),
     (
         [1, 2, 3],
-        """\
-error validating input
-v:
-  value is not a valid dict, got list (type=type_error)""",
-    )
+        [
+            {
+                'loc': 'v',
+                'msg': 'value is not a valid dict, got list',
+                'type': 'type_error',
+            },
+        ],
+    ),
 ])
-def test_typed_dict_error(value, error):
+def test_typed_dict_error(value, errors):
+    class Model(BaseModel):
+        v: Dict[str, int] = ...
+
     with pytest.raises(ValidationError) as exc_info:
-        DictModel(v=value)
-    assert error == str(exc_info.value)
+        Model(v=value)
+    assert exc_info.value.flatten_errors == errors
 
 
 def test_dict_key_error():
-    class DictIntModel(BaseModel):
+    class Model(BaseModel):
         v: Dict[int, int] = ...
-    assert DictIntModel(v={1: 2, '3': '4'}).v == {1: 2, 3: 4}
+
+    assert Model(v={1: 2, '3': '4'}).v == {1: 2, 3: 4}
+
     with pytest.raises(ValidationError) as exc_info:
-        DictIntModel(v={'foo': 2, '3': '4'})
-    assert """\
-error validating input
-v:
-  invalid literal for int() with base 10: 'foo' (type=value_error loc=key)""" == str(exc_info.value)
+        Model(v={'foo': 2, '3': '4'})
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v.key',
+            'msg': 'invalid literal for int() with base 10: \'foo\'',
+            'type': 'value_error',
+        },
+    ]
 
 
 # TODO re-add when implementing better model validators
@@ -244,58 +257,51 @@ v:
 #     assert m.a == '11_main_post'
 
 
-class SubModel(BaseModel):
-    name: str = ...
-    count: int = None
-
-
-class MasterListModel(BaseModel):
-    v: List[SubModel] = []
-
-
 def test_recursive_list():
-    m = MasterListModel(v=[])
+    class SubModel(BaseModel):
+        name: str = ...
+        count: int = None
+
+    class Model(BaseModel):
+        v: List[SubModel] = []
+
+    m = Model(v=[])
     assert m.v == []
 
-    m = MasterListModel(v=[{'name': 'testing', 'count': 4}])
-    assert "<MasterListModel v=[<SubModel name='testing' count=4>]>" == repr(m)
+    m = Model(v=[{'name': 'testing', 'count': 4}])
+    assert "<Model v=[<SubModel name='testing' count=4>]>" == repr(m)
     assert m.v[0].name == 'testing'
     assert m.v[0].count == 4
     assert m.dict() == {'v': [{'count': 4, 'name': 'testing'}]}
 
     with pytest.raises(ValidationError) as exc_info:
-        MasterListModel(v=['x'])
-    print(exc_info.value.json())
-    assert 'dictionary update sequence element #0 has length 1; 2 is required' in str(exc_info.value)
+        Model(v=['x'])
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v.0',
+            'msg': 'dictionary update sequence element #0 has length 1; 2 is required',
+            'type': 'value_error',
+        },
+    ]
 
 
 def test_recursive_list_error():
-    with pytest.raises(ValidationError) as exc_info:
-        MasterListModel(v=[{}])
+    class SubModel(BaseModel):
+        name: str = ...
+        count: int = None
 
-    assert """\
-error validating input
-v:
-  error validating input (type=value_error.validation_error)
-    name:
-      field required (type=value_error.missing)\
-""" == str(exc_info.value)
-    assert """\
-{
-  "v": [
-    {
-      "error_details": {
-        "name": {
-          "msg": "field required",
-          "type": "value_error.missing"
-        }
-      },
-      "loc": 0,
-      "msg": "error validating input",
-      "type": "value_error.validation_error"
-    }
-  ]
-}""" == exc_info.value.json(2)
+    class Model(BaseModel):
+        v: List[SubModel] = []
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[{}])
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v.0.name',
+            'msg': 'field required',
+            'type': 'value_error.missing',
+        },
+    ]
 
 
 def test_list_unions():
@@ -306,13 +312,18 @@ def test_list_unions():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
-    assert """\
-error validating input
-v:
-  int() argument must be a string, a bytes-like object or a number, not 'NoneType' \
-(type=type_error loc=2)
-  None is not an allow value (type=type_error loc=2)\
-""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'v.2',
+            'msg': 'int() argument must be a string, a bytes-like object or a number, not \'NoneType\'',
+            'type': 'type_error',
+        },
+        {
+            'loc': 'v.2',
+            'msg': 'None is not an allow value',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_recursive_lists():
@@ -334,7 +345,6 @@ class StrEnum(str, Enum):
 
 
 def test_str_enum():
-
     class Model(BaseModel):
         v: StrEnum = ...
 
@@ -347,6 +357,7 @@ def test_str_enum():
 def test_any_dict():
     class Model(BaseModel):
         v: Dict[int, Any] = ...
+
     assert Model(v={1: 'foobar'}).dict() == {'v': {1: 'foobar'}}
     assert Model(v={123: 456}).dict() == {'v': {123: 456}}
     assert Model(v={2: [1, 2, 3]}).dict() == {'v': {2: [1, 2, 3]}}
@@ -373,12 +384,16 @@ def test_alias_error():
             fields = {'a': '_a'}
 
     assert Model(_a='123').a == 123
+
     with pytest.raises(ValidationError) as exc_info:
         Model(_a='foo')
-    assert """\
-error validating input
-_a:
-  invalid literal for int() with base 10: 'foo' (type=value_error)""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': '_a',
+            'msg': 'invalid literal for int() with base 10: \'foo\'',
+            'type': 'value_error',
+        },
+    ]
 
 
 def test_annotation_config():
@@ -433,7 +448,6 @@ def test_invalid_type():
     with pytest.raises(TypeError) as exc_info:
         class Model(BaseModel):
             x: 43 = 123
-
     assert "error checking inheritance of 43 (type: int)" in str(exc_info)
 
 
@@ -455,18 +469,35 @@ def test_valid_string_types(value, expected):
     assert Model(v=value).v == expected
 
 
-@pytest.mark.parametrize('value', [
-    {'foo': 'bar'},
-    {'foo', 'bar'},
-    [1, 2, 3],
+@pytest.mark.parametrize('value,errors', [
+    (
+        {'foo': 'bar'},
+        [
+            {
+                'loc': 'v',
+                'msg': 'str or byte type expected not dict',
+                'type': 'type_error',
+            },
+        ],
+    ),
+    (
+        [1, 2, 3],
+        [
+            {
+                'loc': 'v',
+                'msg': 'str or byte type expected not list',
+                'type': 'type_error',
+            },
+        ],
+    )
 ])
-def test_invalid_string_types(value):
+def test_invalid_string_types(value, errors):
     class Model(BaseModel):
         v: str
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert 'str or byte type expected' in str(exc_info.value)
+    assert exc_info.value.flatten_errors == errors
 
 
 def test_inheritance_config():
@@ -516,23 +547,13 @@ def test_string_none():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=None)
-    assert 'None is not an allow value' in str(exc_info.value)
-
-
-def test_pretty_error_no_recursion():
-    with pytest.raises(TypeError):
-        pretty_errors('foobar')
-
-
-def test_dict_list_error():
-    with pytest.raises(ValidationError) as exc_info:
-        assert DictModel(v=[1, 2, 3])
-    assert {
-        'v': {
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'a',
+            'msg': 'None is not an allow value',
             'type': 'type_error',
-            'msg': 'value is not a valid dict, got list',
-        }
-    } == dict(exc_info.value.errors_dict)
+        },
+    ]
 
 
 def test_alias_camel_case():

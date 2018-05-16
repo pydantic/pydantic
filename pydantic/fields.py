@@ -210,37 +210,37 @@ class Field:
             ))
         return tuple(v)
 
-    def validate(self, v, values, index=None, cls=None):
+    def validate(self, v, values, loc=None, cls=None):
         if self.allow_none and v is None:
             return None, None
 
         if self.whole_pre_validators:
-            v, errors = self._apply_validators(v, values, index, cls, self.whole_pre_validators)
+            v, errors = self._apply_validators(v, values, loc, cls, self.whole_pre_validators)
             if errors:
                 return v, errors
 
         if self.shape is Shape.SINGLETON:
-            v, errors = self._validate_singleton(v, values, index, cls)
+            v, errors = self._validate_singleton(v, values, loc, cls)
         elif self.shape is Shape.MAPPING:
-            v, errors = self._validate_mapping(v, values, cls)
+            v, errors = self._validate_mapping(v, values, loc, cls)
         else:
             # list or set
-            v, errors = self._validate_sequence(v, values, cls)
+            v, errors = self._validate_sequence(v, values, loc, cls)
             if not errors and self.shape is Shape.SET:
                 v = set(v)
 
         if not errors and self.whole_post_validators:
-            v, errors = self._apply_validators(v, values, index, cls, self.whole_post_validators)
+            v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
         return v, errors
 
-    def _validate_sequence(self, v, values, cls):
+    def _validate_sequence(self, v, values, loc, cls):
         result, errors = [], []
         try:
             v_iter = enumerate(v)
         except TypeError as exc:
-            return v, Error(exc)
+            return v, Error(exc, loc=loc)
         for i, v_ in v_iter:
-            single_result, single_errors = self._validate_singleton(v_, values, i, cls)
+            single_result, single_errors = self._validate_singleton(v_, values, f'{loc}.{i}', cls)
             if single_errors:
                 errors.append(single_errors)
             else:
@@ -250,22 +250,22 @@ class Field:
         else:
             return result, None
 
-    def _validate_mapping(self, v, values, cls):
+    def _validate_mapping(self, v, values, loc, cls):
         if isinstance(v, dict):
             v_iter = v
         else:
             try:
                 v_iter = dict(v)
-            except TypeError:
-                return v, Error(TypeError(f'value is not a valid dict, got {display_as_type(v)}'))
+            except TypeError as exc:
+                return v, Error(TypeError(f'value is not a valid dict, got {display_as_type(v)}'), loc=loc)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
-            key_result, key_errors = self.key_field.validate(k, values, 'key', cls)
+            key_result, key_errors = self.key_field.validate(k, values, loc=f'{loc}.key', cls=cls)
             if key_errors:
                 errors.append(key_errors)
                 continue
-            value_result, value_errors = self._validate_singleton(v_, values, k, cls)
+            value_result, value_errors = self._validate_singleton(v_, values, f'{loc}.{k}', cls)
             if value_errors:
                 errors.append(value_errors)
                 continue
@@ -275,20 +275,20 @@ class Field:
         else:
             return result, None
 
-    def _validate_singleton(self, v, values, index, cls):
+    def _validate_singleton(self, v, values, loc, cls):
         if self.sub_fields:
             errors = []
             for field in self.sub_fields:
-                value, error = field.validate(v, values, index, cls)
+                value, error = field.validate(v, values, loc=loc, cls=cls)
                 if error:
                     errors.append(error)
                 else:
                     return value, None
             return v, errors[0] if len(self.sub_fields) == 1 else errors
         else:
-            return self._apply_validators(v, values, index, cls, self.validators)
+            return self._apply_validators(v, values, loc, cls, self.validators)
 
-    def _apply_validators(self, v, values, index, cls, validators):
+    def _apply_validators(self, v, values, loc, cls, validators):
         for signature, validator in validators:
             try:
                 if signature is ValidatorSignature.JUST_VALUE:
@@ -301,7 +301,7 @@ class Field:
                     # ValidatorSignature.CLS_VALUE_KWARGS
                     v = validator(cls, v, values=values, config=self.model_config, field=self)
             except (ValueError, TypeError) as exc:
-                return v, Error(exc, loc=index)
+                return v, Error(exc, loc=loc)
         return v, None
 
     def __repr__(self):

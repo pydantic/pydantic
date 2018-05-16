@@ -25,11 +25,13 @@ def test_sub_env_override(env):
 def test_sub_env_missing():
     with pytest.raises(ValidationError) as exc_info:
         SimpleSettings()
-    assert """\
-error validating input
-apple:
-  None is not an allow value (type=type_error)\
-""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'apple',
+            'msg': 'None is not an allow value',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_other_setting(env):

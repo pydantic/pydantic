@@ -91,12 +91,13 @@ def test_funky_name():
     assert m.dict() == {'this-is-funky': 123}
     with pytest.raises(ValidationError) as exc_info:
         model()
-    assert exc_info.value.errors_dict == {
-        'this-is-funky': {
+    assert exc_info.value.flatten_errors == [
+        {
+            'loc': 'this-is-funky',
             'msg': 'field required',
             'type': 'value_error.missing',
         },
-    }
+    ]
 
 
 def test_repeat_base_usage():
