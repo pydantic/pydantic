@@ -43,17 +43,17 @@ class ValidationError(ValueError):
 
     @property
     def display_errors(self):
-        return display_errors(self.flatten_errors)
+        return display_errors(self.flat_errors)
 
     @property
-    def flatten_errors(self):
+    def flat_errors(self):
         return flatten_errors(self.errors)
 
     def __str__(self):
         return f'{self.message}\n{self.display_errors}'
 
     def json(self, *, indent=2):
-        return json.dumps(self.flatten_errors, indent=indent, sort_keys=True)
+        return json.dumps(self.flat_errors, indent=indent, sort_keys=True)
 
 
 class ConfigError(RuntimeError):
@@ -81,21 +81,21 @@ def display_errors(errors):
 
 
 def flatten_errors(errors, *, loc=None):
-    flatten = []
+    flat = []
 
     for error in errors:
         if isinstance(error, Error):
             if isinstance(error.exc_info, ValidationError):
-                flatten.extend(flatten_errors(error.exc_info.errors, loc=error.loc))
+                flat.extend(flatten_errors(error.exc_info.errors, loc=error.loc))
             else:
-                flatten.append({
+                flat.append({
                     'loc': error.loc if loc is None else f'{loc}.{error.loc}',
                     'msg': error.msg,
                     'type': error.type_,
                 })
         elif isinstance(error, list):
-            flatten.extend(flatten_errors(error))
+            flat.extend(flatten_errors(error))
         else:
             raise TypeError(f'Unknown error object: {error}')
 
-    return flatten
+    return flat

@@ -23,7 +23,7 @@ def test_obj():
 def test_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj([1, 2, 3])
-    assert exc_info.value.flatten_errors == [
+    assert exc_info.value.flat_errors == [
         {
             'loc': None,
             'msg': 'Model expected dict not list',
@@ -62,7 +62,7 @@ def test_msgpack_not_installed_proto(mocker):
 def test_msgpack_not_installed_ct():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw(b'\x82\xa1a\x0c\xa1b\x08', content_type='application/msgpack')
-    assert exc_info.value.flatten_errors == [
+    assert exc_info.value.flat_errors == [
         {
             'loc': None,
             'msg': 'Unknown content-type: application/msgpack',
@@ -90,7 +90,7 @@ def test_pickle_not_allowed():
 def test_bad_ct():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', content_type='application/missing')
-    assert exc_info.value.flatten_errors == [
+    assert exc_info.value.flat_errors == [
         {
             'loc': None,
             'msg': 'Unknown content-type: application/missing',
@@ -102,7 +102,7 @@ def test_bad_ct():
 def test_bad_proto():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', proto='foobar')
-    assert exc_info.value.flatten_errors == [
+    assert exc_info.value.flat_errors == [
         {
             'loc': None,
             'msg': 'Unknown protocol: foobar',
