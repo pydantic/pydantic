@@ -27,7 +27,7 @@ def test_ultra_simple_missing():
         UltraSimpleModel()
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'field required',
             'type': 'value_error.missing',
         },
@@ -39,12 +39,12 @@ def test_ultra_simple_failed():
         UltraSimpleModel(a='x', b='x')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'could not convert string to float: \'x\'',
             'type': 'value_error',
         },
         {
-            'loc': 'b',
+            'loc': ('b',),
             'msg': 'invalid literal for int() with base 10: \'x\'',
             'type': 'value_error',
         },
@@ -125,12 +125,12 @@ def test_nullable_strings_fails():
         )
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'required_str_value',
+            'loc': ('required_str_value',),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },
         {
-            'loc': 'required_bytes_value',
+            'loc': ('required_bytes_value',),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },
@@ -175,12 +175,12 @@ def test_prevent_extra_fails():
         PreventExtraModel(foo='ok', bar='wrong', spam='xx')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'bar',
+            'loc': ('bar',),
             'msg': 'extra fields not permitted',
             'type': 'value_error.extra',
         },
         {
-            'loc': 'spam',
+            'loc': ('spam',),
             'msg': 'extra fields not permitted',
             'type': 'value_error.extra',
         },
@@ -316,7 +316,7 @@ def test_required():
         Model()
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'field required',
             'type': 'value_error.missing',
         },
@@ -383,7 +383,7 @@ def test_validating_assignment_fail():
         p.a = 'b'
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'invalid literal for int() with base 10: \'b\'',
             'type': 'value_error',
         },
@@ -393,7 +393,7 @@ def test_validating_assignment_fail():
         p.b = ''
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'b',
+            'loc': ('b',),
             'msg': 'length less than minimum allowed: 1',
             'type': 'value_error',
         },

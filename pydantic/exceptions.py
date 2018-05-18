@@ -1,6 +1,6 @@
 import inspect
 import json
-from typing import Union
+from typing import Tuple, Union
 
 from .utils import to_snake_case
 
@@ -19,9 +19,9 @@ class Error:
         'loc',
     )
 
-    def __init__(self, exc: Exception, *, loc: Union[str, int] = None) -> None:
+    def __init__(self, exc: Exception, *, loc: Union[Tuple[str], str]) -> None:
         self.exc_info = exc
-        self.loc = loc
+        self.loc = loc if isinstance(loc, tuple) else (loc,)
 
     @property
     def msg(self) -> str:
@@ -82,7 +82,7 @@ def display_errors(errors):
 
     for error in errors:
         display.extend([
-            error['loc'],
+            ' -> '.join(error['loc']),
             f'  {error["msg"]} (type={error["type"]})',
         ])
 
@@ -98,7 +98,7 @@ def flatten_errors(errors, *, loc=None):
                 flat.extend(flatten_errors(error.exc_info.errors, loc=error.loc))
             else:
                 flat.append({
-                    'loc': error.loc if loc is None else f'{loc}.{error.loc}',
+                    'loc': error.loc if loc is None else loc + error.loc,
                     'msg': error.msg,
                     'type': error.type_,
                 })

@@ -30,12 +30,12 @@ def test_str_bytes():
         Model(v=None)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v',
+            'loc': ('v',),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },
         {
-            'loc': 'v',
+            'loc': ('v',),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },
@@ -86,12 +86,12 @@ def test_union_int_str():
         Model(v=None)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v',
+            'loc': ('v',),
             'msg': 'int() argument must be a string, a bytes-like object or a number, not \'NoneType\'',
             'type': 'type_error',
         },
         {
-            'loc': 'v',
+            'loc': ('v',),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },
@@ -120,12 +120,12 @@ def test_typed_list():
         Model(v=[1, 'x', 'y'])
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v.1',
+            'loc': ('v', '1'),
             'msg': 'invalid literal for int() with base 10: \'x\'',
             'type': 'value_error',
         },
         {
-            'loc': 'v.2',
+            'loc': ('v', '2'),
             'msg': 'invalid literal for int() with base 10: \'y\'',
             'type': 'value_error',
         },
@@ -135,7 +135,7 @@ def test_typed_list():
         Model(v=1)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v',
+            'loc': ('v',),
             'msg': '\'int\' object is not iterable',
             'type': 'type_error',
         },
@@ -153,7 +153,7 @@ def test_typed_set():
         Model(v=[1, 'x'])
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v.1',
+            'loc': ('v', '1'),
             'msg': 'invalid literal for int() with base 10: \'x\'',
             'type': 'value_error',
         },
@@ -184,7 +184,7 @@ def test_typed_dict(value, result):
         1,
         [
             {
-                'loc': 'v',
+                'loc': ('v',),
                 'msg': 'value is not a valid dict, got int',
                 'type': 'type_error',
             },
@@ -194,7 +194,7 @@ def test_typed_dict(value, result):
         {'a': 'b'},
         [
             {
-                'loc': 'v.a',
+                'loc': ('v', 'a'),
                 'msg': 'invalid literal for int() with base 10: \'b\'',
                 'type': 'value_error',
             },
@@ -204,7 +204,7 @@ def test_typed_dict(value, result):
         [1, 2, 3],
         [
             {
-                'loc': 'v',
+                'loc': ('v',),
                 'msg': 'value is not a valid dict, got list',
                 'type': 'type_error',
             },
@@ -230,7 +230,7 @@ def test_dict_key_error():
         Model(v={'foo': 2, '3': '4'})
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v.key',
+            'loc': ('v', '__key__'),
             'msg': 'invalid literal for int() with base 10: \'foo\'',
             'type': 'value_error',
         },
@@ -278,7 +278,7 @@ def test_recursive_list():
         Model(v=['x'])
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v.0',
+            'loc': ('v', '0'),
             'msg': 'dictionary update sequence element #0 has length 1; 2 is required',
             'type': 'value_error',
         },
@@ -297,7 +297,7 @@ def test_recursive_list_error():
         Model(v=[{}])
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v.0.name',
+            'loc': ('v', '0', 'name'),
             'msg': 'field required',
             'type': 'value_error.missing',
         },
@@ -314,12 +314,12 @@ def test_list_unions():
         Model(v=[1, 2, None])
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v.2',
+            'loc': ('v', '2'),
             'msg': 'int() argument must be a string, a bytes-like object or a number, not \'NoneType\'',
             'type': 'type_error',
         },
         {
-            'loc': 'v.2',
+            'loc': ('v', '2'),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },
@@ -389,7 +389,7 @@ def test_alias_error():
         Model(_a='foo')
     assert exc_info.value.flat_errors == [
         {
-            'loc': '_a',
+            'loc': ('_a',),
             'msg': 'invalid literal for int() with base 10: \'foo\'',
             'type': 'value_error',
         },
@@ -474,7 +474,7 @@ def test_valid_string_types(value, expected):
         {'foo': 'bar'},
         [
             {
-                'loc': 'v',
+                'loc': ('v',),
                 'msg': 'str or byte type expected not dict',
                 'type': 'type_error',
             },
@@ -484,7 +484,7 @@ def test_valid_string_types(value, expected):
         [1, 2, 3],
         [
             {
-                'loc': 'v',
+                'loc': ('v',),
                 'msg': 'str or byte type expected not list',
                 'type': 'type_error',
             },
@@ -549,7 +549,7 @@ def test_string_none():
         Model(a=None)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },

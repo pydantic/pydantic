@@ -37,7 +37,7 @@ def test_constrained_str_too_long():
         ConStringModel(v='this is too long')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v',
+            'loc': ('v',),
             'msg': 'length greater than maximum allowed: 10',
             'type': 'value_error',
         },
@@ -75,12 +75,12 @@ def test_dsn_no_driver():
         DsnModel(db_driver=None)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'db_driver',
+            'loc': ('db_driver',),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },
         {
-            'loc': 'dsn',
+            'loc': ('dsn',),
             'msg': '"db_driver" field may not be missing or None',
             'type': 'value_error',
         },
@@ -98,7 +98,7 @@ def test_module_import():
         PyObjectModel(module='foobar')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'module',
+            'loc': ('module',),
             'msg': '"foobar" doesn\'t look like a module path',
             'type': 'value_error',
         },
@@ -209,7 +209,7 @@ def test_string_too_long():
         StrModel(str_check='x' * 150)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'str_check',
+            'loc': ('str_check',),
             'msg': 'length greater than maximum allowed: 10',
             'type': 'value_error',
         },
@@ -221,7 +221,7 @@ def test_string_too_short():
         StrModel(str_check='x')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'str_check',
+            'loc': ('str_check',),
             'msg': 'length less than minimum allowed: 5',
             'type': 'value_error',
         },
@@ -242,12 +242,12 @@ def test_number_too_big():
         NumberModel(int_check=50, float_check=150)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'int_check',
+            'loc': ('int_check',),
             'msg': 'size greater than maximum allowed: 10',
             'type': 'value_error',
         },
         {
-            'loc': 'float_check',
+            'loc': ('float_check',),
             'msg': 'size greater than maximum allowed: 10',
             'type': 'value_error',
         },
@@ -259,12 +259,12 @@ def test_number_too_small():
         NumberModel(int_check=1, float_check=2.5)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'int_check',
+            'loc': ('int_check',),
             'msg': 'size less than minimum allowed: 5',
             'type': 'value_error',
         },
         {
-            'loc': 'float_check',
+            'loc': ('float_check',),
             'msg': 'size less than minimum allowed: 5',
             'type': 'value_error',
         },
@@ -301,22 +301,22 @@ def test_datetime_errors():
         )
     assert exc_info.value.flat_errors == [
         {
-            'loc': "dt",
+            'loc': ('dt',),
             'msg': 'month must be in 1..12',
             'type': 'value_error',
         },
         {
-            'loc': 'date_',
+            'loc': ('date_',),
             'msg': 'Invalid date format',
             'type': 'value_error',
         },
         {
-            'loc': 'time_',
+            'loc': ('time_',),
             'msg': 'hour must be in 0..23',
             'type': 'value_error',
         },
         {
-            'loc': 'duration',
+            'loc': ('duration',),
             'msg': 'Invalid duration format',
             'type': 'value_error',
         },
@@ -350,7 +350,7 @@ def test_enum_fails():
         CookingModel(tool=3)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'tool',
+            'loc': ('tool',),
             'msg': '3 is not a valid ToolEnum',
             'type': 'value_error',
         }
@@ -404,22 +404,22 @@ def test_string_fails():
         )
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'str_regex',
+            'loc': ('str_regex',),
             'msg': 'string does not match regex "^xxx\\d{3}$"',
             'type': 'value_error',
         },
         {
-            'loc': 'str_min_length',
+            'loc': ('str_min_length',),
             'msg': 'length less than minimum allowed: 5',
             'type': 'value_error',
         },
         {
-            'loc': 'str_email',
+            'loc': ('str_email',),
             'msg': 'The email address contains invalid characters before the @-sign: <.',
             'type': 'value_error.email_not_valid_error.email_syntax_error',
         },
         {
-            'loc': 'name_email',
+            'loc': ('name_email',),
             'msg': 'The email address contains invalid characters before the @-sign:  .',
             'type': 'value_error.email_not_valid_error.email_syntax_error',
         },
@@ -455,7 +455,7 @@ def test_dict():
         ListDictTupleModel(a=[1, 2, 3])
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'value is not a valid dict, got list',
             'type': 'type_error',
         },
@@ -473,7 +473,7 @@ def test_list():
         ListDictTupleModel(b=1)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'b',
+            'loc': ('b',),
             'msg': '\'int\' object is not iterable',
             'type': 'type_error',
         },
@@ -489,7 +489,7 @@ def test_ordered_dict():
         ListDictTupleModel(c=[1, 2, 3])
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'c',
+            'loc': ('c',),
             'msg': '\'int\' object is not iterable',
             'type': 'type_error',
         },
@@ -508,7 +508,7 @@ def test_tuple():
         ListDictTupleModel(d=1)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'd',
+            'loc': ('d',),
             'msg': '\'int\' object is not iterable',
             'type': 'type_error',
         },
@@ -529,17 +529,17 @@ def test_int_validation():
         IntModel(a=-5, b=5, c=-5)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'size less than minimum allowed: 0',
             'type': 'value_error',
         },
         {
-            'loc': 'b',
+            'loc': ('b',),
             'msg': 'size greater than maximum allowed: 0',
             'type': 'value_error',
         },
         {
-            'loc': 'c',
+            'loc': ('c',),
             'msg': 'size less than minimum allowed: 4',
             'type': 'value_error',
         },
@@ -560,17 +560,17 @@ def test_float_validation():
         FloatModel(a=-5.1, b=5.2, c=-5.3)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'size less than minimum allowed: 0',
             'type': 'value_error',
         },
         {
-            'loc': 'b',
+            'loc': ('b',),
             'msg': 'size greater than maximum allowed: 0',
             'type': 'value_error',
         },
         {
-            'loc': 'c',
+            'loc': ('c',),
             'msg': 'size less than minimum allowed: 4',
             'type': 'value_error',
         },
@@ -608,7 +608,7 @@ def test_uuid_error():
         Model(v='ebcdab58-6eb8-46fb-a190-d07a3')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'v',
+            'loc': ('v',),
             'msg': 'badly formed hexadecimal UUID string',
             'type': 'value_error',
         },
@@ -643,22 +643,22 @@ def test_uuid_validation():
         UUIDModel(a=d, b=c, c=b, d=a)
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'uuid version 1 expected, not 5',
             'type': 'value_error',
         },
         {
-            'loc': 'b',
+            'loc': ('b',),
             'msg': 'uuid version 3 expected, not 4',
             'type': 'value_error',
         },
         {
-            'loc': 'c',
+            'loc': ('c',),
             'msg': 'uuid version 4 expected, not 3',
             'type': 'value_error',
         },
         {
-            'loc': 'd',
+            'loc': ('d',),
             'msg': 'uuid version 5 expected, not 1',
             'type': 'value_error',
         },

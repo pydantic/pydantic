@@ -190,7 +190,7 @@ class BaseModel(metaclass=MetaModel):
     def parse_obj(cls, obj):
         if not isinstance(obj, dict):
             exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-            raise ValidationError([Error(exc)])
+            raise ValidationError([Error(exc, loc='__obj__')])
         return cls(**obj)
 
     @classmethod
@@ -203,7 +203,7 @@ class BaseModel(metaclass=MetaModel):
             obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding,
                                  allow_pickle=allow_pickle)
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([Error(e)])
+            raise ValidationError([Error(e, loc='__obj__')])
         return cls.parse_obj(obj)
 
     @classmethod

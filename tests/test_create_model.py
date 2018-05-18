@@ -93,7 +93,7 @@ def test_funky_name():
         model()
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'this-is-funky',
+            'loc': ('this-is-funky',),
             'msg': 'field required',
             'type': 'value_error.missing',
         },

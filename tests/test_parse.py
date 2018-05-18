@@ -25,7 +25,7 @@ def test_fails():
         Model.parse_obj([1, 2, 3])
     assert exc_info.value.flat_errors == [
         {
-            'loc': None,
+            'loc': ('__obj__',),
             'msg': 'Model expected dict not list',
             'type': 'type_error',
         },
@@ -64,7 +64,7 @@ def test_msgpack_not_installed_ct():
         Model.parse_raw(b'\x82\xa1a\x0c\xa1b\x08', content_type='application/msgpack')
     assert exc_info.value.flat_errors == [
         {
-            'loc': None,
+            'loc': ('__obj__',),
             'msg': 'Unknown content-type: application/msgpack',
             'type': 'type_error',
         },
@@ -92,7 +92,7 @@ def test_bad_ct():
         Model.parse_raw('{"a": 12, "b": 8}', content_type='application/missing')
     assert exc_info.value.flat_errors == [
         {
-            'loc': None,
+            'loc': ('__obj__',),
             'msg': 'Unknown content-type: application/missing',
             'type': 'type_error',
         },
@@ -104,7 +104,7 @@ def test_bad_proto():
         Model.parse_raw('{"a": 12, "b": 8}', proto='foobar')
     assert exc_info.value.flat_errors == [
         {
-            'loc': None,
+            'loc': ('__obj__',),
             'msg': 'Unknown protocol: foobar',
             'type': 'type_error',
         },

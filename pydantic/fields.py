@@ -240,7 +240,8 @@ class Field:
         except TypeError as exc:
             return v, Error(exc, loc=loc)
         for i, v_ in v_iter:
-            single_result, single_errors = self._validate_singleton(v_, values, f'{loc}.{i}', cls)
+            v_loc = loc, str(i)
+            single_result, single_errors = self._validate_singleton(v_, values, v_loc, cls)
             if single_errors:
                 errors.append(single_errors)
             else:
@@ -261,14 +262,18 @@ class Field:
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
-            key_result, key_errors = self.key_field.validate(k, values, loc=f'{loc}.key', cls=cls)
+            v_loc = loc, '__key__'
+            key_result, key_errors = self.key_field.validate(k, values, loc=v_loc, cls=cls)
             if key_errors:
                 errors.append(key_errors)
                 continue
-            value_result, value_errors = self._validate_singleton(v_, values, f'{loc}.{k}', cls)
+
+            v_loc = loc, k
+            value_result, value_errors = self._validate_singleton(v_, values, v_loc, cls)
             if value_errors:
                 errors.append(value_errors)
                 continue
+
             result[key_result] = value_result
         if errors:
             return v, errors

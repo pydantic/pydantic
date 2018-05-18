@@ -21,7 +21,7 @@ def test_simple():
         Model(a='snap')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': '"foobar" not found in a',
             'type': 'value_error',
         },
@@ -86,7 +86,7 @@ def test_validate_whole_error():
         Model(a=[1, 3])
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'a1 broken',
             'type': 'value_error',
         },
@@ -98,7 +98,7 @@ def test_validate_whole_error():
         Model(a=[5, 10])
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'a2 broken',
             'type': 'value_error',
         },
@@ -139,7 +139,7 @@ def test_validating_assignment_dict():
         ValidateAssignmentModel(a='x', b='xx')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'invalid literal for int() with base 10: \'x\'',
             'type': 'value_error',
         },
@@ -164,12 +164,12 @@ def test_validate_multiple():
         Model(a='x', b='x')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': 'a is too short',
             'type': 'type_error',
         },
         {
-            'loc': 'b',
+            'loc': ('b',),
             'msg': 'b is too short',
             'type': 'type_error',
         },
@@ -307,12 +307,12 @@ def test_wildcard_validator_error():
         Model(a='snap')
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'a',
+            'loc': ('a',),
             'msg': '"foobar" not found in a',
             'type': 'value_error',
         },
         {
-            'loc': 'b',
+            'loc': ('b',),
             'msg': 'field required',
             'type': 'value_error.missing',
         },

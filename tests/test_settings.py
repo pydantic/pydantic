@@ -27,7 +27,7 @@ def test_sub_env_missing():
         SimpleSettings()
     assert exc_info.value.flat_errors == [
         {
-            'loc': 'apple',
+            'loc': ('apple',),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },
