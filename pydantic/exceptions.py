@@ -14,9 +14,13 @@ __all__ = (
 
 
 class Error:
+    __slots__ = (
+        'exc_info',
+        'loc',
+    )
+
     def __init__(self, exc: Exception, *, loc: Union[str, int] = None) -> None:
         self.exc_info = exc
-        self.exc_type = type(exc)
         self.loc = loc
 
     @property
@@ -26,7 +30,7 @@ class Error:
     @property
     def type_(self) -> str:
         bases = []
-        for b in inspect.getmro(self.exc_type):
+        for b in inspect.getmro(type(self.exc_info)):
             bases.append(b.__name__)
             if b in (ValueError, TypeError):
                 break
@@ -35,6 +39,11 @@ class Error:
 
 
 class ValidationError(ValueError):
+    __slots__ = (
+        'errors',
+        'message',
+    )
+
     def __init__(self, errors):
         self.errors = errors
         self.message = 'validation errors'
