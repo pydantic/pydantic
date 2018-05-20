@@ -289,7 +289,7 @@ class Field:
                     errors.append(error)
                 else:
                     return value, None
-            return v, errors[0] if len(self.sub_fields) == 1 else errors
+            return v, errors
         else:
             return self._apply_validators(v, values, loc, cls, self.validators)
 
