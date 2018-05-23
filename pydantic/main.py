@@ -137,8 +137,7 @@ class MetaModel(ABCMeta):
 
 
 MISSING = Missing('field required')
-MISSING_ERROR = Error(MISSING, None, None)
-EXTRA_ERROR = Error(Extra('extra fields not permitted'), None, None)
+EXTRA = Extra('extra fields not permitted')
 
 
 class BaseModel(metaclass=MetaModel):
@@ -164,9 +163,9 @@ class BaseModel(metaclass=MetaModel):
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.__config__.validate_assignment:
-            value_, error_ = self.fields[name].validate(value, self.dict(exclude={name}))
+            value_, error_ = self.fields[name].validate(value, self.dict(exclude={name}), loc=name)
             if error_:
-                raise ValidationError({name: error_})
+                raise ValidationError([error_])
             else:
                 self.__values__[name] = value_
         else:
@@ -191,7 +190,7 @@ class BaseModel(metaclass=MetaModel):
     def parse_obj(cls, obj):
         if not isinstance(obj, dict):
             exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-            raise ValidationError([Error(exc, None, None)])
+            raise ValidationError([Error(exc, loc='__obj__')])
         return cls(**obj)
 
     @classmethod
@@ -204,7 +203,7 @@ class BaseModel(metaclass=MetaModel):
             obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding,
                                  allow_pickle=allow_pickle)
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([Error(e, None, None)])
+            raise ValidationError([Error(e, loc='__obj__')])
         return cls.parse_obj(obj)
 
     @classmethod
@@ -262,7 +261,7 @@ class BaseModel(metaclass=MetaModel):
 
     def _process_values(self, input_data: dict) -> Dict[str, Any]:  # noqa: C901 (ignore complexity)
         values = {}
-        errors = {}
+        errors = []
 
         for name, field in self.__fields__.items():
             value = input_data.get(field.alias, MISSING)
@@ -271,14 +270,16 @@ class BaseModel(metaclass=MetaModel):
                     value = field.default
                 else:
                     if field.required:
-                        errors[field.alias] = MISSING_ERROR
+                        errors.append(Error(MISSING, loc=field.alias))
                     else:
                         values[name] = field.default
                     continue
 
-            v_, errors_ = field.validate(value, values, cls=self.__class__)
-            if errors_:
-                errors[field.alias] = errors_
+            v_, errors_ = field.validate(value, values, loc=field.alias, cls=self.__class__)
+            if isinstance(errors_, Error):
+                errors.append(errors_)
+            elif isinstance(errors_, list):
+                errors.extend(errors_)
             else:
                 values[name] = v_
 
@@ -291,7 +292,7 @@ class BaseModel(metaclass=MetaModel):
                 else:
                     # config.ignore_extra is False
                     for field in sorted(extra):
-                        errors[field] = EXTRA_ERROR
+                        errors.append(Error(EXTRA, loc=field))
 
         if errors:
             raise ValidationError(errors)

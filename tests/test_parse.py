@@ -23,9 +23,13 @@ def test_obj():
 def test_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj([1, 2, 3])
-    assert """\
-error validating input
-Model expected dict not list (error_type=TypeError)""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('__obj__',),
+            'msg': 'Model expected dict not list',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_json():
@@ -58,9 +62,13 @@ def test_msgpack_not_installed_proto(mocker):
 def test_msgpack_not_installed_ct():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw(b'\x82\xa1a\x0c\xa1b\x08', content_type='application/msgpack')
-    assert """\
-error validating input
-Unknown content-type: application/msgpack (error_type=TypeError)""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('__obj__',),
+            'msg': 'Unknown content-type: application/msgpack',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_pickle_ct():
@@ -82,17 +90,25 @@ def test_pickle_not_allowed():
 def test_bad_ct():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', content_type='application/missing')
-    assert """\
-error validating input
-Unknown content-type: application/missing (error_type=TypeError)""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('__obj__',),
+            'msg': 'Unknown content-type: application/missing',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_bad_proto():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', proto='foobar')
-    assert """\
-error validating input
-Unknown protocol: foobar (error_type=TypeError)""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('__obj__',),
+            'msg': 'Unknown protocol: foobar',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_file_json(tmpdir):

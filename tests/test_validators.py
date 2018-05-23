@@ -16,9 +16,16 @@ def test_simple():
             return v
 
     assert Model(a='this is foobar good').a == 'this is foobar good'
+
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert '"foobar" not found in a' in str(exc_info.value)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('a',),
+            'msg': '"foobar" not found in a',
+            'type': 'value_error',
+        },
+    ]
 
 
 def test_validate_whole():
@@ -73,16 +80,29 @@ def test_validate_whole_error():
 
     assert Model(a=[3, 8]).a == [4, 8]
     assert calls == ['check_a1 [3, 8]', 'check_a2 [4, 8]']
+
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[1, 3])
-    assert 'a1 broken' in str(exc_info.value)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'a1 broken',
+            'type': 'value_error',
+        },
+    ]
     assert calls == ['check_a1 [1, 3]']
 
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[5, 10])
-    assert 'a2 broken' in str(exc_info.value)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'a2 broken',
+            'type': 'value_error',
+        },
+    ]
     assert calls == ['check_a1 [5, 10]', 'check_a2 [6, 10]']
 
 
@@ -117,10 +137,13 @@ def test_validating_assignment_fail():
 def test_validating_assignment_dict():
     with pytest.raises(ValidationError) as exc_info:
         ValidateAssignmentModel(a='x', b='xx')
-    assert """\
-error validating input
-a:
-  invalid literal for int() with base 10: 'x' (error_type=ValueError track=int)""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'invalid literal for int() with base 10: \'x\'',
+            'type': 'value_error',
+        },
+    ]
 
 
 def test_validate_multiple():
@@ -136,14 +159,21 @@ def test_validate_multiple():
             return v + 'x'
 
     assert Model(a='1234', b='5678').dict() == {'a': '1234x', 'b': '5678x'}
+
     with pytest.raises(ValidationError) as exc_info:
         Model(a='x', b='x')
-    assert """\
-2 errors validating input
-a:
-  a is too short (error_type=TypeError track=str)
-b:
-  b is too short (error_type=TypeError track=str)""" == str(exc_info.value)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'a is too short',
+            'type': 'type_error',
+        },
+        {
+            'loc': ('b',),
+            'msg': 'b is too short',
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_classmethod():
@@ -275,8 +305,18 @@ def test_wildcard_validator_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert '"foobar" not found in a' in str(exc_info.value)
-    assert len(exc_info.value.errors_dict) == 2
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('a',),
+            'msg': '"foobar" not found in a',
+            'type': 'value_error',
+        },
+        {
+            'loc': ('b',),
+            'msg': 'field required',
+            'type': 'value_error.missing',
+        },
+    ]
 
 
 def test_invalid_field():

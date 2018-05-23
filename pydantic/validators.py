@@ -7,13 +7,10 @@ from typing import Any
 from uuid import UUID
 
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .exceptions import ConfigError, type_display
+from .exceptions import ConfigError
+from .utils import display_as_type
 
 NoneType = type(None)
-
-
-def display_as_type(v):
-    return type_display(type(v))
 
 
 def not_none_validator(v):
