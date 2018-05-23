@@ -28,7 +28,7 @@ def test_str_bytes():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
             'msg': 'None is not an allow value',
@@ -84,7 +84,7 @@ def test_union_int_str():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
             'msg': 'int() argument must be a string, a bytes-like object or a number, not \'NoneType\'',
@@ -118,14 +118,14 @@ def test_typed_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 'x', 'y'])
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('v', '1'),
+            'loc': ('v', 1),
             'msg': 'invalid literal for int() with base 10: \'x\'',
             'type': 'value_error',
         },
         {
-            'loc': ('v', '2'),
+            'loc': ('v', 2),
             'msg': 'invalid literal for int() with base 10: \'y\'',
             'type': 'value_error',
         },
@@ -133,7 +133,7 @@ def test_typed_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
             'msg': '\'int\' object is not iterable',
@@ -151,9 +151,9 @@ def test_typed_set():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 'x'])
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('v', '1'),
+            'loc': ('v', 1),
             'msg': 'invalid literal for int() with base 10: \'x\'',
             'type': 'value_error',
         },
@@ -217,7 +217,7 @@ def test_typed_dict_error(value, errors):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.flat_errors == errors
+    assert exc_info.value.flatten_errors() == errors
 
 
 def test_dict_key_error():
@@ -228,7 +228,7 @@ def test_dict_key_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v={'foo': 2, '3': '4'})
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v', '__key__'),
             'msg': 'invalid literal for int() with base 10: \'foo\'',
@@ -276,9 +276,9 @@ def test_recursive_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=['x'])
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('v', '0'),
+            'loc': ('v', 0),
             'msg': 'dictionary update sequence element #0 has length 1; 2 is required',
             'type': 'value_error',
         },
@@ -295,9 +295,9 @@ def test_recursive_list_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[{}])
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('v', '0', 'name'),
+            'loc': ('v', 0, 'name'),
             'msg': 'field required',
             'type': 'value_error.missing',
         },
@@ -312,14 +312,14 @@ def test_list_unions():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('v', '2'),
+            'loc': ('v', 2),
             'msg': 'int() argument must be a string, a bytes-like object or a number, not \'NoneType\'',
             'type': 'type_error',
         },
         {
-            'loc': ('v', '2'),
+            'loc': ('v', 2),
             'msg': 'None is not an allow value',
             'type': 'type_error',
         },
@@ -387,7 +387,7 @@ def test_alias_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(_a='foo')
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('_a',),
             'msg': 'invalid literal for int() with base 10: \'foo\'',
@@ -497,7 +497,7 @@ def test_invalid_string_types(value, errors):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.flat_errors == errors
+    assert exc_info.value.flatten_errors() == errors
 
 
 def test_inheritance_config():
@@ -547,7 +547,7 @@ def test_string_none():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=None)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'None is not an allow value',

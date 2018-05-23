@@ -35,7 +35,7 @@ def test_constrained_str_default():
 def test_constrained_str_too_long():
     with pytest.raises(ValidationError) as exc_info:
         ConStringModel(v='this is too long')
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
             'msg': 'length greater than maximum allowed: 10',
@@ -73,7 +73,7 @@ def test_dsn_pw_host():
 def test_dsn_no_driver():
     with pytest.raises(ValidationError) as exc_info:
         DsnModel(db_driver=None)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('db_driver',),
             'msg': 'None is not an allow value',
@@ -96,7 +96,7 @@ def test_module_import():
     assert m.module == os.path
     with pytest.raises(ValidationError) as exc_info:
         PyObjectModel(module='foobar')
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('module',),
             'msg': '"foobar" doesn\'t look like a module path',
@@ -207,7 +207,7 @@ class StrModel(BaseModel):
 def test_string_too_long():
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x' * 150)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('str_check',),
             'msg': 'length greater than maximum allowed: 10',
@@ -219,7 +219,7 @@ def test_string_too_long():
 def test_string_too_short():
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x')
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('str_check',),
             'msg': 'length less than minimum allowed: 5',
@@ -240,7 +240,7 @@ class NumberModel(BaseModel):
 def test_number_too_big():
     with pytest.raises(ValidationError) as exc_info:
         NumberModel(int_check=50, float_check=150)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('int_check',),
             'msg': 'size greater than maximum allowed: 10',
@@ -257,7 +257,7 @@ def test_number_too_big():
 def test_number_too_small():
     with pytest.raises(ValidationError) as exc_info:
         NumberModel(int_check=1, float_check=2.5)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('int_check',),
             'msg': 'size less than minimum allowed: 5',
@@ -299,7 +299,7 @@ def test_datetime_errors():
             time_='25:20:30.400',
             duration='15:30.0001 broken',
         )
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('dt',),
             'msg': 'month must be in 1..12',
@@ -348,7 +348,7 @@ def test_enum_successful():
 def test_enum_fails():
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('tool',),
             'msg': '3 is not a valid ToolEnum',
@@ -402,7 +402,7 @@ def test_string_fails():
             str_email='foobar<@example.com',
             name_email='foobar @example.com',
         )
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('str_regex',),
             'msg': 'string does not match regex "^xxx\\d{3}$"',
@@ -453,7 +453,7 @@ def test_dict():
 
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(a=[1, 2, 3])
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'value is not a valid dict, got list',
@@ -471,7 +471,7 @@ def test_list():
 
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(b=1)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('b',),
             'msg': '\'int\' object is not iterable',
@@ -487,7 +487,7 @@ def test_ordered_dict():
 
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(c=[1, 2, 3])
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('c',),
             'msg': '\'int\' object is not iterable',
@@ -506,7 +506,7 @@ def test_tuple():
 
     with pytest.raises(ValidationError) as exc_info:
         ListDictTupleModel(d=1)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('d',),
             'msg': '\'int\' object is not iterable',
@@ -527,7 +527,7 @@ def test_int_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         IntModel(a=-5, b=5, c=-5)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'size less than minimum allowed: 0',
@@ -558,7 +558,7 @@ def test_float_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         FloatModel(a=-5.1, b=5.2, c=-5.3)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'size less than minimum allowed: 0',
@@ -606,7 +606,7 @@ def test_uuid_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='ebcdab58-6eb8-46fb-a190-d07a3')
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
             'msg': 'badly formed hexadecimal UUID string',
@@ -641,7 +641,7 @@ def test_uuid_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         UUIDModel(a=d, b=c, c=b, d=a)
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'uuid version 1 expected, not 5',

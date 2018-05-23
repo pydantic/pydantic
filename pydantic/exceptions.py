@@ -1,6 +1,5 @@
 import inspect
 import json
-from typing import Tuple, Union
 
 from .utils import to_snake_case
 
@@ -14,21 +13,18 @@ __all__ = (
 
 
 class Error:
-    __slots__ = (
-        'exc_info',
-        'loc',
-    )
+    __slots__ = 'exc_info', 'loc'
 
-    def __init__(self, exc: Exception, *, loc: Union[Tuple[str], str]) -> None:
+    def __init__(self, exc, *, loc):
         self.exc_info = exc
         self.loc = loc if isinstance(loc, tuple) else (loc,)
 
     @property
-    def msg(self) -> str:
+    def msg(self):
         return str(self.exc_info)
 
     @property
-    def type_(self) -> str:
+    def type_(self):
         bases = []
         for b in inspect.getmro(type(self.exc_info)):
             bases.append(b.__name__)
@@ -39,10 +35,7 @@ class Error:
 
 
 class ValidationError(ValueError):
-    __slots__ = (
-        'errors',
-        'message',
-    )
+    __slots__ = 'errors', 'message'
 
     def __init__(self, errors):
         self.errors = errors
@@ -52,17 +45,16 @@ class ValidationError(ValueError):
 
     @property
     def display_errors(self):
-        return display_errors(self.flat_errors)
-
-    @property
-    def flat_errors(self):
-        return flatten_errors(self.errors)
+        return display_errors(self.flatten_errors())
 
     def __str__(self):
         return f'{self.message}\n{self.display_errors}'
 
+    def flatten_errors(self):
+        return flatten_errors(self.errors)
+
     def json(self, *, indent=2):
-        return json.dumps(self.flat_errors, indent=indent, sort_keys=True)
+        return json.dumps(self.flatten_errors(), indent=indent, sort_keys=True)
 
 
 class ConfigError(RuntimeError):
@@ -78,15 +70,14 @@ class Extra(ValueError):
 
 
 def display_errors(errors):
-    display = []
+    return '\n'.join(
+        f'{_display_error_loc(e["loc"])}\n  {e["msg"]} (type={e["type"]})'
+        for e in errors
+    )
 
-    for error in errors:
-        display.extend([
-            ' -> '.join(error['loc']),
-            f'  {error["msg"]} (type={error["type"]})',
-        ])
 
-    return '\n'.join(display)
+def _display_error_loc(loc):
+    return ' -> '.join(str(l) for l in loc)
 
 
 def flatten_errors(errors, *, loc=None):
@@ -105,6 +96,6 @@ def flatten_errors(errors, *, loc=None):
         elif isinstance(error, list):
             flat.extend(flatten_errors(error))
         else:
-            raise TypeError(f'Unknown error object: {error}')
+            raise RuntimeError(f'Unknown error object: {error}')
 
     return flat

@@ -19,7 +19,7 @@ def test_simple():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': '"foobar" not found in a',
@@ -84,7 +84,7 @@ def test_validate_whole_error():
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[1, 3])
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'a1 broken',
@@ -96,7 +96,7 @@ def test_validate_whole_error():
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[5, 10])
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'a2 broken',
@@ -137,7 +137,7 @@ def test_validating_assignment_fail():
 def test_validating_assignment_dict():
     with pytest.raises(ValidationError) as exc_info:
         ValidateAssignmentModel(a='x', b='xx')
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'invalid literal for int() with base 10: \'x\'',
@@ -162,7 +162,7 @@ def test_validate_multiple():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='x', b='x')
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'a is too short',
@@ -305,7 +305,7 @@ def test_wildcard_validator_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.flat_errors == [
+    assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': '"foobar" not found in a',

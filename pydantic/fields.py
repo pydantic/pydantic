@@ -210,9 +210,12 @@ class Field:
             ))
         return tuple(v)
 
-    def validate(self, v, values, loc=None, cls=None):
+    def validate(self, v, values, *, loc, cls=None):
         if self.allow_none and v is None:
             return None, None
+
+        if not isinstance(loc, tuple):
+            loc = (loc,)
 
         if self.whole_pre_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_pre_validators)
@@ -240,7 +243,7 @@ class Field:
         except TypeError as exc:
             return v, Error(exc, loc=loc)
         for i, v_ in v_iter:
-            v_loc = loc, str(i)
+            v_loc = *loc, i
             single_result, single_errors = self._validate_singleton(v_, values, v_loc, cls)
             if single_errors:
                 errors.append(single_errors)
@@ -257,18 +260,18 @@ class Field:
         else:
             try:
                 v_iter = dict(v)
-            except TypeError as exc:
+            except TypeError:
                 return v, Error(TypeError(f'value is not a valid dict, got {display_as_type(v)}'), loc=loc)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
-            v_loc = loc, '__key__'
+            v_loc = *loc, '__key__'
             key_result, key_errors = self.key_field.validate(k, values, loc=v_loc, cls=cls)
             if key_errors:
                 errors.append(key_errors)
                 continue
 
-            v_loc = loc, k
+            v_loc = *loc, k
             value_result, value_errors = self._validate_singleton(v_, values, v_loc, cls)
             if value_errors:
                 errors.append(value_errors)
