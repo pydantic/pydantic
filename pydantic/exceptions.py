@@ -51,7 +51,7 @@ class ValidationError(ValueError):
         return f'{self.message}\n{self.display_errors}'
 
     def flatten_errors(self):
-        return flatten_errors(self.errors)
+        return list(flatten_errors(self.errors))
 
     def json(self, *, indent=2):
         return json.dumps(self.flatten_errors(), indent=indent, sort_keys=True)
@@ -81,21 +81,17 @@ def _display_error_loc(loc):
 
 
 def flatten_errors(errors, *, loc=None):
-    flat = []
-
     for error in errors:
         if isinstance(error, Error):
             if isinstance(error.exc_info, ValidationError):
-                flat.extend(flatten_errors(error.exc_info.errors, loc=error.loc))
+                yield from flatten_errors(error.exc_info.errors, loc=error.loc)
             else:
-                flat.append({
+                yield {
                     'loc': error.loc if loc is None else loc + error.loc,
                     'msg': error.msg,
                     'type': error.type_,
-                })
+                }
         elif isinstance(error, list):
-            flat.extend(flatten_errors(error))
+            yield from flatten_errors(error)
         else:
             raise RuntimeError(f'Unknown error object: {error}')
-
-    return flat

@@ -250,4 +250,4 @@ def test_validation_error(result, expected):
 
 def test_flatten_errors_unknown_error_object():
     with pytest.raises(RuntimeError):
-        flatten_errors([object])
+        list(flatten_errors([object]))
