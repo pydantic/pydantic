@@ -1,8 +1,9 @@
 import os
+from typing import Union
 
 import pytest
 
-from pydantic.utils import import_string, make_dsn, validate_email
+from pydantic.utils import display_as_type, import_string, make_dsn, to_snake_case, validate_email
 
 try:
     import email_validator
@@ -92,3 +93,25 @@ def test_import_no_attr():
     with pytest.raises(ImportError) as exc_info:
         import_string('os.foobar')
     assert exc_info.value.args[0] == 'Module "os" does not define a "foobar" attribute'
+
+
+@pytest.mark.parametrize('value,expected', (
+    (str, 'str'),
+    ('string', 'str'),
+    (Union[str, int], 'typing.Union[str, int]'),
+))
+def test_display_as_type(value, expected):
+    assert display_as_type(value) == expected
+
+
+@pytest.mark.parametrize('value,expected', (
+    ('Foo', 'foo'),
+    ('FooBar', 'foo_bar'),
+    ('Foo42Bar', 'foo42_bar'),
+    ('FOOBar', 'foo_bar'),
+    ('FOOBarFoo', 'foo_bar_foo'),
+    ('FooBAR', 'foo_bar'),
+    ('FOO', 'foo'),
+))
+def test_to_snake_case(value, expected):
+    assert to_snake_case(value) == expected

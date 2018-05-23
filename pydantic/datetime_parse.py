@@ -82,7 +82,7 @@ def from_unix_seconds(seconds: int) -> datetime:
 
 def parse_date(value: Union[date, StrIntFloat]) -> date:
     """
-    Parse a string and return a datetime.date.
+    Parse a date/int/float/string and return a datetime.date.
 
     Raise ValueError if the input is well formatted but not a valid date.
     Raise ValueError if the input isn't well formatted.
@@ -102,9 +102,9 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
     return date(**kw)
 
 
-def parse_time(value: Union[time, StrIntFloat]) -> time:
+def parse_time(value: Union[time, str]) -> time:
     """
-    Parse a string and return a datetime.time.
+    Parse a time/string and return a datetime.time.
 
     This function doesn't support time zone offsets.
 
@@ -127,7 +127,7 @@ def parse_time(value: Union[time, StrIntFloat]) -> time:
 
 def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
     """
-    Parse a string and return a datetime.datetime.
+    Parse a datetime/int/float/string and return a datetime.datetime.
 
     This function supports time zone offsets. When the input contains one,
     the output uses a timezone with a fixed offset from UTC.
@@ -165,7 +165,7 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
 
 def parse_duration(value: StrIntFloat) -> timedelta:
     """
-    Parse a duration string and return a datetime.timedelta.
+    Parse a duration int/float/string and return a datetime.timedelta.
 
     The preferred format for durations in Django is '%d %H:%M:%S.%f'.
 

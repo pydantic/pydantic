@@ -3,10 +3,23 @@
 History
 -------
 
-v0.8.1 (2018-XX-XX)
+v0.9.1 (2018-05-10)
+...................
+* allow custom ``get_field_config`` on config classes #159
+* add ``UUID1``, ``UUID3``, ``UUID4`` and ``UUID5`` types #167, thanks @Gr1N
+* modify some inconsistent docstrings and annotations #173, thanks @YannLuo
+* fix type annotations for exotic types #171, thanks @Gr1N
+* re-use type validators in exotic types #171
+* scheduled monthly requirements updates #168
+* add ``Decimal``, ``ConstrainedDecimal`` and ``condecimal`` types #170, thanks @Gr1N
+
+v0.9.0 (2018-04-28)
 ...................
 * tweak email-validator import error message #145
-* fix parse error of parse_date() and parse_datetime() when input is 0 #144
+* fix parse error of ``parse_date()`` and ``parse_datetime()`` when input is 0 #144, thanks @YannLuo
+* add ``Config.anystr_strip_whitespace`` and ``strip_whitespace`` kwarg to ``constr``,
+  by default values is ``False`` #163, thanks @Gr1N
+* add ``ConstrainedFloat``, ``confloat``, ``PositiveFloat`` and ``NegativeFloat`` types #166, thanks @Gr1N
 
 v0.8.0 (2018-03-25)
 ...................

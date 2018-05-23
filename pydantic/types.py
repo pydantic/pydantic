@@ -1,8 +1,11 @@
 import re
-from typing import Optional, Type, Union
+from decimal import Decimal
+from typing import Optional, Pattern, Type, Union
+from uuid import UUID
 
 from .utils import import_string, make_dsn, validate_email
-from .validators import str_validator
+from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, not_none_validator,
+                         number_size_validator, str_validator)
 
 try:
     import email_validator
@@ -25,6 +28,16 @@ __all__ = [
     'conint',
     'PositiveInt',
     'NegativeInt',
+    'ConstrainedFloat',
+    'confloat',
+    'PositiveFloat',
+    'NegativeFloat',
+    'ConstrainedDecimal',
+    'condecimal',
+    'UUID1',
+    'UUID3',
+    'UUID4',
+    'UUID5',
 ]
 
 NoneStr = Optional[str]
@@ -46,34 +59,29 @@ class StrictStr(str):
 
 
 class ConstrainedStr(str):
-    min_length: int = None
-    max_length: int = None
-    curtail_length: int = None
-    regex = None
+    strip_whitespace = False
+    min_length: Optional[int] = None
+    max_length: Optional[int] = None
+    curtail_length: Optional[int] = None
+    regex: Optional[Pattern] = None
 
     @classmethod
     def get_validators(cls):
+        yield not_none_validator
         yield str_validator
+        yield anystr_strip_whitespace
+        yield anystr_length_validator
         yield cls.validate
 
     @classmethod
     def validate(cls, value: str) -> str:
-        if value is None:
-            raise TypeError('None is not an allow value')
-
-        v_len = len(value)
-        if cls.min_length is not None and v_len < cls.min_length:
-            raise ValueError(f'length less than minimum allowed: {cls.min_length}')
-
-        if cls.curtail_length:
-            if v_len > cls.curtail_length:
-                value = value[:cls.curtail_length]
-        elif cls.max_length is not None and v_len > cls.max_length:
-            raise ValueError(f'length greater than maximum allowed: {cls.max_length}')
+        if cls.curtail_length and len(value) > cls.curtail_length:
+            value = value[:cls.curtail_length]
 
         if cls.regex:
             if not cls.regex.match(value):
                 raise ValueError(f'string does not match regex "{cls.regex.pattern}"')
+
         return value
 
 
@@ -116,9 +124,10 @@ class NameEmail:
         return f'<NameEmail("{self}")>'
 
 
-def constr(*, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
+def constr(*, strip_whitespace=False, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
+        strip_whitespace=strip_whitespace,
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
@@ -165,21 +174,13 @@ class DSN(str):
 
 
 class ConstrainedInt(int):
-    gt: int = None
-    lt: int = None
+    gt: Optional[int] = None
+    lt: Optional[int] = None
 
     @classmethod
     def get_validators(cls):
         yield int
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: int) -> int:
-        if cls.gt is not None and value <= cls.gt:
-            raise ValueError(f'size less than minimum allowed: {cls.gt}')
-        elif cls.lt is not None and value >= cls.lt:
-            raise ValueError(f'size greater than maximum allowed: {cls.lt}')
-        return value
+        yield number_size_validator
 
 
 def conint(*, gt=None, lt=None) -> Type[int]:
@@ -194,6 +195,107 @@ class PositiveInt(ConstrainedInt):
 
 class NegativeInt(ConstrainedInt):
     lt = 0
+
+
+class ConstrainedFloat(float):
+    gt: Union[None, int, float] = None
+    lt: Union[None, int, float] = None
+
+    @classmethod
+    def get_validators(cls):
+        yield float
+        yield number_size_validator
+
+
+def confloat(*, gt=None, lt=None) -> Type[float]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(gt=gt, lt=lt)
+    return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
+
+
+class PositiveFloat(ConstrainedFloat):
+    gt = 0
+
+
+class NegativeFloat(ConstrainedFloat):
+    lt = 0
+
+
+class ConstrainedDecimal(Decimal):
+    gt: Union[None, int, float, Decimal] = None
+    lt: Union[None, int, float, Decimal] = None
+    max_digits: Optional[int] = None
+    decimal_places: Optional[int] = None
+
+    @classmethod
+    def get_validators(cls):
+        yield not_none_validator
+        yield decimal_validator
+        yield number_size_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: Decimal) -> Decimal:
+        digit_tuple, exponent = value.as_tuple()[1:]
+        if exponent in {'F', 'n', 'N'}:
+            raise ValueError(f'value is not a valid decimal, got {value}')
+
+        if exponent >= 0:
+            # A positive exponent adds that many trailing zeros.
+            digits = len(digit_tuple) + exponent
+            decimals = 0
+        else:
+            # If the absolute value of the negative exponent is larger than the
+            # number of digits, then it's the same as the number of digits,
+            # because it'll consume all of the digits in digit_tuple and then
+            # add abs(exponent) - len(digit_tuple) leading zeros after the
+            # decimal point.
+            if abs(exponent) > len(digit_tuple):
+                digits = decimals = abs(exponent)
+            else:
+                digits = len(digit_tuple)
+                decimals = abs(exponent)
+        whole_digits = digits - decimals
+
+        if cls.max_digits is not None and digits > cls.max_digits:
+            raise ValueError(f'ensure that there are no more than {cls.max_digits} digits in total')
+
+        if cls.decimal_places is not None and decimals > cls.decimal_places:
+            raise ValueError(f'ensure that there are no more than {cls.decimal_places} decimal places')
+
+        if cls.max_digits is not None and cls.decimal_places is not None:
+            expected = cls.max_digits - cls.decimal_places
+            if whole_digits > expected:
+                raise ValueError(f'ensure that there are no more than {expected} digits before the decimal point')
+
+        return value
+
+
+def condecimal(*, gt=None, lt=None, max_digits=None, decimal_places=None) -> Type[Decimal]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(
+        gt=gt,
+        lt=lt,
+        max_digits=max_digits,
+        decimal_places=decimal_places
+    )
+    return type('ConstrainedDecimalValue', (ConstrainedDecimal,), namespace)
+
+
+class UUID1(UUID):
+    _required_version = 1
+
+
+class UUID3(UUID):
+    _required_version = 3
+
+
+class UUID4(UUID):
+    _required_version = 4
+
+
+class UUID5(UUID):
+    _required_version = 5
 
 
 # TODO, JsonEither, JsonList, JsonDict

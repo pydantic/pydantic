@@ -10,7 +10,7 @@ def test_create_model():
     assert model.__name__ == 'FooModel'
     assert model.__fields__.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
-    assert model.__config__.__name__ == 'BaseConfig'
+    assert model.__config__.__name__ == 'Config'
 
 
 def test_create_model_usage():
@@ -91,7 +91,13 @@ def test_funky_name():
     assert m.dict() == {'this-is-funky': 123}
     with pytest.raises(ValidationError) as exc_info:
         model()
-    assert exc_info.value.errors_dict == {'this-is-funky': {'error_msg': 'field required', 'error_type': 'Missing'}}
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('this-is-funky',),
+            'msg': 'field required',
+            'type': 'value_error.missing',
+        },
+    ]
 
 
 def test_repeat_base_usage():

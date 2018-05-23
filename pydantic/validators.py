@@ -1,19 +1,16 @@
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
-from decimal import Decimal
+from decimal import Decimal, DecimalException
 from enum import Enum
 from pathlib import Path
 from typing import Any
 from uuid import UUID
 
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .exceptions import ConfigError, type_display
+from .exceptions import ConfigError
+from .utils import display_as_type
 
 NoneType = type(None)
-
-
-def display_as_type(v):
-    return type_display(type(v))
 
 
 def not_none_validator(v):
@@ -58,16 +55,38 @@ def bool_validator(v) -> bool:
     return bool(v)
 
 
-def number_size_validator(v, config, **kwargs):
-    if config.min_number_size <= v <= config.max_number_size:
-        return v
-    raise ValueError(f'size not in range {config.min_number_size} to {config.max_number_size}')
+def number_size_validator(v, field, config, **kwargs):
+    min_size = getattr(field.type_, 'gt', config.min_number_size)
+    if min_size is not None and v <= min_size:
+        raise ValueError(f'size less than minimum allowed: {min_size}')
+
+    max_size = getattr(field.type_, 'lt', config.max_number_size)
+    if max_size is not None and v >= max_size:
+        raise ValueError(f'size greater than maximum allowed: {max_size}')
+
+    return v
 
 
-def anystr_length_validator(v, config, **kwargs):
-    if v is None or config.min_anystr_length <= len(v) <= config.max_anystr_length:
-        return v
-    raise ValueError(f'length {len(v)} not in range {config.min_anystr_length} to {config.max_anystr_length}')
+def anystr_length_validator(v, field, config, **kwargs):
+    v_len = len(v)
+
+    min_length = getattr(field.type_, 'min_length', config.min_anystr_length)
+    if min_length is not None and v_len < min_length:
+        raise ValueError(f'length less than minimum allowed: {min_length}')
+
+    max_length = getattr(field.type_, 'max_length', config.max_anystr_length)
+    if max_length is not None and v_len > max_length:
+        raise ValueError(f'length greater than maximum allowed: {max_length}')
+
+    return v
+
+
+def anystr_strip_whitespace(v, field, config, **kwargs):
+    strip_whitespace = getattr(field.type_, 'strip_whitespace', config.anystr_strip_whitespace)
+    if strip_whitespace:
+        v = v.strip()
+
+    return v
 
 
 def ordered_dict_validator(v) -> OrderedDict:
@@ -108,23 +127,46 @@ def enum_validator(v, field, config, **kwargs) -> Enum:
     return enum_v.value if config.use_enum_values else enum_v
 
 
-def uuid_validator(v) -> UUID:
-    if isinstance(v, UUID):
-        return v
-    elif isinstance(v, str):
-        return UUID(v)
+def uuid_validator(v, field, config, **kwargs) -> UUID:
+    if isinstance(v, str):
+        v = UUID(v)
     elif isinstance(v, (bytes, bytearray)):
-        return UUID(v.decode())
-    else:
+        v = UUID(v.decode())
+    elif not isinstance(v, UUID):
         raise ValueError(f'str, byte or native UUID type expected not {type(v)}')
+
+    required_version = getattr(field.type_, '_required_version', None)
+    if required_version and v.version != required_version:
+        raise ValueError(f'uuid version {required_version} expected, not {v.version}')
+
+    return v
+
+
+def decimal_validator(v) -> Decimal:
+    if isinstance(v, Decimal):
+        return v
+    elif isinstance(v, (bytes, bytearray)):
+        v = v.decode()
+
+    v = str(v).strip()
+
+    try:
+        v = Decimal(v)
+    except DecimalException as e:
+        raise TypeError(f'value is not a valid decimal, got {display_as_type(v)}') from e
+
+    if not v.is_finite():
+        raise TypeError(f'value is not a valid decimal, got {display_as_type(v)}')
+
+    return v
 
 
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (Enum, [enum_validator]),
 
-    (str, [not_none_validator, str_validator, anystr_length_validator]),
-    (bytes, [not_none_validator, bytes_validator, anystr_length_validator]),
+    (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
+    (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
 
     (bool, [bool_validator]),
     (int, [int, number_size_validator]),
@@ -143,6 +185,7 @@ _VALIDATORS = [
     (tuple, [tuple_validator]),
     (set, [set_validator]),
     (UUID, [not_none_validator, uuid_validator]),
+    (Decimal, [not_none_validator, decimal_validator]),
 ]
 
 
