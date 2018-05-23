@@ -263,7 +263,7 @@ Options:
 :fields: extra information on each field, currently just "alias" is allowed (default: ``None``)
 :validate_assignment: whether to perform validation on assignment to attributes or not (default: ``False``)
 :allow_population_by_alias: whether or not a field may be populated by its alias, rather than strictly the name given
-by the model attribute; please be sure to read the warning below before enabling this (default: ``False``)
+    by the model attribute; please be sure to read the warning below before enabling this (default: ``False``)
 
 .. warning::
 
