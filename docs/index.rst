@@ -262,17 +262,19 @@ Options:
     rather than the raw enum - useful if you want to serialise ``model.dict()`` later (default: ``False``)
 :fields: extra information on each field, currently just "alias" is allowed (default: ``None``)
 :validate_assignment: whether to perform validation on assignment to attributes or not (default: ``False``)
-:allow_population_by_alias: whether or not a field may be populated by its alias, rather than strictly the name given
-    by the model attribute; please be sure to read the warning below before enabling this (default: ``False``)
+:allow_population_by_alias: whether or not an aliased field may be populated by its name as given by the model
+    attribute, rather than strictly the alias; please be sure to read the warning below before enabling this (default:
+    ``False``)
 
 .. warning::
 
    Think twice before enabling ``allow_population_by_alias``! Enabling it could cause previously correct code to become
    subtly incorrect. As an example, say you have a field named ``card_number`` with the alias ``cardNumber``. With
-   population by alias disabled (the default), trying to parse an object with only the key ``cardNumber`` will fail.
-   However, if you enable population by alias, this previously-invalid object will now populate the ``card_number``
-   field from ``cardNumber``. This may be desired for some use cases, but in others (like the one given here, perhaps),
-   relaxing strictness could introduce bugs.
+   population by alias disabled (the default), trying to parse an object with only the key ``card_number`` will fail.
+   However, if you enable population by alias, the ``card_number`` field can now be populated from ``cardNumber``
+   **or** ``card_number``, and the previously-invalid example object would now be valid. This may be desired for some
+   use cases, but in others (like the one given here, perhaps!), relaxing strictness with respect to aliases could
+   introduce bugs.
 
 .. literalinclude:: examples/config.py
 
