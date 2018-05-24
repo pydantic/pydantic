@@ -4,7 +4,7 @@ pydantic
 .. toctree::
    :maxdepth: 2
 
-|pypi| |license|
+|pypi| |license| |gitter|
 
 Current Version: |version|
 
@@ -428,3 +428,5 @@ for more details on the test case. Feel free to submit more benchmarks or improv
    :target: https://pypi.python.org/pypi/pydantic
 .. |license| image:: https://img.shields.io/pypi/l/pydantic.svg
    :target: https://github.com/samuelcolvin/pydantic
+.. |gitter| image:: https://badges.gitter.im/pydantic.svg
+   :target: https://gitter.im/pydantic/Lobby
