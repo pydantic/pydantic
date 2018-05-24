@@ -24,6 +24,7 @@ class BaseConfig:
     ignore_extra = True
     allow_extra = False
     allow_mutation = True
+    allow_population_by_alias = False
     use_enum_values = False
     fields = {}
     validate_assignment = False
@@ -265,6 +266,9 @@ class BaseModel(metaclass=MetaModel):
 
         for name, field in self.__fields__.items():
             value = input_data.get(field.alias, MISSING)
+            if value is MISSING and self.__config__.allow_population_by_alias and field.alt_alias:
+                value = input_data.get(field.name, MISSING)
+
             if value is MISSING:
                 if self.__config__.validate_all or field.validate_always:
                     value = field.default
