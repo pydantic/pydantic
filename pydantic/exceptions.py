@@ -26,7 +26,7 @@ class Error:
     @property
     def type_(self):
         bases = []
-        for b in inspect.getmro(type(self.exc_info)):
+        for b in inspect.getmro(type(self.exc_info)):  # pragma: no branch
             bases.append(b.__name__)
             if b in (ValueError, TypeError):
                 break
