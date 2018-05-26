@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Optional, Pattern, Type, Union
 from uuid import UUID
 
+from .exceptions import DecimalIsNotFiniteError, DecimalMaxDigitsError, DecimalMaxPlacesError, DecimalWholeDigitsError
 from .utils import import_string, make_dsn, validate_email
 from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, not_none_validator,
                          number_size_validator, str_validator)
@@ -238,7 +239,7 @@ class ConstrainedDecimal(Decimal):
     def validate(cls, value: Decimal) -> Decimal:
         digit_tuple, exponent = value.as_tuple()[1:]
         if exponent in {'F', 'n', 'N'}:
-            raise ValueError(f'value is not a valid decimal, got {value}')
+            raise DecimalIsNotFiniteError()
 
         if exponent >= 0:
             # A positive exponent adds that many trailing zeros.
@@ -258,15 +259,15 @@ class ConstrainedDecimal(Decimal):
         whole_digits = digits - decimals
 
         if cls.max_digits is not None and digits > cls.max_digits:
-            raise ValueError(f'ensure that there are no more than {cls.max_digits} digits in total')
+            raise DecimalMaxDigitsError(max_digits=cls.max_digits)
 
         if cls.decimal_places is not None and decimals > cls.decimal_places:
-            raise ValueError(f'ensure that there are no more than {cls.decimal_places} decimal places')
+            raise DecimalMaxPlacesError(decimal_places=cls.decimal_places)
 
         if cls.max_digits is not None and cls.decimal_places is not None:
             expected = cls.max_digits - cls.decimal_places
             if whole_digits > expected:
-                raise ValueError(f'ensure that there are no more than {expected} digits before the decimal point')
+                raise DecimalWholeDigitsError(whole_digits=expected)
 
         return value
 

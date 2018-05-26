@@ -6,7 +6,7 @@ from pathlib import Path
 from types import FunctionType
 from typing import Any, Dict, Set, Type, Union
 
-from .exceptions import ConfigError, Error, Extra, Missing, ValidationError
+from .exceptions import ConfigError, Error, ExtraError, MissingError, ValidationError
 from .fields import Field, Validator
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
@@ -136,10 +136,6 @@ class MetaModel(ABCMeta):
         return super().__new__(mcs, name, bases, new_namespace)
 
 
-MISSING = Missing('field required')
-EXTRA = Extra('extra fields not permitted')
-
-
 class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
     __fields__ = {}
@@ -264,13 +260,13 @@ class BaseModel(metaclass=MetaModel):
         errors = []
 
         for name, field in self.__fields__.items():
-            value = input_data.get(field.alias, MISSING)
-            if value is MISSING:
+            value = input_data.get(field.alias, ...)
+            if value is ...:
                 if self.__config__.validate_all or field.validate_always:
                     value = field.default
                 else:
                     if field.required:
-                        errors.append(Error(MISSING, loc=field.alias))
+                        errors.append(Error(MissingError(), loc=field.alias))
                     else:
                         values[name] = field.default
                     continue
@@ -292,7 +288,7 @@ class BaseModel(metaclass=MetaModel):
                 else:
                     # config.ignore_extra is False
                     for field in sorted(extra):
-                        errors.append(Error(EXTRA, loc=field))
+                        errors.append(Error(ExtraError(), loc=field))
 
         if errors:
             raise ValidationError(errors)

@@ -7,7 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .exceptions import ConfigError
+from .exceptions import ConfigError, DecimalError, DecimalIsNotFiniteError, UUIDError, UUIDVersionError
 from .utils import display_as_type
 
 NoneType = type(None)
@@ -98,6 +98,7 @@ def ordered_dict_validator(v) -> OrderedDict:
 def dict_validator(v) -> dict:
     if isinstance(v, dict):
         return v
+
     try:
         return dict(v)
     except TypeError as e:
@@ -128,16 +129,20 @@ def enum_validator(v, field, config, **kwargs) -> Enum:
 
 
 def uuid_validator(v, field, config, **kwargs) -> UUID:
-    if isinstance(v, str):
-        v = UUID(v)
-    elif isinstance(v, (bytes, bytearray)):
-        v = UUID(v.decode())
-    elif not isinstance(v, UUID):
-        raise ValueError(f'str, byte or native UUID type expected not {type(v)}')
+    try:
+        if isinstance(v, str):
+            v = UUID(v)
+        elif isinstance(v, (bytes, bytearray)):
+            v = UUID(v.decode())
+    except ValueError as e:
+        raise UUIDError() from e
+
+    if not isinstance(v, UUID):
+        raise UUIDError()
 
     required_version = getattr(field.type_, '_required_version', None)
     if required_version and v.version != required_version:
-        raise ValueError(f'uuid version {required_version} expected, not {v.version}')
+        raise UUIDVersionError(required_version=required_version)
 
     return v
 
@@ -153,10 +158,10 @@ def decimal_validator(v) -> Decimal:
     try:
         v = Decimal(v)
     except DecimalException as e:
-        raise TypeError(f'value is not a valid decimal, got {display_as_type(v)}') from e
+        raise DecimalError() from e
 
     if not v.is_finite():
-        raise TypeError(f'value is not a valid decimal, got {display_as_type(v)}')
+        raise DecimalIsNotFiniteError()
 
     return v
 
@@ -197,5 +202,6 @@ def find_validators(type_):
             if issubclass(type_, val_type):
                 return validators
         except TypeError as e:
+            # TODO: RuntimeError?
             raise TypeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
     raise ConfigError(f'no validator found for {type_}')
