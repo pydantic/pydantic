@@ -30,7 +30,7 @@ class Error:
     def type_(self):
         return get_exc_type(self.exc)
 
-    def as_dict(self, *, loc_prefix=None):
+    def dict(self, *, loc_prefix=None):
         loc = self.loc if loc_prefix is None else loc_prefix + self.loc
 
         return {
@@ -81,7 +81,7 @@ def flatten_errors(errors, *, loc=None):
             if isinstance(error.exc, ValidationError):
                 yield from flatten_errors(error.exc.errors, loc=error.loc)
             else:
-                yield error.as_dict(loc_prefix=loc)
+                yield error.dict(loc_prefix=loc)
         elif isinstance(error, list):
             yield from flatten_errors(error)
         else:
