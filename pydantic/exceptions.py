@@ -97,7 +97,7 @@ def get_exc_type(exc: Exception) -> str:
 
 
 def _get_exc_bases(exc: Type[Exception]) -> Iterable[str]:
-    for b in exc.__mro__:
+    for b in exc.__mro__:  # pragma: no branch
         if b in (PydanticErrorMixin, PydanticTypeError, PydanticValueError):
             continue
 

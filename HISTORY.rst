@@ -3,6 +3,10 @@
 History
 -------
 
+v0.9.2 (2018-XX-XX)
+...................
+* add ``Config.allow_population_by_alias`` #160, thanks @bendemaree
+
 v0.9.1 (2018-05-10)
 ...................
 * allow custom ``get_field_config`` on config classes #159

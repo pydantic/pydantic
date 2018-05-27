@@ -159,6 +159,7 @@ html_theme_options = {
     'page_width': '1200px',
     'github_banner': True,
     'github_type': 'star',
+    'analytics_id': 'UA-62733018-4',
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
