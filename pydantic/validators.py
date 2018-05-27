@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
+from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .exceptions import ConfigError, DecimalError, DecimalIsNotFiniteError, UUIDError, UUIDVersionError
 from .utils import display_as_type
 
 NoneType = type(None)
@@ -135,14 +135,14 @@ def uuid_validator(v, field, config, **kwargs) -> UUID:
         elif isinstance(v, (bytes, bytearray)):
             v = UUID(v.decode())
     except ValueError as e:
-        raise UUIDError() from e
+        raise errors.UUIDError() from e
 
     if not isinstance(v, UUID):
-        raise UUIDError()
+        raise errors.UUIDError()
 
     required_version = getattr(field.type_, '_required_version', None)
     if required_version and v.version != required_version:
-        raise UUIDVersionError(required_version=required_version)
+        raise errors.UUIDVersionError(required_version=required_version)
 
     return v
 
@@ -158,10 +158,10 @@ def decimal_validator(v) -> Decimal:
     try:
         v = Decimal(v)
     except DecimalException as e:
-        raise DecimalError() from e
+        raise errors.DecimalError() from e
 
     if not v.is_finite():
-        raise DecimalIsNotFiniteError()
+        raise errors.DecimalIsNotFiniteError()
 
     return v
 
@@ -204,4 +204,4 @@ def find_validators(type_):
         except TypeError as e:
             # TODO: RuntimeError?
             raise TypeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
-    raise ConfigError(f'no validator found for {type_}')
+    raise errors.ConfigError(f'no validator found for {type_}')
