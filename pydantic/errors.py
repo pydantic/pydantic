@@ -24,6 +24,7 @@ class PydanticErrorMixin:
 
     def __init__(self, **ctx):
         self.ctx = ctx or None
+        super().__init__()
 
     def __str__(self) -> str:
         return self.msg_template.format(**self.ctx or {})
