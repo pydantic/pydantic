@@ -9,6 +9,7 @@ __all__ = (
     'ExtraError',
 
     'IntegerError',
+    'FloatError',
 
     'DecimalError',
     'DecimalIsNotFiniteError',
@@ -56,6 +57,10 @@ class ExtraError(PydanticValueError):
 
 class IntegerError(PydanticTypeError):
     msg_template = 'value is not a valid integer'
+
+
+class FloatError(PydanticTypeError):
+    msg_template = 'value is not a valid float'
 
 
 class DecimalError(PydanticTypeError):

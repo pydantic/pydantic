@@ -67,6 +67,18 @@ def int_validator(v) -> int:
     return v
 
 
+def float_validator(v) -> float:
+    if isinstance(v, float):
+        return v
+
+    try:
+        v = float(v)
+    except (TypeError, ValueError) as e:
+        raise errors.FloatError() from e
+
+    return v
+
+
 def number_size_validator(v, field, config, **kwargs):
     min_size = getattr(field.type_, 'gt', config.min_number_size)
     if min_size is not None and v <= min_size:
@@ -187,7 +199,7 @@ _VALIDATORS = [
 
     (bool, [bool_validator]),
     (int, [int_validator, number_size_validator]),
-    (float, [float, number_size_validator]),
+    (float, [float_validator, number_size_validator]),
 
     (Path, [Path]),
 

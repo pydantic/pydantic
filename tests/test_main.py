@@ -40,8 +40,8 @@ def test_ultra_simple_failed():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'could not convert string to float: \'x\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid float',
+            'type': 'type_error.float',
         },
         {
             'loc': ('b',),
@@ -55,7 +55,7 @@ def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert repr(m) == '<UltraSimpleModel a=10.2 b=10>'
     assert repr(m.fields['a']) == ("<Field a: type='float', required=True, "
-                                   "validators=['float', 'number_size_validator']>")
+                                   "validators=['float_validator', 'number_size_validator']>")
     assert dict(m) == {'a': 10.2, 'b': 10}
 
 
