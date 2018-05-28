@@ -81,10 +81,10 @@ def float_validator(v) -> float:
 
 def number_size_validator(v, field, config, **kwargs):
     if field.type_.gt is not None and v < field.type_.gt:
-        raise ValueError(f'ensure this value is greater than {field.type_.gt}')
+        raise errors.NumberMinSizeError(limit_value=field.type_.gt)
 
     if field.type_.lt is not None and v > field.type_.lt:
-        raise ValueError(f'ensure this value is less than {field.type_.lt}')
+        raise errors.NumberMaxSizeError(limit_value=field.type_.lt)
 
     return v
 

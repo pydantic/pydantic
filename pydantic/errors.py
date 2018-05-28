@@ -1,3 +1,6 @@
+from decimal import Decimal
+from typing import Union
+
 __all__ = (
     'PydanticErrorMixin',
     'PydanticTypeError',
@@ -10,6 +13,9 @@ __all__ = (
 
     'IntegerError',
     'FloatError',
+
+    'NumberMinSizeError',
+    'NumberMaxSizeError',
 
     'DecimalError',
     'DecimalIsNotFiniteError',
@@ -66,6 +72,22 @@ class IntegerError(PydanticTypeError):
 class FloatError(PydanticTypeError):
     code = 'float'
     msg_template = 'value is not a valid float'
+
+
+class NumberMinSizeError(PydanticValueError):
+    code = 'number.min_size'
+    msg_template = 'ensure this value is greater than {limit_value}'
+
+    def __init__(self, *, limit_value: Union[int, float, Decimal]) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class NumberMaxSizeError(PydanticValueError):
+    code = 'number.max_size'
+    msg_template = 'ensure this value is less than {limit_value}'
+
+    def __init__(self, *, limit_value: Union[int, float, Decimal]) -> None:
+        super().__init__(limit_value=limit_value)
 
 
 class DecimalError(PydanticTypeError):

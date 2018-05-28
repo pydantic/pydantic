@@ -465,64 +465,80 @@ def test_tuple():
     ]
 
 
-class IntModel(BaseModel):
-    a: PositiveInt = None
-    b: NegativeInt = None
-    c: conint(gt=4, lt=10) = None
-
-
 def test_int_validation():
-    m = IntModel(a=5, b=-5, c=5)
+    class Model(BaseModel):
+        a: PositiveInt = None
+        b: NegativeInt = None
+        c: conint(gt=4, lt=10) = None
+
+    m = Model(a=5, b=-5, c=5)
     assert m == {'a': 5, 'b': -5, 'c': 5}
 
     with pytest.raises(ValidationError) as exc_info:
-        IntModel(a=-5, b=5, c=-5)
+        Model(a=-5, b=5, c=-5)
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'ensure this value is greater than 0',
-            'type': 'value_error',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': 0,
+            },
         },
         {
             'loc': ('b',),
             'msg': 'ensure this value is less than 0',
-            'type': 'value_error',
+            'type': 'value_error.number.max_size',
+            'ctx': {
+                'limit_value': 0,
+            },
         },
         {
             'loc': ('c',),
             'msg': 'ensure this value is greater than 4',
-            'type': 'value_error',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': 4,
+            },
         },
     ]
 
 
-class FloatModel(BaseModel):
-    a: PositiveFloat = None
-    b: NegativeFloat = None
-    c: confloat(gt=4, lt=12.2) = None
-
-
 def test_float_validation():
-    m = FloatModel(a=5.1, b=-5.2, c=5.3)
+    class Model(BaseModel):
+        a: PositiveFloat = None
+        b: NegativeFloat = None
+        c: confloat(gt=4, lt=12.2) = None
+
+    m = Model(a=5.1, b=-5.2, c=5.3)
     assert m == {'a': 5.1, 'b': -5.2, 'c': 5.3}
 
     with pytest.raises(ValidationError) as exc_info:
-        FloatModel(a=-5.1, b=5.2, c=-5.3)
+        Model(a=-5.1, b=5.2, c=-5.3)
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
             'msg': 'ensure this value is greater than 0',
-            'type': 'value_error',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': 0,
+            },
         },
         {
             'loc': ('b',),
             'msg': 'ensure this value is less than 0',
-            'type': 'value_error',
+            'type': 'value_error.number.max_size',
+            'ctx': {
+                'limit_value': 0,
+            },
         },
         {
             'loc': ('c',),
             'msg': 'ensure this value is greater than 4',
-            'type': 'value_error',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': 4,
+            },
         },
     ]
 
@@ -659,7 +675,10 @@ def test_anystr_strip_whitespace_disabled():
         {
             'loc': ('foo',),
             'msg': 'ensure this value is greater than 42.24',
-            'type': 'value_error',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': Decimal('42.24'),
+            },
         },
     ]),
     (condecimal(lt=Decimal('42.24')), Decimal('42'), Decimal('42')),
@@ -667,7 +686,10 @@ def test_anystr_strip_whitespace_disabled():
         {
             'loc': ('foo',),
             'msg': 'ensure this value is less than 42.24',
-            'type': 'value_error',
+            'type': 'value_error.number.max_size',
+            'ctx': {
+                'limit_value': Decimal('42.24'),
+            },
         },
     ]),
     (condecimal(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
