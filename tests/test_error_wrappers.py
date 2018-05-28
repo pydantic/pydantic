@@ -30,7 +30,7 @@ f -> 0
 f -> 0
   None is not an allow value (type=type_error)
 g
-  uuid version 1 expected (type=value_error.uuid_version)""",
+  uuid version 1 expected (type=value_error.uuid.version)""",
     ),
     (
         'flatten_errors',
@@ -110,7 +110,7 @@ g
                     'g',
                 ),
                 'msg': 'uuid version 1 expected',
-                'type': 'value_error.uuid_version',
+                'type': 'value_error.uuid.version',
                 'ctx': {
                     'required_version': 1,
                 },
@@ -199,7 +199,7 @@ g
       "g"
     ],
     "msg": "uuid version 1 expected",
-    "type": "value_error.uuid_version"
+    "type": "value_error.uuid.version"
   }
 ]"""
     ),
@@ -226,7 +226,7 @@ f -> 0
 f -> 0
   None is not an allow value (type=type_error)
 g
-  uuid version 1 expected (type=value_error.uuid_version)"""
+  uuid version 1 expected (type=value_error.uuid.version)"""
     ),
 ))
 def test_validation_error(result, expected):

@@ -416,12 +416,12 @@ def test_string_fails():
         {
             'loc': ('str_email',),
             'msg': 'The email address contains invalid characters before the @-sign: <.',
-            'type': 'value_error.email_not_valid.email_syntax',
+            'type': 'value_error',
         },
         {
             'loc': ('name_email',),
             'msg': 'The email address contains invalid characters before the @-sign:  .',
-            'type': 'value_error.email_not_valid.email_syntax',
+            'type': 'value_error',
         },
     ]
 
@@ -645,7 +645,7 @@ def test_uuid_validation():
         {
             'loc': ('a',),
             'msg': 'uuid version 1 expected',
-            'type': 'value_error.uuid_version',
+            'type': 'value_error.uuid.version',
             'ctx': {
                 'required_version': 1,
             },
@@ -653,7 +653,7 @@ def test_uuid_validation():
         {
             'loc': ('b',),
             'msg': 'uuid version 3 expected',
-            'type': 'value_error.uuid_version',
+            'type': 'value_error.uuid.version',
             'ctx': {
                 'required_version': 3,
             },
@@ -661,7 +661,7 @@ def test_uuid_validation():
         {
             'loc': ('c',),
             'msg': 'uuid version 4 expected',
-            'type': 'value_error.uuid_version',
+            'type': 'value_error.uuid.version',
             'ctx': {
                 'required_version': 4,
             },
@@ -669,7 +669,7 @@ def test_uuid_validation():
         {
             'loc': ('d',),
             'msg': 'uuid version 5 expected',
-            'type': 'value_error.uuid_version',
+            'type': 'value_error.uuid.version',
             'ctx': {
                 'required_version': 5,
             },
@@ -725,7 +725,7 @@ def test_anystr_strip_whitespace_disabled():
         {
             'loc': ('foo',),
             'msg': 'ensure that there are no more than 1 decimal places',
-            'type': 'value_error.decimal_max_places',
+            'type': 'value_error.decimal.max_places',
             'ctx': {
                 'decimal_places': 1,
             },
@@ -735,7 +735,7 @@ def test_anystr_strip_whitespace_disabled():
         {
             'loc': ('foo',),
             'msg': 'ensure that there are no more than 2 digits before the decimal point',
-            'type': 'value_error.decimal_whole_digits',
+            'type': 'value_error.decimal.whole_digits',
             'ctx': {
                 'whole_digits': 2,
             },
@@ -748,7 +748,7 @@ def test_anystr_strip_whitespace_disabled():
         {
             'loc': ('foo',),
             'msg': 'ensure that there are no more than 20 digits in total',
-            'type': 'value_error.decimal_max_digits',
+            'type': 'value_error.decimal.max_digits',
             'ctx': {
                 'max_digits': 20,
             },
@@ -759,7 +759,7 @@ def test_anystr_strip_whitespace_disabled():
         {
             'loc': ('foo',),
             'msg': 'ensure that there are no more than 2 decimal places',
-            'type': 'value_error.decimal_max_places',
+            'type': 'value_error.decimal.max_places',
             'ctx': {
                 'decimal_places': 2,
             },
@@ -770,7 +770,7 @@ def test_anystr_strip_whitespace_disabled():
         {
             'loc': ('foo',),
             'msg': 'ensure that there are no more than 5 digits in total',
-            'type': 'value_error.decimal_max_digits',
+            'type': 'value_error.decimal.max_digits',
             'ctx': {
                 'max_digits': 5,
             },
@@ -781,7 +781,7 @@ def test_anystr_strip_whitespace_disabled():
             {
                 'loc': ('foo',),
                 'msg': 'value is not a valid decimal',
-                'type': 'value_error.decimal_is_not_finite',
+                'type': 'value_error.decimal.not_finite',
             },
         ])
         for value in (
@@ -794,7 +794,7 @@ def test_anystr_strip_whitespace_disabled():
             {
                 'loc': ('foo',),
                 'msg': 'value is not a valid decimal',
-                'type': 'value_error.decimal_is_not_finite',
+                'type': 'value_error.decimal.not_finite',
             },
         ])
         for value in (
