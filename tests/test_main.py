@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, NoneBytes, NoneStr, Required, ValidationError, constr, errors
 
 
 def test_success():
@@ -198,21 +198,21 @@ class InvalidValidator:
 
 
 def test_invalid_validator():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class InvalidValidatorModel(BaseModel):
             x: InvalidValidator = ...
     assert exc_info.value.args[0].startswith('Invalid signature for validator')
 
 
 def test_no_validator():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class NoValidatorModel(BaseModel):
             x: object = ...
     assert exc_info.value.args[0] == "no validator found for <class 'object'>"
 
 
 def test_unable_to_infer():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class InvalidDefinitionModel(BaseModel):
             x = None
     assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'

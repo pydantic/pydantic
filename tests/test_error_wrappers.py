@@ -4,7 +4,7 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel
-from pydantic.exceptions import ValidationError, flatten_errors
+from pydantic.error_wrappers import ValidationError, flatten_errors
 
 
 @pytest.mark.parametrize('result,expected', (

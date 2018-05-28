@@ -6,8 +6,8 @@ from pathlib import Path
 from types import FunctionType
 from typing import Any, Dict, Set, Type, Union
 
+from .error_wrappers import Error, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
-from .exceptions import Error, ValidationError
 from .fields import Field, Validator
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes

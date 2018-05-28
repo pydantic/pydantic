@@ -2,8 +2,8 @@ import inspect
 from enum import IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
+from .error_wrappers import Error
 from .errors import ConfigError
-from .exceptions import Error
 from .utils import display_as_type
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
