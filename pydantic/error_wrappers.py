@@ -33,12 +33,16 @@ class Error:
     def dict(self, *, loc_prefix=None):
         loc = self.loc if loc_prefix is None else loc_prefix + self.loc
 
-        return {
+        d = {
             'loc': loc,
             'msg': self.msg,
             'type': self.type_,
-            'ctx': self.ctx,
         }
+
+        if self.ctx is not None:
+            d['ctx'] = self.ctx
+
+        return d
 
 
 class ValidationError(ValueError):

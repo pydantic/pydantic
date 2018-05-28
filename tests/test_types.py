@@ -40,7 +40,6 @@ def test_constrained_str_too_long():
             'loc': ('v',),
             'msg': 'length greater than maximum allowed: 10',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -79,13 +78,11 @@ def test_dsn_no_driver():
             'loc': ('db_driver',),
             'msg': 'None is not an allow value',
             'type': 'type_error',
-            'ctx': None,
         },
         {
             'loc': ('dsn',),
             'msg': '"db_driver" field may not be missing or None',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -104,7 +101,6 @@ def test_module_import():
             'loc': ('module',),
             'msg': '"foobar" doesn\'t look like a module path',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -216,7 +212,6 @@ def test_string_too_long():
             'loc': ('str_check',),
             'msg': 'length greater than maximum allowed: 10',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -229,7 +224,6 @@ def test_string_too_short():
             'loc': ('str_check',),
             'msg': 'length less than minimum allowed: 5',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -251,13 +245,11 @@ def test_number_too_big():
             'loc': ('int_check',),
             'msg': 'size greater than maximum allowed: 10',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('float_check',),
             'msg': 'size greater than maximum allowed: 10',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -270,13 +262,11 @@ def test_number_too_small():
             'loc': ('int_check',),
             'msg': 'size less than minimum allowed: 5',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('float_check',),
             'msg': 'size less than minimum allowed: 5',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -314,25 +304,21 @@ def test_datetime_errors():
             'loc': ('dt',),
             'msg': 'month must be in 1..12',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('date_',),
             'msg': 'Invalid date format',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('time_',),
             'msg': 'hour must be in 0..23',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('duration',),
             'msg': 'Invalid duration format',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -367,7 +353,6 @@ def test_enum_fails():
             'loc': ('tool',),
             'msg': '3 is not a valid ToolEnum',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -422,25 +407,21 @@ def test_string_fails():
             'loc': ('str_regex',),
             'msg': 'string does not match regex "^xxx\\d{3}$"',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('str_min_length',),
             'msg': 'length less than minimum allowed: 5',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('str_email',),
             'msg': 'The email address contains invalid characters before the @-sign: <.',
             'type': 'value_error.email_not_valid.email_syntax',
-            'ctx': None,
         },
         {
             'loc': ('name_email',),
             'msg': 'The email address contains invalid characters before the @-sign:  .',
             'type': 'value_error.email_not_valid.email_syntax',
-            'ctx': None,
         },
     ]
 
@@ -477,7 +458,6 @@ def test_dict():
             'loc': ('a',),
             'msg': 'value is not a valid dict, got list',
             'type': 'type_error',
-            'ctx': None,
         },
     ]
 
@@ -496,7 +476,6 @@ def test_list():
             'loc': ('b',),
             'msg': '\'int\' object is not iterable',
             'type': 'type_error',
-            'ctx': None,
         },
     ]
 
@@ -513,7 +492,6 @@ def test_ordered_dict():
             'loc': ('c',),
             'msg': '\'int\' object is not iterable',
             'type': 'type_error',
-            'ctx': None,
         },
     ]
 
@@ -533,7 +511,6 @@ def test_tuple():
             'loc': ('d',),
             'msg': '\'int\' object is not iterable',
             'type': 'type_error',
-            'ctx': None,
         },
     ]
 
@@ -555,19 +532,16 @@ def test_int_validation():
             'loc': ('a',),
             'msg': 'size less than minimum allowed: 0',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('b',),
             'msg': 'size greater than maximum allowed: 0',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('c',),
             'msg': 'size less than minimum allowed: 4',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -589,19 +563,16 @@ def test_float_validation():
             'loc': ('a',),
             'msg': 'size less than minimum allowed: 0',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('b',),
             'msg': 'size greater than maximum allowed: 0',
             'type': 'value_error',
-            'ctx': None,
         },
         {
             'loc': ('c',),
             'msg': 'size less than minimum allowed: 4',
             'type': 'value_error',
-            'ctx': None,
         },
     ]
 
@@ -640,7 +611,6 @@ def test_uuid_error():
             'loc': ('v',),
             'msg': 'value is not a valid uuid',
             'type': 'type_error.uuid',
-            'ctx': None,
         },
     ]
 
@@ -740,7 +710,6 @@ def test_anystr_strip_whitespace_disabled():
             'loc': ('foo',),
             'msg': 'size less than minimum allowed: 42.24',
             'type': 'value_error',
-            'ctx': None,
         },
     ]),
     (condecimal(lt=Decimal('42.24')), Decimal('42'), Decimal('42')),
@@ -749,7 +718,6 @@ def test_anystr_strip_whitespace_disabled():
             'loc': ('foo',),
             'msg': 'size greater than maximum allowed: 42.24',
             'type': 'value_error',
-            'ctx': None,
         },
     ]),
     (condecimal(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
@@ -814,7 +782,6 @@ def test_anystr_strip_whitespace_disabled():
                 'loc': ('foo',),
                 'msg': 'value is not a valid decimal',
                 'type': 'value_error.decimal_is_not_finite',
-                'ctx': None,
             },
         ])
         for value in (
@@ -828,7 +795,6 @@ def test_anystr_strip_whitespace_disabled():
                 'loc': ('foo',),
                 'msg': 'value is not a valid decimal',
                 'type': 'value_error.decimal_is_not_finite',
-                'ctx': None,
             },
         ])
         for value in (
