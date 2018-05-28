@@ -87,8 +87,8 @@ def test_union_int_str():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
-            'msg': 'int() argument must be a string, a bytes-like object or a number, not \'NoneType\'',
-            'type': 'type_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
         {
             'loc': ('v',),
@@ -121,13 +121,13 @@ def test_typed_list():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v', 1),
-            'msg': 'invalid literal for int() with base 10: \'x\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
         {
             'loc': ('v', 2),
-            'msg': 'invalid literal for int() with base 10: \'y\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 
@@ -154,8 +154,8 @@ def test_typed_set():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v', 1),
-            'msg': 'invalid literal for int() with base 10: \'x\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 
@@ -195,8 +195,8 @@ def test_typed_dict(value, result):
         [
             {
                 'loc': ('v', 'a'),
-                'msg': 'invalid literal for int() with base 10: \'b\'',
-                'type': 'value_error',
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer',
             },
         ],
     ),
@@ -231,8 +231,8 @@ def test_dict_key_error():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v', '__key__'),
-            'msg': 'invalid literal for int() with base 10: \'foo\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 
@@ -315,8 +315,8 @@ def test_list_unions():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v', 2),
-            'msg': 'int() argument must be a string, a bytes-like object or a number, not \'NoneType\'',
-            'type': 'type_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
         {
             'loc': ('v', 2),
@@ -390,8 +390,8 @@ def test_alias_error():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('_a',),
-            'msg': 'invalid literal for int() with base 10: \'foo\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 

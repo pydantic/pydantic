@@ -5,8 +5,8 @@ from uuid import UUID
 
 from . import errors
 from .utils import import_string, make_dsn, validate_email
-from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, not_none_validator,
-                         number_size_validator, str_validator)
+from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, int_validator,
+                         not_none_validator, number_size_validator, str_validator)
 
 try:
     import email_validator
@@ -180,7 +180,7 @@ class ConstrainedInt(int):
 
     @classmethod
     def get_validators(cls):
-        yield int
+        yield int_validator
         yield number_size_validator
 
 

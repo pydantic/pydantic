@@ -140,8 +140,8 @@ def test_validating_assignment_dict():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'invalid literal for int() with base 10: \'x\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 

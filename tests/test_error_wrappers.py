@@ -12,21 +12,21 @@ from pydantic.error_wrappers import ValidationError, flatten_errors
         'display_errors',
         """\
 a
-  invalid literal for int() with base 10: 'not_int' (type=value_error)
+  value is not a valid integer (type=type_error.integer)
 b -> x
   field required (type=value_error.missing)
 b -> z
   field required (type=value_error.missing)
 c -> 0 -> x
-  invalid literal for int() with base 10: 'not_int' (type=value_error)
+  value is not a valid integer (type=type_error.integer)
 d
-  invalid literal for int() with base 10: 'string' (type=value_error)
+  value is not a valid integer (type=type_error.integer)
 d
   value is not a valid uuid (type=type_error.uuid)
 e -> __key__
-  invalid literal for int() with base 10: 'not_int' (type=value_error)
+  value is not a valid integer (type=type_error.integer)
 f -> 0
-  int() argument must be a string, a bytes-like object or a number, not 'NoneType' (type=type_error)
+  value is not a valid integer (type=type_error.integer)
 f -> 0
   None is not an allow value (type=type_error)
 g
@@ -39,8 +39,8 @@ g
                 'loc': (
                     'a',
                 ),
-                'msg': 'invalid literal for int() with base 10: \'not_int\'',
-                'type': 'value_error',
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer',
             },
             {
                 'loc': (
@@ -64,15 +64,15 @@ g
                     0,
                     'x',
                 ),
-                'msg': 'invalid literal for int() with base 10: \'not_int\'',
-                'type': 'value_error',
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer',
             },
             {
                 'loc': (
                     'd',
                 ),
-                'msg': 'invalid literal for int() with base 10: \'string\'',
-                'type': 'value_error',
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer',
             },
             {
                 'loc': (
@@ -86,16 +86,16 @@ g
                     'e',
                     '__key__',
                 ),
-                'msg': 'invalid literal for int() with base 10: \'not_int\'',
-                'type': 'value_error',
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer',
             },
             {
                 'loc': (
                     'f',
                     0,
                 ),
-                'msg': 'int() argument must be a string, a bytes-like object or a number, not \'NoneType\'',
-                'type': 'type_error',
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer',
             },
             {
                 'loc': (
@@ -125,8 +125,8 @@ g
     "loc": [
       "a"
     ],
-    "msg": "invalid literal for int() with base 10: 'not_int'",
-    "type": "value_error"
+    "msg": "value is not a valid integer",
+    "type": "type_error.integer"
   },
   {
     "loc": [
@@ -150,15 +150,15 @@ g
       0,
       "x"
     ],
-    "msg": "invalid literal for int() with base 10: 'not_int'",
-    "type": "value_error"
+    "msg": "value is not a valid integer",
+    "type": "type_error.integer"
   },
   {
     "loc": [
       "d"
     ],
-    "msg": "invalid literal for int() with base 10: 'string'",
-    "type": "value_error"
+    "msg": "value is not a valid integer",
+    "type": "type_error.integer"
   },
   {
     "loc": [
@@ -172,16 +172,16 @@ g
       "e",
       "__key__"
     ],
-    "msg": "invalid literal for int() with base 10: 'not_int'",
-    "type": "value_error"
+    "msg": "value is not a valid integer",
+    "type": "type_error.integer"
   },
   {
     "loc": [
       "f",
       0
     ],
-    "msg": "int() argument must be a string, a bytes-like object or a number, not 'NoneType'",
-    "type": "type_error"
+    "msg": "value is not a valid integer",
+    "type": "type_error.integer"
   },
   {
     "loc": [
@@ -208,21 +208,21 @@ g
         """\
 validation errors
 a
-  invalid literal for int() with base 10: 'not_int' (type=value_error)
+  value is not a valid integer (type=type_error.integer)
 b -> x
   field required (type=value_error.missing)
 b -> z
   field required (type=value_error.missing)
 c -> 0 -> x
-  invalid literal for int() with base 10: 'not_int' (type=value_error)
+  value is not a valid integer (type=type_error.integer)
 d
-  invalid literal for int() with base 10: 'string' (type=value_error)
+  value is not a valid integer (type=type_error.integer)
 d
   value is not a valid uuid (type=type_error.uuid)
 e -> __key__
-  invalid literal for int() with base 10: 'not_int' (type=value_error)
+  value is not a valid integer (type=type_error.integer)
 f -> 0
-  int() argument must be a string, a bytes-like object or a number, not 'NoneType' (type=type_error)
+  value is not a valid integer (type=type_error.integer)
 f -> 0
   None is not an allow value (type=type_error)
 g

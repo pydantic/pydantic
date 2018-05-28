@@ -8,6 +8,8 @@ __all__ = (
     'MissingError',
     'ExtraError',
 
+    'IntegerError',
+
     'DecimalError',
     'DecimalIsNotFiniteError',
     'DecimalMaxDigitsError',
@@ -50,6 +52,10 @@ class MissingError(PydanticValueError):
 
 class ExtraError(PydanticValueError):
     msg_template = 'extra fields not permitted'
+
+
+class IntegerError(PydanticTypeError):
+    msg_template = 'value is not a valid integer'
 
 
 class DecimalError(PydanticTypeError):

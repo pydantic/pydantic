@@ -45,8 +45,8 @@ def test_ultra_simple_failed():
         },
         {
             'loc': ('b',),
-            'msg': 'invalid literal for int() with base 10: \'x\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 
@@ -398,8 +398,8 @@ def test_validating_assignment_fail():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'invalid literal for int() with base 10: \'b\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 
