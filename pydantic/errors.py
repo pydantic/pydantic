@@ -11,6 +11,8 @@ __all__ = (
     'MissingError',
     'ExtraError',
 
+    'NoneIsNotAllowedError',
+
     'IntegerError',
     'FloatError',
 
@@ -62,6 +64,11 @@ class MissingError(PydanticValueError):
 class ExtraError(PydanticValueError):
     code = 'extra'
     msg_template = 'extra fields not permitted'
+
+
+class NoneIsNotAllowedError(PydanticTypeError):
+    code = 'none.not_allowed'
+    msg_template = 'none is not an allow value'
 
 
 class IntegerError(PydanticTypeError):

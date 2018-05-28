@@ -76,8 +76,8 @@ def test_dsn_no_driver():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('db_driver',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
         {
             'loc': ('dsn',),

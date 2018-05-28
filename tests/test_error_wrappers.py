@@ -28,7 +28,7 @@ e -> __key__
 f -> 0
   value is not a valid integer (type=type_error.integer)
 f -> 0
-  None is not an allow value (type=type_error)
+  none is not an allow value (type=type_error.none.not_allowed)
 g
   uuid version 1 expected (type=value_error.uuid.version)""",
     ),
@@ -102,8 +102,8 @@ g
                     'f',
                     0,
                 ),
-                'msg': 'None is not an allow value',
-                'type': 'type_error',
+                'msg': 'none is not an allow value',
+                'type': 'type_error.none.not_allowed',
             },
             {
                 'loc': (
@@ -188,8 +188,8 @@ g
       "f",
       0
     ],
-    "msg": "None is not an allow value",
-    "type": "type_error"
+    "msg": "none is not an allow value",
+    "type": "type_error.none.not_allowed"
   },
   {
     "ctx": {
@@ -224,7 +224,7 @@ e -> __key__
 f -> 0
   value is not a valid integer (type=type_error.integer)
 f -> 0
-  None is not an allow value (type=type_error)
+  none is not an allow value (type=type_error.none.not_allowed)
 g
   uuid version 1 expected (type=value_error.uuid.version)"""
     ),

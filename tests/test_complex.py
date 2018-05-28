@@ -31,13 +31,13 @@ def test_str_bytes():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
         {
             'loc': ('v',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
     ]
 
@@ -92,8 +92,8 @@ def test_union_int_str():
         },
         {
             'loc': ('v',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
     ]
 
@@ -320,8 +320,8 @@ def test_list_unions():
         },
         {
             'loc': ('v', 2),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
     ]
 
@@ -550,8 +550,8 @@ def test_string_none():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
     ]
 

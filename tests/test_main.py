@@ -126,13 +126,13 @@ def test_nullable_strings_fails():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('required_str_value',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
         {
             'loc': ('required_bytes_value',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
     ]
 

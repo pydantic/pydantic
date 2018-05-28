@@ -15,7 +15,7 @@ NoneType = type(None)
 
 def not_none_validator(v):
     if v is None:
-        raise TypeError('None is not an allow value')
+        raise errors.NoneIsNotAllowedError()
     return v
 
 
