@@ -55,7 +55,7 @@ def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert repr(m) == '<UltraSimpleModel a=10.2 b=10>'
     assert repr(m.fields['a']) == ("<Field a: type='float', required=True, "
-                                   "validators=['float_validator', 'number_size_validator']>")
+                                   "validators=['float_validator']>")
     assert dict(m) == {'a': 10.2, 'b': 10}
 
 

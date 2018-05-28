@@ -117,7 +117,6 @@ class CheckModel(BaseModel):
     class Config:
         anystr_strip_whitespace = True
         max_anystr_length = 10
-        max_number_size = 100
 
 
 @pytest.mark.parametrize('field,value,result', [
@@ -159,9 +158,6 @@ class CheckModel(BaseModel):
     ('int_check', 12, 12),
     ('int_check', '12', 12),
     ('int_check', b'12', 12),
-    ('int_check', 123, ValidationError),
-    ('int_check', '123', ValidationError),
-    ('int_check', b'123', ValidationError),
 
     ('float_check', 1, 1.0),
     ('float_check', 1.0, 1.0),
@@ -169,9 +165,6 @@ class CheckModel(BaseModel):
     ('float_check', '1', 1.0),
     ('float_check', b'1.0', 1.0),
     ('float_check', b'1', 1.0),
-    ('float_check', 123, ValidationError),
-    ('float_check', '123', ValidationError),
-    ('float_check', b'123', ValidationError),
 
     ('uuid_check', 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
     ('uuid_check', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
@@ -223,49 +216,6 @@ def test_string_too_short():
         {
             'loc': ('str_check',),
             'msg': 'length less than minimum allowed: 5',
-            'type': 'value_error',
-        },
-    ]
-
-
-class NumberModel(BaseModel):
-    int_check: int
-    float_check: float
-
-    class Config:
-        min_number_size = 5
-        max_number_size = 10
-
-
-def test_number_too_big():
-    with pytest.raises(ValidationError) as exc_info:
-        NumberModel(int_check=50, float_check=150)
-    assert exc_info.value.flatten_errors() == [
-        {
-            'loc': ('int_check',),
-            'msg': 'size greater than maximum allowed: 10',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('float_check',),
-            'msg': 'size greater than maximum allowed: 10',
-            'type': 'value_error',
-        },
-    ]
-
-
-def test_number_too_small():
-    with pytest.raises(ValidationError) as exc_info:
-        NumberModel(int_check=1, float_check=2.5)
-    assert exc_info.value.flatten_errors() == [
-        {
-            'loc': ('int_check',),
-            'msg': 'size less than minimum allowed: 5',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('float_check',),
-            'msg': 'size less than minimum allowed: 5',
             'type': 'value_error',
         },
     ]
@@ -530,17 +480,17 @@ def test_int_validation():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'size less than minimum allowed: 0',
+            'msg': 'ensure this value is greater than 0',
             'type': 'value_error',
         },
         {
             'loc': ('b',),
-            'msg': 'size greater than maximum allowed: 0',
+            'msg': 'ensure this value is less than 0',
             'type': 'value_error',
         },
         {
             'loc': ('c',),
-            'msg': 'size less than minimum allowed: 4',
+            'msg': 'ensure this value is greater than 4',
             'type': 'value_error',
         },
     ]
@@ -561,17 +511,17 @@ def test_float_validation():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'size less than minimum allowed: 0',
+            'msg': 'ensure this value is greater than 0',
             'type': 'value_error',
         },
         {
             'loc': ('b',),
-            'msg': 'size greater than maximum allowed: 0',
+            'msg': 'ensure this value is less than 0',
             'type': 'value_error',
         },
         {
             'loc': ('c',),
-            'msg': 'size less than minimum allowed: 4',
+            'msg': 'ensure this value is greater than 4',
             'type': 'value_error',
         },
     ]
@@ -708,7 +658,7 @@ def test_anystr_strip_whitespace_disabled():
     (condecimal(gt=Decimal('42.24')), Decimal('42'), [
         {
             'loc': ('foo',),
-            'msg': 'size less than minimum allowed: 42.24',
+            'msg': 'ensure this value is greater than 42.24',
             'type': 'value_error',
         },
     ]),
@@ -716,7 +666,7 @@ def test_anystr_strip_whitespace_disabled():
     (condecimal(lt=Decimal('42.24')), Decimal('43'), [
         {
             'loc': ('foo',),
-            'msg': 'size greater than maximum allowed: 42.24',
+            'msg': 'ensure this value is less than 42.24',
             'type': 'value_error',
         },
     ]),

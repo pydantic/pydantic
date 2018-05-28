@@ -19,8 +19,6 @@ class BaseConfig:
     anystr_strip_whitespace = False
     min_anystr_length = 0
     max_anystr_length = 2 ** 16
-    min_number_size = -2 ** 64
-    max_number_size = 2 ** 64
     validate_all = False
     ignore_extra = True
     allow_extra = False

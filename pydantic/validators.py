@@ -80,13 +80,11 @@ def float_validator(v) -> float:
 
 
 def number_size_validator(v, field, config, **kwargs):
-    min_size = getattr(field.type_, 'gt', config.min_number_size)
-    if min_size is not None and v <= min_size:
-        raise ValueError(f'size less than minimum allowed: {min_size}')
+    if field.type_.gt is not None and v < field.type_.gt:
+        raise ValueError(f'ensure this value is greater than {field.type_.gt}')
 
-    max_size = getattr(field.type_, 'lt', config.max_number_size)
-    if max_size is not None and v >= max_size:
-        raise ValueError(f'size greater than maximum allowed: {max_size}')
+    if field.type_.lt is not None and v > field.type_.lt:
+        raise ValueError(f'ensure this value is less than {field.type_.lt}')
 
     return v
 
@@ -198,8 +196,8 @@ _VALIDATORS = [
     (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
 
     (bool, [bool_validator]),
-    (int, [int_validator, number_size_validator]),
-    (float, [float_validator, number_size_validator]),
+    (int, [int_validator]),
+    (float, [float_validator]),
 
     (Path, [Path]),
 
