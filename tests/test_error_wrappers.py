@@ -1,9 +1,9 @@
 from typing import Dict, List, Union
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import BaseModel
+from pydantic import UUID1, BaseModel
 from pydantic.error_wrappers import ValidationError, flatten_errors
 
 
@@ -22,13 +22,15 @@ c -> 0 -> x
 d
   invalid literal for int() with base 10: 'string' (type=value_error)
 d
-  badly formed hexadecimal UUID string (type=value_error)
+  value is not a valid uuid (type=type_error.uuid)
 e -> __key__
   invalid literal for int() with base 10: 'not_int' (type=value_error)
 f -> 0
   int() argument must be a string, a bytes-like object or a number, not 'NoneType' (type=type_error)
 f -> 0
-  None is not an allow value (type=type_error)""",
+  None is not an allow value (type=type_error)
+g
+  uuid version 1 expected (type=value_error.uuid_version)""",
     ),
     (
         'flatten_errors',
@@ -76,8 +78,8 @@ f -> 0
                 'loc': (
                     'd',
                 ),
-                'msg': 'badly formed hexadecimal UUID string',
-                'type': 'value_error',
+                'msg': 'value is not a valid uuid',
+                'type': 'type_error.uuid',
             },
             {
                 'loc': (
@@ -102,6 +104,16 @@ f -> 0
                 ),
                 'msg': 'None is not an allow value',
                 'type': 'type_error',
+            },
+            {
+                'loc': (
+                    'g',
+                ),
+                'msg': 'uuid version 1 expected',
+                'type': 'value_error.uuid_version',
+                'ctx': {
+                    'required_version': 1,
+                },
             },
         ],
     ),
@@ -152,8 +164,8 @@ f -> 0
     "loc": [
       "d"
     ],
-    "msg": "badly formed hexadecimal UUID string",
-    "type": "value_error"
+    "msg": "value is not a valid uuid",
+    "type": "type_error.uuid"
   },
   {
     "loc": [
@@ -178,6 +190,16 @@ f -> 0
     ],
     "msg": "None is not an allow value",
     "type": "type_error"
+  },
+  {
+    "ctx": {
+      "required_version": 1
+    },
+    "loc": [
+      "g"
+    ],
+    "msg": "uuid version 1 expected",
+    "type": "value_error.uuid_version"
   }
 ]"""
     ),
@@ -196,13 +218,15 @@ c -> 0 -> x
 d
   invalid literal for int() with base 10: 'string' (type=value_error)
 d
-  badly formed hexadecimal UUID string (type=value_error)
+  value is not a valid uuid (type=type_error.uuid)
 e -> __key__
   invalid literal for int() with base 10: 'not_int' (type=value_error)
 f -> 0
   int() argument must be a string, a bytes-like object or a number, not 'NoneType' (type=type_error)
 f -> 0
-  None is not an allow value (type=type_error)"""
+  None is not an allow value (type=type_error)
+g
+  uuid version 1 expected (type=value_error.uuid_version)"""
     ),
 ))
 def test_validation_error(result, expected):
@@ -218,6 +242,7 @@ def test_validation_error(result, expected):
         d: Union[int, UUID]
         e: Dict[int, str]
         f: List[Union[int, str]]
+        g: UUID1
 
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({
@@ -239,6 +264,7 @@ def test_validation_error(result, expected):
             'f': [
                 None,
             ],
+            'g': uuid4(),
         })
 
     result = getattr(exc_info.value, result)
