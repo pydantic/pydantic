@@ -192,6 +192,18 @@ def decimal_validator(v) -> Decimal:
     return v
 
 
+def path_validator(v) -> Path:
+    if isinstance(v, Path):
+        return v
+
+    try:
+        v = Path(v)
+    except TypeError as e:
+        raise errors.PathError() from e
+
+    return v
+
+
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (Enum, [enum_validator]),
@@ -203,7 +215,7 @@ _VALIDATORS = [
     (int, [int_validator]),
     (float, [float_validator]),
 
-    (Path, [Path]),
+    (Path, [path_validator]),
 
     (datetime, [parse_datetime]),
     (date, [parse_date]),

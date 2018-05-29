@@ -4,6 +4,7 @@ from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
+from pathlib import Path
 from uuid import UUID
 
 import pytest
@@ -777,11 +778,33 @@ def test_anystr_strip_whitespace_disabled():
 ])
 def test_decimal_validation(type_, value, result):
     model = create_model('DecimalModel', foo=(type_, ...))
-    kwargs = {'foo': value}
 
     if not isinstance(result, Decimal):
         with pytest.raises(ValidationError) as exc_info:
-            model(**kwargs)
+            model(foo=value)
         assert exc_info.value.flatten_errors() == result
     else:
-        assert model(**kwargs).dict()['foo'] == result
+        assert model(foo=value).foo == result
+
+
+@pytest.mark.parametrize('value,result', (
+    ('/test/path', Path('/test/path')),
+    (Path('/test/path'), Path('/test/path')),
+    (None, [
+        {
+            'loc': ('foo',),
+            'msg': 'value is not a valid path',
+            'type': 'type_error.path',
+        },
+    ]),
+))
+def test_path_validation(value, result):
+    class Model(BaseModel):
+        foo: Path
+
+    if not isinstance(result, Path):
+        with pytest.raises(ValidationError) as exc_info:
+            Model(foo=value)
+        assert exc_info.value.flatten_errors() == result
+    else:
+        assert Model(foo=value).foo == result
