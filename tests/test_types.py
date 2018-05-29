@@ -301,8 +301,8 @@ def test_enum_fails():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('tool',),
-            'msg': '3 is not a valid ToolEnum',
-            'type': 'value_error',
+            'msg': 'value is not a valid enumeration member',
+            'type': 'type_error.enum',
         },
     ]
 

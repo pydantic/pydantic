@@ -13,6 +13,7 @@ __all__ = (
 
     'NoneIsNotAllowedError',
 
+    'EnumError',
     'IntegerError',
     'FloatError',
 
@@ -69,6 +70,11 @@ class ExtraError(PydanticValueError):
 class NoneIsNotAllowedError(PydanticTypeError):
     code = 'none.not_allowed'
     msg_template = 'none is not an allow value'
+
+
+class EnumError(PydanticTypeError):
+    code = 'enum'
+    msg_template = 'value is not a valid enumeration member'
 
 
 class IntegerError(PydanticTypeError):

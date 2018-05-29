@@ -146,7 +146,11 @@ def set_validator(v) -> set:
 
 
 def enum_validator(v, field, config, **kwargs) -> Enum:
-    enum_v = field.type_(v)
+    try:
+        enum_v = field.type_(v)
+    except ValueError as e:
+        raise errors.EnumError() from e
+
     return enum_v.value if config.use_enum_values else enum_v
 
 
