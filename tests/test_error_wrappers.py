@@ -30,7 +30,7 @@ f -> 0
 f -> 0
   none is not an allow value (type=type_error.none.not_allowed)
 g
-  uuid version 1 expected (type=value_error.uuid.version)""",
+  uuid version 1 expected (type=value_error.uuid.version; required_version=1)""",
     ),
     (
         'flatten_errors',
@@ -226,7 +226,7 @@ f -> 0
 f -> 0
   none is not an allow value (type=type_error.none.not_allowed)
 g
-  uuid version 1 expected (type=value_error.uuid.version)"""
+  uuid version 1 expected (type=value_error.uuid.version; required_version=1)"""
     ),
 ))
 def test_validation_error(result, expected):

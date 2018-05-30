@@ -66,13 +66,24 @@ class ValidationError(ValueError):
 
 def display_errors(errors):
     return '\n'.join(
-        f'{_display_error_loc(e["loc"])}\n  {e["msg"]} (type={e["type"]})'
+        f'{_display_error_loc(e)}\n  {e["msg"]} ({_display_error_type_and_ctx(e)})'
         for e in errors
     )
 
 
-def _display_error_loc(loc):
-    return ' -> '.join(str(l) for l in loc)
+def _display_error_loc(error):
+    return ' -> '.join(str(l) for l in error['loc'])
+
+
+def _display_error_type_and_ctx(error):
+    display = f'type={error["type"]}'
+
+    ctx = error.get('ctx')
+    if ctx:
+        ctx = '; '.join(f'{k}={v}' for k, v in ctx.items())
+        display = f'{display}; {ctx}'
+
+    return display
 
 
 def flatten_errors(errors, *, loc=None):
