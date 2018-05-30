@@ -3,8 +3,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import UUID1, BaseModel
-from pydantic.error_wrappers import ValidationError, flatten_errors
+from pydantic import UUID1, BaseModel, errors
+from pydantic.error_wrappers import ValidationError, flatten_errors, get_exc_type
 
 
 @pytest.mark.parametrize('result,expected', (
@@ -277,3 +277,18 @@ def test_validation_error(result, expected):
 def test_flatten_errors_unknown_error_object():
     with pytest.raises(RuntimeError):
         list(flatten_errors([object]))
+
+
+@pytest.mark.parametrize('exc,type_', (
+    (TypeError(), 'type_error'),
+    (ValueError(), 'value_error'),
+    (errors.DecimalIsNotFiniteError(), 'value_error.decimal.not_finite'),
+    (RuntimeError(), RuntimeError),
+))
+def test_get_exc_type(exc, type_):
+    if isinstance(type_, str):
+        assert get_exc_type(exc) == type_
+    else:
+        with pytest.raises(type_) as exc_info:
+            get_exc_type(exc)
+        assert isinstance(exc_info.value, type_)
