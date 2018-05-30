@@ -114,7 +114,13 @@ def anystr_strip_whitespace(v, field, config, **kwargs):
 def ordered_dict_validator(v) -> OrderedDict:
     if isinstance(v, OrderedDict):
         return v
-    return OrderedDict(v)
+
+    try:
+        v = OrderedDict(v)
+    except (TypeError, ValueError) as e:
+        raise errors.DictError() from e
+
+    return v
 
 
 def dict_validator(v) -> dict:
@@ -122,9 +128,11 @@ def dict_validator(v) -> dict:
         return v
 
     try:
-        return dict(v)
-    except TypeError as e:
-        raise TypeError(f'value is not a valid dict, got {display_as_type(v)}') from e
+        v = dict(v)
+    except (TypeError, ValueError) as e:
+        raise errors.DictError() from e
+
+    return v
 
 
 def list_validator(v) -> list:

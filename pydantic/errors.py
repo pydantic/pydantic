@@ -13,6 +13,7 @@ __all__ = (
 
     'NoneIsNotAllowedError',
 
+    'DictError',
     'EnumError',
     'IntegerError',
     'FloatError',
@@ -71,6 +72,11 @@ class ExtraError(PydanticValueError):
 class NoneIsNotAllowedError(PydanticTypeError):
     code = 'none.not_allowed'
     msg_template = 'none is not an allow value'
+
+
+class DictError(PydanticTypeError):
+    code = 'dict'
+    msg_template = 'value is not a valid dict'
 
 
 class EnumError(PydanticTypeError):

@@ -407,8 +407,8 @@ def test_dict():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'value is not a valid dict, got list',
-            'type': 'type_error',
+            'msg': 'value is not a valid dict',
+            'type': 'type_error.dict',
         },
     ]
 
@@ -441,8 +441,8 @@ def test_ordered_dict():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('c',),
-            'msg': '\'int\' object is not iterable',
-            'type': 'type_error',
+            'msg': 'value is not a valid dict',
+            'type': 'type_error.dict',
         },
     ]
 

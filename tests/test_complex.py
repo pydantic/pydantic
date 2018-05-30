@@ -185,8 +185,8 @@ def test_typed_dict(value, result):
         [
             {
                 'loc': ('v',),
-                'msg': 'value is not a valid dict, got int',
-                'type': 'type_error',
+                'msg': 'value is not a valid dict',
+                'type': 'type_error.dict',
             },
         ],
     ),
@@ -205,8 +205,8 @@ def test_typed_dict(value, result):
         [
             {
                 'loc': ('v',),
-                'msg': 'value is not a valid dict, got list',
-                'type': 'type_error',
+                'msg': 'value is not a valid dict',
+                'type': 'type_error.dict',
             },
         ],
     ),
@@ -279,8 +279,8 @@ def test_recursive_list():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v', 0),
-            'msg': 'dictionary update sequence element #0 has length 1; 2 is required',
-            'type': 'value_error',
+            'msg': 'value is not a valid dict',
+            'type': 'type_error.dict',
         },
     ]
 
