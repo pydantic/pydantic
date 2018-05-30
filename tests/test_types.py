@@ -425,8 +425,8 @@ def test_list():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('b',),
-            'msg': '\'int\' object is not iterable',
-            'type': 'type_error',
+            'msg': 'value is not a valid list',
+            'type': 'type_error.list',
         },
     ]
 

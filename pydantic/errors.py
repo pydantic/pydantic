@@ -17,6 +17,7 @@ __all__ = (
     'EnumError',
     'IntegerError',
     'FloatError',
+    'ListError',
     'PathError',
 
     'NumberMinSizeError',
@@ -92,6 +93,11 @@ class IntegerError(PydanticTypeError):
 class FloatError(PydanticTypeError):
     code = 'float'
     msg_template = 'value is not a valid float'
+
+
+class ListError(PydanticTypeError):
+    code = 'list'
+    msg_template = 'value is not a valid list'
 
 
 class PathError(PydanticTypeError):

@@ -138,7 +138,13 @@ def dict_validator(v) -> dict:
 def list_validator(v) -> list:
     if isinstance(v, list):
         return v
-    return list(v)
+
+    try:
+        v = list(v)
+    except TypeError as e:
+        raise errors.ListError() from e
+
+    return v
 
 
 def tuple_validator(v) -> tuple:
