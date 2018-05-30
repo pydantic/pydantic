@@ -10,6 +10,7 @@ from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
 
+from pydantic import errors
 from pydantic.datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 
 
@@ -28,12 +29,12 @@ def create_tz(minutes):
     ('2012-4-9', date(2012, 4, 9)),
     (date(2012, 4, 9), date(2012, 4, 9)),
     # Invalid inputs
-    ('x20120423', ValueError),
-    ('2012-04-56', ValueError),
+    ('x20120423', errors.DateError),
+    ('2012-04-56', errors.DateError),
 ])
 def test_date_parsing(value, result):
-    if result == ValueError:
-        with pytest.raises(ValueError):
+    if result == errors.DateError:
+        with pytest.raises(errors.DateError):
             parse_date(value)
     else:
         assert parse_date(value) == result
@@ -47,12 +48,12 @@ def test_date_parsing(value, result):
     ('4:8:16', time(4, 8, 16)),
     (time(4, 8, 16), time(4, 8, 16)),
     # Invalid inputs
-    ('091500', ValueError),
-    ('09:15:90', ValueError),
+    ('091500', errors.TimeError),
+    ('09:15:90', errors.TimeError),
 ])
 def test_time_parsing(value, result):
-    if result == ValueError:
-        with pytest.raises(ValueError):
+    if result == errors.TimeError:
+        with pytest.raises(errors.TimeError):
             parse_time(value)
     else:
         assert parse_time(value) == result
@@ -79,12 +80,12 @@ def test_time_parsing(value, result):
     (datetime(2017, 5, 5), datetime(2017, 5, 5)),
     (0, datetime(1970, 1, 1, 0, 0, 0, tzinfo=timezone.utc)),
     # Invalid inputs
-    ('x20120423091500', ValueError),
-    ('2012-04-56T09:15:90', ValueError),
+    ('x20120423091500', errors.DateTimeError),
+    ('2012-04-56T09:15:90', errors.DateTimeError),
 ])
 def test_datetime_parsing(value, result):
-    if result == ValueError:
-        with pytest.raises(ValueError):
+    if result == errors.DateTimeError:
+        with pytest.raises(errors.DateTimeError):
             parse_datetime(value)
     else:
         assert parse_datetime(value) == result
@@ -132,9 +133,9 @@ def test_parse_python_format(delta):
     ('-1:15:30', timedelta(hours=-1, minutes=15, seconds=30)),
     ('-30.1', timedelta(seconds=-30, milliseconds=-100)),
     # iso_8601
-    ('P4Y', ValueError),
-    ('P4M', ValueError),
-    ('P4W', ValueError),
+    ('P4Y', errors.DurationError),
+    ('P4M', errors.DurationError),
+    ('P4W', errors.DurationError),
     ('P4D', timedelta(days=4)),
     ('P0.5D', timedelta(hours=12)),
     ('PT5H', timedelta(hours=5)),
@@ -143,8 +144,8 @@ def test_parse_python_format(delta):
     ('PT0.000005S', timedelta(microseconds=5)),
 ])
 def test_parse_durations(value, result):
-    if result == ValueError:
-        with pytest.raises(ValueError):
+    if result == errors.DurationError:
+        with pytest.raises(errors.DurationError):
             parse_duration(value)
     else:
         assert parse_duration(value) == result

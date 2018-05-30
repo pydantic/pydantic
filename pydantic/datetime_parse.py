@@ -16,7 +16,9 @@ Changed to:
 """
 import re
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Union
+from typing import Dict, Union
+
+from . import errors
 
 date_re = re.compile(r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$')
 
@@ -96,10 +98,14 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
 
     match = date_re.match(value)
     if not match:
-        raise ValueError('Invalid date format')
+        raise errors.DateError()
 
     kw = {k: int(v) for k, v in match.groupdict().items()}
-    return date(**kw)
+
+    try:
+        return date(**kw)
+    except ValueError as e:
+        raise errors.DateError() from e
 
 
 def parse_time(value: Union[time, str]) -> time:
@@ -116,13 +122,18 @@ def parse_time(value: Union[time, str]) -> time:
 
     match = time_re.match(value)
     if not match:
-        raise ValueError('Invalid time format')
+        raise errors.TimeError()
 
     kw = match.groupdict()
     if kw['microsecond']:
         kw['microsecond'] = kw['microsecond'].ljust(6, '0')
+
     kw = {k: int(v) for k, v in kw.items() if v is not None}
-    return time(**kw)
+
+    try:
+        return time(**kw)
+    except ValueError as e:
+        raise errors.TimeError() from e
 
 
 def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
@@ -144,11 +155,12 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
 
     match = datetime_re.match(value)
     if not match:
-        raise ValueError('Invalid datetime format')
+        raise errors.DateTimeError()
 
     kw = match.groupdict()
     if kw['microsecond']:
         kw['microsecond'] = kw['microsecond'].ljust(6, '0')
+
     tzinfo = kw.pop('tzinfo')
     if tzinfo == 'Z':
         tzinfo = timezone.utc
@@ -158,9 +170,14 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
         if tzinfo[0] == '-':
             offset = -offset
         tzinfo = timezone(timedelta(minutes=offset))
+
     kw = {k: int(v) for k, v in kw.items() if v is not None}
     kw['tzinfo'] = tzinfo
-    return datetime(**kw)
+
+    try:
+        return datetime(**kw)
+    except ValueError as e:
+        raise errors.DateTimeError() from e
 
 
 def parse_duration(value: StrIntFloat) -> timedelta:
@@ -177,13 +194,16 @@ def parse_duration(value: StrIntFloat) -> timedelta:
 
     match = standard_duration_re.match(value) or iso8601_duration_re.match(value)
     if not match:
-        raise ValueError('Invalid duration format')
+        raise errors.DurationError()
 
     kw = match.groupdict()
     sign = -1 if kw.pop('sign', '+') == '-' else 1
     if kw.get('microseconds'):
         kw['microseconds'] = kw['microseconds'].ljust(6, '0')
+
     if kw.get('seconds') and kw.get('microseconds') and kw['seconds'].startswith('-'):
         kw['microseconds'] = '-' + kw['microseconds']
+
     kw = {k: float(v) for k, v in kw.items() if v is not None}
+
     return sign * timedelta(**kw)

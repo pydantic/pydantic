@@ -253,23 +253,23 @@ def test_datetime_errors():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('dt',),
-            'msg': 'month must be in 1..12',
-            'type': 'value_error',
+            'msg': 'invalid datetime format',
+            'type': 'type_error.datetime',
         },
         {
             'loc': ('date_',),
-            'msg': 'Invalid date format',
-            'type': 'value_error',
+            'msg': 'invalid date format',
+            'type': 'type_error.date',
         },
         {
             'loc': ('time_',),
-            'msg': 'hour must be in 0..23',
-            'type': 'value_error',
+            'msg': 'invalid time format',
+            'type': 'type_error.time',
         },
         {
             'loc': ('duration',),
-            'msg': 'Invalid duration format',
-            'type': 'value_error',
+            'msg': 'invalid duration format',
+            'type': 'type_error.duration',
         },
     ]
 

@@ -31,6 +31,11 @@ __all__ = (
     'DecimalMaxPlacesError',
     'DecimalWholeDigitsError',
 
+    'DateTimeError',
+    'DateError',
+    'TimeError',
+    'DurationError',
+
     'UUIDError',
     'UUIDVersionError',
 )
@@ -165,6 +170,26 @@ class DecimalWholeDigitsError(PydanticValueError):
 
     def __init__(self, *, whole_digits: int) -> None:
         super().__init__(whole_digits=whole_digits)
+
+
+class DateTimeError(PydanticTypeError):
+    code = 'datetime'
+    msg_template = 'invalid datetime format'
+
+
+class DateError(PydanticTypeError):
+    code = 'date'
+    msg_template = 'invalid date format'
+
+
+class TimeError(PydanticTypeError):
+    code = 'time'
+    msg_template = 'invalid time format'
+
+
+class DurationError(PydanticTypeError):
+    code = 'duration'
+    msg_template = 'invalid duration format'
 
 
 class UUIDError(PydanticTypeError):
