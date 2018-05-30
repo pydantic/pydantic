@@ -391,22 +391,18 @@ def test_email_validator_not_installed_name_email():
             str_email: NameEmail = ...
 
 
-class ListDictTupleModel(BaseModel):
-    a: dict = None
-    b: list = None
-    c: OrderedDict = None
-    d: tuple = None
-
-
 def test_dict():
-    assert ListDictTupleModel(a={1: 10, 2: 20}).a == {1: 10, 2: 20}
-    assert ListDictTupleModel(a=[(1, 2), (3, 4)]).a == {1: 2, 3: 4}
+    class Model(BaseModel):
+        v: dict
+
+    assert Model(v={1: 10, 2: 20}).v == {1: 10, 2: 20}
+    assert Model(v=[(1, 2), (3, 4)]).v == {1: 2, 3: 4}
 
     with pytest.raises(ValidationError) as exc_info:
-        ListDictTupleModel(a=[1, 2, 3])
+        Model(v=[1, 2, 3])
     assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('a',),
+            'loc': ('v',),
             'msg': 'value is not a valid dict',
             'type': 'type_error.dict',
         },
@@ -414,17 +410,18 @@ def test_dict():
 
 
 def test_list():
-    m = ListDictTupleModel(b=[1, 2, '3'])
-    assert m.a is None
-    assert m.b == [1, 2, '3']
-    assert ListDictTupleModel(b='xyz').b == ['x', 'y', 'z']
-    assert ListDictTupleModel(b=(i**2 for i in range(5))).b == [0, 1, 4, 9, 16]
+    class Model(BaseModel):
+        v: list
+
+    assert Model(v=[1, 2, '3']).v == [1, 2, '3']
+    assert Model(v='xyz').v == ['x', 'y', 'z']
+    assert Model(v=(i**2 for i in range(5))).v == [0, 1, 4, 9, 16]
 
     with pytest.raises(ValidationError) as exc_info:
-        ListDictTupleModel(b=1)
+        Model(v=1)
     assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('b',),
+            'loc': ('v',),
             'msg': 'value is not a valid list',
             'type': 'type_error.list',
         },
@@ -432,15 +429,18 @@ def test_list():
 
 
 def test_ordered_dict():
-    assert ListDictTupleModel(c=OrderedDict([(1, 10), (2, 20)])).c == OrderedDict([(1, 10), (2, 20)])
-    assert ListDictTupleModel(c={1: 10, 2: 20}).c in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
-    assert ListDictTupleModel(c=[(1, 2), (3, 4)]).c == OrderedDict([(1, 2), (3, 4)])
+    class Model(BaseModel):
+        v: OrderedDict
+
+    assert Model(v=OrderedDict([(1, 10), (2, 20)])).v == OrderedDict([(1, 10), (2, 20)])
+    assert Model(v={1: 10, 2: 20}).v in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
+    assert Model(v=[(1, 2), (3, 4)]).v == OrderedDict([(1, 2), (3, 4)])
 
     with pytest.raises(ValidationError) as exc_info:
-        ListDictTupleModel(c=[1, 2, 3])
+        Model(v=[1, 2, 3])
     assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('c',),
+            'loc': ('v',),
             'msg': 'value is not a valid dict',
             'type': 'type_error.dict',
         },
@@ -448,20 +448,39 @@ def test_ordered_dict():
 
 
 def test_tuple():
-    m = ListDictTupleModel(d=(1, 2, '3'))
-    assert m.a is None
-    assert m.d == (1, 2, '3')
-    assert m.dict() == {'a': None, 'b': None, 'c': None, 'd': (1, 2, '3')}
-    assert ListDictTupleModel(d='xyz').d == ('x', 'y', 'z')
-    assert ListDictTupleModel(d=(i**2 for i in range(5))).d == (0, 1, 4, 9, 16)
+    class Model(BaseModel):
+        v: tuple
+
+    assert Model(v=(1, 2, '3')).v == (1, 2, '3')
+    assert Model(v='xyz').v == ('x', 'y', 'z')
+    assert Model(v=(i**2 for i in range(5))).v == (0, 1, 4, 9, 16)
 
     with pytest.raises(ValidationError) as exc_info:
-        ListDictTupleModel(d=1)
+        Model(v=1)
     assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('d',),
+            'loc': ('v',),
             'msg': 'value is not a valid tuple',
             'type': 'type_error.tuple',
+        },
+    ]
+
+
+def test_set():
+    class Model(BaseModel):
+        v: set
+
+    assert Model(v={1, 2, 2, '3'}).v == {1, 2, '3'}
+    assert Model(v='xyzxyz').v == {'x', 'y', 'z'}
+    assert Model(v={i**2 for i in range(5)}).v == {0, 1, 4, 9, 16}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=1)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'value is not a valid set',
+            'type': 'type_error.set',
         },
     ]
 
@@ -542,16 +561,6 @@ def test_float_validation():
             },
         },
     ]
-
-
-def test_set():
-    class SetModel(BaseModel):
-        v: set = ...
-
-    m = SetModel(v=[1, 2, 3])
-    assert m.v == {1, 2, 3}
-    assert m.dict() == {'v': {1, 2, 3}}
-    assert SetModel(v={'a', 'b', 'c'}).v == {'a', 'b', 'c'}
 
 
 def test_strict_str():

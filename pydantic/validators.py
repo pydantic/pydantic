@@ -162,7 +162,13 @@ def tuple_validator(v) -> tuple:
 def set_validator(v) -> set:
     if isinstance(v, set):
         return v
-    return set(v)
+
+    try:
+        v = set(v)
+    except TypeError as e:
+        raise errors.SetError() from e
+
+    return v
 
 
 def enum_validator(v, field, config, **kwargs) -> Enum:

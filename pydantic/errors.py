@@ -19,6 +19,7 @@ __all__ = (
     'FloatError',
     'ListError',
     'PathError',
+    'SetError',
     'TupleError',
 
     'NumberMinSizeError',
@@ -104,6 +105,11 @@ class ListError(PydanticTypeError):
 class PathError(PydanticTypeError):
     code = 'path'
     msg_template = 'value is not a valid path'
+
+
+class SetError(PydanticTypeError):
+    code = 'set'
+    msg_template = 'value is not a valid set'
 
 
 class TupleError(PydanticTypeError):
