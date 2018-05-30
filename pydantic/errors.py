@@ -23,6 +23,7 @@ __all__ = (
     'ListError',
     'PathError',
     'PyObjectError',
+    'SequenceError',
     'SetError',
     'TupleError',
 
@@ -140,6 +141,11 @@ class PathError(PydanticTypeError):
 class PyObjectError(PydanticTypeError):
     code = 'py_object'
     msg_template = 'ensure this value contains valid import path'
+
+
+class SequenceError(PydanticTypeError):
+    code = 'sequence'
+    msg_template = 'value is not a valid sequence'
 
 
 class SetError(PydanticTypeError):

@@ -273,6 +273,5 @@ def find_validators(type_):
             if issubclass(type_, val_type):
                 return validators
         except TypeError as e:
-            # TODO: RuntimeError?
-            raise TypeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
+            raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
     raise errors.ConfigError(f'no validator found for {type_}')

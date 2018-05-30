@@ -3,7 +3,7 @@ from enum import IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
 from .error_wrappers import Error
-from .errors import ConfigError
+from .errors import ConfigError, SequenceError
 from .utils import display_as_type
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
@@ -241,10 +241,9 @@ class Field:
         result, errors = [], []
 
         try:
-            # TODO: move to validators with custom error exception?
             v_iter = enumerate(v)
-        except TypeError as exc:
-            return v, Error(exc, loc=loc)
+        except TypeError:
+            return v, Error(SequenceError(), loc=loc)
 
         for i, v_ in v_iter:
             v_loc = *loc, i

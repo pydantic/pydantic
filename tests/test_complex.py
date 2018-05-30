@@ -136,8 +136,8 @@ def test_typed_list():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
-            'msg': '\'int\' object is not iterable',
-            'type': 'type_error',
+            'msg': 'value is not a valid sequence',
+            'type': 'type_error.sequence',
         },
     ]
 
@@ -445,7 +445,7 @@ def test_inheritance():
 
 
 def test_invalid_type():
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(RuntimeError) as exc_info:
         class Model(BaseModel):
             x: 43 = 123
     assert "error checking inheritance of 43 (type: int)" in str(exc_info)
