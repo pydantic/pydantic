@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import UUID1, BaseModel, errors
+from pydantic import UUID1, BaseModel, conint, errors
 from pydantic.error_wrappers import ValidationError, flatten_errors, get_exc_type
 
 
@@ -30,7 +30,9 @@ f -> 0
 f -> 0
   none is not an allow value (type=type_error.none.not_allowed)
 g
-  uuid version 1 expected (type=value_error.uuid.version; required_version=1)""",
+  uuid version 1 expected (type=value_error.uuid.version; required_version=1)
+h
+  yet another error message template 42 (type=value_error.number.min_size; limit_value=42)""",
     ),
     (
         'flatten_errors',
@@ -115,6 +117,16 @@ g
                     'required_version': 1,
                 },
             },
+            {
+                'loc': (
+                    'h',
+                ),
+                'msg': 'yet another error message template 42',
+                'type': 'value_error.number.min_size',
+                'ctx': {
+                    'limit_value': 42,
+                },
+            }
         ],
     ),
     (
@@ -200,6 +212,16 @@ g
     ],
     "msg": "uuid version 1 expected",
     "type": "value_error.uuid.version"
+  },
+  {
+    "ctx": {
+      "limit_value": 42
+    },
+    "loc": [
+      "h"
+    ],
+    "msg": "yet another error message template 42",
+    "type": "value_error.number.min_size"
   }
 ]"""
     ),
@@ -226,7 +248,9 @@ f -> 0
 f -> 0
   none is not an allow value (type=type_error.none.not_allowed)
 g
-  uuid version 1 expected (type=value_error.uuid.version; required_version=1)"""
+  uuid version 1 expected (type=value_error.uuid.version; required_version=1)
+h
+  yet another error message template 42 (type=value_error.number.min_size; limit_value=42)"""
     ),
 ))
 def test_validation_error(result, expected):
@@ -243,6 +267,12 @@ def test_validation_error(result, expected):
         e: Dict[int, str]
         f: List[Union[int, str]]
         g: UUID1
+        h: conint(gt=42)
+
+        class Config:
+            error_msg_templates = {
+                'value_error.number.min_size': 'yet another error message template {limit_value}',
+            }
 
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({
@@ -265,6 +295,7 @@ def test_validation_error(result, expected):
                 None,
             ],
             'g': uuid4(),
+            'h': 21,
         })
 
     result = getattr(exc_info.value, result)

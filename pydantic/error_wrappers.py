@@ -8,11 +8,12 @@ __all__ = (
 
 
 class Error:
-    __slots__ = 'exc', 'loc'
+    __slots__ = 'exc', 'loc', 'msg_template'
 
-    def __init__(self, exc, *, loc):
+    def __init__(self, exc, *, loc, config=None):
         self.exc = exc
         self.loc = loc if isinstance(loc, tuple) else (loc,)
+        self.msg_template = config.error_msg_templates.get(self.type_) if config else None
 
     @property
     def ctx(self):
@@ -20,6 +21,11 @@ class Error:
 
     @property
     def msg(self):
+        default_msg_template = getattr(self.exc, 'msg_template', None)
+        msg_template = self.msg_template or default_msg_template
+        if msg_template:
+            return msg_template.format(**self.ctx or {})
+
         return str(self.exc)
 
     @property

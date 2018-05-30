@@ -27,6 +27,7 @@ class BaseConfig:
     use_enum_values = False
     fields = {}
     validate_assignment = False
+    error_msg_templates: Dict[str, str] = {}
 
     @classmethod
     def get_field_config(cls, name):
@@ -269,7 +270,7 @@ class BaseModel(metaclass=MetaModel):
                     value = field.default
                 else:
                     if field.required:
-                        errors.append(Error(MissingError(), loc=field.alias))
+                        errors.append(Error(MissingError(), loc=field.alias, config=self.__config__))
                     else:
                         values[name] = field.default
                     continue
@@ -291,7 +292,7 @@ class BaseModel(metaclass=MetaModel):
                 else:
                     # config.ignore_extra is False
                     for field in sorted(extra):
-                        errors.append(Error(ExtraError(), loc=field))
+                        errors.append(Error(ExtraError(), loc=field, config=self.__config__))
 
         if errors:
             raise ValidationError(errors)

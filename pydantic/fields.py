@@ -243,7 +243,7 @@ class Field:
         try:
             v_iter = enumerate(v)
         except TypeError:
-            return v, Error(SequenceError(), loc=loc)
+            return v, Error(SequenceError(), loc=loc, config=self.model_config)
 
         for i, v_ in v_iter:
             v_loc = *loc, i
@@ -262,7 +262,7 @@ class Field:
         try:
             v_iter = dict_validator(v)
         except TypeError as exc:
-            return v, Error(exc, loc=loc)
+            return v, Error(exc, loc=loc, config=self.model_config)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
@@ -310,7 +310,7 @@ class Field:
                     # ValidatorSignature.CLS_VALUE_KWARGS
                     v = validator(cls, v, values=values, config=self.model_config, field=self)
             except (ValueError, TypeError) as exc:
-                return v, Error(exc, loc=loc)
+                return v, Error(exc, loc=loc, config=self.model_config)
         return v, None
 
     def __repr__(self):
