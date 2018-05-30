@@ -150,7 +150,13 @@ def list_validator(v) -> list:
 def tuple_validator(v) -> tuple:
     if isinstance(v, tuple):
         return v
-    return tuple(v)
+
+    try:
+        v = tuple(v)
+    except TypeError as e:
+        raise errors.TupleError() from e
+
+    return v
 
 
 def set_validator(v) -> set:

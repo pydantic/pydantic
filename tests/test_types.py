@@ -460,8 +460,8 @@ def test_tuple():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('d',),
-            'msg': '\'int\' object is not iterable',
-            'type': 'type_error',
+            'msg': 'value is not a valid tuple',
+            'type': 'type_error.tuple',
         },
     ]
 

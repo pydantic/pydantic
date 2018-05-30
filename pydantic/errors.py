@@ -19,6 +19,7 @@ __all__ = (
     'FloatError',
     'ListError',
     'PathError',
+    'TupleError',
 
     'NumberMinSizeError',
     'NumberMaxSizeError',
@@ -103,6 +104,11 @@ class ListError(PydanticTypeError):
 class PathError(PydanticTypeError):
     code = 'path'
     msg_template = 'value is not a valid path'
+
+
+class TupleError(PydanticTypeError):
+    code = 'tuple'
+    msg_template = 'value is not a valid tuple'
 
 
 class NumberMinSizeError(PydanticValueError):
