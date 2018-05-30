@@ -28,13 +28,20 @@ def str_validator(v) -> str:
         # is there anything else we want to add here? If you think so, create an issue.
         return str(v)
     else:
-        raise TypeError(f'str or byte type expected not {display_as_type(v)}')
+        raise errors.StrError()
 
 
 def bytes_validator(v) -> bytes:
-    if isinstance(v, (bytes, NoneType)):
+    if isinstance(v, bytes):
         return v
-    return str_validator(v).encode()
+    elif isinstance(v, bytearray):
+        return bytes(v)
+    elif isinstance(v, str):
+        return v.encode('utf-8')
+    elif isinstance(v, (float, int, Decimal)):
+        return str(v).encode('utf-8')
+    else:
+        raise errors.BytesError()
 
 
 BOOL_STRINGS = {
@@ -94,11 +101,11 @@ def anystr_length_validator(v, field, config, **kwargs):
 
     min_length = getattr(field.type_, 'min_length', config.min_anystr_length)
     if min_length is not None and v_len < min_length:
-        raise ValueError(f'length less than minimum allowed: {min_length}')
+        raise errors.AnyStrMinLengthError(limit_value=min_length)
 
     max_length = getattr(field.type_, 'max_length', config.max_anystr_length)
     if max_length is not None and v_len > max_length:
-        raise ValueError(f'length greater than maximum allowed: {max_length}')
+        raise errors.AnyStrMaxLengthError(limit_value=max_length)
 
     return v
 

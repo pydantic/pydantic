@@ -13,14 +13,24 @@ __all__ = (
 
     'NoneIsNotAllowedError',
 
+    'BytesError',
     'DictError',
+    'DSNDriverIsEmptyError',
+    'EmailError',
     'EnumError',
     'IntegerError',
     'FloatError',
     'ListError',
     'PathError',
+    'PyObjectError',
     'SetError',
     'TupleError',
+
+    'AnyStrMinLengthError',
+    'AnyStrMaxLengthError',
+
+    'StrError',
+    'StrRegexError',
 
     'NumberMinSizeError',
     'NumberMaxSizeError',
@@ -82,9 +92,24 @@ class NoneIsNotAllowedError(PydanticTypeError):
     msg_template = 'none is not an allow value'
 
 
+class BytesError(PydanticTypeError):
+    code = 'bytes'
+    msg_template = 'byte type expected'
+
+
 class DictError(PydanticTypeError):
     code = 'dict'
     msg_template = 'value is not a valid dict'
+
+
+class DSNDriverIsEmptyError(PydanticValueError):
+    code = 'dsn.driver_is_empty'
+    msg_template = '"driver" field may not be empty'
+
+
+class EmailError(PydanticValueError):
+    code = 'email'
+    msg_template = 'value is not a valid email address'
 
 
 class EnumError(PydanticTypeError):
@@ -112,6 +137,11 @@ class PathError(PydanticTypeError):
     msg_template = 'value is not a valid path'
 
 
+class PyObjectError(PydanticTypeError):
+    code = 'py_object'
+    msg_template = 'ensure this value contains valid import path'
+
+
 class SetError(PydanticTypeError):
     code = 'set'
     msg_template = 'value is not a valid set'
@@ -120,6 +150,35 @@ class SetError(PydanticTypeError):
 class TupleError(PydanticTypeError):
     code = 'tuple'
     msg_template = 'value is not a valid tuple'
+
+
+class AnyStrMinLengthError(PydanticValueError):
+    code = 'any_str.min_length'
+    msg_template = 'ensure this value has at least {limit_value} characters'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class AnyStrMaxLengthError(PydanticValueError):
+    code = 'any_str.max_length'
+    msg_template = 'ensure this value has at most {limit_value} characters'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class StrError(PydanticTypeError):
+    code = 'str'
+    msg_template = 'str type expected'
+
+
+class StrRegexError(PydanticValueError):
+    code = 'str.regex'
+    msg_template = 'string does not match regex "{pattern}"'
+
+    def __init__(self, *, pattern: str) -> None:
+        super().__init__(pattern=pattern)
 
 
 class NumberMinSizeError(PydanticValueError):

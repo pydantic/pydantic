@@ -475,8 +475,8 @@ def test_valid_string_types(value, expected):
         [
             {
                 'loc': ('v',),
-                'msg': 'str or byte type expected not dict',
-                'type': 'type_error',
+                'msg': 'str type expected',
+                'type': 'type_error.str',
             },
         ],
     ),
@@ -485,8 +485,8 @@ def test_valid_string_types(value, expected):
         [
             {
                 'loc': ('v',),
-                'msg': 'str or byte type expected not list',
-                'type': 'type_error',
+                'msg': 'str type expected',
+                'type': 'type_error.str',
             },
         ],
     )

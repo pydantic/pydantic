@@ -2,10 +2,13 @@ import re
 from importlib import import_module
 from typing import Tuple, _TypingBase
 
+from . import errors
+
 try:
     import email_validator
 except ImportError:
     email_validator = None
+
 
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
 
@@ -29,8 +32,14 @@ def validate_email(value) -> Tuple[str, str]:
         name, value = m.groups()
     else:
         name = None
+
     email = value.strip()
-    email_validator.validate_email(email, check_deliverability=False)
+
+    try:
+        email_validator.validate_email(email, check_deliverability=False)
+    except email_validator.EmailNotValidError as e:
+        raise errors.EmailError() from e
+
     return name or email[:email.index('@')], email.lower()
 
 

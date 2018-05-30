@@ -16,7 +16,7 @@ Changed to:
 """
 import re
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Dict, Union
+from typing import Union
 
 from . import errors
 

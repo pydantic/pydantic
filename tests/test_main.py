@@ -408,8 +408,11 @@ def test_validating_assignment_fail():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('b',),
-            'msg': 'length less than minimum allowed: 1',
-            'type': 'value_error',
+            'msg': 'ensure this value has at least 1 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {
+                'limit_value': 1,
+            },
         },
     ]
 

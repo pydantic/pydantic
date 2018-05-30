@@ -39,8 +39,11 @@ def test_constrained_str_too_long():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
-            'msg': 'length greater than maximum allowed: 10',
-            'type': 'value_error',
+            'msg': 'ensure this value has at most 10 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {
+                'limit_value': 10,
+            },
         },
     ]
 
@@ -82,8 +85,8 @@ def test_dsn_no_driver():
         },
         {
             'loc': ('dsn',),
-            'msg': '"db_driver" field may not be missing or None',
-            'type': 'value_error',
+            'msg': '"driver" field may not be empty',
+            'type': 'value_error.dsn.driver_is_empty',
         },
     ]
 
@@ -100,8 +103,8 @@ def test_module_import():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('module',),
-            'msg': '"foobar" doesn\'t look like a module path',
-            'type': 'value_error',
+            'msg': 'ensure this value contains valid import path',
+            'type': 'type_error.py_object',
         },
     ]
 
@@ -148,6 +151,10 @@ class CheckModel(BaseModel):
     ('bytes_check', b's', b's'),
     ('bytes_check', b'  s  ', b's'),
     ('bytes_check', 1, b'1'),
+    ('bytes_check', bytearray('xx', encoding='utf8'), b'xx'),
+    ('bytes_check', True, b'True'),
+    ('bytes_check', False, b'False'),
+    ('bytes_check', {}, ValidationError),
     ('bytes_check', 'x' * 11, ValidationError),
     ('bytes_check', b'x' * 11, ValidationError),
 
@@ -204,8 +211,11 @@ def test_string_too_long():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('str_check',),
-            'msg': 'length greater than maximum allowed: 10',
-            'type': 'value_error',
+            'msg': 'ensure this value has at most 10 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {
+                'limit_value': 10,
+            },
         },
     ]
 
@@ -216,8 +226,11 @@ def test_string_too_short():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('str_check',),
-            'msg': 'length less than minimum allowed: 5',
-            'type': 'value_error',
+            'msg': 'ensure this value has at least 5 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {
+                'limit_value': 5,
+            },
         },
     ]
 
@@ -357,22 +370,28 @@ def test_string_fails():
         {
             'loc': ('str_regex',),
             'msg': 'string does not match regex "^xxx\\d{3}$"',
-            'type': 'value_error',
+            'type': 'value_error.str.regex',
+            'ctx': {
+                'pattern': '^xxx\\d{3}$',
+            },
         },
         {
             'loc': ('str_min_length',),
-            'msg': 'length less than minimum allowed: 5',
-            'type': 'value_error',
+            'msg': 'ensure this value has at least 5 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {
+                'limit_value': 5,
+            },
         },
         {
             'loc': ('str_email',),
-            'msg': 'The email address contains invalid characters before the @-sign: <.',
-            'type': 'value_error',
+            'msg': 'value is not a valid email address',
+            'type': 'value_error.email',
         },
         {
             'loc': ('name_email',),
-            'msg': 'The email address contains invalid characters before the @-sign:  .',
-            'type': 'value_error',
+            'msg': 'value is not a valid email address',
+            'type': 'value_error.email',
         },
     ]
 

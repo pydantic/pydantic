@@ -55,7 +55,7 @@ class StrictStr(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(f'strict string: str expected not {type(v)}')
+            raise errors.StrError()
         return v
 
 
@@ -81,7 +81,7 @@ class ConstrainedStr(str):
 
         if cls.regex:
             if not cls.regex.match(value):
-                raise ValueError(f'string does not match regex "{cls.regex.pattern}"')
+                raise errors.StrRegexError(pattern=cls.regex.pattern)
 
         return value
 
@@ -92,6 +92,7 @@ class EmailStr(str):
         # included here and below so the error happens straight away
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
+
         yield str_validator
         yield cls.validate
 
@@ -111,6 +112,7 @@ class NameEmail:
     def get_validators(cls):
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
+
         yield str_validator
         yield cls.validate
 
@@ -150,8 +152,7 @@ class PyObject:
         try:
             return import_string(value)
         except ImportError as e:
-            # errors must be TypeError or ValueError
-            raise ValueError(str(e)) from e
+            raise errors.PyObjectError() from e
 
 
 class DSN(str):
@@ -168,9 +169,11 @@ class DSN(str):
     def validate(cls, value, values, **kwarg):
         if value:
             return value
+
         kwargs = {f: values.get(cls.prefix + f) for f in cls.fields}
         if kwargs['driver'] is None:
-            raise ValueError(f'"{cls.prefix}driver" field may not be missing or None')
+            raise errors.DSNDriverIsEmptyError()
+
         return make_dsn(**kwargs)
 
 
