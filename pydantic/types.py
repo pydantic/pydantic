@@ -3,9 +3,10 @@ from decimal import Decimal
 from typing import Optional, Pattern, Type, Union
 from uuid import UUID
 
+from . import errors
 from .utils import import_string, make_dsn, validate_email
-from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, not_none_validator,
-                         number_size_validator, str_validator)
+from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, float_validator,
+                         int_validator, not_none_validator, number_size_validator, str_validator)
 
 try:
     import email_validator
@@ -54,7 +55,7 @@ class StrictStr(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(f'strict string: str expected not {type(v)}')
+            raise errors.StrError()
         return v
 
 
@@ -80,7 +81,7 @@ class ConstrainedStr(str):
 
         if cls.regex:
             if not cls.regex.match(value):
-                raise ValueError(f'string does not match regex "{cls.regex.pattern}"')
+                raise errors.StrRegexError(pattern=cls.regex.pattern)
 
         return value
 
@@ -91,6 +92,7 @@ class EmailStr(str):
         # included here and below so the error happens straight away
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
+
         yield str_validator
         yield cls.validate
 
@@ -110,6 +112,7 @@ class NameEmail:
     def get_validators(cls):
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
+
         yield str_validator
         yield cls.validate
 
@@ -149,8 +152,7 @@ class PyObject:
         try:
             return import_string(value)
         except ImportError as e:
-            # errors must be TypeError or ValueError
-            raise ValueError(str(e)) from e
+            raise errors.PyObjectError() from e
 
 
 class DSN(str):
@@ -167,9 +169,11 @@ class DSN(str):
     def validate(cls, value, values, **kwarg):
         if value:
             return value
+
         kwargs = {f: values.get(cls.prefix + f) for f in cls.fields}
         if kwargs['driver'] is None:
-            raise ValueError(f'"{cls.prefix}driver" field may not be missing or None')
+            raise errors.DSNDriverIsEmptyError()
+
         return make_dsn(**kwargs)
 
 
@@ -179,7 +183,7 @@ class ConstrainedInt(int):
 
     @classmethod
     def get_validators(cls):
-        yield int
+        yield int_validator
         yield number_size_validator
 
 
@@ -203,7 +207,7 @@ class ConstrainedFloat(float):
 
     @classmethod
     def get_validators(cls):
-        yield float
+        yield float_validator
         yield number_size_validator
 
 
@@ -238,7 +242,7 @@ class ConstrainedDecimal(Decimal):
     def validate(cls, value: Decimal) -> Decimal:
         digit_tuple, exponent = value.as_tuple()[1:]
         if exponent in {'F', 'n', 'N'}:
-            raise ValueError(f'value is not a valid decimal, got {value}')
+            raise errors.DecimalIsNotFiniteError()
 
         if exponent >= 0:
             # A positive exponent adds that many trailing zeros.
@@ -258,15 +262,15 @@ class ConstrainedDecimal(Decimal):
         whole_digits = digits - decimals
 
         if cls.max_digits is not None and digits > cls.max_digits:
-            raise ValueError(f'ensure that there are no more than {cls.max_digits} digits in total')
+            raise errors.DecimalMaxDigitsError(max_digits=cls.max_digits)
 
         if cls.decimal_places is not None and decimals > cls.decimal_places:
-            raise ValueError(f'ensure that there are no more than {cls.decimal_places} decimal places')
+            raise errors.DecimalMaxPlacesError(decimal_places=cls.decimal_places)
 
         if cls.max_digits is not None and cls.decimal_places is not None:
             expected = cls.max_digits - cls.decimal_places
             if whole_digits > expected:
-                raise ValueError(f'ensure that there are no more than {expected} digits before the decimal point')
+                raise errors.DecimalWholeDigitsError(whole_digits=expected)
 
         return value
 

@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError, validator
+from pydantic import BaseModel, ValidationError, errors, validator
 
 
 def test_simple():
@@ -140,8 +140,8 @@ def test_validating_assignment_dict():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'invalid literal for int() with base 10: \'x\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 
@@ -191,7 +191,7 @@ def test_classmethod():
 
 
 def test_duplicates():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class Model(BaseModel):
             a: str
             b: str
@@ -208,7 +208,7 @@ def test_duplicates():
 
 
 def test_use_bare():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class Model(BaseModel):
             a: str
 
@@ -219,7 +219,7 @@ def test_use_bare():
 
 
 def test_use_no_fields():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class Model(BaseModel):
             a: str
 
@@ -320,7 +320,7 @@ def test_wildcard_validator_error():
 
 
 def test_invalid_field():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class Model(BaseModel):
             a: str
 

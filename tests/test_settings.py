@@ -28,8 +28,8 @@ def test_sub_env_missing():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('apple',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
     ]
 

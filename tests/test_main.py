@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, NoneBytes, NoneStr, Required, ValidationError, constr, errors
 
 
 def test_success():
@@ -40,13 +40,13 @@ def test_ultra_simple_failed():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'could not convert string to float: \'x\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid float',
+            'type': 'type_error.float',
         },
         {
             'loc': ('b',),
-            'msg': 'invalid literal for int() with base 10: \'x\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 
@@ -55,7 +55,7 @@ def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert repr(m) == '<UltraSimpleModel a=10.2 b=10>'
     assert repr(m.fields['a']) == ("<Field a: type='float', required=True, "
-                                   "validators=['float', 'number_size_validator']>")
+                                   "validators=['float_validator']>")
     assert dict(m) == {'a': 10.2, 'b': 10}
 
 
@@ -126,13 +126,13 @@ def test_nullable_strings_fails():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('required_str_value',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
         {
             'loc': ('required_bytes_value',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
     ]
 
@@ -198,21 +198,21 @@ class InvalidValidator:
 
 
 def test_invalid_validator():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class InvalidValidatorModel(BaseModel):
             x: InvalidValidator = ...
     assert exc_info.value.args[0].startswith('Invalid signature for validator')
 
 
 def test_no_validator():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class NoValidatorModel(BaseModel):
             x: object = ...
     assert exc_info.value.args[0] == "no validator found for <class 'object'>"
 
 
 def test_unable_to_infer():
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(errors.ConfigError) as exc_info:
         class InvalidDefinitionModel(BaseModel):
             x = None
     assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
@@ -398,8 +398,8 @@ def test_validating_assignment_fail():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'invalid literal for int() with base 10: \'b\'',
-            'type': 'value_error',
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
         },
     ]
 
@@ -408,8 +408,11 @@ def test_validating_assignment_fail():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('b',),
-            'msg': 'length less than minimum allowed: 1',
-            'type': 'value_error',
+            'msg': 'ensure this value has at least 1 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {
+                'limit_value': 1,
+            },
         },
     ]
 

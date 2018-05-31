@@ -6,7 +6,8 @@ from pathlib import Path
 from types import FunctionType
 from typing import Any, Dict, Set, Type, Union
 
-from .exceptions import ConfigError, Error, Extra, Missing, ValidationError
+from .error_wrappers import ErrorWrapper, ValidationError
+from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field, Validator
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
@@ -18,8 +19,6 @@ class BaseConfig:
     anystr_strip_whitespace = False
     min_anystr_length = 0
     max_anystr_length = 2 ** 16
-    min_number_size = -2 ** 64
-    max_number_size = 2 ** 64
     validate_all = False
     ignore_extra = True
     allow_extra = False
@@ -28,6 +27,7 @@ class BaseConfig:
     use_enum_values = False
     fields = {}
     validate_assignment = False
+    error_msg_templates: Dict[str, str] = {}
 
     @classmethod
     def get_field_config(cls, name):
@@ -137,10 +137,6 @@ class MetaModel(ABCMeta):
         return super().__new__(mcs, name, bases, new_namespace)
 
 
-MISSING = Missing('field required')
-EXTRA = Extra('extra fields not permitted')
-
-
 class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
     __fields__ = {}
@@ -191,7 +187,7 @@ class BaseModel(metaclass=MetaModel):
     def parse_obj(cls, obj):
         if not isinstance(obj, dict):
             exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-            raise ValidationError([Error(exc, loc='__obj__')])
+            raise ValidationError([ErrorWrapper(exc, loc='__obj__')])
         return cls(**obj)
 
     @classmethod
@@ -204,7 +200,7 @@ class BaseModel(metaclass=MetaModel):
             obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding,
                                  allow_pickle=allow_pickle)
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([Error(e, loc='__obj__')])
+            raise ValidationError([ErrorWrapper(e, loc='__obj__')])
         return cls.parse_obj(obj)
 
     @classmethod
@@ -265,22 +261,22 @@ class BaseModel(metaclass=MetaModel):
         errors = []
 
         for name, field in self.__fields__.items():
-            value = input_data.get(field.alias, MISSING)
-            if value is MISSING and self.__config__.allow_population_by_alias and field.alt_alias:
-                value = input_data.get(field.name, MISSING)
+            value = input_data.get(field.alias, ...)
+            if value is ... and self.__config__.allow_population_by_alias and field.alt_alias:
+                value = input_data.get(field.name, ...)
 
-            if value is MISSING:
+            if value is ...:
                 if self.__config__.validate_all or field.validate_always:
                     value = field.default
                 else:
                     if field.required:
-                        errors.append(Error(MISSING, loc=field.alias))
+                        errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=self.__config__))
                     else:
                         values[name] = field.default
                     continue
 
             v_, errors_ = field.validate(value, values, loc=field.alias, cls=self.__class__)
-            if isinstance(errors_, Error):
+            if isinstance(errors_, ErrorWrapper):
                 errors.append(errors_)
             elif isinstance(errors_, list):
                 errors.extend(errors_)
@@ -296,7 +292,7 @@ class BaseModel(metaclass=MetaModel):
                 else:
                     # config.ignore_extra is False
                     for field in sorted(extra):
-                        errors.append(Error(EXTRA, loc=field))
+                        errors.append(ErrorWrapper(ExtraError(), loc=field, config=self.__config__))
 
         if errors:
             raise ValidationError(errors)

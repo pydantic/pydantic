@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
+from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .exceptions import ConfigError
 from .utils import display_as_type
 
 NoneType = type(None)
@@ -15,7 +15,7 @@ NoneType = type(None)
 
 def not_none_validator(v):
     if v is None:
-        raise TypeError('None is not an allow value')
+        raise errors.NoneIsNotAllowedError()
     return v
 
 
@@ -28,13 +28,20 @@ def str_validator(v) -> str:
         # is there anything else we want to add here? If you think so, create an issue.
         return str(v)
     else:
-        raise TypeError(f'str or byte type expected not {display_as_type(v)}')
+        raise errors.StrError()
 
 
 def bytes_validator(v) -> bytes:
-    if isinstance(v, (bytes, NoneType)):
+    if isinstance(v, bytes):
         return v
-    return str_validator(v).encode()
+    elif isinstance(v, bytearray):
+        return bytes(v)
+    elif isinstance(v, str):
+        return v.encode('utf-8')
+    elif isinstance(v, (float, int, Decimal)):
+        return str(v).encode('utf-8')
+    else:
+        raise errors.BytesError()
 
 
 BOOL_STRINGS = {
@@ -55,14 +62,36 @@ def bool_validator(v) -> bool:
     return bool(v)
 
 
-def number_size_validator(v, field, config, **kwargs):
-    min_size = getattr(field.type_, 'gt', config.min_number_size)
-    if min_size is not None and v <= min_size:
-        raise ValueError(f'size less than minimum allowed: {min_size}')
+def int_validator(v) -> int:
+    if isinstance(v, int):
+        return v
 
-    max_size = getattr(field.type_, 'lt', config.max_number_size)
-    if max_size is not None and v >= max_size:
-        raise ValueError(f'size greater than maximum allowed: {max_size}')
+    try:
+        v = int(v)
+    except (TypeError, ValueError) as e:
+        raise errors.IntegerError() from e
+
+    return v
+
+
+def float_validator(v) -> float:
+    if isinstance(v, float):
+        return v
+
+    try:
+        v = float(v)
+    except (TypeError, ValueError) as e:
+        raise errors.FloatError() from e
+
+    return v
+
+
+def number_size_validator(v, field, config, **kwargs):
+    if field.type_.gt is not None and v < field.type_.gt:
+        raise errors.NumberMinSizeError(limit_value=field.type_.gt)
+
+    if field.type_.lt is not None and v > field.type_.lt:
+        raise errors.NumberMaxSizeError(limit_value=field.type_.lt)
 
     return v
 
@@ -72,11 +101,11 @@ def anystr_length_validator(v, field, config, **kwargs):
 
     min_length = getattr(field.type_, 'min_length', config.min_anystr_length)
     if min_length is not None and v_len < min_length:
-        raise ValueError(f'length less than minimum allowed: {min_length}')
+        raise errors.AnyStrMinLengthError(limit_value=min_length)
 
     max_length = getattr(field.type_, 'max_length', config.max_anystr_length)
     if max_length is not None and v_len > max_length:
-        raise ValueError(f'length greater than maximum allowed: {max_length}')
+        raise errors.AnyStrMaxLengthError(limit_value=max_length)
 
     return v
 
@@ -92,52 +121,87 @@ def anystr_strip_whitespace(v, field, config, **kwargs):
 def ordered_dict_validator(v) -> OrderedDict:
     if isinstance(v, OrderedDict):
         return v
-    return OrderedDict(v)
+
+    try:
+        v = OrderedDict(v)
+    except (TypeError, ValueError) as e:
+        raise errors.DictError() from e
+
+    return v
 
 
 def dict_validator(v) -> dict:
     if isinstance(v, dict):
         return v
+
     try:
-        return dict(v)
-    except TypeError as e:
-        raise TypeError(f'value is not a valid dict, got {display_as_type(v)}') from e
+        v = dict(v)
+    except (TypeError, ValueError) as e:
+        raise errors.DictError() from e
+
+    return v
 
 
 def list_validator(v) -> list:
     if isinstance(v, list):
         return v
-    return list(v)
+
+    try:
+        v = list(v)
+    except TypeError as e:
+        raise errors.ListError() from e
+
+    return v
 
 
 def tuple_validator(v) -> tuple:
     if isinstance(v, tuple):
         return v
-    return tuple(v)
+
+    try:
+        v = tuple(v)
+    except TypeError as e:
+        raise errors.TupleError() from e
+
+    return v
 
 
 def set_validator(v) -> set:
     if isinstance(v, set):
         return v
-    return set(v)
+
+    try:
+        v = set(v)
+    except TypeError as e:
+        raise errors.SetError() from e
+
+    return v
 
 
 def enum_validator(v, field, config, **kwargs) -> Enum:
-    enum_v = field.type_(v)
+    try:
+        enum_v = field.type_(v)
+    except ValueError as e:
+        raise errors.EnumError() from e
+
     return enum_v.value if config.use_enum_values else enum_v
 
 
 def uuid_validator(v, field, config, **kwargs) -> UUID:
-    if isinstance(v, str):
-        v = UUID(v)
-    elif isinstance(v, (bytes, bytearray)):
-        v = UUID(v.decode())
-    elif not isinstance(v, UUID):
-        raise ValueError(f'str, byte or native UUID type expected not {type(v)}')
+    try:
+        if isinstance(v, str):
+            v = UUID(v)
+        elif isinstance(v, (bytes, bytearray)):
+            v = UUID(v.decode())
+    except ValueError as e:
+        raise errors.UUIDError() from e
+
+    if not isinstance(v, UUID):
+        raise errors.UUIDError()
 
     required_version = getattr(field.type_, '_required_version', None)
     if required_version and v.version != required_version:
-        raise ValueError(f'uuid version {required_version} expected, not {v.version}')
+        raise errors.UUIDVersionError(required_version=required_version)
 
     return v
 
@@ -153,10 +217,22 @@ def decimal_validator(v) -> Decimal:
     try:
         v = Decimal(v)
     except DecimalException as e:
-        raise TypeError(f'value is not a valid decimal, got {display_as_type(v)}') from e
+        raise errors.DecimalError() from e
 
     if not v.is_finite():
-        raise TypeError(f'value is not a valid decimal, got {display_as_type(v)}')
+        raise errors.DecimalIsNotFiniteError()
+
+    return v
+
+
+def path_validator(v) -> Path:
+    if isinstance(v, Path):
+        return v
+
+    try:
+        v = Path(v)
+    except TypeError as e:
+        raise errors.PathError() from e
 
     return v
 
@@ -169,10 +245,10 @@ _VALIDATORS = [
     (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
 
     (bool, [bool_validator]),
-    (int, [int, number_size_validator]),
-    (float, [float, number_size_validator]),
+    (int, [int_validator]),
+    (float, [float_validator]),
 
-    (Path, [Path]),
+    (Path, [path_validator]),
 
     (datetime, [parse_datetime]),
     (date, [parse_date]),
@@ -197,5 +273,5 @@ def find_validators(type_):
             if issubclass(type_, val_type):
                 return validators
         except TypeError as e:
-            raise TypeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
-    raise ConfigError(f'no validator found for {type_}')
+            raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
+    raise errors.ConfigError(f'no validator found for {type_}')

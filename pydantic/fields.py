@@ -2,9 +2,10 @@ import inspect
 from enum import IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
-from .exceptions import ConfigError, Error
+from .error_wrappers import ErrorWrapper
+from .errors import ConfigError, SequenceError
 from .utils import display_as_type
-from .validators import NoneType, find_validators, not_none_validator
+from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
 Required: Any = Ellipsis
 
@@ -238,10 +239,12 @@ class Field:
 
     def _validate_sequence(self, v, values, loc, cls):
         result, errors = [], []
+
         try:
             v_iter = enumerate(v)
-        except TypeError as exc:
-            return v, Error(exc, loc=loc)
+        except TypeError:
+            return v, ErrorWrapper(SequenceError(), loc=loc, config=self.model_config)
+
         for i, v_ in v_iter:
             v_loc = *loc, i
             single_result, single_errors = self._validate_singleton(v_, values, v_loc, cls)
@@ -249,19 +252,17 @@ class Field:
                 errors.append(single_errors)
             else:
                 result.append(single_result)
+
         if errors:
             return v, errors
         else:
             return result, None
 
     def _validate_mapping(self, v, values, loc, cls):
-        if isinstance(v, dict):
-            v_iter = v
-        else:
-            try:
-                v_iter = dict(v)
-            except TypeError:
-                return v, Error(TypeError(f'value is not a valid dict, got {display_as_type(v)}'), loc=loc)
+        try:
+            v_iter = dict_validator(v)
+        except TypeError as exc:
+            return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
@@ -309,7 +310,7 @@ class Field:
                     # ValidatorSignature.CLS_VALUE_KWARGS
                     v = validator(cls, v, values=values, config=self.model_config, field=self)
             except (ValueError, TypeError) as exc:
-                return v, Error(exc, loc=loc)
+                return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
         return v, None
 
     def __repr__(self):

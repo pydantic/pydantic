@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError, create_model, validator
+from pydantic import BaseModel, ValidationError, create_model, errors, validator
 
 
 def test_create_model():
@@ -31,12 +31,12 @@ def test_invalid_name():
 
 
 def test_field_wrong_tuple():
-    with pytest.raises(ConfigError):
+    with pytest.raises(errors.ConfigError):
         create_model('FooModel', foo=(1, 2, 3))
 
 
 def test_config_and_base():
-    with pytest.raises(ConfigError):
+    with pytest.raises(errors.ConfigError):
         create_model('FooModel', __config__=BaseModel.Config, __base__=BaseModel)
 
 

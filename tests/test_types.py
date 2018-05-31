@@ -4,6 +4,7 @@ from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
+from pathlib import Path
 from uuid import UUID
 
 import pytest
@@ -38,8 +39,11 @@ def test_constrained_str_too_long():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
-            'msg': 'length greater than maximum allowed: 10',
-            'type': 'value_error',
+            'msg': 'ensure this value has at most 10 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {
+                'limit_value': 10,
+            },
         },
     ]
 
@@ -76,13 +80,13 @@ def test_dsn_no_driver():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('db_driver',),
-            'msg': 'None is not an allow value',
-            'type': 'type_error',
+            'msg': 'none is not an allow value',
+            'type': 'type_error.none.not_allowed',
         },
         {
             'loc': ('dsn',),
-            'msg': '"db_driver" field may not be missing or None',
-            'type': 'value_error',
+            'msg': '"driver" field may not be empty',
+            'type': 'value_error.dsn.driver_is_empty',
         },
     ]
 
@@ -99,8 +103,8 @@ def test_module_import():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('module',),
-            'msg': '"foobar" doesn\'t look like a module path',
-            'type': 'value_error',
+            'msg': 'ensure this value contains valid import path',
+            'type': 'type_error.py_object',
         },
     ]
 
@@ -117,7 +121,6 @@ class CheckModel(BaseModel):
     class Config:
         anystr_strip_whitespace = True
         max_anystr_length = 10
-        max_number_size = 100
 
 
 @pytest.mark.parametrize('field,value,result', [
@@ -148,6 +151,10 @@ class CheckModel(BaseModel):
     ('bytes_check', b's', b's'),
     ('bytes_check', b'  s  ', b's'),
     ('bytes_check', 1, b'1'),
+    ('bytes_check', bytearray('xx', encoding='utf8'), b'xx'),
+    ('bytes_check', True, b'True'),
+    ('bytes_check', False, b'False'),
+    ('bytes_check', {}, ValidationError),
     ('bytes_check', 'x' * 11, ValidationError),
     ('bytes_check', b'x' * 11, ValidationError),
 
@@ -159,9 +166,6 @@ class CheckModel(BaseModel):
     ('int_check', 12, 12),
     ('int_check', '12', 12),
     ('int_check', b'12', 12),
-    ('int_check', 123, ValidationError),
-    ('int_check', '123', ValidationError),
-    ('int_check', b'123', ValidationError),
 
     ('float_check', 1, 1.0),
     ('float_check', 1.0, 1.0),
@@ -169,9 +173,6 @@ class CheckModel(BaseModel):
     ('float_check', '1', 1.0),
     ('float_check', b'1.0', 1.0),
     ('float_check', b'1', 1.0),
-    ('float_check', 123, ValidationError),
-    ('float_check', '123', ValidationError),
-    ('float_check', b'123', ValidationError),
 
     ('uuid_check', 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
     ('uuid_check', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
@@ -210,8 +211,11 @@ def test_string_too_long():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('str_check',),
-            'msg': 'length greater than maximum allowed: 10',
-            'type': 'value_error',
+            'msg': 'ensure this value has at most 10 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {
+                'limit_value': 10,
+            },
         },
     ]
 
@@ -222,51 +226,11 @@ def test_string_too_short():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('str_check',),
-            'msg': 'length less than minimum allowed: 5',
-            'type': 'value_error',
-        },
-    ]
-
-
-class NumberModel(BaseModel):
-    int_check: int
-    float_check: float
-
-    class Config:
-        min_number_size = 5
-        max_number_size = 10
-
-
-def test_number_too_big():
-    with pytest.raises(ValidationError) as exc_info:
-        NumberModel(int_check=50, float_check=150)
-    assert exc_info.value.flatten_errors() == [
-        {
-            'loc': ('int_check',),
-            'msg': 'size greater than maximum allowed: 10',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('float_check',),
-            'msg': 'size greater than maximum allowed: 10',
-            'type': 'value_error',
-        },
-    ]
-
-
-def test_number_too_small():
-    with pytest.raises(ValidationError) as exc_info:
-        NumberModel(int_check=1, float_check=2.5)
-    assert exc_info.value.flatten_errors() == [
-        {
-            'loc': ('int_check',),
-            'msg': 'size less than minimum allowed: 5',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('float_check',),
-            'msg': 'size less than minimum allowed: 5',
-            'type': 'value_error',
+            'msg': 'ensure this value has at least 5 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {
+                'limit_value': 5,
+            },
         },
     ]
 
@@ -302,23 +266,23 @@ def test_datetime_errors():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('dt',),
-            'msg': 'month must be in 1..12',
-            'type': 'value_error',
+            'msg': 'invalid datetime format',
+            'type': 'type_error.datetime',
         },
         {
             'loc': ('date_',),
-            'msg': 'Invalid date format',
-            'type': 'value_error',
+            'msg': 'invalid date format',
+            'type': 'type_error.date',
         },
         {
             'loc': ('time_',),
-            'msg': 'hour must be in 0..23',
-            'type': 'value_error',
+            'msg': 'invalid time format',
+            'type': 'type_error.time',
         },
         {
             'loc': ('duration',),
-            'msg': 'Invalid duration format',
-            'type': 'value_error',
+            'msg': 'invalid duration format',
+            'type': 'type_error.duration',
         },
     ]
 
@@ -351,9 +315,9 @@ def test_enum_fails():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('tool',),
-            'msg': '3 is not a valid ToolEnum',
-            'type': 'value_error',
-        }
+            'msg': 'value is not a valid enumeration member',
+            'type': 'type_error.enum',
+        },
     ]
 
 
@@ -406,22 +370,28 @@ def test_string_fails():
         {
             'loc': ('str_regex',),
             'msg': 'string does not match regex "^xxx\\d{3}$"',
-            'type': 'value_error',
+            'type': 'value_error.str.regex',
+            'ctx': {
+                'pattern': '^xxx\\d{3}$',
+            },
         },
         {
             'loc': ('str_min_length',),
-            'msg': 'length less than minimum allowed: 5',
-            'type': 'value_error',
+            'msg': 'ensure this value has at least 5 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {
+                'limit_value': 5,
+            },
         },
         {
             'loc': ('str_email',),
-            'msg': 'The email address contains invalid characters before the @-sign: <.',
-            'type': 'value_error.email_not_valid_error.email_syntax_error',
+            'msg': 'value is not a valid email address',
+            'type': 'value_error.email',
         },
         {
             'loc': ('name_email',),
-            'msg': 'The email address contains invalid characters before the @-sign:  .',
-            'type': 'value_error.email_not_valid_error.email_syntax_error',
+            'msg': 'value is not a valid email address',
+            'type': 'value_error.email',
         },
     ]
 
@@ -440,151 +410,176 @@ def test_email_validator_not_installed_name_email():
             str_email: NameEmail = ...
 
 
-class ListDictTupleModel(BaseModel):
-    a: dict = None
-    b: list = None
-    c: OrderedDict = None
-    d: tuple = None
-
-
 def test_dict():
-    assert ListDictTupleModel(a={1: 10, 2: 20}).a == {1: 10, 2: 20}
-    assert ListDictTupleModel(a=[(1, 2), (3, 4)]).a == {1: 2, 3: 4}
+    class Model(BaseModel):
+        v: dict
+
+    assert Model(v={1: 10, 2: 20}).v == {1: 10, 2: 20}
+    assert Model(v=[(1, 2), (3, 4)]).v == {1: 2, 3: 4}
 
     with pytest.raises(ValidationError) as exc_info:
-        ListDictTupleModel(a=[1, 2, 3])
+        Model(v=[1, 2, 3])
     assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('a',),
-            'msg': 'value is not a valid dict, got list',
-            'type': 'type_error',
+            'loc': ('v',),
+            'msg': 'value is not a valid dict',
+            'type': 'type_error.dict',
         },
     ]
 
 
 def test_list():
-    m = ListDictTupleModel(b=[1, 2, '3'])
-    assert m.a is None
-    assert m.b == [1, 2, '3']
-    assert ListDictTupleModel(b='xyz').b == ['x', 'y', 'z']
-    assert ListDictTupleModel(b=(i**2 for i in range(5))).b == [0, 1, 4, 9, 16]
+    class Model(BaseModel):
+        v: list
+
+    assert Model(v=[1, 2, '3']).v == [1, 2, '3']
+    assert Model(v='xyz').v == ['x', 'y', 'z']
+    assert Model(v=(i**2 for i in range(5))).v == [0, 1, 4, 9, 16]
 
     with pytest.raises(ValidationError) as exc_info:
-        ListDictTupleModel(b=1)
+        Model(v=1)
     assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('b',),
-            'msg': '\'int\' object is not iterable',
-            'type': 'type_error',
+            'loc': ('v',),
+            'msg': 'value is not a valid list',
+            'type': 'type_error.list',
         },
     ]
 
 
 def test_ordered_dict():
-    assert ListDictTupleModel(c=OrderedDict([(1, 10), (2, 20)])).c == OrderedDict([(1, 10), (2, 20)])
-    assert ListDictTupleModel(c={1: 10, 2: 20}).c in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
-    assert ListDictTupleModel(c=[(1, 2), (3, 4)]).c == OrderedDict([(1, 2), (3, 4)])
+    class Model(BaseModel):
+        v: OrderedDict
+
+    assert Model(v=OrderedDict([(1, 10), (2, 20)])).v == OrderedDict([(1, 10), (2, 20)])
+    assert Model(v={1: 10, 2: 20}).v in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
+    assert Model(v=[(1, 2), (3, 4)]).v == OrderedDict([(1, 2), (3, 4)])
 
     with pytest.raises(ValidationError) as exc_info:
-        ListDictTupleModel(c=[1, 2, 3])
+        Model(v=[1, 2, 3])
     assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('c',),
-            'msg': '\'int\' object is not iterable',
-            'type': 'type_error',
+            'loc': ('v',),
+            'msg': 'value is not a valid dict',
+            'type': 'type_error.dict',
         },
     ]
 
 
 def test_tuple():
-    m = ListDictTupleModel(d=(1, 2, '3'))
-    assert m.a is None
-    assert m.d == (1, 2, '3')
-    assert m.dict() == {'a': None, 'b': None, 'c': None, 'd': (1, 2, '3')}
-    assert ListDictTupleModel(d='xyz').d == ('x', 'y', 'z')
-    assert ListDictTupleModel(d=(i**2 for i in range(5))).d == (0, 1, 4, 9, 16)
+    class Model(BaseModel):
+        v: tuple
+
+    assert Model(v=(1, 2, '3')).v == (1, 2, '3')
+    assert Model(v='xyz').v == ('x', 'y', 'z')
+    assert Model(v=(i**2 for i in range(5))).v == (0, 1, 4, 9, 16)
 
     with pytest.raises(ValidationError) as exc_info:
-        ListDictTupleModel(d=1)
+        Model(v=1)
     assert exc_info.value.flatten_errors() == [
         {
-            'loc': ('d',),
-            'msg': '\'int\' object is not iterable',
-            'type': 'type_error',
-        },
-    ]
-
-
-class IntModel(BaseModel):
-    a: PositiveInt = None
-    b: NegativeInt = None
-    c: conint(gt=4, lt=10) = None
-
-
-def test_int_validation():
-    m = IntModel(a=5, b=-5, c=5)
-    assert m == {'a': 5, 'b': -5, 'c': 5}
-
-    with pytest.raises(ValidationError) as exc_info:
-        IntModel(a=-5, b=5, c=-5)
-    assert exc_info.value.flatten_errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'size less than minimum allowed: 0',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('b',),
-            'msg': 'size greater than maximum allowed: 0',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('c',),
-            'msg': 'size less than minimum allowed: 4',
-            'type': 'value_error',
-        },
-    ]
-
-
-class FloatModel(BaseModel):
-    a: PositiveFloat = None
-    b: NegativeFloat = None
-    c: confloat(gt=4, lt=12.2) = None
-
-
-def test_float_validation():
-    m = FloatModel(a=5.1, b=-5.2, c=5.3)
-    assert m == {'a': 5.1, 'b': -5.2, 'c': 5.3}
-
-    with pytest.raises(ValidationError) as exc_info:
-        FloatModel(a=-5.1, b=5.2, c=-5.3)
-    assert exc_info.value.flatten_errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'size less than minimum allowed: 0',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('b',),
-            'msg': 'size greater than maximum allowed: 0',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('c',),
-            'msg': 'size less than minimum allowed: 4',
-            'type': 'value_error',
+            'loc': ('v',),
+            'msg': 'value is not a valid tuple',
+            'type': 'type_error.tuple',
         },
     ]
 
 
 def test_set():
-    class SetModel(BaseModel):
-        v: set = ...
+    class Model(BaseModel):
+        v: set
 
-    m = SetModel(v=[1, 2, 3])
-    assert m.v == {1, 2, 3}
-    assert m.dict() == {'v': {1, 2, 3}}
-    assert SetModel(v={'a', 'b', 'c'}).v == {'a', 'b', 'c'}
+    assert Model(v={1, 2, 2, '3'}).v == {1, 2, '3'}
+    assert Model(v='xyzxyz').v == {'x', 'y', 'z'}
+    assert Model(v={i**2 for i in range(5)}).v == {0, 1, 4, 9, 16}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=1)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'value is not a valid set',
+            'type': 'type_error.set',
+        },
+    ]
+
+
+def test_int_validation():
+    class Model(BaseModel):
+        a: PositiveInt = None
+        b: NegativeInt = None
+        c: conint(gt=4, lt=10) = None
+
+    m = Model(a=5, b=-5, c=5)
+    assert m == {'a': 5, 'b': -5, 'c': 5}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=-5, b=5, c=-5)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'ensure this value is greater than 0',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': 0,
+            },
+        },
+        {
+            'loc': ('b',),
+            'msg': 'ensure this value is less than 0',
+            'type': 'value_error.number.max_size',
+            'ctx': {
+                'limit_value': 0,
+            },
+        },
+        {
+            'loc': ('c',),
+            'msg': 'ensure this value is greater than 4',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': 4,
+            },
+        },
+    ]
+
+
+def test_float_validation():
+    class Model(BaseModel):
+        a: PositiveFloat = None
+        b: NegativeFloat = None
+        c: confloat(gt=4, lt=12.2) = None
+
+    m = Model(a=5.1, b=-5.2, c=5.3)
+    assert m == {'a': 5.1, 'b': -5.2, 'c': 5.3}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=-5.1, b=5.2, c=-5.3)
+    assert exc_info.value.flatten_errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'ensure this value is greater than 0',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': 0,
+            },
+        },
+        {
+            'loc': ('b',),
+            'msg': 'ensure this value is less than 0',
+            'type': 'value_error.number.max_size',
+            'ctx': {
+                'limit_value': 0,
+            },
+        },
+        {
+            'loc': ('c',),
+            'msg': 'ensure this value is greater than 4',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': 4,
+            },
+        },
+    ]
 
 
 def test_strict_str():
@@ -609,8 +604,8 @@ def test_uuid_error():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('v',),
-            'msg': 'badly formed hexadecimal UUID string',
-            'type': 'value_error',
+            'msg': 'value is not a valid uuid',
+            'type': 'type_error.uuid',
         },
     ]
 
@@ -644,23 +639,35 @@ def test_uuid_validation():
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
-            'msg': 'uuid version 1 expected, not 5',
-            'type': 'value_error',
+            'msg': 'uuid version 1 expected',
+            'type': 'value_error.uuid.version',
+            'ctx': {
+                'required_version': 1,
+            },
         },
         {
             'loc': ('b',),
-            'msg': 'uuid version 3 expected, not 4',
-            'type': 'value_error',
+            'msg': 'uuid version 3 expected',
+            'type': 'value_error.uuid.version',
+            'ctx': {
+                'required_version': 3,
+            },
         },
         {
             'loc': ('c',),
-            'msg': 'uuid version 4 expected, not 3',
-            'type': 'value_error',
+            'msg': 'uuid version 4 expected',
+            'type': 'value_error.uuid.version',
+            'ctx': {
+                'required_version': 4,
+            },
         },
         {
             'loc': ('d',),
-            'msg': 'uuid version 5 expected, not 1',
-            'type': 'value_error',
+            'msg': 'uuid version 5 expected',
+            'type': 'value_error.uuid.version',
+            'ctx': {
+                'required_version': 5,
+            },
         },
     ]
 
@@ -693,34 +700,139 @@ def test_anystr_strip_whitespace_disabled():
 
 @pytest.mark.parametrize('type_,value,result', [
     (condecimal(gt=Decimal('42.24')), Decimal('43'), Decimal('43')),
-    (condecimal(gt=Decimal('42.24')), Decimal('42'), ValidationError),
+    (condecimal(gt=Decimal('42.24')), Decimal('42'), [
+        {
+            'loc': ('foo',),
+            'msg': 'ensure this value is greater than 42.24',
+            'type': 'value_error.number.min_size',
+            'ctx': {
+                'limit_value': Decimal('42.24'),
+            },
+        },
+    ]),
     (condecimal(lt=Decimal('42.24')), Decimal('42'), Decimal('42')),
-    (condecimal(lt=Decimal('42.24')), Decimal('43'), ValidationError),
+    (condecimal(lt=Decimal('42.24')), Decimal('43'), [
+        {
+            'loc': ('foo',),
+            'msg': 'ensure this value is less than 42.24',
+            'type': 'value_error.number.max_size',
+            'ctx': {
+                'limit_value': Decimal('42.24'),
+            },
+        },
+    ]),
     (condecimal(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
-    (condecimal(max_digits=2, decimal_places=1), Decimal('0.99'), ValidationError),
-    (condecimal(max_digits=3, decimal_places=1), Decimal('999'), ValidationError),
+    (condecimal(max_digits=2, decimal_places=1), Decimal('0.99'), [
+        {
+            'loc': ('foo',),
+            'msg': 'ensure that there are no more than 1 decimal places',
+            'type': 'value_error.decimal.max_places',
+            'ctx': {
+                'decimal_places': 1,
+            },
+        },
+    ]),
+    (condecimal(max_digits=3, decimal_places=1), Decimal('999'), [
+        {
+            'loc': ('foo',),
+            'msg': 'ensure that there are no more than 2 digits before the decimal point',
+            'type': 'value_error.decimal.whole_digits',
+            'ctx': {
+                'whole_digits': 2,
+            },
+        },
+    ]),
     (condecimal(max_digits=4, decimal_places=1), Decimal('999'), Decimal('999')),
     (condecimal(max_digits=20, decimal_places=2), Decimal('742403889818000000'), Decimal('742403889818000000')),
     (condecimal(max_digits=20, decimal_places=2), Decimal('7.42403889818E+17'), Decimal('7.42403889818E+17')),
-    (condecimal(max_digits=20, decimal_places=2), Decimal('7424742403889818000000'), ValidationError),
+    (condecimal(max_digits=20, decimal_places=2), Decimal('7424742403889818000000'), [
+        {
+            'loc': ('foo',),
+            'msg': 'ensure that there are no more than 20 digits in total',
+            'type': 'value_error.decimal.max_digits',
+            'ctx': {
+                'max_digits': 20,
+            },
+        },
+    ]),
     (condecimal(max_digits=5, decimal_places=2), Decimal('7304E-1'), Decimal('7304E-1')),
-    (condecimal(max_digits=5, decimal_places=2), Decimal('7304E-3'), ValidationError),
+    (condecimal(max_digits=5, decimal_places=2), Decimal('7304E-3'), [
+        {
+            'loc': ('foo',),
+            'msg': 'ensure that there are no more than 2 decimal places',
+            'type': 'value_error.decimal.max_places',
+            'ctx': {
+                'decimal_places': 2,
+            },
+        },
+    ]),
     (condecimal(max_digits=5, decimal_places=5), Decimal('70E-5'), Decimal('70E-5')),
-    (condecimal(max_digits=5, decimal_places=5), Decimal('70E-6'), ValidationError),
+    (condecimal(max_digits=5, decimal_places=5), Decimal('70E-6'), [
+        {
+            'loc': ('foo',),
+            'msg': 'ensure that there are no more than 5 digits in total',
+            'type': 'value_error.decimal.max_digits',
+            'ctx': {
+                'max_digits': 5,
+            },
+        },
+    ]),
     *[
-        (condecimal(decimal_places=2, max_digits=10), Decimal(value), ValidationError)
+        (condecimal(decimal_places=2, max_digits=10), value, [
+            {
+                'loc': ('foo',),
+                'msg': 'value is not a valid decimal',
+                'type': 'value_error.decimal.not_finite',
+            },
+        ])
         for value in (
-            'NaN', '-NaN', '+NaN', 'sNaN', '-sNaN', '+sNaN',
-            'Inf', '-Inf', '+Inf', 'Infinity', '-Infinity', '-Infinity',
+            'NaN', '-NaN', '+NaN', 'sNaN', '-sNaN', '+sNaN', 'Inf', '-Inf', '+Inf',
+            'Infinity', '-Infinity', '-Infinity',
+        )
+    ],
+    *[
+        (condecimal(decimal_places=2, max_digits=10), Decimal(value), [
+            {
+                'loc': ('foo',),
+                'msg': 'value is not a valid decimal',
+                'type': 'value_error.decimal.not_finite',
+            },
+        ])
+        for value in (
+            'NaN', '-NaN', '+NaN', 'sNaN', '-sNaN', '+sNaN', 'Inf', '-Inf', '+Inf',
+            'Infinity', '-Infinity', '-Infinity',
         )
     ],
 ])
 def test_decimal_validation(type_, value, result):
     model = create_model('DecimalModel', foo=(type_, ...))
-    kwargs = {'foo': value}
 
-    if result == ValidationError:
-        with pytest.raises(ValidationError):
-            model(**kwargs)
+    if not isinstance(result, Decimal):
+        with pytest.raises(ValidationError) as exc_info:
+            model(foo=value)
+        assert exc_info.value.flatten_errors() == result
     else:
-        assert model(**kwargs).dict()['foo'] == result
+        assert model(foo=value).foo == result
+
+
+@pytest.mark.parametrize('value,result', (
+    ('/test/path', Path('/test/path')),
+    (Path('/test/path'), Path('/test/path')),
+    (None, [
+        {
+            'loc': ('foo',),
+            'msg': 'value is not a valid path',
+            'type': 'type_error.path',
+        },
+    ]),
+))
+def test_path_validation(value, result):
+    class Model(BaseModel):
+        foo: Path
+
+    if not isinstance(result, Path):
+        with pytest.raises(ValidationError) as exc_info:
+            Model(foo=value)
+        assert exc_info.value.flatten_errors() == result
+    else:
+        assert Model(foo=value).foo == result
