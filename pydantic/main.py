@@ -6,7 +6,7 @@ from pathlib import Path
 from types import FunctionType
 from typing import Any, Dict, Set, Type, Union
 
-from .error_wrappers import Error, ValidationError
+from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field, Validator
 from .parse import Protocol, load_file, load_str_bytes
@@ -187,7 +187,7 @@ class BaseModel(metaclass=MetaModel):
     def parse_obj(cls, obj):
         if not isinstance(obj, dict):
             exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-            raise ValidationError([Error(exc, loc='__obj__')])
+            raise ValidationError([ErrorWrapper(exc, loc='__obj__')])
         return cls(**obj)
 
     @classmethod
@@ -200,7 +200,7 @@ class BaseModel(metaclass=MetaModel):
             obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding,
                                  allow_pickle=allow_pickle)
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([Error(e, loc='__obj__')])
+            raise ValidationError([ErrorWrapper(e, loc='__obj__')])
         return cls.parse_obj(obj)
 
     @classmethod
@@ -270,13 +270,13 @@ class BaseModel(metaclass=MetaModel):
                     value = field.default
                 else:
                     if field.required:
-                        errors.append(Error(MissingError(), loc=field.alias, config=self.__config__))
+                        errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=self.__config__))
                     else:
                         values[name] = field.default
                     continue
 
             v_, errors_ = field.validate(value, values, loc=field.alias, cls=self.__class__)
-            if isinstance(errors_, Error):
+            if isinstance(errors_, ErrorWrapper):
                 errors.append(errors_)
             elif isinstance(errors_, list):
                 errors.extend(errors_)
@@ -292,7 +292,7 @@ class BaseModel(metaclass=MetaModel):
                 else:
                     # config.ignore_extra is False
                     for field in sorted(extra):
-                        errors.append(Error(ExtraError(), loc=field, config=self.__config__))
+                        errors.append(ErrorWrapper(ExtraError(), loc=field, config=self.__config__))
 
         if errors:
             raise ValidationError(errors)

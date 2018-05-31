@@ -314,7 +314,6 @@ def test_flatten_errors_unknown_error_object():
     (TypeError(), 'type_error'),
     (ValueError(), 'value_error'),
     (errors.DecimalIsNotFiniteError(), 'value_error.decimal.not_finite'),
-    (RuntimeError(), RuntimeError),
 ))
 def test_get_exc_type(exc, type_):
     if isinstance(type_, str):
