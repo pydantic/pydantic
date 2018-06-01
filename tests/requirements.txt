@@ -7,6 +7,6 @@ pycodestyle==2.4.0
 pyflakes==2.0.0
 pytest==3.6.0
 pytest-cov==2.5.1
-pytest-isort==0.1.0
+pytest-isort==0.2.0
 pytest-mock==1.9.0
 pytest-sugar==0.9.1
