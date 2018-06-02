@@ -838,7 +838,7 @@ def test_path_validation(value, result):
         assert Model(foo=value).foo == result
 
 
-def test_gt():
+def test_number_gt():
     class Model(BaseModel):
         a: conint(gt=-1) = 0
 
@@ -850,7 +850,7 @@ def test_gt():
     ) in str(exc_info.value)
 
 
-def test_lt():
+def test_number_lt():
     class Model(BaseModel):
         a: conint(lt=5) = 0
 
