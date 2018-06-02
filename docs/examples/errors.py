@@ -19,17 +19,15 @@ except ValidationError as e:
     print(e)
 
 """
-4 errors validating input
-list_of_ints:
-  invalid literal for int() with base 10: 'bad' (error_type=ValueError track=int index=2)
-a_float:
-  could not convert string to float: 'not a float' (error_type=ValueError track=float)
-is_required:
-  field required (error_type=Missing)
-recursive_model:
-  error validating input (error_type=ValidationError track=Location)
-    lng:
-      could not convert string to float: 'New York' (error_type=ValueError track=float
+validation errors
+list_of_ints -> 2
+  value is not a valid integer (type=type_error.integer)
+a_float
+  value is not a valid float (type=type_error.float)
+is_required
+  field required (type=value_error.missing)
+recursive_model -> lng
+  value is not a valid float (type=type_error.float)
 """
 
 try:
@@ -38,19 +36,27 @@ except ValidationError as e:
     print(e.json())
 
 """
-{
-  "is_required": {
-    "error_msg": "field required",
-    "error_type": "Missing"
+[
+  {
+    "loc": [
+      "list_of_ints"
+    ],
+    "msg": "value is not a valid sequence",
+    "type": "type_error.sequence"
   },
-  "list_of_ints": {
-    "error_msg": "'int' object is not iterable",
-    "error_type": "TypeError"
+  {
+    "loc": [
+      "is_required"
+    ],
+    "msg": "field required",
+    "type": "value_error.missing"
   },
-  "recursive_model": {
-    "error_msg": "cannot convert dictionary update sequence element #0 to a sequence",
-    "error_type": "TypeError",
-    "track": "Location"
+  {
+    "loc": [
+      "recursive_model"
+    ],
+    "msg": "value is not a valid dict",
+    "type": "type_error.dict"
   }
-}
+]
 """

@@ -252,8 +252,6 @@ Options:
 :anystr_strip_whitespace: strip or not trailing and leading whitespace for str & byte types (default: ``False``)
 :min_anystr_length: min length for str & byte types (default: ``0``)
 :max_anystr_length: max length for str & byte types (default: ``2 ** 16``)
-:min_number_size: min size for numbers (default: ``-2 ** 64``)
-:max_number_size: max size for numbers (default: ``2 ** 64``)
 :validate_all: whether or not to validate field defaults (default: ``False``)
 :ignore_extra: whether to ignore any extra values in input data (default: ``True``)
 :allow_extra: whether or not too allow (and include on the model) any extra values in input data (default: ``False``)
@@ -265,6 +263,8 @@ Options:
 :allow_population_by_alias: whether or not an aliased field may be populated by its name as given by the model
     attribute, rather than strictly the alias; please be sure to read the warning below before enabling this (default:
     ``False``)
+:error_msg_templates: let's you to override default error message templates.
+    Pass in a dictionary with keys matching the error messages you want to override (default: ``{}``)
 
 .. warning::
 

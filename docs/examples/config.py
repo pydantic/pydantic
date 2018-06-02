@@ -6,6 +6,9 @@ class Model(BaseModel):
 
     class Config:
         max_anystr_length = 10
+        error_msg_templates = {
+            'value_error.any_str.max_length': 'max_length:{limit_value}',
+        }
 
 
 try:
@@ -13,7 +16,7 @@ try:
 except ValidationError as e:
     print(e)
 """
-error validating input
-v:
-  length not in range 0 to 10 (error_type=ValueError track=str)
+validation errors
+v
+  max_length:10 (type=value_error.any_str.max_length; limit_value=10)
 """

@@ -25,11 +25,13 @@ try:
 except ValidationError as e:
     print(e.json())
 """
-{
-  "s": {
-    "error_msg": "strict string: str expected not <class 'int'>",
-    "error_type": "ValueError",
-    "track": "StrictStr"
+[
+  {
+    "loc": [
+      "s"
+    ],
+    "msg": "strict string: str expected not <class 'int'>",
+    "type": "value_error"
   }
-}
+]
 """

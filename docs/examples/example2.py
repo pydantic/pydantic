@@ -5,23 +5,28 @@ except ValidationError as e:
     print(e.json())
 
 """
-{
-  "friends": [
-    {
-      "error_msg": "invalid literal for int() with base 10: 'not number'",
-      "error_type": "ValueError",
-      "index": 2,
-      "track": "int"
-    }
-  ],
-  "id": {
-    "error_msg": "field required",
-    "error_type": "Missing"
+[
+  {
+    "loc": [
+      "id"
+    ],
+    "msg": "field required",
+    "type": "value_error.missing"
   },
-  "signup_ts": {
-    "error_msg": "Invalid datetime format",
-    "error_type": "ValueError",
-    "track": "datetime"
+  {
+    "loc": [
+      "signup_ts"
+    ],
+    "msg": "invalid datetime format",
+    "type": "type_error.datetime"
+  },
+  {
+    "loc": [
+      "friends",
+      2
+    ],
+    "msg": "value is not a valid integer",
+    "type": "type_error.integer"
   }
-}
+]
 """

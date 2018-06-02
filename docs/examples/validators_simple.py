@@ -27,9 +27,9 @@ try:
 except ValidationError as e:
     print(e)
 """
-2 errors validating input
-name:
-  must contain a space (error_type=ValueError track=str)
-password2:
-  passwords do not match (error_type=ValueError track=str)
+validation errors
+name
+  must contain a space (type=value_error)
+password2
+  passwords do not match (type=value_error)
 """
