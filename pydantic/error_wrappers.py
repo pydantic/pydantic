@@ -114,7 +114,7 @@ def get_exc_type(exc: Exception) -> str:
         # just TypeError or ValueError, no extra code
         return base_name
 
-    # if it's not a TypeError or ValueError, re just take the lowercase of the exception name
+    # if it's not a TypeError or ValueError, we just take the lowercase of the exception name
     # no chaining or snake case logic, use "code" for more complex error types.
     code = getattr(cls, 'code', None) or cls.__name__.replace('Error', '').lower()
     return base_name + '.' + code
