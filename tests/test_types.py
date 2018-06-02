@@ -267,7 +267,7 @@ def test_datetime_errors():
         {
             'loc': ('dt',),
             'msg': 'invalid datetime format',
-            'type': 'type_error.datetime',
+            'type': 'type_error.date_time',
         },
         {
             'loc': ('date_',),

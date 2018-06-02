@@ -27,12 +27,10 @@ class ConfigError(RuntimeError):
 
 
 class MissingError(PydanticValueError):
-    code = 'missing'
     msg_template = 'field required'
 
 
 class ExtraError(PydanticValueError):
-    code = 'extra'
     msg_template = 'extra fields not permitted'
 
 
@@ -42,12 +40,10 @@ class NoneIsNotAllowedError(PydanticTypeError):
 
 
 class BytesError(PydanticTypeError):
-    code = 'bytes'
     msg_template = 'byte type expected'
 
 
 class DictError(PydanticTypeError):
-    code = 'dict'
     msg_template = 'value is not a valid dict'
 
 
@@ -57,52 +53,42 @@ class DSNDriverIsEmptyError(PydanticValueError):
 
 
 class EmailError(PydanticValueError):
-    code = 'email'
     msg_template = 'value is not a valid email address'
 
 
 class EnumError(PydanticTypeError):
-    code = 'enum'
     msg_template = 'value is not a valid enumeration member'
 
 
 class IntegerError(PydanticTypeError):
-    code = 'integer'
     msg_template = 'value is not a valid integer'
 
 
 class FloatError(PydanticTypeError):
-    code = 'float'
     msg_template = 'value is not a valid float'
 
 
 class ListError(PydanticTypeError):
-    code = 'list'
     msg_template = 'value is not a valid list'
 
 
 class PathError(PydanticTypeError):
-    code = 'path'
     msg_template = 'value is not a valid path'
 
 
 class PyObjectError(PydanticTypeError):
-    code = 'py_object'
     msg_template = 'ensure this value contains valid import path'
 
 
 class SequenceError(PydanticTypeError):
-    code = 'sequence'
     msg_template = 'value is not a valid sequence'
 
 
 class SetError(PydanticTypeError):
-    code = 'set'
     msg_template = 'value is not a valid set'
 
 
 class TupleError(PydanticTypeError):
-    code = 'tuple'
     msg_template = 'value is not a valid tuple'
 
 
@@ -123,7 +109,6 @@ class AnyStrMaxLengthError(PydanticValueError):
 
 
 class StrError(PydanticTypeError):
-    code = 'str'
     msg_template = 'str type expected'
 
 
@@ -152,7 +137,6 @@ class NumberMaxSizeError(PydanticValueError):
 
 
 class DecimalError(PydanticTypeError):
-    code = 'decimal'
     msg_template = 'value is not a valid decimal'
 
 
@@ -186,27 +170,22 @@ class DecimalWholeDigitsError(PydanticValueError):
 
 
 class DateTimeError(PydanticTypeError):
-    code = 'datetime'
     msg_template = 'invalid datetime format'
 
 
 class DateError(PydanticTypeError):
-    code = 'date'
     msg_template = 'invalid date format'
 
 
 class TimeError(PydanticTypeError):
-    code = 'time'
     msg_template = 'invalid time format'
 
 
 class DurationError(PydanticTypeError):
-    code = 'duration'
     msg_template = 'invalid duration format'
 
 
 class UUIDError(PydanticTypeError):
-    code = 'uuid'
     msg_template = 'value is not a valid uuid'
 
 

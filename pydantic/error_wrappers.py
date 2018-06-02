@@ -1,8 +1,6 @@
 import json
 from functools import lru_cache
-from typing import Iterable, Type
 
-from .errors import PydanticErrorMixin
 from .utils import to_snake_case
 
 __all__ = (
@@ -113,28 +111,10 @@ def flatten_errors(errors, *, loc=None):
 def get_exc_type(exc: Exception) -> str:
     cls = type(exc)
 
-    if issubclass(cls, PydanticErrorMixin):
-        return _get_pydantic_exc_type(cls)
+    base_name = 'type_error' if issubclass(cls, TypeError) else 'value_error'
+    if cls in (TypeError, ValueError):
+        # just TypeError or ValueError, no extra code
+        return base_name
 
-    bases = tuple(_get_exc_bases(cls))
-    bases = bases[::-1]
-
-    return to_snake_case('.'.join(bases))
-
-
-def _get_pydantic_exc_type(exc: Type[PydanticErrorMixin]) -> str:
-    if issubclass(exc, TypeError):
-        type_ = 'type_error'
-    else:
-        type_ = 'value_error'
-
-    return f'{type_}.{exc.code}'
-
-
-def _get_exc_bases(exc: Type[Exception]) -> Iterable[str]:
-    for b in exc.__mro__:  # pragma: no branch
-        if b in (TypeError, ValueError):
-            yield b.__name__
-            break
-
-        yield b.__name__.replace('Error', '')
+    code = getattr(cls, 'code', None) or to_snake_case(cls.__name__.replace('Error', ''))
+    return base_name + '.' + code
