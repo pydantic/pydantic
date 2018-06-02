@@ -104,7 +104,7 @@ def test_module_import():
         {
             'loc': ('module',),
             'msg': 'ensure this value contains valid import path',
-            'type': 'type_error.py_object',
+            'type': 'type_error.pyobject',
         },
     ]
 
@@ -267,7 +267,7 @@ def test_datetime_errors():
         {
             'loc': ('dt',),
             'msg': 'invalid datetime format',
-            'type': 'type_error.date_time',
+            'type': 'type_error.datetime',
         },
         {
             'loc': ('date_',),
