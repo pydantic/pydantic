@@ -324,12 +324,7 @@ class Field:
 
 
 def _get_validator_signature(validator):
-    try:
-        signature = inspect.signature(validator)
-    except ValueError:
-        # TODO we should probably have a white list of allowed validators here, rather than assuming
-        # happens on builtins like float
-        return ValidatorSignature.JUST_VALUE
+    signature = inspect.signature(validator)
 
     # bind here will raise a TypeError so:
     # 1. we can deal with it before validation begins

@@ -104,7 +104,7 @@ def test_module_import():
         {
             'loc': ('module',),
             'msg': 'ensure this value contains valid import path',
-            'type': 'type_error.py_object',
+            'type': 'type_error.pyobject',
         },
     ]
 

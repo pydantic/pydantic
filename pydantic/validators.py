@@ -8,7 +8,7 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import display_as_type
+from .utils import change_exception, display_as_type
 
 NoneType = type(None)
 
@@ -37,9 +37,9 @@ def bytes_validator(v) -> bytes:
     elif isinstance(v, bytearray):
         return bytes(v)
     elif isinstance(v, str):
-        return v.encode('utf-8')
+        return v.encode()
     elif isinstance(v, (float, int, Decimal)):
-        return str(v).encode('utf-8')
+        return str(v).encode()
     else:
         raise errors.BytesError()
 
@@ -66,24 +66,16 @@ def int_validator(v) -> int:
     if isinstance(v, int):
         return v
 
-    try:
-        v = int(v)
-    except (TypeError, ValueError) as e:
-        raise errors.IntegerError() from e
-
-    return v
+    with change_exception(errors.IntegerError, TypeError, ValueError):
+        return int(v)
 
 
 def float_validator(v) -> float:
     if isinstance(v, float):
         return v
 
-    try:
-        v = float(v)
-    except (TypeError, ValueError) as e:
-        raise errors.FloatError() from e
-
-    return v
+    with change_exception(errors.FloatError, TypeError, ValueError):
+        return float(v)
 
 
 def number_size_validator(v, field, config, **kwargs):
@@ -122,79 +114,55 @@ def ordered_dict_validator(v) -> OrderedDict:
     if isinstance(v, OrderedDict):
         return v
 
-    try:
-        v = OrderedDict(v)
-    except (TypeError, ValueError) as e:
-        raise errors.DictError() from e
-
-    return v
+    with change_exception(errors.DictError, TypeError, ValueError):
+        return OrderedDict(v)
 
 
 def dict_validator(v) -> dict:
     if isinstance(v, dict):
         return v
 
-    try:
-        v = dict(v)
-    except (TypeError, ValueError) as e:
-        raise errors.DictError() from e
-
-    return v
+    with change_exception(errors.DictError, TypeError, ValueError):
+        return dict(v)
 
 
 def list_validator(v) -> list:
     if isinstance(v, list):
         return v
 
-    try:
-        v = list(v)
-    except TypeError as e:
-        raise errors.ListError() from e
-
-    return v
+    with change_exception(errors.ListError, TypeError):
+        return list(v)
 
 
 def tuple_validator(v) -> tuple:
     if isinstance(v, tuple):
         return v
 
-    try:
-        v = tuple(v)
-    except TypeError as e:
-        raise errors.TupleError() from e
-
-    return v
+    with change_exception(errors.TupleError, TypeError):
+        return tuple(v)
 
 
 def set_validator(v) -> set:
     if isinstance(v, set):
         return v
 
-    try:
-        v = set(v)
-    except TypeError as e:
-        raise errors.SetError() from e
-
-    return v
+    with change_exception(errors.SetError, TypeError):
+        return set(v)
 
 
 def enum_validator(v, field, config, **kwargs) -> Enum:
-    try:
+    with change_exception(errors.EnumError, ValueError):
         enum_v = field.type_(v)
-    except ValueError as e:
-        raise errors.EnumError() from e
 
     return enum_v.value if config.use_enum_values else enum_v
 
 
 def uuid_validator(v, field, config, **kwargs) -> UUID:
-    try:
+    with change_exception(errors.UUIDError, ValueError):
         if isinstance(v, str):
             v = UUID(v)
         elif isinstance(v, (bytes, bytearray)):
             v = UUID(v.decode())
-    except ValueError as e:
-        raise errors.UUIDError() from e
 
     if not isinstance(v, UUID):
         raise errors.UUIDError()
@@ -214,10 +182,8 @@ def decimal_validator(v) -> Decimal:
 
     v = str(v).strip()
 
-    try:
+    with change_exception(errors.DecimalError, DecimalException):
         v = Decimal(v)
-    except DecimalException as e:
-        raise errors.DecimalError() from e
 
     if not v.is_finite():
         raise errors.DecimalIsNotFiniteError()
@@ -229,12 +195,8 @@ def path_validator(v) -> Path:
     if isinstance(v, Path):
         return v
 
-    try:
-        v = Path(v)
-    except TypeError as e:
-        raise errors.PathError() from e
-
-    return v
+    with change_exception(errors.PathError, TypeError):
+        return Path(v)
 
 
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
