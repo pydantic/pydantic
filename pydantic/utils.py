@@ -131,9 +131,8 @@ def to_snake_case(v: str) -> str:
 
 
 @contextmanager
-def change_exception(raise_exc, *except_exc):
-    except_exc = except_exc or (ValueError, TypeError)
+def change_exception(raise_exc, *except_types):
     try:
         yield
-    except except_exc as e:
+    except except_types as e:
         raise raise_exc from e

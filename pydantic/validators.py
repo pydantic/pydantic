@@ -66,7 +66,7 @@ def int_validator(v) -> int:
     if isinstance(v, int):
         return v
 
-    with change_exception(errors.IntegerError):
+    with change_exception(errors.IntegerError, TypeError, ValueError):
         return int(v)
 
 
@@ -74,7 +74,7 @@ def float_validator(v) -> float:
     if isinstance(v, float):
         return v
 
-    with change_exception(errors.FloatError):
+    with change_exception(errors.FloatError, TypeError, ValueError):
         return float(v)
 
 
@@ -114,7 +114,7 @@ def ordered_dict_validator(v) -> OrderedDict:
     if isinstance(v, OrderedDict):
         return v
 
-    with change_exception(errors.DictError):
+    with change_exception(errors.DictError, TypeError, ValueError):
         return OrderedDict(v)
 
 
@@ -122,7 +122,7 @@ def dict_validator(v) -> dict:
     if isinstance(v, dict):
         return v
 
-    with change_exception(errors.DictError):
+    with change_exception(errors.DictError, TypeError, ValueError):
         return dict(v)
 
 
@@ -130,7 +130,7 @@ def list_validator(v) -> list:
     if isinstance(v, list):
         return v
 
-    with change_exception(errors.ListError):
+    with change_exception(errors.ListError, TypeError):
         return list(v)
 
 
@@ -138,7 +138,7 @@ def tuple_validator(v) -> tuple:
     if isinstance(v, tuple):
         return v
 
-    with change_exception(errors.TupleError):
+    with change_exception(errors.TupleError, TypeError):
         return tuple(v)
 
 
@@ -146,19 +146,19 @@ def set_validator(v) -> set:
     if isinstance(v, set):
         return v
 
-    with change_exception(errors.SetError):
+    with change_exception(errors.SetError, TypeError):
         return set(v)
 
 
 def enum_validator(v, field, config, **kwargs) -> Enum:
-    with change_exception(errors.EnumError):
+    with change_exception(errors.EnumError, ValueError):
         enum_v = field.type_(v)
 
     return enum_v.value if config.use_enum_values else enum_v
 
 
 def uuid_validator(v, field, config, **kwargs) -> UUID:
-    with change_exception(errors.UUIDError):
+    with change_exception(errors.UUIDError, ValueError):
         if isinstance(v, str):
             v = UUID(v)
         elif isinstance(v, (bytes, bytearray)):
@@ -195,7 +195,7 @@ def path_validator(v) -> Path:
     if isinstance(v, Path):
         return v
 
-    with change_exception(errors.PathError):
+    with change_exception(errors.PathError, TypeError):
         return Path(v)
 
 

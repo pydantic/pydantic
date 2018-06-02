@@ -103,7 +103,7 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
 
     kw = {k: int(v) for k, v in match.groupdict().items()}
 
-    with change_exception(errors.DateError):
+    with change_exception(errors.DateError, ValueError):
         return date(**kw)
 
 
@@ -129,7 +129,7 @@ def parse_time(value: Union[time, str]) -> time:
 
     kw = {k: int(v) for k, v in kw.items() if v is not None}
 
-    with change_exception(errors.TimeError):
+    with change_exception(errors.TimeError, ValueError):
         return time(**kw)
 
 
@@ -171,7 +171,7 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
     kw = {k: int(v) for k, v in kw.items() if v is not None}
     kw['tzinfo'] = tzinfo
 
-    with change_exception(errors.DateTimeError):
+    with change_exception(errors.DateTimeError, ValueError):
         return datetime(**kw)
 
 
