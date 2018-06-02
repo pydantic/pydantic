@@ -12,6 +12,7 @@ except ImportError:
 
 
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
+SNAKE_CASE_REGEX = re.compile(r'(?:([A-Z]+)([A-Z][a-z])|([^A-Z])([A-Z]))')
 
 
 def validate_email(value) -> Tuple[str, str]:
@@ -126,10 +127,7 @@ def display_as_type(v):
 
 
 def to_snake_case(v: str) -> str:
-    v = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1_\2', v)
-    v = re.sub(r'([a-z\d])([A-Z])', r'\1_\2', v)
-
-    return v.replace('-', '_').lower()
+    return SNAKE_CASE_REGEX.sub(r'\1\3_\2\4', v).lower()
 
 
 @contextmanager
