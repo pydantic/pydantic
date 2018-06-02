@@ -32,7 +32,7 @@ f -> 0
 g
   uuid version 1 expected (type=value_error.uuid.version; required_version=1)
 h
-  yet another error message template 42 (type=value_error.number.min_size; limit_value=42)""",
+  yet another error message template 42 (type=value_error.number.gt; limit_value=42)""",
     ),
     (
         'flatten_errors',
@@ -122,7 +122,7 @@ h
                     'h',
                 ),
                 'msg': 'yet another error message template 42',
-                'type': 'value_error.number.min_size',
+                'type': 'value_error.number.gt',
                 'ctx': {
                     'limit_value': 42,
                 },
@@ -221,7 +221,7 @@ h
       "h"
     ],
     "msg": "yet another error message template 42",
-    "type": "value_error.number.min_size"
+    "type": "value_error.number.gt"
   }
 ]"""
     ),
@@ -250,7 +250,7 @@ f -> 0
 g
   uuid version 1 expected (type=value_error.uuid.version; required_version=1)
 h
-  yet another error message template 42 (type=value_error.number.min_size; limit_value=42)"""
+  yet another error message template 42 (type=value_error.number.gt; limit_value=42)"""
     ),
 ))
 def test_validation_error(result, expected):
@@ -271,7 +271,7 @@ def test_validation_error(result, expected):
 
         class Config:
             error_msg_templates = {
-                'value_error.number.min_size': 'yet another error message template {limit_value}',
+                'value_error.number.gt': 'yet another error message template {limit_value}',
             }
 
     with pytest.raises(ValidationError) as exc_info:
