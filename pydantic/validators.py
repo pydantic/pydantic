@@ -37,9 +37,9 @@ def bytes_validator(v) -> bytes:
     elif isinstance(v, bytearray):
         return bytes(v)
     elif isinstance(v, str):
-        return v.encode('utf-8')
+        return v.encode()
     elif isinstance(v, (float, int, Decimal)):
-        return str(v).encode('utf-8')
+        return str(v).encode()
     else:
         raise errors.BytesError()
 

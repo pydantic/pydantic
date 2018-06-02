@@ -441,3 +441,14 @@ def test_enum_raw():
     assert isinstance(m.foo, FooEnum)
     assert m.foo != 'foo'
     assert m.foo.value == 'foo'
+
+
+def test_set_tuple_values():
+    class Model(BaseModel):
+        foo: set
+        bar: tuple
+
+    m = Model(foo=['a', 'b'], bar=['c', 'd'])
+    assert m.foo == {'a', 'b'}
+    assert m.bar == ('c', 'd')
+    assert m.dict() == {'foo': {'a', 'b'}, 'bar': ('c', 'd')}
