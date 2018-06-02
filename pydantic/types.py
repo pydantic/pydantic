@@ -4,7 +4,7 @@ from typing import Optional, Pattern, Type, Union
 from uuid import UUID
 
 from . import errors
-from .utils import import_string, make_dsn, validate_email
+from .utils import change_exception, import_string, make_dsn, validate_email
 from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, float_validator,
                          int_validator, not_none_validator, number_size_validator, str_validator)
 
@@ -149,10 +149,9 @@ class PyObject:
 
     @classmethod
     def validate(cls, value):
-        try:
+
+        with change_exception(errors.PyObjectError, ImportError):
             return import_string(value)
-        except ImportError as e:
-            raise errors.PyObjectError() from e
 
 
 class DSN(str):

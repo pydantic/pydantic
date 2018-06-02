@@ -1,4 +1,5 @@
 import re
+from contextlib import contextmanager
 from importlib import import_module
 from typing import Tuple, _TypingBase
 
@@ -129,3 +130,12 @@ def to_snake_case(v: str) -> str:
     v = re.sub(r'([a-z\d])([A-Z])', r'\1_\2', v)
 
     return v.replace('-', '_').lower()
+
+
+@contextmanager
+def change_exception(raise_exc, *except_exc):
+    except_exc = except_exc or (ValueError, TypeError)
+    try:
+        yield
+    except except_exc as e:
+        raise raise_exc from e

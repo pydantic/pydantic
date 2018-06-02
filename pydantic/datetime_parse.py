@@ -19,6 +19,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from typing import Union
 
 from . import errors
+from .utils import change_exception
 
 date_re = re.compile(r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$')
 
@@ -102,10 +103,8 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
 
     kw = {k: int(v) for k, v in match.groupdict().items()}
 
-    try:
+    with change_exception(errors.DateError):
         return date(**kw)
-    except ValueError as e:
-        raise errors.DateError() from e
 
 
 def parse_time(value: Union[time, str]) -> time:
@@ -130,10 +129,8 @@ def parse_time(value: Union[time, str]) -> time:
 
     kw = {k: int(v) for k, v in kw.items() if v is not None}
 
-    try:
+    with change_exception(errors.TimeError):
         return time(**kw)
-    except ValueError as e:
-        raise errors.TimeError() from e
 
 
 def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
@@ -174,10 +171,8 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
     kw = {k: int(v) for k, v in kw.items() if v is not None}
     kw['tzinfo'] = tzinfo
 
-    try:
+    with change_exception(errors.DateTimeError):
         return datetime(**kw)
-    except ValueError as e:
-        raise errors.DateTimeError() from e
 
 
 def parse_duration(value: StrIntFloat) -> timedelta:
