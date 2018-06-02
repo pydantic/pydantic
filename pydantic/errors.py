@@ -120,16 +120,16 @@ class StrRegexError(PydanticValueError):
         super().__init__(pattern=pattern)
 
 
-class NumberMinSizeError(PydanticValueError):
-    code = 'number.min_size'
+class NumberGtError(PydanticValueError):
+    code = 'number.gt'
     msg_template = 'ensure this value is greater than {limit_value}'
 
     def __init__(self, *, limit_value: Union[int, float, Decimal]) -> None:
         super().__init__(limit_value=limit_value)
 
 
-class NumberMaxSizeError(PydanticValueError):
-    code = 'number.max_size'
+class NumberLtError(PydanticValueError):
+    code = 'number.lt'
     msg_template = 'ensure this value is less than {limit_value}'
 
     def __init__(self, *, limit_value: Union[int, float, Decimal]) -> None:
