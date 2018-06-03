@@ -357,7 +357,6 @@ def test_infer_alias():
             fields = {'a': '_a'}
 
     assert Model(_a='different').a == 'different'
-    debug(repr(Model.__fields__['a']))
     assert repr(Model.__fields__['a']) == "<Field(a type=str default='foobar' alias=_a)>"
 
 

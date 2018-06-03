@@ -1,5 +1,5 @@
 import inspect
-from enum import IntEnum
+from enum import Enum, IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
 from .error_wrappers import ErrorWrapper
@@ -45,7 +45,7 @@ class Schema:
 class Field:
     __slots__ = (
         'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
-        'default', 'required', 'model_config', 'name', 'alias', 'schema', 'validate_always', 'allow_none', 'shape',
+        'default', 'required', 'model_config', 'name', 'alias', '_schema', 'validate_always', 'allow_none', 'shape',
         'class_validators'
     )
 
@@ -77,7 +77,7 @@ class Field:
         self.model_config = model_config
         self.allow_none: bool = allow_none
         self.shape: Shape = Shape.SINGLETON
-        self.schema: Schema = schema
+        self._schema: Schema = schema
         self.prepare()
 
     @classmethod
@@ -105,8 +105,8 @@ class Field:
         self.model_config = config
         schema_from_config = config.get_field_schema(self.name)
         if schema_from_config:
-            self.schema.alias = self.schema.alias or schema_from_config.get('alias')
-            self.alias = self.schema.alias
+            self._schema.alias = self._schema.alias or schema_from_config.get('alias')
+            self.alias = self._schema.alias
 
     @property
     def alt_alias(self):
@@ -128,6 +128,23 @@ class Field:
 
         self._populate_sub_fields()
         self._populate_validators()
+
+    def schema(self):
+        s = {
+            'type': display_as_type(self.type_),
+            'required': self.required,
+            'title': self._schema.title,
+        }
+        if not self.required:
+            s['default'] = self.default
+        if isinstance(self.type_, Enum):
+            if self._schema.choice_names:
+                s['choices'] = [(v.value, self._schema.choice_names[v.value]) for v in self.type_.__members__.values()]
+            else:
+                s['choices'] = [(v.value, k) for k, v in self.type_.__members__.items()]
+        # TODO gt, lg, sub-model properties
+        s.update(self._schema.extra)
+        return s
 
     def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
