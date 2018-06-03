@@ -32,11 +32,21 @@ class Validator(NamedTuple):
     check_fields: bool
 
 
+class Schema:
+    __slots__ = 'alias', 'title', 'description', 'choice_names', 'extra',
+
+    def __init__(self, alias=None, title=None, choice_names=None, **extra):
+        self.alias = alias
+        self.title = title
+        self.choice_names = choice_names
+        self.extra = extra
+
+
 class Field:
     __slots__ = (
         'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
-        'default', 'required', 'model_config', 'name', 'alias', 'description', 'info', 'validate_always',
-        'allow_none', 'shape', 'class_validators'
+        'default', 'required', 'model_config', 'name', 'alias', 'schema', 'validate_always', 'allow_none', 'shape',
+        'class_validators'
     )
 
     def __init__(
@@ -49,7 +59,7 @@ class Field:
             model_config: Any,
             alias: str=None,
             allow_none: bool=False,
-            description: str=None):
+            schema: str=None):
 
         self.name: str = name
         self.alias: str = alias or name
@@ -65,33 +75,38 @@ class Field:
         self.default: Any = default
         self.required: bool = required
         self.model_config = model_config
-        self.description: str = description
         self.allow_none: bool = allow_none
         self.shape: Shape = Shape.SINGLETON
-        self.info = {}
+        self.schema: Schema = schema
         self.prepare()
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, config):
+        schema_from_config = config.get_field_schema(name)
+        if isinstance(value, tuple) and len(value) == 2 and isinstance(value[1], Schema):
+            value, schema = value
+            schema.alias = schema.alias or schema_from_config.get('alias')
+        else:
+            schema = Schema(**schema_from_config)
+        schema.title = schema.title or name.title()
         required = value == Required
-        field_config = config.get_field_config(name)
         return cls(
             name=name,
             type_=annotation,
-            alias=field_config and field_config.get('alias'),
+            alias=schema.alias,
             class_validators=class_validators,
             default=None if required else value,
             required=required,
             model_config=config,
-            description=field_config and field_config.get('description'),
+            schema=schema,
         )
 
     def set_config(self, config):
         self.model_config = config
-        field_config = config.get_field_config(self.name)
-        if field_config:
-            self.alias = field_config.get('alias') or self.alias
-            self.description = field_config.get('description') or self.description
+        schema_from_config = config.get_field_schema(self.name)
+        if schema_from_config:
+            self.schema.alias = self.schema.alias or schema_from_config.get('alias')
+            self.alias = self.schema.alias
 
     @property
     def alt_alias(self):
@@ -113,22 +128,6 @@ class Field:
 
         self._populate_sub_fields()
         self._populate_validators()
-
-        self.info = {
-            'type': display_as_type(self.type_),
-            'default': self.default,
-            'required': self.required,
-        }
-        if self.required:
-            self.info.pop('default')
-        if self.sub_fields:
-            self.info['sub_fields'] = self.sub_fields
-        else:
-            self.info['validators'] = [v[1].__qualname__ for v in self.validators]
-
-        # TODO
-        # if self.description:
-        #     self.info['description'] = self.description
 
     def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
@@ -314,13 +313,19 @@ class Field:
         return v, None
 
     def __repr__(self):
-        return f'<Field {self}>'
+        return f'<Field({self})>'
 
     def __str__(self):
-        if self.alt_alias:
-            return f"{self.name} (alias '{self.alias}'): " + ', '.join(f'{k}={v!r}' for k, v in self.info.items())
+        parts = [self.name, 'type=' + display_as_type(self.type_)]
+
+        if self.required:
+            parts.append('required')
         else:
-            return f'{self.name}: ' + ', '.join(f'{k}={v!r}' for k, v in self.info.items())
+            parts.append(f'default={self.default!r}')
+
+        if self.alt_alias:
+            parts.append('alias=' + self.alias)
+        return ' '.join(parts)
 
 
 def _get_validator_signature(validator):
