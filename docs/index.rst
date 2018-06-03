@@ -197,14 +197,39 @@ The ellipsis ``...`` just means "Required" same as annotation only declarations 
 Error Handling
 ..............
 
-.. literalinclude:: examples/errors.py
+*Pydantic* comes with ``ValidationError`` which should be used to catch any validation error. You can access errors in a several ways:
+
+:display_errors: property will return to you a string representation of validation errors.
+:flatten_errors: method will return list of errors for each field.
+:json: same as ``flatten_errors`` method, but list of errors will be serialized as JSON.
+
+Each error object contains:
+
+:loc: the error's location.
+:type: a unique identifier of the error readable by a computer.
+:msg: a human readable explanation of the error.
+:ctx: an optional object which contains values required to render the error message.
+
+.. literalinclude:: examples/errors1.py
+
+(This script is complete, it should run "as is")
+
+In your custom data types or in validators you should use ``TypeError`` and ``ValueError`` to raise errors:
+
+.. literalinclude:: examples/errors2.py
+
+(This script is complete, it should run "as is")
+
+You can also define your own error class with abilities to specify custom error code, message template and context:
+
+.. literalinclude:: examples/errors3.py
 
 (This script is complete, it should run "as is")
 
 Exotic Types
 ............
 
-pydantic comes with a number of utilities for parsing or validating common objects.
+*Pydantic* comes with a number of utilities for parsing or validating common objects.
 
 .. literalinclude:: examples/exotic.py
 
