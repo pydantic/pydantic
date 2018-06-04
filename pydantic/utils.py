@@ -1,6 +1,8 @@
 import re
 from contextlib import contextmanager
+from enum import Enum
 from importlib import import_module
+from textwrap import dedent
 from typing import Tuple, _TypingBase
 
 from . import errors
@@ -118,6 +120,14 @@ def display_as_type(v):
     if not isinstance(v, _TypingBase) and not isinstance(v, type):
         v = type(v)
 
+    if isinstance(v, type) and issubclass(v, Enum):
+        if issubclass(v, int):
+            return 'int'
+        elif issubclass(v, str):
+            return 'str'
+        else:
+            return 'enum'
+
     try:
         return v.__name__
     except AttributeError:
@@ -131,3 +141,7 @@ def change_exception(raise_exc, *except_types):
         yield
     except except_types as e:
         raise raise_exc from e
+
+
+def clean_docstring(d):
+    return dedent(d).strip(' \r\n\t')

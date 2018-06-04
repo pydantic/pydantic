@@ -33,7 +33,7 @@ class Validator(NamedTuple):
 
 
 class Schema:
-    __slots__ = 'alias', 'title', 'description', 'choice_names', 'extra',
+    __slots__ = 'alias', 'title', 'choice_names', 'extra',
 
     def __init__(self, alias=None, title=None, choice_names=None, **extra):
         self.alias = alias
@@ -85,10 +85,9 @@ class Field:
         schema_from_config = config.get_field_schema(name)
         if isinstance(value, tuple) and len(value) == 2 and isinstance(value[1], Schema):
             value, schema = value
-            schema.alias = schema.alias or schema_from_config.get('alias')
         else:
             schema = Schema(**schema_from_config)
-        schema.title = schema.title or name.title()
+        schema.alias = schema.alias or schema_from_config.get('alias')
         required = value == Required
         return cls(
             name=name,
@@ -129,20 +128,21 @@ class Field:
         self._populate_sub_fields()
         self._populate_validators()
 
-    def schema(self):
-        s = {
-            'type': display_as_type(self.type_),
-            'required': self.required,
-            'title': self._schema.title,
-        }
-        if not self.required:
+    def schema(self, by_alias=True):
+        s = self.type_.schema(by_alias) if hasattr(self.type_, 'schema') else {}
+        s.update(
+            type=s.get('type') or display_as_type(self.type_),
+            title=self._schema.title or s.get('title') or self.alias.title(),
+            required=self.required,
+        )
+
+        if not self.required and self.default is not None:
             s['default'] = self.default
-        if isinstance(self.type_, Enum):
+        if issubclass(self.type_, Enum):
             if self._schema.choice_names:
                 s['choices'] = [(v.value, self._schema.choice_names[v.value]) for v in self.type_.__members__.values()]
             else:
                 s['choices'] = [(v.value, k) for k, v in self.type_.__members__.items()]
-        # TODO gt, lg, sub-model properties
         s.update(self._schema.extra)
         return s
 
