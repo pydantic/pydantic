@@ -68,7 +68,7 @@ class ValidatorGroup:
         if unused_validators:
             fn = ', '.join(unused_validators)
             raise ConfigError(f"Validators defined with incorrect fields: {fn} "
-                              f"(use check_fields=True if you're inheriting from the model and intended this)")
+                              f"(use check_fields=False if you're inheriting from the model and intended this)")
 
 
 def _extract_validators(namespace):
