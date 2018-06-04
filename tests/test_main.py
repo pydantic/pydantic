@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any
+from typing import Any, List
 
 import pytest
 
@@ -452,3 +452,12 @@ def test_set_tuple_values():
     assert m.foo == {'a', 'b'}
     assert m.bar == ('c', 'd')
     assert m.dict() == {'foo': {'a', 'b'}, 'bar': ('c', 'd')}
+
+
+def test_default_copy():
+    class User(BaseModel):
+        friends: List[int] = []
+
+    u1 = User()
+    u2 = User()
+    assert u1.friends is not u2.friends
