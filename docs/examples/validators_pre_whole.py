@@ -1,5 +1,5 @@
 import json
-from typing import List, Set
+from typing import List
 
 from pydantic import BaseModel, ValidationError, validator
 
@@ -38,9 +38,9 @@ try:
 except ValidationError as e:
     print(e)
 """
-error validating input
-numbers:
-  number to large 5 > 4 (error_type=ValueError track=int index=2)
+validation errors
+numbers -> 2
+  number to large 5 > 4 (type=value_error)
 """
 
 try:
@@ -48,7 +48,7 @@ try:
 except ValidationError as e:
     print(e)
 """
-error validating input
-numbers:
-  sum of numbers greater than 8 (error_type=ValueError track=int)
+validation errors
+numbers
+  sum of numbers greater than 8 (type=value_error)
 """

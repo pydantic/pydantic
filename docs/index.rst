@@ -197,14 +197,39 @@ The ellipsis ``...`` just means "Required" same as annotation only declarations 
 Error Handling
 ..............
 
-.. literalinclude:: examples/errors.py
+*Pydantic* comes with ``ValidationError`` which should be used to catch any validation error. You can access errors in a several ways:
+
+:display_errors: property will return to you a string representation of validation errors.
+:flatten_errors: method will return list of errors for each field.
+:json: same as ``flatten_errors`` method, but list of errors will be serialized as JSON.
+
+Each error object contains:
+
+:loc: the error's location.
+:type: a unique identifier of the error readable by a computer.
+:msg: a human readable explanation of the error.
+:ctx: an optional object which contains values required to render the error message.
+
+.. literalinclude:: examples/errors1.py
+
+(This script is complete, it should run "as is")
+
+In your custom data types or in validators you should use ``TypeError`` and ``ValueError`` to raise errors:
+
+.. literalinclude:: examples/errors2.py
+
+(This script is complete, it should run "as is")
+
+You can also define your own error class with abilities to specify custom error code, message template and context:
+
+.. literalinclude:: examples/errors3.py
 
 (This script is complete, it should run "as is")
 
 Exotic Types
 ............
 
-pydantic comes with a number of utilities for parsing or validating common objects.
+*Pydantic* comes with a number of utilities for parsing or validating common objects.
 
 .. literalinclude:: examples/exotic.py
 
@@ -252,8 +277,6 @@ Options:
 :anystr_strip_whitespace: strip or not trailing and leading whitespace for str & byte types (default: ``False``)
 :min_anystr_length: min length for str & byte types (default: ``0``)
 :max_anystr_length: max length for str & byte types (default: ``2 ** 16``)
-:min_number_size: min size for numbers (default: ``-2 ** 64``)
-:max_number_size: max size for numbers (default: ``2 ** 64``)
 :validate_all: whether or not to validate field defaults (default: ``False``)
 :ignore_extra: whether to ignore any extra values in input data (default: ``True``)
 :allow_extra: whether or not too allow (and include on the model) any extra values in input data (default: ``False``)
@@ -265,6 +288,8 @@ Options:
 :allow_population_by_alias: whether or not an aliased field may be populated by its name as given by the model
     attribute, rather than strictly the alias; please be sure to read the warning below before enabling this (default:
     ``False``)
+:error_msg_templates: let's you to override default error message templates.
+    Pass in a dictionary with keys matching the error messages you want to override (default: ``{}``)
 
 .. warning::
 
