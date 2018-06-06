@@ -519,7 +519,7 @@ def test_int_validation():
         {
             'loc': ('a',),
             'msg': 'ensure this value is greater than 0',
-            'type': 'value_error.number.gt',
+            'type': 'value_error.number.not_gt',
             'ctx': {
                 'limit_value': 0,
             },
@@ -527,7 +527,7 @@ def test_int_validation():
         {
             'loc': ('b',),
             'msg': 'ensure this value is less than 0',
-            'type': 'value_error.number.lt',
+            'type': 'value_error.number.not_lt',
             'ctx': {
                 'limit_value': 0,
             },
@@ -535,7 +535,7 @@ def test_int_validation():
         {
             'loc': ('c',),
             'msg': 'ensure this value is greater than 4',
-            'type': 'value_error.number.gt',
+            'type': 'value_error.number.not_gt',
             'ctx': {
                 'limit_value': 4,
             },
@@ -558,7 +558,7 @@ def test_float_validation():
         {
             'loc': ('a',),
             'msg': 'ensure this value is greater than 0',
-            'type': 'value_error.number.gt',
+            'type': 'value_error.number.not_gt',
             'ctx': {
                 'limit_value': 0,
             },
@@ -566,7 +566,7 @@ def test_float_validation():
         {
             'loc': ('b',),
             'msg': 'ensure this value is less than 0',
-            'type': 'value_error.number.lt',
+            'type': 'value_error.number.not_lt',
             'ctx': {
                 'limit_value': 0,
             },
@@ -574,7 +574,7 @@ def test_float_validation():
         {
             'loc': ('c',),
             'msg': 'ensure this value is greater than 4',
-            'type': 'value_error.number.gt',
+            'type': 'value_error.number.not_gt',
             'ctx': {
                 'limit_value': 4,
             },
@@ -704,7 +704,7 @@ def test_anystr_strip_whitespace_disabled():
         {
             'loc': ('foo',),
             'msg': 'ensure this value is greater than 42.24',
-            'type': 'value_error.number.gt',
+            'type': 'value_error.number.not_gt',
             'ctx': {
                 'limit_value': Decimal('42.24'),
             },
@@ -715,7 +715,7 @@ def test_anystr_strip_whitespace_disabled():
         {
             'loc': ('foo',),
             'msg': 'ensure this value is less than 42.24',
-            'type': 'value_error.number.lt',
+            'type': 'value_error.number.not_lt',
             'ctx': {
                 'limit_value': Decimal('42.24'),
             },
@@ -846,7 +846,7 @@ def test_number_gt():
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-1)
     assert (
-        'ensure this value is greater than -1 (type=value_error.number.gt; limit_value=-1)'
+        'ensure this value is greater than -1 (type=value_error.number.not_gt; limit_value=-1)'
     ) in str(exc_info.value)
 
 
@@ -858,5 +858,5 @@ def test_number_lt():
     with pytest.raises(ValidationError) as exc_info:
         Model(a=5)
     assert (
-        'ensure this value is less than 5 (type=value_error.number.lt; limit_value=5)'
+        'ensure this value is less than 5 (type=value_error.number.not_lt; limit_value=5)'
     ) in str(exc_info.value)
