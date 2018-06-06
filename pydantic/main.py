@@ -137,6 +137,9 @@ class MetaModel(ABCMeta):
         return super().__new__(mcs, name, bases, new_namespace)
 
 
+_missing = object()
+
+
 class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
     __fields__ = {}
@@ -261,18 +264,18 @@ class BaseModel(metaclass=MetaModel):
         errors = []
 
         for name, field in self.__fields__.items():
-            value = input_data.get(field.alias, ...)
-            if value is ... and self.__config__.allow_population_by_alias and field.alt_alias:
-                value = input_data.get(field.name, ...)
+            value = input_data.get(field.alias, _missing)
+            if value is _missing and self.__config__.allow_population_by_alias and field.alt_alias:
+                value = input_data.get(field.name, _missing)
 
-            if value is ...:
+            if value is _missing:
                 if self.__config__.validate_all or field.validate_always:
-                    value = field.default
+                    value = deepcopy(field.default)
                 else:
                     if field.required:
                         errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=self.__config__))
                     else:
-                        values[name] = field.default
+                        values[name] = deepcopy(field.default)
                     continue
 
             v_, errors_ = field.validate(value, values, loc=field.alias, cls=self.__class__)

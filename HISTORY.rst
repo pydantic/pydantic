@@ -10,6 +10,7 @@ v0.10.0 (2018-XX-XX)
 * **breaking change**: removed ``Config.min_number_size`` and ``Config.max_number_size`` #183
 * added error context and ability to redefine error message templates using ``Config.error_msg_templates`` #183
 * fix typo in validator exception #150
+* copy defaults to model values, so different models don't share objects #154
 
 v0.9.1 (2018-05-10)
 ...................
