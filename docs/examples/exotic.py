@@ -16,7 +16,6 @@ class Model(BaseModel):
     strip_str: constr(strip_whitespace=True)
 
     big_int: conint(gt=1000, lt=1024) = None
-    # inclusive: conint(ge=1000, le=1024)
     pos_int: PositiveInt = None
     neg_int: NegativeInt = None
 
