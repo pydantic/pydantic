@@ -9,10 +9,9 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt,
-                      PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, condecimal, confloat, conint,
-                      constr, create_model)
-from pydantic.errors import ConfigError
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, EmailStr, NameEmail, NegativeFloat,
+                      NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, condecimal,
+                      confloat, conint, constr, create_model)
 
 try:
     import email_validator

@@ -175,20 +175,19 @@ class DSN(str):
         return make_dsn(**kwargs)
 
 
-class ConstrainedMeta(type):
+class ConstrainedNumberMeta(type):
     def __new__(cls, name, bases, dct):
         new_cls = type.__new__(cls, name, bases, dct)
-        try:
-            assert new_cls.gt is None or new_cls.ge is None, ('gt', 'ge')
-            assert new_cls.lt is None or new_cls.le is None, ('lt', 'le')
-        except AssertionError as exception:
-            a, b = exception.args[0]
-            raise errors.ConfigError(f'Bounds {a} and {b} cannot be specified at the same time.')
+
+        if new_cls.gt is not None and new_cls.ge is not None:
+            raise errors.ConfigError(f'Bounds gt and ge cannot be specified at the same time.')
+        if new_cls.lt is not None and new_cls.le is not None:
+            raise errors.ConfigError(f'Bounds lt and le cannot be specified at the same time.')
 
         return new_cls
 
 
-class ConstrainedInt(int, metaclass=ConstrainedMeta):
+class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     gt: Optional[int] = None
     ge: Optional[int] = None
     lt: Optional[int] = None
@@ -214,7 +213,7 @@ class NegativeInt(ConstrainedInt):
     lt = 0
 
 
-class ConstrainedFloat(float, metaclass=ConstrainedMeta):
+class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     gt: Union[None, int, float] = None
     ge: Union[None, int, float] = None
     lt: Union[None, int, float] = None
@@ -240,7 +239,7 @@ class NegativeFloat(ConstrainedFloat):
     lt = 0
 
 
-class ConstrainedDecimal(Decimal, metaclass=ConstrainedMeta):
+class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     gt: Union[None, int, float, Decimal] = None
     ge: Union[None, int, float, Decimal] = None
     lt: Union[None, int, float, Decimal] = None
