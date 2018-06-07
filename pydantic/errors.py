@@ -120,20 +120,29 @@ class StrRegexError(PydanticValueError):
         super().__init__(pattern=pattern)
 
 
-class NumberNotGtError(PydanticValueError):
+class _NumberBoundError(PydanticValueError):
+    def __init__(self, *, limit_value: Union[int, float, Decimal]) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class NumberNotGtError(_NumberBoundError):
     code = 'number.not_gt'
     msg_template = 'ensure this value is greater than {limit_value}'
 
-    def __init__(self, *, limit_value: Union[int, float, Decimal]) -> None:
-        super().__init__(limit_value=limit_value)
+
+class NumberNotGeError(_NumberBoundError):
+    code = 'number.not_ge'
+    msg_template = 'ensure this value is greater than or equal to {limit_value}'
 
 
-class NumberNotLtError(PydanticValueError):
+class NumberNotLtError(_NumberBoundError):
     code = 'number.not_lt'
     msg_template = 'ensure this value is less than {limit_value}'
 
-    def __init__(self, *, limit_value: Union[int, float, Decimal]) -> None:
-        super().__init__(limit_value=limit_value)
+
+class NumberNotLeError(_NumberBoundError):
+    code = 'number.not_le'
+    msg_template = 'ensure this value is less than or equal to {limit_value}'
 
 
 class DecimalError(PydanticTypeError):
