@@ -881,48 +881,51 @@ def test_path_validation(value, result):
         assert Model(foo=value).foo == result
 
 
-class TestNumberBounds:
-    message = r'.*ensure this value is {msg} \(type=value_error.number.not_{ty}; limit_value={value}\).*'
+base_message = r'.*ensure this value is {msg} \(type=value_error.number.not_{ty}; limit_value={value}\).*'
 
-    def test_number_gt(self):
-        class Model(BaseModel):
-            a: conint(gt=-1) = 0
 
-        assert Model(a=0).dict() == {'a': 0}
+def test_number_gt():
+    class Model(BaseModel):
+        a: conint(gt=-1) = 0
 
-        message = self.message.format(msg='greater than -1', ty='gt', value=-1)
-        with pytest.raises(ValidationError, match=message):
-            Model(a=-1)
+    assert Model(a=0).dict() == {'a': 0}
 
-    def test_number_ge(self):
-        class Model(BaseModel):
-            a: conint(ge=0) = 0
+    message = base_message.format(msg='greater than -1', ty='gt', value=-1)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=-1)
 
-        assert Model(a=0).dict() == {'a': 0}
 
-        message = self.message.format(msg='greater than or equal to 0', ty='ge', value=0)
-        with pytest.raises(ValidationError, match=message):
-            Model(a=-1)
+def test_number_ge():
+    class Model(BaseModel):
+        a: conint(ge=0) = 0
 
-    def test_number_lt(self):
-        class Model(BaseModel):
-            a: conint(lt=5) = 0
+    assert Model(a=0).dict() == {'a': 0}
 
-        assert Model(a=4).dict() == {'a': 4}
+    message = base_message.format(msg='greater than or equal to 0', ty='ge', value=0)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=-1)
 
-        message = self.message.format(msg='less than 5', ty='lt', value=5)
-        with pytest.raises(ValidationError, match=message):
-            Model(a=5)
 
-    def test_number_le(self):
-        class Model(BaseModel):
-            a: conint(le=5) = 0
+def test_number_lt():
+    class Model(BaseModel):
+        a: conint(lt=5) = 0
 
-        assert Model(a=5).dict() == {'a': 5}
+    assert Model(a=4).dict() == {'a': 4}
 
-        message = self.message.format(msg='less than or equal to 5', ty='le', value=5)
-        with pytest.raises(ValidationError, match=message):
-            Model(a=6)
+    message = base_message.format(msg='less than 5', ty='lt', value=5)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=5)
+
+
+def test_number_le():
+    class Model(BaseModel):
+        a: conint(le=5) = 0
+
+    assert Model(a=5).dict() == {'a': 5}
+
+    message = base_message.format(msg='less than or equal to 5', ty='le', value=5)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=6)
 
 
 @pytest.mark.parametrize('fn', [conint, confloat, condecimal])
