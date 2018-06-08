@@ -9,9 +9,9 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt,
-                      PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, condecimal, confloat, conint,
-                      constr, create_model)
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, EmailStr, NameEmail, NegativeFloat,
+                      NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, condecimal,
+                      confloat, conint, constr, create_model)
 
 try:
     import email_validator
@@ -509,12 +509,13 @@ def test_int_validation():
         a: PositiveInt = None
         b: NegativeInt = None
         c: conint(gt=4, lt=10) = None
+        d: conint(ge=0, le=10) = None
 
-    m = Model(a=5, b=-5, c=5)
-    assert m == {'a': 5, 'b': -5, 'c': 5}
+    m = Model(a=5, b=-5, c=5, d=0)
+    assert m == {'a': 5, 'b': -5, 'c': 5, 'd': 0}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-5, b=5, c=-5)
+        Model(a=-5, b=5, c=-5, d=11)
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
@@ -538,6 +539,14 @@ def test_int_validation():
             'type': 'value_error.number.not_gt',
             'ctx': {
                 'limit_value': 4,
+            },
+        },
+        {
+            'loc': ('d',),
+            'msg': 'ensure this value is less than or equal to 10',
+            'type': 'value_error.number.not_le',
+            'ctx': {
+                'limit_value': 10,
             },
         },
     ]
@@ -548,12 +557,13 @@ def test_float_validation():
         a: PositiveFloat = None
         b: NegativeFloat = None
         c: confloat(gt=4, lt=12.2) = None
+        d: confloat(ge=0, le=9.9) = None
 
-    m = Model(a=5.1, b=-5.2, c=5.3)
-    assert m == {'a': 5.1, 'b': -5.2, 'c': 5.3}
+    m = Model(a=5.1, b=-5.2, c=5.3, d=9.9)
+    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 5.3, 'd': 9.9}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-5.1, b=5.2, c=-5.3)
+        Model(a=-5.1, b=5.2, c=-5.3, d=9.91)
     assert exc_info.value.flatten_errors() == [
         {
             'loc': ('a',),
@@ -577,6 +587,14 @@ def test_float_validation():
             'type': 'value_error.number.not_gt',
             'ctx': {
                 'limit_value': 4,
+            },
+        },
+        {
+            'loc': ('d',),
+            'msg': 'ensure this value is less than or equal to 9.9',
+            'type': 'value_error.number.not_le',
+            'ctx': {
+                'limit_value': 9.9,
             },
         },
     ]
@@ -721,6 +739,30 @@ def test_anystr_strip_whitespace_disabled():
             },
         },
     ]),
+    (condecimal(ge=Decimal('42.24')), Decimal('43'), Decimal('43')),
+    (condecimal(ge=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
+    (condecimal(ge=Decimal('42.24')), Decimal('42'), [
+        {
+            'loc': ('foo',),
+            'msg': 'ensure this value is greater than or equal to 42.24',
+            'type': 'value_error.number.not_ge',
+            'ctx': {
+                'limit_value': Decimal('42.24'),
+            },
+        },
+    ]),
+    (condecimal(le=Decimal('42.24')), Decimal('42'), Decimal('42')),
+    (condecimal(le=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
+    (condecimal(le=Decimal('42.24')), Decimal('43'), [
+        {
+            'loc': ('foo',),
+            'msg': 'ensure this value is less than or equal to 42.24',
+            'type': 'value_error.number.not_le',
+            'ctx': {
+                'limit_value': Decimal('42.24'),
+            },
+        },
+    ]),
     (condecimal(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
     (condecimal(max_digits=2, decimal_places=1), Decimal('0.99'), [
         {
@@ -838,16 +880,29 @@ def test_path_validation(value, result):
         assert Model(foo=value).foo == result
 
 
+base_message = r'.*ensure this value is {msg} \(type=value_error.number.not_{ty}; limit_value={value}\).*'
+
+
 def test_number_gt():
     class Model(BaseModel):
         a: conint(gt=-1) = 0
 
     assert Model(a=0).dict() == {'a': 0}
-    with pytest.raises(ValidationError) as exc_info:
+
+    message = base_message.format(msg='greater than -1', ty='gt', value=-1)
+    with pytest.raises(ValidationError, match=message):
         Model(a=-1)
-    assert (
-        'ensure this value is greater than -1 (type=value_error.number.not_gt; limit_value=-1)'
-    ) in str(exc_info.value)
+
+
+def test_number_ge():
+    class Model(BaseModel):
+        a: conint(ge=0) = 0
+
+    assert Model(a=0).dict() == {'a': 0}
+
+    message = base_message.format(msg='greater than or equal to 0', ty='ge', value=0)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=-1)
 
 
 def test_number_lt():
@@ -855,8 +910,27 @@ def test_number_lt():
         a: conint(lt=5) = 0
 
     assert Model(a=4).dict() == {'a': 4}
-    with pytest.raises(ValidationError) as exc_info:
+
+    message = base_message.format(msg='less than 5', ty='lt', value=5)
+    with pytest.raises(ValidationError, match=message):
         Model(a=5)
-    assert (
-        'ensure this value is less than 5 (type=value_error.number.not_lt; limit_value=5)'
-    ) in str(exc_info.value)
+
+
+def test_number_le():
+    class Model(BaseModel):
+        a: conint(le=5) = 0
+
+    assert Model(a=5).dict() == {'a': 5}
+
+    message = base_message.format(msg='less than or equal to 5', ty='le', value=5)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=6)
+
+
+@pytest.mark.parametrize('fn', [conint, confloat, condecimal])
+def test_bounds_config_exceptions(fn):
+    with pytest.raises(ConfigError):
+        fn(gt=0, ge=0)
+
+    with pytest.raises(ConfigError):
+        fn(lt=0, le=0)

@@ -20,6 +20,7 @@ class Model(BaseModel):
     neg_int: NegativeInt = None
 
     big_float: confloat(gt=1000, lt=1024) = None
+    unit_interval: confloat(ge=0, le=1) = None
     pos_float: PositiveFloat = None
     neg_float: NegativeFloat = None
 
@@ -56,6 +57,7 @@ m = Model(
     big_float=1002.1,
     pos_float=2.2,
     neg_float=-2.3,
+    unit_interval=0.5,
     email_address='Samuel Colvin <s@muelcolvin.com >',
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
     decimal=Decimal('42.24'),
@@ -82,6 +84,7 @@ print(m.dict())
     'big_float': 1002.1,
     'pos_float': 2.2,
     'neg_float': -2.3,
+    'unit_interval': 0.5,
     'email_address': 's@muelcolvin.com',
     'email_and_name': <NameEmail("Samuel Colvin <s@muelcolvin.com>")>,
     ...

@@ -175,9 +175,23 @@ class DSN(str):
         return make_dsn(**kwargs)
 
 
-class ConstrainedInt(int):
+class ConstrainedNumberMeta(type):
+    def __new__(cls, name, bases, dct):
+        new_cls = type.__new__(cls, name, bases, dct)
+
+        if new_cls.gt is not None and new_cls.ge is not None:
+            raise errors.ConfigError(f'Bounds gt and ge cannot be specified at the same time.')
+        if new_cls.lt is not None and new_cls.le is not None:
+            raise errors.ConfigError(f'Bounds lt and le cannot be specified at the same time.')
+
+        return new_cls
+
+
+class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     gt: Optional[int] = None
+    ge: Optional[int] = None
     lt: Optional[int] = None
+    le: Optional[int] = None
 
     @classmethod
     def get_validators(cls):
@@ -185,9 +199,9 @@ class ConstrainedInt(int):
         yield number_size_validator
 
 
-def conint(*, gt=None, lt=None) -> Type[int]:
+def conint(*, gt=None, ge=None, lt=None, le=None) -> Type[int]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, lt=lt)
+    namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
 
 
@@ -199,9 +213,11 @@ class NegativeInt(ConstrainedInt):
     lt = 0
 
 
-class ConstrainedFloat(float):
+class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     gt: Union[None, int, float] = None
+    ge: Union[None, int, float] = None
     lt: Union[None, int, float] = None
+    le: Union[None, int, float] = None
 
     @classmethod
     def get_validators(cls):
@@ -209,9 +225,9 @@ class ConstrainedFloat(float):
         yield number_size_validator
 
 
-def confloat(*, gt=None, lt=None) -> Type[float]:
+def confloat(*, gt=None, ge=None, lt=None, le=None) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, lt=lt)
+    namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
     return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
 
 
@@ -223,9 +239,11 @@ class NegativeFloat(ConstrainedFloat):
     lt = 0
 
 
-class ConstrainedDecimal(Decimal):
+class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     gt: Union[None, int, float, Decimal] = None
+    ge: Union[None, int, float, Decimal] = None
     lt: Union[None, int, float, Decimal] = None
+    le: Union[None, int, float, Decimal] = None
     max_digits: Optional[int] = None
     decimal_places: Optional[int] = None
 
@@ -273,11 +291,11 @@ class ConstrainedDecimal(Decimal):
         return value
 
 
-def condecimal(*, gt=None, lt=None, max_digits=None, decimal_places=None) -> Type[Decimal]:
+def condecimal(*, gt=None, ge=None, lt=None, le=None, max_digits=None, decimal_places=None) -> Type[Decimal]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
-        gt=gt,
-        lt=lt,
+        gt=gt, ge=ge,
+        lt=lt, le=le,
         max_digits=max_digits,
         decimal_places=decimal_places
     )
