@@ -316,6 +316,3 @@ class UUID4(UUID):
 
 class UUID5(UUID):
     _required_version = 5
-
-
-# TODO, JsonEither, JsonList, JsonDict
