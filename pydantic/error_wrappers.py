@@ -78,14 +78,12 @@ def _display_error_loc(error):
 
 
 def _display_error_type_and_ctx(error):
-    display = f'type={error["type"]}'
-
+    t = 'type=' + error['type']
     ctx = error.get('ctx')
     if ctx:
-        ctx = '; '.join(f'{k}={v}' for k, v in ctx.items())
-        display = f'{display}; {ctx}'
-
-    return display
+        return t + ''.join(f'; {k}={v}' for k, v in ctx.items())
+    else:
+        return t
 
 
 def flatten_errors(errors, *, loc=None):
