@@ -272,9 +272,7 @@ def test_validation_error(result, expected):
             'h': 21,
         })
 
-    result = getattr(exc_info.value, result)()
-    print(result)
-    assert result == expected
+    assert getattr(exc_info.value, result)() == expected
 
 
 def test_errors_unknown_error_object():

@@ -63,8 +63,7 @@ class ValidationError(ValueError):
     def __str__(self):
         errors = self.errors()
         no_errors = len(errors)
-        e_suffix = '' if no_errors == 1 else 's'
-        return f'{no_errors} validation error{e_suffix}\n{display_errors(errors)}'
+        return f'{no_errors} validation error{"" if no_errors == 1 else "s"}\n{display_errors(errors)}'
 
 
 def display_errors(errors):
