@@ -3,14 +3,15 @@
 History
 -------
 
-v0.10.0 (2018-XX-XX)
+v0.10.0 (2018-06-11)
 ....................
 * add ``Config.allow_population_by_alias`` #160, thanks @bendemaree
-* **breaking change**: new errors format #179
-* **breaking change**: removed ``Config.min_number_size`` and ``Config.max_number_size`` #183
+* **breaking change**: new errors format #179, thanks @Gr1N
+* **breaking change**: removed ``Config.min_number_size`` and ``Config.max_number_size`` #183, thanks @Gr1N
 * **breaking change**: correct behaviour of ``lt`` and ``gt`` arguments to ``conint`` etc. #188
-  for the old behaviour use ``le`` and ``ge`` # 194
-* added error context and ability to redefine error message templates using ``Config.error_msg_templates`` #183
+  for the old behaviour use ``le`` and ``ge`` #194, thanks @jaheba
+* added error context and ability to redefine error message templates using ``Config.error_msg_templates`` #183,
+  thanks @Gr1N
 * fix typo in validator exception #150
 * copy defaults to model values, so different models don't share objects #154
 
