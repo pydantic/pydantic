@@ -16,7 +16,7 @@ try:
 except ValidationError as e:
     print(e)
 """
-validation errors
+1 validation error
 v
   max_length:10 (type=value_error.any_str.max_length; limit_value=10)
 """

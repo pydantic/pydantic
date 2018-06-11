@@ -24,7 +24,7 @@ try:
 except ValidationError as e:
     print(e)
 """
-validation errors
+5 validation errors
 list_of_ints -> 2
   value is not a valid integer (type=type_error.integer)
 a_float

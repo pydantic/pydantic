@@ -25,7 +25,7 @@ class UltraSimpleModel(BaseModel):
 def test_ultra_simple_missing():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('a',),
             'msg': 'field required',
@@ -37,7 +37,7 @@ def test_ultra_simple_missing():
 def test_ultra_simple_failed():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel(a='x', b='x')
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('a',),
             'msg': 'value is not a valid float',
@@ -123,7 +123,7 @@ def test_nullable_strings_fails():
             required_bytes_value=None,
             required_bytes_none_value=None,
         )
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('required_str_value',),
             'msg': 'none is not an allow value',
@@ -173,7 +173,7 @@ def test_prevent_extra_success():
 def test_prevent_extra_fails():
     with pytest.raises(ValidationError) as exc_info:
         PreventExtraModel(foo='ok', bar='wrong', spam='xx')
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('bar',),
             'msg': 'extra fields not permitted',
@@ -328,7 +328,7 @@ def test_required():
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('a',),
             'msg': 'field required',
@@ -395,7 +395,7 @@ def test_validating_assignment_fail():
 
     with pytest.raises(ValidationError) as exc_info:
         p.a = 'b'
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('a',),
             'msg': 'value is not a valid integer',
@@ -405,7 +405,7 @@ def test_validating_assignment_fail():
 
     with pytest.raises(ValidationError) as exc_info:
         p.b = ''
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('b',),
             'msg': 'ensure this value has at least 1 characters',

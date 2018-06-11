@@ -27,7 +27,7 @@ try:
 except ValidationError as e:
     print(e)
 """
-validation errors
+2 validation errors
 name
   must contain a space (type=value_error)
 password2

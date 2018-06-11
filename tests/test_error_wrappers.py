@@ -9,33 +9,7 @@ from pydantic.error_wrappers import ValidationError, flatten_errors, get_exc_typ
 
 @pytest.mark.parametrize('result,expected', (
     (
-        'display_errors',
-        """\
-a
-  value is not a valid integer (type=type_error.integer)
-b -> x
-  field required (type=value_error.missing)
-b -> z
-  field required (type=value_error.missing)
-c -> 0 -> x
-  value is not a valid integer (type=type_error.integer)
-d
-  value is not a valid integer (type=type_error.integer)
-d
-  value is not a valid uuid (type=type_error.uuid)
-e -> __key__
-  value is not a valid integer (type=type_error.integer)
-f -> 0
-  value is not a valid integer (type=type_error.integer)
-f -> 0
-  none is not an allow value (type=type_error.none.not_allowed)
-g
-  uuid version 1 expected (type=value_error.uuid.version; required_version=1)
-h
-  yet another error message template 42 (type=value_error.number.not_gt; limit_value=42)""",
-    ),
-    (
-        'flatten_errors',
+        'errors',
         [
             {
                 'loc': (
@@ -204,31 +178,31 @@ h
     "type": "type_error.none.not_allowed"
   },
   {
-    "ctx": {
-      "required_version": 1
-    },
     "loc": [
       "g"
     ],
     "msg": "uuid version 1 expected",
-    "type": "value_error.uuid.version"
+    "type": "value_error.uuid.version",
+    "ctx": {
+      "required_version": 1
+    }
   },
   {
-    "ctx": {
-      "limit_value": 42
-    },
     "loc": [
       "h"
     ],
     "msg": "yet another error message template 42",
-    "type": "value_error.number.not_gt"
+    "type": "value_error.number.not_gt",
+    "ctx": {
+      "limit_value": 42
+    }
   }
 ]"""
     ),
     (
         '__str__',
         """\
-validation errors
+11 validation errors
 a
   value is not a valid integer (type=type_error.integer)
 b -> x
@@ -298,14 +272,12 @@ def test_validation_error(result, expected):
             'h': 21,
         })
 
-    result = getattr(exc_info.value, result)
-    if callable(result):
-        result = result()
-
+    result = getattr(exc_info.value, result)()
+    print(result)
     assert result == expected
 
 
-def test_flatten_errors_unknown_error_object():
+def test_errors_unknown_error_object():
     with pytest.raises(RuntimeError):
         list(flatten_errors([object]))
 
@@ -322,3 +294,26 @@ def test_get_exc_type(exc, type_):
         with pytest.raises(type_) as exc_info:
             get_exc_type(exc)
         assert isinstance(exc_info.value, type_)
+
+
+def test_single_error():
+    class Model(BaseModel):
+        x: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='x')
+
+    expected = """\
+1 validation error
+x
+  value is not a valid integer (type=type_error.integer)"""
+    assert str(exc_info.value) == expected
+    assert str(exc_info.value) == expected  # to check lru cache doesn't break anything
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+
+    assert str(exc_info.value) == """\
+1 validation error
+x
+  field required (type=value_error.missing)"""

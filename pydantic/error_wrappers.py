@@ -48,26 +48,23 @@ class ErrorWrapper:
 
 
 class ValidationError(ValueError):
-    __slots__ = 'errors', 'message'
+    __slots__ = '_raw_errors',
 
     def __init__(self, errors):
-        self.errors = errors
-        self.message = 'validation errors'
+        self._raw_errors = errors
 
-        super().__init__(self.message)
-
-    @property
-    def display_errors(self):
-        return display_errors(self.flatten_errors())
-
-    def __str__(self):
-        return f'{self.message}\n{self.display_errors}'
-
-    def flatten_errors(self):
-        return list(flatten_errors(self.errors))
+    @lru_cache()
+    def errors(self):
+        return list(flatten_errors(self._raw_errors))
 
     def json(self, *, indent=2):
-        return json.dumps(self.flatten_errors(), indent=indent, sort_keys=True)
+        return json.dumps(self.errors(), indent=indent)
+
+    def __str__(self):
+        errors = self.errors()
+        no_errors = len(errors)
+        e_suffix = '' if no_errors == 1 else 's'
+        return f'{no_errors} validation error{e_suffix}\n{display_errors(errors)}'
 
 
 def display_errors(errors):
@@ -96,7 +93,7 @@ def flatten_errors(errors, *, loc=None):
     for error in errors:
         if isinstance(error, ErrorWrapper):
             if isinstance(error.exc, ValidationError):
-                yield from flatten_errors(error.exc.errors, loc=error.loc)
+                yield from flatten_errors(error.exc._raw_errors, loc=error.loc)
             else:
                 yield error.dict(loc_prefix=loc)
         elif isinstance(error, list):

@@ -91,7 +91,7 @@ def test_funky_name():
     assert m.dict() == {'this-is-funky': 123}
     with pytest.raises(ValidationError) as exc_info:
         model()
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('this-is-funky',),
             'msg': 'field required',

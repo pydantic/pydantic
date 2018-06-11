@@ -210,10 +210,9 @@ contain information about all the errors and how they happened.
 
 You can access these errors in a several ways:
 
-:flatten_errors: method will return list of errors found in the input data.
-:display_errors: property will give a string representation of ``flatten_errors``
-   (this is by used the ``__str__`` method of ``ValidationError``).
-:json: method will return a JSON representation of ``flatten_errors`` method.
+:errors: method will return list of errors found in the input data.
+:json: method will return a JSON representation of ``errors``.
+:__str__: method will return a human readable representation of the errors.
 
 Each error object contains:
 

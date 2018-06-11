@@ -38,7 +38,7 @@ try:
 except ValidationError as e:
     print(e)
 """
-validation errors
+1 validation error
 numbers -> 2
   number to large 5 > 4 (type=value_error)
 """
@@ -48,7 +48,7 @@ try:
 except ValidationError as e:
     print(e)
 """
-validation errors
+1 validation error
 numbers
   sum of numbers greater than 8 (type=value_error)
 """
