@@ -1,31 +1,28 @@
 from typing import List
-
 from pydantic import BaseModel, ValidationError, conint
-
 
 class Location(BaseModel):
     lat = 0.1
     lng = 10.1
 
-
 class Model(BaseModel):
+    is_required: float
+    gt_int: conint(gt=42)
     list_of_ints: List[int] = None
     a_float: float = None
-    is_required: float = ...
     recursive_model: Location = None
-    gt_int: conint(gt=42) = ...
 
+data = dict(
+    list_of_ints=['1', 2, 'bad'],
+    a_float='not a float',
+    recursive_model={'lat': 4.2, 'lng': 'New York'},
+    gt_int=21,
+)
 
 try:
-    Model(
-        list_of_ints=['1', 2, 'bad'],
-        a_float='not a float',
-        recursive_model={'lat': 4.2, 'lng': 'New York'},
-        gt_int=21
-    )
+    Model(**data)
 except ValidationError as e:
     print(e)
-
 """
 validation errors
 list_of_ints -> 2
@@ -41,42 +38,39 @@ gt_int
 """
 
 try:
-    Model(list_of_ints=1, a_float=None, recursive_model=[1, 2, 3], gt_int=21)
+    Model(**data)
 except ValidationError as e:
     print(e.json())
 
 """
 [
   {
-    "loc": [
-      "list_of_ints"
-    ],
-    "msg": "value is not a valid sequence",
-    "type": "type_error.sequence"
-  },
-  {
-    "loc": [
-      "is_required"
-    ],
+    "loc": ["is_required"],
     "msg": "field required",
     "type": "value_error.missing"
   },
   {
-    "loc": [
-      "recursive_model"
-    ],
-    "msg": "value is not a valid dict",
-    "type": "type_error.dict"
-  },
-  {
+    "loc": ["gt_int"],
+    "msg": "ensure this value is greater than 42",
+    "type": "value_error.number.gt",
     "ctx": {
       "limit_value": 42
-    },
-    "loc": [
-      "gt_int"
-    ],
-    "msg": "ensure this value is greater than 42",
-    "type": "value_error.number.gt"
+    }
+  },
+  {
+    "loc": ["list_of_ints", 2],
+    "msg": "value is not a valid integer",
+    "type": "type_error.integer"
+  },
+  {
+    "loc": ["a_float"],
+    "msg": "value is not a valid float",
+    "type": "type_error.float"
+  },
+  {
+    "loc": ["recursive_model", "lng"],
+    "msg": "value is not a valid float",
+    "type": "type_error.float"
   }
 ]
 """
