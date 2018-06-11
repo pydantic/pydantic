@@ -25,7 +25,7 @@ def test_sub_env_override(env):
 def test_sub_env_missing():
     with pytest.raises(ValidationError) as exc_info:
         SimpleSettings()
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('apple',),
             'msg': 'none is not an allow value',

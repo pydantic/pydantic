@@ -36,7 +36,7 @@ def test_constrained_str_default():
 def test_constrained_str_too_long():
     with pytest.raises(ValidationError) as exc_info:
         ConStringModel(v='this is too long')
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'ensure this value has at most 10 characters',
@@ -77,7 +77,7 @@ def test_dsn_pw_host():
 def test_dsn_no_driver():
     with pytest.raises(ValidationError) as exc_info:
         DsnModel(db_driver=None)
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('db_driver',),
             'msg': 'none is not an allow value',
@@ -100,7 +100,7 @@ def test_module_import():
     assert m.module == os.path
     with pytest.raises(ValidationError) as exc_info:
         PyObjectModel(module='foobar')
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('module',),
             'msg': 'ensure this value contains valid import path',
@@ -208,7 +208,7 @@ class StrModel(BaseModel):
 def test_string_too_long():
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x' * 150)
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('str_check',),
             'msg': 'ensure this value has at most 10 characters',
@@ -223,7 +223,7 @@ def test_string_too_long():
 def test_string_too_short():
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x')
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('str_check',),
             'msg': 'ensure this value has at least 5 characters',
@@ -263,7 +263,7 @@ def test_datetime_errors():
             time_='25:20:30.400',
             duration='15:30.0001 broken',
         )
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('dt',),
             'msg': 'invalid datetime format',
@@ -312,7 +312,7 @@ def test_enum_successful():
 def test_enum_fails():
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('tool',),
             'msg': 'value is not a valid enumeration member',
@@ -366,7 +366,7 @@ def test_string_fails():
             str_email='foobar<@example.com',
             name_email='foobar @example.com',
         )
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('str_regex',),
             'msg': 'string does not match regex "^xxx\\d{3}$"',
@@ -419,7 +419,7 @@ def test_dict():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, 3])
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'value is not a valid dict',
@@ -438,7 +438,7 @@ def test_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1)
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'value is not a valid list',
@@ -457,7 +457,7 @@ def test_ordered_dict():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, 3])
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'value is not a valid dict',
@@ -476,7 +476,7 @@ def test_tuple():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1)
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'value is not a valid tuple',
@@ -495,7 +495,7 @@ def test_set():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1)
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'value is not a valid set',
@@ -516,7 +516,7 @@ def test_int_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-5, b=5, c=-5, d=11)
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('a',),
             'msg': 'ensure this value is greater than 0',
@@ -564,7 +564,7 @@ def test_float_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-5.1, b=5.2, c=-5.3, d=9.91)
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('a',),
             'msg': 'ensure this value is greater than 0',
@@ -619,7 +619,7 @@ def test_uuid_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='ebcdab58-6eb8-46fb-a190-d07a3')
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'value is not a valid uuid',
@@ -654,7 +654,7 @@ def test_uuid_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         UUIDModel(a=d, b=c, c=b, d=a)
-    assert exc_info.value.flatten_errors() == [
+    assert exc_info.value.errors() == [
         {
             'loc': ('a',),
             'msg': 'uuid version 1 expected',
@@ -852,7 +852,7 @@ def test_decimal_validation(type_, value, result):
     if not isinstance(result, Decimal):
         with pytest.raises(ValidationError) as exc_info:
             model(foo=value)
-        assert exc_info.value.flatten_errors() == result
+        assert exc_info.value.errors() == result
     else:
         assert model(foo=value).foo == result
 
@@ -875,7 +875,7 @@ def test_path_validation(value, result):
     if not isinstance(result, Path):
         with pytest.raises(ValidationError) as exc_info:
             Model(foo=value)
-        assert exc_info.value.flatten_errors() == result
+        assert exc_info.value.errors() == result
     else:
         assert Model(foo=value).foo == result
 

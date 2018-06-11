@@ -182,6 +182,7 @@ On class creation validators are checked to confirm that the fields they specify
 Occasionally however this is not wanted: when you define a validator to validate fields on inheriting models.
 In this case you should set ``check_fields=False`` on the validator.
 
+.. _recursive_models:
 
 Recursive Models
 ................
@@ -197,24 +198,39 @@ The ellipsis ``...`` just means "Required" same as annotation only declarations 
 Error Handling
 ..............
 
-*Pydantic* comes with ``ValidationError`` which should be used to catch any validation error. You can access errors in a several ways:
+*Pydantic* will raise ``ValidationError`` whenever it finds an error in the data it's validating.
 
-:display_errors: property will return to you a string representation of validation errors.
-:flatten_errors: method will return list of errors for each field.
-:json: same as ``flatten_errors`` method, but list of errors will be serialized as JSON.
+.. note::
+
+   Validation code should not raise ``ValidationError`` itself, but rather raise ``ValueError`` or ``TypeError``
+   (or subclasses thereof) which will be caught and used to populate ``ValidationError``.
+
+One exception will be raised regardless of the number of errors found, that ``ValidationError`` will
+contain information about all the errors and how they happened.
+
+You can access these errors in a several ways:
+
+:errors: method will return list of errors found in the input data.
+:json: method will return a JSON representation of ``errors``.
+:__str__: method will return a human readable representation of the errors.
 
 Each error object contains:
 
-:loc: the error's location.
+:loc: the error's location as a list, the first item in the list will be the field where the error occurred,
+   subsequent items will represent the field where the error occurred
+   in :ref:`sub models <recursive_models>` when they're used.
 :type: a unique identifier of the error readable by a computer.
 :msg: a human readable explanation of the error.
 :ctx: an optional object which contains values required to render the error message.
 
+To demonstrate that:
+
 .. literalinclude:: examples/errors1.py
 
-(This script is complete, it should run "as is")
+(This script is complete, it should run "as is". ``json()`` has ``indent=2`` set by default, but I've tweaked the
+JSON here and below to make it slightly more concise.)
 
-In your custom data types or in validators you should use ``TypeError`` and ``ValueError`` to raise errors:
+In your custom data types or validators you should use ``TypeError`` and ``ValueError`` to raise errors:
 
 .. literalinclude:: examples/errors2.py
 
