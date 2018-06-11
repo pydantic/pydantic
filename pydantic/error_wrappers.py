@@ -48,14 +48,14 @@ class ErrorWrapper:
 
 
 class ValidationError(ValueError):
-    __slots__ = '_raw_errors',
+    __slots__ = 'raw_errors',
 
     def __init__(self, errors):
-        self._raw_errors = errors
+        self.raw_errors = errors
 
     @lru_cache()
     def errors(self):
-        return list(flatten_errors(self._raw_errors))
+        return list(flatten_errors(self.raw_errors))
 
     def json(self, *, indent=2):
         return json.dumps(self.errors(), indent=indent)
@@ -92,7 +92,7 @@ def flatten_errors(errors, *, loc=None):
     for error in errors:
         if isinstance(error, ErrorWrapper):
             if isinstance(error.exc, ValidationError):
-                yield from flatten_errors(error.exc._raw_errors, loc=error.loc)
+                yield from flatten_errors(error.exc.raw_errors, loc=error.loc)
             else:
                 yield error.dict(loc_prefix=loc)
         elif isinstance(error, list):
