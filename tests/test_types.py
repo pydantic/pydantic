@@ -433,7 +433,8 @@ def test_list():
         v: list
 
     assert Model(v=[1, 2, '3']).v == [1, 2, '3']
-    assert Model(v='xyz').v == ['x', 'y', 'z']
+    assert Model(v=(1, 2, '3')).v == [1, 2, '3']
+    assert Model(v={1, 2, '3'}).v == [1, 2, '3']
     assert Model(v=(i**2 for i in range(5))).v == [0, 1, 4, 9, 16]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -471,7 +472,8 @@ def test_tuple():
         v: tuple
 
     assert Model(v=(1, 2, '3')).v == (1, 2, '3')
-    assert Model(v='xyz').v == ('x', 'y', 'z')
+    assert Model(v=[1, 2, '3']).v == (1, 2, '3')
+    assert Model(v={1, 2, '3'}).v == (1, 2, '3')
     assert Model(v=(i**2 for i in range(5))).v == (0, 1, 4, 9, 16)
 
     with pytest.raises(ValidationError) as exc_info:
@@ -490,7 +492,8 @@ def test_set():
         v: set
 
     assert Model(v={1, 2, 2, '3'}).v == {1, 2, '3'}
-    assert Model(v='xyzxyz').v == {'x', 'y', 'z'}
+    assert Model(v=(1, 2, 2, '3')).v == {1, 2, '3'}
+    assert Model(v=[1, 2, 2, '3']).v == {1, 2, '3'}
     assert Model(v={i**2 for i in range(5)}).v == {0, 1, 4, 9, 16}
 
     with pytest.raises(ValidationError) as exc_info:
