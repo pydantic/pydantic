@@ -33,9 +33,13 @@ class Validator(NamedTuple):
 
 
 class Schema:
-    __slots__ = 'alias', 'title', 'choice_names', 'extra',
+    """
+    Used to provide extra information about a field in a model schema.
+    """
+    __slots__ = 'default', 'alias', 'title', 'choice_names', 'extra',
 
-    def __init__(self, alias=None, title=None, choice_names=None, **extra):
+    def __init__(self, default, *, alias=None, title=None, choice_names=None, **extra):
+        self.default = default
         self.alias = alias
         self.title = title
         self.choice_names = choice_names
@@ -59,7 +63,7 @@ class Field:
             model_config: Any,
             alias: str=None,
             allow_none: bool=False,
-            schema: str=None):
+            schema: Schema=None):
 
         self.name: str = name
         self.alias: str = alias or name
@@ -83,10 +87,11 @@ class Field:
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, config):
         schema_from_config = config.get_field_schema(name)
-        if isinstance(value, tuple) and len(value) == 2 and isinstance(value[1], Schema):
-            value, schema = value
+        if isinstance(value, Schema):
+            schema = value
+            value = schema.default
         else:
-            schema = Schema(**schema_from_config)
+            schema = Schema(value, **schema_from_config)
         schema.alias = schema.alias or schema_from_config.get('alias')
         required = value == Required
         return cls(
@@ -142,7 +147,7 @@ class Field:
             if self._schema.choice_names:
                 s['choices'] = [(v.value, self._schema.choice_names[v.value]) for v in self.type_.__members__.values()]
             else:
-                s['choices'] = [(v.value, k) for k, v in self.type_.__members__.items()]
+                s['choices'] = [(v.value, k.title()) for k, v in self.type_.__members__.items()]
         s.update(self._schema.extra)
         return s
 

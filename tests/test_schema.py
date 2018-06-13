@@ -1,6 +1,8 @@
 from enum import Enum, IntEnum
 
-from pydantic import BaseModel
+import pytest
+
+from pydantic import BaseModel, Schema, ValidationError
 
 
 def test_key():
@@ -104,13 +106,57 @@ def test_sub_model():
     }
 
 
+def test_schema_class():
+    class Model(BaseModel):
+        foo: int = Schema(4, title='Foo is Great')
+        bar: str = Schema(..., description='this description of bar')
+
+    with pytest.raises(ValidationError):
+        Model()
+
+    m = Model(bar=123)
+    assert m.dict() == {'foo': 4, 'bar': '123'}
+
+    assert Model.schema() == {
+        'type': 'object',
+        'title': 'Model',
+        'properties': {
+            'foo': {
+                'type': 'int',
+                'title': 'Foo is Great',
+                'required': False,
+                'default': 4,
+            },
+            'bar': {
+                'type': 'str',
+                'title': 'Bar',
+                'required': True,
+                'description': 'this description of bar',
+            },
+        },
+    }
+
+
+def test_schema_class_by_alias():
+    class Model(BaseModel):
+        foo: int = Schema(4, alias='foofoo')
+
+    assert list(Model.schema()['properties'].keys()) == ['foofoo']
+    assert list(Model.schema(by_alias=False)['properties'].keys()) == ['foo']
+
+
 def test_choices():
     FooEnum = Enum('FooEnum', {'foo': 'f', 'bar': 'b'})
     BarEnum = IntEnum('BarEnum', {'foo': 1, 'bar': 2})
 
+    class SpamEnum(str, Enum):
+        foo = 'f'
+        bar = 'b'
+
     class Model(BaseModel):
         foo: FooEnum
         bar: BarEnum
+        spam: SpamEnum = Schema(None, choice_names={'f': 'Sausage', 'b': 'Bacon'})
 
     assert Model.schema() == {
         'type': 'object',
@@ -121,8 +167,8 @@ def test_choices():
                 'title': 'Foo',
                 'required': True,
                 'choices': [
-                    ('f', 'foo'),
-                    ('b', 'bar'),
+                    ('f', 'Foo'),
+                    ('b', 'Bar'),
                 ],
             },
             'bar': {
@@ -130,8 +176,17 @@ def test_choices():
                 'title': 'Bar',
                 'required': True,
                 'choices': [
-                    (1, 'foo'),
-                    (2, 'bar'),
+                    (1, 'Foo'),
+                    (2, 'Bar'),
+                ],
+            },
+            'spam': {
+                'type': 'str',
+                'title': 'Spam',
+                'required': False,
+                'choices': [
+                    ('f', 'Sausage'),
+                    ('b', 'Bacon'),
                 ],
             },
         },
