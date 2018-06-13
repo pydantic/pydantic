@@ -428,16 +428,29 @@ def test_dict():
     ]
 
 
-def test_list():
+@pytest.mark.parametrize('value,result', (
+    ([1, 2, '3'], [1, 2, '3']),
+    ((1, 2, '3'), [1, 2, '3']),
+    ({1, 2, '3'}, [1, 2, '3']),
+    ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
+))
+def test_list_success(value, result):
     class Model(BaseModel):
         v: list
 
-    assert Model(v=[1, 2, '3']).v == [1, 2, '3']
-    assert Model(v='xyz').v == ['x', 'y', 'z']
-    assert Model(v=(i**2 for i in range(5))).v == [0, 1, 4, 9, 16]
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize('value', (
+    123,
+    '123',
+))
+def test_list_fails(value):
+    class Model(BaseModel):
+        v: list
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=1)
+        Model(v=value)
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -466,16 +479,29 @@ def test_ordered_dict():
     ]
 
 
-def test_tuple():
+@pytest.mark.parametrize('value,result', (
+    ([1, 2, '3'], (1, 2, '3')),
+    ((1, 2, '3'), (1, 2, '3')),
+    ({1, 2, '3'}, (1, 2, '3')),
+    ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
+))
+def test_tuple_success(value, result):
     class Model(BaseModel):
         v: tuple
 
-    assert Model(v=(1, 2, '3')).v == (1, 2, '3')
-    assert Model(v='xyz').v == ('x', 'y', 'z')
-    assert Model(v=(i**2 for i in range(5))).v == (0, 1, 4, 9, 16)
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize('value', (
+    123,
+    '123',
+))
+def test_tuple_fails(value):
+    class Model(BaseModel):
+        v: tuple
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=1)
+        Model(v=value)
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -485,16 +511,29 @@ def test_tuple():
     ]
 
 
-def test_set():
+@pytest.mark.parametrize('value,result', (
+    ({1, 2, 2, '3'}, {1, 2, '3'}),
+    ((1, 2, 2, '3'), {1, 2, '3'}),
+    ([1, 2, 2, '3'], {1, 2, '3'}),
+    ({i**2 for i in range(5)}, {0, 1, 4, 9, 16}),
+))
+def test_set_success(value, result):
     class Model(BaseModel):
         v: set
 
-    assert Model(v={1, 2, 2, '3'}).v == {1, 2, '3'}
-    assert Model(v='xyzxyz').v == {'x', 'y', 'z'}
-    assert Model(v={i**2 for i in range(5)}).v == {0, 1, 4, 9, 16}
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize('value', (
+    123,
+    '123',
+))
+def test_set_fails(value):
+    class Model(BaseModel):
+        v: set
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=1)
+        Model(v=value)
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
