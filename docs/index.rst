@@ -78,9 +78,7 @@ Just::
 you're good to go.
 
 If you want *pydantic* to parse json faster you can add `ujson <https://pypi.python.org/pypi/ujson>`_
-as an optional dependency.
-
-Similarly if *pydantic's* email validation relies on
+as an optional dependency. Similarly if *pydantic's* email validation relies on
 `email-validator <https://github.com/JoshData/python-email-validator>`_ ::
 
     pip install pydantic[ujson]
