@@ -4,11 +4,6 @@ import pytest
 
 from pydantic import BaseModel, Protocol, ValidationError
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
-
 
 class Model(BaseModel):
     a: float = ...
@@ -38,37 +33,6 @@ def test_json():
 
 def test_json_ct():
     assert Model.parse_raw('{"a": 12, "b": 8}', content_type='application/json') == Model.construct(a=12, b=8)
-
-
-@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
-def test_msgpack_proto(mocker):
-    # b'\x82\xa1a\x0c\xa1b\x08' == msgpack.packb(dict(a=12, b=8))
-    assert Model.parse_raw(b'\x82\xa1a\x0c\xa1b\x08', proto=Protocol.msgpack) == Model.construct(a=12, b=8)
-
-
-@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
-def test_msgpack_ct():
-    assert Model.parse_raw(b'\x82\xa1a\x0c\xa1b\x08', content_type='application/msgpack') == Model.construct(a=12, b=8)
-
-
-@pytest.mark.skipif(msgpack, reason='msgpack installed')
-def test_msgpack_not_installed_proto(mocker):
-    with pytest.raises(ImportError) as exc_info:
-        Model.parse_raw(b'\x82\xa1a\x0c\xa1b\x08', proto=Protocol.msgpack)
-    assert "ImportError: msgpack not installed, can't parse data" in str(exc_info)
-
-
-@pytest.mark.skipif(msgpack, reason='msgpack installed')
-def test_msgpack_not_installed_ct():
-    with pytest.raises(ValidationError) as exc_info:
-        Model.parse_raw(b'\x82\xa1a\x0c\xa1b\x08', content_type='application/msgpack')
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('__obj__',),
-            'msg': 'Unknown content-type: application/msgpack',
-            'type': 'type_error',
-        },
-    ]
 
 
 def test_pickle_ct():
@@ -120,13 +84,6 @@ def test_file_json(tmpdir):
 def test_file_json_no_ext(tmpdir):
     p = tmpdir.join('test')
     p.write('{"a": 12, "b": 8}')
-    assert Model.parse_file(str(p)) == Model.construct(a=12, b=8)
-
-
-@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
-def test_file_msgpack(tmpdir):
-    p = tmpdir.join('test.mp')
-    p.write_binary(b'\x82\xa1a\x0c\xa1b\x08')
     assert Model.parse_file(str(p)) == Model.construct(a=12, b=8)
 
 
