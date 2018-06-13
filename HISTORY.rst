@@ -3,6 +3,10 @@
 History
 -------
 
+v0.10.1 (2018-xx-xx)
+....................
+* make ``list``, ``tuple`` and ``set`` types stricter #86
+
 v0.10.0 (2018-06-11)
 ....................
 * add ``Config.allow_population_by_alias`` #160, thanks @bendemaree
