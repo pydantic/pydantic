@@ -77,19 +77,15 @@ Just::
 *pydantic* has no required dependencies except python 3.6+. If you've got python 3.6 and ``pip`` installed -
 you're good to go.
 
-If you want *pydantic* to parse msgpack you can add `msgpack-python <https://pypi.python.org/pypi/msgpack-python>`_
-as an optional dependency, same goes for reading json faster with `ujson <https://pypi.python.org/pypi/ujson>`_.
-
-Similarly if *pydantic's* email validation relies on
+If you want *pydantic* to parse json faster you can add `ujson <https://pypi.python.org/pypi/ujson>`_
+as an optional dependency. Similarly if *pydantic's* email validation relies on
 `email-validator <https://github.com/JoshData/python-email-validator>`_ ::
 
-    pip install pydantic[msgpack]
-    # or
     pip install pydantic[ujson]
     # or
     pip install pydantic[email]
     # or just
-    pip install pydantic[msgpack,ujson,email]
+    pip install pydantic[ujson,email]
 
 Of course you can also install these requirements manually with ``pip install ...``.
 
@@ -268,7 +264,7 @@ Helper Functions
 
 :parse_obj: this is almost identical to the ``__init__`` method of the model except if the object passed is not
   a dict ``ValidationError`` will be raised (rather than python raising a ``TypeError``).
-:parse_raw: takes a *str* or *bytes* parses it as *json*, *msgpack* or *pickle* data and then passes
+:parse_raw: takes a *str* or *bytes* parses it as *json*, or *pickle* data and then passes
   the result to ``parse_obj``. The data type is inferred from the ``content_type`` argument,
   otherwise *json* is assumed.
 :parse_file: reads a file and passes the contents to ``parse_raw``, if ``content_type`` is omitted it is inferred
@@ -276,7 +272,7 @@ Helper Functions
 
 .. literalinclude:: examples/parse.py
 
-(This script is complete, it should run "as is" provided ``msgpack-python`` is installed)
+(This script is complete, it should run "as is")
 
 .. note::
 

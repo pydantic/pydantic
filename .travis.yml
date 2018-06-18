@@ -17,9 +17,9 @@ install:
 script:
 - make lint
 
-# test with and without msgpack and ujson then combine coverage
+# test with and without ujson and email-validator then combine coverage
 - make test && mv .coverage .coverage.extra
-- pip uninstall -y msgpack-python ujson email-validator
+- pip uninstall -y ujson email-validator
 - make test && mv .coverage .coverage.no-extra
 - coverage combine
 
