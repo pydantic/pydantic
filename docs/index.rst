@@ -414,17 +414,17 @@ a model.
 Trying to change ``a`` caused an error and it remains unchanged, however the dict ``b`` is mutable and the
 immutability of ``foobar`` doesn't stop being changed.
 
-Copy and Values
-...............
+Copying and Dictionary Serialization
+....................................
 
-The ``values`` function returns a dict containing the attributes of a model sub-model are recursively
+The ``dict`` function returns a dict containing the attributes of a model. Sub-models are recursively
 converted to dicts.
 
 While ``copy`` allows models to be duplicated, this is particularly useful for immutable models.
 
-Both ``values`` and ``copy`` take the optional ``include`` and ``exclude`` keyword arguments to control which attributes
-are return/copied. ``copy`` allows an extra keyword argument ``update`` allowing attributes to be modified as the model
-is duplicated.
+Both ``dict`` and ``copy`` take the optional ``include`` and ``exclude`` keyword arguments to control which attributes
+are returned or copied, respectively. ``copy`` accepts an extra keyword argument, ``update``, which accepts a ``dict``
+mapping attributes to new values that will be applied as the model is duplicated.
 
 .. literalinclude:: examples/copy_values.py
 
