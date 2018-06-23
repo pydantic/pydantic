@@ -76,6 +76,30 @@ class PathError(PydanticTypeError):
     msg_template = 'value is not a valid path'
 
 
+class PathNotExistsError(PydanticValueError):
+    code = 'path.not_exists'
+    msg_template = 'file or directory at path "{path}" does not exist'
+
+    def __init__(self, *, path: str) -> None:
+        super().__init__(path=path)
+
+
+class PathNotAFileError(PydanticValueError):
+    code = 'path.not_a_file'
+    msg_template = 'path "{path}" does not point to a file'
+
+    def __init__(self, *, path: str) -> None:
+        super().__init__(path=path)
+
+
+class PathNotADirectoryError(PydanticValueError):
+    code = 'path.not_a_directory'
+    msg_template = 'path "{path}" does not point to a directory'
+
+    def __init__(self, *, path: str) -> None:
+        super().__init__(path=path)
+
+
 class PyObjectError(PydanticTypeError):
     msg_template = 'ensure this value contains valid import path'
 

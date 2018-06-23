@@ -9,9 +9,9 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, EmailStr, NameEmail, NegativeFloat,
-                      NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, condecimal,
-                      confloat, conint, constr, create_model)
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, DirectoryPath, EmailStr, FilePath,
+                      NameEmail, NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictStr,
+                      ValidationError, condecimal, confloat, conint, constr, create_model)
 
 try:
     import email_validator
@@ -910,6 +910,76 @@ def test_decimal_validation(type_, value, result):
 def test_path_validation(value, result):
     class Model(BaseModel):
         foo: Path
+
+    if not isinstance(result, Path):
+        with pytest.raises(ValidationError) as exc_info:
+            Model(foo=value)
+        assert exc_info.value.errors() == result
+    else:
+        assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize('value,result', (
+    ('nonexistentfile', [
+        {
+            'loc': ('foo',),
+            'msg': 'file or directory at path "nonexistentfile" does not exist',
+            'type': 'value_error.path.not_exists',
+            'ctx': {
+                'path': 'nonexistentfile',
+            },
+        },
+    ]),
+    ('tests', [
+        {
+            'loc': ('foo',),
+            'msg': 'path "tests" does not point to a file',
+            'type': 'value_error.path.not_a_file',
+            'ctx': {
+                'path': 'tests',
+            },
+        },
+    ]),
+    ('tests/test_types.py', Path('tests/test_types.py')),
+))
+def test_file_path_validation(value, result):
+    class Model(BaseModel):
+        foo: FilePath
+
+    if not isinstance(result, Path):
+        with pytest.raises(ValidationError) as exc_info:
+            Model(foo=value)
+        assert exc_info.value.errors() == result
+    else:
+        assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize('value,result', (
+    ('nonexistentdirectory', [
+        {
+            'loc': ('foo',),
+            'msg': 'file or directory at path "nonexistentdirectory" does not exist',
+            'type': 'value_error.path.not_exists',
+            'ctx': {
+                'path': 'nonexistentdirectory',
+            },
+        },
+    ]),
+    ('tests', Path('tests')),
+    ('tests/test_types.py', [
+        {
+            'loc': ('foo',),
+            'msg': 'path "tests/test_types.py" does not point to a directory',
+            'type': 'value_error.path.not_a_directory',
+            'ctx': {
+                'path': 'tests/test_types.py',
+            },
+        },
+    ]),
+))
+def test_directory_path_validation(value, result):
+    class Model(BaseModel):
+        foo: DirectoryPath
 
     if not isinstance(result, Path):
         with pytest.raises(ValidationError) as exc_info:

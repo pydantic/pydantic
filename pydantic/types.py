@@ -1,12 +1,14 @@
 import re
 from decimal import Decimal
+from pathlib import Path
 from typing import Optional, Pattern, Type, Union
 from uuid import UUID
 
 from . import errors
 from .utils import change_exception, import_string, make_dsn, validate_email
 from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, float_validator,
-                         int_validator, not_none_validator, number_size_validator, str_validator)
+                         int_validator, not_none_validator, number_size_validator, path_exists_validator,
+                         path_validator, str_validator)
 
 try:
     import email_validator
@@ -39,6 +41,8 @@ __all__ = [
     'UUID3',
     'UUID4',
     'UUID5',
+    'FilePath',
+    'DirectoryPath',
 ]
 
 NoneStr = Optional[str]
@@ -316,3 +320,31 @@ class UUID4(UUID):
 
 class UUID5(UUID):
     _required_version = 5
+
+
+class FilePath(Path):
+    @classmethod
+    def get_validators(cls):
+        yield path_validator
+        yield path_exists_validator
+        yield cls.validate
+
+    def validate(cls, value: Path) -> Path:
+        if not value.is_file():
+            raise errors.PathNotAFileError(path=str(value))
+
+        return value
+
+
+class DirectoryPath(Path):
+    @classmethod
+    def get_validators(cls):
+        yield path_validator
+        yield path_exists_validator
+        yield cls.validate
+
+    def validate(cls, value: Path) -> Path:
+        if not value.is_dir():
+            raise errors.PathNotADirectoryError(path=str(value))
+
+        return value
