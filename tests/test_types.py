@@ -431,7 +431,7 @@ def test_dict():
 @pytest.mark.parametrize('value,result', (
     ([1, 2, '3'], [1, 2, '3']),
     ((1, 2, '3'), [1, 2, '3']),
-    ({1, 2, '3'}, [1, 2, '3']),
+    ({1, 2, '3'}, list({1, 2, '3'})),
     ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
 ))
 def test_list_success(value, result):
@@ -482,7 +482,7 @@ def test_ordered_dict():
 @pytest.mark.parametrize('value,result', (
     ([1, 2, '3'], (1, 2, '3')),
     ((1, 2, '3'), (1, 2, '3')),
-    ({1, 2, '3'}, (1, 2, '3')),
+    ({1, 2, '3'}, tuple({1, 2, '3'})),
     ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
 ))
 def test_tuple_success(value, result):
