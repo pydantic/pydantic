@@ -899,27 +899,37 @@ def test_decimal_validation(type_, value, result):
 @pytest.mark.parametrize('value,result', (
     ('/test/path', Path('/test/path')),
     (Path('/test/path'), Path('/test/path')),
-    (None, [
+))
+def test_path_validation_success(value, result):
+    class Model(BaseModel):
+        foo: Path
+
+    assert Model(foo=value).foo == result
+
+
+def test_path_validation_fails():
+    class Model(BaseModel):
+        foo: Path
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=None)
+    assert exc_info.value.errors() == [
         {
             'loc': ('foo',),
             'msg': 'value is not a valid path',
             'type': 'type_error.path',
         },
-    ]),
-))
-def test_path_validation(value, result):
+    ]
+
+
+def test_file_path_validation_success():
     class Model(BaseModel):
-        foo: Path
+        foo: FilePath
 
-    if not isinstance(result, Path):
-        with pytest.raises(ValidationError) as exc_info:
-            Model(foo=value)
-        assert exc_info.value.errors() == result
-    else:
-        assert Model(foo=value).foo == result
+    assert Model(foo='tests/test_types.py').foo == Path('tests/test_types.py')
 
 
-@pytest.mark.parametrize('value,result', (
+@pytest.mark.parametrize('value,errors', (
     ('nonexistentfile', [
         {
             'loc': ('foo',),
@@ -940,21 +950,24 @@ def test_path_validation(value, result):
             },
         },
     ]),
-    ('tests/test_types.py', Path('tests/test_types.py')),
 ))
-def test_file_path_validation(value, result):
+def test_file_path_validation_fails(value, errors):
     class Model(BaseModel):
         foo: FilePath
 
-    if not isinstance(result, Path):
-        with pytest.raises(ValidationError) as exc_info:
-            Model(foo=value)
-        assert exc_info.value.errors() == result
-    else:
-        assert Model(foo=value).foo == result
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == errors
 
 
-@pytest.mark.parametrize('value,result', (
+def test_directory_path_validation_success():
+    class Model(BaseModel):
+        foo: DirectoryPath
+
+    assert Model(foo='tests').foo == Path('tests')
+
+
+@pytest.mark.parametrize('value,errors', (
     ('nonexistentdirectory', [
         {
             'loc': ('foo',),
@@ -965,7 +978,6 @@ def test_file_path_validation(value, result):
             },
         },
     ]),
-    ('tests', Path('tests')),
     ('tests/test_types.py', [
         {
             'loc': ('foo',),
@@ -977,16 +989,13 @@ def test_file_path_validation(value, result):
         },
     ]),
 ))
-def test_directory_path_validation(value, result):
+def test_directory_path_validation_fails(value, errors):
     class Model(BaseModel):
         foo: DirectoryPath
 
-    if not isinstance(result, Path):
-        with pytest.raises(ValidationError) as exc_info:
-            Model(foo=value)
-        assert exc_info.value.errors() == result
-    else:
-        assert Model(foo=value).foo == result
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == errors
 
 
 base_message = r'.*ensure this value is {msg} \(type=value_error.number.not_{ty}; limit_value={value}\).*'
