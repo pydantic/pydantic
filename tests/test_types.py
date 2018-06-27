@@ -922,15 +922,29 @@ def test_path_validation_fails():
     ]
 
 
-def test_file_path_validation_success():
+@pytest.mark.parametrize('value,result', (
+    ('tests/test_types.py', Path('tests/test_types.py')),
+    (Path('tests/test_types.py'), Path('tests/test_types.py')),
+))
+def test_file_path_validation_success(value, result):
     class Model(BaseModel):
         foo: FilePath
 
-    assert Model(foo='tests/test_types.py').foo == Path('tests/test_types.py')
+    assert Model(foo=value).foo == result
 
 
 @pytest.mark.parametrize('value,errors', (
     ('nonexistentfile', [
+        {
+            'loc': ('foo',),
+            'msg': 'file or directory at path "nonexistentfile" does not exist',
+            'type': 'value_error.path.not_exists',
+            'ctx': {
+                'path': 'nonexistentfile',
+            },
+        },
+    ]),
+    (Path('nonexistentfile'), [
         {
             'loc': ('foo',),
             'msg': 'file or directory at path "nonexistentfile" does not exist',
@@ -950,6 +964,16 @@ def test_file_path_validation_success():
             },
         },
     ]),
+    (Path('tests'), [
+        {
+            'loc': ('foo',),
+            'msg': 'path "tests" does not point to a file',
+            'type': 'value_error.path.not_a_file',
+            'ctx': {
+                'path': 'tests',
+            },
+        },
+    ]),
 ))
 def test_file_path_validation_fails(value, errors):
     class Model(BaseModel):
@@ -960,11 +984,15 @@ def test_file_path_validation_fails(value, errors):
     assert exc_info.value.errors() == errors
 
 
-def test_directory_path_validation_success():
+@pytest.mark.parametrize('value,result', (
+    ('tests', Path('tests')),
+    (Path('tests'), Path('tests')),
+))
+def test_directory_path_validation_success(value, result):
     class Model(BaseModel):
         foo: DirectoryPath
 
-    assert Model(foo='tests').foo == Path('tests')
+    assert Model(foo=value).foo == result
 
 
 @pytest.mark.parametrize('value,errors', (
@@ -978,7 +1006,27 @@ def test_directory_path_validation_success():
             },
         },
     ]),
+    (Path('nonexistentdirectory'), [
+        {
+            'loc': ('foo',),
+            'msg': 'file or directory at path "nonexistentdirectory" does not exist',
+            'type': 'value_error.path.not_exists',
+            'ctx': {
+                'path': 'nonexistentdirectory',
+            },
+        },
+    ]),
     ('tests/test_types.py', [
+        {
+            'loc': ('foo',),
+            'msg': 'path "tests/test_types.py" does not point to a directory',
+            'type': 'value_error.path.not_a_directory',
+            'ctx': {
+                'path': 'tests/test_types.py',
+            },
+        },
+    ]),
+    (Path('tests/test_types.py'), [
         {
             'loc': ('foo',),
             'msg': 'path "tests/test_types.py" does not point to a directory',
