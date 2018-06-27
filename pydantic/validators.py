@@ -209,7 +209,7 @@ def path_validator(v) -> Path:
 
 def path_exists_validator(v) -> Path:
     if not v.exists():
-        raise errors.PathNotExistsError(path=str(v))
+        raise errors.PathNotExistsError(path=v)
 
     return v
 

@@ -331,7 +331,7 @@ class FilePath(Path):
 
     def validate(cls, value: Path) -> Path:
         if not value.is_file():
-            raise errors.PathNotAFileError(path=str(value))
+            raise errors.PathNotAFileError(path=value)
 
         return value
 
@@ -345,6 +345,6 @@ class DirectoryPath(Path):
 
     def validate(cls, value: Path) -> Path:
         if not value.is_dir():
-            raise errors.PathNotADirectoryError(path=str(value))
+            raise errors.PathNotADirectoryError(path=value)
 
         return value
