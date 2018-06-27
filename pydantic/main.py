@@ -28,6 +28,7 @@ class BaseConfig:
     fields = {}
     validate_assignment = False
     error_msg_templates: Dict[str, str] = {}
+    arbitrary_types_allowed = False
 
     @classmethod
     def get_field_config(cls, name):

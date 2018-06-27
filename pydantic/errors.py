@@ -204,3 +204,10 @@ class UUIDVersionError(PydanticValueError):
 
     def __init__(self, *, required_version: int) -> None:
         super().__init__(required_version=required_version)
+
+
+class ArbitraryTypeError(PydanticTypeError):
+    msg_template = 'instance of {expected_arbitrary_type} expected'
+
+    def __init__(self, *, expected_arbitrary_type) -> None:
+        super().__init__(expected_arbitrary_type=expected_arbitrary_type)
