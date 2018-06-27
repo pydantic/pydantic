@@ -255,4 +255,4 @@ def find_validators(type_, arbitrary_types_allowed=False):
     if arbitrary_types_allowed:
         return [make_arbitrary_type_validator(type_)]
     else:
-        raise errors.ConfigError(f'no validator found for {type_}')
+        raise RuntimeError(f'no validator found for {type_}')

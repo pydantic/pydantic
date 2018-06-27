@@ -303,7 +303,7 @@ Options:
 :error_msg_templates: let's you to override default error message templates.
     Pass in a dictionary with keys matching the error messages you want to override (default: ``{}``)
 :arbitrary_types_allowed: whether to allow arbitrary user types for fields (they are validated simply by checking if the
-    value is instance of that type). If False - ConfigError will be raised on model declaration (default: ``False``)
+    value is instance of that type). If False - RuntimeError will be raised on model declaration (default: ``False``)
 
 .. warning::
 

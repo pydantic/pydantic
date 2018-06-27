@@ -204,13 +204,6 @@ def test_invalid_validator():
     assert exc_info.value.args[0].startswith('Invalid signature for validator')
 
 
-def test_no_validator():
-    with pytest.raises(errors.ConfigError) as exc_info:
-        class NoValidatorModel(BaseModel):
-            x: object = ...
-    assert exc_info.value.args[0] == "no validator found for <class 'object'>"
-
-
 def test_unable_to_infer():
     with pytest.raises(errors.ConfigError) as exc_info:
         class InvalidDefinitionModel(BaseModel):
@@ -502,7 +495,7 @@ def test_arbitrary_type_allowed_validation_fails():
 
 
 def test_arbitrary_types_not_allowed():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(RuntimeError) as exc_info:
         class ArbitraryTypeNotAllowedModel(BaseModel):
             t: ArbitraryType
     assert exc_info.value.args[0].startswith('no validator found for')
