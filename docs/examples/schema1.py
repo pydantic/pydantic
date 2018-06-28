@@ -32,8 +32,3 @@ class MainModel(BaseModel):
         title = 'Main'
 
 print(json.dumps(MainModel.schema(), indent=2))
-
-[1, "Male"],
-[2, "Female"],
-[3, "Other"],
-[4, "I'd rather not say"]

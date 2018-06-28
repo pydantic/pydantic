@@ -193,8 +193,8 @@ The ellipsis ``...`` just means "Required" same as annotation only declarations 
 
 .. _schema:
 
-Model Schema
-............
+Schema Creation
+...............
 
 *Pydantic* allows auto creation of schemas from models:
 
@@ -221,7 +221,7 @@ Optionally the ``Schema`` class can be used to provide extra information about t
 * ``title`` if omitted ``field_name.title()`` is used
 * ``choice_names`` as described above
 * ``alias`` - the public name of the field.
-* ``**`` any other keyword arguments eg. ``description`` will be added verbatim to the field's schema
+* ``**`` any other keyword arguments (eg. ``description``) will be added verbatim to the field's schema
 
 Instead of using ``Schema``, the ``fields`` property of :ref:`the Config class <config>` can be used
 to set all the arguments above except ``default``.
