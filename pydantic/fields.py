@@ -144,10 +144,11 @@ class Field:
         if not self.required and self.default is not None:
             s['default'] = self.default
         if issubclass(self.type_, Enum):
-            if self._schema.choice_names:
-                s['choices'] = [(v.value, self._schema.choice_names[v.value]) for v in self.type_.__members__.values()]
-            else:
-                s['choices'] = [(v.value, k.title()) for k, v in self.type_.__members__.items()]
+            choice_names = self._schema.choice_names or {}
+            s['choices'] = [
+                (v.value, choice_names.get(v.value) or k.title())
+                for k, v in self.type_.__members__.items()
+            ]
         s.update(self._schema.extra)
         return s
 

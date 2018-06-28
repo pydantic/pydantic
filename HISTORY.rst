@@ -8,6 +8,7 @@ v0.11.0 (2018-XX-XX)
 * make ``list``, ``tuple`` and ``set`` types stricter #86
 * **breaking change**: remove msgpack parsing #201
 * add ``FilePath`` and ``DirectoryPath`` types #10
+* model schema generation #190
 
 v0.10.0 (2018-06-11)
 ....................

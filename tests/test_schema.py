@@ -156,7 +156,7 @@ def test_choices():
     class Model(BaseModel):
         foo: FooEnum
         bar: BarEnum
-        spam: SpamEnum = Schema(None, choice_names={'f': 'Sausage', 'b': 'Bacon'})
+        spam: SpamEnum = Schema(None, choice_names={'f': 'Sausage'})
 
     assert Model.schema() == {
         'type': 'object',
@@ -186,7 +186,7 @@ def test_choices():
                 'required': False,
                 'choices': [
                     ('f', 'Sausage'),
-                    ('b', 'Bacon'),
+                    ('b', 'Bar'),
                 ],
             },
         },
