@@ -48,3 +48,11 @@ def test_model_encoding():
     assert m.dict() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}}
     assert m.json() == '{"a": 10.2, "b": "foobar", "c": 10.2, "d": {"x": 123, "y": "123"}}'
     assert m.json(exclude={'b'}) == '{"a": 10.2, "c": 10.2, "d": {"x": 123, "y": "123"}}'
+
+
+def test_invalid_model():
+    class Foo:
+        pass
+
+    with pytest.raises(TypeError):
+        json.dumps(Foo, default=pydantic_encoder)
