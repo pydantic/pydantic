@@ -31,4 +31,11 @@ class MainModel(BaseModel):
     class Config:
         title = 'Main'
 
-print(json.dumps(MainModel.schema(), indent=2))
+debug(MainModel.schema())
+# > {
+#       'type': 'object',
+#       'title': 'Main',
+#       'properties': {
+#           'foo_bar': {
+#           ...
+print(MainModel.schema_json(indent=2))
