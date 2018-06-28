@@ -9,9 +9,9 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, EmailStr, NameEmail, NegativeFloat,
-                      NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictStr, ValidationError, condecimal,
-                      confloat, conint, constr, create_model)
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, DirectoryPath, EmailStr, FilePath,
+                      NameEmail, NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictStr,
+                      ValidationError, condecimal, confloat, conint, constr, create_model)
 
 try:
     import email_validator
@@ -428,16 +428,29 @@ def test_dict():
     ]
 
 
-def test_list():
+@pytest.mark.parametrize('value,result', (
+    ([1, 2, '3'], [1, 2, '3']),
+    ((1, 2, '3'), [1, 2, '3']),
+    ({1, 2, '3'}, list({1, 2, '3'})),
+    ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
+))
+def test_list_success(value, result):
     class Model(BaseModel):
         v: list
 
-    assert Model(v=[1, 2, '3']).v == [1, 2, '3']
-    assert Model(v='xyz').v == ['x', 'y', 'z']
-    assert Model(v=(i**2 for i in range(5))).v == [0, 1, 4, 9, 16]
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize('value', (
+    123,
+    '123',
+))
+def test_list_fails(value):
+    class Model(BaseModel):
+        v: list
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=1)
+        Model(v=value)
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -466,16 +479,29 @@ def test_ordered_dict():
     ]
 
 
-def test_tuple():
+@pytest.mark.parametrize('value,result', (
+    ([1, 2, '3'], (1, 2, '3')),
+    ((1, 2, '3'), (1, 2, '3')),
+    ({1, 2, '3'}, tuple({1, 2, '3'})),
+    ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
+))
+def test_tuple_success(value, result):
     class Model(BaseModel):
         v: tuple
 
-    assert Model(v=(1, 2, '3')).v == (1, 2, '3')
-    assert Model(v='xyz').v == ('x', 'y', 'z')
-    assert Model(v=(i**2 for i in range(5))).v == (0, 1, 4, 9, 16)
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize('value', (
+    123,
+    '123',
+))
+def test_tuple_fails(value):
+    class Model(BaseModel):
+        v: tuple
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=1)
+        Model(v=value)
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -485,16 +511,29 @@ def test_tuple():
     ]
 
 
-def test_set():
+@pytest.mark.parametrize('value,result', (
+    ({1, 2, 2, '3'}, {1, 2, '3'}),
+    ((1, 2, 2, '3'), {1, 2, '3'}),
+    ([1, 2, 2, '3'], {1, 2, '3'}),
+    ({i**2 for i in range(5)}, {0, 1, 4, 9, 16}),
+))
+def test_set_success(value, result):
     class Model(BaseModel):
         v: set
 
-    assert Model(v={1, 2, 2, '3'}).v == {1, 2, '3'}
-    assert Model(v='xyzxyz').v == {'x', 'y', 'z'}
-    assert Model(v={i**2 for i in range(5)}).v == {0, 1, 4, 9, 16}
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize('value', (
+    123,
+    '123',
+))
+def test_set_fails(value):
+    class Model(BaseModel):
+        v: set
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=1)
+        Model(v=value)
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -860,24 +899,151 @@ def test_decimal_validation(type_, value, result):
 @pytest.mark.parametrize('value,result', (
     ('/test/path', Path('/test/path')),
     (Path('/test/path'), Path('/test/path')),
-    (None, [
+))
+def test_path_validation_success(value, result):
+    class Model(BaseModel):
+        foo: Path
+
+    assert Model(foo=value).foo == result
+
+
+def test_path_validation_fails():
+    class Model(BaseModel):
+        foo: Path
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=None)
+    assert exc_info.value.errors() == [
         {
             'loc': ('foo',),
             'msg': 'value is not a valid path',
             'type': 'type_error.path',
         },
+    ]
+
+
+@pytest.mark.parametrize('value,result', (
+    ('tests/test_types.py', Path('tests/test_types.py')),
+    (Path('tests/test_types.py'), Path('tests/test_types.py')),
+))
+def test_file_path_validation_success(value, result):
+    class Model(BaseModel):
+        foo: FilePath
+
+    assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize('value,errors', (
+    ('nonexistentfile', [
+        {
+            'loc': ('foo',),
+            'msg': 'file or directory at path "nonexistentfile" does not exist',
+            'type': 'value_error.path.not_exists',
+            'ctx': {
+                'path': 'nonexistentfile',
+            },
+        },
+    ]),
+    (Path('nonexistentfile'), [
+        {
+            'loc': ('foo',),
+            'msg': 'file or directory at path "nonexistentfile" does not exist',
+            'type': 'value_error.path.not_exists',
+            'ctx': {
+                'path': 'nonexistentfile',
+            },
+        },
+    ]),
+    ('tests', [
+        {
+            'loc': ('foo',),
+            'msg': 'path "tests" does not point to a file',
+            'type': 'value_error.path.not_a_file',
+            'ctx': {
+                'path': 'tests',
+            },
+        },
+    ]),
+    (Path('tests'), [
+        {
+            'loc': ('foo',),
+            'msg': 'path "tests" does not point to a file',
+            'type': 'value_error.path.not_a_file',
+            'ctx': {
+                'path': 'tests',
+            },
+        },
     ]),
 ))
-def test_path_validation(value, result):
+def test_file_path_validation_fails(value, errors):
     class Model(BaseModel):
-        foo: Path
+        foo: FilePath
 
-    if not isinstance(result, Path):
-        with pytest.raises(ValidationError) as exc_info:
-            Model(foo=value)
-        assert exc_info.value.errors() == result
-    else:
-        assert Model(foo=value).foo == result
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == errors
+
+
+@pytest.mark.parametrize('value,result', (
+    ('tests', Path('tests')),
+    (Path('tests'), Path('tests')),
+))
+def test_directory_path_validation_success(value, result):
+    class Model(BaseModel):
+        foo: DirectoryPath
+
+    assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize('value,errors', (
+    ('nonexistentdirectory', [
+        {
+            'loc': ('foo',),
+            'msg': 'file or directory at path "nonexistentdirectory" does not exist',
+            'type': 'value_error.path.not_exists',
+            'ctx': {
+                'path': 'nonexistentdirectory',
+            },
+        },
+    ]),
+    (Path('nonexistentdirectory'), [
+        {
+            'loc': ('foo',),
+            'msg': 'file or directory at path "nonexistentdirectory" does not exist',
+            'type': 'value_error.path.not_exists',
+            'ctx': {
+                'path': 'nonexistentdirectory',
+            },
+        },
+    ]),
+    ('tests/test_types.py', [
+        {
+            'loc': ('foo',),
+            'msg': 'path "tests/test_types.py" does not point to a directory',
+            'type': 'value_error.path.not_a_directory',
+            'ctx': {
+                'path': 'tests/test_types.py',
+            },
+        },
+    ]),
+    (Path('tests/test_types.py'), [
+        {
+            'loc': ('foo',),
+            'msg': 'path "tests/test_types.py" does not point to a directory',
+            'type': 'value_error.path.not_a_directory',
+            'ctx': {
+                'path': 'tests/test_types.py',
+            },
+        },
+    ]),
+))
+def test_directory_path_validation_fails(value, errors):
+    class Model(BaseModel):
+        foo: DirectoryPath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == errors
 
 
 base_message = r'.*ensure this value is {msg} \(type=value_error.number.not_{ty}; limit_value={value}\).*'

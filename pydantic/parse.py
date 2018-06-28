@@ -10,15 +10,9 @@ try:
 except ImportError:
     import json
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
-
 
 class Protocol(str, Enum):
     json = 'json'
-    msgpack = 'msgpack'
     pickle = 'pickle'
 
 
@@ -30,8 +24,6 @@ def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
     if proto is None and content_type:
         if content_type.endswith(('json', 'javascript')):
             pass
-        elif msgpack and content_type.endswith('msgpack'):
-            proto = Protocol.msgpack
         elif allow_pickle and content_type.endswith('pickle'):
             proto = Protocol.pickle
         else:
@@ -43,10 +35,6 @@ def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
         if isinstance(b, bytes):
             b = b.decode(encoding)
         return json.loads(b)
-    elif proto == Protocol.msgpack:
-        if msgpack is None:
-            raise ImportError("msgpack not installed, can't parse data")
-        return msgpack.unpackb(b, encoding=encoding)
     elif proto == Protocol.pickle:
         if not allow_pickle:
             raise RuntimeError('Trying to decode with pickle with allow_pickle=False')
@@ -65,8 +53,6 @@ def load_file(path: Union[str, Path], *,
     if content_type is None:
         if path.suffix in ('.js', '.json'):
             proto = Protocol.json
-        elif path.suffix in ('.mp', '.msgpack'):
-            proto = Protocol.msgpack
         elif path.suffix == '.pkl':
             proto = Protocol.pickle
 

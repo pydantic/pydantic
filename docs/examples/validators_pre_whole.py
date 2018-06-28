@@ -20,7 +20,7 @@ class DemoModel(BaseModel):
     @validator('numbers')
     def check_numbers_low(cls, v):
         if v > 4:
-            raise ValueError(f'number to large {v} > 4')
+            raise ValueError(f'number too large {v} > 4')
         return v
 
     @validator('numbers', whole=True)
@@ -40,7 +40,7 @@ except ValidationError as e:
 """
 1 validation error
 numbers -> 2
-  number to large 5 > 4 (type=value_error)
+  number too large 5 > 4 (type=value_error)
 """
 
 try:

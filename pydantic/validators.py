@@ -1,3 +1,4 @@
+import inspect
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
@@ -133,25 +134,28 @@ def dict_validator(v) -> dict:
 def list_validator(v) -> list:
     if isinstance(v, list):
         return v
-
-    with change_exception(errors.ListError, TypeError):
+    elif isinstance(v, (tuple, set)) or inspect.isgenerator(v):
         return list(v)
+    else:
+        raise errors.ListError()
 
 
 def tuple_validator(v) -> tuple:
     if isinstance(v, tuple):
         return v
-
-    with change_exception(errors.TupleError, TypeError):
+    elif isinstance(v, (list, set)) or inspect.isgenerator(v):
         return tuple(v)
+    else:
+        raise errors.TupleError()
 
 
 def set_validator(v) -> set:
     if isinstance(v, set):
         return v
-
-    with change_exception(errors.SetError, TypeError):
+    elif isinstance(v, (list, tuple)) or inspect.isgenerator(v):
         return set(v)
+    else:
+        raise errors.SetError()
 
 
 def enum_validator(v, field, config, **kwargs) -> Enum:
@@ -201,6 +205,13 @@ def path_validator(v) -> Path:
 
     with change_exception(errors.PathError, TypeError):
         return Path(v)
+
+
+def path_exists_validator(v) -> Path:
+    if not v.exists():
+        raise errors.PathNotExistsError(path=v)
+
+    return v
 
 
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
