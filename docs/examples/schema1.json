@@ -1,6 +1,7 @@
 {
   "type": "object",
   "title": "Main",
+  "description": "This is the description of the main model",
   "properties": {
     "foo_bar": {
       "type": "object",
@@ -37,6 +38,5 @@
       "default": 42,
       "description": "this is the value of snap"
     }
-  },
-  "description": "This is the description of the main model"
+  }
 }

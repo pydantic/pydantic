@@ -195,7 +195,7 @@ class BaseModel(metaclass=MetaModel):
         as per `json.dumps()`.
         """
         from .json import pydantic_encoder
-        return json.dumps(self.dict(include=include, exclude=exclude),  default=pydantic_encoder, **dumps_kwargs)
+        return json.dumps(self.dict(include=include, exclude=exclude), default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls, obj):
@@ -266,24 +266,26 @@ class BaseModel(metaclass=MetaModel):
         cached = cls._schema_cache.get(by_alias)
         if cached is not None:
             return cached
-        if by_alias:
-            props = {f.alias: f.schema(by_alias) for f in cls.__fields__.values()}
-        else:
-            props = {k: f.schema(by_alias) for k, f in cls.__fields__.items()}
+
         s = {
             'type': 'object',
             'title': cls.__config__.title or cls.__name__,
-            'properties': props,
         }
         if cls.__doc__:
             s['description'] = clean_docstring(cls.__doc__)
+
+        if by_alias:
+            s['properties'] = {f.alias: f.schema(by_alias) for f in cls.__fields__.values()}
+        else:
+            s['properties'] = {k: f.schema(by_alias) for k, f in cls.__fields__.items()}
+
         cls._schema_cache[by_alias] = s
         return s
 
     @classmethod
     def schema_json(cls, *, by_alias=True, **dumps_kwargs) -> str:
         from .json import pydantic_encoder
-        return json.dumps(cls.schema(by_alias=by_alias),  default=pydantic_encoder, **dumps_kwargs)
+        return json.dumps(cls.schema(by_alias=by_alias), default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
     def get_validators(cls):
