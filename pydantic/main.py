@@ -1,3 +1,4 @@
+import json
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
@@ -181,12 +182,20 @@ class BaseModel(metaclass=MetaModel):
 
     def dict(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
         """
-        Get a dict of the values processed by the model, optionally specifying which fields to include or exclude.
+        Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
         return {
             k: v for k, v in self
             if k not in exclude and (not include or k in include)
         }
+
+    def json(self, *, include: Set[str]=None, exclude: Set[str]=set(), **dumps_kwargs) -> str:
+        """
+        Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`. Other arguments
+        as per `json.dumps()`.
+        """
+        from .json import pydantic_encoder
+        return json.dumps(self.dict(include=include, exclude=exclude),  default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls, obj):
@@ -253,7 +262,7 @@ class BaseModel(metaclass=MetaModel):
         return self.__fields__
 
     @classmethod
-    def schema(cls, by_alias=True):
+    def schema(cls, by_alias=True) -> Dict[str, Any]:
         cached = cls._schema_cache.get(by_alias)
         if cached is not None:
             return cached
@@ -270,6 +279,11 @@ class BaseModel(metaclass=MetaModel):
             s['description'] = clean_docstring(cls.__doc__)
         cls._schema_cache[by_alias] = s
         return s
+
+    @classmethod
+    def schema_json(cls, *, by_alias=True, **dumps_kwargs) -> str:
+        from .json import pydantic_encoder
+        return json.dumps(cls.schema(by_alias=by_alias),  default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
     def get_validators(cls):

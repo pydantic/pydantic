@@ -1,3 +1,5 @@
+import json
+from decimal import Decimal
 from enum import Enum, IntEnum
 
 import pytest
@@ -191,3 +193,33 @@ def test_choices():
             },
         },
     }
+
+
+def test_json_schema():
+    class Model(BaseModel):
+        a = b'foobar'
+        b = Decimal('12.34')
+
+    with pytest.raises(TypeError):
+        json.dumps(Model.schema())
+
+    assert Model.schema_json(indent=2) == (
+        '{\n'
+        '  "type": "object",\n'
+        '  "title": "Model",\n'
+        '  "properties": {\n'
+        '    "a": {\n'
+        '      "type": "bytes",\n'
+        '      "title": "A",\n'
+        '      "required": false,\n'
+        '      "default": "foobar"\n'
+        '    },\n'
+        '    "b": {\n'
+        '      "type": "Decimal",\n'
+        '      "title": "B",\n'
+        '      "required": false,\n'
+        '      "default": 12.34\n'
+        '    }\n'
+        '  }\n'
+        '}'
+    )
