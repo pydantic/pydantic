@@ -207,6 +207,13 @@ def path_validator(v) -> Path:
         return Path(v)
 
 
+def path_exists_validator(v) -> Path:
+    if not v.exists():
+        raise errors.PathNotExistsError(path=v)
+
+    return v
+
+
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (Enum, [enum_validator]),
