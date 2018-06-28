@@ -487,9 +487,9 @@ def test_arbitrary_type_allowed_validation_fails():
     assert exc_info.value.errors() == [
         {
             'loc': ('t',),
-            'msg': "instance of <class 'tests.test_main.ArbitraryType'> expected",
-            'type': 'type_error.arbitrarytype',
-            'ctx': {'expected_arbitrary_type': ArbitraryType}
+            'msg': "instance of ArbitraryType expected",
+            'type': 'type_error.arbitrary_type',
+            'ctx': {'expected_arbitrary_type': 'ArbitraryType'}
         },
     ]
 
