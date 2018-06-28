@@ -3,7 +3,7 @@
 History
 -------
 
-v0.11.0 (2018-XX-XX)
+v0.11.0 (2018-06-28)
 ....................
 * make ``list``, ``tuple`` and ``set`` types stricter #86
 * **breaking change**: remove msgpack parsing #201
