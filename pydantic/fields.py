@@ -1,10 +1,12 @@
 import inspect
+import json
 from enum import Enum, IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
 from .error_wrappers import ErrorWrapper
-from .errors import ConfigError, SequenceError
+from .errors import ConfigError, JsonError, SequenceError
 from .utils import display_as_type
+from .types import Json
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
 Required: Any = Ellipsis
@@ -22,6 +24,7 @@ class Shape(IntEnum):
     LIST = 2
     SET = 3
     MAPPING = 4
+    JSON = 5
 
 
 class Validator(NamedTuple):
@@ -181,6 +184,9 @@ class Field:
         elif issubclass(origin, Set):
             self.type_ = self.type_.__args__[0]
             self.shape = Shape.SET
+        elif issubclass(origin, Json):
+            self.type_ = self.type_.__args__[0]
+            self.shape = Shape.JSON
         else:
             assert issubclass(origin, Mapping)
             self.key_type_ = self.type_.__args__[0]
@@ -249,6 +255,8 @@ class Field:
             v, errors = self._validate_singleton(v, values, loc, cls)
         elif self.shape is Shape.MAPPING:
             v, errors = self._validate_mapping(v, values, loc, cls)
+        elif self.shape is Shape.JSON:
+            v, errors = self._validate_json(v, values, loc, cls)
         else:
             # list or set
             v, errors = self._validate_sequence(v, values, loc, cls)
@@ -258,6 +266,17 @@ class Field:
         if not errors and self.whole_post_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
         return v, errors
+
+    def _validate_json(self, v, values, loc, cls):
+        try:
+            json_obj = json.loads(v)
+        except (json.JSONDecodeError, TypeError):
+            return v, ErrorWrapper(JsonError(json_str=v), loc=loc, config=self.model_config)
+        result, errors = self._validate_singleton(json_obj, values, loc, cls)
+        if errors:
+            return json_obj, errors
+        else:
+            return result, None
 
     def _validate_sequence(self, v, values, loc, cls):
         result, errors = [], []

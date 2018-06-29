@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 from collections import OrderedDict
@@ -5,11 +6,12 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
+from typing import List
 from uuid import UUID
 
 import pytest
 
-from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, DirectoryPath, EmailStr, FilePath,
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, DirectoryPath, EmailStr, FilePath, Json,
                       NameEmail, NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictStr,
                       ValidationError, condecimal, confloat, conint, constr, create_model)
 
@@ -1100,3 +1102,43 @@ def test_bounds_config_exceptions(fn):
 
     with pytest.raises(ConfigError):
         fn(lt=0, le=0)
+
+
+def test_valid_simple_json():
+    class JsonModel(BaseModel):
+        json_obj: Json
+
+    obj = {'a': 1, 'b': [2, 3]}
+    assert JsonModel(json_obj=json.dumps(obj)).dict() == {'json_obj': obj}
+
+
+class JsonDetailedModel(BaseModel):
+    json_obj: Json[List[int]]
+
+
+def test_valid_detailed_json():
+    obj = [1, 2, 3]
+    assert JsonDetailedModel(json_obj=json.dumps(obj)).dict() == {'json_obj': obj}
+
+
+def test_invalid_detailed_json():
+    obj = ['a', 'b', 'c']
+    with pytest.raises(ValidationError) as exc_info:
+        JsonDetailedModel(json_obj=json.dumps(obj))
+    assert exc_info.value.errors() == [
+        {'loc': ('json_obj', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('json_obj', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('json_obj', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+def test_json_not_str():
+    obj = 12
+    with pytest.raises(ValidationError) as exc_info:
+        JsonDetailedModel(json_obj=obj)
+    assert exc_info.value.errors()[0] == {
+        'loc': ('json_obj',),
+        'msg': "12 is not valid JSON and can't be decoded",
+        'type': 'value_error.json',
+        'ctx': {'json_str': 12}
+    }

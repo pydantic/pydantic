@@ -225,3 +225,10 @@ class UUIDVersionError(PydanticValueError):
 
     def __init__(self, *, required_version: int) -> None:
         super().__init__(required_version=required_version)
+
+
+class JsonError(PydanticValueError):
+    msg_template = "{json_str} is not valid JSON and can't be decoded"
+
+    def __init__(self, *, json_str: str) -> None:
+        super().__init__(json_str=json_str)

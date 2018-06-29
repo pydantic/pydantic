@@ -7,7 +7,7 @@ from uuid import UUID
 from . import errors
 from .utils import change_exception, import_string, make_dsn, validate_email
 from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, float_validator,
-                         int_validator, not_none_validator, number_size_validator, path_exists_validator,
+                         int_validator, Json, not_none_validator, number_size_validator, path_exists_validator,
                          path_validator, str_validator)
 
 try:
@@ -43,6 +43,7 @@ __all__ = [
     'UUID5',
     'FilePath',
     'DirectoryPath',
+    'Json'
 ]
 
 NoneStr = Optional[str]
