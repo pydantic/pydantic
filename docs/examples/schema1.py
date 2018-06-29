@@ -1,4 +1,3 @@
-import json
 from enum import IntEnum
 from pydantic import BaseModel, Schema
 
@@ -31,11 +30,4 @@ class MainModel(BaseModel):
     class Config:
         title = 'Main'
 
-debug(MainModel.schema())
-# > {
-#       'type': 'object',
-#       'title': 'Main',
-#       'properties': {
-#           'foo_bar': {
-#           ...
 print(MainModel.schema_json(indent=2))
