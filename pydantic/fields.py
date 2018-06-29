@@ -5,8 +5,8 @@ from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
 from .error_wrappers import ErrorWrapper
 from .errors import ConfigError, JsonError, SequenceError
-from .utils import display_as_type
 from .types import Json
+from .utils import display_as_type
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
 Required: Any = Ellipsis
