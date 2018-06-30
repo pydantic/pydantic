@@ -4,7 +4,6 @@ cache: pip
 
 python:
 - '3.6'
-- '3.7-dev'
 - 'nightly'  # currently 3.7
 
 matrix:
