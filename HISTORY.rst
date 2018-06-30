@@ -3,6 +3,10 @@
 History
 -------
 
+v0.11.1 (2018-07-01)
+....................
+* support Python 3.7
+
 v0.11.0 (2018-06-28)
 ....................
 * make ``list``, ``tuple`` and ``set`` types stricter #86
