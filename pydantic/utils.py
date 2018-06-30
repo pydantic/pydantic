@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from enum import Enum
 from importlib import import_module
 from textwrap import dedent
-from typing import Tuple, _TypingBase
+from typing import Tuple
 
 from . import errors
 
@@ -11,6 +11,11 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
+
+try:
+    from typing import _TypingBase as typing_base
+except ImportError:
+    from typing import _Final as typing_base
 
 
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
@@ -117,7 +122,7 @@ def truncate(v, *, max_len=80):
 
 
 def display_as_type(v):
-    if not isinstance(v, _TypingBase) and not isinstance(v, type):
+    if not isinstance(v, typing_base) and not isinstance(v, type):
         v = type(v)
 
     if isinstance(v, type) and issubclass(v, Enum):
