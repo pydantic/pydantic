@@ -3,9 +3,10 @@
 History
 -------
 
-v0.11.1 (2018-07-01)
+v0.11.1 (2018-XX-XX)
 ....................
-* support Python 3.7
+* support Python 3.7 #216, thanks @layday
+* Allow arbitrary types in model #209, thanks @oldPadavan
 
 v0.11.0 (2018-06-28)
 ....................
