@@ -3,7 +3,7 @@
 History
 -------
 
-v0.11.1 (2018-XX-XX)
+v0.11.1 (2018-07-02)
 ....................
 * support Python 3.7 #216, thanks @layday
 * Allow arbitrary types in model #209, thanks @oldPadavan
