@@ -1,3 +1,4 @@
+import json
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
@@ -11,11 +12,12 @@ from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field, Validator
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
-from .utils import truncate
+from .utils import clean_docstring, truncate
 from .validators import dict_validator
 
 
 class BaseConfig:
+    title = None
     anystr_strip_whitespace = False
     min_anystr_length = 0
     max_anystr_length = 2 ** 16
@@ -31,7 +33,7 @@ class BaseConfig:
     arbitrary_types_allowed = False
 
     @classmethod
-    def get_field_config(cls, name):
+    def get_field_schema(cls, name):
         field_config = cls.fields.get(name) or {}
         if isinstance(field_config, str):
             field_config = {'alias': field_config}
@@ -133,6 +135,7 @@ class MetaModel(ABCMeta):
             '__config__': config,
             '__fields__': fields,
             '__validators__': vg.validators,
+            '_schema_cache': {},
             **{n: v for n, v in namespace.items() if n not in fields}
         }
         return super().__new__(mcs, name, bases, new_namespace)
@@ -180,12 +183,20 @@ class BaseModel(metaclass=MetaModel):
 
     def dict(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
         """
-        Get a dict of the values processed by the model, optionally specifying which fields to include or exclude.
+        Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
         return {
             k: v for k, v in self
             if k not in exclude and (not include or k in include)
         }
+
+    def json(self, *, include: Set[str]=None, exclude: Set[str]=set(), **dumps_kwargs) -> str:
+        """
+        Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`. Other arguments
+        as per `json.dumps()`.
+        """
+        from .json import pydantic_encoder
+        return json.dumps(self.dict(include=include, exclude=exclude), default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls, obj):
@@ -250,6 +261,32 @@ class BaseModel(metaclass=MetaModel):
     @property
     def fields(self):
         return self.__fields__
+
+    @classmethod
+    def schema(cls, by_alias=True) -> Dict[str, Any]:
+        cached = cls._schema_cache.get(by_alias)
+        if cached is not None:
+            return cached
+
+        s = {
+            'type': 'object',
+            'title': cls.__config__.title or cls.__name__,
+        }
+        if cls.__doc__:
+            s['description'] = clean_docstring(cls.__doc__)
+
+        if by_alias:
+            s['properties'] = {f.alias: f.schema(by_alias) for f in cls.__fields__.values()}
+        else:
+            s['properties'] = {k: f.schema(by_alias) for k, f in cls.__fields__.items()}
+
+        cls._schema_cache[by_alias] = s
+        return s
+
+    @classmethod
+    def schema_json(cls, *, by_alias=True, **dumps_kwargs) -> str:
+        from .json import pydantic_encoder
+        return json.dumps(cls.schema(by_alias=by_alias), default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
     def get_validators(cls):

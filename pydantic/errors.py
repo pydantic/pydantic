@@ -1,4 +1,5 @@
 from decimal import Decimal
+from pathlib import Path
 from typing import Union
 
 from .utils import display_as_type
@@ -76,6 +77,26 @@ class ListError(PydanticTypeError):
 
 class PathError(PydanticTypeError):
     msg_template = 'value is not a valid path'
+
+
+class _PathValueError(PydanticValueError):
+    def __init__(self, *, path: Path) -> None:
+        super().__init__(path=str(path))
+
+
+class PathNotExistsError(_PathValueError):
+    code = 'path.not_exists'
+    msg_template = 'file or directory at path "{path}" does not exist'
+
+
+class PathNotAFileError(_PathValueError):
+    code = 'path.not_a_file'
+    msg_template = 'path "{path}" does not point to a file'
+
+
+class PathNotADirectoryError(_PathValueError):
+    code = 'path.not_a_directory'
+    msg_template = 'path "{path}" does not point to a directory'
 
 
 class PyObjectError(PydanticTypeError):

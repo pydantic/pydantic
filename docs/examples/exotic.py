@@ -3,13 +3,17 @@ from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, EmailStr, NameEmail, NegativeFloat, NegativeInt,
-                      PositiveFloat, PositiveInt, PyObject, condecimal, confloat, conint, constr)
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
+                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, condecimal, confloat, conint,
+                      constr)
 
 
 class Model(BaseModel):
     cos_function: PyObject = None
+
     path_to_something: Path = None
+    path_to_file: FilePath = None
+    path_to_directory: DirectoryPath = None
 
     short_str: constr(min_length=2, max_length=10) = None
     regex_str: constr(regex='apple (pie|tart|sandwich)') = None
@@ -48,6 +52,8 @@ class Model(BaseModel):
 m = Model(
     cos_function='math.cos',
     path_to_something='/home',
+    path_to_file='/home/file.py',
+    path_to_directory='home/projects',
     short_str='foo',
     regex_str='apple pie',
     strip_str='   bar',
@@ -75,6 +81,8 @@ print(m.dict())
 {
     'cos_function': <built-in function cos>,
     'path_to_something': PosixPath('/home'),
+    'path_to_file': PosixPath('/home/file.py'),
+    'path_to_directory': PosixPath('/home/projects'),
     'short_str': 'foo',
     'regex_str': 'apple pie',
     'strip_str': 'bar',

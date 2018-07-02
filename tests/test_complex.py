@@ -14,14 +14,8 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert ("<Field v: "
-            "type='typing.Union[str, bytes]', "
-            "required=True, "
-            "sub_fields=["
-            "<Field v_str: type='str', required=True, validators=['not_none_validator', 'str_validator', "
-            "'anystr_strip_whitespace', 'anystr_length_validator']>, "
-            "<Field v_bytes: type='bytes', required=True, validators=['not_none_validator', 'bytes_validator', "
-            "'anystr_strip_whitespace', 'anystr_length_validator']>]>") == repr(m.fields['v'])
+    assert '<Field(v type=typing.Union[str, bytes] required)>' == repr(m.fields['v'])
+    assert 'not_none_validator' in [v[1].__qualname__ for v in m.fields['v'].sub_fields[0].validators]
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -54,15 +48,7 @@ def test_str_bytes_none():
 
     m = Model(v=None)
     assert m.v is None
-
-    # NOTE not_none_validator removed
-    assert ("{'type': 'typing.Union[str, bytes, NoneType]', "
-            "'required': True, "
-            "'sub_fields': [<Field v_str: type='str', "
-            "required=True, "
-            "validators=['str_validator', 'anystr_strip_whitespace', 'anystr_length_validator']>, "
-            "<Field v_bytes: type='bytes', required=True, validators=['bytes_validator', "
-            "'anystr_strip_whitespace', 'anystr_length_validator']>]}") == repr(m.fields['v'].info)
+    assert 'not_none_validator' not in [v[1].__qualname__ for v in m.fields['v'].sub_fields[0].validators]
 
 
 def test_union_int_str():
@@ -371,9 +357,7 @@ def test_infer_alias():
             fields = {'a': '_a'}
 
     assert Model(_a='different').a == 'different'
-    assert repr(Model.__fields__['a']) == ("<Field a (alias '_a'): type='str', default='foobar',"
-                                           " required=False, validators=['not_none_validator', 'str_validator',"
-                                           " 'anystr_strip_whitespace', 'anystr_length_validator']>")
+    assert repr(Model.__fields__['a']) == "<Field(a type=str default='foobar' alias=_a)>"
 
 
 def test_alias_error():
@@ -563,8 +547,8 @@ def test_alias_camel_case():
 
         class Config(BaseConfig):
             @classmethod
-            def get_field_config(cls, name):
-                field_config = super().get_field_config(name) or {}
+            def get_field_schema(cls, name):
+                field_config = super().get_field_schema(name) or {}
                 if 'alias' not in field_config:
                     field_config['alias'] = re.sub(r'(?:^|_)([a-z])', lambda m: m.group(1).upper(), name)
                 return field_config
@@ -575,12 +559,12 @@ def test_alias_camel_case():
     assert v == {'one_thing': 123, 'another_thing': 321}
 
 
-def test_get_field_config_inherit():
+def test_get_field_schema_inherit():
     class ModelOne(BaseModel):
         class Config(BaseConfig):
             @classmethod
-            def get_field_config(cls, name):
-                field_config = super().get_field_config(name) or {}
+            def get_field_schema(cls, name):
+                field_config = super().get_field_schema(name) or {}
                 if 'alias' not in field_config:
                     field_config['alias'] = re.sub(r'_([a-z])', lambda m: m.group(1).upper(), name)
                 return field_config

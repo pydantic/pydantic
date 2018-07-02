@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "title": "Main",
+  "description": "This is the description of the main model",
+  "properties": {
+    "foo_bar": {
+      "type": "object",
+      "title": "FooBar",
+      "properties": {
+        "count": {
+          "type": "int",
+          "title": "Count",
+          "required": true
+        },
+        "size": {
+          "type": "float",
+          "title": "Size",
+          "required": false
+        }
+      },
+      "required": true
+    },
+    "Gender": {
+      "type": "int",
+      "title": "Gender",
+      "required": false,
+      "choices": [
+        [1, "Male"],
+        [2, "Female"],
+        [3, "Other"],
+        [4, "I'd rather not say"]
+      ]
+    },
+    "snap": {
+      "type": "int",
+      "title": "The Snap",
+      "required": false,
+      "default": 42,
+      "description": "this is the value of snap"
+    }
+  }
+}

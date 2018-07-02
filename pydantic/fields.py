@@ -1,5 +1,5 @@
 import inspect
-from enum import IntEnum
+from enum import Enum, IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
 from .error_wrappers import ErrorWrapper
@@ -32,11 +32,25 @@ class Validator(NamedTuple):
     check_fields: bool
 
 
+class Schema:
+    """
+    Used to provide extra information about a field in a model schema.
+    """
+    __slots__ = 'default', 'alias', 'title', 'choice_names', 'extra',
+
+    def __init__(self, default, *, alias=None, title=None, choice_names=None, **extra):
+        self.default = default
+        self.alias = alias
+        self.title = title
+        self.choice_names = choice_names
+        self.extra = extra
+
+
 class Field:
     __slots__ = (
         'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
-        'default', 'required', 'model_config', 'name', 'alias', 'description', 'info', 'validate_always',
-        'allow_none', 'shape', 'class_validators'
+        'default', 'required', 'model_config', 'name', 'alias', '_schema', 'validate_always', 'allow_none', 'shape',
+        'class_validators'
     )
 
     def __init__(
@@ -49,7 +63,7 @@ class Field:
             model_config: Any,
             alias: str=None,
             allow_none: bool=False,
-            description: str=None):
+            schema: Schema=None):
 
         self.name: str = name
         self.alias: str = alias or name
@@ -65,33 +79,38 @@ class Field:
         self.default: Any = default
         self.required: bool = required
         self.model_config = model_config
-        self.description: str = description
         self.allow_none: bool = allow_none
         self.shape: Shape = Shape.SINGLETON
-        self.info = {}
+        self._schema: Schema = schema
         self.prepare()
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, config):
+        schema_from_config = config.get_field_schema(name)
+        if isinstance(value, Schema):
+            schema = value
+            value = schema.default
+        else:
+            schema = Schema(value, **schema_from_config)
+        schema.alias = schema.alias or schema_from_config.get('alias')
         required = value == Required
-        field_config = config.get_field_config(name)
         return cls(
             name=name,
             type_=annotation,
-            alias=field_config and field_config.get('alias'),
+            alias=schema.alias,
             class_validators=class_validators,
             default=None if required else value,
             required=required,
             model_config=config,
-            description=field_config and field_config.get('description'),
+            schema=schema,
         )
 
     def set_config(self, config):
         self.model_config = config
-        field_config = config.get_field_config(self.name)
-        if field_config:
-            self.alias = field_config.get('alias') or self.alias
-            self.description = field_config.get('description') or self.description
+        schema_from_config = config.get_field_schema(self.name)
+        if schema_from_config:
+            self._schema.alias = self._schema.alias or schema_from_config.get('alias')
+            self.alias = self._schema.alias
 
     @property
     def alt_alias(self):
@@ -114,21 +133,24 @@ class Field:
         self._populate_sub_fields()
         self._populate_validators()
 
-        self.info = {
-            'type': display_as_type(self.type_),
-            'default': self.default,
-            'required': self.required,
-        }
-        if self.required:
-            self.info.pop('default')
-        if self.sub_fields:
-            self.info['sub_fields'] = self.sub_fields
-        else:
-            self.info['validators'] = [v[1].__qualname__ for v in self.validators]
+    def schema(self, by_alias=True):
+        s = self.type_.schema(by_alias) if hasattr(self.type_, 'schema') else {}
+        s.update(
+            type=s.get('type') or display_as_type(self.type_),
+            title=self._schema.title or s.get('title') or self.alias.title(),
+            required=self.required,
+        )
 
-        # TODO
-        # if self.description:
-        #     self.info['description'] = self.description
+        if not self.required and self.default is not None:
+            s['default'] = self.default
+        if issubclass(self.type_, Enum):
+            choice_names = self._schema.choice_names or {}
+            s['choices'] = [
+                (v.value, choice_names.get(v.value) or k.title())
+                for k, v in self.type_.__members__.items()
+            ]
+        s.update(self._schema.extra)
+        return s
 
     def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
@@ -315,13 +337,19 @@ class Field:
         return v, None
 
     def __repr__(self):
-        return f'<Field {self}>'
+        return f'<Field({self})>'
 
     def __str__(self):
-        if self.alt_alias:
-            return f"{self.name} (alias '{self.alias}'): " + ', '.join(f'{k}={v!r}' for k, v in self.info.items())
+        parts = [self.name, 'type=' + display_as_type(self.type_)]
+
+        if self.required:
+            parts.append('required')
         else:
-            return f'{self.name}: ' + ', '.join(f'{k}={v!r}' for k, v in self.info.items())
+            parts.append(f'default={self.default!r}')
+
+        if self.alt_alias:
+            parts.append('alias=' + self.alias)
+        return ' '.join(parts)
 
 
 def _get_validator_signature(validator):

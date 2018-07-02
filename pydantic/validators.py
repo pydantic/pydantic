@@ -207,6 +207,13 @@ def path_validator(v) -> Path:
         return Path(v)
 
 
+def path_exists_validator(v) -> Path:
+    if not v.exists():
+        raise errors.PathNotExistsError(path=v)
+
+    return v
+
+
 def make_arbitrary_type_validator(type_):
     def arbitrary_type_validator(v) -> type_:
         if isinstance(v, type_):
