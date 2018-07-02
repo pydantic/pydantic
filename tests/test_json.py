@@ -21,6 +21,7 @@ class MyEnum(Enum):
     (datetime.datetime(2032, 1, 1, 1, 1, tzinfo=datetime.timezone.utc), '"2032-01-01T01:01:00+00:00"'),
     (datetime.datetime(2032, 1, 1), '"2032-01-01T00:00:00"'),
     (datetime.time(12, 34, 56), '"12:34:56"'),
+    (datetime.timedelta(12, 34, 56), '"P12DT0H0M34.000056S"'),
     ({1, 2, 3}, '[1, 2, 3]'),
     (frozenset([1, 2, 3]), '[1, 2, 3]'),
     ((v for v in range(4)), '[0, 1, 2, 3]'),
