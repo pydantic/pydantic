@@ -214,6 +214,14 @@ def path_exists_validator(v) -> Path:
     return v
 
 
+def make_arbitrary_type_validator(type_):
+    def arbitrary_type_validator(v) -> type_:
+        if isinstance(v, type_):
+            return v
+        raise errors.ArbitraryTypeError(expected_arbitrary_type=type_)
+    return arbitrary_type_validator
+
+
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (Enum, [enum_validator]),
@@ -242,7 +250,7 @@ _VALIDATORS = [
 ]
 
 
-def find_validators(type_):
+def find_validators(type_, arbitrary_types_allowed=False):
     if type_ is Any:
         return []
     for val_type, validators in _VALIDATORS:
@@ -251,4 +259,7 @@ def find_validators(type_):
                 return validators
         except TypeError as e:
             raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
-    raise errors.ConfigError(f'no validator found for {type_}')
+    if arbitrary_types_allowed:
+        return [make_arbitrary_type_validator(type_)]
+    else:
+        raise RuntimeError(f'no validator found for {type_}')

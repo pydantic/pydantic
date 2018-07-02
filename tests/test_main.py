@@ -205,13 +205,6 @@ def test_invalid_validator():
     assert exc_info.value.args[0].startswith('Invalid signature for validator')
 
 
-def test_no_validator():
-    with pytest.raises(errors.ConfigError) as exc_info:
-        class NoValidatorModel(BaseModel):
-            x: object = ...
-    assert exc_info.value.args[0] == "no validator found for <class 'object'>"
-
-
 def test_unable_to_infer():
     with pytest.raises(errors.ConfigError) as exc_info:
         class InvalidDefinitionModel(BaseModel):
@@ -462,3 +455,48 @@ def test_default_copy():
     u1 = User()
     u2 = User()
     assert u1.friends is not u2.friends
+
+
+class ArbitraryType:
+    pass
+
+
+def test_arbitrary_type_allowed_validation_success():
+    class ArbitraryTypeAllowedModel(BaseModel):
+        t: ArbitraryType
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    arbitrary_type_instance = ArbitraryType()
+    m = ArbitraryTypeAllowedModel(t=arbitrary_type_instance)
+    assert m.t == arbitrary_type_instance
+
+
+def test_arbitrary_type_allowed_validation_fails():
+    class ArbitraryTypeAllowedModel(BaseModel):
+        t: ArbitraryType
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    class C:
+        pass
+
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryTypeAllowedModel(t=C())
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('t',),
+            'msg': "instance of ArbitraryType expected",
+            'type': 'type_error.arbitrary_type',
+            'ctx': {'expected_arbitrary_type': 'ArbitraryType'}
+        },
+    ]
+
+
+def test_arbitrary_types_not_allowed():
+    with pytest.raises(RuntimeError) as exc_info:
+        class ArbitraryTypeNotAllowedModel(BaseModel):
+            t: ArbitraryType
+    assert exc_info.value.args[0].startswith('no validator found for')
