@@ -3,7 +3,7 @@ coverage==4.5.1
 flake8==3.5.0
 isort==4.3.4
 mypy==0.610
-pycodestyle==2.4.0
+pycodestyle==2.3.1
 pyflakes==2.0.0
 pytest==3.6.2
 pytest-cov==2.5.1
