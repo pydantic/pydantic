@@ -16,16 +16,37 @@ from statistics import StatisticsError, mean
 from statistics import stdev as stdev_
 
 from test_pydantic import TestPydantic
-from test_trafaret import TestTrafaret
-from test_drf import TestDRF
-from test_marshmallow import TestMarshmallow
-from test_toasted_marshmallow import TestToastedMarshmallow
+
+# trafaret currently (2018-07-02) fails on python 3.7
+try:
+    from test_trafaret import TestTrafaret
+except Exception:
+    TestTrafaret = None
+try:
+    from test_drf import TestDRF
+except Exception:
+    TestDRF = None
+try:
+    from test_marshmallow import TestMarshmallow
+except Exception:
+    TestMarshmallow = None
+try:
+    from test_toasted_marshmallow import TestToastedMarshmallow
+except Exception:
+    TestToastedMarshmallow = None
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
 UNICODE = '\xa0\xad¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
 ALL = PUNCTUATION * 5 + LETTERS * 20 + UNICODE
 random = random.SystemRandom()
+
+# in order of performance for csv
+other_tests = [
+    t for t in
+    [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
+    if t is not None
+]
 
 
 class GenerateData:
@@ -127,11 +148,9 @@ def main():
         with json_path.open() as f:
             cases = json.load(f)
 
-    if 'pydantic-only' in sys.argv:
-        tests = [TestPydantic]
-    else:
-        # in order of performance for csv
-        tests = [TestPydantic, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
+    tests = [TestPydantic]
+    if 'pydantic-only' not in sys.argv:
+        tests += other_tests
 
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     results = []
@@ -187,12 +206,7 @@ def diff():
 
     allow_extra = True
     pydantic = TestPydantic(allow_extra)
-    others = [
-        TestTrafaret(allow_extra),
-        TestDRF(allow_extra),
-        TestMarshmallow(allow_extra),
-        TestToastedMarshmallow(allow_extra)
-    ]
+    others = [t(allow_extra) for t in other_tests]
 
     for case in cases:
         pydantic_passed, pydantic_result = pydantic.validate(case)
