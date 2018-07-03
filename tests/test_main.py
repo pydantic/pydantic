@@ -284,6 +284,7 @@ def test_alias():
     assert Model().dict() == {'a': 'foobar'}
     assert Model(_a='different').a == 'different'
     assert Model(_a='different').dict() == {'a': 'different'}
+    assert Model(_a='different').dict(by_alias=True) == {'_a': 'different'}
 
 
 def test_population_by_alias():
@@ -298,6 +299,7 @@ def test_population_by_alias():
 
     assert Model(a='different').a == 'different'
     assert Model(a='different').dict() == {'a': 'different'}
+    assert Model(a='different').dict(by_alias=True) == {'_a': 'different'}
 
 
 def test_field_order():
