@@ -5,6 +5,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
+from typing import NewType
 from uuid import UUID
 
 import pytest
@@ -1100,3 +1101,42 @@ def test_bounds_config_exceptions(fn):
 
     with pytest.raises(ConfigError):
         fn(lt=0, le=0)
+
+
+def test_new_type_success():
+    a_type = NewType('a_type', int)
+    b_type = NewType('b_type', a_type)
+
+    class Model(BaseModel):
+        a: a_type
+        b: b_type
+
+    m = Model(a=42, b=24)
+    assert m.dict() == {
+        'a': 42,
+        'b': 24,
+    }
+
+
+def test_new_type_fails():
+    a_type = NewType('a_type', int)
+    b_type = NewType('b_type', a_type)
+
+    class Model(BaseModel):
+        a: a_type
+        b: b_type
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='foo', b='bar')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        },
+        {
+            'loc': ('b',),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        },
+    ]
