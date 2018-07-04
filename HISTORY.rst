@@ -3,6 +3,10 @@
 History
 -------
 
+v0.12 (2018-XX-XX)
+..................
+* add ``NewType`` support #115
+
 v0.11.1 (2018-07-02)
 ....................
 * support Python 3.7 #216, thanks @layday

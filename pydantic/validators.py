@@ -252,13 +252,34 @@ _VALIDATORS = [
 def find_validators(type_, arbitrary_types_allowed=False):
     if type_ is Any:
         return []
+
+    supertype = _find_supertype(type_)
+    if supertype is not None:
+        type_ = supertype
+
     for val_type, validators in _VALIDATORS:
         try:
             if issubclass(type_, val_type):
                 return validators
         except TypeError as e:
             raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
+
     if arbitrary_types_allowed:
         return [make_arbitrary_type_validator(type_)]
     else:
         raise RuntimeError(f'no validator found for {type_}')
+
+
+def _find_supertype(type_):
+    if not _is_new_type(type_):
+        return None
+
+    supertype = type_.__supertype__
+    if _is_new_type(supertype):
+        supertype = _find_supertype(supertype)
+
+    return supertype
+
+
+def _is_new_type(type_):
+    return hasattr(type_, '__name__') and hasattr(type_, '__supertype__')
