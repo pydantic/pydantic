@@ -122,8 +122,8 @@ def test_typed_list():
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
-            'msg': 'value is not a valid sequence',
-            'type': 'type_error.sequence',
+            'msg': 'value is not a valid list',
+            'type': 'type_error.list',
         },
     ]
 
