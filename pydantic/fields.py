@@ -2,9 +2,9 @@ import inspect
 from enum import Enum, IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
+from . import errors as errors_
 from .error_wrappers import ErrorWrapper
-from .errors import ConfigError, SequenceError
-from .utils import display_as_type
+from .utils import display_as_type, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
 Required: Any = Ellipsis
@@ -121,7 +121,7 @@ class Field:
             self.type_ = type(self.default)
 
         if self.type_ is None:
-            raise ConfigError(f'unable to infer type for attribute "{self.name}"')
+            raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
         self.validate_always: bool = (
             getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators)
@@ -252,9 +252,13 @@ class Field:
             v, errors = self._validate_mapping(v, values, loc, cls)
         else:
             # list or set
-            v, errors = self._validate_sequence(v, values, loc, cls)
-            if not errors and self.shape is Shape.SET:
-                v = set(v)
+            if list_like(v):
+                v, errors = self._validate_sequence(v, values, loc, cls)
+                if not errors and self.shape is Shape.SET:
+                    v = set(v)
+            else:
+                e = errors_.ListError() if self.shape is Shape.LIST else errors_.SetError()
+                errors = ErrorWrapper(e, loc=loc, config=self.model_config)
 
         if not errors and self.whole_post_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
@@ -263,12 +267,7 @@ class Field:
     def _validate_sequence(self, v, values, loc, cls):
         result, errors = [], []
 
-        try:
-            v_iter = enumerate(v)
-        except TypeError:
-            return v, ErrorWrapper(SequenceError(), loc=loc, config=self.model_config)
-
-        for i, v_ in v_iter:
+        for i, v_ in enumerate(v):
             v_loc = *loc, i
             single_result, single_errors = self._validate_singleton(v_, values, v_loc, cls)
             if single_errors:
@@ -374,9 +373,9 @@ def _get_validator_signature(validator):
                 signature.bind(1, values=2, config=3, field=4)
                 return ValidatorSignature.VALUE_KWARGS
     except TypeError as e:
-        raise ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
-                          f'(value) or (value, *, values, config, field) or for class validators '
-                          f'(cls, value) or (cls, value, *, values, config, field)') from e
+        raise errors_.ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
+                                  f'(value) or (value, *, values, config, field) or for class validators '
+                                  f'(cls, value) or (cls, value, *, values, config, field)') from e
 
 
 def _get_type_origin(obj):
