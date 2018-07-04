@@ -1,3 +1,4 @@
+import inspect
 import re
 from contextlib import contextmanager
 from enum import Enum
@@ -150,3 +151,7 @@ def change_exception(raise_exc, *except_types):
 
 def clean_docstring(d):
     return dedent(d).strip(' \r\n\t')
+
+
+def list_like(v):
+    return isinstance(v, (list, tuple, set)) or inspect.isgenerator(v)

@@ -1,4 +1,3 @@
-import inspect
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
@@ -9,7 +8,7 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import change_exception, display_as_type
+from .utils import change_exception, display_as_type, list_like
 
 NoneType = type(None)
 
@@ -134,7 +133,7 @@ def dict_validator(v) -> dict:
 def list_validator(v) -> list:
     if isinstance(v, list):
         return v
-    elif isinstance(v, (tuple, set)) or inspect.isgenerator(v):
+    elif list_like(v):
         return list(v)
     else:
         raise errors.ListError()
@@ -143,7 +142,7 @@ def list_validator(v) -> list:
 def tuple_validator(v) -> tuple:
     if isinstance(v, tuple):
         return v
-    elif isinstance(v, (list, set)) or inspect.isgenerator(v):
+    elif list_like(v):
         return tuple(v)
     else:
         raise errors.TupleError()
@@ -152,7 +151,7 @@ def tuple_validator(v) -> tuple:
 def set_validator(v) -> set:
     if isinstance(v, set):
         return v
-    elif isinstance(v, (list, tuple)) or inspect.isgenerator(v):
+    elif list_like(v):
         return set(v)
     else:
         raise errors.SetError()

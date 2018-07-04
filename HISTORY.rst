@@ -6,6 +6,7 @@ History
 v0.12 (2018-XX-XX)
 ..................
 * add ``NewType`` support #115
+* fix ``list``, ``set`` & ``tuple`` validation #225
 
 v0.11.1 (2018-07-02)
 ....................

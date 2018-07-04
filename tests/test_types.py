@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import NewType
+from typing import List, NewType, Set
 from uuid import UUID
 
 import pytest
@@ -535,6 +535,36 @@ def test_set_fails(value):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'value is not a valid set',
+            'type': 'type_error.set',
+        },
+    ]
+
+
+def test_list_type_fails():
+    class Model(BaseModel):
+        v: List[int]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='123')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'value is not a valid list',
+            'type': 'type_error.list',
+        },
+    ]
+
+
+def test_set_type_fails():
+    class Model(BaseModel):
+        v: Set[int]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='123')
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
