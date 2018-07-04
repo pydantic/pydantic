@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Set, Union
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr
+from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr, validate_model
 
 
 def test_str_bytes():
@@ -581,3 +581,40 @@ def test_get_field_schema_inherit():
 
     v = ModelTwo(**{'oneThing': 123, 'anotherThing': '321', 'Banana': 1})
     assert v == {'one_thing': 123, 'another_thing': 321, 'third_thing': 1}
+
+
+def test_return_errors_ok():
+    class Model(BaseModel):
+        foo: int
+        bar: List[int]
+
+    assert validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}) == {'foo': 123, 'bar': [1, 2, 3]}
+    d, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}, False)
+    assert d == {'foo': 123, 'bar': [1, 2, 3]}
+    assert e.errors() == []
+
+
+def test_return_errors_error():
+    class Model(BaseModel):
+        foo: int
+        bar: List[int]
+
+    d, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 'x')}, False)
+    assert d == {'foo': 123}
+    assert e.errors() == [
+        {
+            'loc': ('bar', 2),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer'
+        }
+    ]
+
+    d, e = validate_model(Model, {'bar': (1, 2, 3)}, False)
+    assert d == {'bar': [1, 2, 3]}
+    assert e.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': 'field required',
+            'type': 'value_error.missing'
+        }
+    ]

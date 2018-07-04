@@ -3,6 +3,11 @@
 History
 -------
 
+
+v0.12 (2018-XX-XX)
+..................
+* separate out ``validate_model`` method, allow errors to be returned along with valid values #221
+
 v0.11.1 (2018-07-02)
 ....................
 * support Python 3.7 #216, thanks @layday
