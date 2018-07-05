@@ -468,7 +468,7 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
                     errors.append(ErrorWrapper(ExtraError(), loc=field, config=model.__config__))
 
     if not raise_exc:
-        return values, ValidationError(errors)
+        return values, ValidationError(errors) if errors else None
 
     if errors:
         raise ValidationError(errors)

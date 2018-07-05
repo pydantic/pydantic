@@ -591,7 +591,7 @@ def test_return_errors_ok():
     assert validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}) == {'foo': 123, 'bar': [1, 2, 3]}
     d, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}, False)
     assert d == {'foo': 123, 'bar': [1, 2, 3]}
-    assert e.errors() == []
+    assert e is None
 
 
 def test_return_errors_error():
