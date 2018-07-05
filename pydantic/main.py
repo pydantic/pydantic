@@ -298,46 +298,7 @@ class BaseModel(metaclass=MetaModel):
         return cls(**value)
 
     def _process_values(self, input_data: dict) -> Dict[str, Any]:  # noqa: C901 (ignore complexity)
-        values = {}
-        errors = []
-
-        for name, field in self.__fields__.items():
-            value = input_data.get(field.alias, _missing)
-            if value is _missing and self.__config__.allow_population_by_alias and field.alt_alias:
-                value = input_data.get(field.name, _missing)
-
-            if value is _missing:
-                if self.__config__.validate_all or field.validate_always:
-                    value = deepcopy(field.default)
-                else:
-                    if field.required:
-                        errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=self.__config__))
-                    else:
-                        values[name] = deepcopy(field.default)
-                    continue
-
-            v_, errors_ = field.validate(value, values, loc=field.alias, cls=self.__class__)
-            if isinstance(errors_, ErrorWrapper):
-                errors.append(errors_)
-            elif isinstance(errors_, list):
-                errors.extend(errors_)
-            else:
-                values[name] = v_
-
-        if (not self.__config__.ignore_extra) or self.__config__.allow_extra:
-            extra = input_data.keys() - {f.alias for f in self.__fields__.values()}
-            if extra:
-                if self.__config__.allow_extra:
-                    for field in extra:
-                        values[field] = input_data[field]
-                else:
-                    # config.ignore_extra is False
-                    for field in sorted(extra):
-                        errors.append(ErrorWrapper(ExtraError(), loc=field, config=self.__config__))
-
-        if errors:
-            raise ValidationError(errors)
-        return values
+        return validate_model(self, input_data)
 
     @classmethod
     def _get_value(cls, v):
@@ -463,3 +424,52 @@ def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False, c
         f_cls.__validator_config = fields, Validator(f, pre, whole, always, check_fields)
         return f_cls
     return dec
+
+
+def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (ignore complexity)
+    """
+    validate data against a model.
+    """
+    values = {}
+    errors = []
+
+    for name, field in model.__fields__.items():
+        value = input_data.get(field.alias, _missing)
+        if value is _missing and model.__config__.allow_population_by_alias and field.alt_alias:
+            value = input_data.get(field.name, _missing)
+
+        if value is _missing:
+            if model.__config__.validate_all or field.validate_always:
+                value = deepcopy(field.default)
+            else:
+                if field.required:
+                    errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
+                else:
+                    values[name] = deepcopy(field.default)
+                continue
+
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)
+        if isinstance(errors_, ErrorWrapper):
+            errors.append(errors_)
+        elif isinstance(errors_, list):
+            errors.extend(errors_)
+        else:
+            values[name] = v_
+
+    if (not model.__config__.ignore_extra) or model.__config__.allow_extra:
+        extra = input_data.keys() - {f.alias for f in model.__fields__.values()}
+        if extra:
+            if model.__config__.allow_extra:
+                for field in extra:
+                    values[field] = input_data[field]
+            else:
+                # config.ignore_extra is False
+                for field in sorted(extra):
+                    errors.append(ErrorWrapper(ExtraError(), loc=field, config=model.__config__))
+
+    if not raise_exc:
+        return values, ValidationError(errors) if errors else None
+
+    if errors:
+        raise ValidationError(errors)
+    return values

@@ -7,6 +7,7 @@ v0.12 (2018-XX-XX)
 ..................
 * add ``NewType`` support #115
 * fix ``list``, ``set`` & ``tuple`` validation #225
+* separate out ``validate_model`` method, allow errors to be returned along with valid values #221
 
 v0.11.1 (2018-07-02)
 ....................
