@@ -272,8 +272,17 @@ def test_any():
 
 
 def test_alias():
+    class SubModel(BaseModel):
+        c = 'barfoo'
+
+        class Config:
+            fields = {
+                'c': {'alias': '_c'}
+            }
+
     class Model(BaseModel):
         a = 'foobar'
+        b: SubModel = SubModel()
 
         class Config:
             fields = {
@@ -281,10 +290,27 @@ def test_alias():
             }
 
     assert Model().a == 'foobar'
-    assert Model().dict() == {'a': 'foobar'}
+    assert Model().b.c == 'barfoo'
+    assert Model().dict() == {
+        'a': 'foobar',
+        'b': {
+            'c': 'barfoo',
+        },
+    }
     assert Model(_a='different').a == 'different'
-    assert Model(_a='different').dict() == {'a': 'different'}
-    assert Model(_a='different').dict(by_alias=True) == {'_a': 'different'}
+    assert Model(b={'_c': 'different'}).b.c == 'different'
+    assert Model(_a='different', b={'_c': 'different'}).dict() == {
+        'a': 'different',
+        'b': {
+            'c': 'different',
+        },
+    }
+    assert Model(_a='different', b={'_c': 'different'}).dict(by_alias=True) == {
+        '_a': 'different',
+        'b': {
+            '_c': 'different',
+        },
+    }
 
 
 def test_population_by_alias():
