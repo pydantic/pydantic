@@ -2,10 +2,11 @@ import json
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
+from functools import partial
 from itertools import chain
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Dict, Set, Type, Union
+from typing import Any, Callable, Dict, Set, Type, Union
 
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
@@ -30,6 +31,7 @@ class BaseConfig:
     fields = {}
     validate_assignment = False
     error_msg_templates: Dict[str, str] = {}
+    arbitrary_types_allowed = False
 
     @classmethod
     def get_field_schema(cls, name):
@@ -180,22 +182,35 @@ class BaseModel(metaclass=MetaModel):
     def __setstate__(self, state):
         object.__setattr__(self, '__values__', state)
 
-    def dict(self, *, include: Set[str]=None, exclude: Set[str]=set()) -> Dict[str, Any]:
+    def dict(self, *, include: Set[str]=None, exclude: Set[str]=set(), by_alias: bool = False) -> Dict[str, Any]:
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
+        get_key = self._get_key_factory(by_alias)
+        get_key = partial(get_key, self.fields)
+
         return {
-            k: v for k, v in self
+            get_key(k): v
+            for k, v in self._iter(by_alias=by_alias)
             if k not in exclude and (not include or k in include)
         }
 
-    def json(self, *, include: Set[str]=None, exclude: Set[str]=set(), **dumps_kwargs) -> str:
+    def _get_key_factory(self, by_alias: bool) -> Callable:
+        if by_alias:
+            return lambda fields, key: fields[key].alias
+
+        return lambda _, key: key
+
+    def json(self, *, include: Set[str]=None, exclude: Set[str]=set(), by_alias: bool = False, **dumps_kwargs) -> str:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`. Other arguments
         as per `json.dumps()`.
         """
         from .json import pydantic_encoder
-        return json.dumps(self.dict(include=include, exclude=exclude), default=pydantic_encoder, **dumps_kwargs)
+        return json.dumps(
+            self.dict(include=include, exclude=exclude, by_alias=by_alias),
+            default=pydantic_encoder, **dumps_kwargs
+        )
 
     @classmethod
     def parse_obj(cls, obj):
@@ -297,59 +312,20 @@ class BaseModel(metaclass=MetaModel):
         return cls(**value)
 
     def _process_values(self, input_data: dict) -> Dict[str, Any]:  # noqa: C901 (ignore complexity)
-        values = {}
-        errors = []
-
-        for name, field in self.__fields__.items():
-            value = input_data.get(field.alias, _missing)
-            if value is _missing and self.__config__.allow_population_by_alias and field.alt_alias:
-                value = input_data.get(field.name, _missing)
-
-            if value is _missing:
-                if self.__config__.validate_all or field.validate_always:
-                    value = deepcopy(field.default)
-                else:
-                    if field.required:
-                        errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=self.__config__))
-                    else:
-                        values[name] = deepcopy(field.default)
-                    continue
-
-            v_, errors_ = field.validate(value, values, loc=field.alias, cls=self.__class__)
-            if isinstance(errors_, ErrorWrapper):
-                errors.append(errors_)
-            elif isinstance(errors_, list):
-                errors.extend(errors_)
-            else:
-                values[name] = v_
-
-        if (not self.__config__.ignore_extra) or self.__config__.allow_extra:
-            extra = input_data.keys() - {f.alias for f in self.__fields__.values()}
-            if extra:
-                if self.__config__.allow_extra:
-                    for field in extra:
-                        values[field] = input_data[field]
-                else:
-                    # config.ignore_extra is False
-                    for field in sorted(extra):
-                        errors.append(ErrorWrapper(ExtraError(), loc=field, config=self.__config__))
-
-        if errors:
-            raise ValidationError(errors)
-        return values
+        return validate_model(self, input_data)
 
     @classmethod
-    def _get_value(cls, v):
+    def _get_value(cls, v, by_alias=False):
         if isinstance(v, BaseModel):
-            return v.dict()
+            return v.dict(by_alias=by_alias)
         elif isinstance(v, list):
-            return [cls._get_value(v_) for v_ in v]
+            return [cls._get_value(v_, by_alias=by_alias) for v_ in v]
         elif isinstance(v, dict):
-            return {k_: cls._get_value(v_) for k_, v_ in v.items()}
+            return {k_: cls._get_value(v_, by_alias=by_alias) for k_, v_ in v.items()}
         elif isinstance(v, set):
-            return {cls._get_value(v_) for v_ in v}
+            return {cls._get_value(v_, by_alias=by_alias) for v_ in v}
         elif isinstance(v, tuple):
-            return tuple(cls._get_value(v_) for v_ in v)
+            return tuple(cls._get_value(v_, by_alias=by_alias) for v_ in v)
         else:
             return v
 
@@ -357,8 +333,11 @@ class BaseModel(metaclass=MetaModel):
         """
         so `dict(model)` works
         """
+        yield from self._iter()
+
+    def _iter(self, by_alias=False):
         for k, v in self.__values__.items():
-            yield k, self._get_value(v)
+            yield k, self._get_value(v, by_alias=by_alias)
 
     def __eq__(self, other):
         if isinstance(other, BaseModel):
@@ -462,3 +441,52 @@ def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False, c
         f_cls.__validator_config = fields, Validator(f, pre, whole, always, check_fields)
         return f_cls
     return dec
+
+
+def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (ignore complexity)
+    """
+    validate data against a model.
+    """
+    values = {}
+    errors = []
+
+    for name, field in model.__fields__.items():
+        value = input_data.get(field.alias, _missing)
+        if value is _missing and model.__config__.allow_population_by_alias and field.alt_alias:
+            value = input_data.get(field.name, _missing)
+
+        if value is _missing:
+            if model.__config__.validate_all or field.validate_always:
+                value = deepcopy(field.default)
+            else:
+                if field.required:
+                    errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
+                else:
+                    values[name] = deepcopy(field.default)
+                continue
+
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)
+        if isinstance(errors_, ErrorWrapper):
+            errors.append(errors_)
+        elif isinstance(errors_, list):
+            errors.extend(errors_)
+        else:
+            values[name] = v_
+
+    if (not model.__config__.ignore_extra) or model.__config__.allow_extra:
+        extra = input_data.keys() - {f.alias for f in model.__fields__.values()}
+        if extra:
+            if model.__config__.allow_extra:
+                for field in extra:
+                    values[field] = input_data[field]
+            else:
+                # config.ignore_extra is False
+                for field in sorted(extra):
+                    errors.append(ErrorWrapper(ExtraError(), loc=field, config=model.__config__))
+
+    if not raise_exc:
+        return values, ValidationError(errors) if errors else None
+
+    if errors:
+        raise ValidationError(errors)
+    return values

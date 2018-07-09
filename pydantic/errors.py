@@ -2,6 +2,8 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Union
 
+from .utils import display_as_type
+
 
 class PydanticErrorMixin:
     code: str
@@ -69,10 +71,6 @@ class FloatError(PydanticTypeError):
     msg_template = 'value is not a valid float'
 
 
-class ListError(PydanticTypeError):
-    msg_template = 'value is not a valid list'
-
-
 class PathError(PydanticTypeError):
     msg_template = 'value is not a valid path'
 
@@ -101,8 +99,8 @@ class PyObjectError(PydanticTypeError):
     msg_template = 'ensure this value contains valid import path'
 
 
-class SequenceError(PydanticTypeError):
-    msg_template = 'value is not a valid sequence'
+class ListError(PydanticTypeError):
+    msg_template = 'value is not a valid list'
 
 
 class SetError(PydanticTypeError):
@@ -225,6 +223,14 @@ class UUIDVersionError(PydanticValueError):
 
     def __init__(self, *, required_version: int) -> None:
         super().__init__(required_version=required_version)
+
+
+class ArbitraryTypeError(PydanticTypeError):
+    code = 'arbitrary_type'
+    msg_template = 'instance of {expected_arbitrary_type} expected'
+
+    def __init__(self, *, expected_arbitrary_type) -> None:
+        super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
 
 
 class JsonError(PydanticValueError):
