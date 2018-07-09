@@ -234,7 +234,4 @@ class ArbitraryTypeError(PydanticTypeError):
 
 
 class JsonError(PydanticValueError):
-    msg_template = "{json_str} is not valid JSON and can't be decoded"
-
-    def __init__(self, *, json_str: str) -> None:
-        super().__init__(json_str=json_str)
+    msg_template = "Not valid JSON provided - it can't be decoded"

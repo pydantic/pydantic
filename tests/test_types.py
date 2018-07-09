@@ -1148,6 +1148,7 @@ def test_new_type_success():
         'b': 24,
     }
 
+
 def test_new_type_fails():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
@@ -1206,7 +1207,6 @@ def test_json_not_str():
         JsonDetailedModel(json_obj=obj)
     assert exc_info.value.errors()[0] == {
         'loc': ('json_obj',),
-        'msg': "12 is not valid JSON and can't be decoded",
-        'type': 'value_error.json',
-        'ctx': {'json_str': 12}
+        'msg': "Not valid JSON provided - it can't be decoded",
+        'type': 'value_error.json'
     }

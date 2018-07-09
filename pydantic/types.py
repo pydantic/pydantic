@@ -6,9 +6,9 @@ from uuid import UUID
 
 from . import errors
 from .utils import change_exception, import_string, make_dsn, validate_email
-from .validators import (Json, anystr_length_validator, anystr_strip_whitespace, decimal_validator, float_validator,
-                         int_validator, not_none_validator, number_size_validator, path_exists_validator,
-                         path_validator, str_validator)
+from .validators import (JsonWrapper, anystr_length_validator, anystr_strip_whitespace, decimal_validator,
+                         float_validator, int_validator, json_validator, not_none_validator, number_size_validator,
+                         path_exists_validator, path_validator, str_validator)
 
 try:
     import email_validator
@@ -351,3 +351,15 @@ class DirectoryPath(Path):
             raise errors.PathNotADirectoryError(path=value)
 
         return value
+
+
+class JsonMeta(type):
+    def __getitem__(self, t):
+        return type('JsonWrapperValue', (JsonWrapper, ), {'inner_type': t})
+
+
+class Json(metaclass=JsonMeta):
+    @classmethod
+    def get_validators(cls):
+        yield str_validator
+        yield json_validator

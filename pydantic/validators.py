@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Generic, List, TypeVar
+from typing import Any
 from uuid import UUID
 
 from . import errors
@@ -12,11 +12,10 @@ from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_ti
 from .utils import change_exception, display_as_type, list_like
 
 NoneType = type(None)
-JsonObj = TypeVar('JsonObj', Dict[str, Any], List)
 
 
-class Json(Generic[JsonObj]):  # defined not in types.py to avoid circular imports
-    pass
+class JsonWrapper:
+    __slots__ = 'inner_type',
 
 
 def not_none_validator(v):
@@ -219,11 +218,11 @@ def path_exists_validator(v) -> Path:
     return v
 
 
-def json_validator(v: str) -> JsonObj:
+def json_validator(v: str):
     try:
         return json.loads(v)
     except (json.JSONDecodeError, TypeError):
-        raise errors.JsonError(json_str=v)
+        raise errors.JsonError()
 
 
 def make_arbitrary_type_validator(type_):
@@ -252,7 +251,7 @@ _VALIDATORS = [
     (time, [parse_time]),
     (timedelta, [parse_duration]),
 
-    (Json, [str_validator, json_validator]),
+    (JsonWrapper, [str_validator, json_validator]),
     (OrderedDict, [ordered_dict_validator]),
     (dict, [dict_validator]),
     (list, [list_validator]),

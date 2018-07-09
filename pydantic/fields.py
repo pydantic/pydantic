@@ -6,7 +6,7 @@ from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
 from .errors import JsonError
-from .types import Json
+from .types import JsonWrapper
 from .utils import display_as_type, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
@@ -25,7 +25,6 @@ class Shape(IntEnum):
     LIST = 2
     SET = 3
     MAPPING = 4
-    JSON = 5
 
 
 class Validator(NamedTuple):
@@ -54,7 +53,7 @@ class Field:
     __slots__ = (
         'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
         'default', 'required', 'model_config', 'name', 'alias', '_schema', 'validate_always', 'allow_none', 'shape',
-        'class_validators'
+        'class_validators', 'parse_json'
     )
 
     def __init__(
@@ -84,6 +83,7 @@ class Field:
         self.required: bool = required
         self.model_config = model_config
         self.allow_none: bool = allow_none
+        self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
         self._schema: Schema = schema
         self.prepare()
@@ -158,11 +158,14 @@ class Field:
 
     def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
+        if inspect.isclass(self.type_) and issubclass(self.type_, JsonWrapper):
+            self.type_ = self.type_.inner_type
+            self.parse_json = True
+
         origin = _get_type_origin(self.type_)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
-
         if origin is Union:
             types_ = []
             for type_ in self.type_.__args__:
@@ -185,9 +188,6 @@ class Field:
         elif issubclass(origin, Set):
             self.type_ = self.type_.__args__[0]
             self.shape = Shape.SET
-        elif issubclass(origin, Json):
-            self.type_ = self.type_.__args__[0]
-            self.shape = Shape.JSON
         else:
             assert issubclass(origin, Mapping)
             self.key_type_ = self.type_.__args__[0]
@@ -248,6 +248,12 @@ class Field:
         if not isinstance(loc, tuple):
             loc = (loc,)
 
+        if self.parse_json:
+            try:
+                v = json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return v, ErrorWrapper(JsonError(), loc=loc, config=self.model_config)
+
         if self.whole_pre_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_pre_validators)
             if errors:
@@ -257,8 +263,6 @@ class Field:
             v, errors = self._validate_singleton(v, values, loc, cls)
         elif self.shape is Shape.MAPPING:
             v, errors = self._validate_mapping(v, values, loc, cls)
-        elif self.shape is Shape.JSON:
-            v, errors = self._validate_json(v, values, loc, cls)
         else:
             # list or set
             if list_like(v):
@@ -272,17 +276,6 @@ class Field:
         if not errors and self.whole_post_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
         return v, errors
-
-    def _validate_json(self, v, values, loc, cls):
-        try:
-            json_obj = json.loads(v)
-        except (json.JSONDecodeError, TypeError):
-            return v, ErrorWrapper(JsonError(json_str=v), loc=loc, config=self.model_config)
-        result, errors = self._validate_singleton(json_obj, values, loc, cls)
-        if errors:
-            return json_obj, errors
-        else:
-            return result, None
 
     def _validate_sequence(self, v, values, loc, cls):
         result, errors = [], []
