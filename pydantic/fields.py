@@ -245,14 +245,11 @@ class Field:
         if self.allow_none and v is None:
             return None, None
 
-        if not isinstance(loc, tuple):
-            loc = (loc,)
+        loc = loc if isinstance(loc, tuple) else (loc, )
 
-        if self.parse_json:
-            try:
-                v = json.loads(v)
-            except (json.JSONDecodeError, TypeError):
-                return v, ErrorWrapper(JsonError(), loc=loc, config=self.model_config)
+        v, error = self._validate_json(v, loc)
+        if error:
+            return v, error
 
         if self.whole_pre_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_pre_validators)
@@ -276,6 +273,14 @@ class Field:
         if not errors and self.whole_post_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
         return v, errors
+
+    def _validate_json(self, v, loc):
+        if self.parse_json:
+            try:
+                return json.loads(v), None
+            except (json.JSONDecodeError, TypeError):
+                return v, ErrorWrapper(JsonError(), loc=loc, config=self.model_config)
+        return v, None
 
     def _validate_sequence(self, v, values, loc, cls):
         result, errors = [], []
