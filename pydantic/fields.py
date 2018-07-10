@@ -48,7 +48,7 @@ class Schema:
 
 class Field:
     __slots__ = (
-        'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
+        'type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
         'default', 'required', 'model_config', 'name', 'alias', '_schema', 'validate_always', 'allow_none', 'shape',
         'class_validators'
     )
@@ -68,7 +68,6 @@ class Field:
         self.name: str = name
         self.alias: str = alias or name
         self.type_: type = type_
-        self.key_type_: type = None
         self.class_validators = class_validators or []
         self.validate_always: bool = False
         self.sub_fields: List[Field] = None
@@ -166,16 +165,10 @@ class Field:
                     self.allow_none = True
                 else:
                     types_.append(type_)
-            self.sub_fields = [self.__class__(
-                type_=t,
-                class_validators=self.class_validators,
-                default=self.default,
-                required=self.required,
-                allow_none=self.allow_none,
-                name=f'{self.name}_{display_as_type(t)}',
-                model_config=self.model_config,
-            ) for t in types_]
-        elif issubclass(origin, List):
+            self.sub_fields = [self.create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
+            return
+
+        if issubclass(origin, List):
             self.type_ = self.type_.__args__[0]
             self.shape = Shape.LIST
         elif issubclass(origin, Set):
@@ -183,30 +176,24 @@ class Field:
             self.shape = Shape.SET
         else:
             assert issubclass(origin, Mapping)
-            self.key_type_ = self.type_.__args__[0]
+            self.key_field = self.create_sub_type(self.type_.__args__[0], 'key_' + self.name)
             self.type_ = self.type_.__args__[1]
             self.shape = Shape.MAPPING
-            self.key_field = self.__class__(
-                type_=self.key_type_,
-                class_validators=self.class_validators,
-                default=self.default,
-                required=self.required,
-                allow_none=self.allow_none,
-                name=f'key_{self.name}',
-                model_config=self.model_config,
-            )
 
-        if not self.sub_fields and _get_type_origin(self.type_):
+        if _get_type_origin(self.type_):
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
-            self.sub_fields = [self.__class__(
-                type_=self.type_,
-                class_validators=self.class_validators,
-                default=self.default,
-                required=self.required,
-                allow_none=self.allow_none,
-                name=f'_{self.name}',
-                model_config=self.model_config,
-            )]
+            self.sub_fields = [self.create_sub_type(self.type_, '_' + self.name)]
+
+    def create_sub_type(self, type_, name):
+        return self.__class__(
+            type_=type_,
+            name=name,
+            class_validators=self.class_validators,
+            default=self.default,
+            required=self.required,
+            allow_none=self.allow_none,
+            model_config=self.model_config,
+        )
 
     def _populate_validators(self):
         if not self.sub_fields:
