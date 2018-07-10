@@ -1,7 +1,7 @@
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Set, Union
+from typing import Any, Dict, List, Set, Tuple, Union
 
 import pytest
 
@@ -223,24 +223,80 @@ def test_dict_key_error():
     ]
 
 
-# TODO re-add when implementing better model validators
-# def test_all_model_validator():
-#     class OverModel(BaseModel):
-#         a: int = ...
-#
-#         def validate_a_pre(self, v):
-#             return f'{v}1'
-#
-#         def validate_a(self, v):
-#             assert isinstance(v, int)
-#             return f'{v}_main'
-#
-#         def validate_a_post(self, v):
-#             assert isinstance(v, str)
-#             return f'{v}_post'
-#
-#     m = OverModel(a=1)
-#     assert m.a == '11_main_post'
+def test_tuple():
+    class Model(BaseModel):
+        v: Tuple[int, float, bool]
+
+    m = Model(v=[1.2, '2.2', 'true'])
+    assert m.v == (1, 2.2, True)
+
+
+def test_tuple_more():
+    class Model(BaseModel):
+        simple_tuple: tuple = None
+        tuple_of_different_types: Tuple[int, float, str, bool] = None
+
+    m = Model(simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[1, 2, 3, 4])
+    assert m.dict() == {'simple_tuple': (1, 2, 3, 4), 'tuple_of_different_types': (1, 2.0, '3', True)}
+
+
+def test_tuple_length_error():
+    class Model(BaseModel):
+        v: Tuple[int, float, bool]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[1, 2])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'wrong tuple length 2, expected 3',
+            'type': 'value_error.tuple.length',
+            'ctx': {
+                'actual_length': 2,
+                'expected_length': 3,
+            },
+        },
+    ]
+
+
+def test_tuple_invalid():
+    class Model(BaseModel):
+        v: Tuple[int, float, bool]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='xxx')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'value is not a valid tuple',
+            'type': 'type_error.tuple',
+        },
+    ]
+
+
+def test_tuple_value_error():
+    class Model(BaseModel):
+        v: Tuple[int, float, Decimal]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=['x', 'y', 'x'])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v', 0),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        },
+        {
+            'loc': ('v', 1),
+            'msg': 'value is not a valid float',
+            'type': 'type_error.float',
+        },
+        {
+            'loc': ('v', 2),
+            'msg': 'value is not a valid decimal',
+            'type': 'type_error.decimal',
+        },
+    ]
 
 
 def test_recursive_list():
