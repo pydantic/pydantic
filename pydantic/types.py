@@ -373,7 +373,7 @@ class Json(metaclass=JsonMeta):
     def validate(cls, v: str):
         try:
             return json.loads(v)
-        except json.JSONDecodeError:
+        except ValueError:
             raise errors.JsonError()
         except TypeError:
-            raise errors.JsonNotStrError()
+            raise errors.JsonTypeError()

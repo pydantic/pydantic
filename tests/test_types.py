@@ -1180,11 +1180,41 @@ def test_valid_simple_json():
     assert JsonModel(json_obj=obj).dict() == {'json_obj': {"a": 1, "b": [2, 3]}}
 
 
+def test_invalid_simple_json():
+    class JsonModel(BaseModel):
+        json_obj: Json
+
+    obj = '{a: 1, b: [2, 3]}'
+    with pytest.raises(ValidationError) as exc_info:
+        JsonModel(json_obj=obj)
+    assert exc_info.value.errors()[0] == {
+        'loc': ('json_obj',),
+        'msg': 'Invalid JSON',
+        'type': 'value_error.json'
+    }
+
+
+def test_valid_simple_json_bytes():
+    class JsonModel(BaseModel):
+        json_obj: Json
+
+    obj = b'{"a": 1, "b": [2, 3]}'
+    assert JsonModel(json_obj=obj).dict() == {'json_obj': {"a": 1, "b": [2, 3]}}
+
+
 def test_valid_detailed_json():
     class JsonDetailedModel(BaseModel):
         json_obj: Json[List[int]]
 
     obj = '[1, 2, 3]'
+    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
+
+
+def test_valid_detailed_json_bytes():
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
+    obj = b'[1, 2, 3]'
     assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
 
 
@@ -1211,6 +1241,6 @@ def test_json_not_str():
         JsonDetailedModel(json_obj=obj)
     assert exc_info.value.errors()[0] == {
         'loc': ('json_obj',),
-        'msg': "JSON object must be str, bytes or bytearray",
-        'type': 'type_error.json_not_str'
+        'msg': 'JSON object must be str, bytes or bytearray',
+        'type': 'type_error.json'
     }
