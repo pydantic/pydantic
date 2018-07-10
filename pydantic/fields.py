@@ -4,6 +4,7 @@ from typing import Any, Callable, List, Mapping, NamedTuple, Set, Tuple, Type, U
 
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
+from .types import Json, JsonWrapper
 from .utils import display_as_type, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
@@ -51,7 +52,7 @@ class Field:
     __slots__ = (
         'type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
         'default', 'required', 'model_config', 'name', 'alias', '_schema', 'validate_always', 'allow_none', 'shape',
-        'class_validators'
+        'class_validators', 'parse_json'
     )
 
     def __init__(
@@ -80,6 +81,7 @@ class Field:
         self.required: bool = required
         self.model_config = model_config
         self.allow_none: bool = allow_none
+        self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
         self._schema: Schema = schema
         self.prepare()
@@ -154,11 +156,14 @@ class Field:
 
     def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
+        if isinstance(self.type_, type) and issubclass(self.type_, JsonWrapper):
+            self.type_ = self.type_.inner_type
+            self.parse_json = True
+
         origin = _get_type_origin(self.type_)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
-
         if origin is Union:
             types_ = []
             for type_ in self.type_.__args__:
@@ -229,12 +234,16 @@ class Field:
             ))
         return tuple(v)
 
-    def validate(self, v, values, *, loc, cls=None):
+    def validate(self, v, values, *, loc, cls=None):  # noqa: C901 (ignore complexity)
         if self.allow_none and v is None:
             return None, None
 
-        if not isinstance(loc, tuple):
-            loc = (loc,)
+        loc = loc if isinstance(loc, tuple) else (loc, )
+
+        if self.parse_json:
+            v, error = self._validate_json(v, loc)
+            if error:
+                return v, error
 
         if self.whole_pre_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_pre_validators)
@@ -256,6 +265,14 @@ class Field:
         if not errors and self.whole_post_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
         return v, errors
+
+    def _validate_json(self, v, loc):
+        try:
+            return Json.validate(v), None
+        except ValueError as exc:
+            return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
+        except TypeError as exc:
+            return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
     def _validate_list_set(self, v, values, loc, cls):
         if not list_like(v):

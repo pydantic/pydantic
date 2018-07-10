@@ -239,3 +239,12 @@ class ArbitraryTypeError(PydanticTypeError):
 
     def __init__(self, *, expected_arbitrary_type) -> None:
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
+
+
+class JsonError(PydanticValueError):
+    msg_template = 'Invalid JSON'
+
+
+class JsonTypeError(PydanticTypeError):
+    code = 'json'
+    msg_template = 'JSON object must be str, bytes or bytearray'
