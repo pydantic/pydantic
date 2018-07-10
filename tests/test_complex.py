@@ -228,7 +228,16 @@ def test_tuple():
         v: Tuple[int, float, bool]
 
     m = Model(v=[1.2, '2.2', 'true'])
-    assert m.v == [1, 2.2, True]
+    assert m.v == (1, 2.2, True)
+
+
+def test_tuple_more():
+    class Model(BaseModel):
+        simple_tuple: tuple = None
+        tuple_of_different_types: Tuple[int, float, str, bool] = None
+
+    m = Model(simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[1, 2, 3, 4])
+    assert m.dict() == {'simple_tuple': (1, 2, 3, 4), 'tuple_of_different_types': (1, 2.0, '3', True)}
 
 
 def test_tuple_length_error():

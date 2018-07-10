@@ -300,7 +300,7 @@ class Field:
         if errors:
             return v, errors
         else:
-            return result, None
+            return tuple(result), None
 
     def _validate_mapping(self, v, values, loc, cls):
         try:
