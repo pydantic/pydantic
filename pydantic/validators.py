@@ -1,4 +1,3 @@
-import json
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
@@ -12,10 +11,6 @@ from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_ti
 from .utils import change_exception, display_as_type, list_like
 
 NoneType = type(None)
-
-
-class JsonWrapper:
-    __slots__ = 'inner_type',
 
 
 def not_none_validator(v):
@@ -218,13 +213,6 @@ def path_exists_validator(v) -> Path:
     return v
 
 
-def json_validator(v: str):
-    try:
-        return json.loads(v)
-    except (json.JSONDecodeError, TypeError):
-        raise errors.JsonError()
-
-
 def make_arbitrary_type_validator(type_):
     def arbitrary_type_validator(v) -> type_:
         if isinstance(v, type_):
@@ -251,7 +239,6 @@ _VALIDATORS = [
     (time, [parse_time]),
     (timedelta, [parse_duration]),
 
-    (JsonWrapper, [str_validator, json_validator]),
     (OrderedDict, [ordered_dict_validator]),
     (dict, [dict_validator]),
     (list, [list_validator]),

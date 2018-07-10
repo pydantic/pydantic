@@ -1,4 +1,3 @@
-import json
 import os
 import uuid
 from collections import OrderedDict
@@ -1177,23 +1176,25 @@ def test_valid_simple_json():
     class JsonModel(BaseModel):
         json_obj: Json
 
-    obj = {'a': 1, 'b': [2, 3]}
-    assert JsonModel(json_obj=json.dumps(obj)).dict() == {'json_obj': obj}
-
-
-class JsonDetailedModel(BaseModel):
-    json_obj: Json[List[int]]
+    obj = '{"a": 1, "b": [2, 3]}'
+    assert JsonModel(json_obj=obj).dict() == {'json_obj': {"a": 1, "b": [2, 3]}}
 
 
 def test_valid_detailed_json():
-    obj = [1, 2, 3]
-    assert JsonDetailedModel(json_obj=json.dumps(obj)).dict() == {'json_obj': obj}
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
+    obj = '[1, 2, 3]'
+    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
 
 
 def test_invalid_detailed_json():
-    obj = ['a', 'b', 'c']
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
+    obj = '["a", "b", "c"]'
     with pytest.raises(ValidationError) as exc_info:
-        JsonDetailedModel(json_obj=json.dumps(obj))
+        JsonDetailedModel(json_obj=obj)
     assert exc_info.value.errors() == [
         {'loc': ('json_obj', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
         {'loc': ('json_obj', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
@@ -1202,11 +1203,14 @@ def test_invalid_detailed_json():
 
 
 def test_json_not_str():
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
     obj = 12
     with pytest.raises(ValidationError) as exc_info:
         JsonDetailedModel(json_obj=obj)
     assert exc_info.value.errors()[0] == {
         'loc': ('json_obj',),
-        'msg': "Not valid JSON provided - it can't be decoded",
-        'type': 'value_error.json'
+        'msg': "JSON object must be str, bytes or bytearray",
+        'type': 'type_error.json_not_str'
     }

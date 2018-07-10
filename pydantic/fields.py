@@ -1,12 +1,10 @@
 import inspect
-import json
 from enum import Enum, IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
 
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
-from .errors import JsonError
-from .types import JsonWrapper
+from .types import Json, JsonWrapper
 from .utils import display_as_type, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
@@ -158,7 +156,7 @@ class Field:
 
     def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
-        if inspect.isclass(self.type_) and issubclass(self.type_, JsonWrapper):
+        if isinstance(self.type_, type) and issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type
             self.parse_json = True
 
@@ -241,15 +239,16 @@ class Field:
             ))
         return tuple(v)
 
-    def validate(self, v, values, *, loc, cls=None):
+    def validate(self, v, values, *, loc, cls=None):  # noqa: C901 (ignore complexity)
         if self.allow_none and v is None:
             return None, None
 
         loc = loc if isinstance(loc, tuple) else (loc, )
 
-        v, error = self._validate_json(v, loc)
-        if error:
-            return v, error
+        if self.parse_json:
+            v, error = self._validate_json(v, loc)
+            if error:
+                return v, error
 
         if self.whole_pre_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_pre_validators)
@@ -275,12 +274,10 @@ class Field:
         return v, errors
 
     def _validate_json(self, v, loc):
-        if self.parse_json:
-            try:
-                return json.loads(v), None
-            except (json.JSONDecodeError, TypeError):
-                return v, ErrorWrapper(JsonError(), loc=loc, config=self.model_config)
-        return v, None
+        try:
+            return Json.validate(v), None
+        except (ValueError, TypeError) as exc:
+            return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
     def _validate_sequence(self, v, values, loc, cls):
         result, errors = [], []

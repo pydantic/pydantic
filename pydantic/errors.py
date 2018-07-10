@@ -234,4 +234,9 @@ class ArbitraryTypeError(PydanticTypeError):
 
 
 class JsonError(PydanticValueError):
-    msg_template = "Not valid JSON provided - it can't be decoded"
+    msg_template = "Invalid JSON"
+
+
+class JsonNotStrError(PydanticTypeError):
+    code = 'json_not_str'
+    msg_template = "JSON object must be str, bytes or bytearray"
