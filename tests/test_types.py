@@ -1210,6 +1210,20 @@ def test_valid_detailed_json():
     assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
 
 
+def test_invalid_detailed_json_value_error():
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
+    obj = '(1, 2, 3)'
+    with pytest.raises(ValidationError) as exc_info:
+        JsonDetailedModel(json_obj=obj)
+    assert exc_info.value.errors()[0] == {
+        'loc': ('json_obj',),
+        'msg': 'Invalid JSON',
+        'type': 'value_error.json'
+    }
+
+
 def test_valid_detailed_json_bytes():
     class JsonDetailedModel(BaseModel):
         json_obj: Json[List[int]]
@@ -1218,7 +1232,7 @@ def test_valid_detailed_json_bytes():
     assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
 
 
-def test_invalid_detailed_json():
+def test_invalid_detailed_json_type_error():
     class JsonDetailedModel(BaseModel):
         json_obj: Json[List[int]]
 
