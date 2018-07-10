@@ -111,6 +111,14 @@ class TupleError(PydanticTypeError):
     msg_template = 'value is not a valid tuple'
 
 
+class TupleLengthError(PydanticValueError):
+    code = 'tuple.length'
+    msg_template = 'wrong tuple length {actual_length}, expected {expected_length}'
+
+    def __init__(self, *, actual_length: int, expected_length: int) -> None:
+        super().__init__(actual_length=actual_length, expected_length=expected_length)
+
+
 class AnyStrMinLengthError(PydanticValueError):
     code = 'any_str.min_length'
     msg_template = 'ensure this value has at least {limit_value} characters'
