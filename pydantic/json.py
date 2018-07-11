@@ -13,16 +13,6 @@ def isoformat(o):
     return o.isoformat()
 
 
-def iso8601_duration(value):
-    seconds = value.total_seconds()
-    minutes, seconds = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    days, hours = divmod(hours, 24)
-    days, hours, minutes = map(int, (days, hours, minutes))
-    seconds = round(seconds, 6)
-    return f'P{days}DT{hours}H{minutes}M{seconds}S'
-
-
 ENCODERS_BY_TYPE = {
     UUID: str,
     datetime.datetime: isoformat,
@@ -42,6 +32,8 @@ def pydantic_encoder(obj):
         return obj.dict()
     elif isinstance(obj, Enum):
         return obj.value
+    elif hasattr(obj, "json") and callable(obj.json):
+        return obj.json()
 
     try:
         encoder = ENCODERS_BY_TYPE[type(obj)]
