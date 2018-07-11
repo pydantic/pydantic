@@ -287,6 +287,16 @@ Exotic Types
 
 (This script is complete, it should run "as is")
 
+Json Type
+.........
+
+You can use ``Json`` data type - *Pydantic* will first parse raw JSON string and then will validate parsed object
+against defined Json structure if it's provided.
+
+.. literalinclude:: examples/ex_json.py
+
+(This script is complete, it should run "as is")
+
 Custom Data Types
 .................
 
