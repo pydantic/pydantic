@@ -196,7 +196,8 @@ class BaseModel(metaclass=MetaModel):
         as per `json.dumps()`.
         """
         from .json import pydantic_encoder
-        return json.dumps(self.dict(include=include, exclude=exclude), default=pydantic_encoder, **dumps_kwargs)
+        dumps_kwargs.setdefault('default', pydantic_encoder)
+        return json.dumps(self.dict(include=include, exclude=exclude), **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls, obj):
