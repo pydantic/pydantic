@@ -28,7 +28,7 @@ ENCODERS_BY_TYPE = {
     datetime.datetime: isoformat,
     datetime.date: isoformat,
     datetime.time: isoformat,
-    datetime.timedelta: iso8601_duration,
+    datetime.timedelta: lambda td: f'{td.total_seconds():0.6f}',
     set: list,
     frozenset: list,
     GeneratorType: list,
