@@ -58,3 +58,4 @@ class BaseSettings(BaseModel):
         env_prefix = 'APP_'
         validate_all = True
         ignore_extra = False
+        arbitrary_types_allowed = True
