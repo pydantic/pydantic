@@ -7,3 +7,4 @@ from .main import BaseConfig, BaseModel, create_model, validate_model, validator
 from .parse import Protocol
 from .types import *
 from .version import VERSION
+from . import dataclasses
