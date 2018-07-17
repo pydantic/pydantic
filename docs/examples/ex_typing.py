@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union, Set
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -6,6 +6,9 @@ from pydantic import BaseModel
 class Model(BaseModel):
     simple_list: list = None
     list_of_ints: List[int] = None
+
+    simple_tuple: tuple = None
+    tuple_of_different_types: Tuple[int, float, str, bool] = None
 
     simple_dict: dict = None
     dict_str_float: Dict[str, float] = None
@@ -23,3 +26,6 @@ print(Model(list_of_ints=['1', '2', '3']).list_of_ints)  # > [1, 2, 3]
 
 print(Model(simple_dict={'a': 1, b'b': 2}).simple_dict)  # > {'a': 1, b'b': 2}
 print(Model(dict_str_float={'a': 1, b'b': 2}).dict_str_float)  # > {'a': 1.0, 'b': 2.0}
+
+print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)  # > (1, 2, 3, 4)
+print(Model(tuple_of_different_types=[1, 2, 3, 4]).tuple_of_different_types)  # > (1, 2.0, '3', True)

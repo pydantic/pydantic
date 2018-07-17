@@ -3,7 +3,19 @@
 History
 -------
 
-v0.11.1 (2018-XX-XX)
+v0.12.0 (2018-XX-XX)
+....................
+* add ``by_alias`` argument in ``.dict()`` and ``.json()`` model methods #205
+* add Json type support #214
+* support tuples #227
+
+v0.11.2 (2018-07-05)
+....................
+* add ``NewType`` support #115
+* fix ``list``, ``set`` & ``tuple`` validation #225
+* separate out ``validate_model`` method, allow errors to be returned along with valid values #221
+
+v0.11.1 (2018-07-02)
 ....................
 * support Python 3.7 #216, thanks @layday
 * Allow arbitrary types in model #209, thanks @oldPadavan

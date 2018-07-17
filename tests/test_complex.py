@@ -1,11 +1,11 @@
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Set, Union
+from typing import Any, Dict, List, Set, Tuple, Union
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr
+from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr, validate_model
 
 
 def test_str_bytes():
@@ -122,8 +122,8 @@ def test_typed_list():
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
-            'msg': 'value is not a valid sequence',
-            'type': 'type_error.sequence',
+            'msg': 'value is not a valid list',
+            'type': 'type_error.list',
         },
     ]
 
@@ -223,24 +223,80 @@ def test_dict_key_error():
     ]
 
 
-# TODO re-add when implementing better model validators
-# def test_all_model_validator():
-#     class OverModel(BaseModel):
-#         a: int = ...
-#
-#         def validate_a_pre(self, v):
-#             return f'{v}1'
-#
-#         def validate_a(self, v):
-#             assert isinstance(v, int)
-#             return f'{v}_main'
-#
-#         def validate_a_post(self, v):
-#             assert isinstance(v, str)
-#             return f'{v}_post'
-#
-#     m = OverModel(a=1)
-#     assert m.a == '11_main_post'
+def test_tuple():
+    class Model(BaseModel):
+        v: Tuple[int, float, bool]
+
+    m = Model(v=[1.2, '2.2', 'true'])
+    assert m.v == (1, 2.2, True)
+
+
+def test_tuple_more():
+    class Model(BaseModel):
+        simple_tuple: tuple = None
+        tuple_of_different_types: Tuple[int, float, str, bool] = None
+
+    m = Model(simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[1, 2, 3, 4])
+    assert m.dict() == {'simple_tuple': (1, 2, 3, 4), 'tuple_of_different_types': (1, 2.0, '3', True)}
+
+
+def test_tuple_length_error():
+    class Model(BaseModel):
+        v: Tuple[int, float, bool]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[1, 2])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'wrong tuple length 2, expected 3',
+            'type': 'value_error.tuple.length',
+            'ctx': {
+                'actual_length': 2,
+                'expected_length': 3,
+            },
+        },
+    ]
+
+
+def test_tuple_invalid():
+    class Model(BaseModel):
+        v: Tuple[int, float, bool]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='xxx')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'value is not a valid tuple',
+            'type': 'type_error.tuple',
+        },
+    ]
+
+
+def test_tuple_value_error():
+    class Model(BaseModel):
+        v: Tuple[int, float, Decimal]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=['x', 'y', 'x'])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v', 0),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        },
+        {
+            'loc': ('v', 1),
+            'msg': 'value is not a valid float',
+            'type': 'type_error.float',
+        },
+        {
+            'loc': ('v', 2),
+            'msg': 'value is not a valid decimal',
+            'type': 'type_error.decimal',
+        },
+    ]
 
 
 def test_recursive_list():
@@ -581,3 +637,40 @@ def test_get_field_schema_inherit():
 
     v = ModelTwo(**{'oneThing': 123, 'anotherThing': '321', 'Banana': 1})
     assert v == {'one_thing': 123, 'another_thing': 321, 'third_thing': 1}
+
+
+def test_return_errors_ok():
+    class Model(BaseModel):
+        foo: int
+        bar: List[int]
+
+    assert validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}) == {'foo': 123, 'bar': [1, 2, 3]}
+    d, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}, False)
+    assert d == {'foo': 123, 'bar': [1, 2, 3]}
+    assert e is None
+
+
+def test_return_errors_error():
+    class Model(BaseModel):
+        foo: int
+        bar: List[int]
+
+    d, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 'x')}, False)
+    assert d == {'foo': 123}
+    assert e.errors() == [
+        {
+            'loc': ('bar', 2),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer'
+        }
+    ]
+
+    d, e = validate_model(Model, {'bar': (1, 2, 3)}, False)
+    assert d == {'bar': [1, 2, 3]}
+    assert e.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': 'field required',
+            'type': 'value_error.missing'
+        }
+    ]

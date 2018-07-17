@@ -1,3 +1,4 @@
+import json
 import re
 from decimal import Decimal
 from pathlib import Path
@@ -43,6 +44,7 @@ __all__ = [
     'UUID5',
     'FilePath',
     'DirectoryPath',
+    'Json'
 ]
 
 NoneStr = Optional[str]
@@ -329,6 +331,7 @@ class FilePath(Path):
         yield path_exists_validator
         yield cls.validate
 
+    @classmethod
     def validate(cls, value: Path) -> Path:
         if not value.is_file():
             raise errors.PathNotAFileError(path=value)
@@ -343,8 +346,34 @@ class DirectoryPath(Path):
         yield path_exists_validator
         yield cls.validate
 
+    @classmethod
     def validate(cls, value: Path) -> Path:
         if not value.is_dir():
             raise errors.PathNotADirectoryError(path=value)
 
         return value
+
+
+class JsonWrapper:
+    __slots__ = 'inner_type',
+
+
+class JsonMeta(type):
+    def __getitem__(self, t):
+        return type('JsonWrapperValue', (JsonWrapper, ), {'inner_type': t})
+
+
+class Json(metaclass=JsonMeta):
+    @classmethod
+    def get_validators(cls):
+        yield str_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v: str):
+        try:
+            return json.loads(v)
+        except ValueError:
+            raise errors.JsonError()
+        except TypeError:
+            raise errors.JsonTypeError()

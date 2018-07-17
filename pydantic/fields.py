@@ -1,10 +1,11 @@
 import inspect
 from enum import Enum, IntEnum
-from typing import Any, Callable, List, Mapping, NamedTuple, Set, Type, Union
+from typing import Any, Callable, List, Mapping, NamedTuple, Set, Tuple, Type, Union
 
+from . import errors as errors_
 from .error_wrappers import ErrorWrapper
-from .errors import ConfigError, SequenceError
-from .utils import display_as_type
+from .types import Json, JsonWrapper
+from .utils import display_as_type, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
 Required: Any = Ellipsis
@@ -22,6 +23,7 @@ class Shape(IntEnum):
     LIST = 2
     SET = 3
     MAPPING = 4
+    TUPLE = 5
 
 
 class Validator(NamedTuple):
@@ -48,9 +50,9 @@ class Schema:
 
 class Field:
     __slots__ = (
-        'type_', 'key_type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
+        'type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
         'default', 'required', 'model_config', 'name', 'alias', '_schema', 'validate_always', 'allow_none', 'shape',
-        'class_validators'
+        'class_validators', 'parse_json'
     )
 
     def __init__(
@@ -68,7 +70,6 @@ class Field:
         self.name: str = name
         self.alias: str = alias or name
         self.type_: type = type_
-        self.key_type_: type = None
         self.class_validators = class_validators or []
         self.validate_always: bool = False
         self.sub_fields: List[Field] = None
@@ -80,6 +81,7 @@ class Field:
         self.required: bool = required
         self.model_config = model_config
         self.allow_none: bool = allow_none
+        self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
         self._schema: Schema = schema
         self.prepare()
@@ -121,7 +123,7 @@ class Field:
             self.type_ = type(self.default)
 
         if self.type_ is None:
-            raise ConfigError(f'unable to infer type for attribute "{self.name}"')
+            raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
         self.validate_always: bool = (
             getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators)
@@ -154,11 +156,14 @@ class Field:
 
     def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
+        if isinstance(self.type_, type) and issubclass(self.type_, JsonWrapper):
+            self.type_ = self.type_.inner_type
+            self.parse_json = True
+
         origin = _get_type_origin(self.type_)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
-
         if origin is Union:
             types_ = []
             for type_ in self.type_.__args__:
@@ -166,16 +171,17 @@ class Field:
                     self.allow_none = True
                 else:
                     types_.append(type_)
-            self.sub_fields = [self.__class__(
-                type_=t,
-                class_validators=self.class_validators,
-                default=self.default,
-                required=self.required,
-                allow_none=self.allow_none,
-                name=f'{self.name}_{display_as_type(t)}',
-                model_config=self.model_config,
-            ) for t in types_]
-        elif issubclass(origin, List):
+            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
+            return
+
+        if issubclass(origin, Tuple):
+            self.shape = Shape.TUPLE
+            self.sub_fields = [
+                self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)
+            ]
+            return
+
+        if issubclass(origin, List):
             self.type_ = self.type_.__args__[0]
             self.shape = Shape.LIST
         elif issubclass(origin, Set):
@@ -183,30 +189,24 @@ class Field:
             self.shape = Shape.SET
         else:
             assert issubclass(origin, Mapping)
-            self.key_type_ = self.type_.__args__[0]
+            self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name)
             self.type_ = self.type_.__args__[1]
             self.shape = Shape.MAPPING
-            self.key_field = self.__class__(
-                type_=self.key_type_,
-                class_validators=self.class_validators,
-                default=self.default,
-                required=self.required,
-                allow_none=self.allow_none,
-                name=f'key_{self.name}',
-                model_config=self.model_config,
-            )
 
-        if not self.sub_fields and _get_type_origin(self.type_):
+        if _get_type_origin(self.type_):
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
-            self.sub_fields = [self.__class__(
-                type_=self.type_,
-                class_validators=self.class_validators,
-                default=self.default,
-                required=self.required,
-                allow_none=self.allow_none,
-                name=f'_{self.name}',
-                model_config=self.model_config,
-            )]
+            self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
+
+    def _create_sub_type(self, type_, name):
+        return self.__class__(
+            type_=type_,
+            name=name,
+            class_validators=self.class_validators,
+            default=self.default,
+            required=self.required,
+            allow_none=self.allow_none,
+            model_config=self.model_config,
+        )
 
     def _populate_validators(self):
         if not self.sub_fields:
@@ -234,12 +234,16 @@ class Field:
             ))
         return tuple(v)
 
-    def validate(self, v, values, *, loc, cls=None):
+    def validate(self, v, values, *, loc, cls=None):  # noqa: C901 (ignore complexity)
         if self.allow_none and v is None:
             return None, None
 
-        if not isinstance(loc, tuple):
-            loc = (loc,)
+        loc = loc if isinstance(loc, tuple) else (loc, )
+
+        if self.parse_json:
+            v, error = self._validate_json(v, loc)
+            if error:
+                return v, error
 
         if self.whole_pre_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_pre_validators)
@@ -250,9 +254,11 @@ class Field:
             v, errors = self._validate_singleton(v, values, loc, cls)
         elif self.shape is Shape.MAPPING:
             v, errors = self._validate_mapping(v, values, loc, cls)
+        elif self.shape is Shape.TUPLE:
+            v, errors = self._validate_tuple(v, values, loc, cls)
         else:
             # list or set
-            v, errors = self._validate_sequence(v, values, loc, cls)
+            v, errors = self._validate_list_set(v, values, loc, cls)
             if not errors and self.shape is Shape.SET:
                 v = set(v)
 
@@ -260,26 +266,56 @@ class Field:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
         return v, errors
 
-    def _validate_sequence(self, v, values, loc, cls):
-        result, errors = [], []
-
+    def _validate_json(self, v, loc):
         try:
-            v_iter = enumerate(v)
-        except TypeError:
-            return v, ErrorWrapper(SequenceError(), loc=loc, config=self.model_config)
+            return Json.validate(v), None
+        except (ValueError, TypeError) as exc:
+            return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
-        for i, v_ in v_iter:
+    def _validate_list_set(self, v, values, loc, cls):
+        if not list_like(v):
+            e = errors_.ListError() if self.shape is Shape.LIST else errors_.SetError()
+            return v, ErrorWrapper(e, loc=loc, config=self.model_config)
+
+        result, errors = [], []
+        for i, v_ in enumerate(v):
             v_loc = *loc, i
-            single_result, single_errors = self._validate_singleton(v_, values, v_loc, cls)
-            if single_errors:
-                errors.append(single_errors)
+            r, e = self._validate_singleton(v_, values, v_loc, cls)
+            if e:
+                errors.append(e)
             else:
-                result.append(single_result)
+                result.append(r)
 
         if errors:
             return v, errors
         else:
             return result, None
+
+    def _validate_tuple(self, v, values, loc, cls):
+        e = None
+        if not list_like(v):
+            e = errors_.TupleError()
+        else:
+            actual_length, expected_length = len(v), len(self.sub_fields)
+            if actual_length != expected_length:
+                e = errors_.TupleLengthError(actual_length=actual_length, expected_length=expected_length)
+
+        if e:
+            return v, ErrorWrapper(e, loc=loc, config=self.model_config)
+
+        result, errors = [], []
+        for i, (v_, field) in enumerate(zip(v, self.sub_fields)):
+            v_loc = *loc, i
+            r, e = field.validate(v_, values, loc=v_loc, cls=cls)
+            if e:
+                errors.append(e)
+            else:
+                result.append(r)
+
+        if errors:
+            return v, errors
+        else:
+            return tuple(result), None
 
     def _validate_mapping(self, v, values, loc, cls):
         try:
@@ -374,9 +410,9 @@ def _get_validator_signature(validator):
                 signature.bind(1, values=2, config=3, field=4)
                 return ValidatorSignature.VALUE_KWARGS
     except TypeError as e:
-        raise ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
-                          f'(value) or (value, *, values, config, field) or for class validators '
-                          f'(cls, value) or (cls, value, *, values, config, field)') from e
+        raise errors_.ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
+                                  f'(value) or (value, *, values, config, field) or for class validators '
+                                  f'(cls, value) or (cls, value, *, values, config, field)') from e
 
 
 def _get_type_origin(obj):

@@ -71,10 +71,6 @@ class FloatError(PydanticTypeError):
     msg_template = 'value is not a valid float'
 
 
-class ListError(PydanticTypeError):
-    msg_template = 'value is not a valid list'
-
-
 class PathError(PydanticTypeError):
     msg_template = 'value is not a valid path'
 
@@ -103,8 +99,8 @@ class PyObjectError(PydanticTypeError):
     msg_template = 'ensure this value contains valid import path'
 
 
-class SequenceError(PydanticTypeError):
-    msg_template = 'value is not a valid sequence'
+class ListError(PydanticTypeError):
+    msg_template = 'value is not a valid list'
 
 
 class SetError(PydanticTypeError):
@@ -113,6 +109,14 @@ class SetError(PydanticTypeError):
 
 class TupleError(PydanticTypeError):
     msg_template = 'value is not a valid tuple'
+
+
+class TupleLengthError(PydanticValueError):
+    code = 'tuple.length'
+    msg_template = 'wrong tuple length {actual_length}, expected {expected_length}'
+
+    def __init__(self, *, actual_length: int, expected_length: int) -> None:
+        super().__init__(actual_length=actual_length, expected_length=expected_length)
 
 
 class AnyStrMinLengthError(PydanticValueError):
@@ -235,3 +239,12 @@ class ArbitraryTypeError(PydanticTypeError):
 
     def __init__(self, *, expected_arbitrary_type) -> None:
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
+
+
+class JsonError(PydanticValueError):
+    msg_template = 'Invalid JSON'
+
+
+class JsonTypeError(PydanticTypeError):
+    code = 'json'
+    msg_template = 'JSON object must be str, bytes or bytearray'

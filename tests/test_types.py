@@ -5,11 +5,12 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
+from typing import List, NewType, Set
 from uuid import UUID
 
 import pytest
 
-from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, DirectoryPath, EmailStr, FilePath,
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigError, DirectoryPath, EmailStr, FilePath, Json,
                       NameEmail, NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictStr,
                       ValidationError, condecimal, confloat, conint, constr, create_model)
 
@@ -534,6 +535,36 @@ def test_set_fails(value):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'value is not a valid set',
+            'type': 'type_error.set',
+        },
+    ]
+
+
+def test_list_type_fails():
+    class Model(BaseModel):
+        v: List[int]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='123')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'value is not a valid list',
+            'type': 'type_error.list',
+        },
+    ]
+
+
+def test_set_type_fails():
+    class Model(BaseModel):
+        v: Set[int]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='123')
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -1100,3 +1131,130 @@ def test_bounds_config_exceptions(fn):
 
     with pytest.raises(ConfigError):
         fn(lt=0, le=0)
+
+
+def test_new_type_success():
+    a_type = NewType('a_type', int)
+    b_type = NewType('b_type', a_type)
+
+    class Model(BaseModel):
+        a: a_type
+        b: b_type
+
+    m = Model(a=42, b=24)
+    assert m.dict() == {
+        'a': 42,
+        'b': 24,
+    }
+
+
+def test_new_type_fails():
+    a_type = NewType('a_type', int)
+    b_type = NewType('b_type', a_type)
+
+    class Model(BaseModel):
+        a: a_type
+        b: b_type
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='foo', b='bar')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        },
+        {
+            'loc': ('b',),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        },
+    ]
+
+
+def test_valid_simple_json():
+    class JsonModel(BaseModel):
+        json_obj: Json
+
+    obj = '{"a": 1, "b": [2, 3]}'
+    assert JsonModel(json_obj=obj).dict() == {'json_obj': {"a": 1, "b": [2, 3]}}
+
+
+def test_invalid_simple_json():
+    class JsonModel(BaseModel):
+        json_obj: Json
+
+    obj = '{a: 1, b: [2, 3]}'
+    with pytest.raises(ValidationError) as exc_info:
+        JsonModel(json_obj=obj)
+    assert exc_info.value.errors()[0] == {
+        'loc': ('json_obj',),
+        'msg': 'Invalid JSON',
+        'type': 'value_error.json'
+    }
+
+
+def test_valid_simple_json_bytes():
+    class JsonModel(BaseModel):
+        json_obj: Json
+
+    obj = b'{"a": 1, "b": [2, 3]}'
+    assert JsonModel(json_obj=obj).dict() == {'json_obj': {"a": 1, "b": [2, 3]}}
+
+
+def test_valid_detailed_json():
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
+    obj = '[1, 2, 3]'
+    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
+
+
+def test_invalid_detailed_json_value_error():
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
+    obj = '(1, 2, 3)'
+    with pytest.raises(ValidationError) as exc_info:
+        JsonDetailedModel(json_obj=obj)
+    assert exc_info.value.errors()[0] == {
+        'loc': ('json_obj',),
+        'msg': 'Invalid JSON',
+        'type': 'value_error.json'
+    }
+
+
+def test_valid_detailed_json_bytes():
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
+    obj = b'[1, 2, 3]'
+    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
+
+
+def test_invalid_detailed_json_type_error():
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
+    obj = '["a", "b", "c"]'
+    with pytest.raises(ValidationError) as exc_info:
+        JsonDetailedModel(json_obj=obj)
+    assert exc_info.value.errors() == [
+        {'loc': ('json_obj', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('json_obj', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('json_obj', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+def test_json_not_str():
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[List[int]]
+
+    obj = 12
+    with pytest.raises(ValidationError) as exc_info:
+        JsonDetailedModel(json_obj=obj)
+    assert exc_info.value.errors()[0] == {
+        'loc': ('json_obj',),
+        'msg': 'JSON object must be str, bytes or bytearray',
+        'type': 'type_error.json'
+    }
