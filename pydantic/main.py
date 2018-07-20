@@ -277,23 +277,26 @@ class BaseModel(metaclass=MetaModel):
         return self.__fields__
 
     @classmethod
+    def type_schema(cls, by_alias):
+        return {
+            'type': 'object',
+            'properties': (
+                {f.alias: f.schema(by_alias) for f in cls.__fields__.values()}
+                if by_alias else
+                {k: f.schema(by_alias) for k, f in cls.__fields__.items()}
+            )
+        }
+
+    @classmethod
     def schema(cls, by_alias=True) -> Dict[str, Any]:
         cached = cls._schema_cache.get(by_alias)
         if cached is not None:
             return cached
-
-        s = {
-            'type': 'object',
-            'title': cls.__config__.title or cls.__name__,
-        }
+        s = {'title': cls.__config__.title or cls.__name__}
         if cls.__doc__:
             s['description'] = clean_docstring(cls.__doc__)
 
-        if by_alias:
-            s['properties'] = {f.alias: f.schema(by_alias) for f in cls.__fields__.values()}
-        else:
-            s['properties'] = {k: f.schema(by_alias) for k, f in cls.__fields__.items()}
-
+        s.update(cls.type_schema(by_alias))
         cls._schema_cache[by_alias] = s
         return s
 
