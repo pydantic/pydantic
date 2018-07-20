@@ -292,7 +292,7 @@ def test_set():
 
 def test_tuple():
     class Model(BaseModel):
-        a: Tuple[str, int, float, Union[str, int, float]]
+        a: Tuple[str, int, Union[str, int, float], float]
 
     assert Model.schema() == {
         'title': 'Model',
@@ -305,7 +305,6 @@ def test_tuple():
                 'item_types': [
                     'str',
                     'int',
-                    'float',
                     {
                         'type': 'any_of',
                         'types': [
@@ -314,6 +313,7 @@ def test_tuple():
                             'float',
                         ],
                     },
+                    'float',
                 ],
             },
         },

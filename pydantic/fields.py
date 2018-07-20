@@ -144,11 +144,9 @@ class Field:
         if not self.required and self.default is not None:
             s['default'] = self.default
         s.update(self._schema.extra)
-        ts = self.type_schema(by_alias)
-        if isinstance(ts, str):
-            ts = {'type': ts}
 
-        s.update(ts)
+        ts = self.type_schema(by_alias)
+        s.update(ts if isinstance(ts, dict) else {'type': ts})
         return s
 
     def type_schema(self, by_alias):

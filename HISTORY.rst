@@ -8,6 +8,7 @@ v0.12.0 (2018-XX-XX)
 * add ``by_alias`` argument in ``.dict()`` and ``.json()`` model methods #205
 * add Json type support #214
 * support tuples #227
+* major improvements and changes to schema #213
 
 v0.11.2 (2018-07-05)
 ....................
