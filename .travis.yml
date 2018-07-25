@@ -2,18 +2,18 @@ language: python
 
 cache: pip
 
-python:
-- '3.6'
-- '3.7'
-- 'nightly'  # currently 3.7
-
 matrix:
-  allow_failures:
-  - python: 'nightly'
   include:
-  - python: '3.7'
+  - python: 3.6
+  - python: 3.7
     dist: xenial
-    sudo: true
+    sudo: required
+  - python: 3.8-dev
+    dist: xenial
+    sudo: required
+
+  allow_failures:
+  - python: 3.8-dev
 
 install:
 - make install
