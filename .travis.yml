@@ -4,12 +4,16 @@ cache: pip
 
 python:
 - '3.6'
-- '3.7-dev'
+- '3.7'
 - 'nightly'  # currently 3.7
 
 matrix:
   allow_failures:
   - python: 'nightly'
+  include:
+  - python: '3.7'
+    dist: xenial
+    sudo: true
 
 install:
 - make install
