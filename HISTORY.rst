@@ -3,7 +3,7 @@
 History
 -------
 
-v0.12.1 (2018-XX-XX)
+v0.12.1 (2018-07-31)
 ....................
 * fix schema generation for fields defined using ``typing.Any`` #237
 
