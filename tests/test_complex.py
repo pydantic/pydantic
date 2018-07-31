@@ -1,7 +1,7 @@
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
@@ -674,3 +674,12 @@ def test_return_errors_error():
             'type': 'value_error.missing'
         }
     ]
+
+
+def test_optional_required():
+    class Model(BaseModel):
+        bar: Optional[int]
+
+    assert Model(bar=123).dict() == {'bar': 123}
+    assert Model().dict() == {'bar': None}
+    assert Model(bar=None).dict() == {'bar': None}

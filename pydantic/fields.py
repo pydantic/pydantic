@@ -136,23 +136,69 @@ class Field:
         self._populate_validators()
 
     def schema(self, by_alias=True):
-        s = self.type_.schema(by_alias) if hasattr(self.type_, 'schema') else {}
-        s.update(
-            type=s.get('type') or display_as_type(self.type_),
-            title=self._schema.title or s.get('title') or self.alias.title(),
+        s = dict(
+            title=self._schema.title or self.alias.title(),
             required=self.required,
         )
 
         if not self.required and self.default is not None:
             s['default'] = self.default
-        if issubclass(self.type_, Enum):
-            choice_names = self._schema.choice_names or {}
-            s['choices'] = [
-                (v.value, choice_names.get(v.value) or k.title())
-                for k, v in self.type_.__members__.items()
-            ]
         s.update(self._schema.extra)
+
+        ts = self.type_schema(by_alias)
+        s.update(ts if isinstance(ts, dict) else {'type': ts})
         return s
+
+    def type_schema(self, by_alias):
+        if self.shape is Shape.LIST:
+            return {
+                'type': 'list',
+                'item_type': self._singleton_schema(by_alias),
+            }
+        if self.shape is Shape.SET:
+            return {
+                'type': 'set',
+                'item_type': self._singleton_schema(by_alias),
+            }
+        elif self.shape is Shape.MAPPING:
+            return {
+                'type': 'mapping',
+                'item_type': self._singleton_schema(by_alias),
+                'key_type': self.key_field.type_schema(by_alias)
+            }
+        elif self.shape is Shape.TUPLE:
+            return {
+                'type': 'tuple',
+                'item_types': [sf.type_schema(by_alias) for sf in self.sub_fields],
+            }
+        else:
+            assert self.shape is Shape.SINGLETON, self.shape
+            return self._singleton_schema(by_alias)
+
+    def _singleton_schema(self, by_alias):
+        if self.sub_fields:
+            if len(self.sub_fields) == 1:
+                return self.sub_fields[0].type_schema(by_alias)
+            else:
+                return {
+                    'type': 'any_of',
+                    'types': [sf.type_schema(by_alias) for sf in self.sub_fields]
+                }
+        elif issubclass(self.type_, Enum):
+            choice_names = self._schema.choice_names or {}
+            return {
+                'type': display_as_type(self.type_),
+                'choices': [
+                    (v.value, choice_names.get(v.value) or k.title())
+                    for k, v in self.type_.__members__.items()
+                ]
+            }
+
+        type_schema_method = getattr(self.type_, 'type_schema', None)
+        if callable(type_schema_method):
+            return type_schema_method(by_alias)
+        else:
+            return display_as_type(self.type_)
 
     def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
@@ -160,7 +206,7 @@ class Field:
             self.type_ = self.type_.inner_type
             self.parse_json = True
 
-        origin = _get_type_origin(self.type_)
+        origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
@@ -169,6 +215,7 @@ class Field:
             for type_ in self.type_.__args__:
                 if type_ is NoneType:
                     self.allow_none = True
+                    self.required = False
                 else:
                     types_.append(type_)
             self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
@@ -193,7 +240,7 @@ class Field:
             self.type_ = self.type_.__args__[1]
             self.shape = Shape.MAPPING
 
-        if _get_type_origin(self.type_):
+        if getattr(self.type_, '__origin__', None):
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
             self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
@@ -413,10 +460,3 @@ def _get_validator_signature(validator):
         raise errors_.ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
                                   f'(value) or (value, *, values, config, field) or for class validators '
                                   f'(cls, value) or (cls, value, *, values, config, field)') from e
-
-
-def _get_type_origin(obj):
-    """
-    Like obj.__class__ or type(obj) but for typing objects
-    """
-    return getattr(obj, '__origin__', None)

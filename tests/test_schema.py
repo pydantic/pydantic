@@ -1,6 +1,7 @@
 import json
 from decimal import Decimal
 from enum import Enum, IntEnum
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
@@ -17,8 +18,6 @@ def test_key():
 
     s = {
         'type': 'object',
-        'title': 'ApplePie',
-        'description': 'This is a test.',
         'properties': {
             'a': {
                 'type': 'float',
@@ -32,6 +31,8 @@ def test_key():
                 'default': 10,
             },
         },
+        'title': 'ApplePie',
+        'description': 'This is a test.',
     }
     assert True not in ApplePie._schema_cache
     assert False not in ApplePie._schema_cache
@@ -93,7 +94,7 @@ def test_sub_model():
             },
             'b': {
                 'type': 'object',
-                'title': 'Foo',
+                'title': 'B',
                 'properties': {
                     'b': {
                         'type': 'float',
@@ -101,7 +102,6 @@ def test_sub_model():
                         'required': True,
                     },
                 },
-                'description': 'hello',
                 'required': False,
             },
         },
@@ -205,21 +205,179 @@ def test_json_schema():
 
     assert Model.schema_json(indent=2) == (
         '{\n'
-        '  "type": "object",\n'
         '  "title": "Model",\n'
+        '  "type": "object",\n'
         '  "properties": {\n'
         '    "a": {\n'
-        '      "type": "bytes",\n'
         '      "title": "A",\n'
         '      "required": false,\n'
-        '      "default": "foobar"\n'
+        '      "default": "foobar",\n'
+        '      "type": "bytes"\n'
         '    },\n'
         '    "b": {\n'
-        '      "type": "Decimal",\n'
         '      "title": "B",\n'
         '      "required": false,\n'
-        '      "default": 12.34\n'
+        '      "default": 12.34,\n'
+        '      "type": "Decimal"\n'
         '    }\n'
         '  }\n'
         '}'
     )
+
+
+def test_list_sub_model():
+    class Foo(BaseModel):
+        a: float
+
+    class Bar(BaseModel):
+        b: List[Foo]
+
+    assert Bar.schema() == {
+        'title': 'Bar',
+        'type': 'object',
+        'properties': {
+            'b': {
+                'type': 'list',
+                'item_type': {
+                    'type': 'object',
+                    'properties': {
+                        'a': {
+                            'type': 'float',
+                            'title': 'A',
+                            'required': True,
+                        },
+                    },
+                },
+                'title': 'B',
+                'required': True,
+            },
+        },
+    }
+
+
+def test_optional():
+    class Model(BaseModel):
+        a: Optional[str]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'str',
+                'title': 'A',
+                'required': False,
+            },
+        },
+    }
+
+
+def test_set():
+    class Model(BaseModel):
+        a: Set[int]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {
+                'title': 'A',
+                'required': True,
+                'type': 'set',
+                'item_type': 'int'
+            }
+        }
+    }
+
+
+def test_tuple():
+    class Model(BaseModel):
+        a: Tuple[str, int, Union[str, int, float], float]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {
+                'title': 'A',
+                'required': True,
+                'type': 'tuple',
+                'item_types': [
+                    'str',
+                    'int',
+                    {
+                        'type': 'any_of',
+                        'types': [
+                            'str',
+                            'int',
+                            'float',
+                        ],
+                    },
+                    'float',
+                ],
+            },
+        },
+    }
+
+
+def test_list_union_dict():
+    class Foo(BaseModel):
+        a: float
+
+    class Model(BaseModel):
+        """party time"""
+        a: Union[int, str]
+        b: List[int]
+        c: Dict[int, Foo]
+        d: Union[None, Foo]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'description': 'party time',
+        'type': 'object',
+        'properties': {
+            'a': {
+                'title': 'A',
+                'required': True,
+                'type': 'any_of',
+                'types': [
+                    'int',
+                    'str',
+                ],
+            },
+            'b': {
+                'title': 'B',
+                'required': True,
+                'type': 'list',
+                'item_type': 'int',
+            },
+            'c': {
+                'title': 'C',
+                'required': True,
+                'type': 'mapping',
+                'item_type': {
+                    'type': 'object',
+                    'properties': {
+                        'a': {
+                            'title': 'A',
+                            'required': True,
+                            'type': 'float',
+                        },
+                    },
+                },
+                'key_type': 'int',
+            },
+            'd': {
+                'title': 'D',
+                'required': False,
+                'type': 'object',
+                'properties': {
+                    'a': {
+                        'title': 'A',
+                        'required': True,
+                        'type': 'float',
+                    },
+                },
+            },
+        },
+    }
