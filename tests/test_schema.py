@@ -401,9 +401,7 @@ def test_list_union_dict():
                 'title': 'E',
                 'required': True,
                 'type': 'mapping',
-                'item_type': {
-                    'type': 'any',
-                },
+                'item_type': 'any',
                 'key_type': 'str',
             },
         },

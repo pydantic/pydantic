@@ -185,9 +185,7 @@ class Field:
                     'types': [sf.type_schema(by_alias) for sf in self.sub_fields]
                 }
         elif self.type_ is Any:
-            return {
-                'type': 'any',
-            }
+            return 'any'
         elif issubclass(self.type_, Enum):
             choice_names = self._schema.choice_names or {}
             return {
