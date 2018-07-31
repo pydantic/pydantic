@@ -1,7 +1,7 @@
 import json
 from decimal import Decimal
 from enum import Enum, IntEnum
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
@@ -272,6 +272,23 @@ def test_optional():
     }
 
 
+def test_any():
+    class Model(BaseModel):
+        a: Any
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'any',
+                'title': 'A',
+                'required': True,
+            },
+        },
+    }
+
+
 def test_set():
     class Model(BaseModel):
         a: Set[int]
@@ -330,6 +347,7 @@ def test_list_union_dict():
         b: List[int]
         c: Dict[int, Foo]
         d: Union[None, Foo]
+        e: Dict[str, Any]
 
     assert Model.schema() == {
         'title': 'Model',
@@ -378,6 +396,15 @@ def test_list_union_dict():
                         'type': 'float',
                     },
                 },
+            },
+            'e': {
+                'title': 'E',
+                'required': True,
+                'type': 'mapping',
+                'item_type': {
+                    'type': 'any',
+                },
+                'key_type': 'str',
             },
         },
     }

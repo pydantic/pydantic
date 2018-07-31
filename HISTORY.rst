@@ -3,6 +3,10 @@
 History
 -------
 
+v0.12.1 (2018-XX-XX)
+....................
+* fix schema generation for fields defined using ``typing.Any`` #237
+
 v0.12.0 (2018-07-31)
 ....................
 * add ``by_alias`` argument in ``.dict()`` and ``.json()`` model methods #205
