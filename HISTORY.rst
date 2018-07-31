@@ -3,7 +3,7 @@
 History
 -------
 
-v0.12.0 (2018-XX-XX)
+v0.12.0 (2018-07-31)
 ....................
 * add ``by_alias`` argument in ``.dict()`` and ``.json()`` model methods #205
 * add Json type support #214
