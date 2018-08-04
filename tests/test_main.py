@@ -528,3 +528,16 @@ def test_arbitrary_types_not_allowed():
         class ArbitraryTypeNotAllowedModel(BaseModel):
             t: ArbitraryType
     assert exc_info.value.args[0].startswith('no validator found for')
+
+
+def test_annotation_field_name_shadows_attribute():
+    with pytest.raises(NameError):
+        # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
+        class BadModel(BaseModel):
+            schema: str  # This conflicts with the BaseModel's schema() class method
+
+def test_value_field_name_shadows_attribute():
+    # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
+    with pytest.raises(NameError):
+        class BadModel(BaseModel):
+            schema = 'abc'  # This conflicts with the BaseModel's schema() class method
