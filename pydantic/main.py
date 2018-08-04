@@ -112,6 +112,12 @@ class MetaModel(ABCMeta):
         annotations = namespace.get('__annotations__', {})
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
+            # Ensure that the field's name does not shadow an existing attribute
+            for base in reversed(bases):
+                if getattr(base, ann_name, None):
+                    raise NameError(f'Field name "{ann_name}" shadows a BaseModel attribute; '
+                                    f'use a different field name with "alias=\'{ann_name}\'".')
+
             if not ann_name.startswith('_') and ann_name not in namespace:
                 fields[ann_name] = Field.infer(
                     name=ann_name,

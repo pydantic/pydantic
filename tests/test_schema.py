@@ -406,3 +406,9 @@ def test_list_union_dict():
             },
         },
     }
+
+
+def test_field_name_shadows_attribute():
+    with pytest.raises(NameError):
+        class BadModel(BaseModel):
+            schema: str
