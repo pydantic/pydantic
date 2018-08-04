@@ -536,6 +536,7 @@ def test_annotation_field_name_shadows_attribute():
         class BadModel(BaseModel):
             schema: str  # This conflicts with the BaseModel's schema() class method
 
+
 def test_value_field_name_shadows_attribute():
     # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
     with pytest.raises(NameError):
