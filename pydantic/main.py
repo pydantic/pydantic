@@ -6,7 +6,7 @@ from functools import partial
 from itertools import chain
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Callable, Dict, Set, Type, Union, List
+from typing import Any, Callable, Dict, List, Set, Type, Union
 
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
