@@ -13,7 +13,7 @@ from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field, Validator
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
-from .utils import clean_docstring, truncate
+from .utils import clean_docstring, truncate, validate_field_name
 from .validators import dict_validator
 
 
@@ -113,6 +113,7 @@ class MetaModel(ABCMeta):
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
             if not ann_name.startswith('_') and ann_name not in namespace:
+                validate_field_name(bases, ann_name)
                 fields[ann_name] = Field.infer(
                     name=ann_name,
                     value=...,
@@ -123,6 +124,7 @@ class MetaModel(ABCMeta):
 
         for var_name, value in namespace.items():
             if not var_name.startswith('_') and not isinstance(value, TYPE_BLACKLIST):
+                validate_field_name(bases, var_name)
                 fields[var_name] = Field.infer(
                     name=var_name,
                     value=value,
