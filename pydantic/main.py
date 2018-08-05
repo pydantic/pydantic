@@ -13,7 +13,7 @@ from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field, Validator
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
-from .utils import clean_docstring, truncate
+from .utils import clean_docstring, truncate, validate_field_name
 from .validators import dict_validator
 
 
@@ -113,7 +113,7 @@ class MetaModel(ABCMeta):
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
             if not ann_name.startswith('_') and ann_name not in namespace:
-                mcs._validate_field_name(bases, ann_name)
+                validate_field_name(bases, ann_name)
                 fields[ann_name] = Field.infer(
                     name=ann_name,
                     value=...,
@@ -124,7 +124,7 @@ class MetaModel(ABCMeta):
 
         for var_name, value in namespace.items():
             if not var_name.startswith('_') and not isinstance(value, TYPE_BLACKLIST):
-                mcs._validate_field_name(bases, var_name)
+                validate_field_name(bases, var_name)
                 fields[var_name] = Field.infer(
                     name=var_name,
                     value=value,
@@ -142,16 +142,6 @@ class MetaModel(ABCMeta):
             **{n: v for n, v in namespace.items() if n not in fields}
         }
         return super().__new__(mcs, name, bases, new_namespace)
-
-    @staticmethod
-    def _validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
-        """
-        Ensure that the field's name does not shadow an existing attribute of the model.
-        """
-        for base in reversed(bases):
-            if getattr(base, field_name, None):
-                raise NameError(f'Field name "{field_name}" shadows a BaseModel attribute; '
-                                f'use a different field name with "alias=\'{field_name}\'".')
 
 
 _missing = object()
