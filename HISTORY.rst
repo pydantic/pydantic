@@ -3,6 +3,10 @@
 History
 -------
 
+v0.12.2 (XXXX-XX-XX)
+....................
+* raise an exception if a field's name shadows an existing ``BaseModel`` attribute #242
+
 v0.12.1 (2018-07-31)
 ....................
 * fix schema generation for fields defined using ``typing.Any`` #237
