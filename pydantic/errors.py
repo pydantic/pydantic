@@ -59,6 +59,19 @@ class EmailError(PydanticValueError):
     msg_template = 'value is not a valid email address'
 
 
+class UrlSchemeError(PydanticValueError):
+    code = 'url.scheme'
+    msg_template = 'url scheme "{scheme}" is not allowed'
+
+    def __init__(self, *, scheme: str) -> None:
+        super().__init__(scheme=scheme)
+
+
+class UrlRegexError(PydanticValueError):
+    code = 'url.regex'
+    msg_template = 'url string does not match regex'
+
+
 class EnumError(PydanticTypeError):
     msg_template = 'value is not a valid enumeration member'
 

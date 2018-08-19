@@ -2,9 +2,10 @@ import inspect
 import re
 from contextlib import contextmanager
 from enum import Enum
+from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
-from typing import List, Tuple, Type
+from typing import List, Pattern, Tuple, Type
 
 from . import errors
 
@@ -165,3 +166,27 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
         if getattr(base, field_name, None):
             raise NameError(f'Field name "{field_name}" shadows a BaseModel attribute; '
                             f'use a different field name with "alias=\'{field_name}\'".')
+
+
+@lru_cache(maxsize=None)
+def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern:
+    return re.compile(
+        r''.join((
+            r'^',
+            r'(' if relative else r'',
+            r'(?:[a-z0-9\.\-\+]*)://',  # scheme is validated separately
+            r'(?:[^:@]+?:[^:@]*?@|)',  # basic auth
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
+            r'(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
+            r'localhost|',  # localhost...
+            (
+                r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|'
+                if not require_tld else r''
+            ),  # allow dotless hostnames
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|',  # ...or ipv4
+            r'\[[A-F0-9]*:[A-F0-9:]+\])',  # ...or ipv6
+            r'(?::\d+)?',  # optional port
+            r')?' if relative else r'',  # host is optional, allow for relative URLs
+            r'(?:/?|[/?]\S+)$',
+        )), re.IGNORECASE,
+    )

@@ -2,11 +2,11 @@ import json
 import re
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional, Pattern, Type, Union
+from typing import Optional, Pattern, Set, Type, Union
 from uuid import UUID
 
 from . import errors
-from .utils import change_exception, import_string, make_dsn, validate_email
+from .utils import change_exception, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, float_validator,
                          int_validator, not_none_validator, number_size_validator, path_exists_validator,
                          path_validator, str_validator)
@@ -25,6 +25,8 @@ __all__ = [
     'ConstrainedStr',
     'constr',
     'EmailStr',
+    'UrlStr',
+    'urlstr',
     'NameEmail',
     'PyObject',
     'DSN',
@@ -92,6 +94,18 @@ class ConstrainedStr(str):
         return value
 
 
+def constr(*, strip_whitespace=False, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(
+        strip_whitespace=strip_whitespace,
+        min_length=min_length,
+        max_length=max_length,
+        curtail_length=curtail_length,
+        regex=regex and re.compile(regex)
+    )
+    return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
+
+
 class EmailStr(str):
     @classmethod
     def get_validators(cls):
@@ -105,6 +119,60 @@ class EmailStr(str):
     @classmethod
     def validate(cls, value):
         return validate_email(value)[1]
+
+
+class UrlStr(str):
+    strip_whitespace = True
+    min_length = 1
+    max_length = 2 ** 16
+    default_schemes = {'http', 'https', 'ftp', 'ftps'}
+    schemes: Optional[Set[str]] = None
+    relative = False  # whether to allow relative URLs
+    require_tld = True  # whether to reject non-FQDN hostnames
+
+    @classmethod
+    def get_validators(cls):
+        yield not_none_validator
+        yield str_validator
+        yield anystr_strip_whitespace
+        yield anystr_length_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: str) -> str:
+        # Check first if the scheme is valid
+        schemes = cls.schemes or cls.default_schemes
+        if '://' in value:
+            scheme = value.split('://')[0].lower()
+            if scheme not in schemes:
+                raise errors.UrlSchemeError(scheme=scheme)
+
+        regex = url_regex_generator(relative=cls.relative, require_tld=cls.require_tld)
+        if not regex.match(value):
+            raise errors.UrlRegexError()
+
+        return value
+
+
+def urlstr(
+    *,
+    strip_whitespace=True,
+    min_length=1,
+    max_length=2**16,
+    relative=False,
+    require_tld=True,
+    schemes: Optional[Set[str]] = None
+) -> Type[str]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(
+        strip_whitespace=strip_whitespace,
+        min_length=min_length,
+        max_length=max_length,
+        relative=relative,
+        require_tld=require_tld,
+        schemes=schemes,
+    )
+    return type('UrlStrValue', (UrlStr,), namespace)
 
 
 class NameEmail:
@@ -131,18 +199,6 @@ class NameEmail:
 
     def __repr__(self):
         return f'<NameEmail("{self}")>'
-
-
-def constr(*, strip_whitespace=False, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
-    # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(
-        strip_whitespace=strip_whitespace,
-        min_length=min_length,
-        max_length=max_length,
-        curtail_length=curtail_length,
-        regex=regex and re.compile(regex)
-    )
-    return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
 
 
 class PyObject:

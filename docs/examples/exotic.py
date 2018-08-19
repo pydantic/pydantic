@@ -4,8 +4,8 @@ from pathlib import Path
 from uuid import UUID
 
 from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
-                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, condecimal, confloat, conint,
-                      constr)
+                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, UrlStr, condecimal, confloat,
+                      conint, constr)
 
 
 class Model(BaseModel):
@@ -30,6 +30,8 @@ class Model(BaseModel):
 
     email_address: EmailStr = None
     email_and_name: NameEmail = None
+
+    url: UrlStr = None
 
     db_name = 'foobar'
     db_user = 'postgres'
@@ -66,6 +68,7 @@ m = Model(
     unit_interval=0.5,
     email_address='Samuel Colvin <s@muelcolvin.com >',
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
+    url='http://example.com',
     decimal=Decimal('42.24'),
     decimal_positive=Decimal('21.12'),
     decimal_negative=Decimal('-21.12'),
@@ -95,6 +98,7 @@ print(m.dict())
     'unit_interval': 0.5,
     'email_address': 's@muelcolvin.com',
     'email_and_name': <NameEmail("Samuel Colvin <s@muelcolvin.com>")>,
+    'url': 'http://example.com',
     ...
     'dsn': 'postgres://postgres@localhost:5432/foobar',
     'decimal': Decimal('42.24'),
