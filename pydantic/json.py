@@ -48,7 +48,7 @@ def custom_pydantic_encoder(type_encoders, obj):
         return pydantic_encoder(obj)
 
 
-def timedelta_isoformat(td: datetime.timedelta):
+def timedelta_isoformat(td: datetime.timedelta) -> str:
     """
     ISO 8601 encoding for timedeltas.
     """
