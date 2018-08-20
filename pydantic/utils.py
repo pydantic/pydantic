@@ -170,6 +170,11 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
 
 @lru_cache(maxsize=None)
 def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern:
+    """
+    Url regex generator taken from Marshmallow library,
+    for details please follow library source code:
+        https://github.com/marshmallow-code/marshmallow/blob/298870ef6c089fb4d91efae9ca4168453ffe00d2/marshmallow/validate.py#L37
+    """
     return re.compile(
         r''.join((
             r'^',

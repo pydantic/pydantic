@@ -125,7 +125,6 @@ class UrlStr(str):
     strip_whitespace = True
     min_length = 1
     max_length = 2 ** 16
-    default_schemes = {'http', 'https', 'ftp', 'ftps'}
     schemes: Optional[Set[str]] = None
     relative = False  # whether to allow relative URLs
     require_tld = True  # whether to reject non-FQDN hostnames
@@ -141,7 +140,7 @@ class UrlStr(str):
     @classmethod
     def validate(cls, value: str) -> str:
         # Check first if the scheme is valid
-        schemes = cls.schemes or cls.default_schemes
+        schemes = cls.schemes or {'http', 'https', 'ftp', 'ftps'}
         if '://' in value:
             scheme = value.split('://')[0].lower()
             if scheme not in schemes:
