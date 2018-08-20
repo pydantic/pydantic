@@ -80,7 +80,7 @@ def test_custom_encoder():
     assert m.json() == '{"x": "datetime.timedelta(0, 123)", "y": "a decimal", "z": "2032-06-01"}'
 
 
-def test_iso_timedelt():
+def test_custom_iso_timedelta():
     class Model(BaseModel):
         x: datetime.timedelta
 
@@ -89,3 +89,12 @@ def test_iso_timedelt():
 
     m = Model(x=123)
     assert m.json() == '{"x": "P0DT0H2M3.000000S"}'
+
+
+def test_custom_encoder_arg():
+    class Model(BaseModel):
+        x: datetime.timedelta
+
+    m = Model(x=123)
+    assert m.json() == '{"x": 123.0}'
+    assert m.json(encoder=lambda v: '__default__') == '{"x": "__default__"}'
