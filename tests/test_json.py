@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, create_model
-from pydantic.json import pydantic_encoder
+from pydantic.json import pydantic_encoder, timedelta_isoformat
 
 
 class MyEnum(Enum):
@@ -21,16 +21,17 @@ class MyEnum(Enum):
     (datetime.datetime(2032, 1, 1, 1, 1, tzinfo=datetime.timezone.utc), '"2032-01-01T01:01:00+00:00"'),
     (datetime.datetime(2032, 1, 1), '"2032-01-01T00:00:00"'),
     (datetime.time(12, 34, 56), '"12:34:56"'),
+    (datetime.timedelta(days=12, seconds=34, microseconds=56), '1036834.000056'),
     ({1, 2, 3}, '[1, 2, 3]'),
     (frozenset([1, 2, 3]), '[1, 2, 3]'),
     ((v for v in range(4)), '[0, 1, 2, 3]'),
     (b'this is bytes', '"this is bytes"'),
     (Decimal('12.34'), '12.34'),
     (create_model('BarModel', a='b', c='d')(), '{"a": "b", "c": "d"}'),
-    (MyEnum.foo, '"bar"')
+    (MyEnum.foo, '"bar"'),
 ])
 def test_encoding(input, output):
-    assert json.dumps(input, default=pydantic_encoder) == output
+    assert output == json.dumps(input, default=pydantic_encoder)
 
 
 def test_model_encoding():
@@ -56,3 +57,35 @@ def test_invalid_model():
 
     with pytest.raises(TypeError):
         json.dumps(Foo, default=pydantic_encoder)
+
+
+@pytest.mark.parametrize('input,output', [
+    (datetime.timedelta(days=12, seconds=34, microseconds=56), 'P12DT0H0M34.000056S'),
+    (datetime.timedelta(days=1001, hours=1, minutes=2, seconds=3, microseconds=654321), 'P1001DT1H2M3.654321S'),
+])
+def test_iso_timedelta(input, output):
+    assert output == timedelta_isoformat(input)
+
+
+def test_custom_encoder():
+    class Model(BaseModel):
+        x: datetime.timedelta
+        y: Decimal
+        z: datetime.date
+
+        class Config:
+            json_encoders = {datetime.timedelta: repr, Decimal: lambda v: 'a decimal'}
+
+    m = Model(x=123, y=5, z='2032-06-01')
+    assert m.json() == '{"x": "datetime.timedelta(0, 123)", "y": "a decimal", "z": "2032-06-01"}'
+
+
+def test_iso_timedelt():
+    class Model(BaseModel):
+        x: datetime.timedelta
+
+        class Config:
+            json_encoders = {datetime.timedelta: timedelta_isoformat}
+
+    m = Model(x=123)
+    assert m.json() == '{"x": "P0DT0H2M3.000000S"}'
