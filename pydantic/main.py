@@ -209,6 +209,7 @@ class BaseModel(metaclass=MetaModel):
         as per `json.dumps()`.
         """
         from .json import pydantic_encoder
+        dumps_kwargs.setdefault('default', pydantic_encoder)
         return json.dumps(
             self.dict(include=include, exclude=exclude, by_alias=by_alias),
             default=pydantic_encoder, **dumps_kwargs

@@ -18,6 +18,7 @@ ENCODERS_BY_TYPE = {
     datetime.datetime: isoformat,
     datetime.date: isoformat,
     datetime.time: isoformat,
+    datetime.timedelta: lambda td: f'{td.total_seconds():0.6f}',
     set: list,
     frozenset: list,
     GeneratorType: list,
@@ -31,6 +32,8 @@ def pydantic_encoder(obj):
         return obj.dict()
     elif isinstance(obj, Enum):
         return obj.value
+    elif hasattr(obj, "json") and callable(obj.json):
+        return obj.json()
 
     try:
         encoder = ENCODERS_BY_TYPE[type(obj)]

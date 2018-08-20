@@ -15,12 +15,26 @@ class MyEnum(Enum):
     snap = 'crackle'
 
 
+class IsoTimeDelta(datetime.timedelta):
+    def json(self):
+        """ Returns ISO 8601 encoding """
+        seconds = self.total_seconds()
+        minutes, seconds = divmod(seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+        days, hours = divmod(hours, 24)
+        days, hours, minutes = map(int, (days, hours, minutes))
+        seconds = round(seconds, 6)
+        return f'P{days}DT{hours}H{minutes}M{seconds}S'
+
+
 @pytest.mark.parametrize('input,output', [
     (UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
     (datetime.datetime(2032, 1, 1, 1, 1), '"2032-01-01T01:01:00"'),
     (datetime.datetime(2032, 1, 1, 1, 1, tzinfo=datetime.timezone.utc), '"2032-01-01T01:01:00+00:00"'),
     (datetime.datetime(2032, 1, 1), '"2032-01-01T00:00:00"'),
     (datetime.time(12, 34, 56), '"12:34:56"'),
+    (datetime.timedelta(12, 34, 56), '"1036834.000056"'),
+    (IsoTimeDelta(12, 34, 56), '"P12DT0H0M34.000056S"'),
     ({1, 2, 3}, '[1, 2, 3]'),
     (frozenset([1, 2, 3]), '[1, 2, 3]'),
     ((v for v in range(4)), '[0, 1, 2, 3]'),
