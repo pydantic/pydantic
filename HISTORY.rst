@@ -3,7 +3,7 @@
 History
 -------
 
-v0.12.2 (XXXX-XX-XX)
+v0.13.0 (XXXX-XX-XX)
 ....................
 * raise an exception if a field's name shadows an existing ``BaseModel`` attribute #242
 * add ``UrlStr`` and ``urlstr`` types #236
