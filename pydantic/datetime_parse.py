@@ -183,6 +183,9 @@ def parse_duration(value: StrIntFloat) -> timedelta:
 
     Also supports ISO 8601 representation.
     """
+    if isinstance(value, timedelta):
+        return value
+
     if isinstance(value, (int, float)):
         # bellow code requires a string
         value = str(value)
