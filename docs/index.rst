@@ -488,18 +488,18 @@ to new values that will be applied as the model is duplicated.
 Serialisation
 .............
 
-*pydantic* has native support for serialisation to JSON and Pickle, you can of course serialise to any other format
-you like by processing the result of ``dict()``.
+*pydantic* has native support for serialisation to **JSON** and **Pickle**, you can of course serialise to any
+other format you like by processing the result of ``dict()``.
 
 .. _json_dump:
 
 JSON Serialisation
 ~~~~~~~~~~~~~~~~~~
 
-The ``json`` method will serialise a model to JSON. ``json`` in term calls ``dict`` and serialises it's result.
+The ``json()`` method will serialise a model to JSON, ``json()`` in turn calls ``dict()`` and serialises its result.
 
-Serialisation can be customised on a model config using the ``json_encoders`` property, the keys should be types and
-the values should be functions which serialise that type.
+Serialisation can be customised on a model using the ``json_encoders`` config property, the keys should be types and
+the values should be functions which serialise that type, see the example below.
 
 If this is not sufficient, ``json()`` takes an optional ``encoder`` argument which allows complete control
 over how non-standard types are encoded to JSON.
