@@ -13,13 +13,14 @@ class Model(BaseModel):
 try:
     Model(foo='ber')
 except ValidationError as e:
-    print(e.json())
+    print(e.errors())
+
 """
 [
-  {
-    "loc": ["foo"],
-    "msg": "value must be \"bar\"",
-    "type": "value_error"
-  }
+    {
+        'loc': ('foo',),
+        'msg': 'value must be "bar"',
+        'type': 'value_error',
+    },
 ]
 """

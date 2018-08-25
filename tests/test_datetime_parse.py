@@ -101,11 +101,13 @@ def test_datetime_parsing(value, result):
     timedelta(seconds=30),  # seconds
 ])
 def test_parse_python_format(delta):
-    assert parse_duration(format(delta)) == delta
+    assert parse_duration(delta) == delta
+    assert parse_duration(str(delta)) == delta
 
 
 @pytest.mark.parametrize('value,result', [
     # seconds
+    (timedelta(seconds=30), timedelta(seconds=30)),
     ('30', timedelta(seconds=30)),
     (30, timedelta(seconds=30)),
     (30.1, timedelta(seconds=30, milliseconds=100)),

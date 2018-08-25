@@ -3,10 +3,12 @@
 History
 -------
 
-v0.12.2 (XXXX-XX-XX)
+v0.13.0 (XXXX-XX-XX)
 ....................
 * raise an exception if a field's name shadows an existing ``BaseModel`` attribute #242
 * add ``UrlStr`` and ``urlstr`` types #236
+* timedelta json encoding ISO8601 and total seconds, custom json encoders #247, by @cfkanesan and @samuelcolvin
+* allow ``timedelta`` objects as values for properties of type ``timedelta`` (matches ``datetime`` etc. behavior) #247
 
 v0.12.1 (2018-07-31)
 ....................

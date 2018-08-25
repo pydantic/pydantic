@@ -246,9 +246,9 @@ contain information about all the errors and how they happened.
 
 You can access these errors in a several ways:
 
-:errors: method will return list of errors found in the input data.
-:json: method will return a JSON representation of ``errors``.
-:__str__: method will return a human readable representation of the errors.
+:e.errors(): method will return list of errors found in the input data.
+:e.json(): method will return a JSON representation of ``errors``.
+:str(e): method will return a human readable representation of the errors.
 
 Each error object contains:
 
@@ -357,6 +357,8 @@ Options:
     Pass in a dictionary with keys matching the error messages you want to override (default: ``{}``)
 :arbitrary_types_allowed: whether to allow arbitrary user types for fields (they are validated simply by checking if the
     value is instance of that type). If False - RuntimeError will be raised on model declaration (default: ``False``)
+:json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
+    details.
 
 .. warning::
 
@@ -469,27 +471,51 @@ a model.
 Trying to change ``a`` caused an error and it remains unchanged, however the dict ``b`` is mutable and the
 immutability of ``foobar`` doesn't stop being changed.
 
-Copying and Serialization
-.........................
+Copying
+.......
 
 The ``dict`` function returns a dictionary containing the attributes of a model. Sub-models are recursively
-converted to dicts. The ``json`` method will serialise a model to JSON using ``dict``.
-
-While ``copy`` allows models to be duplicated, this is particularly useful for immutable models.
+converted to dicts, ``copy`` allows models to be duplicated, this is particularly useful for immutable models.
 
 
-``dict``, ``json`` and ``copy`` all take the optional ``include`` and ``exclude`` keyword arguments to control
-which attributes are returned or copied, respectively. ``copy`` accepts an extra keyword argument, ``update``,
-which accepts a ``dict`` mapping attributes to new values that will be applied as the model is duplicated.
+``dict``, ``copy``, and ``json`` (described :ref:`below <json_dump>`) all take the optional
+``include`` and ``exclude`` keyword arguments to control which attributes are returned or copied,
+respectively. ``copy`` accepts an extra keyword argument, ``update``, which accepts a ``dict`` mapping attributes
+to new values that will be applied as the model is duplicated.
 
-.. literalinclude:: examples/copy_values.py
+.. literalinclude:: examples/copy_dict.py
 
-Pickle
-......
+Serialisation
+.............
 
-Using the same plumbing as ``copy()`` pydantic models support efficient pickling and unpicking.
+*pydantic* has native support for serialisation to **JSON** and **Pickle**, you can of course serialise to any
+other format you like by processing the result of ``dict()``.
+
+.. _json_dump:
+
+JSON Serialisation
+~~~~~~~~~~~~~~~~~~
+
+The ``json()`` method will serialise a model to JSON, ``json()`` in turn calls ``dict()`` and serialises its result.
+
+Serialisation can be customised on a model using the ``json_encoders`` config property, the keys should be types and
+the values should be functions which serialise that type, see the example below.
+
+If this is not sufficient, ``json()`` takes an optional ``encoder`` argument which allows complete control
+over how non-standard types are encoded to JSON.
+
+.. literalinclude:: examples/ex_json.py
+
+(This script is complete, it should run "as is")
+
+Pickle Serialisation
+~~~~~~~~~~~~~~~~~~~~
+
+Using the same plumbing as ``copy()`` *pydantic* models support efficient pickling and unpicking.
 
 .. literalinclude:: examples/ex_pickle.py
+
+(This script is complete, it should run "as is")
 
 Abstract Base Classes
 .....................
@@ -498,6 +524,8 @@ Pydantic models can be used alongside Python's
 `Abstract Base Classes <https://docs.python.org/3/library/abc.html>`_ (ABCs).
 
 .. literalinclude:: examples/ex_abc.py
+
+(This script is complete, it should run "as is")
 
 .. _benchmarks_tag:
 

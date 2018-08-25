@@ -1,51 +1,29 @@
-from typing import List
+from datetime import datetime, timedelta
+from pydantic import BaseModel
+from pydantic.json import timedelta_isoformat
 
-from pydantic import BaseModel, Json, ValidationError
+class BarModel(BaseModel):
+    whatever: int
 
+class FooBarModel(BaseModel):
+    foo: datetime
+    bar: BarModel
 
-class SimpleJsonModel(BaseModel):
-    json_obj: Json
+m = FooBarModel(foo=datetime(2032, 6, 1, 12, 13, 14), bar={'whatever': 123})
+print(m.json())
+# (returns a str)
+# > {"foo": "2032-06-01T12:13:14", "bar": {"whatever": 123}}
 
+class WithCustomEncoders(BaseModel):
+    dt: datetime
+    diff: timedelta
 
-class ComplexJsonModel(BaseModel):
-    json_obj: Json[List[int]]
+    class Config:
+        json_encoders = {
+            datetime: lambda v: (v - datetime(1970, 1, 1)).total_seconds(),
+            timedelta: timedelta_isoformat,
+        }
 
-
-print(SimpleJsonModel(json_obj='{"b": 1}'))
-# > SimpleJsonModel json_obj={'b': 1}
-
-print(ComplexJsonModel(json_obj='[1, 2, 3]'))
-# > ComplexJsonModel json_obj=[1, 2, 3]
-
-
-try:
-    ComplexJsonModel(json_obj=12)
-except ValidationError as e:
-    print(e)
-"""
-1 validation error
-json_obj
-  JSON object must be str, bytes or bytearray (type=type_error.json)
-"""
-
-try:
-    ComplexJsonModel(json_obj='[a, b]')
-except ValidationError as e:
-    print(e)
-"""
-1 validation error
-json_obj
-  Invalid JSON (type=value_error.json)
-"""
-
-try:
-    ComplexJsonModel(json_obj='["a", "b"]')
-except ValidationError as e:
-    print(e)
-"""
-2 validation errors
-json_obj -> 0
-  value is not a valid integer (type=type_error.integer)
-json_obj -> 1
-  value is not a valid integer (type=type_error.integer)
-"""
+m = WithCustomEncoders(dt=datetime(2032, 6, 1), diff=timedelta(hours=100))
+print(m.json())
+# > {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}

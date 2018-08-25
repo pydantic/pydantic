@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, Set, Type, Union
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field, Validator
+from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
 from .utils import clean_docstring, truncate, validate_field_name
@@ -32,6 +33,7 @@ class BaseConfig:
     validate_assignment = False
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
+    json_encoders = {}
 
     @classmethod
     def get_field_schema(cls, name):
@@ -134,11 +136,16 @@ class MetaModel(ABCMeta):
                 )
 
         vg.check_for_unused()
+        if config.json_encoders:
+            json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
+        else:
+            json_encoder = pydantic_encoder
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
             '__validators__': vg.validators,
             '_schema_cache': {},
+            '_json_encoder': staticmethod(json_encoder),
             **{n: v for n, v in namespace.items() if n not in fields}
         }
         return super().__new__(mcs, name, bases, new_namespace)
@@ -203,15 +210,16 @@ class BaseModel(metaclass=MetaModel):
 
         return lambda _, key: key
 
-    def json(self, *, include: Set[str]=None, exclude: Set[str]=set(), by_alias: bool = False, **dumps_kwargs) -> str:
+    def json(self, *, include: Set[str]=None, exclude: Set[str]=set(), by_alias: bool = False,
+             encoder=None, **dumps_kwargs) -> str:
         """
-        Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`. Other arguments
-        as per `json.dumps()`.
+        Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
+
+        `encoder` is an optional function to supply as `default` to json.dumps(), other arguments as per `json.dumps()`.
         """
-        from .json import pydantic_encoder
         return json.dumps(
             self.dict(include=include, exclude=exclude, by_alias=by_alias),
-            default=pydantic_encoder, **dumps_kwargs
+            default=encoder or self._json_encoder, **dumps_kwargs
         )
 
     @classmethod
