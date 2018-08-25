@@ -508,6 +508,9 @@ over how non-standard types are encoded to JSON.
 
 (This script is complete, it should run "as is")
 
+By default timedelta's are encoded as a simple float of total seconds. The ``timedelta_isoformat`` is provided
+as an optional alternative which implements ISO 8601 time diff encoding.
+
 Pickle Serialisation
 ~~~~~~~~~~~~~~~~~~~~
 

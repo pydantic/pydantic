@@ -30,7 +30,7 @@ script:
 
 - make mypy
 - make docs
-- BENCHMARK_REPEATS=1 make benchmark
+- BENCHMARK_REPEATS=1 make benchmark-all
 - ./tests/check_tag.py
 
 after_success:

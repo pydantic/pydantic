@@ -41,9 +41,13 @@ testcov:
 .PHONY: all
 all: testcov mypy lint
 
-.PHONY: benchmark
-benchmark:
+.PHONY: benchmark-all
+benchmark-all:
 	python benchmarks/run.py
+
+.PHONY: benchmark-pydantic
+benchmark-pydantic:
+	python benchmarks/run.py pydantic-only
 
 .PHONY: clean
 clean:
