@@ -28,7 +28,8 @@ TMP_HISTORY_FILE = os.path.join(THIS_DIR, '.TMP_HISTORY.rst')
 with open(REAL_HISTORY_FILE) as f:
     history = f.read()
     history = re.sub('#(\d+)', r'`#\1 <https://github.com/samuelcolvin/pydantic/pull/\1>`_', history)
-    history = re.sub('(thanks(?: to)? *)@(\S+)', r'\1`@\2 <https://github.com/\2>`_', history, flags=re.I)
+    history = re.sub('( +)@(\w+)', r'\1`@\2 <https://github.com/\2>`_', history, flags=re.I)
+    history = re.sub('@@', '@', history)
 
 with open(TMP_HISTORY_FILE, 'w') as f:
     f.write(history)
@@ -183,7 +184,7 @@ html_theme_options = {
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
 #
-# html_favicon = None
+html_favicon = 'favicon.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
