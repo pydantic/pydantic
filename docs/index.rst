@@ -498,9 +498,11 @@ JSON Serialisation
 
 The ``json`` method will serialise a model to JSON. ``json`` in term calls ``dict`` and serialises it's result.
 
-Serialisation can be customised on a model config using the ``json_encoders`` property. If this is not sufficient,
-``json()`` takes an optional ``encoder`` argument which allows complete control over how non-standard types are encoded
-to JSON.
+Serialisation can be customised on a model config using the ``json_encoders`` property, the keys should be types and
+the values should be functions which serialise that type.
+
+If this is not sufficient, ``json()`` takes an optional ``encoder`` argument which allows complete control
+over how non-standard types are encoded to JSON.
 
 .. literalinclude:: examples/ex_json.py
 
