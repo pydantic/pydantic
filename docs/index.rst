@@ -293,7 +293,7 @@ Json Type
 You can use ``Json`` data type - *Pydantic* will first parse raw JSON string and then will validate parsed object
 against defined Json structure if it's provided.
 
-.. literalinclude:: examples/ex_json.py
+.. literalinclude:: examples/ex_json_type.py
 
 (This script is complete, it should run "as is")
 
