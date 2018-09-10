@@ -42,6 +42,18 @@ class ModelTwo(BaseModel):
     d: Model
 
 
+def test_deep_copy():
+    m = ModelTwo(a=24, d=Model(a='12'))
+    m2 = m.copy(deep=True)
+
+    assert m.a == m2.a == 24
+    assert m.b == m2.b == 10
+    assert m.c == m2.c == 'foobar'
+    assert m.d is not m2.d
+    assert m == m2
+    assert m.__fields__ == m2.__fields__
+
+
 def test_copy_exclude():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(exclude={'b'})

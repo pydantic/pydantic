@@ -261,7 +261,7 @@ class BaseModel(metaclass=MetaModel):
         m.__setstate__(values)
         return m
 
-    def copy(self, *, include: Set[str]=None, exclude: Set[str]=None, update: Dict[str, Any]=None):
+    def copy(self, *, include: Set[str]=None, exclude: Set[str]=None, update: Dict[str, Any]=None, deep: bool=False):
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
 
@@ -269,6 +269,7 @@ class BaseModel(metaclass=MetaModel):
         :param exclude: fields to exclude from new model, as with values this takes precedence over include
         :param update: values to change/add in the new model. Note: the data is not validated before creating
             the new model: you should trust this data
+        :param deep: set to `True` to make a deep copy of the model
         :return: new model instance
         """
         if include is None and exclude is None and update is None:
@@ -280,6 +281,8 @@ class BaseModel(metaclass=MetaModel):
                 **{k: v for k, v in self.__values__.items() if k not in exclude and (not include or k in include)},
                 **(update or {})
             }
+        if deep:
+            v = deepcopy(v)
         return self.__class__.construct(**v)
 
     @property
