@@ -480,8 +480,8 @@ converted to dicts, ``copy`` allows models to be duplicated, this is particularl
 
 ``dict``, ``copy``, and ``json`` (described :ref:`below <json_dump>`) all take the optional
 ``include`` and ``exclude`` keyword arguments to control which attributes are returned or copied,
-respectively. ``copy`` accepts an extra keyword argument, ``update``, which accepts a ``dict`` mapping attributes
-to new values that will be applied as the model is duplicated.
+respectively. ``copy`` accepts extra keyword arguments, ``update``, which accepts a ``dict`` mapping attributes
+to new values that will be applied as the model is duplicated and ``deep`` to make a deep copy of the model.
 
 .. literalinclude:: examples/copy_dict.py
 

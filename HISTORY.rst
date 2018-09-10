@@ -3,6 +3,10 @@
 History
 -------
 
+v0.XX.X (XXXX-XX-XX)
+.....................
+* add deep copy support for ``BaseModel.copy()`` #249, @gangefors
+
 v0.13.0 (2018-08-25)
 .....................
 * raise an exception if a field's name shadows an existing ``BaseModel`` attribute #242
