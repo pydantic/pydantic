@@ -28,6 +28,25 @@ def test_simple():
     ]
 
 
+def test_int_validation():
+    class Model(BaseModel):
+        a: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='snap')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        },
+    ]
+    assert Model(a=3).a is 3
+    assert Model(a=True).a is 1
+    assert Model(a=False).a is 0
+    assert Model(a=4.5).a is 4
+
+
 def test_validate_whole():
     class Model(BaseModel):
         a: List[int]

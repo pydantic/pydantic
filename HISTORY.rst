@@ -5,6 +5,7 @@ History
 
 v0.XX.X (XXXX-XX-XX)
 .....................
+* fix issue where int_validator doesn't cast a ``bool`` to an ``int`` #264 by @nphyatt
 * add deep copy support for ``BaseModel.copy()`` #249, @gangefors
 
 v0.13.0 (2018-08-25)
