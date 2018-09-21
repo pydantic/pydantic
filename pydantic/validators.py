@@ -63,7 +63,7 @@ def bool_validator(v) -> bool:
 
 
 def int_validator(v) -> int:
-    if type(v) is int:
+    if not isinstance(v, bool) and isinstance(v, int):
         return v
 
     with change_exception(errors.IntegerError, TypeError, ValueError):
