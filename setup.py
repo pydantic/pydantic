@@ -44,6 +44,9 @@ setup(
     packages=['pydantic'],
     python_requires='>=3.6',
     zip_safe=True,
+    install_requires=[
+        'dataclasses>=0.6;python_version<"3.7"'
+    ],
     extras_require={
         'ujson': ['ujson>=1.35'],
         'email': ['email-validator>=1.0.3'],

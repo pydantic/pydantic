@@ -4,3 +4,4 @@
 
 ujson==1.35
 email-validator==1.0.3
+dataclasses==0.6; python_version < '3.7'
