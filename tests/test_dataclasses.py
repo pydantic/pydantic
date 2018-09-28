@@ -49,7 +49,7 @@ def test_frozen():
 
 
 def test_validate_assignment():
-    @pydantic.dataclasses.dataclass
+    @pydantic.dataclasses.dataclass(validate_assignment=True)
     class MyDataclass:
         a: int
 
@@ -61,7 +61,7 @@ def test_validate_assignment():
 
 
 def test_validate_assignment_error():
-    @pydantic.dataclasses.dataclass
+    @pydantic.dataclasses.dataclass(validate_assignment=True)
     class MyDataclass:
         a: int
 
@@ -79,7 +79,7 @@ def test_validate_assignment_error():
 
 
 def test_not_validate_assignment():
-    @pydantic.dataclasses.dataclass(validate_assignment=False)
+    @pydantic.dataclasses.dataclass
     class MyDataclass:
         a: int
 

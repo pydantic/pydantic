@@ -40,12 +40,12 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, validate_as
 
 
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
-              validate_assignment=True):
+              validate_assignment=False):
     """
     Like the python standard lib dataclasses but with type validation.
 
     Arguments are the same as for standard dataclasses, except for validate_assignment which has the same meaning
-    as Config.validate_assignment
+    as Config.validate_assignment.
     """
 
     def wrap(cls):

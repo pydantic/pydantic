@@ -3,6 +3,10 @@
 History
 -------
 
+v0.14 (future)
+..............
+* dataclasses decorator, #269 by @Gaunt and @samuelcolvin
+
 v0.13.1 (2018-09-21)
 .....................
 * fix issue where int_validator doesn't cast a ``bool`` to an ``int`` #264 by @nphyatt
