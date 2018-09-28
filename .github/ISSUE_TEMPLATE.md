@@ -1,5 +1,6 @@
 <!-- Questions, Feature Requests, and Bug Reports are all welcome -->
-<!-- please prefix issue titles with "Question: ", "Feature Request: ", or "Bug: " -->
+<!-- delete as applicable: -->
+# Question | Feature Request | Bug
 
 For bugs/questions:
 * OS: **?**
@@ -10,7 +11,7 @@ Where possible please include a self contained code snippet describing your
 bug, question, or where applicable feature request:
 
 ```py
-from pydantic import BaseModel
+import pydantic
 
 ...
 ```
