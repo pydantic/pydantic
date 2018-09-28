@@ -60,6 +60,24 @@ def test_validate_assignment():
     assert d.a == 7
 
 
+def test_validate_assignment_error():
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: int
+
+    d = MyDataclass(1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        d.a = 'xxx'
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        },
+    ]
+
+
 def test_not_validate_assignment():
     @pydantic.dataclasses.dataclass(validate_assignment=False)
     class MyDataclass:
