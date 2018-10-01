@@ -8,7 +8,7 @@ pydantic
 
 Current Version: |version|
 
-Data validation and settings management using python 3.6 type hinting.
+Data validation and settings management using python type hinting.
 
 Define how data should be in pure, canonical python; validate it with *pydantic*.
 
@@ -16,6 +16,9 @@ Define how data should be in pure, canonical python; validate it with *pydantic*
 `PEP 526 <https://www.python.org/dev/peps/pep-0526/>`_ extended that with syntax for variable annotation in python 3.6.
 
 *pydantic* uses those annotations to validate that untrusted data takes the form you want.
+
+There's also support for an extension to `dataclasses <https://docs.python.org/3/library/dataclasses.html>`_
+where the input data is validated.
 
 Example:
 
@@ -74,8 +77,8 @@ Just::
 
     pip install pydantic
 
-*pydantic* has no required dependencies except python 3.6+. If you've got python 3.6 and ``pip`` installed -
-you're good to go.
+*pydantic* has no required dependencies except python 3.6 or 3.7 (and dataclasses in python 3.6).
+If you've got python 3.6 and ``pip`` installed - you're good to go.
 
 If you want *pydantic* to parse json faster you can add `ujson <https://pypi.python.org/pypi/ujson>`_
 as an optional dependency. Similarly if *pydantic's* email validation relies on
@@ -100,6 +103,30 @@ PEP 484 Types
 .. literalinclude:: examples/ex_typing.py
 
 (This script is complete, it should run "as is")
+
+dataclasses
+...........
+
+.. note::
+
+   New in version ``v0.14.0``.
+
+If you don't want to use pydantic's ``BaseModel`` you can instead get the same data validation on standard
+`dataclasses <https://docs.python.org/3/library/dataclasses.html>`_ (introduced in python 3.7).
+
+Dataclasses work in python 3.6 using the `dataclasses backport package <https://github.com/ericvsmith/dataclasses>`_.
+
+.. literalinclude:: examples/ex_dataclasses.py
+
+(This script is complete, it should run "as is")
+
+You can use all the standard pydantic field types and the resulting dataclass will be identical to the one
+created by the standard library ``dataclass`` decorator.
+
+``pydantic.dataclasses.dataclass``'s arguments are the same as the standard decorator, except one extra
+key word argument ``validate_assignment`` which has the same meaning as :ref:`Config.validate_assignment <config>`.
+
+Currently validators don't work on validators, if it's something you want please create an issue on github.
 
 Choices
 .......
@@ -168,10 +195,6 @@ You'll often want to use this together with ``pre`` since otherwise the with ``a
 
 Field Checks
 ~~~~~~~~~~~~
-
-.. note::
-
-   New in version ``v0.8.0``.
 
 On class creation validators are checked to confirm that the fields they specify actually exist on the model.
 
