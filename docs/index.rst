@@ -77,7 +77,7 @@ Just::
 
     pip install pydantic
 
-*pydantic* has no required dependencies except python 3.6 or 3.7 (and dataclasses in python 3.6).
+*pydantic* has no required dependencies except python 3.6 or 3.7 (and the dataclasses package in python 3.6).
 If you've got python 3.6 and ``pip`` installed - you're good to go.
 
 If you want *pydantic* to parse json faster you can add `ujson <https://pypi.python.org/pypi/ujson>`_

@@ -3,8 +3,8 @@
 History
 -------
 
-v0.14 (future)
-..............
+v0.14 (2018-10-02)
+..................
 * dataclasses decorator, #269 by @Gaunt and @samuelcolvin
 
 v0.13.1 (2018-09-21)

@@ -3,7 +3,7 @@ pydantic
 
 |BuildStatus| |Coverage| |pypi| |gitter|
 
-Data validation and settings management using python 3.6 type hinting.
+Data validation and settings management using python type hinting.
 
 See `documentation`_ for more details.
 
