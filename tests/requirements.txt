@@ -2,11 +2,11 @@ attrs==18.2.0
 coverage==4.5.1
 flake8==3.5.0
 isort==4.3.4
-mypy==0.620
+mypy==0.630
 pycodestyle==2.3.1  # pyup: ignore
 pyflakes==2.0.0
 pytest==3.8.1
-pytest-cov==2.5.1
-pytest-isort==0.2.0
+pytest-cov==2.6.0
+pytest-isort==0.2.1
 pytest-mock==1.10.0
 pytest-sugar==0.9.1
