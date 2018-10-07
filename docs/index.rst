@@ -150,7 +150,7 @@ A few things to note on validators:
 
 * validators are "class methods", the first value they receive here will be the ``UserModel`` not an instance
   of ``UserModel``
-* their signature can with be ``(cls, value)`` or ``(cls, value, *, values, config, field)``
+* their signature can be ``(cls, value)`` or ``(cls, value, *, values, config, field)``
 * validator should either return the new value or raise a ``ValueError`` or ``TypeError``
 * where validators rely on other values, you should be aware that:
 
@@ -444,7 +444,7 @@ required variables:
 
 (This script is complete, it should run "as is")
 
-This script is complete, it should run "as is". You can also run it through mypy with::
+You can also run it through mypy with::
 
     mypy --ignore-missing-imports --follow-imports=skip --strict-optional pydantic_mypy_test.py
 
