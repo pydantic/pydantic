@@ -103,3 +103,18 @@ def test_non_class(env):
     env.set('APP_FOOBAR', 'xxx')
     s = Settings()
     assert s.foobar == 'xxx'
+
+
+def test_alias_field_name_pun(env):
+    class Settings(BaseSettings):
+        foobar: str
+        class Config:
+            fields = dict(
+                foobar=dict(
+                    alias="foobar"
+                )
+            )
+
+    env.set('foobar', 'xxx')
+    s = Settings()
+    assert s.foobar == 'xxx'

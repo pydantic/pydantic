@@ -52,7 +52,7 @@ class Field:
     __slots__ = (
         'type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
         'default', 'required', 'model_config', 'name', 'alias', '_schema', 'validate_always', 'allow_none', 'shape',
-        'class_validators', 'parse_json'
+        'class_validators', 'parse_json', 'pun_alias'
     )
 
     def __init__(
@@ -69,6 +69,7 @@ class Field:
 
         self.name: str = name
         self.alias: str = alias or name
+        self.pun_alias: bool = alias == name
         self.type_: type = type_
         self.class_validators = class_validators or []
         self.validate_always: bool = False

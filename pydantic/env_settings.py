@@ -40,7 +40,7 @@ class BaseSettings(BaseModel):
         """
         d = {}
         for field in self.__fields__.values():
-            if field.alt_alias:
+            if field.alt_alias or field.pun_alias:
                 env_name = field.alias
             else:
                 env_name = self.__config__.env_prefix + field.name.upper()
