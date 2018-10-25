@@ -68,7 +68,7 @@ class Field:
             schema: Schema=None):
 
         self.name: str = name
-        self.alias: str = alias or name
+        self.alias: str = alias
         self.pun_alias: bool = alias == name
         self.type_: type = type_
         self.class_validators = class_validators or []
@@ -433,7 +433,7 @@ class Field:
         else:
             parts.append(f'default={self.default!r}')
 
-        if self.alt_alias:
+        if self.alias:
             parts.append('alias=' + self.alias)
         return ' '.join(parts)
 

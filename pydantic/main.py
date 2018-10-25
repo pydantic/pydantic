@@ -153,7 +153,6 @@ class MetaModel(ABCMeta):
 
 _missing = object()
 
-
 class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
     __fields__ = {}
@@ -365,6 +364,7 @@ class BaseModel(metaclass=MetaModel):
         return f'<{self}>'
 
     def to_string(self, pretty=False):
+        # TODO Fix infinite recursion when this function runs
         divider = '\n  ' if pretty else ' '
         return '{}{}{}'.format(
             self.__class__.__name__,
@@ -467,7 +467,7 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     errors = []
 
     for name, field in model.__fields__.items():
-        value = input_data.get(field.alias, _missing)
+        value = input_data.get(field.alias or field.name, _missing)
         if value is _missing and model.__config__.allow_population_by_alias and field.alt_alias:
             value = input_data.get(field.name, _missing)
 
@@ -476,12 +476,14 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
                 value = deepcopy(field.default)
             else:
                 if field.required:
-                    errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
+                    loc = field.alias if field.alias else field.name
+                    errors.append(ErrorWrapper(MissingError(), loc=loc, config=model.__config__))
                 else:
                     values[name] = deepcopy(field.default)
                 continue
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)
+        loc = field.alias if field.alias else field.name
+        v_, errors_ = field.validate(value, values, loc=loc, cls=model.__class__)
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):
