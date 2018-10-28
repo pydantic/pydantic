@@ -6,7 +6,9 @@ class Model(BaseModel):
 
     class Config:
         max_anystr_length = 10
-        error_msg_templates = {'value_error.any_str.max_length': 'max_length:{limit_value}'}
+        error_msg_templates = {
+            'value_error.any_str.max_length': 'max_length:{limit_value}',
+        }
 
 
 try:

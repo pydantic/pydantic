@@ -3,28 +3,9 @@ from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import (
-    DSN,
-    UUID1,
-    UUID3,
-    UUID4,
-    UUID5,
-    BaseModel,
-    DirectoryPath,
-    EmailStr,
-    FilePath,
-    NameEmail,
-    NegativeFloat,
-    NegativeInt,
-    PositiveFloat,
-    PositiveInt,
-    PyObject,
-    UrlStr,
-    condecimal,
-    confloat,
-    conint,
-    constr,
-)
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
+                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, UrlStr, condecimal, confloat,
+                      conint, constr)
 
 
 class Model(BaseModel):
@@ -70,7 +51,6 @@ class Model(BaseModel):
     uuid_v4: UUID4 = None
     uuid_v5: UUID5 = None
 
-
 m = Model(
     cos_function='math.cos',
     path_to_something='/home',
@@ -97,7 +77,7 @@ m = Model(
     uuid_v1=uuid.uuid1(),
     uuid_v3=uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org'),
     uuid_v4=uuid.uuid4(),
-    uuid_v5=uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org'),
+    uuid_v5=uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
 )
 print(m.dict())
 """

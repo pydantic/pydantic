@@ -1,7 +1,6 @@
 from datetime import datetime
 from pydantic.dataclasses import dataclass
 
-
 @dataclass
 class User:
     id: int

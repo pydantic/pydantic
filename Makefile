@@ -9,14 +9,14 @@ install:
 .PHONY: format
 format:
 	isort -rc -w 120 pydantic tests
-	black -S -l 120 --py36 pydantic tests docs/examples
+	black -S -l 120 --py36 pydantic tests
 
 .PHONY: lint
 lint:
 	python setup.py check -rms
 	flake8 pydantic/ tests/
 	pytest pydantic -p no:sugar -q
-	black -S -l 120 --py36 --check pydantic tests docs/examples
+	black -S -l 120 --py36 --check pydantic tests
 
 .PHONY: test
 test:

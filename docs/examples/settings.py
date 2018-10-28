@@ -37,4 +37,8 @@ class Settings(BaseSettings):
 
     class Config:
         env_prefix = 'MY_PREFIX_'  # defaults to 'APP_'
-        fields = {'auth_key': {'alias': 'my_api_key'}}
+        fields = {
+            'auth_key': {
+                'alias': 'my_api_key'
+            }
+        }
