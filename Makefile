@@ -6,19 +6,17 @@ install:
 	pip install -U -r requirements.txt
 	pip install -U .
 
-.PHONY: black
-black:
+.PHONY: format
+format:
+	isort -rc -w 120 pydantic tests
 	black -S -l 120 --py36 pydantic tests docs/examples
 
 .PHONY: lint
 lint:
 	python setup.py check -rms
 	flake8 pydantic/ tests/
+	pytest pydantic -p no:sugar -q
 	black -S -l 120 --py36 --check pydantic tests docs/examples
-
-.PHONY: black
-black:
-	black -S -l 120 --py36 pydantic tests docs/examples
 
 .PHONY: test
 test:
