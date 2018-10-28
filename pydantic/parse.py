@@ -17,12 +17,7 @@ class Protocol(str, Enum):
 
 
 def load_str_bytes(
-    b: StrBytes,
-    *,  # noqa: C901 (ignore complexity)
-    content_type: str = None,
-    encoding: str = 'utf8',
-    proto: Protocol = None,
-    allow_pickle: bool = False,
+    b: StrBytes, *, content_type: str = None, encoding: str = 'utf8', proto: Protocol = None, allow_pickle: bool = False
 ) -> Any:
     if proto is None and content_type:
         if content_type.endswith(('json', 'javascript')):
