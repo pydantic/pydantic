@@ -3,6 +3,10 @@
 History
 -------
 
+v0.14.1 (2018-10-27)
+....................
+* support for passing Config class in dataclasses decorator, #276 by @jarekkar
+
 v0.14 (2018-10-02)
 ..................
 * dataclasses decorator, #269 by @Gaunt and @samuelcolvin

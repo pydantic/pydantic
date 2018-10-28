@@ -2,7 +2,7 @@ import dataclasses
 
 from pydantic import ValidationError
 
-from .main import create_model, validate_model
+from .main import BaseConfig, create_model, inherit_config, validate_model
 
 
 def post_init(self):
@@ -24,23 +24,29 @@ def setattr_validate_assignment(self, name, value):
     object.__setattr__(self, name, value)
 
 
-def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, validate_assignment):
+def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
     post_init_original = getattr(_cls, '__post_init__', None)
     _cls.__post_init__ = post_init
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)
 
     fields = {name: (field.type, field.default) for name, field in cls.__dataclass_fields__.items()}
     cls.__post_init_original__ = post_init_original
-    cls.__pydantic_model__ = create_model(cls.__name__, **fields)
+
+    cls.__pydantic_model__ = create_model(cls.__name__,
+                                          __config__=inherit_config(config, BaseConfig),
+                                          **fields)
+    cls.__pydantic_model__.__config__ = cls.__pydantic_model__.config
+
     cls.__initialised__ = False
 
-    if validate_assignment and not frozen:
+    if cls.__pydantic_model__.__config__.validate_assignment and not frozen:
         cls.__setattr__ = setattr_validate_assignment
+
     return cls
 
 
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
-              validate_assignment=False):
+              config=None):
     """
     Like the python standard lib dataclasses but with type validation.
 
@@ -49,7 +55,7 @@ def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_h
     """
 
     def wrap(cls):
-        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, validate_assignment)
+        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
 
     if _cls is None:
         return wrap
