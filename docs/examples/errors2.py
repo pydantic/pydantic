@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ValidationError, validator
 
+
 class Model(BaseModel):
     foo: str
 
@@ -9,6 +10,7 @@ class Model(BaseModel):
             raise ValueError('value must be "bar"')
 
         return v
+
 
 try:
     Model(foo='ber')

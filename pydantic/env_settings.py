@@ -28,10 +28,7 @@ class BaseSettings(BaseModel):
     """
 
     def __init__(self, **values):
-        values = {
-            **self._substitute_environ(),
-            **values,
-        }
+        values = {**self._substitute_environ(), **values}
         super().__init__(**values)
 
     def _substitute_environ(self):

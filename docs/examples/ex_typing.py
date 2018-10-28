@@ -21,6 +21,7 @@ class Model(BaseModel):
 
     compound: Dict[Union[str, bytes], List[Set[int]]] = None
 
+
 print(Model(simple_list=['1', '2', '3']).simple_list)  # > ['1', '2', '3']
 print(Model(list_of_ints=['1', '2', '3']).list_of_ints)  # > [1, 2, 3]
 

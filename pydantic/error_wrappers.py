@@ -1,10 +1,7 @@
 import json
 from functools import lru_cache
 
-__all__ = (
-    'ErrorWrapper',
-    'ValidationError',
-)
+__all__ = ('ErrorWrapper', 'ValidationError')
 
 
 class ErrorWrapper:
@@ -35,11 +32,7 @@ class ErrorWrapper:
     def dict(self, *, loc_prefix=None):
         loc = self.loc if loc_prefix is None else loc_prefix + self.loc
 
-        d = {
-            'loc': loc,
-            'msg': self.msg,
-            'type': self.type_,
-        }
+        d = {'loc': loc, 'msg': self.msg, 'type': self.type_}
 
         if self.ctx is not None:
             d['ctx'] = self.ctx
@@ -48,7 +41,7 @@ class ErrorWrapper:
 
 
 class ValidationError(ValueError):
-    __slots__ = 'raw_errors',
+    __slots__ = ('raw_errors',)
 
     def __init__(self, errors):
         self.raw_errors = errors
@@ -67,10 +60,7 @@ class ValidationError(ValueError):
 
 
 def display_errors(errors):
-    return '\n'.join(
-        f'{_display_error_loc(e)}\n  {e["msg"]} ({_display_error_type_and_ctx(e)})'
-        for e in errors
-    )
+    return '\n'.join(f'{_display_error_loc(e)}\n  {e["msg"]} ({_display_error_type_and_ctx(e)})' for e in errors)
 
 
 def _display_error_loc(error):

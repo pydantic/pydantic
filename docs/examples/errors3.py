@@ -1,8 +1,10 @@
 from pydantic import BaseModel, PydanticValueError, ValidationError, validator
 
+
 class NotABarError(PydanticValueError):
     code = 'not_a_bar'
     msg_template = 'value is not "bar", got "{wrong_value}"'
+
 
 class Model(BaseModel):
     foo: str
@@ -12,6 +14,7 @@ class Model(BaseModel):
         if v != 'bar':
             raise NotABarError(wrong_value=v)
         return v
+
 
 try:
     Model(foo='ber')

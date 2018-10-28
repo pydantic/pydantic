@@ -13,23 +13,15 @@ def test_key():
         """
         This is a test.
         """
+
         a: float
         b: int = 10
 
     s = {
         'type': 'object',
         'properties': {
-            'a': {
-                'type': 'float',
-                'required': True,
-                'title': 'A',
-            },
-            'b': {
-                'type': 'int',
-                'required': False,
-                'title': 'B',
-                'default': 10,
-            },
+            'a': {'type': 'float', 'required': True, 'title': 'A'},
+            'b': {'type': 'int', 'required': False, 'title': 'B', 'default': 10},
         },
         'title': 'ApplePie',
         'description': 'This is a test.',
@@ -55,17 +47,8 @@ def test_by_alias():
         'type': 'object',
         'title': 'Apple Pie',
         'properties': {
-            'Snap': {
-                'type': 'float',
-                'required': True,
-                'title': 'Snap',
-            },
-            'Crackle': {
-                'type': 'int',
-                'required': False,
-                'title': 'Crackle',
-                'default': 10,
-            },
+            'Snap': {'type': 'float', 'required': True, 'title': 'Snap'},
+            'Crackle': {'type': 'int', 'required': False, 'title': 'Crackle', 'default': 10},
         },
     }
     assert ApplePie.schema() == s
@@ -77,6 +60,7 @@ def test_by_alias():
 def test_sub_model():
     class Foo(BaseModel):
         """hello"""
+
         b: float
 
     class Bar(BaseModel):
@@ -87,21 +71,11 @@ def test_sub_model():
         'type': 'object',
         'title': 'Bar',
         'properties': {
-            'a': {
-                'type': 'int',
-                'title': 'A',
-                'required': True,
-            },
+            'a': {'type': 'int', 'title': 'A', 'required': True},
             'b': {
                 'type': 'object',
                 'title': 'B',
-                'properties': {
-                    'b': {
-                        'type': 'float',
-                        'title': 'B',
-                        'required': True,
-                    },
-                },
+                'properties': {'b': {'type': 'float', 'title': 'B', 'required': True}},
                 'required': False,
             },
         },
@@ -123,18 +97,8 @@ def test_schema_class():
         'type': 'object',
         'title': 'Model',
         'properties': {
-            'foo': {
-                'type': 'int',
-                'title': 'Foo is Great',
-                'required': False,
-                'default': 4,
-            },
-            'bar': {
-                'type': 'str',
-                'title': 'Bar',
-                'required': True,
-                'description': 'this description of bar',
-            },
+            'foo': {'type': 'int', 'title': 'Foo is Great', 'required': False, 'default': 4},
+            'bar': {'type': 'str', 'title': 'Bar', 'required': True, 'description': 'this description of bar'},
         },
     }
 
@@ -164,33 +128,9 @@ def test_choices():
         'type': 'object',
         'title': 'Model',
         'properties': {
-            'foo': {
-                'type': 'enum',
-                'title': 'Foo',
-                'required': True,
-                'choices': [
-                    ('f', 'Foo'),
-                    ('b', 'Bar'),
-                ],
-            },
-            'bar': {
-                'type': 'int',
-                'title': 'Bar',
-                'required': True,
-                'choices': [
-                    (1, 'Foo'),
-                    (2, 'Bar'),
-                ],
-            },
-            'spam': {
-                'type': 'str',
-                'title': 'Spam',
-                'required': False,
-                'choices': [
-                    ('f', 'Sausage'),
-                    ('b', 'Bar'),
-                ],
-            },
+            'foo': {'type': 'enum', 'title': 'Foo', 'required': True, 'choices': [('f', 'Foo'), ('b', 'Bar')]},
+            'bar': {'type': 'int', 'title': 'Bar', 'required': True, 'choices': [(1, 'Foo'), (2, 'Bar')]},
+            'spam': {'type': 'str', 'title': 'Spam', 'required': False, 'choices': [('f', 'Sausage'), ('b', 'Bar')]},
         },
     }
 
@@ -238,19 +178,10 @@ def test_list_sub_model():
         'properties': {
             'b': {
                 'type': 'list',
-                'item_type': {
-                    'type': 'object',
-                    'properties': {
-                        'a': {
-                            'type': 'float',
-                            'title': 'A',
-                            'required': True,
-                        },
-                    },
-                },
+                'item_type': {'type': 'object', 'properties': {'a': {'type': 'float', 'title': 'A', 'required': True}}},
                 'title': 'B',
                 'required': True,
-            },
+            }
         },
     }
 
@@ -262,13 +193,7 @@ def test_optional():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {
-                'type': 'str',
-                'title': 'A',
-                'required': False,
-            },
-        },
+        'properties': {'a': {'type': 'str', 'title': 'A', 'required': False}},
     }
 
 
@@ -279,13 +204,7 @@ def test_any():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {
-                'type': 'any',
-                'title': 'A',
-                'required': True,
-            },
-        },
+        'properties': {'a': {'type': 'any', 'title': 'A', 'required': True}},
     }
 
 
@@ -296,14 +215,7 @@ def test_set():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {
-                'title': 'A',
-                'required': True,
-                'type': 'set',
-                'item_type': 'int'
-            }
-        }
+        'properties': {'a': {'title': 'A', 'required': True, 'type': 'set', 'item_type': 'int'}},
     }
 
 
@@ -319,20 +231,8 @@ def test_tuple():
                 'title': 'A',
                 'required': True,
                 'type': 'tuple',
-                'item_types': [
-                    'str',
-                    'int',
-                    {
-                        'type': 'any_of',
-                        'types': [
-                            'str',
-                            'int',
-                            'float',
-                        ],
-                    },
-                    'float',
-                ],
-            },
+                'item_types': ['str', 'int', {'type': 'any_of', 'types': ['str', 'int', 'float']}, 'float'],
+            }
         },
     }
 
@@ -343,6 +243,7 @@ def test_list_union_dict():
 
     class Model(BaseModel):
         """party time"""
+
         a: Union[int, str]
         b: List[int]
         c: Dict[int, Foo]
@@ -354,55 +255,21 @@ def test_list_union_dict():
         'description': 'party time',
         'type': 'object',
         'properties': {
-            'a': {
-                'title': 'A',
-                'required': True,
-                'type': 'any_of',
-                'types': [
-                    'int',
-                    'str',
-                ],
-            },
-            'b': {
-                'title': 'B',
-                'required': True,
-                'type': 'list',
-                'item_type': 'int',
-            },
+            'a': {'title': 'A', 'required': True, 'type': 'any_of', 'types': ['int', 'str']},
+            'b': {'title': 'B', 'required': True, 'type': 'list', 'item_type': 'int'},
             'c': {
                 'title': 'C',
                 'required': True,
                 'type': 'mapping',
-                'item_type': {
-                    'type': 'object',
-                    'properties': {
-                        'a': {
-                            'title': 'A',
-                            'required': True,
-                            'type': 'float',
-                        },
-                    },
-                },
+                'item_type': {'type': 'object', 'properties': {'a': {'title': 'A', 'required': True, 'type': 'float'}}},
                 'key_type': 'int',
             },
             'd': {
                 'title': 'D',
                 'required': False,
                 'type': 'object',
-                'properties': {
-                    'a': {
-                        'title': 'A',
-                        'required': True,
-                        'type': 'float',
-                    },
-                },
+                'properties': {'a': {'title': 'A', 'required': True, 'type': 'float'}},
             },
-            'e': {
-                'title': 'E',
-                'required': True,
-                'type': 'mapping',
-                'item_type': 'any',
-                'key_type': 'str',
-            },
+            'e': {'title': 'E', 'required': True, 'type': 'mapping', 'item_type': 'any', 'key_type': 'str'},
         },
     }

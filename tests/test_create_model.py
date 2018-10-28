@@ -44,6 +44,7 @@ def test_inheritance():
     class BarModel(BaseModel):
         x = 1
         y = 2
+
     model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __base__=BarModel)
     assert model.__fields__.keys() == {'foo', 'bar', 'x', 'y'}
     m = model(foo='a', x=4)
@@ -52,9 +53,8 @@ def test_inheritance():
 
 def test_custom_config():
     class Config(BaseModel.Config):
-        fields = {
-            'foo': 'api-foo-field'
-        }
+        fields = {'foo': 'api-foo-field'}
+
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(**{'api-foo-field': '987'}).foo == 987
     with pytest.raises(ValidationError):
@@ -92,11 +92,7 @@ def test_funky_name():
     with pytest.raises(ValidationError) as exc_info:
         model()
     assert exc_info.value.errors() == [
-        {
-            'loc': ('this-is-funky',),
-            'msg': 'field required',
-            'type': 'value_error.missing',
-        },
+        {'loc': ('this-is-funky',), 'msg': 'field required', 'type': 'value_error.missing'}
     ]
 
 

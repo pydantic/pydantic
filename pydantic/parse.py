@@ -16,11 +16,14 @@ class Protocol(str, Enum):
     pickle = 'pickle'
 
 
-def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
-                   content_type: str=None,
-                   encoding: str='utf8',
-                   proto: Protocol=None,
-                   allow_pickle: bool=False) -> Any:
+def load_str_bytes(
+    b: StrBytes,
+    *,  # noqa: C901 (ignore complexity)
+    content_type: str = None,
+    encoding: str = 'utf8',
+    proto: Protocol = None,
+    allow_pickle: bool = False,
+) -> Any:
     if proto is None and content_type:
         if content_type.endswith(('json', 'javascript')):
             pass
@@ -43,11 +46,14 @@ def load_str_bytes(b: StrBytes, *,  # noqa: C901 (ignore complexity)
         raise TypeError(f'Unknown protocol: {proto}')
 
 
-def load_file(path: Union[str, Path], *,
-              content_type: str=None,
-              encoding: str='utf8',
-              proto: Protocol=None,
-              allow_pickle: bool=False) -> Any:
+def load_file(
+    path: Union[str, Path],
+    *,
+    content_type: str = None,
+    encoding: str = 'utf8',
+    proto: Protocol = None,
+    allow_pickle: bool = False,
+) -> Any:
     path = Path(path)
     b = path.read_bytes()
     if content_type is None:

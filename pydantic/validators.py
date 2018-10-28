@@ -44,12 +44,7 @@ def bytes_validator(v) -> bytes:
         raise errors.BytesError()
 
 
-BOOL_STRINGS = {
-    '1',
-    'TRUE',
-    'ON',
-    'YES',
-}
+BOOL_STRINGS = {'1', 'TRUE', 'ON', 'YES'}
 
 
 def bool_validator(v) -> bool:
@@ -218,27 +213,23 @@ def make_arbitrary_type_validator(type_):
         if isinstance(v, type_):
             return v
         raise errors.ArbitraryTypeError(expected_arbitrary_type=type_)
+
     return arbitrary_type_validator
 
 
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (Enum, [enum_validator]),
-
     (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
     (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
-
     (bool, [bool_validator]),
     (int, [int_validator]),
     (float, [float_validator]),
-
     (Path, [path_validator]),
-
     (datetime, [parse_datetime]),
     (date, [parse_date]),
     (time, [parse_time]),
     (timedelta, [parse_duration]),
-
     (OrderedDict, [ordered_dict_validator]),
     (dict, [dict_validator]),
     (list, [list_validator]),

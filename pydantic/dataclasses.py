@@ -39,8 +39,9 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, validate_as
     return cls
 
 
-def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
-              validate_assignment=False):
+def dataclass(
+    _cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, validate_assignment=False
+):
     """
     Like the python standard lib dataclasses but with type validation.
 

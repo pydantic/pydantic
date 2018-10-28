@@ -4,7 +4,8 @@ from pydantic import BaseModel, ValidationError, urlstr
 
 
 @pytest.mark.parametrize(
-    'value', [
+    'value',
+    [
         'http://example.org',
         'https://example.org',
         'ftp://example.org',
@@ -32,86 +33,36 @@ def test_url_str_absolute_success(value):
 
 
 @pytest.mark.parametrize(
-    'value,errors', [
+    'value,errors',
+    [
         (
             'http:///example.com/',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'https:///example.com/',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'https://example.org\\',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'ftp:///example.com/',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'ftps:///example.com/',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'http//example.org',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
-        (
-            'http:///',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
-        ),
+        ('http:///', [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}]),
         (
             'http:/example.org',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'foo://example.org',
@@ -120,72 +71,25 @@ def test_url_str_absolute_success(value):
                     'loc': ('v',),
                     'msg': 'url scheme "foo" is not allowed',
                     'type': 'value_error.url.scheme',
-                    'ctx': {
-                        'scheme': 'foo',
-                    },
-                },
+                    'ctx': {'scheme': 'foo'},
+                }
             ],
         ),
         (
             '../icons/logo.gif',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'http://2001:db8::ff00:42:8329',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'http://[192.168.1.1]:8329',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
-        (
-            'abc',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
-        ),
-        (
-            '..',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
-        ),
-        (
-            '/',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
-        ),
+        ('abc', [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}]),
+        ('..', [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}]),
+        ('/', [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}]),
         (
             ' ',
             [
@@ -193,10 +97,8 @@ def test_url_str_absolute_success(value):
                     'loc': ('v',),
                     'msg': 'ensure this value has at least 1 characters',
                     'type': 'value_error.any_str.min_length',
-                    'ctx': {
-                        'limit_value': 1,
-                    },
-                },
+                    'ctx': {'limit_value': 1},
+                }
             ],
         ),
         (
@@ -206,22 +108,11 @@ def test_url_str_absolute_success(value):
                     'loc': ('v',),
                     'msg': 'ensure this value has at least 1 characters',
                     'type': 'value_error.any_str.min_length',
-                    'ctx': {
-                        'limit_value': 1,
-                    },
-                },
+                    'ctx': {'limit_value': 1},
+                }
             ],
         ),
-        (
-            None,
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'none is not an allow value',
-                    'type': 'type_error.none.not_allowed',
-                },
-            ],
-        ),
+        (None, [{'loc': ('v',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}]),
     ],
 )
 def test_url_str_absolute_fails(value, errors):
@@ -234,7 +125,8 @@ def test_url_str_absolute_fails(value, errors):
 
 
 @pytest.mark.parametrize(
-    'value', [
+    'value',
+    [
         'http://example.org',
         'http://123.45.67.8/',
         'http://example.com/foo/bar/../baz',
@@ -252,77 +144,27 @@ def test_url_str_relative_success(value):
 
 
 @pytest.mark.parametrize(
-    'value,errors', [
+    'value,errors',
+    [
         (
             'http//example.org',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'suppliers.html',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             '../icons/logo.gif',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             '\icons/logo.gif',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
-        (
-            '../.../g',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
-        ),
-        (
-            '...',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
-        ),
-        (
-            '\\',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
-        ),
+        ('../.../g', [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}]),
+        ('...', [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}]),
+        ('\\', [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}]),
         (
             ' ',
             [
@@ -330,10 +172,8 @@ def test_url_str_relative_success(value):
                     'loc': ('v',),
                     'msg': 'ensure this value has at least 1 characters',
                     'type': 'value_error.any_str.min_length',
-                    'ctx': {
-                        'limit_value': 1,
-                    },
-                },
+                    'ctx': {'limit_value': 1},
+                }
             ],
         ),
         (
@@ -343,22 +183,11 @@ def test_url_str_relative_success(value):
                     'loc': ('v',),
                     'msg': 'ensure this value has at least 1 characters',
                     'type': 'value_error.any_str.min_length',
-                    'ctx': {
-                        'limit_value': 1,
-                    },
-                },
+                    'ctx': {'limit_value': 1},
+                }
             ],
         ),
-        (
-            None,
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'none is not an allow value',
-                    'type': 'type_error.none.not_allowed',
-                },
-            ],
-        ),
+        (None, [{'loc': ('v',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}]),
     ],
 )
 def test_url_str_relative_fails(value, errors):
@@ -371,7 +200,8 @@ def test_url_str_relative_fails(value, errors):
 
 
 @pytest.mark.parametrize(
-    'value', [
+    'value',
+    [
         'http://example.org',
         'http://123.45.67.8/',
         'http://example',
@@ -389,46 +219,20 @@ def test_url_str_dont_require_tld_success(value):
 
 
 @pytest.mark.parametrize(
-    'value,errors', [
-        (
-            'http//example',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
-        ),
+    'value,errors',
+    [
+        ('http//example', [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}]),
         (
             'http://.example.org',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'http:///foo/bar',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             'http:// /foo/bar',
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'url string does not match regex',
-                    'type': 'value_error.url.regex',
-                },
-            ],
+            [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
             '',
@@ -437,22 +241,11 @@ def test_url_str_dont_require_tld_success(value):
                     'loc': ('v',),
                     'msg': 'ensure this value has at least 1 characters',
                     'type': 'value_error.any_str.min_length',
-                    'ctx': {
-                        'limit_value': 1,
-                    },
-                },
+                    'ctx': {'limit_value': 1},
+                }
             ],
         ),
-        (
-            None,
-            [
-                {
-                    'loc': ('v',),
-                    'msg': 'none is not an allow value',
-                    'type': 'type_error.none.not_allowed',
-                },
-            ],
-        ),
+        (None, [{'loc': ('v',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}]),
     ],
 )
 def test_url_str_dont_require_tld_fails(value, errors):
@@ -477,10 +270,8 @@ def test_url_str_absolute_custom_scheme():
             'loc': ('v',),
             'msg': 'url scheme "ws" is not allowed',
             'type': 'value_error.url.scheme',
-            'ctx': {
-                'scheme': 'ws',
-            },
-        },
+            'ctx': {'scheme': 'ws'},
+        }
     ]
 
     class Model(BaseModel):
@@ -502,10 +293,8 @@ def test_url_str_relative_and_custom_schemes():
             'loc': ('v',),
             'msg': 'url scheme "ws" is not allowed',
             'type': 'value_error.url.scheme',
-            'ctx': {
-                'scheme': 'ws',
-            },
-        },
+            'ctx': {'scheme': 'ws'},
+        }
     ]
 
     class Model(BaseModel):
