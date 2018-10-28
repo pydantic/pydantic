@@ -1,10 +1,10 @@
 attrs==18.2.0
 black==18.9b0
 coverage==4.5.1
-flake8==3.5.0
+flake8==3.6.0
 isort==4.3.4
 mypy==0.630
-pycodestyle==2.3.1  # pyup: ignore
+pycodestyle==2.4.0
 pyflakes==2.0.0
 pytest==3.8.1
 pytest-cov==2.6.0

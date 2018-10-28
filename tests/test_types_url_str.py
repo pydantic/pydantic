@@ -159,7 +159,7 @@ def test_url_str_relative_success(value):
             [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         (
-            '\icons/logo.gif',
+            '\\icons/logo.gif',
             [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}],
         ),
         ('../.../g', [{'loc': ('v',), 'msg': 'url string does not match regex', 'type': 'value_error.url.regex'}]),
