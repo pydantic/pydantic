@@ -13,6 +13,7 @@ black:
 .PHONY: lint
 lint:
 	python setup.py check -rms
+	flake8 pydantic/ tests/
 	black -S -l 120 --py36 --check pydantic tests docs/examples
 
 .PHONY: black
