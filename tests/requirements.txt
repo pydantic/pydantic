@@ -6,7 +6,7 @@ isort==4.3.4
 mypy==0.641
 pycodestyle==2.4.0
 pyflakes==2.0.0
-pytest==3.8.1
+pytest==3.9.3
 pytest-cov==2.6.0
 pytest-isort==0.2.1
 pytest-mock==1.10.0
