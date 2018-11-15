@@ -3,7 +3,7 @@
 History
 -------
 
-v0.15 (2018-XX-XX)
+v0.15 (2018-11-15)
 ..................
 * move codebase to use black, #287 by @samuelcolvin
 * fix alias use in settings, #286 by @jasonkuhrt and @samuelcolvin
