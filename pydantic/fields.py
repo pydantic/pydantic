@@ -38,7 +38,8 @@ class Schema:
     """
     Used to provide extra information about a field in a model schema.
     """
-    __slots__ = 'default', 'alias', 'title', 'choice_names', 'extra',
+
+    __slots__ = 'default', 'alias', 'title', 'choice_names', 'extra'
 
     def __init__(self, default, *, alias=None, title=None, choice_names=None, **extra):
         self.default = default
@@ -50,22 +51,38 @@ class Schema:
 
 class Field:
     __slots__ = (
-        'type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
-        'default', 'required', 'model_config', 'name', 'alias', '_schema', 'validate_always', 'allow_none', 'shape',
-        'class_validators', 'parse_json'
+        'type_',
+        'sub_fields',
+        'key_field',
+        'validators',
+        'whole_pre_validators',
+        'whole_post_validators',
+        'default',
+        'required',
+        'model_config',
+        'name',
+        'alias',
+        '_schema',
+        'validate_always',
+        'allow_none',
+        'shape',
+        'class_validators',
+        'parse_json',
     )
 
     def __init__(
-            self, *,
-            name: str,
-            type_: Type,
-            class_validators: List[Validator],
-            default: Any,
-            required: bool,
-            model_config: Any,
-            alias: str=None,
-            allow_none: bool=False,
-            schema: Schema=None):
+        self,
+        *,
+        name: str,
+        type_: Type,
+        class_validators: List[Validator],
+        default: Any,
+        required: bool,
+        model_config: Any,
+        alias: str = None,
+        allow_none: bool = False,
+        schema: Schema = None,
+    ):
 
         self.name: str = name
         self.alias: str = alias or name
@@ -136,10 +153,7 @@ class Field:
         self._populate_validators()
 
     def schema(self, by_alias=True):
-        s = dict(
-            title=self._schema.title or self.alias.title(),
-            required=self.required,
-        )
+        s = dict(title=self._schema.title or self.alias.title(), required=self.required)
 
         if not self.required and self.default is not None:
             s['default'] = self.default
@@ -151,26 +165,17 @@ class Field:
 
     def type_schema(self, by_alias):
         if self.shape is Shape.LIST:
-            return {
-                'type': 'list',
-                'item_type': self._singleton_schema(by_alias),
-            }
+            return {'type': 'list', 'item_type': self._singleton_schema(by_alias)}
         if self.shape is Shape.SET:
-            return {
-                'type': 'set',
-                'item_type': self._singleton_schema(by_alias),
-            }
+            return {'type': 'set', 'item_type': self._singleton_schema(by_alias)}
         elif self.shape is Shape.MAPPING:
             return {
                 'type': 'mapping',
                 'item_type': self._singleton_schema(by_alias),
-                'key_type': self.key_field.type_schema(by_alias)
+                'key_type': self.key_field.type_schema(by_alias),
             }
         elif self.shape is Shape.TUPLE:
-            return {
-                'type': 'tuple',
-                'item_types': [sf.type_schema(by_alias) for sf in self.sub_fields],
-            }
+            return {'type': 'tuple', 'item_types': [sf.type_schema(by_alias) for sf in self.sub_fields]}
         else:
             assert self.shape is Shape.SINGLETON, self.shape
             return self._singleton_schema(by_alias)
@@ -180,10 +185,7 @@ class Field:
             if len(self.sub_fields) == 1:
                 return self.sub_fields[0].type_schema(by_alias)
             else:
-                return {
-                    'type': 'any_of',
-                    'types': [sf.type_schema(by_alias) for sf in self.sub_fields]
-                }
+                return {'type': 'any_of', 'types': [sf.type_schema(by_alias) for sf in self.sub_fields]}
         elif self.type_ is Any:
             return 'any'
         elif issubclass(self.type_, Enum):
@@ -191,9 +193,8 @@ class Field:
             return {
                 'type': display_as_type(self.type_),
                 'choices': [
-                    (v.value, choice_names.get(v.value) or k.title())
-                    for k, v in self.type_.__members__.items()
-                ]
+                    (v.value, choice_names.get(v.value) or k.title()) for k, v in self.type_.__members__.items()
+                ],
             }
 
         type_schema_method = getattr(self.type_, 'type_schema', None)
@@ -225,9 +226,7 @@ class Field:
 
         if issubclass(origin, Tuple):
             self.shape = Shape.TUPLE
-            self.sub_fields = [
-                self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)
-            ]
+            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)]
             return
 
         if issubclass(origin, List):
@@ -262,8 +261,11 @@ class Field:
             get_validators = getattr(self.type_, 'get_validators', None)
             v_funcs = (
                 *tuple(v.func for v in self.class_validators if not v.whole and v.pre),
-                *(get_validators() if get_validators else find_validators(self.type_,
-                                                                          self.model_config.arbitrary_types_allowed)),
+                *(
+                    get_validators()
+                    if get_validators
+                    else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
+                ),
                 *tuple(v.func for v in self.class_validators if not v.whole and not v.pre),
             )
             self.validators = self._prep_vals(v_funcs)
@@ -277,17 +279,14 @@ class Field:
         for f in v_funcs:
             if not f or (self.allow_none and f is not_none_validator):
                 continue
-            v.append((
-                _get_validator_signature(f),
-                f,
-            ))
+            v.append((_get_validator_signature(f), f))
         return tuple(v)
 
     def validate(self, v, values, *, loc, cls=None):  # noqa: C901 (ignore complexity)
         if self.allow_none and v is None:
             return None, None
 
-        loc = loc if isinstance(loc, tuple) else (loc, )
+        loc = loc if isinstance(loc, tuple) else (loc,)
 
         if self.parse_json:
             v, error = self._validate_json(v, loc)
@@ -459,6 +458,8 @@ def _get_validator_signature(validator):
                 signature.bind(1, values=2, config=3, field=4)
                 return ValidatorSignature.VALUE_KWARGS
     except TypeError as e:
-        raise errors_.ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
-                                  f'(value) or (value, *, values, config, field) or for class validators '
-                                  f'(cls, value) or (cls, value, *, values, config, field)') from e
+        raise errors_.ConfigError(
+            f'Invalid signature for validator {validator}: {signature}, should be: '
+            f'(value) or (value, *, values, config, field) or for class validators '
+            f'(cls, value) or (cls, value, *, values, config, field)'
+        ) from e

@@ -27,6 +27,7 @@ ENCODERS_BY_TYPE = {
 
 def pydantic_encoder(obj):
     from .main import BaseModel
+
     if isinstance(obj, BaseModel):
         return obj.dict()
     elif isinstance(obj, Enum):

@@ -28,11 +28,7 @@ def test_value_error():
         MyDataclass(1, 'wrong')
 
     assert exc_info.value.errors() == [
-        {
-            'loc': ('b',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        },
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
@@ -70,11 +66,7 @@ def test_validate_assignment_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxx'
     assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        },
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 

@@ -15,21 +15,24 @@ class MyEnum(Enum):
     snap = 'crackle'
 
 
-@pytest.mark.parametrize('input,output', [
-    (UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
-    (datetime.datetime(2032, 1, 1, 1, 1), '"2032-01-01T01:01:00"'),
-    (datetime.datetime(2032, 1, 1, 1, 1, tzinfo=datetime.timezone.utc), '"2032-01-01T01:01:00+00:00"'),
-    (datetime.datetime(2032, 1, 1), '"2032-01-01T00:00:00"'),
-    (datetime.time(12, 34, 56), '"12:34:56"'),
-    (datetime.timedelta(days=12, seconds=34, microseconds=56), '1036834.000056'),
-    ({1, 2, 3}, '[1, 2, 3]'),
-    (frozenset([1, 2, 3]), '[1, 2, 3]'),
-    ((v for v in range(4)), '[0, 1, 2, 3]'),
-    (b'this is bytes', '"this is bytes"'),
-    (Decimal('12.34'), '12.34'),
-    (create_model('BarModel', a='b', c='d')(), '{"a": "b", "c": "d"}'),
-    (MyEnum.foo, '"bar"'),
-])
+@pytest.mark.parametrize(
+    'input,output',
+    [
+        (UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
+        (datetime.datetime(2032, 1, 1, 1, 1), '"2032-01-01T01:01:00"'),
+        (datetime.datetime(2032, 1, 1, 1, 1, tzinfo=datetime.timezone.utc), '"2032-01-01T01:01:00+00:00"'),
+        (datetime.datetime(2032, 1, 1), '"2032-01-01T00:00:00"'),
+        (datetime.time(12, 34, 56), '"12:34:56"'),
+        (datetime.timedelta(days=12, seconds=34, microseconds=56), '1036834.000056'),
+        ({1, 2, 3}, '[1, 2, 3]'),
+        (frozenset([1, 2, 3]), '[1, 2, 3]'),
+        ((v for v in range(4)), '[0, 1, 2, 3]'),
+        (b'this is bytes', '"this is bytes"'),
+        (Decimal('12.34'), '12.34'),
+        (create_model('BarModel', a='b', c='d')(), '{"a": "b", "c": "d"}'),
+        (MyEnum.foo, '"bar"'),
+    ],
+)
 def test_encoding(input, output):
     assert output == json.dumps(input, default=pydantic_encoder)
 
@@ -59,10 +62,13 @@ def test_invalid_model():
         json.dumps(Foo, default=pydantic_encoder)
 
 
-@pytest.mark.parametrize('input,output', [
-    (datetime.timedelta(days=12, seconds=34, microseconds=56), 'P12DT0H0M34.000056S'),
-    (datetime.timedelta(days=1001, hours=1, minutes=2, seconds=3, microseconds=654321), 'P1001DT1H2M3.654321S'),
-])
+@pytest.mark.parametrize(
+    'input,output',
+    [
+        (datetime.timedelta(days=12, seconds=34, microseconds=56), 'P12DT0H0M34.000056S'),
+        (datetime.timedelta(days=1001, hours=1, minutes=2, seconds=3, microseconds=654_321), 'P1001DT1H2M3.654321S'),
+    ],
+)
 def test_iso_timedelta(input, output):
     assert output == timedelta_isoformat(input)
 

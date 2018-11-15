@@ -50,21 +50,23 @@ def validate_email(value) -> Tuple[str, str]:
     except email_validator.EmailNotValidError as e:
         raise errors.EmailError() from e
 
-    return name or email[:email.index('@')], email.lower()
+    return name or email[: email.index('@')], email.lower()
 
 
 def _rfc_1738_quote(text):
     return re.sub(r'[:@/]', lambda m: '%{:X}'.format(ord(m.group(0))), text)
 
 
-def make_dsn(*,
-             driver: str,
-             user: str=None,
-             password: str=None,
-             host: str=None,
-             port: str=None,
-             name: str=None,
-             query: str=None):
+def make_dsn(
+    *,
+    driver: str,
+    user: str = None,
+    password: str = None,
+    host: str = None,
+    port: str = None,
+    name: str = None,
+    query: str = None,
+):
     """
     Create a DSN from from connection settings.
 
@@ -116,10 +118,10 @@ def truncate(v, *, max_len=80):
     """
     if isinstance(v, str) and len(v) > (max_len - 2):
         # -3 so quote + string + … + quote has correct length
-        return repr(v[:(max_len - 3)] + '…')
+        return repr(v[: (max_len - 3)] + '…')
     v = repr(v)
     if len(v) > max_len:
-        v = v[:max_len - 1] + '…'
+        v = v[: max_len - 1] + '…'
     return v
 
 
@@ -164,8 +166,10 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
     """
     for base in bases:
         if getattr(base, field_name, None):
-            raise NameError(f'Field name "{field_name}" shadows a BaseModel attribute; '
-                            f'use a different field name with "alias=\'{field_name}\'".')
+            raise NameError(
+                f'Field name "{field_name}" shadows a BaseModel attribute; '
+                f'use a different field name with "alias=\'{field_name}\'".'
+            )
 
 
 @lru_cache(maxsize=None)
@@ -176,22 +180,24 @@ def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern:
         https://github.com/marshmallow-code/marshmallow/blob/298870ef6c089fb4d91efae9ca4168453ffe00d2/marshmallow/validate.py#L37
     """
     return re.compile(
-        r''.join((
-            r'^',
-            r'(' if relative else r'',
-            r'(?:[a-z0-9\.\-\+]*)://',  # scheme is validated separately
-            r'(?:[^:@]+?:[^:@]*?@|)',  # basic auth
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
-            r'(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
-            r'localhost|',  # localhost...
+        r''.join(
             (
-                r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|'
-                if not require_tld else r''
-            ),  # allow dotless hostnames
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|',  # ...or ipv4
-            r'\[[A-F0-9]*:[A-F0-9:]+\])',  # ...or ipv6
-            r'(?::\d+)?',  # optional port
-            r')?' if relative else r'',  # host is optional, allow for relative URLs
-            r'(?:/?|[/?]\S+)$',
-        )), re.IGNORECASE,
+                r'^',
+                r'(' if relative else r'',
+                r'(?:[a-z0-9\.\-\+]*)://',  # scheme is validated separately
+                r'(?:[^:@]+?:[^:@]*?@|)',  # basic auth
+                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
+                r'(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
+                r'localhost|',  # localhost...
+                (
+                    r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|' if not require_tld else r''
+                ),  # allow dotless hostnames
+                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|',  # ...or ipv4
+                r'\[[A-F0-9]*:[A-F0-9:]+\])',  # ...or ipv6
+                r'(?::\d+)?',  # optional port
+                r')?' if relative else r'',  # host is optional, allow for relative URLs
+                r'(?:/?|[/?]\S+)$',
+            )
+        ),
+        re.IGNORECASE,
     )

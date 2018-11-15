@@ -26,11 +26,7 @@ def test_sub_env_missing():
     with pytest.raises(ValidationError) as exc_info:
         SimpleSettings()
     assert exc_info.value.errors() == [
-        {
-            'loc': ('apple',),
-            'msg': 'none is not an allow value',
-            'type': 'type_error.none.not_allowed',
-        },
+        {'loc': ('apple',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}
     ]
 
 
@@ -44,9 +40,8 @@ def test_env_with_aliass(env):
         apple: str = ...
 
         class Config:
-            fields = {
-                'apple': 'BOOM'
-            }
+            fields = {'apple': 'BOOM'}
+
     env.set('BOOM', 'hello')
     assert Settings().apple == 'hello'
 
