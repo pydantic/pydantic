@@ -89,10 +89,11 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
     Raise ValueError if the input is well formatted but not a valid date.
     Raise ValueError if the input isn't well formatted.
     """
-    if isinstance(value, datetime):
-        return value.date()
-    elif isinstance(value, date):
-        return value
+    if isinstance(value, date):
+        if isinstance(value, datetime):
+            return value.date()
+        else:
+            return value
 
     number = get_numeric(value)
     if number is not None:

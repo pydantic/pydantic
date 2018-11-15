@@ -3,6 +3,12 @@
 History
 -------
 
+v0.15 (2018-XX-XX)
+..................
+* move codebase to use black, #287 by @samuelcolvin
+* fix alias use in settings, #286 by @jasonkuhrt and @samuelcolvin
+* fix datetime parsing in ``parse_date``, #298 by @samuelcolvin
+
 v0.14 (2018-10-02)
 ..................
 * dataclasses decorator, #269 by @Gaunt and @samuelcolvin
