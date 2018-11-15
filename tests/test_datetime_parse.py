@@ -30,6 +30,7 @@ def create_tz(minutes):
         ('2012-04-23', date(2012, 4, 23)),
         ('2012-4-9', date(2012, 4, 9)),
         (date(2012, 4, 9), date(2012, 4, 9)),
+        (datetime(2012, 4, 9, 12, 15), date(2012, 4, 9)),
         # Invalid inputs
         ('x20120423', errors.DateError),
         ('2012-04-56', errors.DateError),
