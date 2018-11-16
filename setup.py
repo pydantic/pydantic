@@ -1,3 +1,4 @@
+import re
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 from setuptools import setup
@@ -5,10 +6,14 @@ from setuptools import setup
 description = 'Data validation and settings management using python 3.6 type hinting'
 THIS_DIR = Path(__file__).resolve().parent
 try:
-    long_description = '\n\n'.join([
-        THIS_DIR.joinpath('README.rst').read_text(),
-        THIS_DIR.joinpath('HISTORY.rst').read_text()
-    ])
+    history = THIS_DIR.joinpath('HISTORY.rst').read_text()
+
+    # same as docs/conf.py but copied to avoid import problems
+    history = re.sub(r'#(\d+)', r'`#\1 <https://github.com/samuelcolvin/pydantic/pull/\1>`_', history)
+    history = re.sub(r'( +)@(\w+)', r'\1`@\2 <https://github.com/\2>`_', history, flags=re.I)
+    history = re.sub(r'@@', '@', history)
+
+    long_description = '\n\n'.join([THIS_DIR.joinpath('README.rst').read_text(), history])
 except FileNotFoundError:
     long_description = description + '.\n\nSee https://pydantic-docs.helpmanual.io/ for documentation.'
 
