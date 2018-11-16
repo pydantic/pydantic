@@ -3,15 +3,36 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 from setuptools import setup
 
+
+class ReplaceLinks:
+    def __init__(self):
+        self.links = set()
+
+    def replace_issues(self, m):
+        id = m.group(1)
+        self.links.add(f'.. _#{id}: https://github.com/samuelcolvin/pydantic/issues/{id}')
+        return f'`#{id}`_'
+
+    def replace_users(self, m):
+        name = m.group(2)
+        self.links.add(f'.. _@{name}: https://github.com/{name}')
+        return f'{m.group(1)}`@{name}`_'
+
+    def extra(self):
+        return '\n\n' + '\n'.join(self.links) + '\n'
+
+
 description = 'Data validation and settings management using python 3.6 type hinting'
 THIS_DIR = Path(__file__).resolve().parent
 try:
     history = THIS_DIR.joinpath('HISTORY.rst').read_text()
 
     # same as docs/conf.py but copied to avoid import problems
-    history = re.sub(r'#(\d+)', r'`#\1 <https://github.com/samuelcolvin/pydantic/pull/\1>`_', history)
-    history = re.sub(r'( +)@(\w+)', r'\1`@\2 <https://github.com/\2>`_', history, flags=re.I)
+    replacer = ReplaceLinks()
+    history = re.sub(r'#(\d+)', replacer.replace_issues, history)
+    history = re.sub(r'( +)@(\w+)', replacer.replace_users, history, flags=re.I)
     history = re.sub(r'@@', '@', history)
+    history += replacer.extra()
 
     long_description = '\n\n'.join([THIS_DIR.joinpath('README.rst').read_text(), history])
 except FileNotFoundError:
