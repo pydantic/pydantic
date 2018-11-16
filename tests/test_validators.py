@@ -356,7 +356,8 @@ def test_pattern():
         pattern: Pattern
 
     f = Foobar(pattern=r'^whatev.r\d$')
-    assert f.pattern.__class__.__name__ == 'SRE_Pattern'
+    # SRE_Pattern for 3.6, Pattern for 3.7
+    assert f.pattern.__class__.__name__ in {'SRE_Pattern', 'Pattern'}
     # check it's really a proper pattern
     assert f.pattern.match('whatever1')
     assert not f.pattern.match(' whatever1')

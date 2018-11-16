@@ -1,6 +1,6 @@
 import inspect
 from enum import Enum, IntEnum
-from typing import Any, Callable, List, Mapping, NamedTuple, Set, Tuple, Type, Union
+from typing import Any, Callable, List, Mapping, NamedTuple, Set, Tuple, Type, Union, Pattern
 
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
@@ -211,6 +211,9 @@ class Field:
             self.type_ = self.type_.inner_type
             self.parse_json = True
 
+        if self.type_ is Pattern:
+            # python 3.7 only, Pattern is a typing object but without sub fields
+            return
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
