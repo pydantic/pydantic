@@ -27,7 +27,6 @@ THIS_DIR = Path(__file__).resolve().parent
 try:
     history = THIS_DIR.joinpath('HISTORY.rst').read_text()
 
-    # same as docs/conf.py but copied to avoid import problems
     replacer = ReplaceLinks()
     history = re.sub(r'#(\d+)', replacer.replace_issues, history)
     history = re.sub(r'( +)@(\w+)', replacer.replace_users, history, flags=re.I)

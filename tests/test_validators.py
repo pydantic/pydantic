@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Pattern
 
 import pytest
 
@@ -349,3 +349,14 @@ def test_validate_parent_extra():
     assert Child(a='this is foobar good').a == 'THIS IS FOOBAR GOOD'
     with pytest.raises(ValidationError):
         Child(a='snap')
+
+
+def test_pattern():
+    class Foobar(BaseModel):
+        pattern: Pattern
+
+    f = Foobar(pattern=r'^whatev.r\d$')
+    assert f.pattern.__class__.__name__ == 'SRE_Pattern'
+    # check it's really a proper pattern
+    assert f.pattern.match('whatever1')
+    assert not f.pattern.match(' whatever1')

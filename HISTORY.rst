@@ -6,6 +6,7 @@ History
 v0.15.1 (2018-XX-XX)
 ....................
 * fix ``PyObject = None``, #305 by @samuelcolvin
+* allow ``Pattern`` type, fix #303 by @samuelcolvin
 
 v0.15 (2018-11-15)
 ..................

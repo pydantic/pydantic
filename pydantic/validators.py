@@ -1,9 +1,10 @@
+import re
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Pattern
 from uuid import UUID
 
 from . import errors
@@ -217,6 +218,11 @@ def make_arbitrary_type_validator(type_):
     return arbitrary_type_validator
 
 
+def pattern_validator(v) -> Pattern:
+    return re.compile(v)
+
+
+pattern_validators = [not_none_validator, str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
 _VALIDATORS = [
     (Enum, [enum_validator]),
@@ -243,6 +249,8 @@ _VALIDATORS = [
 def find_validators(type_, arbitrary_types_allowed=False):
     if type_ is Any:
         return []
+    if type_ is Pattern:
+        return pattern_validators
 
     supertype = _find_supertype(type_)
     if supertype is not None:
