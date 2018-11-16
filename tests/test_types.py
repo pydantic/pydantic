@@ -105,11 +105,10 @@ def test_dsn_no_driver():
     ]
 
 
-class PyObjectModel(BaseModel):
-    module: PyObject = 'os.path'
-
-
 def test_module_import():
+    class PyObjectModel(BaseModel):
+        module: PyObject = 'os.path'
+
     m = PyObjectModel()
     assert m.module == os.path
     with pytest.raises(ValidationError) as exc_info:
@@ -117,6 +116,14 @@ def test_module_import():
     assert exc_info.value.errors() == [
         {'loc': ('module',), 'msg': 'ensure this value contains valid import path', 'type': 'type_error.pyobject'}
     ]
+
+
+def test_pyobject_none():
+    class PyObjectModel(BaseModel):
+        module: PyObject = None
+
+    m = PyObjectModel()
+    assert m.module is None
 
 
 class CheckModel(BaseModel):

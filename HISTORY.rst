@@ -3,6 +3,10 @@
 History
 -------
 
+v0.15 (2018-XX-XX)
+..................
+* fix ``PyObject = None``, #305 by @samuelcolvin
+
 v0.15 (2018-11-15)
 ..................
 * move codebase to use black, #287 by @samuelcolvin
