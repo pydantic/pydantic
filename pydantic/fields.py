@@ -1,6 +1,6 @@
 import inspect
-from enum import Enum, IntEnum
-from typing import Any, Callable, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
+from enum import IntEnum
+from typing import Any, Callable, List, Mapping, NamedTuple, Set, Tuple, Type, Union
 
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
