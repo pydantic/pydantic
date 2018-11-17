@@ -9,10 +9,37 @@ import pytest
 
 from pydantic import BaseModel, Schema, ValidationError
 from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_maps, schema
-from pydantic.types import (DSN, UUID1, UUID3, UUID4, UUID5, ConstrainedDecimal, ConstrainedFloat, ConstrainedInt,
-                            ConstrainedStr, DirectoryPath, EmailStr, FilePath, Json, NameEmail, NegativeFloat,
-                            NegativeInt, NoneBytes, NoneStr, NoneStrBytes, PositiveFloat, PositiveInt, StrBytes,
-                            StrictStr, UrlStr, condecimal, confloat, conint, constr, urlstr)
+from pydantic.types import (
+    DSN,
+    UUID1,
+    UUID3,
+    UUID4,
+    UUID5,
+    ConstrainedDecimal,
+    ConstrainedFloat,
+    ConstrainedInt,
+    ConstrainedStr,
+    DirectoryPath,
+    EmailStr,
+    FilePath,
+    Json,
+    NameEmail,
+    NegativeFloat,
+    NegativeInt,
+    NoneBytes,
+    NoneStr,
+    NoneStrBytes,
+    PositiveFloat,
+    PositiveInt,
+    StrBytes,
+    StrictStr,
+    UrlStr,
+    condecimal,
+    confloat,
+    conint,
+    constr,
+    urlstr,
+)
 
 from .schema_test_package.modulea.modela import Model as ModelA
 from .schema_test_package.moduleb.modelb import Model as ModelB
