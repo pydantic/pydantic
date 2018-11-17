@@ -154,58 +154,7 @@ class Field:
         self._populate_sub_fields()
         self._populate_validators()
 
-    def schema(self, by_alias=True):
-        s = dict(title=self._schema.title or self.alias.title(), required=self.required)
-
-        if not self.required and self.default is not None:
-            s['default'] = self.default
-        s.update(self._schema.extra)
-
-        ts = self.type_schema(by_alias)
-        s.update(ts if isinstance(ts, dict) else {'type': ts})
-        return s
-
-    def type_schema(self, by_alias):
-        if self.shape is Shape.LIST:
-            return {'type': 'list', 'item_type': self._singleton_schema(by_alias)}
-        if self.shape is Shape.SET:
-            return {'type': 'set', 'item_type': self._singleton_schema(by_alias)}
-        elif self.shape is Shape.MAPPING:
-            return {
-                'type': 'mapping',
-                'item_type': self._singleton_schema(by_alias),
-                'key_type': self.key_field.type_schema(by_alias),
-            }
-        elif self.shape is Shape.TUPLE:
-            return {'type': 'tuple', 'item_types': [sf.type_schema(by_alias) for sf in self.sub_fields]}
-        else:
-            assert self.shape is Shape.SINGLETON, self.shape
-            return self._singleton_schema(by_alias)
-
-    def _singleton_schema(self, by_alias):
-        if self.sub_fields:
-            if len(self.sub_fields) == 1:
-                return self.sub_fields[0].type_schema(by_alias)
-            else:
-                return {'type': 'any_of', 'types': [sf.type_schema(by_alias) for sf in self.sub_fields]}
-        elif self.type_ is Any:
-            return 'any'
-        elif issubclass(self.type_, Enum):
-            choice_names = self._schema.choice_names or {}
-            return {
-                'type': display_as_type(self.type_),
-                'choices': [
-                    (v.value, choice_names.get(v.value) or k.title()) for k, v in self.type_.__members__.items()
-                ],
-            }
-
-        type_schema_method = getattr(self.type_, 'type_schema', None)
-        if callable(type_schema_method):
-            return type_schema_method(by_alias)
-        else:
-            return display_as_type(self.type_)
-
-    def _populate_sub_fields(self):  # noqa: C901 (ignore complexity)
+    def _populate_sub_fields(self):
         # typing interface is horrible, we have to do some ugly checks
         if isinstance(self.type_, type) and issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type
