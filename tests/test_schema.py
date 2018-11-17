@@ -1,11 +1,17 @@
 import json
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from uuid import UUID
 
 import pytest
 
 from pydantic import BaseModel, Schema, ValidationError
+from pydantic.types import (DSN, UUID1, UUID3, UUID4, UUID5, ConstrainedDecimal, ConstrainedFloat, ConstrainedInt,
+                            ConstrainedStr, DirectoryPath, EmailStr, FilePath, Json, NameEmail, NegativeFloat,
+                            NegativeInt, NoneBytes, NoneStr, NoneStrBytes, PositiveFloat, PositiveInt, StrBytes,
+                            StrictStr, UrlStr, condecimal, confloat, conint, constr, urlstr)
 
 
 def test_key():
@@ -313,4 +319,232 @@ def test_list_union_dict():
             'e': {'title': 'E', 'type': 'object'},
         },
         'required': ['a', 'b', 'c', 'e'],
+    }
+
+
+def test_date_types():
+    class Model(BaseModel):
+        a: datetime
+        b: date
+        c: time
+        d: timedelta
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'string', 'format': 'date-time'},
+            'b': {'title': 'B', 'type': 'string', 'format': 'date'},
+            'c': {'title': 'C', 'type': 'string', 'format': 'time'},
+            'd': {'title': 'D', 'type': 'string', 'format': 'time-delta'},
+        },
+        'required': ['a', 'b', 'c', 'd'],
+    }
+
+
+def test_str_basic_types():
+    class Model(BaseModel):
+        a: NoneStr
+        b: NoneBytes
+        c: StrBytes
+        d: NoneStrBytes
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'string'},
+            'b': {'title': 'B', 'type': 'string', 'format': 'binary'},
+            'c': {
+                'title': 'C',
+                'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}],
+            },
+            'd': {
+                'title': 'D',
+                'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}],
+            },
+        },
+        'required': ['c'],
+    }
+
+
+def test_str_constrained_types():
+    class Model(BaseModel):
+        a: StrictStr
+        b: ConstrainedStr
+        c: constr(min_length=3, max_length=5, regex='^text$')
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'string'},
+            'b': {'title': 'B', 'type': 'string'},
+            'c': {
+                'title': 'C',
+                'type': 'string',
+                'minLength': 3,
+                'maxLength': 5,
+                'pattern': '^text$',
+            },
+        },
+        'required': ['a', 'b', 'c'],
+    }
+
+
+def test_special_str_types():
+    class Model(BaseModel):
+        a: EmailStr
+        b: UrlStr
+        c: urlstr(min_length=5, max_length=10)
+        d: NameEmail
+        e: DSN
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'string', 'format': 'email'},
+            'b': {
+                'title': 'B',
+                'type': 'string',
+                'format': 'uri',
+                'minLength': 1,
+                'maxLength': 2 ** 16,
+            },
+            'c': {
+                'title': 'C',
+                'type': 'string',
+                'format': 'uri',
+                'minLength': 5,
+                'maxLength': 10,
+            },
+            'd': {'title': 'D', 'type': 'string', 'format': 'name-email'},
+            'e': {'title': 'E', 'type': 'string', 'format': 'dsn'},
+        },
+        'required': ['a', 'b', 'c', 'd', 'e'],
+    }
+
+
+def test_special_int_types():
+    class Model(BaseModel):
+        a: ConstrainedInt
+        b: conint(gt=5, lt=10)
+        c: conint(ge=5, le=10)
+        d: PositiveInt
+        e: NegativeInt
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {
+                'title': 'B',
+                'type': 'integer',
+                'exclusiveMinimum': 5,
+                'exclusiveMaximum': 10,
+            },
+            'c': {'title': 'C', 'type': 'integer', 'minimum': 5, 'maximum': 10},
+            'd': {'title': 'D', 'type': 'integer', 'exclusiveMinimum': 0},
+            'e': {'title': 'E', 'type': 'integer', 'exclusiveMaximum': 0},
+        },
+        'required': ['a', 'b', 'c', 'd', 'e'],
+    }
+
+
+def test_special_float_types():
+    class Model(BaseModel):
+        a: ConstrainedFloat
+        b: confloat(gt=5, lt=10)
+        c: confloat(ge=5, le=10)
+        d: PositiveFloat
+        e: NegativeFloat
+        f: ConstrainedDecimal
+        g: condecimal(gt=5, lt=10)
+        h: condecimal(ge=5, le=10)
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'number'},
+            'b': {
+                'title': 'B',
+                'type': 'number',
+                'exclusiveMinimum': 5,
+                'exclusiveMaximum': 10,
+            },
+            'c': {'title': 'C', 'type': 'number', 'minimum': 5, 'maximum': 10},
+            'd': {'title': 'D', 'type': 'number', 'exclusiveMinimum': 0},
+            'e': {'title': 'E', 'type': 'number', 'exclusiveMaximum': 0},
+            'f': {'title': 'F', 'type': 'number'},
+            'g': {
+                'title': 'G',
+                'type': 'number',
+                'exclusiveMinimum': 5,
+                'exclusiveMaximum': 10,
+            },
+            'h': {'title': 'H', 'type': 'number', 'minimum': 5, 'maximum': 10},
+        },
+        'required': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+    }
+
+
+def test_uuid_types():
+    class Model(BaseModel):
+        a: UUID
+        b: UUID1
+        c: UUID3
+        d: UUID4
+        e: UUID5
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'string', 'format': 'uuid'},
+            'b': {'title': 'B', 'type': 'string', 'format': 'uuid1'},
+            'c': {'title': 'C', 'type': 'string', 'format': 'uuid3'},
+            'd': {'title': 'D', 'type': 'string', 'format': 'uuid4'},
+            'e': {'title': 'E', 'type': 'string', 'format': 'uuid5'},
+        },
+        'required': ['a', 'b', 'c', 'd', 'e'],
+    }
+
+
+def test_path_types():
+    class Model(BaseModel):
+        a: FilePath
+        b: DirectoryPath
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'string', 'format': 'file-path'},
+            'b': {'title': 'B', 'type': 'string', 'format': 'directory-path'},
+        },
+        'required': ['a', 'b'],
+    }
+
+
+def test_json_type():
+    class Model(BaseModel):
+        a: Json
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
+        'required': ['a'],
     }
