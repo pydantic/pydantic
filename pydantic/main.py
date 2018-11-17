@@ -17,6 +17,8 @@ from .types import StrBytes
 from .utils import clean_docstring, truncate, validate_field_name
 from .validators import dict_validator
 
+from .schema import model_schema, model_type_schema
+
 
 class BaseConfig:
     title = None
@@ -164,7 +166,7 @@ _missing = object()
 
 class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
-    __fields__ = {}
+    __fields__: Dict[str, Field] = {}
     __validators__ = {}
 
     Config = BaseConfig
@@ -318,25 +320,14 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def type_schema(cls, by_alias):
-        return {
-            'type': 'object',
-            'properties': (
-                {f.alias: f.schema(by_alias) for f in cls.__fields__.values()}
-                if by_alias
-                else {k: f.schema(by_alias) for k, f in cls.__fields__.items()}
-            ),
-        }
+        return model_type_schema(cls, by_alias=by_alias)
 
     @classmethod
     def schema(cls, by_alias=True) -> Dict[str, Any]:
         cached = cls._schema_cache.get(by_alias)
         if cached is not None:
             return cached
-        s = {'title': cls.__config__.title or cls.__name__}
-        if cls.__doc__:
-            s['description'] = clean_docstring(cls.__doc__)
-
-        s.update(cls.type_schema(by_alias))
+        s = model_schema(cls, by_alias=by_alias)
         cls._schema_cache[by_alias] = s
         return s
 
