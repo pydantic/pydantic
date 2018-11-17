@@ -43,6 +43,7 @@ from pydantic.types import (
 from .schema_test_package.modulea.modela import Model as ModelA
 from .schema_test_package.moduleb.modelb import Model as ModelB
 from .schema_test_package.modulec.modelc import Model as ModelC
+from .schema_test_package.moduled.modeld import Model as ModelD
 
 
 def test_key():
@@ -628,7 +629,7 @@ def test_model_name_maps():
     class Baz(BaseModel):
         c: Bar
 
-    flat_models = get_flat_models_from_models([Baz, ModelA, ModelB, ModelC])
+    flat_models = get_flat_models_from_models([Baz, ModelA, ModelB, ModelC, ModelD])
     name_model_map, model_name_map = get_model_name_maps(flat_models)
     assert name_model_map == {
         'Foo': Foo,
@@ -636,6 +637,7 @@ def test_model_name_maps():
         'Baz': Baz,
         'tests__schema_test_package__modulea__modela__Model': ModelA,
         'tests__schema_test_package__moduleb__modelb__Model': ModelB,
+        'tests__schema_test_package__moduled__modeld__Model': ModelD,
     }
     assert model_name_map == {
         Foo: 'Foo',
@@ -643,6 +645,7 @@ def test_model_name_maps():
         Baz: 'Baz',
         ModelA: 'tests__schema_test_package__modulea__modela__Model',
         ModelB: 'tests__schema_test_package__moduleb__modelb__Model',
+        ModelD: 'tests__schema_test_package__moduled__modeld__Model',
     }
 
 
@@ -654,7 +657,7 @@ def test_schema_overrides():
         b: Foo = Foo(a='foo')
 
     class Baz(BaseModel):
-        c: Bar
+        c: Optional[Bar]
 
     class Model(BaseModel):
         d: Baz
@@ -681,7 +684,6 @@ def test_schema_overrides():
                 'title': 'Baz',
                 'type': 'object',
                 'properties': {'c': {'$ref': '#/definitions/Bar'}},
-                'required': ['c'],
             },
         },
         'properties': {'d': {'$ref': '#/definitions/Baz'}},
