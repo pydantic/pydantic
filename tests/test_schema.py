@@ -20,9 +20,10 @@ def test_key():
     s = {
         'type': 'object',
         'properties': {
-            'a': {'type': 'float', 'required': True, 'title': 'A'},
-            'b': {'type': 'int', 'required': False, 'title': 'B', 'default': 10},
+            'a': {'type': 'number', 'title': 'A'},
+            'b': {'type': 'integer', 'title': 'B', 'default': 10},
         },
+        'required': ['a'],
         'title': 'ApplePie',
         'description': 'This is a test.',
     }
@@ -47,13 +48,16 @@ def test_by_alias():
         'type': 'object',
         'title': 'Apple Pie',
         'properties': {
-            'Snap': {'type': 'float', 'required': True, 'title': 'Snap'},
-            'Crackle': {'type': 'int', 'required': False, 'title': 'Crackle', 'default': 10},
+            'Snap': {'type': 'number', 'title': 'Snap'},
+            'Crackle': {'type': 'integer', 'title': 'Crackle', 'default': 10},
         },
+        'required': ['Snap'],
     }
     assert ApplePie.schema() == s
-    assert ApplePie.schema() == s
-    assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
+    assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == [
+        'Snap',
+        'Crackle',
+    ]
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
 
 
@@ -71,14 +75,16 @@ def test_sub_model():
         'type': 'object',
         'title': 'Bar',
         'properties': {
-            'a': {'type': 'int', 'title': 'A', 'required': True},
+            'a': {'type': 'integer', 'title': 'A'},
             'b': {
                 'type': 'object',
-                'title': 'B',
-                'properties': {'b': {'type': 'float', 'title': 'B', 'required': True}},
-                'required': False,
+                'title': 'Foo',
+                'description': 'hello',
+                'properties': {'b': {'type': 'number', 'title': 'B'}},
+                'required': ['b'],
             },
         },
+        'required': ['a'],
     }
 
 
@@ -97,9 +103,14 @@ def test_schema_class():
         'type': 'object',
         'title': 'Model',
         'properties': {
-            'foo': {'type': 'int', 'title': 'Foo is Great', 'required': False, 'default': 4},
-            'bar': {'type': 'str', 'title': 'Bar', 'required': True, 'description': 'this description of bar'},
+            'foo': {'type': 'integer', 'title': 'Foo is Great', 'default': 4},
+            'bar': {
+                'type': 'string',
+                'title': 'Bar',
+                'description': 'this description of bar',
+            },
         },
+        'required': ['bar'],
     }
 
 
@@ -122,16 +133,17 @@ def test_choices():
     class Model(BaseModel):
         foo: FooEnum
         bar: BarEnum
-        spam: SpamEnum = Schema(None, choice_names={'f': 'Sausage'})
+        spam: SpamEnum = Schema(None)
 
     assert Model.schema() == {
         'type': 'object',
         'title': 'Model',
         'properties': {
-            'foo': {'type': 'enum', 'title': 'Foo', 'required': True, 'choices': [('f', 'Foo'), ('b', 'Bar')]},
-            'bar': {'type': 'int', 'title': 'Bar', 'required': True, 'choices': [(1, 'Foo'), (2, 'Bar')]},
-            'spam': {'type': 'str', 'title': 'Spam', 'required': False, 'choices': [('f', 'Sausage'), ('b', 'Bar')]},
+            'foo': {'title': 'Foo', 'enum': ['f', 'b']},
+            'bar': {'type': 'integer', 'title': 'Bar', 'enum': [1, 2]},
+            'spam': {'type': 'string', 'title': 'Spam', 'enum': ['f', 'b']},
         },
+        'required': ['foo', 'bar'],
     }
 
 
@@ -150,15 +162,14 @@ def test_json_schema():
         '  "properties": {\n'
         '    "a": {\n'
         '      "title": "A",\n'
-        '      "required": false,\n'
         '      "default": "foobar",\n'
-        '      "type": "bytes"\n'
+        '      "type": "string",\n'
+        '      "format": "binary"\n'
         '    },\n'
         '    "b": {\n'
         '      "title": "B",\n'
-        '      "required": false,\n'
         '      "default": 12.34,\n'
-        '      "type": "Decimal"\n'
+        '      "type": "number"\n'
         '    }\n'
         '  }\n'
         '}'
@@ -177,12 +188,17 @@ def test_list_sub_model():
         'type': 'object',
         'properties': {
             'b': {
-                'type': 'list',
-                'item_type': {'type': 'object', 'properties': {'a': {'type': 'float', 'title': 'A', 'required': True}}},
+                'type': 'array',
+                'items': {
+                    'title': 'Foo',
+                    'type': 'object',
+                    'properties': {'a': {'type': 'number', 'title': 'A'}},
+                    'required': ['a'],
+                },
                 'title': 'B',
-                'required': True,
             }
         },
+        'required': ['b'],
     }
 
 
@@ -193,7 +209,7 @@ def test_optional():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'type': 'str', 'title': 'A', 'required': False}},
+        'properties': {'a': {'type': 'string', 'title': 'A'}},
     }
 
 
@@ -204,7 +220,8 @@ def test_any():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'type': 'any', 'title': 'A', 'required': True}},
+        'properties': {'a': {'title': 'A'}},
+        'required': ['a'],
     }
 
 
@@ -215,7 +232,15 @@ def test_set():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'required': True, 'type': 'set', 'item_type': 'int'}},
+        'properties': {
+            'a': {
+                'title': 'A',
+                'type': 'array',
+                'uniqueItems': True,
+                'items': {'type': 'integer'},
+            }
+        },
+        'required': ['a'],
     }
 
 
@@ -229,11 +254,22 @@ def test_tuple():
         'properties': {
             'a': {
                 'title': 'A',
-                'required': True,
-                'type': 'tuple',
-                'item_types': ['str', 'int', {'type': 'any_of', 'types': ['str', 'int', 'float']}, 'float'],
+                'type': 'array',
+                'items': [
+                    {'type': 'string'},
+                    {'type': 'integer'},
+                    {
+                        'anyOf': [
+                            {'type': 'string'},
+                            {'type': 'integer'},
+                            {'type': 'number'},
+                        ]
+                    },
+                    {'type': 'number'},
+                ],
             }
         },
+        'required': ['a'],
     }
 
 
@@ -246,30 +282,35 @@ def test_list_union_dict():
 
         a: Union[int, str]
         b: List[int]
-        c: Dict[int, Foo]
+        c: Dict[str, Foo]
         d: Union[None, Foo]
         e: Dict[str, Any]
 
-    assert Model.schema() == {
+    model_schema = Model.schema()
+    assert model_schema == {
         'title': 'Model',
         'description': 'party time',
         'type': 'object',
         'properties': {
-            'a': {'title': 'A', 'required': True, 'type': 'any_of', 'types': ['int', 'str']},
-            'b': {'title': 'B', 'required': True, 'type': 'list', 'item_type': 'int'},
+            'a': {'title': 'A', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
+            'b': {'title': 'B', 'type': 'array', 'items': {'type': 'integer'}},
             'c': {
                 'title': 'C',
-                'required': True,
-                'type': 'mapping',
-                'item_type': {'type': 'object', 'properties': {'a': {'title': 'A', 'required': True, 'type': 'float'}}},
-                'key_type': 'int',
+                'type': 'object',
+                'additionalProperties': {
+                    'title': 'Foo',
+                    'type': 'object',
+                    'properties': {'a': {'title': 'A', 'type': 'number'}},
+                    'required': ['a'],
+                },
             },
             'd': {
-                'title': 'D',
-                'required': False,
+                'title': 'Foo',
                 'type': 'object',
-                'properties': {'a': {'title': 'A', 'required': True, 'type': 'float'}},
+                'properties': {'a': {'title': 'A', 'type': 'number'}},
+                'required': ['a'],
             },
-            'e': {'title': 'E', 'required': True, 'type': 'mapping', 'item_type': 'any', 'key_type': 'str'},
+            'e': {'title': 'E', 'type': 'object'},
         },
+        'required': ['a', 'b', 'c', 'e'],
     }
