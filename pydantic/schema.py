@@ -274,7 +274,7 @@ def field_singleton_sub_fields_schema(
         return {'anyOf': sub_field_schemas}, definitions
 
 
-def field_singleton_schema(
+def field_singleton_schema(  # noqa: C901 (ignore complexity)
     field: Field,
     *,
     by_alias: bool,
