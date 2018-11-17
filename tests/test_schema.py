@@ -1,4 +1,3 @@
-import json
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -779,12 +778,12 @@ def test_schema_with_ref_prefix():
     model_schema = schema(
         [Bar, Baz],
         title='Multi-model schema',
-        description='Custom prefix for $ref fields, moving the definitions to the correspondig location has to be done by the developer',
+        description='Custom prefix for $ref fields',
         ref_prefix='#/components/schemas/',  # OpenAPI style
     )
     assert model_schema == {
         'title': 'Multi-model schema',
-        'description': 'Custom prefix for $ref fields, moving the definitions to the correspondig location has to be done by the developer',
+        'description': 'Custom prefix for $ref fields',
         'definitions': {
             'Baz': {
                 'title': 'Baz',
