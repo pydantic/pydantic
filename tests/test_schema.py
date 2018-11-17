@@ -737,3 +737,45 @@ def test_schema_from_models():
             },
         },
     }
+
+
+def test_schema_with_ref_prefix():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    model_schema = schema(
+        [Bar, Baz],
+        title='Multi-model schema',
+        description='Custom prefix for $ref fields, moving the definitions to the correspondig location has to be done by the developer',
+        ref_prefix='#/components/schemas/',  # OpenAPI style
+    )
+    assert model_schema == {
+        'title': 'Multi-model schema',
+        'description': 'Custom prefix for $ref fields, moving the definitions to the correspondig location has to be done by the developer',
+        'definitions': {
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'$ref': '#/components/schemas/Bar'}},
+                'required': ['c'],
+            },
+            'Bar': {
+                'title': 'Bar',
+                'type': 'object',
+                'properties': {'b': {'$ref': '#/components/schemas/Foo'}},
+                'required': ['b'],
+            },
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            },
+        },
+    }
