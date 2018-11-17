@@ -8,19 +8,7 @@ from uuid import UUID
 from . import main
 from .fields import Field, Shape
 from .json import pydantic_encoder
-from .types import (
-    DSN,
-    UUID1,
-    UUID3,
-    UUID4,
-    UUID5,
-    DirectoryPath,
-    EmailStr,
-    FilePath,
-    Json,
-    NameEmail,
-    UrlStr,
-)
+from .types import DSN, UUID1, UUID3, UUID4, UUID5, DirectoryPath, EmailStr, FilePath, Json, NameEmail, UrlStr
 from .utils import clean_docstring
 
 

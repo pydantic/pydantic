@@ -13,11 +13,10 @@ from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field, Validator
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
+from .schema import model_schema
 from .types import StrBytes
 from .utils import truncate, validate_field_name
 from .validators import dict_validator
-
-from .schema import model_schema
 
 
 class BaseConfig:
