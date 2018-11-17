@@ -80,7 +80,11 @@ def get_model_name_maps(
 
 
 def field_schema(
-    field: Field, *, by_alias=True, model_name_map: Dict[Type['main.BaseModel'], str]
+    field: Field,
+    *,
+    by_alias=True,
+    model_name_map: Dict[Type['main.BaseModel'], str],
+    ref_prefix='#/definitions/',
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     schema_overrides = False
     s = dict(title=field._schema.title or field.alias.title())
@@ -102,6 +106,7 @@ def field_schema(
         by_alias=by_alias,
         model_name_map=model_name_map,
         schema_overrides=schema_overrides,
+        ref_prefix=ref_prefix,
     )
     # $ref will only be returned when there are no schema_overrides
     if '$ref' in f_schema:
@@ -117,23 +122,33 @@ def field_type_schema(
     by_alias: bool,
     model_name_map: Dict[Type['main.BaseModel'], str],
     schema_overrides=False,
+    ref_prefix='#/definitions/',
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     definitions = {}
     if field.shape is Shape.LIST:
         f_schema, f_definitions = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map
+            field,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
         )
         definitions.update(f_definitions)
         return {'type': 'array', 'items': f_schema}, definitions
     elif field.shape is Shape.SET:
         f_schema, f_definitions = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map
+            field,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
         )
         definitions.update(f_definitions)
         return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions
     elif field.shape is Shape.MAPPING:
         f_schema, f_definitions = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map
+            field,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
         )
         definitions.update(f_definitions)
         if f_schema:
@@ -146,7 +161,10 @@ def field_type_schema(
         sub_schema = []
         for sf in field.sub_fields:
             sf_schema, sf_definitions = field_type_schema(
-                sf, by_alias=by_alias, model_name_map=model_name_map
+                sf,
+                by_alias=by_alias,
+                model_name_map=model_name_map,
+                ref_prefix=ref_prefix,
             )
             definitions.update(sf_definitions)
             sub_schema.append(sf_schema)
@@ -160,6 +178,7 @@ def field_type_schema(
             by_alias=by_alias,
             model_name_map=model_name_map,
             schema_overrides=schema_overrides,
+            ref_prefix=ref_prefix,
         )
         definitions.update(f_definitions)
         return f_schema, definitions
@@ -170,12 +189,13 @@ def model_process_schema(
     *,
     by_alias=True,
     model_name_map: Dict[Type['main.BaseModel'], str],
+    ref_prefix='#/definitions/',
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     s = {'title': class_.__config__.title or class_.__name__}
     if class_.__doc__:
         s['description'] = clean_docstring(class_.__doc__)
     m_schema, m_definitions = model_type_schema(
-        class_, by_alias=by_alias, model_name_map=model_name_map
+        class_, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
     )
     s.update(m_schema)
     return s, m_definitions
@@ -186,13 +206,14 @@ def model_type_schema(
     *,
     by_alias: bool,
     model_name_map: Dict[Type['main.BaseModel'], str],
+    ref_prefix='#/definitions/',
 ):
     properties = {}
     required = []
     definitions = {}
     for k, f in class_.__fields__.items():
         f_schema, f_definitions = field_schema(
-            f, by_alias=by_alias, model_name_map=model_name_map
+            f, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
         definitions.update(f_definitions)
         if by_alias:
@@ -215,18 +236,25 @@ def field_singleton_schema(
     by_alias: bool,
     model_name_map: Dict[Type['main.BaseModel'], str],
     schema_overrides=False,
+    ref_prefix='#/definitions/',
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     definitions = {}
     if field.sub_fields:
         if len(field.sub_fields) == 1:
             return field_type_schema(
-                field.sub_fields[0], by_alias=by_alias, model_name_map=model_name_map
+                field.sub_fields[0],
+                by_alias=by_alias,
+                model_name_map=model_name_map,
+                ref_prefix=ref_prefix,
             )
         else:
             sub_field_schemas = []
             for sf in field.sub_fields:
                 sub_schema, sub_definitions = field_type_schema(
-                    sf, by_alias=by_alias, model_name_map=model_name_map
+                    sf,
+                    by_alias=by_alias,
+                    model_name_map=model_name_map,
+                    ref_prefix=ref_prefix,
                 )
                 definitions.update(sub_definitions)
                 sub_field_schemas.append(sub_schema)
@@ -313,23 +341,28 @@ def field_singleton_schema(
         return {'type': 'string', 'format': 'json-string'}, definitions
     elif issubclass(field.type_, main.BaseModel):
         sub_schema, sub_definitions = model_process_schema(
-            field.type_, by_alias=by_alias, model_name_map=model_name_map
+            field.type_,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
         )
         definitions.update(sub_definitions)
         if not schema_overrides:
             model_name = model_name_map[field.type_]
             definitions[model_name] = sub_schema
-            return {'$ref': f'#/definitions/{model_name}'}, definitions
+            return {'$ref': f'{ref_prefix}{model_name}'}, definitions
         else:
             return sub_schema, definitions
     raise ValueError('Value not declarable with JSON Schema')
 
 
-def model_schema(class_: 'main.BaseModel', by_alias=True) -> Dict[str, Any]:
+def model_schema(
+    class_: 'main.BaseModel', by_alias=True, ref_prefix='#/definitions/'
+) -> Dict[str, Any]:
     flat_models = get_flat_models_from_model(class_)
     _, model_name_map = get_model_name_maps(flat_models)
     m_schema, m_definitions = model_process_schema(
-        class_, by_alias=by_alias, model_name_map=model_name_map
+        class_, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
     )
     if m_definitions:
         m_schema.update({'definitions': m_definitions})
@@ -342,6 +375,7 @@ def schema(
     by_alias=True,
     title=None,
     description=None,
+    ref_prefix='#/definitions/',
 ) -> Dict:
     flat_models = get_flat_models_from_models(models)
     _, model_name_map = get_model_name_maps(flat_models)
@@ -353,7 +387,10 @@ def schema(
         output_schema['description'] = description
     for model in models:
         m_schema, m_definitions = model_process_schema(
-            model, by_alias=by_alias, model_name_map=model_name_map
+            model,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
         )
         definitions.update(m_definitions)
         model_name = model_name_map[model]
