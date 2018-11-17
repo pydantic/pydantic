@@ -57,10 +57,7 @@ def test_key():
 
     s = {
         'type': 'object',
-        'properties': {
-            'a': {'type': 'number', 'title': 'A'},
-            'b': {'type': 'integer', 'title': 'B', 'default': 10},
-        },
+        'properties': {'a': {'type': 'number', 'title': 'A'}, 'b': {'type': 'integer', 'title': 'B', 'default': 10}},
         'required': ['a'],
         'title': 'ApplePie',
         'description': 'This is a test.',
@@ -92,10 +89,7 @@ def test_by_alias():
         'required': ['Snap'],
     }
     assert ApplePie.schema() == s
-    assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == [
-        'Snap',
-        'Crackle',
-    ]
+    assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
 
 
@@ -121,10 +115,7 @@ def test_sub_model():
                 'required': ['b'],
             }
         },
-        'properties': {
-            'a': {'type': 'integer', 'title': 'A'},
-            'b': {'$ref': '#/definitions/Foo'},
-        },
+        'properties': {'a': {'type': 'integer', 'title': 'A'}, 'b': {'$ref': '#/definitions/Foo'}},
         'required': ['a'],
     }
 
@@ -145,11 +136,7 @@ def test_schema_class():
         'title': 'Model',
         'properties': {
             'foo': {'type': 'integer', 'title': 'Foo is Great', 'default': 4},
-            'bar': {
-                'type': 'string',
-                'title': 'Bar',
-                'description': 'this description of bar',
-            },
+            'bar': {'type': 'string', 'title': 'Bar', 'description': 'this description of bar'},
         },
         'required': ['bar'],
     }
@@ -232,9 +219,7 @@ def test_list_sub_model():
                 'required': ['a'],
             }
         },
-        'properties': {
-            'b': {'type': 'array', 'items': {'$ref': '#/definitions/Foo'}, 'title': 'B'}
-        },
+        'properties': {'b': {'type': 'array', 'items': {'$ref': '#/definitions/Foo'}, 'title': 'B'}},
         'required': ['b'],
     }
 
@@ -243,11 +228,7 @@ def test_optional():
     class Model(BaseModel):
         a: Optional[str]
 
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'type': 'string', 'title': 'A'}},
-    }
+    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'type': 'string', 'title': 'A'}}}
 
 
 def test_any():
@@ -269,14 +250,7 @@ def test_set():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {
-                'title': 'A',
-                'type': 'array',
-                'uniqueItems': True,
-                'items': {'type': 'integer'},
-            }
-        },
+        'properties': {'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}}},
         'required': ['a'],
     }
 
@@ -295,13 +269,7 @@ def test_tuple():
                 'items': [
                     {'type': 'string'},
                     {'type': 'integer'},
-                    {
-                        'anyOf': [
-                            {'type': 'string'},
-                            {'type': 'integer'},
-                            {'type': 'number'},
-                        ]
-                    },
+                    {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
                     {'type': 'number'},
                 ],
             }
@@ -339,11 +307,7 @@ def test_list_union_dict():
         'properties': {
             'a': {'title': 'A', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
             'b': {'title': 'B', 'type': 'array', 'items': {'type': 'integer'}},
-            'c': {
-                'title': 'C',
-                'type': 'object',
-                'additionalProperties': {'$ref': '#/definitions/Foo'},
-            },
+            'c': {'title': 'C', 'type': 'object', 'additionalProperties': {'$ref': '#/definitions/Foo'}},
             'd': {'$ref': '#/definitions/Foo'},
             'e': {'title': 'E', 'type': 'object'},
         },
@@ -386,14 +350,8 @@ def test_str_basic_types():
         'properties': {
             'a': {'title': 'A', 'type': 'string'},
             'b': {'title': 'B', 'type': 'string', 'format': 'binary'},
-            'c': {
-                'title': 'C',
-                'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}],
-            },
-            'd': {
-                'title': 'D',
-                'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}],
-            },
+            'c': {'title': 'C', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]},
+            'd': {'title': 'D', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]},
         },
         'required': ['c'],
     }
@@ -412,13 +370,7 @@ def test_str_constrained_types():
         'properties': {
             'a': {'title': 'A', 'type': 'string'},
             'b': {'title': 'B', 'type': 'string'},
-            'c': {
-                'title': 'C',
-                'type': 'string',
-                'minLength': 3,
-                'maxLength': 5,
-                'pattern': '^text$',
-            },
+            'c': {'title': 'C', 'type': 'string', 'minLength': 3, 'maxLength': 5, 'pattern': '^text$'},
         },
         'required': ['a', 'b', 'c'],
     }
@@ -438,20 +390,8 @@ def test_special_str_types():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'type': 'string', 'format': 'email'},
-            'b': {
-                'title': 'B',
-                'type': 'string',
-                'format': 'uri',
-                'minLength': 1,
-                'maxLength': 2 ** 16,
-            },
-            'c': {
-                'title': 'C',
-                'type': 'string',
-                'format': 'uri',
-                'minLength': 5,
-                'maxLength': 10,
-            },
+            'b': {'title': 'B', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16},
+            'c': {'title': 'C', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
             'd': {'title': 'D', 'type': 'string', 'format': 'name-email'},
             'e': {'title': 'E', 'type': 'string', 'format': 'dsn'},
         },
@@ -473,12 +413,7 @@ def test_special_int_types():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'type': 'integer'},
-            'b': {
-                'title': 'B',
-                'type': 'integer',
-                'exclusiveMinimum': 5,
-                'exclusiveMaximum': 10,
-            },
+            'b': {'title': 'B', 'type': 'integer', 'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
             'c': {'title': 'C', 'type': 'integer', 'minimum': 5, 'maximum': 10},
             'd': {'title': 'D', 'type': 'integer', 'exclusiveMinimum': 0},
             'e': {'title': 'E', 'type': 'integer', 'exclusiveMaximum': 0},
@@ -504,22 +439,12 @@ def test_special_float_types():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'type': 'number'},
-            'b': {
-                'title': 'B',
-                'type': 'number',
-                'exclusiveMinimum': 5,
-                'exclusiveMaximum': 10,
-            },
+            'b': {'title': 'B', 'type': 'number', 'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
             'c': {'title': 'C', 'type': 'number', 'minimum': 5, 'maximum': 10},
             'd': {'title': 'D', 'type': 'number', 'exclusiveMinimum': 0},
             'e': {'title': 'E', 'type': 'number', 'exclusiveMaximum': 0},
             'f': {'title': 'F', 'type': 'number'},
-            'g': {
-                'title': 'G',
-                'type': 'number',
-                'exclusiveMinimum': 5,
-                'exclusiveMaximum': 10,
-            },
+            'g': {'title': 'G', 'type': 'number', 'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
             'h': {'title': 'H', 'type': 'number', 'minimum': 5, 'maximum': 10},
         },
         'required': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
@@ -680,11 +605,7 @@ def test_schema_overrides():
                     }
                 },
             },
-            'Baz': {
-                'title': 'Baz',
-                'type': 'object',
-                'properties': {'c': {'$ref': '#/definitions/Bar'}},
-            },
+            'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
         },
         'properties': {'d': {'$ref': '#/definitions/Baz'}},
         'required': ['d'],
@@ -712,9 +633,7 @@ def test_schema_from_models():
         ingredients: List[Ingredient]
 
     model_schema = schema(
-        [Model, Pizza],
-        title='Multi-model schema',
-        description='Single JSON Schema with multiple definitions',
+        [Model, Pizza], title='Multi-model schema', description='Single JSON Schema with multiple definitions'
     )
     assert model_schema == {
         'title': 'Multi-model schema',
