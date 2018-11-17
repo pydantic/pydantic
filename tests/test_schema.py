@@ -8,10 +8,15 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, Schema, ValidationError
+from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_maps, schema
 from pydantic.types import (DSN, UUID1, UUID3, UUID4, UUID5, ConstrainedDecimal, ConstrainedFloat, ConstrainedInt,
                             ConstrainedStr, DirectoryPath, EmailStr, FilePath, Json, NameEmail, NegativeFloat,
                             NegativeInt, NoneBytes, NoneStr, NoneStrBytes, PositiveFloat, PositiveInt, StrBytes,
                             StrictStr, UrlStr, condecimal, confloat, conint, constr, urlstr)
+
+from .schema_test_package.modulea.modela import Model as ModelA
+from .schema_test_package.moduleb.modelb import Model as ModelB
+from .schema_test_package.modulec.modelc import Model as ModelC
 
 
 def test_key():
@@ -80,15 +85,18 @@ def test_sub_model():
     assert Bar.schema() == {
         'type': 'object',
         'title': 'Bar',
-        'properties': {
-            'a': {'type': 'integer', 'title': 'A'},
-            'b': {
+        'definitions': {
+            'Foo': {
                 'type': 'object',
                 'title': 'Foo',
                 'description': 'hello',
                 'properties': {'b': {'type': 'number', 'title': 'B'}},
                 'required': ['b'],
-            },
+            }
+        },
+        'properties': {
+            'a': {'type': 'integer', 'title': 'A'},
+            'b': {'$ref': '#/definitions/Foo'},
         },
         'required': ['a'],
     }
@@ -158,9 +166,6 @@ def test_json_schema():
         a = b'foobar'
         b = Decimal('12.34')
 
-    with pytest.raises(TypeError):
-        json.dumps(Model.schema())
-
     assert Model.schema_json(indent=2) == (
         '{\n'
         '  "title": "Model",\n'
@@ -192,17 +197,16 @@ def test_list_sub_model():
     assert Bar.schema() == {
         'title': 'Bar',
         'type': 'object',
-        'properties': {
-            'b': {
-                'type': 'array',
-                'items': {
-                    'title': 'Foo',
-                    'type': 'object',
-                    'properties': {'a': {'type': 'number', 'title': 'A'}},
-                    'required': ['a'],
-                },
-                'title': 'B',
+        'definitions': {
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'type': 'number', 'title': 'A'}},
+                'required': ['a'],
             }
+        },
+        'properties': {
+            'b': {'type': 'array', 'items': {'$ref': '#/definitions/Foo'}, 'title': 'B'}
         },
         'required': ['b'],
     }
@@ -297,25 +301,23 @@ def test_list_union_dict():
         'title': 'Model',
         'description': 'party time',
         'type': 'object',
+        'definitions': {
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'number'}},
+                'required': ['a'],
+            }
+        },
         'properties': {
             'a': {'title': 'A', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
             'b': {'title': 'B', 'type': 'array', 'items': {'type': 'integer'}},
             'c': {
                 'title': 'C',
                 'type': 'object',
-                'additionalProperties': {
-                    'title': 'Foo',
-                    'type': 'object',
-                    'properties': {'a': {'title': 'A', 'type': 'number'}},
-                    'required': ['a'],
-                },
+                'additionalProperties': {'$ref': '#/definitions/Foo'},
             },
-            'd': {
-                'title': 'Foo',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'number'}},
-                'required': ['a'],
-            },
+            'd': {'$ref': '#/definitions/Foo'},
             'e': {'title': 'E', 'type': 'object'},
         },
         'required': ['a', 'b', 'c', 'e'],
@@ -547,4 +549,191 @@ def test_json_type():
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
         'required': ['a'],
+    }
+
+
+def test_flat_models_unique_models():
+    flat_models = get_flat_models_from_models([ModelA, ModelB, ModelC])
+    assert flat_models == set([ModelA, ModelB])
+
+
+def test_flat_models_with_submodels():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: List[Foo]
+
+    class Baz(BaseModel):
+        c: Dict[str, Bar]
+
+    flat_models = get_flat_models_from_model(Baz)
+    assert flat_models == set([Foo, Bar, Baz])
+
+
+def test_flat_models_with_submodels_from_sequence():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    class Ingredient(BaseModel):
+        name: str
+
+    class Pizza(BaseModel):
+        name: str
+        ingredients: List[Ingredient]
+
+    flat_models = get_flat_models_from_models([Baz, Pizza])
+    assert flat_models == set([Foo, Bar, Baz, Ingredient, Pizza])
+
+
+def test_model_name_maps():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    flat_models = get_flat_models_from_models([Baz, ModelA, ModelB, ModelC])
+    name_model_map, model_name_map = get_model_name_maps(flat_models)
+    assert name_model_map == {
+        'Foo': Foo,
+        'Bar': Bar,
+        'Baz': Baz,
+        'tests__schema_test_package__modulea__modela__Model': ModelA,
+        'tests__schema_test_package__moduleb__modelb__Model': ModelB,
+    }
+    assert model_name_map == {
+        Foo: 'Foo',
+        Bar: 'Bar',
+        Baz: 'Baz',
+        ModelA: 'tests__schema_test_package__modulea__modela__Model',
+        ModelB: 'tests__schema_test_package__moduleb__modelb__Model',
+    }
+
+
+def test_schema_overrides():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo = Foo(a='foo')
+
+    class Baz(BaseModel):
+        c: Bar
+
+    class Model(BaseModel):
+        d: Baz
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'definitions': {
+            'Bar': {
+                'title': 'Bar',
+                'type': 'object',
+                'properties': {
+                    'b': {
+                        'title': 'Foo',
+                        'type': 'object',
+                        'properties': {'a': {'title': 'A', 'type': 'string'}},
+                        'required': ['a'],
+                        'default': {'a': 'foo'},
+                    }
+                },
+            },
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'$ref': '#/definitions/Bar'}},
+                'required': ['c'],
+            },
+        },
+        'properties': {'d': {'$ref': '#/definitions/Baz'}},
+        'required': ['d'],
+    }
+
+
+def test_schema_from_models():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    class Model(BaseModel):
+        d: Baz
+
+    class Ingredient(BaseModel):
+        name: str
+
+    class Pizza(BaseModel):
+        name: str
+        ingredients: List[Ingredient]
+
+    model_schema = schema(
+        [Model, Pizza],
+        title='Multi-model schema',
+        description='Single JSON Schema with multiple definitions',
+    )
+    assert model_schema == {
+        'title': 'Multi-model schema',
+        'description': 'Single JSON Schema with multiple definitions',
+        'definitions': {
+            'Pizza': {
+                'title': 'Pizza',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'ingredients': {
+                        'title': 'Ingredients',
+                        'type': 'array',
+                        'items': {'$ref': '#/definitions/Ingredient'},
+                    },
+                },
+                'required': ['name', 'ingredients'],
+            },
+            'Ingredient': {
+                'title': 'Ingredient',
+                'type': 'object',
+                'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                'required': ['name'],
+            },
+            'Model': {
+                'title': 'Model',
+                'type': 'object',
+                'properties': {'d': {'$ref': '#/definitions/Baz'}},
+                'required': ['d'],
+            },
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'$ref': '#/definitions/Bar'}},
+                'required': ['c'],
+            },
+            'Bar': {
+                'title': 'Bar',
+                'type': 'object',
+                'properties': {'b': {'$ref': '#/definitions/Foo'}},
+                'required': ['b'],
+            },
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            },
+        },
     }
