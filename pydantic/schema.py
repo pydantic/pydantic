@@ -2,13 +2,25 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Mapping, Sequence, Set, Tuple, Type
+from typing import Any, Dict, Sequence, Set, Tuple, Type
 from uuid import UUID
 
 from . import main
 from .fields import Field, Shape
 from .json import pydantic_encoder
-from .types import DSN, UUID1, UUID3, UUID4, UUID5, DirectoryPath, EmailStr, FilePath, Json, NameEmail, UrlStr
+from .types import (
+    DSN,
+    UUID1,
+    UUID3,
+    UUID4,
+    UUID5,
+    DirectoryPath,
+    EmailStr,
+    FilePath,
+    Json,
+    NameEmail,
+    UrlStr,
+)
 from .utils import clean_docstring
 
 
@@ -230,6 +242,38 @@ def model_type_schema(
     return out_schema, definitions
 
 
+def field_singleton_sub_fields_schema(
+    sub_fields: Sequence[Field],
+    *,
+    by_alias: bool,
+    model_name_map: Dict[Type['main.BaseModel'], str],
+    schema_overrides=False,
+    ref_prefix='#/definitions/',
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    definitions = {}
+    if len(sub_fields) == 1:
+        return field_type_schema(
+            sub_fields[0],
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            schema_overrides=schema_overrides,
+            ref_prefix=ref_prefix,
+        )
+    else:
+        sub_field_schemas = []
+        for sf in sub_fields:
+            sub_schema, sub_definitions = field_type_schema(
+                sf,
+                by_alias=by_alias,
+                model_name_map=model_name_map,
+                schema_overrides=schema_overrides,
+                ref_prefix=ref_prefix,
+            )
+            definitions.update(sub_definitions)
+            sub_field_schemas.append(sub_schema)
+        return {'anyOf': sub_field_schemas}, definitions
+
+
 def field_singleton_schema(
     field: Field,
     *,
@@ -240,25 +284,13 @@ def field_singleton_schema(
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     definitions = {}
     if field.sub_fields:
-        if len(field.sub_fields) == 1:
-            return field_type_schema(
-                field.sub_fields[0],
-                by_alias=by_alias,
-                model_name_map=model_name_map,
-                ref_prefix=ref_prefix,
-            )
-        else:
-            sub_field_schemas = []
-            for sf in field.sub_fields:
-                sub_schema, sub_definitions = field_type_schema(
-                    sf,
-                    by_alias=by_alias,
-                    model_name_map=model_name_map,
-                    ref_prefix=ref_prefix,
-                )
-                definitions.update(sub_definitions)
-                sub_field_schemas.append(sub_schema)
-            return {'anyOf': sub_field_schemas}, definitions
+        return field_singleton_sub_fields_schema(
+            field.sub_fields,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            schema_overrides=schema_overrides,
+            ref_prefix=ref_prefix,
+        )
     if field.type_ is Any:
         return {}, definitions  # no restrictions
     f_schema = {}
