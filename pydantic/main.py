@@ -319,10 +319,6 @@ class BaseModel(metaclass=MetaModel):
         return self.__fields__
 
     @classmethod
-    def type_schema(cls, by_alias):
-        return model_type_schema(cls, by_alias=by_alias)
-
-    @classmethod
     def schema(cls, by_alias=True) -> Dict[str, Any]:
         cached = cls._schema_cache.get(by_alias)
         if cached is not None:
