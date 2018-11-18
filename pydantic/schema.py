@@ -15,30 +15,30 @@ from .utils import clean_docstring
 def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
     flat_models = set()
     flat_models.add(model)
-    flat_models = flat_models | get_flat_models_from_fields(model.__fields__.values())
+    flat_models |= get_flat_models_from_fields(model.__fields__.values())
     return flat_models
 
 
 def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
     flat_models = set()
     if field.sub_fields:
-        flat_models = flat_models | get_flat_models_from_fields(field.sub_fields)
+        flat_models |= get_flat_models_from_fields(field.sub_fields)
     elif isinstance(field.type_, type) and issubclass(field.type_, main.BaseModel):
-        flat_models = flat_models | get_flat_models_from_model(field.type_)
+        flat_models |= get_flat_models_from_model(field.type_)
     return flat_models
 
 
 def get_flat_models_from_fields(fields) -> Set[Type['main.BaseModel']]:
     flat_models = set()
     for field in fields:
-        flat_models = flat_models | get_flat_models_from_field(field)
+        flat_models |= get_flat_models_from_field(field)
     return flat_models
 
 
 def get_flat_models_from_models(models: Sequence[Type['main.BaseModel']]) -> Set[Type['main.BaseModel']]:
     flat_models = set()
     for model in models:
-        flat_models = flat_models | get_flat_models_from_model(model)
+        flat_models |= get_flat_models_from_model(model)
     return flat_models
 
 
