@@ -281,11 +281,7 @@ def test_tuple():
                     {'type': 'number'},
                 ],
             },
-            'b': {
-                'title': 'B',
-                'type': 'array',
-                'items': {'type': 'string'},
-            }
+            'b': {'title': 'B', 'type': 'array', 'items': {'type': 'string'}},
         },
         'required': ['a', 'b'],
     }
@@ -745,10 +741,7 @@ def test_schema_with_ref_prefix():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = schema(
-        [Bar, Baz],
-        ref_prefix='#/components/schemas/',  # OpenAPI style
-    )
+    model_schema = schema([Bar, Baz], ref_prefix='#/components/schemas/')  # OpenAPI style
     assert model_schema == {
         'definitions': {
             'Baz': {
@@ -769,12 +762,10 @@ def test_schema_with_ref_prefix():
                 'properties': {'a': {'title': 'A', 'type': 'string'}},
                 'required': ['a'],
             },
-        },
+        }
     }
 
 
 def test_schema_no_definitions():
     model_schema = schema([], title='Schema without definitions')
-    assert model_schema == {
-        'title': 'Schema without definitions',
-    }
+    assert model_schema == {'title': 'Schema without definitions'}
