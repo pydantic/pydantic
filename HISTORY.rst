@@ -3,15 +3,20 @@
 History
 -------
 
-v0.15 (2018-11-15)
-..................
+v0.15.1 (2018-11-18)
+....................
+* fix ``PyObject = None``, fix #305 by @samuelcolvin
+* allow ``Pattern`` type, fix #303 by @samuelcolvin
+
+v0.15.0 (2018-11-15)
+....................
 * move codebase to use black, #287 by @samuelcolvin
 * fix alias use in settings, #286 by @jasonkuhrt and @samuelcolvin
 * fix datetime parsing in ``parse_date``, #298 by @samuelcolvin
 * allow dataclass inheritance, fix #293 by @samuelcolvin
 
-v0.14 (2018-10-02)
-..................
+v0.14.0 (2018-10-02)
+....................
 * dataclasses decorator, #269 by @Gaunt and @samuelcolvin
 
 v0.13.1 (2018-09-21)

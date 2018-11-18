@@ -219,8 +219,9 @@ class PyObject:
 
     @classmethod
     def validate(cls, value):
-        with change_exception(errors.PyObjectError, ImportError):
-            return import_string(value)
+        if value is not None:
+            with change_exception(errors.PyObjectError, ImportError):
+                return import_string(value)
 
 
 class DSN(str):

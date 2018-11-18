@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Pattern
 
 import pytest
 
@@ -349,3 +349,26 @@ def test_validate_parent_extra():
     assert Child(a='this is foobar good').a == 'THIS IS FOOBAR GOOD'
     with pytest.raises(ValidationError):
         Child(a='snap')
+
+
+def test_pattern():
+    class Foobar(BaseModel):
+        pattern: Pattern
+
+    f = Foobar(pattern=r'^whatev.r\d$')
+    # SRE_Pattern for 3.6, Pattern for 3.7
+    assert f.pattern.__class__.__name__ in {'SRE_Pattern', 'Pattern'}
+    # check it's really a proper pattern
+    assert f.pattern.match('whatever1')
+    assert not f.pattern.match(' whatever1')
+
+
+def test_pattern_error():
+    class Foobar(BaseModel):
+        pattern: Pattern
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(pattern=f'[xx')
+    assert exc_info.value.errors() == [
+        {'loc': ('pattern',), 'msg': 'Invalid regular expression', 'type': 'value_error.regex_pattern'}
+    ]

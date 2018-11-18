@@ -1,14 +1,39 @@
+import re
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 from setuptools import setup
 
+
+class ReplaceLinks:
+    def __init__(self):
+        self.links = set()
+
+    def replace_issues(self, m):
+        id = m.group(1)
+        self.links.add(f'.. _#{id}: https://github.com/samuelcolvin/pydantic/issues/{id}')
+        return f'`#{id}`_'
+
+    def replace_users(self, m):
+        name = m.group(2)
+        self.links.add(f'.. _@{name}: https://github.com/{name}')
+        return f'{m.group(1)}`@{name}`_'
+
+    def extra(self):
+        return '\n\n' + '\n'.join(self.links) + '\n'
+
+
 description = 'Data validation and settings management using python 3.6 type hinting'
 THIS_DIR = Path(__file__).resolve().parent
 try:
-    long_description = '\n\n'.join([
-        THIS_DIR.joinpath('README.rst').read_text(),
-        THIS_DIR.joinpath('HISTORY.rst').read_text()
-    ])
+    history = THIS_DIR.joinpath('HISTORY.rst').read_text()
+
+    replacer = ReplaceLinks()
+    history = re.sub(r'#(\d+)', replacer.replace_issues, history)
+    history = re.sub(r'( +)@(\w+)', replacer.replace_users, history, flags=re.I)
+    history = re.sub(r'@@', '@', history)
+    history += replacer.extra()
+
+    long_description = '\n\n'.join([THIS_DIR.joinpath('README.rst').read_text(), history])
 except FileNotFoundError:
     long_description = description + '.\n\nSee https://pydantic-docs.helpmanual.io/ for documentation.'
 
