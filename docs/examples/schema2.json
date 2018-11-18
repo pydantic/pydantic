@@ -1,0 +1,40 @@
+{
+  "title": "My Schema",
+  "definitions": {
+    "Foo": {
+      "title": "Foo",
+      "type": "object",
+      "properties": {
+        "a": {
+          "title": "A",
+          "type": "string"
+        }
+      }
+    },
+    "Model": {
+      "title": "Model",
+      "type": "object",
+      "properties": {
+        "b": {
+          "$ref": "#/definitions/Foo"
+        }
+      },
+      "required": [
+        "b"
+      ]
+    },
+    "Bar": {
+      "title": "Bar",
+      "type": "object",
+      "properties": {
+        "c": {
+          "title": "C",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "c"
+      ]
+    }
+  }
+}
