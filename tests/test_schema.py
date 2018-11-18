@@ -549,7 +549,7 @@ def test_error_non_supported_types():
     class Model(BaseModel):
         a: PyObject
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         Model.schema()
 
 
