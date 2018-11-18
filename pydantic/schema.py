@@ -14,7 +14,6 @@ from .utils import clean_docstring
 
 def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
     flat_models: Set[Type[main.BaseModel]] = set()
-    assert issubclass(model, main.BaseModel)
     flat_models.add(model)
     for field in model.__fields__.values():
         flat_models = flat_models | get_flat_models_from_field(field)
