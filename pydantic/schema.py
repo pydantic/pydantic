@@ -68,10 +68,8 @@ def get_model_name_map(
         elif model_name in name_model_map:
             conflicting_names.add(model_name)
             conflicting_model = name_model_map.pop(model_name)
-            conflicting_model_name = get_long_model_name(conflicting_model)
-            name_model_map[conflicting_model_name] = conflicting_model
-            model_name = get_long_model_name(model)
-            name_model_map[model_name] = model
+            name_model_map[get_long_model_name(conflicting_model)] = conflicting_model
+            name_model_map[get_long_model_name(model)] = model
         else:
             name_model_map[model_name] = model
     model_name_map = {v: k for k, v in name_model_map.items()}
