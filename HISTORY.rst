@@ -4,7 +4,7 @@ History
 -------
 
 v0.16.0 (2018-11-19)
-..................
+....................
 
 * refactor schema generation to be compatible with JSON Schema and OpenAPI specs, #308 by @tiangolo
 * add ``schema`` to ``schema`` module to generate top-level schemas from base models, #308 by @tiangolo

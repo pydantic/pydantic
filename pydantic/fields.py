@@ -1,6 +1,6 @@
 import inspect
 from enum import IntEnum
-from typing import Any, Callable, List, Mapping, NamedTuple, Set, Tuple, Type, Union
+from typing import Any, Callable, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
 
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
@@ -153,7 +153,7 @@ class Field:
         self._populate_sub_fields()
         self._populate_validators()
 
-    def _populate_sub_fields(self):
+    def _populate_sub_fields(self):  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
         if isinstance(self.type_, type) and issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type
