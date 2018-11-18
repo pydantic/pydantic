@@ -39,13 +39,12 @@ class Schema:
     Used to provide extra information about a field in a model schema.
     """
 
-    __slots__ = 'default', 'alias', 'title', 'choice_names', 'extra'
+    __slots__ = 'default', 'alias', 'title', 'extra'
 
-    def __init__(self, default, *, alias=None, title=None, choice_names=None, **extra):
+    def __init__(self, default, *, alias=None, title=None, **extra):
         self.default = default
         self.alias = alias
         self.title = title
-        self.choice_names = choice_names
         self.extra = extra
 
 
