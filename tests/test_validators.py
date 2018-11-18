@@ -361,3 +361,14 @@ def test_pattern():
     # check it's really a proper pattern
     assert f.pattern.match('whatever1')
     assert not f.pattern.match(' whatever1')
+
+
+def test_pattern_error():
+    class Foobar(BaseModel):
+        pattern: Pattern
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(pattern=f'[xx')
+    assert exc_info.value.errors() == [
+        {'loc': ('pattern',), 'msg': 'Invalid regular expression', 'type': 'value_error.regex_pattern'}
+    ]

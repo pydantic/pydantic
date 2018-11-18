@@ -219,7 +219,8 @@ def make_arbitrary_type_validator(type_):
 
 
 def pattern_validator(v) -> Pattern:
-    return re.compile(v)
+    with change_exception(errors.PatternError, re.error):
+        return re.compile(v)
 
 
 pattern_validators = [not_none_validator, str_validator, pattern_validator]
