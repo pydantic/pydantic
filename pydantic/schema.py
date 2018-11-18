@@ -13,7 +13,7 @@ from .utils import clean_docstring
 
 
 def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
-    flat_models: Set[Type[main.BaseModel]] = set()
+    flat_models = set()
     flat_models.add(model)
     for field in model.__fields__.values():
         flat_models = flat_models | get_flat_models_from_field(field)
@@ -21,7 +21,7 @@ def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.
 
 
 def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
-    flat_models: Set[Type[main.BaseModel]] = set()
+    flat_models = set()
     if field.sub_fields:
         flat_models = flat_models | get_flat_models_from_sub_fields(field.sub_fields)
     elif isinstance(field.type_, type) and issubclass(field.type_, main.BaseModel):
@@ -30,14 +30,14 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
 
 
 def get_flat_models_from_sub_fields(fields) -> Set[Type['main.BaseModel']]:
-    flat_models: Set[Type[main.BaseModel]] = set()
+    flat_models = set()
     for field in fields:
         flat_models = flat_models | get_flat_models_from_field(field)
     return flat_models
 
 
 def get_flat_models_from_models(models: Sequence[Type['main.BaseModel']]) -> Set[Type['main.BaseModel']]:
-    flat_models: Set[Type[main.BaseModel]] = set()
+    flat_models = set()
     for model in models:
         flat_models = flat_models | get_flat_models_from_model(model)
     return flat_models
@@ -53,8 +53,8 @@ def get_long_model_name(model: Type['main.BaseModel']):
 def get_model_name_maps(
     unique_models: Set[Type['main.BaseModel']]
 ) -> Tuple[Dict[str, Type['main.BaseModel']], Dict[Type['main.BaseModel'], str]]:
-    name_model_map: Dict[str, Type[main.BaseModel]] = {}
-    conflicting_names: Set[str] = set()
+    name_model_map = {}
+    conflicting_names = set()
     for model in unique_models:
         model_name = model.__name__
         if model_name in conflicting_names:
