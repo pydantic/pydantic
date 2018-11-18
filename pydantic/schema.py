@@ -13,6 +13,48 @@ from .utils import clean_docstring
 
 default_prefix = '#/definitions/'
 
+validation_attribute_to_schema_keyword = {
+    'min_length': 'minLength',
+    'max_length': 'maxLength',
+    'regex': 'pattern',
+    'gt': 'exclusiveMinimum',
+    'lt': 'exclusiveMaximum',
+    'ge': 'minimum',
+    'le': 'maximum',
+}
+
+# Order is important, subclasses of str must go before str, etc
+field_class_to_schema_enum_enabled = (
+    (EmailStr, {'type': 'string', 'format': 'email'}),
+    (UrlStr, {'type': 'string', 'format': 'uri'}),
+    (DSN, {'type': 'string', 'format': 'dsn'}),
+    (str, {'type': 'string'}),
+    (bytes, {'type': 'string', 'format': 'binary'}),
+    (bool, {'type': 'boolean'}),
+    (int, {'type': 'integer'}),
+    (float, {'type': 'number'}),
+    (Decimal, {'type': 'number'}),
+    (UUID1, {'type': 'string', 'format': 'uuid1'}),
+    (UUID3, {'type': 'string', 'format': 'uuid3'}),
+    (UUID4, {'type': 'string', 'format': 'uuid4'}),
+    (UUID5, {'type': 'string', 'format': 'uuid5'}),
+    (UUID, {'type': 'string', 'format': 'uuid'}),
+    (NameEmail, {'type': 'string', 'format': 'name-email'}),
+)
+
+
+# Order is important, subclasses of Path must go before Path, etc
+field_class_to_schema_enum_disabled = (
+    (FilePath, {'type': 'string', 'format': 'file-path'}),
+    (DirectoryPath, {'type': 'string', 'format': 'directory-path'}),
+    (Path, {'type': 'string', 'format': 'path'}),
+    (datetime, {'type': 'string', 'format': 'date-time'}),
+    (date, {'type': 'string', 'format': 'date'}),
+    (time, {'type': 'string', 'format': 'time'}),
+    (timedelta, {'type': 'string', 'format': 'time-delta'}),
+    (Json, {'type': 'string', 'format': 'json-string'}),
+)
+
 
 def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
     flat_models = set()
@@ -279,81 +321,23 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if issubclass(field.type_, Enum):
         f_schema.update({'enum': [item.value for item in field.type_]})
         # Don't return immediately, to allow adding specific types
-    # For constrained strings
-    if hasattr(field.type_, 'min_length'):
-        if field.type_.min_length is not None:
-            f_schema.update({'minLength': field.type_.min_length})
-    if hasattr(field.type_, 'max_length'):
-        if field.type_.max_length is not None:
-            f_schema.update({'maxLength': field.type_.max_length})
-    if hasattr(field.type_, 'regex'):
-        if field.type_.regex is not None:
-            f_schema.update({'pattern': field.type_.regex.pattern})
-    # For constrained numbers
-    if hasattr(field.type_, 'gt'):
-        if field.type_.gt is not None:
-            f_schema.update({'exclusiveMinimum': field.type_.gt})
-    if hasattr(field.type_, 'lt'):
-        if field.type_.lt is not None:
-            f_schema.update({'exclusiveMaximum': field.type_.lt})
-    if hasattr(field.type_, 'ge'):
-        if field.type_.ge is not None:
-            f_schema.update({'minimum': field.type_.ge})
-    if hasattr(field.type_, 'le'):
-        if field.type_.le is not None:
-            f_schema.update({'maximum': field.type_.le})
-    # Sub-classes of str must go before str
-    if issubclass(field.type_, EmailStr):
-        f_schema.update({'type': 'string', 'format': 'email'})
-    elif issubclass(field.type_, UrlStr):
-        f_schema.update({'type': 'string', 'format': 'uri'})
-    elif issubclass(field.type_, DSN):
-        f_schema.update({'type': 'string', 'format': 'dsn'})
-    elif issubclass(field.type_, str):
-        f_schema.update({'type': 'string'})
-    elif issubclass(field.type_, bytes):
-        f_schema.update({'type': 'string', 'format': 'binary'})
-    elif issubclass(field.type_, bool):
-        f_schema.update({'type': 'boolean'})
-    elif issubclass(field.type_, int):
-        f_schema.update({'type': 'integer'})
-    elif issubclass(field.type_, float):
-        f_schema.update({'type': 'number'})
-    elif issubclass(field.type_, Decimal):
-        f_schema.update({'type': 'number'})
-    elif issubclass(field.type_, UUID1):
-        f_schema.update({'type': 'string', 'format': 'uuid1'})
-    elif issubclass(field.type_, UUID3):
-        f_schema.update({'type': 'string', 'format': 'uuid3'})
-    elif issubclass(field.type_, UUID4):
-        f_schema.update({'type': 'string', 'format': 'uuid4'})
-    elif issubclass(field.type_, UUID5):
-        f_schema.update({'type': 'string', 'format': 'uuid5'})
-    elif issubclass(field.type_, UUID):
-        f_schema.update({'type': 'string', 'format': 'uuid'})
-    elif issubclass(field.type_, NameEmail):
-        f_schema.update({'type': 'string', 'format': 'name-email'})
-        # This is the last value that can also be an Enum
+    for field_name, schema_name in validation_attribute_to_schema_keyword.items():
+        field_value = getattr(field.type_, field_name, None)
+        if field_value is not None:
+            if field_name == 'regex':
+                field_value = field_value.pattern
+            f_schema[schema_name] = field_value
+    for type_, t_schema in field_class_to_schema_enum_enabled:
+        if issubclass(field.type_, type_):
+            f_schema.update(t_schema)
+            break
+    # Return schema, with or without enum definitions
     if f_schema:
         return f_schema, definitions
-    # Path subclasses must go before Path
-    elif issubclass(field.type_, FilePath):
-        return {'type': 'string', 'format': 'file-path'}, definitions
-    elif issubclass(field.type_, DirectoryPath):
-        return {'type': 'string', 'format': 'directory-path'}, definitions
-    elif issubclass(field.type_, Path):
-        return {'type': 'string', 'format': 'path'}, definitions
-    elif issubclass(field.type_, datetime):
-        return {'type': 'string', 'format': 'date-time'}, definitions
-    elif issubclass(field.type_, date):
-        return {'type': 'string', 'format': 'date'}, definitions
-    elif issubclass(field.type_, time):
-        return {'type': 'string', 'format': 'time'}, definitions
-    elif issubclass(field.type_, timedelta):
-        return {'type': 'string', 'format': 'time-delta'}, definitions
-    elif issubclass(field.type_, Json):
-        return {'type': 'string', 'format': 'json-string'}, definitions
-    elif issubclass(field.type_, main.BaseModel):
+    for type_, t_schema in field_class_to_schema_enum_disabled:
+        if issubclass(field.type_, type_):
+            return t_schema, definitions
+    if issubclass(field.type_, main.BaseModel):
         sub_schema, sub_definitions = model_process_schema(
             field.type_, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
