@@ -86,7 +86,7 @@ def field_schema(
 
     if not field.required and field.default is not None:
         schema_overrides = True
-        if isinstance(field.default, (int, float, bool, str)):
+        if isinstance(field.default, (int, float, str)):
             s['default'] = field.default
         else:
             s['default'] = pydantic_encoder(field.default)
