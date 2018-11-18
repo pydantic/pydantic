@@ -1,3 +1,6 @@
+import os
+import sys
+import tempfile
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -41,11 +44,6 @@ from pydantic.types import (
     constr,
     urlstr,
 )
-
-from .schema_test_package.modulea.modela import Model as ModelA
-from .schema_test_package.moduleb.modelb import Model as ModelB
-from .schema_test_package.modulec.modelc import Model as ModelC
-from .schema_test_package.moduled.modeld import Model as ModelD
 
 try:
     import email_validator
@@ -549,8 +547,34 @@ def test_error_non_supported_types():
         Model.schema()
 
 
+def create_testing_submodules():
+    base_path = Path(tempfile.mkdtemp())
+    mod_root_path = base_path / 'pydantic_schema_test'
+    os.makedirs(mod_root_path, exist_ok=True)
+    open(mod_root_path / '__init__.py', 'w').close()
+    for mod in ['a', 'b', 'c']:
+        module_name = 'module' + mod
+        model_name = 'model' + mod + '.py'
+        os.makedirs(mod_root_path / module_name, exist_ok=True)
+        open(mod_root_path / module_name / '__init__.py', 'w').close()
+        with open(mod_root_path / module_name / model_name, 'w') as f:
+            f.write('from pydantic import BaseModel\n' 'class Model(BaseModel):\n' '    a: str\n')
+    module_name = 'moduled'
+    model_name = 'modeld.py'
+    os.makedirs(mod_root_path / module_name, exist_ok=True)
+    open(mod_root_path / module_name / '__init__.py', 'w').close()
+    with open(mod_root_path / module_name / model_name, 'w') as f:
+        f.write('from ..moduleb.modelb import Model')
+    sys.path.insert(0, str(base_path))
+
+
 def test_flat_models_unique_models():
-    flat_models = get_flat_models_from_models([ModelA, ModelB, ModelC])
+    create_testing_submodules()
+    from pydantic_schema_test.modulea.modela import Model as ModelA
+    from pydantic_schema_test.moduleb.modelb import Model as ModelB
+    from pydantic_schema_test.moduled.modeld import Model as ModelD
+
+    flat_models = get_flat_models_from_models([ModelA, ModelB, ModelD])
     assert flat_models == set([ModelA, ModelB])
 
 
@@ -590,6 +614,12 @@ def test_flat_models_with_submodels_from_sequence():
 
 
 def test_model_name_maps():
+    create_testing_submodules()
+    from pydantic_schema_test.modulea.modela import Model as ModelA
+    from pydantic_schema_test.moduleb.modelb import Model as ModelB
+    from pydantic_schema_test.modulec.modelc import Model as ModelC
+    from pydantic_schema_test.moduled.modeld import Model as ModelD
+
     class Foo(BaseModel):
         a: str
 
@@ -605,9 +635,9 @@ def test_model_name_maps():
         Foo: 'Foo',
         Bar: 'Bar',
         Baz: 'Baz',
-        ModelA: 'tests__schema_test_package__modulea__modela__Model',
-        ModelB: 'tests__schema_test_package__moduleb__modelb__Model',
-        ModelD: 'tests__schema_test_package__moduled__modeld__Model',
+        ModelA: 'pydantic_schema_test__modulea__modela__Model',
+        ModelB: 'pydantic_schema_test__moduleb__modelb__Model',
+        ModelC: 'pydantic_schema_test__modulec__modelc__Model',
     }
 
 
