@@ -12,6 +12,9 @@ from .types import DSN, UUID1, UUID3, UUID4, UUID5, DirectoryPath, EmailStr, Fil
 from .utils import clean_docstring
 
 
+default_prefix='#/definitions/'
+
+
 def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
     flat_models = set()
     flat_models.add(model)
@@ -77,8 +80,22 @@ def get_model_name_map(
 
 
 def field_schema(
-    field: Field, *, by_alias=True, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix='#/definitions/'
+    field: Field, *, by_alias=True, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    Process a Pydantic field and return a tuple with a JSON Schema for it as the first item.
+    Also return a dictionary of definitions with models as keys and their schemas as values. If the passed field
+    is a model and has submodels, and those submodels don't have overrides (as ``title``, ``default``, etc), they
+    will be included in the definitions and referenced in the schema instead of included recursively.
+
+    :param field: a Pydantic Field
+    :param by_alias: use the defined alias (if any) in the returned schema
+    :param model_name_map: used to generate the JSON Schema references to other models included in the definitions
+    :param ref_prefix: the JSON Pointer prefix to use for references to other schemas, if None, the default of 
+        #/definitions/ will be used
+    :return: tuple of the schema for this field and additional definitions
+    """
+    ref_prefix = ref_prefix or default_prefix
     schema_overrides = False
     s = dict(title=field._schema.title or field.alias.title())
     if field._schema.title:
@@ -115,12 +132,13 @@ def field_type_schema(
     by_alias: bool,
     model_name_map: Dict[Type['main.BaseModel'], str],
     schema_overrides=False,
-    ref_prefix='#/definitions/',
+    ref_prefix=None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     definitions = {}
+    ref_prefix = ref_prefix or default_prefix
     if field.shape is Shape.LIST:
         f_schema, f_definitions = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix= ref_prefix
         )
         definitions.update(f_definitions)
         return {'type': 'array', 'items': f_schema}, definitions
@@ -170,8 +188,9 @@ def model_process_schema(
     *,
     by_alias=True,
     model_name_map: Dict[Type['main.BaseModel'], str],
-    ref_prefix='#/definitions/',
+    ref_prefix=None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ref_prefix = ref_prefix or default_prefix
     s = {'title': class_.__config__.title or class_.__name__}
     if class_.__doc__:
         s['description'] = clean_docstring(class_.__doc__)
@@ -187,8 +206,9 @@ def model_type_schema(
     *,
     by_alias: bool,
     model_name_map: Dict[Type['main.BaseModel'], str],
-    ref_prefix='#/definitions/',
+    ref_prefix=None,
 ):
+    ref_prefix = ref_prefix or default_prefix
     properties = {}
     required = []
     definitions = {}
@@ -217,8 +237,9 @@ def field_singleton_sub_fields_schema(
     by_alias: bool,
     model_name_map: Dict[Type['main.BaseModel'], str],
     schema_overrides=False,
-    ref_prefix='#/definitions/',
+    ref_prefix=None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ref_prefix = ref_prefix or default_prefix
     definitions = {}
     if len(sub_fields) == 1:
         return field_type_schema(
@@ -249,8 +270,9 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     by_alias: bool,
     model_name_map: Dict[Type['main.BaseModel'], str],
     schema_overrides=False,
-    ref_prefix='#/definitions/',
+    ref_prefix=None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ref_prefix = ref_prefix or default_prefix
     definitions = {}
     if field.sub_fields:
         return field_singleton_sub_fields_schema(
@@ -354,7 +376,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
 
-def model_schema(class_: 'main.BaseModel', by_alias=True, ref_prefix='#/definitions/') -> Dict[str, Any]:
+def model_schema(class_: 'main.BaseModel', by_alias=True, ref_prefix=None) -> Dict[str, Any]:
+    ref_prefix = ref_prefix or default_prefix
     flat_models = get_flat_models_from_model(class_)
     model_name_map = get_model_name_map(flat_models)
     m_schema, m_definitions = model_process_schema(
@@ -371,8 +394,9 @@ def schema(
     by_alias=True,
     title=None,
     description=None,
-    ref_prefix='#/definitions/',
+    ref_prefix=None,
 ) -> Dict:
+    ref_prefix = ref_prefix or default_prefix
     flat_models = get_flat_models_from_models(models)
     model_name_map = get_model_name_map(flat_models)
     definitions = {}
