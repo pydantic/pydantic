@@ -260,29 +260,34 @@ def test_set():
     }
 
 
-def test_tuple():
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (
+            Tuple[str, int, Union[str, int, float], float],
+            [
+                {'type': 'string'},
+                {'type': 'integer'},
+                {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
+                {'type': 'number'},
+            ],
+        ),
+        (Tuple[str], {'type': 'string'}),
+    ],
+)
+def test_tuple(field_type, expected_schema):
     class Model(BaseModel):
-        a: Tuple[str, int, Union[str, int, float], float]
-        b: Tuple[str]
+        a: field_type
 
-    assert Model.schema() == {
+    base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {
-                'title': 'A',
-                'type': 'array',
-                'items': [
-                    {'type': 'string'},
-                    {'type': 'integer'},
-                    {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
-                    {'type': 'number'},
-                ],
-            },
-            'b': {'title': 'B', 'type': 'array', 'items': {'type': 'string'}},
-        },
-        'required': ['a', 'b'],
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': None}},
+        'required': ['a'],
     }
+    base_schema['properties']['a']['items'] = expected_schema
+
+    assert Model.schema() == base_schema
 
 
 def test_bool():
@@ -297,233 +302,266 @@ def test_bool():
     }
 
 
-def test_list_union_dict():
-    class Foo(BaseModel):
-        a: float
+class Foo(BaseModel):
+    a: float
 
-    class Model(BaseModel):
-        """party time"""
 
-        a: Union[int, str]
-        b: List[int]
-        c: Dict[str, Foo]
-        d: Union[None, Foo]
-        e: Dict[str, Any]
-
-    model_schema = Model.schema()
-    assert model_schema == {
-        'title': 'Model',
-        'description': 'party time',
-        'type': 'object',
-        'definitions': {
-            'Foo': {
-                'title': 'Foo',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'number'}},
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (
+            Union[int, str],
+            {
+                'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
                 'required': ['a'],
-            }
-        },
-        'properties': {
-            'a': {'title': 'A', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
-            'b': {'title': 'B', 'type': 'array', 'items': {'type': 'integer'}},
-            'c': {'title': 'C', 'type': 'object', 'additionalProperties': {'$ref': '#/definitions/Foo'}},
-            'd': {'$ref': '#/definitions/Foo'},
-            'e': {'title': 'E', 'type': 'object'},
-        },
-        'required': ['a', 'b', 'c', 'e'],
-    }
-
-
-def test_date_types():
+            },
+        ),
+        (
+            List[int],
+            {'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}}, 'required': ['a']},
+        ),
+        (
+            Dict[str, Foo],
+            {
+                'definitions': {
+                    'Foo': {
+                        'title': 'Foo',
+                        'type': 'object',
+                        'properties': {'a': {'title': 'A', 'type': 'number'}},
+                        'required': ['a'],
+                    }
+                },
+                'properties': {
+                    'a': {'title': 'A', 'type': 'object', 'additionalProperties': {'$ref': '#/definitions/Foo'}}
+                },
+                'required': ['a'],
+            },
+        ),
+        (
+            Union[None, Foo],
+            {
+                'definitions': {
+                    'Foo': {
+                        'title': 'Foo',
+                        'type': 'object',
+                        'properties': {'a': {'title': 'A', 'type': 'number'}},
+                        'required': ['a'],
+                    }
+                },
+                'properties': {'a': {'$ref': '#/definitions/Foo'}},
+            },
+        ),
+        (Dict[str, Any], {'properties': {'a': {'title': 'A', 'type': 'object'}}, 'required': ['a']}),
+    ],
+)
+def test_list_union_dict(field_type, expected_schema):
     class Model(BaseModel):
-        a: datetime
-        b: date
-        c: time
-        d: timedelta
+        a: field_type
 
-    model_schema = Model.schema()
-    assert model_schema == {
+    base_schema = {'title': 'Model', 'type': 'object'}
+    base_schema.update(expected_schema)
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema', [(datetime, 'date-time'), (date, 'date'), (time, 'time'), (timedelta, 'time-delta')]
+)
+def test_date_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'type': 'string', 'format': 'date-time'},
-            'b': {'title': 'B', 'type': 'string', 'format': 'date'},
-            'c': {'title': 'C', 'type': 'string', 'format': 'time'},
-            'd': {'title': 'D', 'type': 'string', 'format': 'time-delta'},
-        },
-        'required': ['a', 'b', 'c', 'd'],
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
+        'required': ['a'],
     }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
 
 
-def test_str_basic_types():
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (NoneStr, {'properties': {'a': {'title': 'A', 'type': 'string'}}}),
+        (NoneBytes, {'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'binary'}}}),
+        (
+            StrBytes,
+            {
+                'properties': {
+                    'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
+                },
+                'required': ['a'],
+            },
+        ),
+        (
+            NoneStrBytes,
+            {
+                'properties': {
+                    'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
+                }
+            },
+        ),
+    ],
+)
+def test_str_basic_types(field_type, expected_schema):
     class Model(BaseModel):
-        a: NoneStr
-        b: NoneBytes
-        c: StrBytes
-        d: NoneStrBytes
+        a: field_type
 
-    model_schema = Model.schema()
-    assert model_schema == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'type': 'string'},
-            'b': {'title': 'B', 'type': 'string', 'format': 'binary'},
-            'c': {'title': 'C', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]},
-            'd': {'title': 'D', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]},
-        },
-        'required': ['c'],
-    }
+    base_schema = {'title': 'Model', 'type': 'object'}
+    base_schema.update(expected_schema)
+    assert Model.schema() == base_schema
 
 
-def test_str_constrained_types():
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (StrictStr, {'title': 'A', 'type': 'string'}),
+        (ConstrainedStr, {'title': 'A', 'type': 'string'}),
+        (
+            constr(min_length=3, max_length=5, regex='^text$'),
+            {'title': 'A', 'type': 'string', 'minLength': 3, 'maxLength': 5, 'pattern': '^text$'},
+        ),
+    ],
+)
+def test_str_constrained_types(field_type, expected_schema):
     class Model(BaseModel):
-        a: StrictStr
-        b: ConstrainedStr
-        c: constr(min_length=3, max_length=5, regex='^text$')
+        a: field_type
 
-    model_schema = Model.schema()
-    assert model_schema == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'type': 'string'},
-            'b': {'title': 'B', 'type': 'string'},
-            'c': {'title': 'C', 'type': 'string', 'minLength': 3, 'maxLength': 5, 'pattern': '^text$'},
-        },
-        'required': ['a', 'b', 'c'],
-    }
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
+    base_schema['properties']['a'] = expected_schema
+
+    assert Model.schema() == base_schema
 
 
-def test_special_str_types():
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (UrlStr, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
+        (
+            urlstr(min_length=5, max_length=10),
+            {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
+        ),
+        (DSN, {'title': 'A', 'type': 'string', 'format': 'dsn'}),
+    ],
+)
+def test_special_str_types(field_type, expected_schema):
     class Model(BaseModel):
-        a: UrlStr
-        b: urlstr(min_length=5, max_length=10)
-        c: DSN
+        a: field_type
 
-    model_schema = Model.schema()
-    assert model_schema == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16},
-            'b': {'title': 'B', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
-            'c': {'title': 'C', 'type': 'string', 'format': 'dsn'},
-        },
-        'required': ['a', 'b', 'c'],
-    }
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
+    base_schema['properties']['a'] = expected_schema
+
+    assert Model.schema() == base_schema
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
-def test_email_str_types():
+@pytest.mark.parametrize('field_type,expected_schema', [(EmailStr, 'email'), (NameEmail, 'name-email')])
+def test_email_str_types(field_type, expected_schema):
     class Model(BaseModel):
-        a: EmailStr
-        b: NameEmail
+        a: field_type
 
-    model_schema = Model.schema()
-    assert model_schema == {
+    base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'type': 'string', 'format': 'email'},
-            'b': {'title': 'B', 'type': 'string', 'format': 'name-email'},
-        },
-        'required': ['a', 'b'],
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
     }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
 
 
-def test_special_int_types():
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (ConstrainedInt, {}),
+        (conint(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (conint(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (PositiveInt, {'exclusiveMinimum': 0}),
+        (NegativeInt, {'exclusiveMaximum': 0}),
+    ],
+)
+def test_special_int_types(field_type, expected_schema):
     class Model(BaseModel):
-        a: ConstrainedInt
-        b: conint(gt=5, lt=10)
-        c: conint(ge=5, le=10)
-        d: PositiveInt
-        e: NegativeInt
+        a: field_type
 
-    model_schema = Model.schema()
-    assert model_schema == {
+    base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'type': 'integer'},
-            'b': {'title': 'B', 'type': 'integer', 'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
-            'c': {'title': 'C', 'type': 'integer', 'minimum': 5, 'maximum': 10},
-            'd': {'title': 'D', 'type': 'integer', 'exclusiveMinimum': 0},
-            'e': {'title': 'E', 'type': 'integer', 'exclusiveMaximum': 0},
-        },
-        'required': ['a', 'b', 'c', 'd', 'e'],
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
     }
+    base_schema['properties']['a'].update(expected_schema)
+
+    assert Model.schema() == base_schema
 
 
-def test_special_float_types():
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (ConstrainedFloat, {}),
+        (confloat(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (confloat(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (PositiveFloat, {'exclusiveMinimum': 0}),
+        (NegativeFloat, {'exclusiveMaximum': 0}),
+        (ConstrainedDecimal, {}),
+        (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+    ],
+)
+def test_special_float_types(field_type, expected_schema):
     class Model(BaseModel):
-        a: ConstrainedFloat
-        b: confloat(gt=5, lt=10)
-        c: confloat(ge=5, le=10)
-        d: PositiveFloat
-        e: NegativeFloat
-        f: ConstrainedDecimal
-        g: condecimal(gt=5, lt=10)
-        h: condecimal(ge=5, le=10)
+        a: field_type
 
-    model_schema = Model.schema()
-    assert model_schema == {
+    base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'type': 'number'},
-            'b': {'title': 'B', 'type': 'number', 'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
-            'c': {'title': 'C', 'type': 'number', 'minimum': 5, 'maximum': 10},
-            'd': {'title': 'D', 'type': 'number', 'exclusiveMinimum': 0},
-            'e': {'title': 'E', 'type': 'number', 'exclusiveMaximum': 0},
-            'f': {'title': 'F', 'type': 'number'},
-            'g': {'title': 'G', 'type': 'number', 'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
-            'h': {'title': 'H', 'type': 'number', 'minimum': 5, 'maximum': 10},
-        },
-        'required': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+        'properties': {'a': {'title': 'A', 'type': 'number'}},
+        'required': ['a'],
     }
+    base_schema['properties']['a'].update(expected_schema)
+
+    assert Model.schema() == base_schema
 
 
-def test_uuid_types():
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [(UUID, 'uuid'), (UUID1, 'uuid1'), (UUID3, 'uuid3'), (UUID4, 'uuid4'), (UUID5, 'uuid5')],
+)
+def test_uuid_types(field_type, expected_schema):
     class Model(BaseModel):
-        a: UUID
-        b: UUID1
-        c: UUID3
-        d: UUID4
-        e: UUID5
+        a: field_type
 
-    model_schema = Model.schema()
-    assert model_schema == {
+    base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'type': 'string', 'format': 'uuid'},
-            'b': {'title': 'B', 'type': 'string', 'format': 'uuid1'},
-            'c': {'title': 'C', 'type': 'string', 'format': 'uuid3'},
-            'd': {'title': 'D', 'type': 'string', 'format': 'uuid4'},
-            'e': {'title': 'E', 'type': 'string', 'format': 'uuid5'},
-        },
-        'required': ['a', 'b', 'c', 'd', 'e'],
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
+        'required': ['a'],
     }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
 
 
-def test_path_types():
+@pytest.mark.parametrize(
+    'field_type,expected_schema', [(FilePath, 'file-path'), (DirectoryPath, 'directory-path'), (Path, 'path')]
+)
+def test_path_types(field_type, expected_schema):
     class Model(BaseModel):
-        a: FilePath
-        b: DirectoryPath
-        c: Path
+        a: field_type
 
-    model_schema = Model.schema()
-    assert model_schema == {
+    base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'type': 'string', 'format': 'file-path'},
-            'b': {'title': 'B', 'type': 'string', 'format': 'directory-path'},
-            'c': {'title': 'C', 'type': 'string', 'format': 'path'},
-        },
-        'required': ['a', 'b', 'c'],
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
+        'required': ['a'],
     }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
 
 
 def test_json_type():
@@ -599,9 +637,6 @@ def test_flat_models_with_submodels_from_sequence():
     class Bar(BaseModel):
         b: Foo
 
-    class Baz(BaseModel):
-        c: Bar
-
     class Ingredient(BaseModel):
         name: str
 
@@ -609,8 +644,8 @@ def test_flat_models_with_submodels_from_sequence():
         name: str
         ingredients: List[Ingredient]
 
-    flat_models = get_flat_models_from_models([Baz, Pizza])
-    assert flat_models == set([Foo, Bar, Baz, Ingredient, Pizza])
+    flat_models = get_flat_models_from_models([Bar, Pizza])
+    assert flat_models == set([Foo, Bar, Ingredient, Pizza])
 
 
 def test_model_name_maps():
