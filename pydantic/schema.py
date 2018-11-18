@@ -47,7 +47,7 @@ def schema(
     else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
     top-level key ``definitions``, so you can extract them from there. But all the references will have the set
     prefix.
-    :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for 
+    :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for
     the models and submodels passed in ``models``.
     """
     ref_prefix = ref_prefix or default_prefix
@@ -73,7 +73,7 @@ def schema(
 
 def model_schema(model: 'main.BaseModel', by_alias=True, ref_prefix=None) -> Dict[str, Any]:
     """
-    Generate a JSON Schema for one model. With all the submodels defined in the ``definitions`` top-level 
+    Generate a JSON Schema for one model. With all the submodels defined in the ``definitions`` top-level
     JSON key.
 
     :param model: a Pydantic model (a class that inherits from BaseModel)
@@ -108,7 +108,7 @@ def field_schema(
     :param field: a Pydantic Field
     :param by_alias: use the defined alias (if any) in the returned schema
     :param model_name_map: used to generate the JSON Schema references to other models included in the definitions
-    :param ref_prefix: the JSON Pointer prefix to use for references to other schemas, if None, the default of 
+    :param ref_prefix: the JSON Pointer prefix to use for references to other schemas, if None, the default of
         #/definitions/ will be used
     :return: tuple of the schema for this field and additional definitions
     """
@@ -148,8 +148,8 @@ def get_model_name_map(
 ) -> Tuple[Dict[str, Type['main.BaseModel']], Dict[Type['main.BaseModel'], str]]:
     """
     Process a set of models and generate unique names for them to be used as keys in the JSON Schema
-    definitions. By default the names are the same class name. But if two models in diferent Python 
-    modules have the same name (e.g. "users.Model" and "items.Model"), the generated names will be 
+    definitions. By default the names are the same class name. But if two models in diferent Python
+    modules have the same name (e.g. "users.Model" and "items.Model"), the generated names will be
     based on the Python module path for those conflicting models to prevent name collisions.
 
     :param unique_models: a Python set of models
