@@ -25,7 +25,7 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
     flat_models: Set[Type[main.BaseModel]] = set()
     if field.sub_fields:
         flat_models = flat_models | get_flat_models_from_sub_fields(field.sub_fields)
-    elif issubclass(field.type_, main.BaseModel):
+    elif isinstance(field.type_, type) and issubclass(field.type_, main.BaseModel):
         flat_models = flat_models | get_flat_models_from_model(field.type_)
     return flat_models
 
