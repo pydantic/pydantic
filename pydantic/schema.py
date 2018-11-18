@@ -67,8 +67,7 @@ def get_model_name_map(
             name_model_map[model_name] = model
         elif model_name in name_model_map:
             conflicting_names.add(model_name)
-            conflicting_model = name_model_map[model_name]
-            del name_model_map[model_name]
+            conflicting_model = name_model_map.pop(model_name)
             conflicting_model_name = get_long_model_name(conflicting_model)
             name_model_map[conflicting_model_name] = conflicting_model
             model_name = get_long_model_name(model)
