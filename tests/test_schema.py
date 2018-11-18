@@ -187,7 +187,7 @@ def test_json_schema():
         a = b'foobar'
         b = Decimal('12.34')
 
-    assert Model.schema_json(indent=2) == (
+    assert Model.schema_str(indent=2) == (
         '{\n'
         '  "title": "Model",\n'
         '  "type": "object",\n'
