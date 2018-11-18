@@ -43,9 +43,7 @@ def get_flat_models_from_models(models: Sequence[Type['main.BaseModel']]) -> Set
 
 
 def get_long_model_name(model: Type['main.BaseModel']):
-    prefix = model.__module__.replace('.', '__')
-    name = model.__name__
-    return f'{prefix}__{name}'
+    return f'{model.__module__}__{model.__name__}'.replace('.', '__')
 
 
 def get_model_name_maps(
