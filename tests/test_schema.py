@@ -1,6 +1,7 @@
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
@@ -30,6 +31,7 @@ from pydantic.types import (
     NoneStrBytes,
     PositiveFloat,
     PositiveInt,
+    PyObject,
     StrBytes,
     StrictStr,
     UrlStr,
@@ -263,6 +265,7 @@ def test_set():
 def test_tuple():
     class Model(BaseModel):
         a: Tuple[str, int, Union[str, int, float], float]
+        b: Tuple[str]
 
     assert Model.schema() == {
         'title': 'Model',
@@ -277,8 +280,25 @@ def test_tuple():
                     {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
                     {'type': 'number'},
                 ],
+            },
+            'b': {
+                'title': 'B',
+                'type': 'array',
+                'items': {'type': 'string'},
             }
         },
+        'required': ['a', 'b'],
+    }
+
+
+def test_bool():
+    class Model(BaseModel):
+        a: bool
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'boolean'}},
         'required': ['a'],
     }
 
@@ -497,6 +517,7 @@ def test_path_types():
     class Model(BaseModel):
         a: FilePath
         b: DirectoryPath
+        c: Path
 
     model_schema = Model.schema()
     assert model_schema == {
@@ -505,8 +526,9 @@ def test_path_types():
         'properties': {
             'a': {'title': 'A', 'type': 'string', 'format': 'file-path'},
             'b': {'title': 'B', 'type': 'string', 'format': 'directory-path'},
+            'c': {'title': 'C', 'type': 'string', 'format': 'path'},
         },
-        'required': ['a', 'b'],
+        'required': ['a', 'b', 'c'],
     }
 
 
@@ -521,6 +543,14 @@ def test_json_type():
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
         'required': ['a'],
     }
+
+
+def test_error_non_supported_types():
+    class Model(BaseModel):
+        a: PyObject
+
+    with pytest.raises(ValueError) as e:
+        Model.schema()
 
 
 def test_flat_models_unique_models():
@@ -717,13 +747,9 @@ def test_schema_with_ref_prefix():
 
     model_schema = schema(
         [Bar, Baz],
-        title='Multi-model schema',
-        description='Custom prefix for $ref fields',
         ref_prefix='#/components/schemas/',  # OpenAPI style
     )
     assert model_schema == {
-        'title': 'Multi-model schema',
-        'description': 'Custom prefix for $ref fields',
         'definitions': {
             'Baz': {
                 'title': 'Baz',
@@ -744,4 +770,11 @@ def test_schema_with_ref_prefix():
                 'required': ['a'],
             },
         },
+    }
+
+
+def test_schema_no_definitions():
+    model_schema = schema([], title='Schema without definitions')
+    assert model_schema == {
+        'title': 'Schema without definitions',
     }
