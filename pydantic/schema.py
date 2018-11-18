@@ -56,68 +56,69 @@ field_class_to_schema_enum_disabled = (
 )
 
 
-def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
-    flat_models = set()
-    flat_models.add(model)
-    flat_models |= get_flat_models_from_fields(model.__fields__.values())
-    return flat_models
+def schema(
+    models: Sequence[Type['main.BaseModel']], *, by_alias=True, title=None, description=None, ref_prefix=None
+) -> Dict:
+    """
+    Process a list of models and generate a single JSON Schema with all of them defined in the ``definitions``
+    top-level JSON key, including their submodels.
 
-
-def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
-    flat_models = set()
-    if field.sub_fields:
-        flat_models |= get_flat_models_from_fields(field.sub_fields)
-    elif isinstance(field.type_, type) and issubclass(field.type_, main.BaseModel):
-        flat_models |= get_flat_models_from_model(field.type_)
-    return flat_models
-
-
-def get_flat_models_from_fields(fields) -> Set[Type['main.BaseModel']]:
-    flat_models = set()
-    for field in fields:
-        flat_models |= get_flat_models_from_field(field)
-    return flat_models
-
-
-def get_flat_models_from_models(models: Sequence[Type['main.BaseModel']]) -> Set[Type['main.BaseModel']]:
-    flat_models = set()
+    :param models: a list of models to include in the generated JSON Schema
+    :param by_alias: generate the schemas using the aliases defined, if any
+    :param title: title for the generated schema that includes the definitions
+    :param description: description for the generated schema
+    :param ref_prefix: the JSON Pointer prefix for schema references with ``$ref``, if None, will be set to the
+    default of ``#/definitions/``. Update it if you want the schemas to reference the definitions somewhere
+    else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
+    top-level key ``definitions``, so you can extract them from there. But all the references will have the set
+    prefix.
+    :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for 
+    the models and submodels passed in ``models``.
+    """
+    ref_prefix = ref_prefix or default_prefix
+    flat_models = get_flat_models_from_models(models)
+    model_name_map = get_model_name_map(flat_models)
+    definitions = {}
+    output_schema = {}
+    if title:
+        output_schema['title'] = title
+    if description:
+        output_schema['description'] = description
     for model in models:
-        flat_models |= get_flat_models_from_model(model)
-    return flat_models
+        m_schema, m_definitions = model_process_schema(
+            model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+        )
+        definitions.update(m_definitions)
+        model_name = model_name_map[model]
+        definitions[model_name] = m_schema
+    if definitions:
+        output_schema['definitions'] = definitions
+    return output_schema
 
 
-def get_long_model_name(model: Type['main.BaseModel']):
-    return f'{model.__module__}__{model.__name__}'.replace('.', '__')
-
-
-def get_model_name_map(
-    unique_models: Set[Type['main.BaseModel']]
-) -> Tuple[Dict[str, Type['main.BaseModel']], Dict[Type['main.BaseModel'], str]]:
+def model_schema(model: 'main.BaseModel', by_alias=True, ref_prefix=None) -> Dict[str, Any]:
     """
-    Process a set of models and generate unique names for them to be used as keys in the JSON Schema
-    definitions. By default the names are the same class name. But if two models in diferent Python 
-    modules have the same name (e.g. "users.Model" and "items.Model"), the generated names will be 
-    based on the Python module path for those conflicting models to prevent name collisions.
+    Generate a JSON Schema for one model. With all the submodels defined in the ``definitions`` top-level 
+    JSON key.
 
-    :param unique_models: a Python set of models
-    :return: dict mapping models to names
+    :param model: a Pydantic model (a class that inherits from BaseModel)
+    :param by_alias: generate the schemas using the aliases defined, if any
+    :param ref_prefix: the JSON Pointer prefix for schema references with ``$ref``, if None, will be set to the
+    default of ``#/definitions/``. Update it if you want the schemas to reference the definitions somewhere
+    else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
+    top-level key ``definitions``, so you can extract them from there. But all the references will have the set
+    prefix.
+    :return: dict with the JSON Schema for the passed ``model``
     """
-    name_model_map = {}
-    conflicting_names = set()
-    for model in unique_models:
-        model_name = model.__name__
-        if model_name in conflicting_names:
-            model_name = get_long_model_name(model)
-            name_model_map[model_name] = model
-        elif model_name in name_model_map:
-            conflicting_names.add(model_name)
-            conflicting_model = name_model_map.pop(model_name)
-            name_model_map[get_long_model_name(conflicting_model)] = conflicting_model
-            name_model_map[get_long_model_name(model)] = model
-        else:
-            name_model_map[model_name] = model
-    model_name_map = {v: k for k, v in name_model_map.items()}
-    return model_name_map
+    ref_prefix = ref_prefix or default_prefix
+    flat_models = get_flat_models_from_model(model)
+    model_name_map = get_model_name_map(flat_models)
+    m_schema, m_definitions = model_process_schema(
+        model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+    )
+    if m_definitions:
+        m_schema.update({'definitions': m_definitions})
+    return m_schema
 
 
 def field_schema(
@@ -165,6 +166,70 @@ def field_schema(
     else:
         s.update(f_schema)
         return s, f_definitions
+
+
+def get_model_name_map(
+    unique_models: Set[Type['main.BaseModel']]
+) -> Tuple[Dict[str, Type['main.BaseModel']], Dict[Type['main.BaseModel'], str]]:
+    """
+    Process a set of models and generate unique names for them to be used as keys in the JSON Schema
+    definitions. By default the names are the same class name. But if two models in diferent Python 
+    modules have the same name (e.g. "users.Model" and "items.Model"), the generated names will be 
+    based on the Python module path for those conflicting models to prevent name collisions.
+
+    :param unique_models: a Python set of models
+    :return: dict mapping models to names
+    """
+    name_model_map = {}
+    conflicting_names = set()
+    for model in unique_models:
+        model_name = model.__name__
+        if model_name in conflicting_names:
+            model_name = get_long_model_name(model)
+            name_model_map[model_name] = model
+        elif model_name in name_model_map:
+            conflicting_names.add(model_name)
+            conflicting_model = name_model_map.pop(model_name)
+            name_model_map[get_long_model_name(conflicting_model)] = conflicting_model
+            name_model_map[get_long_model_name(model)] = model
+        else:
+            name_model_map[model_name] = model
+    model_name_map = {v: k for k, v in name_model_map.items()}
+    return model_name_map
+
+
+def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
+    flat_models = set()
+    flat_models.add(model)
+    flat_models |= get_flat_models_from_fields(model.__fields__.values())
+    return flat_models
+
+
+def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
+    flat_models = set()
+    if field.sub_fields:
+        flat_models |= get_flat_models_from_fields(field.sub_fields)
+    elif isinstance(field.type_, type) and issubclass(field.type_, main.BaseModel):
+        flat_models |= get_flat_models_from_model(field.type_)
+    return flat_models
+
+
+def get_flat_models_from_fields(fields) -> Set[Type['main.BaseModel']]:
+    flat_models = set()
+    for field in fields:
+        flat_models |= get_flat_models_from_field(field)
+    return flat_models
+
+
+def get_flat_models_from_models(models: Sequence[Type['main.BaseModel']]) -> Set[Type['main.BaseModel']]:
+    flat_models = set()
+    for model in models:
+        flat_models |= get_flat_models_from_model(model)
+    return flat_models
+
+
+def get_long_model_name(model: Type['main.BaseModel']):
+    return f'{model.__module__}__{model.__name__}'.replace('.', '__')
 
 
 def field_type_schema(
@@ -349,39 +414,3 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         else:
             return sub_schema, definitions
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
-
-
-def model_schema(class_: 'main.BaseModel', by_alias=True, ref_prefix=None) -> Dict[str, Any]:
-    ref_prefix = ref_prefix or default_prefix
-    flat_models = get_flat_models_from_model(class_)
-    model_name_map = get_model_name_map(flat_models)
-    m_schema, m_definitions = model_process_schema(
-        class_, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
-    )
-    if m_definitions:
-        m_schema.update({'definitions': m_definitions})
-    return m_schema
-
-
-def schema(
-    models: Sequence[Type['main.BaseModel']], *, by_alias=True, title=None, description=None, ref_prefix=None
-) -> Dict:
-    ref_prefix = ref_prefix or default_prefix
-    flat_models = get_flat_models_from_models(models)
-    model_name_map = get_model_name_map(flat_models)
-    definitions = {}
-    output_schema = {}
-    if title:
-        output_schema['title'] = title
-    if description:
-        output_schema['description'] = description
-    for model in models:
-        m_schema, m_definitions = model_process_schema(
-            model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
-        )
-        definitions.update(m_definitions)
-        model_name = model_name_map[model]
-        definitions[model_name] = m_schema
-    if definitions:
-        output_schema['definitions'] = definitions
-    return output_schema
