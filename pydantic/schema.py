@@ -46,9 +46,18 @@ def get_long_model_name(model: Type['main.BaseModel']):
     return f'{model.__module__}__{model.__name__}'.replace('.', '__')
 
 
-def get_model_name_maps(
+def get_model_name_map(
     unique_models: Set[Type['main.BaseModel']]
 ) -> Tuple[Dict[str, Type['main.BaseModel']], Dict[Type['main.BaseModel'], str]]:
+    """
+    Process a set of models and generate unique names for them to be used as keys in the JSON Schema
+    definitions. By default the names are the same class name. But if two models in diferent Python 
+    modules have the same name (e.g. "users.Model" and "items.Model"), the generated names will be 
+    based on the Python module path for those conflicting models to prevent name collisions.
+
+    :param unique_models: a Python set of models
+    :return: dict mapping models to names
+    """
     name_model_map = {}
     conflicting_names = set()
     for model in unique_models:
@@ -67,7 +76,7 @@ def get_model_name_maps(
         else:
             name_model_map[model_name] = model
     model_name_map = {v: k for k, v in name_model_map.items()}
-    return name_model_map, model_name_map
+    return model_name_map
 
 
 def field_schema(
@@ -350,7 +359,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
 def model_schema(class_: 'main.BaseModel', by_alias=True, ref_prefix='#/definitions/') -> Dict[str, Any]:
     flat_models = get_flat_models_from_model(class_)
-    _, model_name_map = get_model_name_maps(flat_models)
+    model_name_map = get_model_name_map(flat_models)
     m_schema, m_definitions = model_process_schema(
         class_, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
     )
@@ -368,7 +377,7 @@ def schema(
     ref_prefix='#/definitions/',
 ) -> Dict:
     flat_models = get_flat_models_from_models(models)
-    _, model_name_map = get_model_name_maps(flat_models)
+    model_name_map = get_model_name_map(flat_models)
     definitions = {}
     output_schema = {}
     if title:

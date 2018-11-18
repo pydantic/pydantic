@@ -8,7 +8,7 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, Schema, ValidationError
-from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_maps, schema
+from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_map, schema
 from pydantic.types import (
     DSN,
     UUID1,
@@ -600,15 +600,7 @@ def test_model_name_maps():
         c: Bar
 
     flat_models = get_flat_models_from_models([Baz, ModelA, ModelB, ModelC, ModelD])
-    name_model_map, model_name_map = get_model_name_maps(flat_models)
-    assert name_model_map == {
-        'Foo': Foo,
-        'Bar': Bar,
-        'Baz': Baz,
-        'tests__schema_test_package__modulea__modela__Model': ModelA,
-        'tests__schema_test_package__moduleb__modelb__Model': ModelB,
-        'tests__schema_test_package__moduled__modeld__Model': ModelD,
-    }
+    model_name_map = get_model_name_map(flat_models)
     assert model_name_map == {
         Foo: 'Foo',
         Bar: 'Bar',
