@@ -11,8 +11,7 @@ from .json import pydantic_encoder
 from .types import DSN, UUID1, UUID3, UUID4, UUID5, DirectoryPath, EmailStr, FilePath, Json, NameEmail, UrlStr
 from .utils import clean_docstring
 
-
-default_prefix='#/definitions/'
+default_prefix = '#/definitions/'
 
 
 def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
@@ -138,7 +137,7 @@ def field_type_schema(
     ref_prefix = ref_prefix or default_prefix
     if field.shape is Shape.LIST:
         f_schema, f_definitions = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix= ref_prefix
+            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
         definitions.update(f_definitions)
         return {'type': 'array', 'items': f_schema}, definitions
@@ -184,11 +183,7 @@ def field_type_schema(
 
 
 def model_process_schema(
-    class_: Type['main.BaseModel'],
-    *,
-    by_alias=True,
-    model_name_map: Dict[Type['main.BaseModel'], str],
-    ref_prefix=None,
+    class_: Type['main.BaseModel'], *, by_alias=True, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     ref_prefix = ref_prefix or default_prefix
     s = {'title': class_.__config__.title or class_.__name__}
@@ -202,11 +197,7 @@ def model_process_schema(
 
 
 def model_type_schema(
-    class_: 'main.BaseModel',
-    *,
-    by_alias: bool,
-    model_name_map: Dict[Type['main.BaseModel'], str],
-    ref_prefix=None,
+    class_: 'main.BaseModel', *, by_alias: bool, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
 ):
     ref_prefix = ref_prefix or default_prefix
     properties = {}
@@ -389,12 +380,7 @@ def model_schema(class_: 'main.BaseModel', by_alias=True, ref_prefix=None) -> Di
 
 
 def schema(
-    models: Sequence[Type['main.BaseModel']],
-    *,
-    by_alias=True,
-    title=None,
-    description=None,
-    ref_prefix=None,
+    models: Sequence[Type['main.BaseModel']], *, by_alias=True, title=None, description=None, ref_prefix=None
 ) -> Dict:
     ref_prefix = ref_prefix or default_prefix
     flat_models = get_flat_models_from_models(models)
