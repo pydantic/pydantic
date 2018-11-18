@@ -350,7 +350,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             return {'$ref': f'{ref_prefix}{model_name}'}, definitions
         else:
             return sub_schema, definitions
-    raise ValueError('Value not declarable with JSON Schema')
+    raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
 
 def model_schema(class_: 'main.BaseModel', by_alias=True, ref_prefix='#/definitions/') -> Dict[str, Any]:
