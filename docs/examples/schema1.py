@@ -36,4 +36,4 @@ print(MainModel.schema())
 #       'properties': {
 #           'foo_bar': {
 #           ...
-print(MainModel.schema_str(indent=2))
+print(MainModel.schema_json(indent=2))

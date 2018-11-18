@@ -231,7 +231,7 @@ Outputs:
 
 The generated schemas are compliant with the specifications: `JSON Schema Core <https://json-schema.org/>`__, `JSON Schema Validation <https://json-schema.org/>`__ and `OpenAPI <https://github.com/OAI/OpenAPI-Specification>`__.
 
-``BaseModel.schema`` will return a dict of the schema, while ``BaseModel.schema_str`` will return a JSON string representation of that.
+``BaseModel.schema`` will return a dict of the schema, while ``BaseModel.schema_json`` will return a JSON string representation of that.
 
 "submodels" used are added to the ``definitons`` JSON attribute and referenced, as per the spec.
 
