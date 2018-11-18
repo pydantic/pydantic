@@ -355,6 +355,7 @@ The field schema mapping from Python / Pydantic to JSON Schema is done as follow
 | ``BaseModel``                                               | ``object``       |                                                                                  | JSON Schema Core                     | All the properties defined will be defined with standard JSON Schema, including submodels.                                                                                                                                        |
 +-------------------------------------------------------------+------------------+----------------------------------------------------------------------------------+--------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+
 You can also generate a top-level JSON Schema that only includes a list of models and all their related submodules in its ``definitions``:
 
 .. literalinclude:: examples/schema2.py
