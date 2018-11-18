@@ -45,6 +45,11 @@ from .schema_test_package.moduleb.modelb import Model as ModelB
 from .schema_test_package.modulec.modelc import Model as ModelC
 from .schema_test_package.moduled.modeld import Model as ModelD
 
+try:
+    import email_validator
+except ImportError:
+    email_validator = None
+
 
 def test_key():
     class ApplePie(BaseModel):
@@ -378,11 +383,28 @@ def test_str_constrained_types():
 
 def test_special_str_types():
     class Model(BaseModel):
+        a: UrlStr
+        b: urlstr(min_length=5, max_length=10)
+        c: DSN
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16},
+            'b': {'title': 'B', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
+            'c': {'title': 'C', 'type': 'string', 'format': 'dsn'},
+        },
+        'required': ['a', 'b', 'c'],
+    }
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_email_str_types():
+    class Model(BaseModel):
         a: EmailStr
-        b: UrlStr
-        c: urlstr(min_length=5, max_length=10)
-        d: NameEmail
-        e: DSN
+        b: NameEmail
 
     model_schema = Model.schema()
     assert model_schema == {
@@ -390,12 +412,9 @@ def test_special_str_types():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'type': 'string', 'format': 'email'},
-            'b': {'title': 'B', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16},
-            'c': {'title': 'C', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
-            'd': {'title': 'D', 'type': 'string', 'format': 'name-email'},
-            'e': {'title': 'E', 'type': 'string', 'format': 'dsn'},
+            'b': {'title': 'B', 'type': 'string', 'format': 'name-email'},
         },
-        'required': ['a', 'b', 'c', 'd', 'e'],
+        'required': ['a', 'b'],
     }
 
 
