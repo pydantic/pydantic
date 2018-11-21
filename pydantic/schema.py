@@ -32,7 +32,7 @@ default_prefix = '#/definitions/'
 
 
 def schema(
-    models: Sequence[Type[main.BaseModel]], *, by_alias=True, title=None, description=None, ref_prefix=None
+    models: Sequence[Type['main.BaseModel']], *, by_alias=True, title=None, description=None, ref_prefix=None
 ) -> Dict:
     """
     Process a list of models and generate a single JSON Schema with all of them defined in the ``definitions``
@@ -105,7 +105,7 @@ def field_schema(
     is a model and has submodels, and those submodels don't have overrides (as ``title``, ``default``, etc), they
     will be included in the definitions and referenced in the schema instead of included recursively.
 
-    :param field: a Pydantic Field
+    :param field: a Pydantic ``Field``
     :param by_alias: use the defined alias (if any) in the returned schema
     :param model_name_map: used to generate the JSON Schema references to other models included in the definitions
     :param ref_prefix: the JSON Pointer prefix to use for references to other schemas, if None, the default of
@@ -174,6 +174,15 @@ def get_model_name_map(
 
 
 def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
+    """
+    Take a single ``model`` and generate a set with itself and all the submodels in the tree. I.e. if you pass
+    model ``Foo`` (subclass of Pydantic ``BaseModel``) as ``model``, and it has a field of type ``Bar`` (also
+    subclass of ``BaseModel``) and that model ``Bar`` has a field of type ``Baz`` (also subclass of ``BaseModel``),
+    the return value will be ``set([Foo, Bar, Baz])``.
+
+    :param model: a Pydantic ``BaseModel`` subclass
+    :return: a set with the initial model and all its submodels
+    """
     flat_models = set()
     flat_models.add(model)
     flat_models |= get_flat_models_from_fields(model.__fields__.values())
@@ -181,6 +190,16 @@ def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.
 
 
 def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
+    """
+    Take a single Pydantic ``Field`` (from a model) that could have been declared as a sublcass of BaseModel
+    (so, it could be a submodel), and generate a set with its model and all the submodels in the tree.
+    I.e. if you pass a field that was declared to be of type ``Foo`` (subclass of BaseModel) as ``field``, and that
+    model ``Foo`` has a field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of
+    type ``Baz`` (also subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
+
+    :param field: a Pydantic ``Field``
+    :return: a set with the model used in the declaration for this field, if any, and all its submodels
+    """
     flat_models = set()
     if field.sub_fields:
         flat_models |= get_flat_models_from_fields(field.sub_fields)
@@ -190,6 +209,16 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
 
 
 def get_flat_models_from_fields(fields) -> Set[Type['main.BaseModel']]:
+    """
+    Take a list of Pydantic  ``Field``s (from a model) that could have been declared as sublcasses of ``BaseModel``
+    (so, any of them could be a submodel), and generate a set with their models and all the submodels in the tree.
+    I.e. if you pass a the fields of a model ``Foo`` (subclass of ``BaseModel``) as ``fields``, and on of them has a
+    field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of type ``Baz`` (also
+    subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
+
+    :param fields: a list of Pydantic ``Field``s
+    :return: a set with any model declared in the fields, and all their submodels
+    """
     flat_models = set()
     for field in fields:
         flat_models |= get_flat_models_from_field(field)
@@ -197,6 +226,14 @@ def get_flat_models_from_fields(fields) -> Set[Type['main.BaseModel']]:
 
 
 def get_flat_models_from_models(models: Sequence[Type['main.BaseModel']]) -> Set[Type['main.BaseModel']]:
+    """
+    Take a list of ``models`` and generate a set with them and all their submodels in their trees. I.e. if you pass
+    a list of two models, ``Foo`` and ``Bar``, both subclasses of Pydantic ``BaseModel`` as models, and ``Bar`` has
+    a field of type ``Baz`` (also subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
+
+    :param model: a Pydantic ``BaseModel`` subclass
+    :return: a set with the initial model and all its submodels
+    """
     flat_models = set()
     for model in models:
         flat_models |= get_flat_models_from_model(model)
@@ -215,6 +252,15 @@ def field_type_schema(
     schema_overrides=False,
     ref_prefix=None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    Used by ``field_schema()``, you probably should be using that function.
+
+    Take a single ``field`` and generate the schema for its type only, not including additional
+    information as title, etc. Also return additional schema definitions, from submodels.
+
+    :param model: a Pydantic ``Field`` subclass
+    :return: tuple of the type schema for this field and additional definitions form submodules
+    """
     definitions = {}
     ref_prefix = ref_prefix or default_prefix
     if field.shape is Shape.LIST:
@@ -265,27 +311,46 @@ def field_type_schema(
 
 
 def model_process_schema(
-    class_: Type['main.BaseModel'], *, by_alias=True, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
+    model: Type['main.BaseModel'], *, by_alias=True, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    Used by ``model_schema()``, you probably should be using that function.
+
+    Take a single ``model`` and generate its schema. Also return additional schema definitions, from submodels. The
+    submodels of the returned schema will be referenced, but their definitions will not be included in the schema. All
+    the definitions are returned as the second value.
+
+    :param model: a Pydantic ``BaseModel`` subclass
+    :return: tuple of the schema for this model and additional definitions form submodules
+    """
     ref_prefix = ref_prefix or default_prefix
-    s = {'title': class_.__config__.title or class_.__name__}
-    if class_.__doc__:
-        s['description'] = clean_docstring(class_.__doc__)
+    s = {'title': model.__config__.title or model.__name__}
+    if model.__doc__:
+        s['description'] = clean_docstring(model.__doc__)
     m_schema, m_definitions = model_type_schema(
-        class_, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+        model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
     )
     s.update(m_schema)
     return s, m_definitions
 
 
 def model_type_schema(
-    class_: 'main.BaseModel', *, by_alias: bool, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
+    model: 'main.BaseModel', *, by_alias: bool, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
 ):
+    """
+    You probably should be using ``model_schema()``, this function is indirectly used by that function.
+
+    Take a single ``model`` and generate the schema for its type only, not including additional
+    information as title, etc. Also return additional schema definitions, from submodels.
+
+    :param model: a Pydantic ``BaseModel`` subclass
+    :return: tuple of the type schema for this model and additional definitions form submodules
+    """
     ref_prefix = ref_prefix or default_prefix
     properties = {}
     required = []
     definitions = {}
-    for k, f in class_.__fields__.items():
+    for k, f in model.__fields__.items():
         f_schema, f_definitions = field_schema(
             f, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
@@ -312,6 +377,16 @@ def field_singleton_sub_fields_schema(
     schema_overrides=False,
     ref_prefix=None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    This function is indirectly used by ``field_schema()``, you probably should be using that function.
+
+    Take a list of Pydantic ``Field`` from the declaration of a type with parameters, and generate their
+    schema. I.e., fields used as "type parameters", like ``str`` and ``int`` in ``Tuple[str, int]``.
+
+    :param sub_fields: a list of Pydantic ``Field``s from a declaration using a type with parameters
+    :return: a tuple with the schema for the type declared with parameters and additional definitions from
+    any submodules
+    """
     ref_prefix = ref_prefix or default_prefix
     definitions = {}
     if len(sub_fields) == 1:
@@ -388,6 +463,15 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     schema_overrides=False,
     ref_prefix=None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    This function is indirectly used by ``field_schema()``, you probably should be using that function.
+
+    Take a single Pydantic ``Field``, and return its schema and any additional definitions from submodels.
+
+    :param field: a single Pydantic ``Field``
+    :return: a tuple with the schema for the type declared and additional definitions from any submodules
+    """
+
     ref_prefix = ref_prefix or default_prefix
     definitions = {}
     if field.sub_fields:
