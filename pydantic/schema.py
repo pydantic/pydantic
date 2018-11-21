@@ -32,7 +32,7 @@ default_prefix = '#/definitions/'
 
 
 def schema(
-    models: Sequence[Type['main.BaseModel']], *, by_alias=True, title=None, description=None, ref_prefix=None
+    models: Sequence[Type[main.BaseModel]], *, by_alias=True, title=None, description=None, ref_prefix=None
 ) -> Dict:
     """
     Process a list of models and generate a single JSON Schema with all of them defined in the ``definitions``
