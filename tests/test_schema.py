@@ -861,6 +861,7 @@ def test_dict_default():
     'kwargs,type_,expected',
     [
         ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
+        ({'max_length': 5}, constr(max_length=6), {'type': 'string', 'maxLength': 6, 'minLength': 0}),
         ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
         ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
         ({'regex': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
@@ -923,9 +924,11 @@ def test_not_constraints_schema(kwargs, type_, expected):
     'kwargs,type_,value',
     [
         ({'max_length': 5}, str, 'foo'),
+        ({'max_length': 5}, constr(max_length=6), 'foo'),
         ({'min_length': 2}, str, 'foo'),
         ({'max_length': 5}, bytes, b'foo'),
         ({'regex': '^foo$'}, str, 'foo'),
+        ({'max_length': 5}, bool, True),
         ({'gt': 2}, int, 3),
         ({'lt': 5}, int, 3),
         ({'ge': 2}, int, 3),
@@ -984,3 +987,14 @@ def test_constraints_schema_validation_raises(kwargs, type_, value):
 
     with pytest.raises(ValidationError):
         Foo(a=value)
+
+
+def test_schema_kwargs():
+    class Foo(BaseModel):
+        a: str = Schema('foo', example='bar')
+
+    assert Foo.schema() == {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {'a': {'type': 'string', 'title': 'A', 'default': 'foo', 'example': 'bar'}},
+    }
