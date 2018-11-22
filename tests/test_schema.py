@@ -991,10 +991,10 @@ def test_constraints_schema_validation_raises(kwargs, type_, value):
 
 def test_schema_kwargs():
     class Foo(BaseModel):
-        a: str = Schema('foo', example='bar')
+        a: str = Schema('foo', examples=['bar'])
 
     assert Foo.schema() == {
         'title': 'Foo',
         'type': 'object',
-        'properties': {'a': {'type': 'string', 'title': 'A', 'default': 'foo', 'example': 'bar'}},
+        'properties': {'a': {'type': 'string', 'title': 'A', 'default': 'foo', 'examples': ['bar']}},
     }
