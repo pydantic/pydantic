@@ -14,6 +14,7 @@ clean:
 
 .PHONY: html
 html: clean
+	./schema_mapping.py
 	mkdir -p $(STATICDIR)
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
