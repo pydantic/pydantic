@@ -257,7 +257,7 @@ Optionally the ``Schema`` class can be used to provide extra information about t
 * ``description`` if omitted and the annotation is a sub-model, the docstring of the sub-model will be used
 * ``gt`` for numeric values (``int``, ``float``, ``Decimal``), adds a validation of "greater than" and an annotation
   of ``exclusiveMinimum`` to the JSON Schema
-* ``ge`` for numeric values, adds a validation of "greater than or equal" and an annotation of ``maximum`` to the
+* ``ge`` for numeric values, adds a validation of "greater than or equal" and an annotation of ``minimum`` to the
   JSON Schema
 * ``lt`` for numeric values, adds a validation of "less than" and an annotation of ``exclusiveMaximum`` to the
   JSON Schema
