@@ -3,7 +3,7 @@
 History
 -------
 
-v0.16.0 (2018-11-19)
+v0.16.0 (2018-XX-XX)
 ....................
 
 * refactor schema generation to be compatible with JSON Schema and OpenAPI specs, #308 by @tiangolo
