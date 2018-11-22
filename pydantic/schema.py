@@ -118,11 +118,17 @@ def field_schema(
     if field._schema.title:
         schema_overrides = True
 
-    if not field.required and field.default is not None:
+    if field._schema.description:
+        s['description'] = field._schema.description
         schema_overrides = True
+
+    if not field.required and field.default is not None:
         s['default'] = encode_default(field.default)
-    if field._schema.extra:
-        s.update(field._schema.extra)
+        schema_overrides = True
+
+    validation_schema = get_field_schema_validations(field)
+    if validation_schema:
+        s.update(validation_schema)
         schema_overrides = True
 
     f_schema, f_definitions = field_type_schema(
@@ -138,6 +144,38 @@ def field_schema(
     else:
         s.update(f_schema)
         return s, f_definitions
+
+
+numeric_types = (int, float, Decimal)
+_str_types_attrs = {
+    'max_length': (numeric_types, 'maxLength'),
+    'min_length': (numeric_types, 'minLength'),
+    'regex': (str, 'pattern'),
+}
+_numeric_types_attrs = {
+    'gt': (numeric_types, 'exclusiveMinimum'),
+    'lt': (numeric_types, 'exclusiveMaximum'),
+    'ge': (numeric_types, 'minimum'),
+    'le': (numeric_types, 'maximum'),
+}
+
+
+def get_field_schema_validations(field):
+    """Get the JSON Schema validation keywords for a ``field`` with an annotation of
+      a Pydantic ``Schema`` with validation arguments.
+    """
+    f_schema = {}
+    if isinstance(field.type_, type) and issubclass(field.type_, (str, bytes)):
+        for attr, (t, keyword) in _str_types_attrs.items():
+            if getattr(field._schema, attr) and isinstance(getattr(field._schema, attr), t):
+                f_schema[keyword] = getattr(field._schema, attr)
+    if isinstance(field.type_, type) and issubclass(field.type_, numeric_types) and not issubclass(field.type_, bool):
+        for attr, (t, keyword) in _numeric_types_attrs.items():
+            if getattr(field._schema, attr) and isinstance(getattr(field._schema, attr), t):
+                f_schema[keyword] = getattr(field._schema, attr)
+    if field._schema.extra:
+        f_schema.update(field._schema.extra)
+    return f_schema
 
 
 def get_model_name_map(unique_models: Set[Type['main.BaseModel']]) -> Dict[Type['main.BaseModel'], str]:
