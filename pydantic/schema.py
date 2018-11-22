@@ -120,10 +120,7 @@ def field_schema(
 
     if not field.required and field.default is not None:
         schema_overrides = True
-        if isinstance(field.default, (int, float, str)):
-            s['default'] = field.default
-        else:
-            s['default'] = pydantic_encoder(field.default)
+        s['default'] = encode_default(field.default)
     if field._schema.extra:
         s.update(field._schema.extra)
         schema_overrides = True
@@ -445,7 +442,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     ref_prefix=None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
-    This function is indirectly used by ``field_schema()``, you probably should be using that function.
+    This function is indirectly used by ``field_schema()``, you should probably be using that function.
 
     Take a single Pydantic ``Field``, and return its schema and any additional definitions from sub-models.
     """
@@ -494,3 +491,15 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         else:
             return sub_schema, definitions
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
+
+
+def encode_default(dft):
+    if isinstance(dft, (int, float, str)):
+        return dft
+    elif isinstance(dft, (tuple, list, set)):
+        t = type(dft)
+        return t(encode_default(v) for v in dft)
+    elif isinstance(dft, dict):
+        return {encode_default(k): encode_default(v) for k, v in dft.items()}
+    else:
+        return pydantic_encoder(dft)

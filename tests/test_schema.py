@@ -826,3 +826,32 @@ def test_schema_with_ref_prefix():
 def test_schema_no_definitions():
     model_schema = schema([], title='Schema without definitions')
     assert model_schema == {'title': 'Schema without definitions'}
+
+
+def test_list_default():
+    class UserModel(BaseModel):
+        friends: List[int] = [1]
+
+    assert UserModel.schema() == {
+        'title': 'UserModel',
+        'type': 'object',
+        'properties': {'friends': {'title': 'Friends', 'default': [1], 'type': 'array', 'items': {'type': 'integer'}}},
+    }
+
+
+def test_dict_default():
+    class UserModel(BaseModel):
+        friends: Dict[int, float] = {1: 1.1, 2: 2.2}
+
+    assert UserModel.schema() == {
+        'title': 'UserModel',
+        'type': 'object',
+        'properties': {
+            'friends': {
+                'title': 'Friends',
+                'default': {1: 1.1, 2: 2.2},
+                'type': 'object',
+                'additionalProperties': {'type': 'number'},
+            }
+        },
+    }
