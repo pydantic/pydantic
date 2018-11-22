@@ -130,10 +130,8 @@ def get_annotation_from_schema(annotation, schema):
             # Is numeric type
             attrs = _numeric_attrs
             kwargs = {'gt': None, 'lt': None, 'ge': None, 'le': None}
-            for t in _numeric_types:
-                if issubclass(annotation, t):
-                    con = _map_types_const[t]
-                    break
+            n_types = [t for t in _numeric_types if issubclass(annotation, t)]
+            con = _map_types_const[n_types[0]]
         for attr in attrs:
             if hasattr(schema, attr) and getattr(schema, attr) is not None:
                 params_to_set = True
