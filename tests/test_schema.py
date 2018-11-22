@@ -855,3 +855,132 @@ def test_dict_default():
             }
         },
     }
+
+
+@pytest.mark.parametrize(
+    'kwargs,type_,expected',
+    [
+        ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
+        ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
+        ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
+        ({'regex': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
+        ({'gt': 2}, int, {'type': 'integer', 'exclusiveMinimum': 2}),
+        ({'lt': 5}, int, {'type': 'integer', 'exclusiveMaximum': 5}),
+        ({'ge': 2}, int, {'type': 'integer', 'minimum': 2}),
+        ({'le': 5}, int, {'type': 'integer', 'maximum': 5}),
+        ({'gt': 2}, float, {'type': 'number', 'exclusiveMinimum': 2}),
+        ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
+        ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
+        ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
+        ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
+        ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),
+        ({'ge': 2}, Decimal, {'type': 'number', 'minimum': 2}),
+        ({'le': 5}, Decimal, {'type': 'number', 'maximum': 5}),
+    ],
+)
+def test_constraints_schema(kwargs, type_, expected):
+    class Foo(BaseModel):
+        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+
+    base_schema = {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
+    }
+
+    base_schema['properties']['a'].update(expected)
+    assert Foo.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'kwargs,type_,expected',
+    [
+        ({'max_length': 5}, int, {'type': 'integer'}),
+        ({'min_length': 2}, float, {'type': 'number'}),
+        ({'max_length': 5}, Decimal, {'type': 'number'}),
+        ({'regex': '^foo$'}, int, {'type': 'integer'}),
+        ({'gt': 2}, str, {'type': 'string'}),
+        ({'lt': 5}, bytes, {'type': 'string', 'format': 'binary'}),
+        ({'ge': 2}, str, {'type': 'string'}),
+        ({'le': 5}, bool, {'type': 'boolean'}),
+    ],
+)
+def test_not_constraints_schema(kwargs, type_, expected):
+    class Foo(BaseModel):
+        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+
+    base_schema = {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
+    }
+
+    base_schema['properties']['a'].update(expected)
+    assert Foo.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'kwargs,type_,value',
+    [
+        ({'max_length': 5}, str, 'foo'),
+        ({'min_length': 2}, str, 'foo'),
+        ({'max_length': 5}, bytes, b'foo'),
+        ({'regex': '^foo$'}, str, 'foo'),
+        ({'gt': 2}, int, 3),
+        ({'lt': 5}, int, 3),
+        ({'ge': 2}, int, 3),
+        ({'ge': 2}, int, 2),
+        ({'gt': 2}, int, '3'),
+        ({'le': 5}, int, 3),
+        ({'le': 5}, int, 5),
+        ({'gt': 2}, float, 3.0),
+        ({'gt': 2}, float, 2.1),
+        ({'lt': 5}, float, 3.0),
+        ({'lt': 5}, float, 4.9),
+        ({'ge': 2}, float, 3.0),
+        ({'ge': 2}, float, 2.0),
+        ({'le': 5}, float, 3.0),
+        ({'le': 5}, float, 5.0),
+        ({'gt': 2}, float, 3),
+        ({'gt': 2}, float, '3'),
+        ({'gt': 2}, Decimal, Decimal(3)),
+        ({'lt': 5}, Decimal, Decimal(3)),
+        ({'ge': 2}, Decimal, Decimal(3)),
+        ({'ge': 2}, Decimal, Decimal(2)),
+        ({'le': 5}, Decimal, Decimal(3)),
+        ({'le': 5}, Decimal, Decimal(5)),
+    ],
+)
+def test_constraints_schema_validation(kwargs, type_, value):
+    class Foo(BaseModel):
+        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+
+    assert Foo(a=value)
+
+
+@pytest.mark.parametrize(
+    'kwargs,type_,value',
+    [
+        ({'max_length': 5}, str, 'foobar'),
+        ({'min_length': 2}, str, 'f'),
+        ({'regex': '^foo$'}, str, 'bar'),
+        ({'gt': 2}, int, 2),
+        ({'lt': 5}, int, 5),
+        ({'ge': 2}, int, 1),
+        ({'le': 5}, int, 6),
+        ({'gt': 2}, float, 2.0),
+        ({'lt': 5}, float, 5.0),
+        ({'ge': 2}, float, 1.9),
+        ({'le': 5}, float, 5.1),
+        ({'gt': 2}, Decimal, Decimal(2)),
+        ({'lt': 5}, Decimal, Decimal(5)),
+        ({'ge': 2}, Decimal, Decimal(1)),
+        ({'le': 5}, Decimal, Decimal(6)),
+    ],
+)
+def test_constraints_schema_validation_raises(kwargs, type_, value):
+    class Foo(BaseModel):
+        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+
+    with pytest.raises(ValidationError):
+        Foo(a=value)
