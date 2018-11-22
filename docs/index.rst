@@ -230,8 +230,9 @@ Outputs:
 .. literalinclude:: examples/schema1.json
 
 The generated schemas are compliant with the specifications:
-`JSON Schema Core <https://github.com/java-json-tools/json-schema-core>`__,
-`JSON Schema Validation <https://json-schema.org/>`__ and `OpenAPI <https://github.com/OAI/OpenAPI-Specification>`__.
+`JSON Schema Core <https://json-schema.org/latest/json-schema-core.html>`__,
+`JSON Schema Validation <https://json-schema.org/latest/json-schema-validation.html>`__ and 
+`OpenAPI <https://github.com/OAI/OpenAPI-Specification>`__.
 
 ``BaseModel.schema`` will return a dict of the schema, while ``BaseModel.schema_json`` will return a JSON string
 representation of that.
