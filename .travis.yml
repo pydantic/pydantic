@@ -4,8 +4,8 @@ cache: pip
 
 matrix:
   include:
-  - python: 3.6
-  - python: 3.7
+  - python: '3.6'
+  - python: '3.7'
     dist: xenial
     sudo: required
   - python: 3.8-dev
@@ -35,8 +35,7 @@ script:
 
 after_success:
 - ls -lha
-# currently a problem with coverage on python 3.8: https://github.com/nedbat/coveragepy/issues/707
-- python -c 'import sys; exit(sys.version_info >= (3, 8))' && bash <(curl -s https://codecov.io/bash)
+- bash <(curl -s https://codecov.io/bash)
 
 env:
 - secure: "vpTd8bkwPBP0CV3EJBAwSMNMnNK3m/71dvTvBd1T4YGuefyJvYhtA7wauA5xRL9jpK2mu5QR5eo0owTUJhKi4DjpafMMd1bc4PnXlrdZFzkn3VsGmlKt74D/aJgiuiNyhd/Qvq4OxMHrMhf4f6lKWoMM1vh6yT0yp3+51SexSh2Me0Q+npxbjXwoxX5XUHRcoSLtFk4GbYI88a2I+08XWI6v+Awo/giQ5QurUJhjAklbosrrQVr1FCOkU0em5jeyZvEbZSLmaMtbX1JlRdKoJm6WMU+y9I7zj35w6ue/vgfcLz7b/HDZrBx7/L9g1LxRo80briueX/IbHvN7DOVFKvaXVmnEa6lIDdCeOLOyESpIbmjqmDKi8JeexdPNxKq4Tvo2VEA9dL2w2aw+aALNtU2OF5iEMfPTUQyosu/CNu2PKtiuZkSOdvpYbSy1WUNHJRvomdR4Olzg8ZIScNsxU3IIPdrlG/LUA8auXcE9juFeZfD6D2hQZATqWeEe/C2J7amNSD+mLLaTf6nMQw8oNtKYOvYK17M7xyvi7HXDy711Bi18U3x6Ye0xGx8CDbFwl0ICNzIk9rrSAh9hEHTvfdUUkk35pxifvO0Hrh4SArCA20ozcH/hHWBhyqGdxoIQ6KoDgNbIFIGQ6/vugxL/pt8z1sJwPfJnq8tRDAyWZvE="
