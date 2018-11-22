@@ -1,11 +1,54 @@
-import json
+import os
+import sys
+import tempfile
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from uuid import UUID
 
 import pytest
 
 from pydantic import BaseModel, Schema, ValidationError
+from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_map, schema
+from pydantic.types import (
+    DSN,
+    UUID1,
+    UUID3,
+    UUID4,
+    UUID5,
+    ConstrainedDecimal,
+    ConstrainedFloat,
+    ConstrainedInt,
+    ConstrainedStr,
+    DirectoryPath,
+    EmailStr,
+    FilePath,
+    Json,
+    NameEmail,
+    NegativeFloat,
+    NegativeInt,
+    NoneBytes,
+    NoneStr,
+    NoneStrBytes,
+    PositiveFloat,
+    PositiveInt,
+    PyObject,
+    StrBytes,
+    StrictStr,
+    UrlStr,
+    condecimal,
+    confloat,
+    conint,
+    constr,
+    urlstr,
+)
+
+try:
+    import email_validator
+except ImportError:
+    email_validator = None
 
 
 def test_key():
@@ -19,10 +62,8 @@ def test_key():
 
     s = {
         'type': 'object',
-        'properties': {
-            'a': {'type': 'float', 'required': True, 'title': 'A'},
-            'b': {'type': 'int', 'required': False, 'title': 'B', 'default': 10},
-        },
+        'properties': {'a': {'type': 'number', 'title': 'A'}, 'b': {'type': 'integer', 'title': 'B', 'default': 10}},
+        'required': ['a'],
         'title': 'ApplePie',
         'description': 'This is a test.',
     }
@@ -47,11 +88,11 @@ def test_by_alias():
         'type': 'object',
         'title': 'Apple Pie',
         'properties': {
-            'Snap': {'type': 'float', 'required': True, 'title': 'Snap'},
-            'Crackle': {'type': 'int', 'required': False, 'title': 'Crackle', 'default': 10},
+            'Snap': {'type': 'number', 'title': 'Snap'},
+            'Crackle': {'type': 'integer', 'title': 'Crackle', 'default': 10},
         },
+        'required': ['Snap'],
     }
-    assert ApplePie.schema() == s
     assert ApplePie.schema() == s
     assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
@@ -70,15 +111,17 @@ def test_sub_model():
     assert Bar.schema() == {
         'type': 'object',
         'title': 'Bar',
-        'properties': {
-            'a': {'type': 'int', 'title': 'A', 'required': True},
-            'b': {
+        'definitions': {
+            'Foo': {
                 'type': 'object',
-                'title': 'B',
-                'properties': {'b': {'type': 'float', 'title': 'B', 'required': True}},
-                'required': False,
-            },
+                'title': 'Foo',
+                'description': 'hello',
+                'properties': {'b': {'type': 'number', 'title': 'B'}},
+                'required': ['b'],
+            }
         },
+        'properties': {'a': {'type': 'integer', 'title': 'A'}, 'b': {'$ref': '#/definitions/Foo'}},
+        'required': ['a'],
     }
 
 
@@ -97,9 +140,10 @@ def test_schema_class():
         'type': 'object',
         'title': 'Model',
         'properties': {
-            'foo': {'type': 'int', 'title': 'Foo is Great', 'required': False, 'default': 4},
-            'bar': {'type': 'str', 'title': 'Bar', 'required': True, 'description': 'this description of bar'},
+            'foo': {'type': 'integer', 'title': 'Foo is Great', 'default': 4},
+            'bar': {'type': 'string', 'title': 'Bar', 'description': 'this description of bar'},
         },
+        'required': ['bar'],
     }
 
 
@@ -122,16 +166,17 @@ def test_choices():
     class Model(BaseModel):
         foo: FooEnum
         bar: BarEnum
-        spam: SpamEnum = Schema(None, choice_names={'f': 'Sausage'})
+        spam: SpamEnum = Schema(None)
 
     assert Model.schema() == {
         'type': 'object',
         'title': 'Model',
         'properties': {
-            'foo': {'type': 'enum', 'title': 'Foo', 'required': True, 'choices': [('f', 'Foo'), ('b', 'Bar')]},
-            'bar': {'type': 'int', 'title': 'Bar', 'required': True, 'choices': [(1, 'Foo'), (2, 'Bar')]},
-            'spam': {'type': 'str', 'title': 'Spam', 'required': False, 'choices': [('f', 'Sausage'), ('b', 'Bar')]},
+            'foo': {'title': 'Foo', 'enum': ['f', 'b']},
+            'bar': {'type': 'integer', 'title': 'Bar', 'enum': [1, 2]},
+            'spam': {'type': 'string', 'title': 'Spam', 'enum': ['f', 'b']},
         },
+        'required': ['foo', 'bar'],
     }
 
 
@@ -140,9 +185,6 @@ def test_json_schema():
         a = b'foobar'
         b = Decimal('12.34')
 
-    with pytest.raises(TypeError):
-        json.dumps(Model.schema())
-
     assert Model.schema_json(indent=2) == (
         '{\n'
         '  "title": "Model",\n'
@@ -150,15 +192,14 @@ def test_json_schema():
         '  "properties": {\n'
         '    "a": {\n'
         '      "title": "A",\n'
-        '      "required": false,\n'
         '      "default": "foobar",\n'
-        '      "type": "bytes"\n'
+        '      "type": "string",\n'
+        '      "format": "binary"\n'
         '    },\n'
         '    "b": {\n'
         '      "title": "B",\n'
-        '      "required": false,\n'
         '      "default": 12.34,\n'
-        '      "type": "Decimal"\n'
+        '      "type": "number"\n'
         '    }\n'
         '  }\n'
         '}'
@@ -175,14 +216,16 @@ def test_list_sub_model():
     assert Bar.schema() == {
         'title': 'Bar',
         'type': 'object',
-        'properties': {
-            'b': {
-                'type': 'list',
-                'item_type': {'type': 'object', 'properties': {'a': {'type': 'float', 'title': 'A', 'required': True}}},
-                'title': 'B',
-                'required': True,
+        'definitions': {
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'type': 'number', 'title': 'A'}},
+                'required': ['a'],
             }
         },
+        'properties': {'b': {'type': 'array', 'items': {'$ref': '#/definitions/Foo'}, 'title': 'B'}},
+        'required': ['b'],
     }
 
 
@@ -190,11 +233,7 @@ def test_optional():
     class Model(BaseModel):
         a: Optional[str]
 
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'type': 'str', 'title': 'A', 'required': False}},
-    }
+    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'type': 'string', 'title': 'A'}}}
 
 
 def test_any():
@@ -204,7 +243,8 @@ def test_any():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'type': 'any', 'title': 'A', 'required': True}},
+        'properties': {'a': {'title': 'A'}},
+        'required': ['a'],
     }
 
 
@@ -215,61 +255,603 @@ def test_set():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'required': True, 'type': 'set', 'item_type': 'int'}},
+        'properties': {'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}}},
+        'required': ['a'],
     }
 
 
-def test_tuple():
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (
+            Tuple[str, int, Union[str, int, float], float],
+            [
+                {'type': 'string'},
+                {'type': 'integer'},
+                {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
+                {'type': 'number'},
+            ],
+        ),
+        (Tuple[str], {'type': 'string'}),
+    ],
+)
+def test_tuple(field_type, expected_schema):
     class Model(BaseModel):
-        a: Tuple[str, int, Union[str, int, float], float]
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': None}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['items'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+def test_bool():
+    class Model(BaseModel):
+        a: bool
 
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {
-                'title': 'A',
-                'required': True,
-                'type': 'tuple',
-                'item_types': ['str', 'int', {'type': 'any_of', 'types': ['str', 'int', 'float']}, 'float'],
-            }
+        'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+        'required': ['a'],
+    }
+
+
+class Foo(BaseModel):
+    a: float
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (
+            Union[int, str],
+            {
+                'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+                'required': ['a'],
+            },
+        ),
+        (
+            List[int],
+            {'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}}, 'required': ['a']},
+        ),
+        (
+            Dict[str, Foo],
+            {
+                'definitions': {
+                    'Foo': {
+                        'title': 'Foo',
+                        'type': 'object',
+                        'properties': {'a': {'title': 'A', 'type': 'number'}},
+                        'required': ['a'],
+                    }
+                },
+                'properties': {
+                    'a': {'title': 'A', 'type': 'object', 'additionalProperties': {'$ref': '#/definitions/Foo'}}
+                },
+                'required': ['a'],
+            },
+        ),
+        (
+            Union[None, Foo],
+            {
+                'definitions': {
+                    'Foo': {
+                        'title': 'Foo',
+                        'type': 'object',
+                        'properties': {'a': {'title': 'A', 'type': 'number'}},
+                        'required': ['a'],
+                    }
+                },
+                'properties': {'a': {'$ref': '#/definitions/Foo'}},
+            },
+        ),
+        (Dict[str, Any], {'properties': {'a': {'title': 'A', 'type': 'object'}}, 'required': ['a']}),
+    ],
+)
+def test_list_union_dict(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {'title': 'Model', 'type': 'object'}
+    base_schema.update(expected_schema)
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema', [(datetime, 'date-time'), (date, 'date'), (time, 'time'), (timedelta, 'time-delta')]
+)
+def test_date_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (NoneStr, {'properties': {'a': {'title': 'A', 'type': 'string'}}}),
+        (NoneBytes, {'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'binary'}}}),
+        (
+            StrBytes,
+            {
+                'properties': {
+                    'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
+                },
+                'required': ['a'],
+            },
+        ),
+        (
+            NoneStrBytes,
+            {
+                'properties': {
+                    'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
+                }
+            },
+        ),
+    ],
+)
+def test_str_basic_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {'title': 'Model', 'type': 'object'}
+    base_schema.update(expected_schema)
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (StrictStr, {'title': 'A', 'type': 'string'}),
+        (ConstrainedStr, {'title': 'A', 'type': 'string'}),
+        (
+            constr(min_length=3, max_length=5, regex='^text$'),
+            {'title': 'A', 'type': 'string', 'minLength': 3, 'maxLength': 5, 'pattern': '^text$'},
+        ),
+    ],
+)
+def test_str_constrained_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
+    base_schema['properties']['a'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (UrlStr, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
+        (
+            urlstr(min_length=5, max_length=10),
+            {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
+        ),
+        (DSN, {'title': 'A', 'type': 'string', 'format': 'dsn'}),
+    ],
+)
+def test_special_str_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
+    base_schema['properties']['a'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+@pytest.mark.parametrize('field_type,expected_schema', [(EmailStr, 'email'), (NameEmail, 'name-email')])
+def test_email_str_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (ConstrainedInt, {}),
+        (conint(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (conint(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (PositiveInt, {'exclusiveMinimum': 0}),
+        (NegativeInt, {'exclusiveMaximum': 0}),
+    ],
+)
+def test_special_int_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a'].update(expected_schema)
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (ConstrainedFloat, {}),
+        (confloat(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (confloat(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (PositiveFloat, {'exclusiveMinimum': 0}),
+        (NegativeFloat, {'exclusiveMaximum': 0}),
+        (ConstrainedDecimal, {}),
+        (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+    ],
+)
+def test_special_float_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'number'}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a'].update(expected_schema)
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [(UUID, 'uuid'), (UUID1, 'uuid1'), (UUID3, 'uuid3'), (UUID4, 'uuid4'), (UUID5, 'uuid5')],
+)
+def test_uuid_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema', [(FilePath, 'file-path'), (DirectoryPath, 'directory-path'), (Path, 'path')]
+)
+def test_path_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+def test_json_type():
+    class Model(BaseModel):
+        a: Json
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
+        'required': ['a'],
+    }
+
+
+def test_error_non_supported_types():
+    class Model(BaseModel):
+        a: PyObject
+
+    with pytest.raises(ValueError):
+        Model.schema()
+
+
+def create_testing_submodules():
+    base_path = Path(tempfile.mkdtemp())
+    mod_root_path = base_path / 'pydantic_schema_test'
+    os.makedirs(mod_root_path, exist_ok=True)
+    open(mod_root_path / '__init__.py', 'w').close()
+    for mod in ['a', 'b', 'c']:
+        module_name = 'module' + mod
+        model_name = 'model' + mod + '.py'
+        os.makedirs(mod_root_path / module_name, exist_ok=True)
+        open(mod_root_path / module_name / '__init__.py', 'w').close()
+        with open(mod_root_path / module_name / model_name, 'w') as f:
+            f.write('from pydantic import BaseModel\n' 'class Model(BaseModel):\n' '    a: str\n')
+    module_name = 'moduled'
+    model_name = 'modeld.py'
+    os.makedirs(mod_root_path / module_name, exist_ok=True)
+    open(mod_root_path / module_name / '__init__.py', 'w').close()
+    with open(mod_root_path / module_name / model_name, 'w') as f:
+        f.write('from ..moduleb.modelb import Model')
+    sys.path.insert(0, str(base_path))
+
+
+def test_flat_models_unique_models():
+    create_testing_submodules()
+    from pydantic_schema_test.modulea.modela import Model as ModelA
+    from pydantic_schema_test.moduleb.modelb import Model as ModelB
+    from pydantic_schema_test.moduled.modeld import Model as ModelD
+
+    flat_models = get_flat_models_from_models([ModelA, ModelB, ModelD])
+    assert flat_models == set([ModelA, ModelB])
+
+
+def test_flat_models_with_submodels():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: List[Foo]
+
+    class Baz(BaseModel):
+        c: Dict[str, Bar]
+
+    flat_models = get_flat_models_from_model(Baz)
+    assert flat_models == set([Foo, Bar, Baz])
+
+
+def test_flat_models_with_submodels_from_sequence():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Ingredient(BaseModel):
+        name: str
+
+    class Pizza(BaseModel):
+        name: str
+        ingredients: List[Ingredient]
+
+    flat_models = get_flat_models_from_models([Bar, Pizza])
+    assert flat_models == set([Foo, Bar, Ingredient, Pizza])
+
+
+def test_model_name_maps():
+    create_testing_submodules()
+    from pydantic_schema_test.modulea.modela import Model as ModelA
+    from pydantic_schema_test.moduleb.modelb import Model as ModelB
+    from pydantic_schema_test.modulec.modelc import Model as ModelC
+    from pydantic_schema_test.moduled.modeld import Model as ModelD
+
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    flat_models = get_flat_models_from_models([Baz, ModelA, ModelB, ModelC, ModelD])
+    model_name_map = get_model_name_map(flat_models)
+    assert model_name_map == {
+        Foo: 'Foo',
+        Bar: 'Bar',
+        Baz: 'Baz',
+        ModelA: 'pydantic_schema_test__modulea__modela__Model',
+        ModelB: 'pydantic_schema_test__moduleb__modelb__Model',
+        ModelC: 'pydantic_schema_test__modulec__modelc__Model',
+    }
+
+
+def test_schema_overrides():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo = Foo(a='foo')
+
+    class Baz(BaseModel):
+        c: Optional[Bar]
+
+    class Model(BaseModel):
+        d: Baz
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'definitions': {
+            'Bar': {
+                'title': 'Bar',
+                'type': 'object',
+                'properties': {
+                    'b': {
+                        'title': 'Foo',
+                        'type': 'object',
+                        'properties': {'a': {'title': 'A', 'type': 'string'}},
+                        'required': ['a'],
+                        'default': {'a': 'foo'},
+                    }
+                },
+            },
+            'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
+        },
+        'properties': {'d': {'$ref': '#/definitions/Baz'}},
+        'required': ['d'],
+    }
+
+
+def test_schema_from_models():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    class Model(BaseModel):
+        d: Baz
+
+    class Ingredient(BaseModel):
+        name: str
+
+    class Pizza(BaseModel):
+        name: str
+        ingredients: List[Ingredient]
+
+    model_schema = schema(
+        [Model, Pizza], title='Multi-model schema', description='Single JSON Schema with multiple definitions'
+    )
+    assert model_schema == {
+        'title': 'Multi-model schema',
+        'description': 'Single JSON Schema with multiple definitions',
+        'definitions': {
+            'Pizza': {
+                'title': 'Pizza',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'ingredients': {
+                        'title': 'Ingredients',
+                        'type': 'array',
+                        'items': {'$ref': '#/definitions/Ingredient'},
+                    },
+                },
+                'required': ['name', 'ingredients'],
+            },
+            'Ingredient': {
+                'title': 'Ingredient',
+                'type': 'object',
+                'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                'required': ['name'],
+            },
+            'Model': {
+                'title': 'Model',
+                'type': 'object',
+                'properties': {'d': {'$ref': '#/definitions/Baz'}},
+                'required': ['d'],
+            },
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'$ref': '#/definitions/Bar'}},
+                'required': ['c'],
+            },
+            'Bar': {
+                'title': 'Bar',
+                'type': 'object',
+                'properties': {'b': {'$ref': '#/definitions/Foo'}},
+                'required': ['b'],
+            },
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            },
         },
     }
 
 
-def test_list_union_dict():
+def test_schema_with_ref_prefix():
     class Foo(BaseModel):
-        a: float
+        a: str
 
-    class Model(BaseModel):
-        """party time"""
+    class Bar(BaseModel):
+        b: Foo
 
-        a: Union[int, str]
-        b: List[int]
-        c: Dict[int, Foo]
-        d: Union[None, Foo]
-        e: Dict[str, Any]
+    class Baz(BaseModel):
+        c: Bar
 
-    assert Model.schema() == {
-        'title': 'Model',
-        'description': 'party time',
+    model_schema = schema([Bar, Baz], ref_prefix='#/components/schemas/')  # OpenAPI style
+    assert model_schema == {
+        'definitions': {
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'$ref': '#/components/schemas/Bar'}},
+                'required': ['c'],
+            },
+            'Bar': {
+                'title': 'Bar',
+                'type': 'object',
+                'properties': {'b': {'$ref': '#/components/schemas/Foo'}},
+                'required': ['b'],
+            },
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            },
+        }
+    }
+
+
+def test_schema_no_definitions():
+    model_schema = schema([], title='Schema without definitions')
+    assert model_schema == {'title': 'Schema without definitions'}
+
+
+def test_list_default():
+    class UserModel(BaseModel):
+        friends: List[int] = [1]
+
+    assert UserModel.schema() == {
+        'title': 'UserModel',
+        'type': 'object',
+        'properties': {'friends': {'title': 'Friends', 'default': [1], 'type': 'array', 'items': {'type': 'integer'}}},
+    }
+
+
+def test_dict_default():
+    class UserModel(BaseModel):
+        friends: Dict[str, float] = {'a': 1.1, 'b': 2.2}
+
+    assert UserModel.schema() == {
+        'title': 'UserModel',
         'type': 'object',
         'properties': {
-            'a': {'title': 'A', 'required': True, 'type': 'any_of', 'types': ['int', 'str']},
-            'b': {'title': 'B', 'required': True, 'type': 'list', 'item_type': 'int'},
-            'c': {
-                'title': 'C',
-                'required': True,
-                'type': 'mapping',
-                'item_type': {'type': 'object', 'properties': {'a': {'title': 'A', 'required': True, 'type': 'float'}}},
-                'key_type': 'int',
-            },
-            'd': {
-                'title': 'D',
-                'required': False,
+            'friends': {
+                'title': 'Friends',
+                'default': {'a': 1.1, 'b': 2.2},
                 'type': 'object',
-                'properties': {'a': {'title': 'A', 'required': True, 'type': 'float'}},
-            },
-            'e': {'title': 'E', 'required': True, 'type': 'mapping', 'item_type': 'any', 'key_type': 'str'},
+                'additionalProperties': {'type': 'number'},
+            }
         },
     }

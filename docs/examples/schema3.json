@@ -1,0 +1,29 @@
+{
+  "definitions": {
+    "Foo": {
+      "title": "Foo",
+      "type": "object",
+      "properties": {
+        "a": {
+          "title": "A",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "a"
+      ]
+    },
+    "Model": {
+      "title": "Model",
+      "type": "object",
+      "properties": {
+        "a": {
+          "$ref": "#/components/schemas/Foo"
+        }
+      },
+      "required": [
+        "a"
+      ]
+    }
+  }
+}

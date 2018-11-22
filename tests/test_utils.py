@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 from typing import Union
 
 import pytest
@@ -107,3 +108,30 @@ def test_import_no_attr():
 )
 def test_display_as_type(value, expected):
     assert display_as_type(value) == expected
+
+
+def test_display_as_type_enum():
+    class SubField(Enum):
+        a = 1
+        b = 'b'
+
+    displayed = display_as_type(SubField)
+    assert displayed == 'enum'
+
+
+def test_display_as_type_enum_int():
+    class SubField(int, Enum):
+        a = 1
+        b = 2
+
+    displayed = display_as_type(SubField)
+    assert displayed == 'int'
+
+
+def test_display_as_type_enum_str():
+    class SubField(str, Enum):
+        a = 'a'
+        b = 'b'
+
+    displayed = display_as_type(SubField)
+    assert displayed == 'str'
