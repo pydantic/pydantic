@@ -245,15 +245,31 @@ and reference.
 "sub-models" with modifications (via the ``Schema`` class) like a custom title, description or default value,
 are recursively included instead of referenced.
 
-The ``description`` for models is taken from the docstring of the class.
+The ``description`` for models is taken from the docstring of the class or the argument ``description`` to the ``Schema``
+class.
 
-Optionally the ``Schema`` class can be used to provide extra information about the field, arguments:
+Optionally the ``Schema`` class can be used to provide extra information about the field and validations, arguments:
 
 * ``default`` (positional argument), since the ``Schema`` is replacing the field's default, its first
   argument is used to set the default, use ellipsis (``...``) to indicate the field is required
+* ``alias`` - the public name of the field
 * ``title`` if omitted ``field_name.title()`` is used
-* ``alias`` - the public name of the field.
-* ``**`` any other keyword arguments (eg. ``description``) will be added verbatim to the field's schema
+* ``description`` if omitted and the annotation is a sub-model, the docstring of the sub-model will be used
+* ``gt`` for numeric values (``int``, ``float``, ``Decimal``), adds a validation of "greater than" and an annotation
+  of ``exclusiveMinimum`` to the JSON Schema
+* ``ge`` for numeric values, adds a validation of "greater than or equal" and an annotation of ``maximum`` to the
+  JSON Schema
+* ``lt`` for numeric values, adds a validation of "less than" and an annotation of ``exclusiveMaximum`` to the
+  JSON Schema
+* ``le`` for numeric values, adds a validation of "less than or equal" and an annotation of ``maximum`` to the
+  JSON Schema
+* ``min_length`` for string values, adds a corresponding validation and an annotation of ``minLength`` to the
+  JSON Schema
+* ``max_length`` for string values, adds a corresponding validation and an annotation of ``maxLength`` to the
+  JSON Schema
+* ``regex`` for string values, adds a Regular Expression validation generated from the passed string and an 
+  annotation of ``pattern`` to the JSON Schema
+* ``**`` any other keyword arguments (eg. ``examples``) will be added verbatim to the field's schema
 
 Instead of using ``Schema``, the ``fields`` property of :ref:`the Config class <config>` can be used
 to set all the arguments above except ``default``.
