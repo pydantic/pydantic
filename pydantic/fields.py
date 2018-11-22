@@ -99,7 +99,6 @@ class Schema:
         self.regex = regex
 
 
-# base classes, classes blacklist, args to check and assign
 _numeric_types = (int, float, Decimal)
 _blacklist = (EmailStr, DSN, UrlStr, ConstrainedStr, ConstrainedInt, ConstrainedFloat, ConstrainedDecimal)
 _str_attrs = ('max_length', 'min_length', 'regex')
@@ -127,7 +126,8 @@ def get_annotation_from_schema(annotation, schema):
             attrs = _str_attrs
             kwargs = {'min_length': None, 'max_length': None, 'regex': None}
             con = _map_types_const[str]
-        elif issubclass(annotation, _numeric_types):
+        else:
+            # Is numeric type
             attrs = _numeric_attrs
             kwargs = {'gt': None, 'lt': None, 'ge': None, 'le': None}
             for t in _numeric_types:
@@ -135,9 +135,7 @@ def get_annotation_from_schema(annotation, schema):
                     con = _map_types_const[t]
                     break
         for attr in attrs:
-            if hasattr(annotation, attr) and getattr(annotation, attr) is not None:
-                kwargs[attr] = getattr(annotation, attr)
-            elif hasattr(schema, attr) and getattr(schema, attr) is not None:
+            if hasattr(schema, attr) and getattr(schema, attr) is not None:
                 params_to_set = True
                 kwargs[attr] = getattr(schema, attr)
         if params_to_set:
