@@ -841,7 +841,7 @@ def test_list_default():
 
 def test_dict_default():
     class UserModel(BaseModel):
-        friends: Dict[int, float] = {1: 1.1, 2: 2.2}
+        friends: Dict[str, float] = {'a': 1.1, 'b': 2.2}
 
     assert UserModel.schema() == {
         'title': 'UserModel',
@@ -849,7 +849,7 @@ def test_dict_default():
         'properties': {
             'friends': {
                 'title': 'Friends',
-                'default': {1: 1.1, 2: 2.2},
+                'default': {'a': 1.1, 'b': 2.2},
                 'type': 'object',
                 'additionalProperties': {'type': 'number'},
             }
