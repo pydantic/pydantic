@@ -42,7 +42,7 @@ class BaseSettings(BaseModel):
         if self.__config__.case_insensitive:
             env_vars = {k.lower(): v for (k, v) in os.environ.items()}
         else:
-            env_vars = dict(os.environ)
+            env_vars = os.environ
 
         for field in self.__fields__.values():
             if field.has_alias:
