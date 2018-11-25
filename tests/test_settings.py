@@ -110,3 +110,18 @@ def test_alias_matches_name(env):
     env.set('foobar', 'xxx')
     s = Settings()
     assert s.foobar == 'xxx'
+
+
+def test_case_insensitive(env):
+    class Settings(BaseSettings):
+        foo: str
+        bAR: str
+
+        class Config:
+            case_insensitive = True
+
+    env.set('apP_foO', 'foo')
+    env.set('app_bar', 'bar')
+    s = Settings()
+    assert s.foo == 'foo'
+    assert s.bAR == 'bar'
