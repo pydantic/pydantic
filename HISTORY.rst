@@ -8,6 +8,7 @@ v0.16.0 (2018-XX-XX)
 
 * refactor schema generation to be compatible with JSON Schema and OpenAPI specs, #308 by @tiangolo
 * add ``schema`` to ``schema`` module to generate top-level schemas from base models, #308 by @tiangolo
+* add ``case_insensitive`` option to ``BaseSettings`` ``Config``, #277 by @jasonkuhrt
 
 v0.15.0 (2018-11-18)
 ....................
