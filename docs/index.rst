@@ -231,7 +231,7 @@ Outputs:
 
 The generated schemas are compliant with the specifications:
 `JSON Schema Core <https://json-schema.org/latest/json-schema-core.html>`__,
-`JSON Schema Validation <https://json-schema.org/latest/json-schema-validation.html>`__ and 
+`JSON Schema Validation <https://json-schema.org/latest/json-schema-validation.html>`__ and
 `OpenAPI <https://github.com/OAI/OpenAPI-Specification>`__.
 
 ``BaseModel.schema`` will return a dict of the schema, while ``BaseModel.schema_json`` will return a JSON string
@@ -458,6 +458,12 @@ Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` o
 ``export my_api_key=6380``.
 
 Complex types like ``list``, ``set``, ``dict`` and submodels can be set by using JSON environment variables.
+
+Environment variables can be read in a case insensitive manner:
+
+.. literalinclude:: examples/settings_case_insensitive.py
+
+Here ``redis_port`` could be modified via ``export APP_REDIS_HOST``, ``export app_redis_host``, ``export app_REDIS_host``, etc.
 
 Dynamic model creation
 ......................
