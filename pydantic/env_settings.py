@@ -39,17 +39,20 @@ class BaseSettings(BaseModel):
         """
         d = {}
 
-        env_vars = {k.lower(): v for (k, v) in os.environ.items()} if self.__config__.case_insensitive else os.environ
+        if self.__config__.case_insensitive:
+            env_vars = {k.lower(): v for (k, v) in os.environ.items()}
+        else:
+            env_vars = os.environ
 
         for field in self.__fields__.values():
 
-            env_name = field.alias if field.has_alias else self.__config__.env_prefix + field.name.upper()
+            if field.has_alias:
+                env_name = field.alias
+            else:
+                env_name = self.__config__.env_prefix + field.name.upper()
 
-            env_val = (
-                env_vars.get(env_name.lower(), None)
-                if self.__config__.case_insensitive
-                else env_vars.get(env_name, None)
-            )
+            env_name_ = env_name.lower() if self.__config__.case_insensitive else env_name
+            env_val = env_vars.get(env_name_, None)
 
             if env_val:
                 if _complex_field(field):
