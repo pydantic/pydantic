@@ -39,19 +39,11 @@ class BaseSettings(BaseModel):
         """
         d = {}
 
-        env_vars = (
-            {k.lower(): v for (k, v) in os.environ.items()}
-            if self.__config__.case_insensitive
-            else os.environ
-        )
+        env_vars = {k.lower(): v for (k, v) in os.environ.items()} if self.__config__.case_insensitive else os.environ
 
         for field in self.__fields__.values():
 
-            env_name = (
-                field.alias
-                if field.has_alias
-                else self.__config__.env_prefix + field.name.upper()
-            )
+            env_name = field.alias if field.has_alias else self.__config__.env_prefix + field.name.upper()
 
             env_val = (
                 env_vars.get(env_name.lower(), None)
@@ -69,7 +61,7 @@ class BaseSettings(BaseModel):
         return d
 
     class Config:
-        env_prefix = 'APP_'
+        env_prefix = "APP_"
         validate_all = True
         ignore_extra = False
         arbitrary_types_allowed = True
