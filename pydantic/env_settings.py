@@ -39,29 +39,33 @@ class BaseSettings(BaseModel):
         """
         d = {}
 
-        if self.__config__.case_insensitive:
-            env_vars = {k.lower(): v for (k, v) in os.environ.items()}
-        else:
-            env_vars = os.environ
+        env_vars = (
+            {k.lower(): v for (k, v) in os.environ.items()}
+            if self.__config__.case_insensitive
+            else os.environ
+        )
 
         for field in self.__fields__.values():
-            if field.has_alias:
-                env_name = field.alias
-            else:
-                env_name = self.__config__.env_prefix + field.name.upper()
 
-            if self.__config__.case_insensitive:
-                env_var = env_vars.get(env_name.lower(), None)
-            else:
-                env_var = env_vars.get(env_name, None)
+            env_name = (
+                field.alias
+                if field.has_alias
+                else self.__config__.env_prefix + field.name.upper()
+            )
 
-            if env_var:
+            env_val = (
+                env_vars.get(env_name.lower(), None)
+                if self.__config__.case_insensitive
+                else env_vars.get(env_name, None)
+            )
+
+            if env_val:
                 if _complex_field(field):
                     try:
-                        env_var = json.loads(env_var)
+                        env_val = json.loads(env_val)
                     except ValueError as e:
                         raise SettingsError(f'error parsing JSON for "{env_name}"') from e
-                d[field.alias] = env_var
+                d[field.alias] = env_val
         return d
 
     class Config:
