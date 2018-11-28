@@ -76,7 +76,7 @@ def get_annotation_from_schema(annotation, schema):
             # Is numeric type
             attrs = _numeric_attrs
             kwargs = {'gt': None, 'lt': None, 'ge': None, 'le': None}
-            numeric_type = next(t for t in _numeric_types if issubclass(annotation, t))
+            numeric_type = next(t for t in _numeric_types if issubclass(annotation, t))  # pragma: no branch
             constraint_func = _map_types_const[numeric_type]
         for attr_name in attrs:
             attr = getattr(schema, attr_name, None)
