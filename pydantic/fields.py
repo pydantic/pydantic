@@ -1,4 +1,5 @@
 import inspect
+from dataclasses import dataclass
 from decimal import Decimal
 from enum import IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
@@ -20,7 +21,7 @@ from .types import (
     conint,
     constr,
 )
-from .utils import display_as_type, list_like
+from .utils import display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
 Required: Any = Ellipsis
@@ -49,6 +50,7 @@ class Validator(NamedTuple):
     check_fields: bool
 
 
+@dataclass
 class Schema:
     """
     Used to provide extra information about a field in a model schema. The parameters will be
@@ -63,17 +65,17 @@ class Schema:
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
       will have an ``exclusiveMinimum`` validation keyword
     :param ge: only applies to numbers, requires the field to be "greater than or equal to". The
-    schema will have a ``minimum`` validation keyword
+      schema will have a ``minimum`` validation keyword
     :param lt: only applies to numbers, requires the field to be "less than". The schema
-    will have an ``exclusiveMaximum`` validation keyword
+      will have an ``exclusiveMaximum`` validation keyword
     :param le: only applies to numbers, requires the field to be "less than or equal to". The
-    schema will have a ``maximum`` validation keyword
+      schema will have a ``maximum`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
-    schema will have a ``maximum`` validation keyword
+      schema will have a ``maximum`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
-    schema will have a ``maxLength`` validation keyword
+      schema will have a ``maxLength`` validation keyword
     :param regex: only applies to strings, requires the field match agains a regular expression
-    pattern string. The schema will have a ``pattern`` validation keyword
+      pattern string. The schema will have a ``pattern`` validation keyword
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
 
@@ -123,44 +125,40 @@ class Schema:
 
 
 _numeric_types = (int, float, Decimal)
-_blacklist = (EmailStr, DSN, UrlStr, ConstrainedStr, ConstrainedInt, ConstrainedFloat, ConstrainedDecimal)
+_blacklist = (EmailStr, DSN, UrlStr, ConstrainedStr, ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, bool)
 _str_attrs = ('max_length', 'min_length', 'regex')
 _numeric_attrs = ('gt', 'lt', 'ge', 'le')
 _map_types_const = {str: constr, int: conint, float: confloat, Decimal: condecimal}
 
 
 def get_annotation_from_schema(annotation, schema):
-    """Get an annotation with validation implemented for numbers and strings based on the schema.
+    """
+    Get an annotation with validation implemented for numbers and strings based on the schema.
 
-    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr`` or the
-      return value of ``constr(max_length=10)``
+    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
     :param schema: an instance of Schema, possibly with declarations for validations and JSON Schema
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
     kwargs = {}
     params_to_set = False
-    if (
-        isinstance(annotation, type)
-        and issubclass(annotation, (str,) + _numeric_types)
-        and not issubclass(annotation, bool)
-        and not any([issubclass(annotation, c) for c in _blacklist])
-    ):
+    if lenient_issubclass(annotation, (str,) + _numeric_types) and not issubclass(annotation, _blacklist):
         if issubclass(annotation, str):
             attrs = _str_attrs
             kwargs = {'min_length': None, 'max_length': None, 'regex': None}
-            con = _map_types_const[str]
+            constraint_func = _map_types_const[str]
         else:
             # Is numeric type
             attrs = _numeric_attrs
             kwargs = {'gt': None, 'lt': None, 'ge': None, 'le': None}
-            n_types = [t for t in _numeric_types if issubclass(annotation, t)]
-            con = _map_types_const[n_types[0]]
-        for attr in attrs:
-            if hasattr(schema, attr) and getattr(schema, attr) is not None:
+            numeric_type = next(t for t in _numeric_types if issubclass(annotation, t))
+            constraint_func = _map_types_const[numeric_type]
+        for attr_name in attrs:
+            attr = getattr(schema, attr_name, None)
+            if attr is not None:
                 params_to_set = True
-                kwargs[attr] = getattr(schema, attr)
+                kwargs[attr_name] = attr
         if params_to_set:
-            annotation = con(**kwargs)
+            annotation = constraint_func(**kwargs)
     return annotation
 
 
@@ -272,7 +270,7 @@ class Field:
 
     def _populate_sub_fields(self):  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
-        if isinstance(self.type_, type) and issubclass(self.type_, JsonWrapper):
+        if lenient_issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type
             self.parse_json = True
 

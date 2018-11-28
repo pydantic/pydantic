@@ -9,7 +9,7 @@ from . import main
 from .fields import Field, Shape
 from .json import pydantic_encoder
 from .types import DSN, UUID1, UUID3, UUID4, UUID5, DirectoryPath, EmailStr, FilePath, Json, NameEmail, UrlStr
-from .utils import clean_docstring
+from .utils import clean_docstring, lenient_issubclass
 
 __all__ = [
     'schema',
@@ -147,32 +147,36 @@ def field_schema(
 
 
 numeric_types = (int, float, Decimal)
-_str_types_attrs = {
-    'max_length': (numeric_types, 'maxLength'),
-    'min_length': (numeric_types, 'minLength'),
-    'regex': (str, 'pattern'),
-}
-_numeric_types_attrs = {
-    'gt': (numeric_types, 'exclusiveMinimum'),
-    'lt': (numeric_types, 'exclusiveMaximum'),
-    'ge': (numeric_types, 'minimum'),
-    'le': (numeric_types, 'maximum'),
-}
+_str_types_attrs = (
+    ('max_length', numeric_types, 'maxLength'),
+    ('min_length', numeric_types, 'minLength'),
+    ('regex', str, 'pattern'),
+)
+
+_numeric_types_attrs = (
+    ('gt', numeric_types, 'exclusiveMinimum'),
+    ('lt', numeric_types, 'exclusiveMaximum'),
+    ('ge', numeric_types, 'minimum'),
+    ('le', numeric_types, 'maximum'),
+)
 
 
 def get_field_schema_validations(field):
-    """Get the JSON Schema validation keywords for a ``field`` with an annotation of
+    """
+    Get the JSON Schema validation keywords for a ``field`` with an annotation of
       a Pydantic ``Schema`` with validation arguments.
     """
     f_schema = {}
-    if isinstance(field.type_, type) and issubclass(field.type_, (str, bytes)):
-        for attr, (t, keyword) in _str_types_attrs.items():
-            if getattr(field._schema, attr) and isinstance(getattr(field._schema, attr), t):
-                f_schema[keyword] = getattr(field._schema, attr)
-    if isinstance(field.type_, type) and issubclass(field.type_, numeric_types) and not issubclass(field.type_, bool):
-        for attr, (t, keyword) in _numeric_types_attrs.items():
-            if getattr(field._schema, attr) and isinstance(getattr(field._schema, attr), t):
-                f_schema[keyword] = getattr(field._schema, attr)
+    if lenient_issubclass(field.type_, (str, bytes)):
+        for attr_name, t, keyword in _str_types_attrs:
+            attr = getattr(field._schema, attr_name, None)
+            if isinstance(attr, t):
+                f_schema[keyword] = attr
+    if lenient_issubclass(field.type_, numeric_types) and not issubclass(field.type_, bool):
+        for attr_name, t, keyword in _numeric_types_attrs:
+            attr = getattr(field._schema, attr_name, None)
+            if isinstance(attr, t):
+                f_schema[keyword] = attr
     if field._schema.extra:
         f_schema.update(field._schema.extra)
     return f_schema
@@ -235,7 +239,7 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
     flat_models = set()
     if field.sub_fields:
         flat_models |= get_flat_models_from_fields(field.sub_fields)
-    elif isinstance(field.type_, type) and issubclass(field.type_, main.BaseModel):
+    elif lenient_issubclass(field.type_, main.BaseModel):
         flat_models |= get_flat_models_from_model(field.type_)
     return flat_models
 

@@ -4,7 +4,7 @@ from typing import Union
 
 import pytest
 
-from pydantic.utils import display_as_type, import_string, make_dsn, validate_email
+from pydantic.utils import display_as_type, import_string, lenient_issubclass, make_dsn, validate_email
 
 try:
     import email_validator
@@ -135,3 +135,14 @@ def test_display_as_type_enum_str():
 
     displayed = display_as_type(SubField)
     assert displayed == 'str'
+
+
+def test_lenient_issubclass():
+    class A(str):
+        pass
+
+    assert lenient_issubclass(A, str) is True
+
+
+def test_lenient_issubclass_is_lenient():
+    assert lenient_issubclass('a', 'a') is False
