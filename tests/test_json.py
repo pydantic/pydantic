@@ -144,3 +144,20 @@ def test_invalid_model_jsonable():
 
     with pytest.raises(TypeError):
         jsonable_encoder(Foo)
+
+
+def test_model_jsonable():
+    class ModelA(BaseModel):
+        x: int
+        y: str
+
+    class Model(BaseModel):
+        a: float
+        b: bytes
+        c: Decimal
+        d: ModelA
+        e: MyEnum
+
+    m = Model(a=10.2, b='foobar', c=10.2, d={'x': 123, 'y': '123'}, e=MyEnum.foo)
+    assert m.dict_jsonable() == {'a': 10.2, 'b': 'foobar', 'c': 10.2, 'd': {'x': 123, 'y': '123'}, 'e': 'bar'}
+    assert m.dict_jsonable(exclude={'b'}) == {'a': 10.2, 'c': 10.2, 'd': {'x': 123, 'y': '123'}, 'e': 'bar'}
