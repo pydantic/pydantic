@@ -2,9 +2,16 @@ import datetime
 from decimal import Decimal
 from enum import Enum
 from types import GeneratorType
+from typing import Set
 from uuid import UUID
 
-__all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
+__all__ = (
+    'pydantic_encoder',
+    'custom_pydantic_encoder',
+    'timedelta_isoformat',
+    'serializable_encoder',
+    'model_serializable_dict',
+)
 
 
 def isoformat(o):
@@ -24,6 +31,10 @@ ENCODERS_BY_TYPE = {
     Decimal: float,
 }
 
+JSONABLE_ENCODERS_BY_TYPE = ENCODERS_BY_TYPE.copy()
+JSONABLE_ENCODERS_BY_TYPE.update({str: str, int: int, float: float, bool: bool, type(None): lambda n: n})
+SEQUENCES = (list, set, frozenset, GeneratorType, tuple)
+
 
 def pydantic_encoder(obj):
     from .main import BaseModel
@@ -39,6 +50,30 @@ def pydantic_encoder(obj):
         raise TypeError(f"Object of type '{obj.__class__.__name__}' is not JSON serializable")
     else:
         return encoder(obj)
+
+
+def jsonable_encoder(obj):
+    from .main import BaseModel
+
+    if isinstance(obj, BaseModel):
+        return model_dict_jsonable(obj)
+    if isinstance(obj, Enum):
+        return jsonable_encoder(obj.value)
+    if isinstance(obj, dict):
+        return {jsonable_encoder(key): jsonable_encoder(value) for key, value in obj.items()}
+    if isinstance(obj, SEQUENCES):
+        return [jsonable_encoder(item) for item in obj]
+    try:
+        encoder = JSONABLE_ENCODERS_BY_TYPE[type(obj)]
+    except KeyError:
+        raise TypeError(f"Object of type '{obj.__class__.__name__}' is not serializable")
+    else:
+        return encoder(obj)
+
+
+def model_dict_jsonable(model, *, include: Set[str] = None, exclude: Set[str] = set(), by_alias: bool = False):
+    model_dict = model.dict(include=include, exclude=exclude, by_alias=by_alias)
+    return jsonable_encoder(model_dict)
 
 
 def custom_pydantic_encoder(type_encoders, obj):

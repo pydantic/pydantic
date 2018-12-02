@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, create_model
-from pydantic.json import pydantic_encoder, timedelta_isoformat
+from pydantic.json import jsonable_encoder, model_dict_jsonable, pydantic_encoder, timedelta_isoformat
 
 
 class MyEnum(Enum):
@@ -103,3 +103,44 @@ def test_custom_encoder_arg():
     m = Model(x=123)
     assert m.json() == '{"x": 123.0}'
     assert m.json(encoder=lambda v: '__default__') == '{"x": "__default__"}'
+
+
+@pytest.mark.parametrize(
+    'input,output',
+    [
+        (UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8'),
+        (datetime.datetime(2032, 1, 1, 1, 1), '2032-01-01T01:01:00'),
+        (datetime.datetime(2032, 1, 1, 1, 1, tzinfo=datetime.timezone.utc), '2032-01-01T01:01:00+00:00'),
+        (datetime.datetime(2032, 1, 1), '2032-01-01T00:00:00'),
+        (datetime.time(12, 34, 56), '12:34:56'),
+        (datetime.timedelta(days=12, seconds=34, microseconds=56), 1_036_834.000_056),
+        (b'this is bytes', 'this is bytes'),
+        (Decimal('12.34'), 12.34),
+        (create_model('BarModel', a='b', c='d')(), {"a": "b", "c": "d"}),
+        (MyEnum.foo, 'bar'),
+        ('a', 'a'),
+        (1, 1),
+        (2.5, 2.5),
+        (True, True),
+        (None, None),
+        ({'a': 'a'}, {'a': 'a'}),
+        ({'a': MyEnum.foo}, {'a': 'bar'}),
+        ({MyEnum.foo: 2}, {'bar': 2}),
+        ({3.0: True}, {3.0: True}),
+        ([1, 2, 3], [1, 2, 3]),
+        (set([1, 2, 3]), [1, 2, 3]),
+        (frozenset([1, 2, 3]), [1, 2, 3]),
+        ((v for v in range(4)), [0, 1, 2, 3]),
+        ((1, 2, 3), [1, 2, 3]),
+    ],
+)
+def test_jsonable(input, output):
+    assert output == jsonable_encoder(input)
+
+
+def test_invalid_model_jsonable():
+    class Foo:
+        pass
+
+    with pytest.raises(TypeError):
+        jsonable_encoder(Foo)

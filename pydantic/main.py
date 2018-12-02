@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, Set, Type, Union
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field, Validator
-from .json import custom_pydantic_encoder, pydantic_encoder
+from .json import custom_pydantic_encoder, model_dict_jsonable, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
@@ -212,6 +212,11 @@ class BaseModel(metaclass=MetaModel):
             for k, v in self._iter(by_alias=by_alias)
             if k not in exclude and (not include or k in include)
         }
+
+    def dict_jsonable(
+        self, *, include: Set[str] = None, exclude: Set[str] = set(), by_alias: bool = False
+    ) -> Dict[str, Any]:
+        return model_dict_jsonable(self, include=include, exclude=exclude, by_alias=by_alias)
 
     def _get_key_factory(self, by_alias: bool) -> Callable:
         if by_alias:
