@@ -583,6 +583,20 @@ over how non-standard types are encoded to JSON.
 By default timedelta's are encoded as a simple float of total seconds. The ``timedelta_isoformat`` is provided
 as an optional alternative which implements ISO 8601 time diff encoding.
 
+The method ``dict()`` returns a ``dict`` with the value types unchanged. For example, a ``datetime`` will still be
+a ``datetime``, a ``set`` will still be a ``set``, etc.
+
+The method ``json()`` will return the serialised model: it will convert all the value types to JSON compatible and
+then will serialise everything, the return value will be a `str`.
+
+There is an intermediate method ``dict_jsonable()`` for situations where you need something between ``dict()`` and
+``json()``. It will return a ``dict`` (not a ``str``) that you can pass directly to ``json.dumps()`` or any equivalent
+function. All the value types will be converted to JSON compatible values. For example, a ``datetime`` will be converted
+to a ISO date-time string, a ``set`` will be converted to a ``list``, etc.
+
+This is useful for example if you need to pass a ``dict`` to something that will then serialise it to JSON
+or other format before sending it to a NoSQL database or that will be serialized by a web framework afterwards.
+
 Pickle Serialisation
 ~~~~~~~~~~~~~~~~~~~~
 

@@ -9,8 +9,8 @@ __all__ = (
     'pydantic_encoder',
     'custom_pydantic_encoder',
     'timedelta_isoformat',
-    'serializable_encoder',
-    'model_serializable_dict',
+    'jsonable_encoder',
+    'model_dict_jsonable',
 )
 
 

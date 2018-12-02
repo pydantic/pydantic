@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, create_model
-from pydantic.json import jsonable_encoder, model_dict_jsonable, pydantic_encoder, timedelta_isoformat
+from pydantic.json import jsonable_encoder, pydantic_encoder, timedelta_isoformat
 
 
 class MyEnum(Enum):
