@@ -889,14 +889,14 @@ def test_constraints_schema(kwargs, type_, expected_extra):
     class Foo(BaseModel):
         a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
 
-    exected_schema = {
+    expected_schema = {
         'title': 'Foo',
         'type': 'object',
         'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
     }
 
-    exected_schema['properties']['a'].update(expected_extra)
-    assert Foo.schema() == exected_schema
+    expected_schema['properties']['a'].update(expected_extra)
+    assert Foo.schema() == expected_schema
 
 
 @pytest.mark.parametrize(
