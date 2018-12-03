@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Mapping, NamedTuple, Pattern, Set, Tuple
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .utils import display_as_type, list_like
+from .utils import display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
 Required: Any = Ellipsis
@@ -34,20 +34,6 @@ class Validator(NamedTuple):
     check_fields: bool
 
 
-class Schema:
-    """
-    Used to provide extra information about a field in a model schema.
-    """
-
-    __slots__ = 'default', 'alias', 'title', 'extra'
-
-    def __init__(self, default, *, alias=None, title=None, **extra):
-        self.default = default
-        self.alias = alias
-        self.title = title
-        self.extra = extra
-
-
 class Field:
     __slots__ = (
         'type_',
@@ -62,7 +48,7 @@ class Field:
         'name',
         'alias',
         'has_alias',
-        '_schema',
+        'schema',
         'validate_always',
         'allow_none',
         'shape',
@@ -81,7 +67,7 @@ class Field:
         model_config: Any,
         alias: str = None,
         allow_none: bool = False,
-        schema: Schema = None,
+        schema=None,
     ):
 
         self.name: str = name
@@ -101,12 +87,14 @@ class Field:
         self.allow_none: bool = allow_none
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
-        self._schema: Schema = schema
+        self.schema: 'schema.Schema' = schema
         self.prepare()
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, config):
         schema_from_config = config.get_field_schema(name)
+        from .schema import Schema, get_annotation_from_schema
+
         if isinstance(value, Schema):
             schema = value
             value = schema.default
@@ -114,6 +102,7 @@ class Field:
             schema = Schema(value, **schema_from_config)
         schema.alias = schema.alias or schema_from_config.get('alias')
         required = value == Required
+        annotation = get_annotation_from_schema(annotation, schema)
         return cls(
             name=name,
             type_=annotation,
@@ -129,8 +118,8 @@ class Field:
         self.model_config = config
         schema_from_config = config.get_field_schema(self.name)
         if schema_from_config:
-            self._schema.alias = self._schema.alias or schema_from_config.get('alias')
-            self.alias = self._schema.alias
+            self.schema.alias = self.schema.alias or schema_from_config.get('alias')
+            self.alias = self.schema.alias
 
     @property
     def alt_alias(self):
@@ -155,7 +144,7 @@ class Field:
 
     def _populate_sub_fields(self):  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
-        if isinstance(self.type_, type) and issubclass(self.type_, JsonWrapper):
+        if lenient_issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type
             self.parse_json = True
 

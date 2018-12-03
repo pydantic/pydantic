@@ -24,6 +24,8 @@ class MainModel(BaseModel):
         42,
         title='The Snap',
         description='this is the value of snap',
+        gt=30,
+        lt=50,
     )
 
     class Config:

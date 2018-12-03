@@ -8,10 +8,31 @@ from uuid import UUID
 from . import main
 from .fields import Field, Shape
 from .json import pydantic_encoder
-from .types import DSN, UUID1, UUID3, UUID4, UUID5, DirectoryPath, EmailStr, FilePath, Json, NameEmail, UrlStr
-from .utils import clean_docstring
+from .types import (
+    DSN,
+    UUID1,
+    UUID3,
+    UUID4,
+    UUID5,
+    ConstrainedDecimal,
+    ConstrainedFloat,
+    ConstrainedInt,
+    ConstrainedStr,
+    DirectoryPath,
+    EmailStr,
+    FilePath,
+    Json,
+    NameEmail,
+    UrlStr,
+    condecimal,
+    confloat,
+    conint,
+    constr,
+)
+from .utils import clean_docstring, lenient_issubclass
 
 __all__ = [
+    'Schema',
     'schema',
     'model_schema',
     'field_schema',
@@ -26,9 +47,87 @@ __all__ = [
     'model_type_schema',
     'field_singleton_sub_fields_schema',
     'field_singleton_schema',
+    'get_annotation_from_schema',
 ]
 
 default_prefix = '#/definitions/'
+
+
+class Schema:
+    """
+    Used to provide extra information about a field in a model schema. The parameters will be
+    converted to validations and will add annotations to the generated JSON Schema. Some arguments
+    apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``
+
+    :param default: since the Schema is replacing the field’s default, its first argument is used
+      to set the default, use ellipsis (``...``) to indicate the field is required
+    :param alias: the public name of the field
+    :param title: can be any string, used in the schema
+    :param description: can be any string, used in the schema
+    :param gt: only applies to numbers, requires the field to be "greater than". The schema
+      will have an ``exclusiveMinimum`` validation keyword
+    :param ge: only applies to numbers, requires the field to be "greater than or equal to". The
+      schema will have a ``minimum`` validation keyword
+    :param lt: only applies to numbers, requires the field to be "less than". The schema
+      will have an ``exclusiveMaximum`` validation keyword
+    :param le: only applies to numbers, requires the field to be "less than or equal to". The
+      schema will have a ``maximum`` validation keyword
+    :param min_length: only applies to strings, requires the field to have a minimum length. The
+      schema will have a ``maximum`` validation keyword
+    :param max_length: only applies to strings, requires the field to have a maximum length. The
+      schema will have a ``maxLength`` validation keyword
+    :param regex: only applies to strings, requires the field match agains a regular expression
+      pattern string. The schema will have a ``pattern`` validation keyword
+    :param **extra: any additional keyword arguments will be added as is to the schema
+    """
+
+    __slots__ = (
+        'default',
+        'alias',
+        'title',
+        'description',
+        'gt',
+        'ge',
+        'lt',
+        'le',
+        'min_length',
+        'max_length',
+        'regex',
+        'extra',
+    )
+
+    def __init__(
+        self,
+        default,
+        *,
+        alias: str = None,
+        title: str = None,
+        description: str = None,
+        gt: float = None,
+        ge: float = None,
+        lt: float = None,
+        le: float = None,
+        min_length: int = None,
+        max_length: int = None,
+        regex: str = None,
+        **extra,
+    ):
+        self.default = default
+        self.alias = alias
+        self.title = title
+        self.description = description
+        self.extra = extra
+        self.gt = gt
+        self.ge = ge
+        self.lt = lt
+        self.le = le
+        self.min_length = min_length
+        self.max_length = max_length
+        self.regex = regex
+
+    def __repr__(self):
+        attrs = ((s, getattr(self, s)) for s in self.__slots__)
+        return 'Schema({})'.format(', '.join(f'{a}: {v!r}' for a, v in attrs if v is not None))
 
 
 def schema(
@@ -114,15 +213,21 @@ def field_schema(
     """
     ref_prefix = ref_prefix or default_prefix
     schema_overrides = False
-    s = dict(title=field._schema.title or field.alias.title())
-    if field._schema.title:
+    s = dict(title=field.schema.title or field.alias.title())
+    if field.schema.title:
+        schema_overrides = True
+
+    if field.schema.description:
+        s['description'] = field.schema.description
         schema_overrides = True
 
     if not field.required and field.default is not None:
-        schema_overrides = True
         s['default'] = encode_default(field.default)
-    if field._schema.extra:
-        s.update(field._schema.extra)
+        schema_overrides = True
+
+    validation_schema = get_field_schema_validations(field)
+    if validation_schema:
+        s.update(validation_schema)
         schema_overrides = True
 
     f_schema, f_definitions = field_type_schema(
@@ -138,6 +243,42 @@ def field_schema(
     else:
         s.update(f_schema)
         return s, f_definitions
+
+
+numeric_types = (int, float, Decimal)
+_str_types_attrs = (
+    ('max_length', numeric_types, 'maxLength'),
+    ('min_length', numeric_types, 'minLength'),
+    ('regex', str, 'pattern'),
+)
+
+_numeric_types_attrs = (
+    ('gt', numeric_types, 'exclusiveMinimum'),
+    ('lt', numeric_types, 'exclusiveMaximum'),
+    ('ge', numeric_types, 'minimum'),
+    ('le', numeric_types, 'maximum'),
+)
+
+
+def get_field_schema_validations(field):
+    """
+    Get the JSON Schema validation keywords for a ``field`` with an annotation of
+    a Pydantic ``Schema`` with validation arguments.
+    """
+    f_schema = {}
+    if lenient_issubclass(field.type_, (str, bytes)):
+        for attr_name, t, keyword in _str_types_attrs:
+            attr = getattr(field.schema, attr_name, None)
+            if isinstance(attr, t):
+                f_schema[keyword] = attr
+    if lenient_issubclass(field.type_, numeric_types) and not issubclass(field.type_, bool):
+        for attr_name, t, keyword in _numeric_types_attrs:
+            attr = getattr(field.schema, attr_name, None)
+            if isinstance(attr, t):
+                f_schema[keyword] = attr
+    if field.schema.extra:
+        f_schema.update(field.schema.extra)
+    return f_schema
 
 
 def get_model_name_map(unique_models: Set[Type['main.BaseModel']]) -> Dict[Type['main.BaseModel'], str]:
@@ -197,7 +338,7 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
     flat_models = set()
     if field.sub_fields:
         flat_models |= get_flat_models_from_fields(field.sub_fields)
-    elif isinstance(field.type_, type) and issubclass(field.type_, main.BaseModel):
+    elif lenient_issubclass(field.type_, main.BaseModel):
         flat_models |= get_flat_models_from_model(field.type_)
     return flat_models
 
@@ -320,7 +461,7 @@ def model_process_schema(
 
 
 def model_type_schema(
-    model: 'main.BaseModel', *, by_alias: bool, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
+    model: Type['main.BaseModel'], *, by_alias: bool, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
 ):
     """
     You probably should be using ``model_schema()``, this function is indirectly used by that function.
@@ -503,3 +644,38 @@ def encode_default(dft):
         return {encode_default(k): encode_default(v) for k, v in dft.items()}
     else:
         return pydantic_encoder(dft)
+
+
+_map_types_constraint = {int: conint, float: confloat, Decimal: condecimal}
+
+
+def get_annotation_from_schema(annotation, schema):
+    """
+    Get an annotation with validation implemented for numbers and strings based on the schema.
+
+    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
+    :param schema: an instance of Schema, possibly with declarations for validations and JSON Schema
+    :return: the same ``annotation`` if unmodified or a new annotation with validation in place
+    """
+    if isinstance(annotation, type):
+        attrs = constraint_func = None
+        if issubclass(annotation, str) and not issubclass(annotation, (EmailStr, DSN, UrlStr, ConstrainedStr)):
+            attrs = ('max_length', 'min_length', 'regex')
+            constraint_func = constr
+        elif lenient_issubclass(annotation, numeric_types) and not issubclass(
+            annotation, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, bool)
+        ):
+            # Is numeric type
+            attrs = ('gt', 'lt', 'ge', 'le')
+            numeric_type = next(t for t in numeric_types if issubclass(annotation, t))  # pragma: no branch
+            constraint_func = _map_types_constraint[numeric_type]
+
+        if attrs:
+            kwargs = {
+                attr_name: attr
+                for attr_name, attr in ((attr_name, getattr(schema, attr_name)) for attr_name in attrs)
+                if attr is not None
+            }
+            if kwargs:
+                return constraint_func(**kwargs)
+    return annotation

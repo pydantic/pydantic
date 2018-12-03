@@ -18,8 +18,10 @@
     },
     "snap": {
       "title": "The Snap",
-      "default": 42,
       "description": "this is the value of snap",
+      "default": 42,
+      "exclusiveMinimum": 30,
+      "exclusiveMaximum": 50,
       "type": "integer"
     }
   },
