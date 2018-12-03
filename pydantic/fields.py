@@ -1,11 +1,27 @@
 import inspect
+from decimal import Decimal
 from enum import IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
 
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
-from .types import Json, JsonWrapper
-from .utils import display_as_type, list_like
+from .schema_class import Schema
+from .types import (
+    DSN,
+    ConstrainedDecimal,
+    ConstrainedFloat,
+    ConstrainedInt,
+    ConstrainedStr,
+    EmailStr,
+    Json,
+    JsonWrapper,
+    UrlStr,
+    condecimal,
+    confloat,
+    conint,
+    constr,
+)
+from .utils import display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
 Required: Any = Ellipsis
@@ -34,18 +50,42 @@ class Validator(NamedTuple):
     check_fields: bool
 
 
-class Schema:
-    """
-    Used to provide extra information about a field in a model schema.
-    """
+_numeric_types = (int, float, Decimal)
+_blacklist = (EmailStr, DSN, UrlStr, ConstrainedStr, ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, bool)
+_str_attrs = ('max_length', 'min_length', 'regex')
+_numeric_attrs = ('gt', 'lt', 'ge', 'le')
+_map_types_const = {str: constr, int: conint, float: confloat, Decimal: condecimal}
 
-    __slots__ = 'default', 'alias', 'title', 'extra'
 
-    def __init__(self, default, *, alias=None, title=None, **extra):
-        self.default = default
-        self.alias = alias
-        self.title = title
-        self.extra = extra
+def get_annotation_from_schema(annotation, schema):
+    """
+    Get an annotation with validation implemented for numbers and strings based on the schema.
+
+    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
+    :param schema: an instance of Schema, possibly with declarations for validations and JSON Schema
+    :return: the same ``annotation`` if unmodified or a new annotation with validation in place
+    """
+    kwargs = {}
+    params_to_set = False
+    if lenient_issubclass(annotation, (str,) + _numeric_types) and not issubclass(annotation, _blacklist):
+        if issubclass(annotation, str):
+            attrs = _str_attrs
+            kwargs = {'min_length': None, 'max_length': None, 'regex': None}
+            constraint_func = _map_types_const[str]
+        else:
+            # Is numeric type
+            attrs = _numeric_attrs
+            kwargs = {'gt': None, 'lt': None, 'ge': None, 'le': None}
+            numeric_type = next(t for t in _numeric_types if issubclass(annotation, t))  # pragma: no branch
+            constraint_func = _map_types_const[numeric_type]
+        for attr_name in attrs:
+            attr = getattr(schema, attr_name, None)
+            if attr is not None:
+                params_to_set = True
+                kwargs[attr_name] = attr
+        if params_to_set:
+            annotation = constraint_func(**kwargs)
+    return annotation
 
 
 class Field:
@@ -114,6 +154,7 @@ class Field:
             schema = Schema(value, **schema_from_config)
         schema.alias = schema.alias or schema_from_config.get('alias')
         required = value == Required
+        annotation = get_annotation_from_schema(annotation, schema)
         return cls(
             name=name,
             type_=annotation,
@@ -155,7 +196,7 @@ class Field:
 
     def _populate_sub_fields(self):  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
-        if isinstance(self.type_, type) and issubclass(self.type_, JsonWrapper):
+        if lenient_issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type
             self.parse_json = True
 

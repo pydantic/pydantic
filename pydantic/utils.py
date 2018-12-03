@@ -129,7 +129,7 @@ def display_as_type(v):
     if not isinstance(v, typing_base) and not isinstance(v, type):
         v = type(v)
 
-    if isinstance(v, type) and issubclass(v, Enum):
+    if lenient_issubclass(v, Enum):
         if issubclass(v, int):
             return 'int'
         elif issubclass(v, str):
@@ -201,3 +201,7 @@ def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern:
         ),
         re.IGNORECASE,
     )
+
+
+def lenient_issubclass(cls, class_or_tuple):
+    return isinstance(cls, type) and issubclass(cls, class_or_tuple)
