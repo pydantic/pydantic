@@ -48,7 +48,7 @@ class Field:
         'name',
         'alias',
         'has_alias',
-        '_schema',
+        'schema',
         'validate_always',
         'allow_none',
         'shape',
@@ -87,7 +87,7 @@ class Field:
         self.allow_none: bool = allow_none
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
-        self._schema: 'schema.Schema' = schema
+        self.schema: 'schema.Schema' = schema
         self.prepare()
 
     @classmethod
@@ -118,8 +118,8 @@ class Field:
         self.model_config = config
         schema_from_config = config.get_field_schema(self.name)
         if schema_from_config:
-            self._schema.alias = self._schema.alias or schema_from_config.get('alias')
-            self.alias = self._schema.alias
+            self.schema.alias = self.schema.alias or schema_from_config.get('alias')
+            self.alias = self.schema.alias
 
     @property
     def alt_alias(self):
