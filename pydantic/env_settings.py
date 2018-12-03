@@ -64,7 +64,7 @@ class BaseSettings(BaseModel):
         return d
 
     class Config:
-        env_prefix = "APP_"
+        env_prefix = 'APP_'
         validate_all = True
         ignore_extra = False
         arbitrary_types_allowed = True
