@@ -104,7 +104,7 @@ class ConstrainedStr(str):
         return value
 
 
-def constr(*, strip_whitespace=False, min_length=0, max_length=2 ** 16, curtail_length=None, regex=None) -> Type[str]:
+def constr(*, strip_whitespace=False, min_length=None, max_length=None, curtail_length=None, regex=None) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,

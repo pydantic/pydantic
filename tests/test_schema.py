@@ -147,6 +147,12 @@ def test_schema_class():
     }
 
 
+def test_schema_repr():
+    s = Schema(4, title='Foo is Great')
+    assert repr(s) == "Schema(default: 4, title: 'Foo is Great', extra: {})"
+    assert str(s) == "Schema(default: 4, title: 'Foo is Great', extra: {})"
+
+
 def test_schema_class_by_alias():
     class Model(BaseModel):
         foo: int = Schema(4, alias='foofoo')
@@ -858,10 +864,10 @@ def test_dict_default():
 
 
 @pytest.mark.parametrize(
-    'kwargs,type_,expected',
+    'kwargs,type_,expected_extra',
     [
         ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
-        ({'max_length': 5}, constr(max_length=6), {'type': 'string', 'maxLength': 6, 'minLength': 0}),
+        ({'max_length': 5}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
         ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
         ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
         ({'regex': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
@@ -879,18 +885,18 @@ def test_dict_default():
         ({'le': 5}, Decimal, {'type': 'number', 'maximum': 5}),
     ],
 )
-def test_constraints_schema(kwargs, type_, expected):
+def test_constraints_schema(kwargs, type_, expected_extra):
     class Foo(BaseModel):
         a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
 
-    base_schema = {
+    exected_schema = {
         'title': 'Foo',
         'type': 'object',
         'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
     }
 
-    base_schema['properties']['a'].update(expected)
-    assert Foo.schema() == base_schema
+    exected_schema['properties']['a'].update(expected_extra)
+    assert Foo.schema() == exected_schema
 
 
 @pytest.mark.parametrize(

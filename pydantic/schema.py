@@ -125,6 +125,10 @@ class Schema:
         self.max_length = max_length
         self.regex = regex
 
+    def __repr__(self):
+        attrs = ((s, getattr(self, s)) for s in self.__slots__)
+        return 'Schema({})'.format(', '.join(f'{a}: {v!r}' for a, v in attrs if v is not None))
+
 
 def schema(
     models: Sequence[Type['main.BaseModel']], *, by_alias=True, title=None, description=None, ref_prefix=None
@@ -457,7 +461,7 @@ def model_process_schema(
 
 
 def model_type_schema(
-    model: 'main.BaseModel', *, by_alias: bool, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
+    model: Type['main.BaseModel'], *, by_alias: bool, model_name_map: Dict[Type['main.BaseModel'], str], ref_prefix=None
 ):
     """
     You probably should be using ``model_schema()``, this function is indirectly used by that function.
@@ -642,10 +646,7 @@ def encode_default(dft):
         return pydantic_encoder(dft)
 
 
-_blacklist = (EmailStr, DSN, UrlStr, ConstrainedStr, ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, bool)
-_str_attrs = ('max_length', 'min_length', 'regex')
-_numeric_attrs = ('gt', 'lt', 'ge', 'le')
-_map_types_const = {str: constr, int: conint, float: confloat, Decimal: condecimal}
+_map_types_constraint = {int: conint, float: confloat, Decimal: condecimal}
 
 
 def get_annotation_from_schema(annotation, schema):
@@ -656,24 +657,25 @@ def get_annotation_from_schema(annotation, schema):
     :param schema: an instance of Schema, possibly with declarations for validations and JSON Schema
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
-    kwargs = {}
-    params_to_set = False
-    if lenient_issubclass(annotation, (str,) + numeric_types) and not issubclass(annotation, _blacklist):
-        if issubclass(annotation, str):
-            attrs = _str_attrs
-            kwargs = {'min_length': None, 'max_length': None, 'regex': None}
-            constraint_func = _map_types_const[str]
-        else:
+    if isinstance(annotation, type):
+        attrs = constraint_func = None
+        if issubclass(annotation, str) and not issubclass(annotation, (EmailStr, DSN, UrlStr, ConstrainedStr)):
+            attrs = ('max_length', 'min_length', 'regex')
+            constraint_func = constr
+        elif lenient_issubclass(annotation, numeric_types) and not issubclass(
+            annotation, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, bool)
+        ):
             # Is numeric type
-            attrs = _numeric_attrs
-            kwargs = {'gt': None, 'lt': None, 'ge': None, 'le': None}
+            attrs = ('gt', 'lt', 'ge', 'le')
             numeric_type = next(t for t in numeric_types if issubclass(annotation, t))  # pragma: no branch
-            constraint_func = _map_types_const[numeric_type]
-        for attr_name in attrs:
-            attr = getattr(schema, attr_name, None)
-            if attr is not None:
-                params_to_set = True
-                kwargs[attr_name] = attr
-        if params_to_set:
-            annotation = constraint_func(**kwargs)
+            constraint_func = _map_types_constraint[numeric_type]
+
+        if attrs:
+            kwargs = {
+                attr_name: attr
+                for attr_name, attr in ((attr_name, getattr(schema, attr_name)) for attr_name in attrs)
+                if attr is not None
+            }
+            if kwargs:
+                return constraint_func(**kwargs)
     return annotation
