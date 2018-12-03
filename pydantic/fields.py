@@ -1,26 +1,10 @@
 import inspect
-from decimal import Decimal
 from enum import IntEnum
 from typing import Any, Callable, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
 
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
-from .schema_class import Schema
-from .types import (
-    DSN,
-    ConstrainedDecimal,
-    ConstrainedFloat,
-    ConstrainedInt,
-    ConstrainedStr,
-    EmailStr,
-    Json,
-    JsonWrapper,
-    UrlStr,
-    condecimal,
-    confloat,
-    conint,
-    constr,
-)
+from .types import Json, JsonWrapper
 from .utils import display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
@@ -48,44 +32,6 @@ class Validator(NamedTuple):
     whole: bool
     always: bool
     check_fields: bool
-
-
-_numeric_types = (int, float, Decimal)
-_blacklist = (EmailStr, DSN, UrlStr, ConstrainedStr, ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, bool)
-_str_attrs = ('max_length', 'min_length', 'regex')
-_numeric_attrs = ('gt', 'lt', 'ge', 'le')
-_map_types_const = {str: constr, int: conint, float: confloat, Decimal: condecimal}
-
-
-def get_annotation_from_schema(annotation, schema):
-    """
-    Get an annotation with validation implemented for numbers and strings based on the schema.
-
-    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
-    :param schema: an instance of Schema, possibly with declarations for validations and JSON Schema
-    :return: the same ``annotation`` if unmodified or a new annotation with validation in place
-    """
-    kwargs = {}
-    params_to_set = False
-    if lenient_issubclass(annotation, (str,) + _numeric_types) and not issubclass(annotation, _blacklist):
-        if issubclass(annotation, str):
-            attrs = _str_attrs
-            kwargs = {'min_length': None, 'max_length': None, 'regex': None}
-            constraint_func = _map_types_const[str]
-        else:
-            # Is numeric type
-            attrs = _numeric_attrs
-            kwargs = {'gt': None, 'lt': None, 'ge': None, 'le': None}
-            numeric_type = next(t for t in _numeric_types if issubclass(annotation, t))  # pragma: no branch
-            constraint_func = _map_types_const[numeric_type]
-        for attr_name in attrs:
-            attr = getattr(schema, attr_name, None)
-            if attr is not None:
-                params_to_set = True
-                kwargs[attr_name] = attr
-        if params_to_set:
-            annotation = constraint_func(**kwargs)
-    return annotation
 
 
 class Field:
@@ -121,7 +67,7 @@ class Field:
         model_config: Any,
         alias: str = None,
         allow_none: bool = False,
-        schema: Schema = None,
+        schema=None,
     ):
 
         self.name: str = name
@@ -141,12 +87,14 @@ class Field:
         self.allow_none: bool = allow_none
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
-        self._schema: Schema = schema
+        self._schema: 'schema.Schema' = schema
         self.prepare()
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, config):
         schema_from_config = config.get_field_schema(name)
+        from .schema import Schema, get_annotation_from_schema
+
         if isinstance(value, Schema):
             schema = value
             value = schema.default

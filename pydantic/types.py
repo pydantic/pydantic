@@ -56,6 +56,7 @@ __all__ = [
     'FilePath',
     'DirectoryPath',
     'Json',
+    'JsonWrapper',
 ]
 
 NoneStr = Optional[str]
