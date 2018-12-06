@@ -443,10 +443,7 @@ def create_model(
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
-    namespace = {
-        "__annotations__": annotations,
-        "__validators__": vg.validators,
-    }
+    namespace = {"__annotations__": annotations, "__validators__": vg.validators}
     namespace.update(fields)
     if __config__:
         namespace["Config"] = __config__
