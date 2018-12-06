@@ -102,7 +102,11 @@ def _extract_validators(namespace):
 
 def inherit_validators(base_validators, validators):
     for field, field_validators in base_validators.items():
-        validators.setdefault(field, []).extend(field_validators)
+        if field in validators:
+            validators[field] += field_validators
+        else:
+            validators[field] = []  # avoid aliasing
+            validators[field] += field_validators
     return validators
 
 
