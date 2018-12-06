@@ -103,6 +103,7 @@ def _extract_validators(namespace):
 def inherit_validators(base_validators, validators):
     for field, field_validators in base_validators.items():
         validators.setdefault(field, []).extend(field_validators)
+    return validators
 
 
 class MetaModel(ABCMeta):
@@ -114,7 +115,7 @@ class MetaModel(ABCMeta):
             if issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(base.__fields__)
                 config = inherit_config(base.__config__, config)
-                inherit_validators(base.__validators__, validators)
+                validators = inherit_validators(base.__validators__, validators)
 
         config = inherit_config(namespace.get('Config'), config)
         inherit_validators(_extract_validators(namespace), validators)
