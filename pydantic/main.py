@@ -437,10 +437,10 @@ def create_model(
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
-    namespace = {"__annotations__": annotations}
+    namespace = {'__annotations__': annotations}
     namespace.update(fields)
     if __config__:
-        namespace["Config"] = __config__
+        namespace['Config'] = __config__
 
     return type(model_name, (__base__,), namespace)
 

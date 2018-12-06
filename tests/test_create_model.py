@@ -66,7 +66,7 @@ def test_custom_config_extras():
         ignore_extra = False
         allow_extra = False
 
-    model = create_model("FooModel", foo=(int, ...), __config__=Config)
+    model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(foo=654)
     with pytest.raises(ValidationError):
         model(bar=654)
