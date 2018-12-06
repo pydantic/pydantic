@@ -410,14 +410,11 @@ def create_model(
         `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
     if __base__:
-        validators = __base__.__validators__
         if __config__ is not None:
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
         __base__ = BaseModel
-        validators = {}
 
-    vg = ValidatorGroup(validators)
     fields = {}
     annotations = {}
 
@@ -436,14 +433,11 @@ def create_model(
         else:
             f_annotation, f_value = None, f_def
 
-        # f_validators = vg.get_validators(f_name)
-        # if f_validators:
-        #     setattr(f_value, "__validator_config", f_validators)
         if f_annotation:
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
-    namespace = {"__annotations__": annotations, "__validators__": vg.validators}
+    namespace = {"__annotations__": annotations}
     namespace.update(fields)
     if __config__:
         namespace["Config"] = __config__
