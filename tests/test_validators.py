@@ -315,7 +315,7 @@ def test_invalid_field():
     )
 
 
-def test_validate_parent():
+def test_validate_child():
     class Parent(BaseModel):
         a: str
 
@@ -332,7 +332,7 @@ def test_validate_parent():
         Child(a='snap')
 
 
-def test_validate_parent_extra():
+def test_validate_child_extra():
     class Parent(BaseModel):
         a: str
 
@@ -353,7 +353,7 @@ def test_validate_parent_extra():
         Child(a='snap')
 
 
-def test_validate_parent_all():
+def test_validate_child_all():
     class Parent(BaseModel):
         a: str
 
@@ -370,7 +370,7 @@ def test_validate_parent_all():
         Child(a='snap')
 
 
-def test_validate_child():
+def test_validate_parent():
     class Parent(BaseModel):
         a: str
 
@@ -391,7 +391,7 @@ def test_validate_child():
         Child(a='snap')
 
 
-def test_validate_child_all():
+def test_validate_parent_all():
     class Parent(BaseModel):
         a: str
 
