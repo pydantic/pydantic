@@ -115,7 +115,7 @@ class MetaModel(ABCMeta):
         validators = {}
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
-                fields.update(base.__fields__)
+                fields.update(deepcopy(base.__fields__))
                 config = inherit_config(base.__config__, config)
                 validators = inherit_validators(base.__validators__, validators)
 
