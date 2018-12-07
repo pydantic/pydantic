@@ -102,11 +102,9 @@ def _extract_validators(namespace):
 
 def inherit_validators(base_validators, validators):
     for field, field_validators in base_validators.items():
-        if field in validators:
-            validators[field] += field_validators
-        else:
-            validators[field] = []  # avoid aliasing
-            validators[field] += field_validators
+        if field not in validators:
+            validators[field] = []
+        validators[field] += field_validators
     return validators
 
 
@@ -122,7 +120,7 @@ class MetaModel(ABCMeta):
                 validators = inherit_validators(base.__validators__, validators)
 
         config = inherit_config(namespace.get('Config'), config)
-        inherit_validators(_extract_validators(namespace), validators)
+        validators = inherit_validators(_extract_validators(namespace), validators)
         vg = ValidatorGroup(validators)
 
         for f in fields.values():
