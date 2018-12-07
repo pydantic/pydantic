@@ -3,6 +3,10 @@
 History
 -------
 
+v0.16.1 (Unreleased)
+....................
+* fix ``create_model`` to correctly use the passed ``__config__``, #320 by @hugoduncan
+
 v0.16.0 (2018-12-03)
 ....................
 * **breaking change**: refactor schema generation to be compatible with JSON Schema and OpenAPI specs, #308 by @tiangolo

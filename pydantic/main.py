@@ -100,17 +100,28 @@ def _extract_validators(namespace):
     return validators
 
 
+def inherit_validators(base_validators, validators):
+    for field, field_validators in base_validators.items():
+        if field not in validators:
+            validators[field] = []
+        validators[field] += field_validators
+    return validators
+
+
 class MetaModel(ABCMeta):
     def __new__(mcs, name, bases, namespace):
         fields: Dict[name, Field] = {}
         config = BaseConfig
+        validators = {}
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
-                fields.update(base.__fields__)
+                fields.update(deepcopy(base.__fields__))
                 config = inherit_config(base.__config__, config)
+                validators = inherit_validators(base.__validators__, validators)
 
         config = inherit_config(namespace.get('Config'), config)
-        vg = ValidatorGroup(_extract_validators(namespace))
+        validators = inherit_validators(_extract_validators(namespace), validators)
+        vg = ValidatorGroup(validators)
 
         for f in fields.values():
             f.set_config(config)
@@ -402,19 +413,17 @@ def create_model(
         `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
     if __base__:
-        fields = deepcopy(__base__.__fields__)
-        validators = __base__.__validators__
         if __config__ is not None:
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
         __base__ = BaseModel
-        fields = {}
-        validators = {}
 
-    config = __config__ or BaseConfig
-    vg = ValidatorGroup(validators)
+    fields = {}
+    annotations = {}
 
     for f_name, f_def in field_definitions.items():
+        if f_name.startswith('_'):
+            warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
             try:
                 f_annotation, f_value = f_def
@@ -426,18 +435,16 @@ def create_model(
                 ) from e
         else:
             f_annotation, f_value = None, f_def
-        if f_name.startswith('_'):
-            warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
-        else:
-            fields[f_name] = Field.infer(
-                name=f_name,
-                value=f_value,
-                annotation=f_annotation,
-                class_validators=vg.get_validators(f_name),
-                config=config,
-            )
 
-    namespace = {'config': config, '__fields__': fields}
+        if f_annotation:
+            annotations[f_name] = f_annotation
+        fields[f_name] = f_value
+
+    namespace = {'__annotations__': annotations}
+    namespace.update(fields)
+    if __config__:
+        namespace['Config'] = __config__
+
     return type(model_name, (__base__,), namespace)
 
 
