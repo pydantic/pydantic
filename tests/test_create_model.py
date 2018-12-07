@@ -82,6 +82,23 @@ def test_inheritance_validators():
 
     model = create_model('FooModel', a='cake', __base__=BarModel)
     assert model().a == 'cake'
+    assert model(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        model(a='something else')
+
+
+def test_inheritance_validators_always():
+    class BarModel(BaseModel):
+        @validator('a', check_fields=False, always=True)
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    model = create_model('FooModel', a='cake', __base__=BarModel)
+    with pytest.raises(ValidationError):
+        model()
+    assert model(a='this is foobar good').a == 'this is foobar good'
     with pytest.raises(ValidationError):
         model(a='something else')
 
