@@ -353,6 +353,65 @@ def test_validate_parent_extra():
         Child(a='snap')
 
 
+def test_validate_parent_all():
+    class Parent(BaseModel):
+        a: str
+
+    class Child(Parent):
+        @validator('*')
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    assert Parent(a='this is not a child').a == 'this is not a child'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Child(a='snap')
+
+
+def test_validate_child():
+    class Parent(BaseModel):
+        a: str
+
+        @validator('a')
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    class Child(Parent):
+        pass
+
+    assert Parent(a='this is foobar good').a == 'this is foobar good'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Parent(a='snap')
+    with pytest.raises(ValidationError):
+        Child(a='snap')
+
+
+def test_validate_child_all():
+    class Parent(BaseModel):
+        a: str
+
+        @validator('*')
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    class Child(Parent):
+        pass
+
+    assert Parent(a='this is foobar good').a == 'this is foobar good'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Parent(a='snap')
+    with pytest.raises(ValidationError):
+        Child(a='snap')
+
+
 def test_pattern():
     class Foobar(BaseModel):
         pattern: Pattern
