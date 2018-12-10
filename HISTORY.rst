@@ -3,7 +3,7 @@
 History
 -------
 
-v0.16.1 (Unreleased)
+v0.16.1 (2018-12-10)
 ....................
 * fix ``create_model`` to correctly use the passed ``__config__``, #320 by @hugoduncan
 
