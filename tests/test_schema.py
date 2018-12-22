@@ -371,19 +371,22 @@ def test_list_union_dict(field_type, expected_schema):
 
 
 @pytest.mark.parametrize(
-    'field_type,expected_schema', [(datetime, 'date-time'), (date, 'date'), (time, 'time'), (timedelta, 'time-delta')]
+    'field_type,expected_schema',
+    [
+        (datetime, {'type': 'string', 'format': 'date-time'}),
+        (date, {'type': 'string', 'format': 'date'}),
+        (time, {'type': 'string', 'format': 'time'}),
+        (timedelta, {'type': 'number', 'format': 'time-delta'}),
+    ],
 )
 def test_date_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    base_schema = {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
-        'required': ['a'],
-    }
-    base_schema['properties']['a']['format'] = expected_schema
+    attribute_schema = {'title': 'A'}
+    attribute_schema.update(expected_schema)
+
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': attribute_schema}, 'required': ['a']}
 
     assert Model.schema() == base_schema
 
