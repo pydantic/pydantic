@@ -633,10 +633,19 @@ Below are the results of crude benchmarks comparing *pydantic* to other validati
 (See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
 for more details on the test case. Feel free to submit more benchmarks or improve an existing one.)
 
-Third-Party libraries
----------------------
+Using Pydantic
+--------------
 
-* `FastAPI <https://github.com/tiangolo/fastapi>`_ is a high performance API framework, easy to learn, fast to code and ready for production, based on Pydantic and Starlette.
+Third party libraries based on *pydantic*.
+
+* `FastAPI <https://github.com/tiangolo/fastapi>`_ is a high performance API framework, easy to learn,
+  fast to code and ready for production, based on *pydantic* and Starlette.
+* `aiohttp-toolbox <https://github.com/samuelcolvin/aiohttp-toolbox>`_ numerous utilities for aiohttp including
+  data parsing using *pydantic*.
+* `harrier <https://github.com/samuelcolvin/harrier>`_ a better static site generator build with python.
+
+More packages using pydantic can be found by visiting
+`pydantic's page on libraries.io <https://libraries.io/pypi/pydantic>`_.
 
 
 .. include:: .TMP_HISTORY.rst
