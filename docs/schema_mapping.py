@@ -228,9 +228,9 @@ table = [
     ],
     [
         'timedelta',
-        'string',
+        'number',
         '{"format": "time-delta"}',
-        'Pydantic standard "format" extension',
+        'Difference in seconds (a ``float``), with Pydantic standard "format" extension',
         'Suggested in JSON Schema repository\'s issues by maintainer.'
     ],
     [

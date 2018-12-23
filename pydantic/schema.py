@@ -569,7 +569,7 @@ field_class_to_schema_enum_disabled = (
     (datetime, {'type': 'string', 'format': 'date-time'}),
     (date, {'type': 'string', 'format': 'date'}),
     (time, {'type': 'string', 'format': 'time'}),
-    (timedelta, {'type': 'string', 'format': 'time-delta'}),
+    (timedelta, {'type': 'number', 'format': 'time-delta'}),
     (Json, {'type': 'string', 'format': 'json-string'}),
 )
 
