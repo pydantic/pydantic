@@ -633,6 +633,12 @@ Below are the results of crude benchmarks comparing *pydantic* to other validati
 (See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
 for more details on the test case. Feel free to submit more benchmarks or improve an existing one.)
 
+Third-Party libraries
+---------------------
+
+* `FastAPI <https://github.com/tiangolo/fastapi>`_ is a high performance API framework, easy to learn, fast to code and ready for production, based on Pydantic and Starlette.
+
+
 .. include:: .TMP_HISTORY.rst
 
 
