@@ -642,7 +642,7 @@ Third party libraries based on *pydantic*.
   fast to code and ready for production, based on *pydantic* and Starlette.
 * `aiohttp-toolbox <https://github.com/samuelcolvin/aiohttp-toolbox>`_ numerous utilities for aiohttp including
   data parsing using *pydantic*.
-* `harrier <https://github.com/samuelcolvin/harrier>`_ a better static site generator build with python.
+* `harrier <https://github.com/samuelcolvin/harrier>`_ a better static site generator built with python.
 
 More packages using pydantic can be found by visiting
 `pydantic's page on libraries.io <https://libraries.io/pypi/pydantic>`_.
