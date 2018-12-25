@@ -59,7 +59,7 @@ TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 class ValidatorGroup:
     def __init__(self, validators):
-        self.validators = validators
+        self.validators: Dict[str, Validator] = validators
         self.used_validators = {'*'}
 
     def get_validators(self, name):
@@ -67,7 +67,8 @@ class ValidatorGroup:
         specific_validators = self.validators.get(name)
         wildcard_validators = self.validators.get('*')
         if specific_validators or wildcard_validators:
-            return (specific_validators or []) + (wildcard_validators or [])
+            validators = (specific_validators or []) + (wildcard_validators or [])
+            return {v.func.__name__: v for v in validators}
 
     def check_for_unused(self):
         unused_validators = set(
@@ -127,7 +128,7 @@ class MetaModel(ABCMeta):
             f.set_config(config)
             extra_validators = vg.get_validators(f.name)
             if extra_validators:
-                f.class_validators += extra_validators
+                f.class_validators.update(extra_validators)
                 # re-run prepare to add extra validators
                 f.prepare()
 
