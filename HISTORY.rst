@@ -7,6 +7,7 @@ v0.x.x (xxx-xx-xx)
 ..................
 * fix schema for ``timedelta`` as number, #325 by @tiangolo
 * prevent validators being called repeatedly after inheritance, #327 by @samuelcolvin
+* prevent duplicate validator check in ipython, fix #312 by @samuelcolvin
 
 v0.16.1 (2018-12-10)
 ....................

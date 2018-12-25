@@ -15,7 +15,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
-from .utils import truncate, validate_field_name
+from .utils import in_ipython, truncate, validate_field_name
 from .validators import dict_validator
 
 
@@ -470,10 +470,13 @@ def validator(*fields, pre: bool = False, whole: bool = False, always: bool = Fa
         )
 
     def dec(f):
-        ref = f.__module__ + '.' + f.__qualname__
-        if ref in _FUNCS:
-            raise ConfigError(f'duplicate validator function "{ref}"')
-        _FUNCS.add(ref)
+        # avoid validators with duplicated names since without this validators can be overwritten silently
+        # which generally isn't the intended behaviour, don't run in ipython - see #312
+        if not in_ipython():  # pragma: no branch
+            ref = f.__module__ + '.' + f.__qualname__
+            if ref in _FUNCS:
+                raise ConfigError(f'duplicate validator function "{ref}"')
+            _FUNCS.add(ref)
         f_cls = classmethod(f)
         f_cls.__validator_config = fields, Validator(f, pre, whole, always, check_fields)
         return f_cls
