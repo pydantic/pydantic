@@ -1,6 +1,6 @@
 import inspect
 from enum import IntEnum
-from typing import Any, Callable, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
 
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
@@ -61,7 +61,7 @@ class Field:
         *,
         name: str,
         type_: Type,
-        class_validators: List[Validator],
+        class_validators: Dict[str, Validator],
         default: Any,
         required: bool,
         model_config: Any,
@@ -74,7 +74,7 @@ class Field:
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
         self.type_: type = type_
-        self.class_validators = class_validators or []
+        self.class_validators = class_validators or {}
         self.validate_always: bool = False
         self.sub_fields: List[Field] = None
         self.key_field: Field = None
@@ -133,7 +133,7 @@ class Field:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
         self.validate_always: bool = (
-            getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators)
+            getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators.values())
         )
 
         if not self.required and not self.validate_always and self.default is None:
@@ -199,22 +199,23 @@ class Field:
         )
 
     def _populate_validators(self):
+        class_validators_ = self.class_validators.values()
         if not self.sub_fields:
             get_validators = getattr(self.type_, 'get_validators', None)
             v_funcs = (
-                *tuple(v.func for v in self.class_validators if not v.whole and v.pre),
+                *tuple(v.func for v in class_validators_ if not v.whole and v.pre),
                 *(
                     get_validators()
                     if get_validators
                     else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
                 ),
-                *tuple(v.func for v in self.class_validators if not v.whole and not v.pre),
+                *tuple(v.func for v in class_validators_ if not v.whole and not v.pre),
             )
             self.validators = self._prep_vals(v_funcs)
 
-        if self.class_validators:
-            self.whole_pre_validators = self._prep_vals(v.func for v in self.class_validators if v.whole and v.pre)
-            self.whole_post_validators = self._prep_vals(v.func for v in self.class_validators if v.whole and not v.pre)
+        if class_validators_:
+            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre)
+            self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
 
     def _prep_vals(self, v_funcs):
         v = []
