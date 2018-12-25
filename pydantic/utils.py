@@ -205,3 +205,15 @@ def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern:
 
 def lenient_issubclass(cls, class_or_tuple):
     return isinstance(cls, type) and issubclass(cls, class_or_tuple)
+
+
+def in_ipython():
+    """
+    Check whether we're in an ipython environment, including jupyter notebooks.
+    """
+    try:
+        __IPYTHON__
+    except NameError:
+        return False
+    else:  # pragma: no cover
+        return True
