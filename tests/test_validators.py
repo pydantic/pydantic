@@ -423,7 +423,7 @@ def test_inheritance_keep():
     class Child(Parent):
         pass
 
-    assert Child(a=1).a == 2
+    assert Child(a=0).a == 1
 
 
 def test_inheritance_replace():
@@ -439,4 +439,20 @@ def test_inheritance_replace():
         def add_to_a(cls, v):
             return v + 5
 
-    assert Child(a=1).a == 6
+    assert Child(a=0).a == 5
+
+
+def test_inheritance_new():
+    class Parent(BaseModel):
+        a: int
+
+        @validator('a')
+        def add_one_to_a(cls, v):
+            return v + 1
+
+    class Child(Parent):
+        @validator('a')
+        def add_five_to_a(cls, v):
+            return v + 5
+
+    assert Child(a=0).a == 6
