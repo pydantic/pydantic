@@ -3,10 +3,10 @@ black==18.9b0
 coverage==4.5.2
 flake8==3.6.0
 isort==4.3.4
-mypy==0.641
+mypy==0.650
 pycodestyle==2.4.0
 pyflakes==2.0.0
-pytest==4.0.1
+pytest==4.0.2
 pytest-cov==2.6.0
 pytest-isort==0.2.1
 pytest-mock==1.10.0
