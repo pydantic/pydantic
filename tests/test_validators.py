@@ -435,7 +435,6 @@ def test_inheritance_replace():
             return v + 1
 
     class Child(Parent):
-
         @validator('a')
         def add_to_a(cls, v):
             return v + 5
