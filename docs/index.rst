@@ -4,7 +4,7 @@ pydantic
 .. toctree::
    :maxdepth: 2
 
-|pypi| |license| |gitter|
+|pypi| |license|
 
 Current Version: |version|
 
@@ -655,5 +655,3 @@ More packages using pydantic can be found by visiting
    :target: https://pypi.python.org/pypi/pydantic
 .. |license| image:: https://img.shields.io/pypi/l/pydantic.svg
    :target: https://github.com/samuelcolvin/pydantic
-.. |gitter| image:: https://badges.gitter.im/pydantic.svg
-   :target: https://gitter.im/pydantic/Lobby
