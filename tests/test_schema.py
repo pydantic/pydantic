@@ -308,6 +308,18 @@ def test_bool():
     }
 
 
+def test_dict():
+    class Model(BaseModel):
+        a: dict
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'object'}},
+        'required': ['a'],
+    }
+
+
 class Foo(BaseModel):
     a: float
 

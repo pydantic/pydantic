@@ -558,6 +558,7 @@ field_class_to_schema_enum_enabled = (
     (UUID5, {'type': 'string', 'format': 'uuid5'}),
     (UUID, {'type': 'string', 'format': 'uuid'}),
     (NameEmail, {'type': 'string', 'format': 'name-email'}),
+    (dict, {'type': 'object'}),
 )
 
 
