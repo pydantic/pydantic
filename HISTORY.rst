@@ -3,7 +3,7 @@
 History
 -------
 
-v0.17.0 (unreleased)
+v0.17.0 (2018-12-27)
 ....................
 * fix schema for ``timedelta`` as number, #325 by @tiangolo
 * prevent validators being called repeatedly after inheritance, #327 by @samuelcolvin
