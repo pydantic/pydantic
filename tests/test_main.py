@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, List
+from typing import Any, ClassVar, List
 
 import pytest
 
@@ -463,3 +463,12 @@ def test_value_field_name_shadows_attribute():
 
         class BadModel(BaseModel):
             schema = 'abc'  # This conflicts with the BaseModel's schema() class method
+
+
+def test_class_var():
+    class MyModel(BaseModel):
+        a: ClassVar
+        b: ClassVar = 1
+        c: int = 2
+
+    assert list(MyModel.__fields__.keys()) == ['c']

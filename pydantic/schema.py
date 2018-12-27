@@ -376,7 +376,7 @@ def get_long_model_name(model: Type['main.BaseModel']):
     return f'{model.__module__}__{model.__name__}'.replace('.', '__')
 
 
-def field_type_schema(  # noqa: C901 (ignore complexity)
+def field_type_schema(
     field: Field,
     *,
     by_alias: bool,
