@@ -6,7 +6,7 @@ from typing import Optional, Pattern, Set, Type, Union
 from uuid import UUID
 
 from . import errors
-from .utils import change_exception, import_string, make_dsn, url_regex_generator, validate_email
+from .utils import import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
     anystr_strip_whitespace,
@@ -221,8 +221,10 @@ class PyObject:
     @classmethod
     def validate(cls, value):
         if value is not None:
-            with change_exception(errors.PyObjectError, ImportError):
+            try:
                 return import_string(value)
+            except ImportError as e:
+                raise errors.PyObjectError(error_message=str(e))
 
 
 class DSN(str):

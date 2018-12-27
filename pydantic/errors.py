@@ -109,7 +109,7 @@ class PathNotADirectoryError(_PathValueError):
 
 
 class PyObjectError(PydanticTypeError):
-    msg_template = 'ensure this value contains valid import path'
+    msg_template = 'ensure this value contains valid import path: {error_message}'
 
 
 class ListError(PydanticTypeError):
