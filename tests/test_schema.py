@@ -1019,3 +1019,20 @@ def test_schema_kwargs():
         'type': 'object',
         'properties': {'a': {'type': 'string', 'title': 'A', 'default': 'foo', 'examples': ['bar']}},
     }
+
+
+def test_schema_dict_constr():
+    regex_str = r'^([a-zA-Z_][a-zA-Z0-9_]*)$'
+    ConStrType = constr(regex=regex_str)
+    ConStrKeyDict = Dict[ConStrType, str]
+
+    class Foo(BaseModel):
+        a: ConStrKeyDict = {}
+
+    assert Foo.schema() == {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {
+            'a': {'type': 'object', 'title': 'A', 'default': {}, 'patternProperties': {regex_str: {'type': 'string'}}}
+        },
+    }

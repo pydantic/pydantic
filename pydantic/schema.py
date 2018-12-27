@@ -376,7 +376,7 @@ def get_long_model_name(model: Type['main.BaseModel']):
     return f'{model.__module__}__{model.__name__}'.replace('.', '__')
 
 
-def field_type_schema(
+def field_type_schema(  # noqa: C901 (ignore complexity)
     field: Field,
     *,
     by_alias: bool,
@@ -405,16 +405,20 @@ def field_type_schema(
         definitions.update(f_definitions)
         return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions
     elif field.shape is Shape.MAPPING:
+        dict_schema = {'type': 'object'}
+        regex = getattr(field.key_field.type_, 'regex', None)
         f_schema, f_definitions = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
         definitions.update(f_definitions)
-        if f_schema:
-            # The dict values are not simply Any
-            return {'type': 'object', 'additionalProperties': f_schema}, definitions
-        else:
-            # The dict values are Any, no need to declare it
-            return {'type': 'object'}, definitions
+        if regex:
+            # Dict keys have a regex pattern
+            # f_schema might be a schema or empty dict, add it either way
+            dict_schema['patternProperties'] = {regex.pattern: f_schema}
+        elif f_schema:
+            # The dict values are not simply Any, so they need a schema
+            dict_schema['additionalProperties'] = f_schema
+        return dict_schema, definitions
     elif field.shape is Shape.TUPLE:
         sub_schema = []
         for sf in field.sub_fields:
