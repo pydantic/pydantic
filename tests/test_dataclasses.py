@@ -1,11 +1,9 @@
+import dataclasses
+
 import pytest
 
 import pydantic
-<<<<<<< HEAD
-from pydantic import BaseConfig, ValidationError
-=======
 from pydantic import BaseModel, ValidationError
->>>>>>> dataclass validation, fix #273
 
 
 def test_simple():
@@ -159,7 +157,7 @@ def test_validate_assigment_long_string_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxxx'
 
-    assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseConfig)
+    assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseModel.Config)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -185,26 +183,66 @@ def test_no_validate_assigment_long_string_error():
     assert d.a == 'xxxx'
 
 
-def test_dataclass_subtype():
+def test_nested_dataclass():
     @pydantic.dataclasses.dataclass
+    class Nested:
+        number: int
+
+    class Outer(BaseModel):
+        n: Nested
+
+    navbar = Outer(n=Nested(number='1'))
+    assert isinstance(navbar.n, Nested)
+    assert navbar.n.number == 1
+
+    navbar = Outer(n=('2',))
+    assert isinstance(navbar.n, Nested)
+    assert navbar.n.number == 2
+
+    navbar = Outer(n={'number': '3'})
+    assert isinstance(navbar.n, Nested)
+    assert navbar.n.number == 3
+
+    with pytest.raises(ValidationError) as exc_info:
+        Outer(n='not nested')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('n',),
+            'msg': 'instance of Nested, tuple or dict expected',
+            'type': 'type_error.dataclass',
+            'ctx': {'class_name': 'Nested'},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Outer(n=('x',))
+    assert exc_info.value.errors() == [
+        {'loc': ('n', 'number'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+def test_arbitrary_types_allowed():
+    @dataclasses.dataclass
     class Button:
         href: str
 
     class Navbar(BaseModel):
         button: Button
 
+        class Config:
+            arbitrary_types_allowed = True
+
     btn = Button(href='a')
     navbar = Navbar(button=btn)
-    assert isinstance(navbar.button, Button)
     assert navbar.button.href == 'a'
 
     with pytest.raises(ValidationError) as exc_info:
-        Navbar(button='not button')
+        Navbar(button=('b',))
     assert exc_info.value.errors() == [
         {
-            'ctx': {'class_name': 'Button'},
             'loc': ('button',),
-            'msg': 'must be an instance of Button',
-            'type': 'type_error.dataclass',
+            'msg': 'instance of Button expected',
+            'type': 'type_error.arbitrary_type',
+            'ctx': {'expected_arbitrary_type': 'Button'},
         }
     ]

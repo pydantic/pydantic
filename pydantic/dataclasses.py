@@ -16,6 +16,10 @@ def _get_validators(cls):
     def _validate_dataclass(v):
         if isinstance(v, cls):
             return v
+        elif isinstance(v, (cls, list, tuple)):
+            return cls(*v)
+        elif isinstance(v, dict):
+            return cls(**v)
         else:
             raise errors.DataclassTypeError(class_name=cls.__name__)
 
