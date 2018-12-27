@@ -124,7 +124,7 @@ You can use all the standard pydantic field types and the resulting dataclass wi
 created by the standard library ``dataclass`` decorator.
 
 ``pydantic.dataclasses.dataclass``'s arguments are the same as the standard decorator, except one extra
-key word argument ``validate_assignment`` which has the same meaning as :ref:`Config.validate_assignment <config>`.
+key word argument ``config`` which has the same meaning as :ref:`Config <config>`.
 
 Currently validators don't work on validators, if it's something you want please create an issue on github.
 
@@ -453,6 +453,12 @@ Options:
    introduce bugs.
 
 .. literalinclude:: examples/config.py
+
+(This script is complete, it should run "as is")
+
+Version for models based on ``@dataclass`` decorator:
+
+.. literalinclude:: examples/ex_dataclasses_config.py
 
 (This script is complete, it should run "as is")
 

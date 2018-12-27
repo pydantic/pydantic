@@ -11,6 +11,8 @@ v0.17.0 (unreleased)
 * add "Using Pydantic" section to docs, #323 by @tiangolo & #326 by @samuelcolvin
 * fix schema generation for fields annotated as ``: dict``, #330 by @nkonin
 * add support for constrained strings as dict keys in schema, #332 by @tiangolo
+* support for passing Config class in dataclasses decorator, #276 by @jarekkar
+  (**breaking change**: this supersedes the ``validate_assignment`` argument with ``config``)
 
 v0.16.1 (2018-12-10)
 ....................
