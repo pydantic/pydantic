@@ -109,7 +109,7 @@ dataclasses
 
 .. note::
 
-   New in version ``v0.14.0``.
+   New in version ``v0.14``.
 
 If you don't want to use pydantic's ``BaseModel`` you can instead get the same data validation on standard
 `dataclasses <https://docs.python.org/3/library/dataclasses.html>`_ (introduced in python 3.7).
@@ -126,7 +126,16 @@ created by the standard library ``dataclass`` decorator.
 ``pydantic.dataclasses.dataclass``'s arguments are the same as the standard decorator, except one extra
 key word argument ``config`` which has the same meaning as :ref:`Config <config>`.
 
-Currently validators don't work on validators, if it's something you want please create an issue on github.
+
+Since version ``v0.17`` nested dataclasses are support both in dataclasses and normal models.
+
+.. literalinclude:: examples/ex_nested_dataclasses.py
+
+(This script is complete, it should run "as is")
+
+Dataclasses attributes can be populated by tuples, dictionaries or instances of that dataclass.
+
+Currently validators don't work with dataclasses, if it's something you want please create an issue on github.
 
 Choices
 .......
