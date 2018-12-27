@@ -6,7 +6,7 @@ from functools import partial
 from itertools import chain
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Callable, Dict, Set, Type, Union, ClassVar
+from typing import Any, Callable, ClassVar, Dict, Set, Type, Union
 
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
@@ -356,7 +356,7 @@ class BaseModel(metaclass=MetaModel):
     def validate(cls, value):
         return cls(**value)
 
-    def _process_values(self, input_data: dict) -> Dict[str, Any]:  # noqa: C901 (ignore complexity)
+    def _process_values(self, input_data: dict) -> Dict[str, Any]:
         return validate_model(self, input_data)
 
     @classmethod

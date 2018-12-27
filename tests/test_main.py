@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, List, ClassVar
+from typing import Any, ClassVar, List
 
 import pytest
 
