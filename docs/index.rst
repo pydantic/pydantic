@@ -391,8 +391,13 @@ against defined Json structure if it's provided.
 Custom Data Types
 .................
 
-You can also define your own data types. Class method ``get_validators`` will be called to get validators to parse and
-validate the input data.
+You can also define your own data types. The class method ``__get_validators__`` will be called
+to get validators to parse and validate the input data.
+
+.. note::
+
+   The name of ``__get_validators__`` was changed from ``get_validators`` in ``v0.17``,
+   the old name is currently still supported but deprecated and will be removed in future.
 
 .. literalinclude:: examples/custom_data_types.py
 

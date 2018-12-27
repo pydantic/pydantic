@@ -3,7 +3,7 @@ from pydantic import BaseModel, ValidationError
 
 class StrictStr(str):
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield cls.validate
 
     @classmethod

@@ -3,7 +3,7 @@ from typing import Any, List
 
 import pytest
 
-from pydantic import BaseModel, NoneBytes, NoneStr, Required, ValidationError, constr, errors
+from pydantic import BaseModel, NoneBytes, NoneStr, Required, ValidationError, constr
 
 
 def test_success():
@@ -157,34 +157,6 @@ def test_prevent_extra_fails():
         {'loc': ('bar',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
         {'loc': ('spam',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
     ]
-
-
-class InvalidValidator:
-    @classmethod
-    def get_validators(cls):
-        yield cls.has_wrong_arguments
-
-    @classmethod
-    def has_wrong_arguments(cls, value, bar):
-        pass
-
-
-def test_invalid_validator():
-    with pytest.raises(errors.ConfigError) as exc_info:
-
-        class InvalidValidatorModel(BaseModel):
-            x: InvalidValidator = ...
-
-    assert exc_info.value.args[0].startswith('Invalid signature for validator')
-
-
-def test_unable_to_infer():
-    with pytest.raises(errors.ConfigError) as exc_info:
-
-        class InvalidDefinitionModel(BaseModel):
-            x = None
-
-    assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
 
 
 def test_not_required():

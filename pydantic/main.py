@@ -345,7 +345,7 @@ class BaseModel(metaclass=MetaModel):
         return json.dumps(cls.schema(by_alias=by_alias), default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield dict_validator
         yield cls.validate
 

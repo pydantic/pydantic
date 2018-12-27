@@ -16,6 +16,7 @@ v0.17.0 (unreleased)
   (**breaking change**: this supersedes the ``validate_assignment`` argument with ``config``)
 * support for nested dataclasses, #334 by @samuelcolvin
 * better errors when getting an ``ImportError`` with ``PyObject``, #309 by @samuelcolvin
+* rename ``get_validators`` to ``__get_validators__``, deprecation warning on use of old name, #338 by @samuelcolvin
 
 v0.16.1 (2018-12-10)
 ....................
