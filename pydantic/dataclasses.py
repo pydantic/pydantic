@@ -1,7 +1,6 @@
 import dataclasses
 
-from pydantic import ValidationError
-
+from . import ValidationError, errors
 from .main import create_model, validate_model
 
 
@@ -11,6 +10,16 @@ def _pydantic_post_init(self):
     object.__setattr__(self, '__initialised__', True)
     if self.__post_init_original__:
         self.__post_init_original__()
+
+
+def _get_validators(cls):
+    def _validate_dataclass(v):
+        if isinstance(v, cls):
+            return v
+        else:
+            raise errors.DataclassTypeError(class_name=cls.__name__)
+
+    yield _validate_dataclass
 
 
 def setattr_validate_assignment(self, name, value):
@@ -37,6 +46,7 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
     cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, **fields)
 
     cls.__initialised__ = False
+    cls.__get_validators__ = classmethod(_get_validators)
 
     if cls.__pydantic_model__.__config__.validate_assignment and not frozen:
         cls.__setattr__ = setattr_validate_assignment

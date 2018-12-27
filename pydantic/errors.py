@@ -266,3 +266,8 @@ class JsonTypeError(PydanticTypeError):
 class PatternError(PydanticValueError):
     code = 'regex_pattern'
     msg_template = 'Invalid regular expression'
+
+
+class DataclassTypeError(PydanticTypeError):
+    code = 'dataclass'
+    msg_template = 'must be an instance of {class_name}'

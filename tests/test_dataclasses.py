@@ -1,7 +1,11 @@
 import pytest
 
 import pydantic
+<<<<<<< HEAD
 from pydantic import BaseConfig, ValidationError
+=======
+from pydantic import BaseModel, ValidationError
+>>>>>>> dataclass validation, fix #273
 
 
 def test_simple():
@@ -179,3 +183,28 @@ def test_no_validate_assigment_long_string_error():
     d.a = 'xxxx'
 
     assert d.a == 'xxxx'
+
+
+def test_dataclass_subtype():
+    @pydantic.dataclasses.dataclass
+    class Button:
+        href: str
+
+    class Navbar(BaseModel):
+        button: Button
+
+    btn = Button(href='a')
+    navbar = Navbar(button=btn)
+    assert isinstance(navbar.button, Button)
+    assert navbar.button.href == 'a'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Navbar(button='not button')
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'class_name': 'Button'},
+            'loc': ('button',),
+            'msg': 'must be an instance of Button',
+            'type': 'type_error.dataclass',
+        }
+    ]
