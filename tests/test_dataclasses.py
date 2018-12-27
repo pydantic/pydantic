@@ -188,7 +188,8 @@ def test_nested_dataclass():
     class Nested:
         number: int
 
-    class Outer(BaseModel):
+    @pydantic.dataclasses.dataclass
+    class Outer:
         n: Nested
 
     navbar = Outer(n=Nested(number='1'))
@@ -226,11 +227,12 @@ def test_arbitrary_types_allowed():
     class Button:
         href: str
 
-    class Navbar(BaseModel):
-        button: Button
+    class Config:
+        arbitrary_types_allowed = True
 
-        class Config:
-            arbitrary_types_allowed = True
+    @pydantic.dataclasses.dataclass(config=Config)
+    class Navbar:
+        button: Button
 
     btn = Button(href='a')
     navbar = Navbar(button=btn)
@@ -246,3 +248,15 @@ def test_arbitrary_types_allowed():
             'ctx': {'expected_arbitrary_type': 'Button'},
         }
     ]
+
+
+def test_nested_dataclass_model():
+    @pydantic.dataclasses.dataclass
+    class Nested:
+        number: int
+
+    class Outer(BaseModel):
+        n: Nested
+
+    navbar = Outer(n=Nested(number='1'))
+    assert navbar.n.number == 1
