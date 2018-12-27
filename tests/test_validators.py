@@ -19,13 +19,7 @@ def test_simple():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': '"foobar" not found in a',
-            'type': 'value_error',
-        },
-    ]
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': '"foobar" not found in a', 'type': 'value_error'}]
 
 
 def test_int_validation():
@@ -35,11 +29,7 @@ def test_int_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
     assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        },
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
     assert Model(a=3).a is 3
     assert Model(a=True).a is 1
@@ -103,25 +93,13 @@ def test_validate_whole_error():
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[1, 3])
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'a1 broken',
-            'type': 'value_error',
-        },
-    ]
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'a1 broken', 'type': 'value_error'}]
     assert calls == ['check_a1 [1, 3]']
 
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[5, 10])
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'a2 broken',
-            'type': 'value_error',
-        },
-    ]
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'a2 broken', 'type': 'value_error'}]
     assert calls == ['check_a1 [5, 10]', 'check_a2 [6, 10]']
 
 
@@ -157,11 +135,7 @@ def test_validating_assignment_dict():
     with pytest.raises(ValidationError) as exc_info:
         ValidateAssignmentModel(a='x', b='xx')
     assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        },
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
@@ -182,16 +156,8 @@ def test_validate_multiple():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='x', b='x')
     assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'a is too short',
-            'type': 'type_error',
-        },
-        {
-            'loc': ('b',),
-            'msg': 'b is too short',
-            'type': 'type_error',
-        },
+        {'loc': ('a',), 'msg': 'a is too short', 'type': 'type_error'},
+        {'loc': ('b',), 'msg': 'b is too short', 'type': 'type_error'},
     ]
 
 
@@ -211,6 +177,7 @@ def test_classmethod():
 
 def test_duplicates():
     with pytest.raises(errors.ConfigError) as exc_info:
+
         class Model(BaseModel):
             a: str
             b: str
@@ -222,29 +189,35 @@ def test_duplicates():
             @validator('b')  # noqa
             def duplicate_name(cls, v):
                 return v
-    assert str(exc_info.value) == ('duplicate validator function '
-                                   '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"')
+
+    assert str(exc_info.value) == (
+        'duplicate validator function ' '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"'
+    )
 
 
 def test_use_bare():
     with pytest.raises(errors.ConfigError) as exc_info:
+
         class Model(BaseModel):
             a: str
 
             @validator
             def checker(cls, v):
                 return v
+
     assert 'validators should be used with fields' in str(exc_info.value)
 
 
 def test_use_no_fields():
     with pytest.raises(errors.ConfigError) as exc_info:
+
         class Model(BaseModel):
             a: str
 
             @validator()
             def checker(cls, v):
                 return v
+
     assert 'validator with no fields specified' in str(exc_info.value)
 
 
@@ -302,11 +275,7 @@ def test_wildcard_validators():
             return v
 
     assert Model(a='abc', b='123').dict() == dict(a='abc', b=123)
-    assert calls == [
-        ('check_a', 'abc', 'a'),
-        ('check_all', 'abc', 'a'),
-        ('check_all', 123, 'b'),
-    ]
+    assert calls == [('check_a', 'abc', 'a'), ('check_all', 'abc', 'a'), ('check_all', 123, 'b')]
 
 
 def test_wildcard_validator_error():
@@ -325,32 +294,28 @@ def test_wildcard_validator_error():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
     assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': '"foobar" not found in a',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('b',),
-            'msg': 'field required',
-            'type': 'value_error.missing',
-        },
+        {'loc': ('a',), 'msg': '"foobar" not found in a', 'type': 'value_error'},
+        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
 
 
 def test_invalid_field():
     with pytest.raises(errors.ConfigError) as exc_info:
+
         class Model(BaseModel):
             a: str
 
             @validator('b')
             def check_b(cls, v):
                 return v
-    assert str(exc_info.value) == ("Validators defined with incorrect fields: check_b "
-                                   "(use check_fields=False if you're inheriting from the model and intended this)")
+
+    assert str(exc_info.value) == (
+        "Validators defined with incorrect fields: check_b "
+        "(use check_fields=False if you're inheriting from the model and intended this)"
+    )
 
 
-def test_validate_parent():
+def test_validate_child():
     class Parent(BaseModel):
         a: str
 
@@ -361,12 +326,13 @@ def test_validate_parent():
                 raise ValueError('"foobar" not found in a')
             return v
 
+    assert Parent(a='this is not a child').a == 'this is not a child'
     assert Child(a='this is foobar good').a == 'this is foobar good'
     with pytest.raises(ValidationError):
         Child(a='snap')
 
 
-def test_validate_parent_extra():
+def test_validate_child_extra():
     class Parent(BaseModel):
         a: str
 
@@ -381,6 +347,112 @@ def test_validate_parent_extra():
         def check_a_two(cls, v):
             return v.upper()
 
+    assert Parent(a='this is foobar good').a == 'this is foobar good'
     assert Child(a='this is foobar good').a == 'THIS IS FOOBAR GOOD'
     with pytest.raises(ValidationError):
         Child(a='snap')
+
+
+def test_validate_child_all():
+    class Parent(BaseModel):
+        a: str
+
+    class Child(Parent):
+        @validator('*')
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    assert Parent(a='this is not a child').a == 'this is not a child'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Child(a='snap')
+
+
+def test_validate_parent():
+    class Parent(BaseModel):
+        a: str
+
+        @validator('a')
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    class Child(Parent):
+        pass
+
+    assert Parent(a='this is foobar good').a == 'this is foobar good'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Parent(a='snap')
+    with pytest.raises(ValidationError):
+        Child(a='snap')
+
+
+def test_validate_parent_all():
+    class Parent(BaseModel):
+        a: str
+
+        @validator('*')
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    class Child(Parent):
+        pass
+
+    assert Parent(a='this is foobar good').a == 'this is foobar good'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Parent(a='snap')
+    with pytest.raises(ValidationError):
+        Child(a='snap')
+
+
+def test_inheritance_keep():
+    class Parent(BaseModel):
+        a: int
+
+        @validator('a')
+        def add_to_a(cls, v):
+            return v + 1
+
+    class Child(Parent):
+        pass
+
+    assert Child(a=0).a == 1
+
+
+def test_inheritance_replace():
+    class Parent(BaseModel):
+        a: int
+
+        @validator('a')
+        def add_to_a(cls, v):
+            return v + 1
+
+    class Child(Parent):
+        @validator('a')
+        def add_to_a(cls, v):
+            return v + 5
+
+    assert Child(a=0).a == 5
+
+
+def test_inheritance_new():
+    class Parent(BaseModel):
+        a: int
+
+        @validator('a')
+        def add_one_to_a(cls, v):
+            return v + 1
+
+    class Child(Parent):
+        @validator('a')
+        def add_five_to_a(cls, v):
+            return v + 5
+
+    assert Child(a=0).a == 6

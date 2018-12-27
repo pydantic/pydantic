@@ -261,3 +261,8 @@ class JsonError(PydanticValueError):
 class JsonTypeError(PydanticTypeError):
     code = 'json'
     msg_template = 'JSON object must be str, bytes or bytearray'
+
+
+class PatternError(PydanticValueError):
+    code = 'regex_pattern'
+    msg_template = 'Invalid regular expression'

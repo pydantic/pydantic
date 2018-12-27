@@ -28,11 +28,7 @@ def test_value_error():
         MyDataclass(1, 'wrong')
 
     assert exc_info.value.errors() == [
-        {
-            'loc': ('b',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        },
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
@@ -76,11 +72,7 @@ def test_validate_assignment_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxx'
     assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        },
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
@@ -110,3 +102,20 @@ def test_post_init():
     d = MyDataclass('1')
     assert d.a == 1
     assert post_init_called
+
+
+def test_inheritance():
+    @pydantic.dataclasses.dataclass
+    class A:
+        a: str = None
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        b: int = None
+
+    b = B(a='a', b=12)
+    assert b.a == 'a'
+    assert b.b == 12
+
+    with pytest.raises(ValidationError):
+        B(a='a', b='b')

@@ -1,11 +1,11 @@
 import inspect
-from enum import Enum, IntEnum
-from typing import Any, Callable, List, Mapping, NamedTuple, Set, Tuple, Type, Union
+from enum import IntEnum
+from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
 
 from . import errors as errors_
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .utils import display_as_type, list_like
+from .utils import display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators, not_none_validator
 
 Required: Any = Ellipsis
@@ -34,43 +34,47 @@ class Validator(NamedTuple):
     check_fields: bool
 
 
-class Schema:
-    """
-    Used to provide extra information about a field in a model schema.
-    """
-    __slots__ = 'default', 'alias', 'title', 'choice_names', 'extra',
-
-    def __init__(self, default, *, alias=None, title=None, choice_names=None, **extra):
-        self.default = default
-        self.alias = alias
-        self.title = title
-        self.choice_names = choice_names
-        self.extra = extra
-
-
 class Field:
     __slots__ = (
-        'type_', 'sub_fields', 'key_field', 'validators', 'whole_pre_validators', 'whole_post_validators',
-        'default', 'required', 'model_config', 'name', 'alias', '_schema', 'validate_always', 'allow_none', 'shape',
-        'class_validators', 'parse_json'
+        'type_',
+        'sub_fields',
+        'key_field',
+        'validators',
+        'whole_pre_validators',
+        'whole_post_validators',
+        'default',
+        'required',
+        'model_config',
+        'name',
+        'alias',
+        'has_alias',
+        'schema',
+        'validate_always',
+        'allow_none',
+        'shape',
+        'class_validators',
+        'parse_json',
     )
 
     def __init__(
-            self, *,
-            name: str,
-            type_: Type,
-            class_validators: List[Validator],
-            default: Any,
-            required: bool,
-            model_config: Any,
-            alias: str=None,
-            allow_none: bool=False,
-            schema: Schema=None):
+        self,
+        *,
+        name: str,
+        type_: Type,
+        class_validators: Dict[str, Validator],
+        default: Any,
+        required: bool,
+        model_config: Any,
+        alias: str = None,
+        allow_none: bool = False,
+        schema=None,
+    ):
 
         self.name: str = name
+        self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
         self.type_: type = type_
-        self.class_validators = class_validators or []
+        self.class_validators = class_validators or {}
         self.validate_always: bool = False
         self.sub_fields: List[Field] = None
         self.key_field: Field = None
@@ -83,12 +87,14 @@ class Field:
         self.allow_none: bool = allow_none
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
-        self._schema: Schema = schema
+        self.schema: 'schema.Schema' = schema
         self.prepare()
 
     @classmethod
     def infer(cls, *, name, value, annotation, class_validators, config):
         schema_from_config = config.get_field_schema(name)
+        from .schema import Schema, get_annotation_from_schema
+
         if isinstance(value, Schema):
             schema = value
             value = schema.default
@@ -96,6 +102,7 @@ class Field:
             schema = Schema(value, **schema_from_config)
         schema.alias = schema.alias or schema_from_config.get('alias')
         required = value == Required
+        annotation = get_annotation_from_schema(annotation, schema)
         return cls(
             name=name,
             type_=annotation,
@@ -111,8 +118,8 @@ class Field:
         self.model_config = config
         schema_from_config = config.get_field_schema(self.name)
         if schema_from_config:
-            self._schema.alias = self._schema.alias or schema_from_config.get('alias')
-            self.alias = self._schema.alias
+            self.schema.alias = self.schema.alias or schema_from_config.get('alias')
+            self.alias = self.schema.alias
 
     @property
     def alt_alias(self):
@@ -126,7 +133,7 @@ class Field:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
         self.validate_always: bool = (
-            getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators)
+            getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators.values())
         )
 
         if not self.required and not self.validate_always and self.default is None:
@@ -135,79 +142,15 @@ class Field:
         self._populate_sub_fields()
         self._populate_validators()
 
-    def schema(self, by_alias=True):
-        s = dict(
-            title=self._schema.title or self.alias.title(),
-            required=self.required,
-        )
-
-        if not self.required and self.default is not None:
-            s['default'] = self.default
-        s.update(self._schema.extra)
-
-        ts = self.type_schema(by_alias)
-        s.update(ts if isinstance(ts, dict) else {'type': ts})
-        return s
-
-    def type_schema(self, by_alias):
-        if self.shape is Shape.LIST:
-            return {
-                'type': 'list',
-                'item_type': self._singleton_schema(by_alias),
-            }
-        if self.shape is Shape.SET:
-            return {
-                'type': 'set',
-                'item_type': self._singleton_schema(by_alias),
-            }
-        elif self.shape is Shape.MAPPING:
-            return {
-                'type': 'mapping',
-                'item_type': self._singleton_schema(by_alias),
-                'key_type': self.key_field.type_schema(by_alias)
-            }
-        elif self.shape is Shape.TUPLE:
-            return {
-                'type': 'tuple',
-                'item_types': [sf.type_schema(by_alias) for sf in self.sub_fields],
-            }
-        else:
-            assert self.shape is Shape.SINGLETON, self.shape
-            return self._singleton_schema(by_alias)
-
-    def _singleton_schema(self, by_alias):
-        if self.sub_fields:
-            if len(self.sub_fields) == 1:
-                return self.sub_fields[0].type_schema(by_alias)
-            else:
-                return {
-                    'type': 'any_of',
-                    'types': [sf.type_schema(by_alias) for sf in self.sub_fields]
-                }
-        elif self.type_ is Any:
-            return 'any'
-        elif issubclass(self.type_, Enum):
-            choice_names = self._schema.choice_names or {}
-            return {
-                'type': display_as_type(self.type_),
-                'choices': [
-                    (v.value, choice_names.get(v.value) or k.title())
-                    for k, v in self.type_.__members__.items()
-                ]
-            }
-
-        type_schema_method = getattr(self.type_, 'type_schema', None)
-        if callable(type_schema_method):
-            return type_schema_method(by_alias)
-        else:
-            return display_as_type(self.type_)
-
-    def _populate_sub_fields(self):
+    def _populate_sub_fields(self):  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
-        if isinstance(self.type_, type) and issubclass(self.type_, JsonWrapper):
+        if lenient_issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type
             self.parse_json = True
 
+        if self.type_ is Pattern:
+            # python 3.7 only, Pattern is a typing object but without sub fields
+            return
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
@@ -225,9 +168,7 @@ class Field:
 
         if issubclass(origin, Tuple):
             self.shape = Shape.TUPLE
-            self.sub_fields = [
-                self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)
-            ]
+            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)]
             return
 
         if issubclass(origin, List):
@@ -258,36 +199,37 @@ class Field:
         )
 
     def _populate_validators(self):
+        class_validators_ = self.class_validators.values()
         if not self.sub_fields:
             get_validators = getattr(self.type_, 'get_validators', None)
             v_funcs = (
-                *tuple(v.func for v in self.class_validators if not v.whole and v.pre),
-                *(get_validators() if get_validators else find_validators(self.type_,
-                                                                          self.model_config.arbitrary_types_allowed)),
-                *tuple(v.func for v in self.class_validators if not v.whole and not v.pre),
+                *tuple(v.func for v in class_validators_ if not v.whole and v.pre),
+                *(
+                    get_validators()
+                    if get_validators
+                    else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
+                ),
+                *tuple(v.func for v in class_validators_ if not v.whole and not v.pre),
             )
             self.validators = self._prep_vals(v_funcs)
 
-        if self.class_validators:
-            self.whole_pre_validators = self._prep_vals(v.func for v in self.class_validators if v.whole and v.pre)
-            self.whole_post_validators = self._prep_vals(v.func for v in self.class_validators if v.whole and not v.pre)
+        if class_validators_:
+            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre)
+            self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
 
     def _prep_vals(self, v_funcs):
         v = []
         for f in v_funcs:
             if not f or (self.allow_none and f is not_none_validator):
                 continue
-            v.append((
-                _get_validator_signature(f),
-                f,
-            ))
+            v.append((_get_validator_signature(f), f))
         return tuple(v)
 
     def validate(self, v, values, *, loc, cls=None):  # noqa: C901 (ignore complexity)
         if self.allow_none and v is None:
             return None, None
 
-        loc = loc if isinstance(loc, tuple) else (loc, )
+        loc = loc if isinstance(loc, tuple) else (loc,)
 
         if self.parse_json:
             v, error = self._validate_json(v, loc)
@@ -459,6 +401,8 @@ def _get_validator_signature(validator):
                 signature.bind(1, values=2, config=3, field=4)
                 return ValidatorSignature.VALUE_KWARGS
     except TypeError as e:
-        raise errors_.ConfigError(f'Invalid signature for validator {validator}: {signature}, should be: '
-                                  f'(value) or (value, *, values, config, field) or for class validators '
-                                  f'(cls, value) or (cls, value, *, values, config, field)') from e
+        raise errors_.ConfigError(
+            f'Invalid signature for validator {validator}: {signature}, should be: '
+            f'(value) or (value, *, values, config, field) or for class validators '
+            f'(cls, value) or (cls, value, *, values, config, field)'
+        ) from e

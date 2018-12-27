@@ -26,11 +26,7 @@ def test_sub_env_missing():
     with pytest.raises(ValidationError) as exc_info:
         SimpleSettings()
     assert exc_info.value.errors() == [
-        {
-            'loc': ('apple',),
-            'msg': 'none is not an allow value',
-            'type': 'type_error.none.not_allowed',
-        },
+        {'loc': ('apple',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}
     ]
 
 
@@ -44,9 +40,8 @@ def test_env_with_aliass(env):
         apple: str = ...
 
         class Config:
-            fields = {
-                'apple': 'BOOM'
-            }
+            fields = {'apple': 'BOOM'}
+
     env.set('BOOM', 'hello')
     assert Settings().apple == 'hello'
 
@@ -103,3 +98,30 @@ def test_non_class(env):
     env.set('APP_FOOBAR', 'xxx')
     s = Settings()
     assert s.foobar == 'xxx'
+
+
+def test_alias_matches_name(env):
+    class Settings(BaseSettings):
+        foobar: str
+
+        class Config:
+            fields = {'foobar': 'foobar'}
+
+    env.set('foobar', 'xxx')
+    s = Settings()
+    assert s.foobar == 'xxx'
+
+
+def test_case_insensitive(env):
+    class Settings(BaseSettings):
+        foo: str
+        bAR: str
+
+        class Config:
+            case_insensitive = True
+
+    env.set('apP_foO', 'foo')
+    env.set('app_bar', 'bar')
+    s = Settings()
+    assert s.foo == 'foo'
+    assert s.bAR == 'bar'

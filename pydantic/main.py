@@ -13,8 +13,9 @@ from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field, Validator
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
+from .schema import model_schema
 from .types import StrBytes
-from .utils import clean_docstring, truncate, validate_field_name
+from .utils import in_ipython, truncate, validate_field_name
 from .validators import dict_validator
 
 
@@ -45,9 +46,9 @@ class BaseConfig:
 
 def inherit_config(self_config: Type[BaseConfig], parent_config: Type[BaseConfig]) -> Type[BaseConfig]:
     if not self_config:
-        base_classes = parent_config,
+        base_classes = (parent_config,)
     elif self_config == parent_config:
-        base_classes = self_config,
+        base_classes = (self_config,)
     else:
         base_classes = self_config, parent_config
     return type('Config', base_classes, {})
@@ -58,7 +59,7 @@ TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 class ValidatorGroup:
     def __init__(self, validators):
-        self.validators = validators
+        self.validators: Dict[str, Validator] = validators
         self.used_validators = {'*'}
 
     def get_validators(self, name):
@@ -66,15 +67,24 @@ class ValidatorGroup:
         specific_validators = self.validators.get(name)
         wildcard_validators = self.validators.get('*')
         if specific_validators or wildcard_validators:
-            return (specific_validators or []) + (wildcard_validators or [])
+            validators = (specific_validators or []) + (wildcard_validators or [])
+            return {v.func.__name__: v for v in validators}
 
     def check_for_unused(self):
-        unused_validators = set(chain(*[(v.func.__name__ for v in self.validators[f] if v.check_fields)
-                                        for f in (self.validators.keys() - self.used_validators)]))
+        unused_validators = set(
+            chain(
+                *[
+                    (v.func.__name__ for v in self.validators[f] if v.check_fields)
+                    for f in (self.validators.keys() - self.used_validators)
+                ]
+            )
+        )
         if unused_validators:
             fn = ', '.join(unused_validators)
-            raise ConfigError(f"Validators defined with incorrect fields: {fn} "
-                              f"(use check_fields=False if you're inheriting from the model and intended this)")
+            raise ConfigError(
+                f"Validators defined with incorrect fields: {fn} "
+                f"(use check_fields=False if you're inheriting from the model and intended this)"
+            )
 
 
 def _extract_validators(namespace):
@@ -91,23 +101,34 @@ def _extract_validators(namespace):
     return validators
 
 
+def inherit_validators(base_validators, validators):
+    for field, field_validators in base_validators.items():
+        if field not in validators:
+            validators[field] = []
+        validators[field] += field_validators
+    return validators
+
+
 class MetaModel(ABCMeta):
     def __new__(mcs, name, bases, namespace):
         fields: Dict[name, Field] = {}
         config = BaseConfig
+        validators = {}
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
-                fields.update(base.__fields__)
+                fields.update(deepcopy(base.__fields__))
                 config = inherit_config(base.__config__, config)
+                validators = inherit_validators(base.__validators__, validators)
 
         config = inherit_config(namespace.get('Config'), config)
-        vg = ValidatorGroup(_extract_validators(namespace))
+        validators = inherit_validators(_extract_validators(namespace), validators)
+        vg = ValidatorGroup(validators)
 
         for f in fields.values():
             f.set_config(config)
             extra_validators = vg.get_validators(f.name)
             if extra_validators:
-                f.class_validators += extra_validators
+                f.class_validators.update(extra_validators)
                 # re-run prepare to add extra validators
                 f.prepare()
 
@@ -146,7 +167,7 @@ class MetaModel(ABCMeta):
             '__validators__': vg.validators,
             '_schema_cache': {},
             '_json_encoder': staticmethod(json_encoder),
-            **{n: v for n, v in namespace.items() if n not in fields}
+            **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace)
 
@@ -156,11 +177,11 @@ _missing = object()
 
 class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
-    __fields__ = {}
+    __fields__: Dict[str, Field] = {}
     __validators__ = {}
 
     Config = BaseConfig
-    __slots__ = '__values__',
+    __slots__ = ('__values__',)
 
     def __init__(self, **data):
         self.__setstate__(self._process_values(data))
@@ -191,7 +212,7 @@ class BaseModel(metaclass=MetaModel):
     def __setstate__(self, state):
         object.__setattr__(self, '__values__', state)
 
-    def dict(self, *, include: Set[str]=None, exclude: Set[str]=set(), by_alias: bool = False) -> Dict[str, Any]:
+    def dict(self, *, include: Set[str] = None, exclude: Set[str] = set(), by_alias: bool = False) -> Dict[str, Any]:
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
@@ -210,8 +231,15 @@ class BaseModel(metaclass=MetaModel):
 
         return lambda _, key: key
 
-    def json(self, *, include: Set[str]=None, exclude: Set[str]=set(), by_alias: bool = False,
-             encoder=None, **dumps_kwargs) -> str:
+    def json(
+        self,
+        *,
+        include: Set[str] = None,
+        exclude: Set[str] = set(),
+        by_alias: bool = False,
+        encoder=None,
+        **dumps_kwargs,
+    ) -> str:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
 
@@ -219,7 +247,8 @@ class BaseModel(metaclass=MetaModel):
         """
         return json.dumps(
             self.dict(include=include, exclude=exclude, by_alias=by_alias),
-            default=encoder or self._json_encoder, **dumps_kwargs
+            default=encoder or self._json_encoder,
+            **dumps_kwargs,
         )
 
     @classmethod
@@ -230,24 +259,33 @@ class BaseModel(metaclass=MetaModel):
         return cls(**obj)
 
     @classmethod
-    def parse_raw(cls, b: StrBytes, *,
-                  content_type: str=None,
-                  encoding: str='utf8',
-                  proto: Protocol=None,
-                  allow_pickle: bool=False):
+    def parse_raw(
+        cls,
+        b: StrBytes,
+        *,
+        content_type: str = None,
+        encoding: str = 'utf8',
+        proto: Protocol = None,
+        allow_pickle: bool = False,
+    ):
         try:
-            obj = load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding,
-                                 allow_pickle=allow_pickle)
+            obj = load_str_bytes(
+                b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle
+            )
         except (ValueError, TypeError, UnicodeDecodeError) as e:
             raise ValidationError([ErrorWrapper(e, loc='__obj__')])
         return cls.parse_obj(obj)
 
     @classmethod
-    def parse_file(cls, path: Union[str, Path], *,
-                   content_type: str=None,
-                   encoding: str='utf8',
-                   proto: Protocol=None,
-                   allow_pickle: bool=False):
+    def parse_file(
+        cls,
+        path: Union[str, Path],
+        *,
+        content_type: str = None,
+        encoding: str = 'utf8',
+        proto: Protocol = None,
+        allow_pickle: bool = False,
+    ):
         obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
         return cls.parse_obj(obj)
 
@@ -261,7 +299,9 @@ class BaseModel(metaclass=MetaModel):
         m.__setstate__(values)
         return m
 
-    def copy(self, *, include: Set[str]=None, exclude: Set[str]=None, update: Dict[str, Any]=None, deep: bool=False):
+    def copy(
+        self, *, include: Set[str] = None, exclude: Set[str] = None, update: Dict[str, Any] = None, deep: bool = False
+    ):
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
 
@@ -279,7 +319,7 @@ class BaseModel(metaclass=MetaModel):
             exclude = exclude or set()
             v = {
                 **{k: v for k, v in self.__values__.items() if k not in exclude and (not include or k in include)},
-                **(update or {})
+                **(update or {}),
             }
         if deep:
             v = deepcopy(v)
@@ -290,32 +330,18 @@ class BaseModel(metaclass=MetaModel):
         return self.__fields__
 
     @classmethod
-    def type_schema(cls, by_alias):
-        return {
-            'type': 'object',
-            'properties': (
-                {f.alias: f.schema(by_alias) for f in cls.__fields__.values()}
-                if by_alias else
-                {k: f.schema(by_alias) for k, f in cls.__fields__.items()}
-            )
-        }
-
-    @classmethod
     def schema(cls, by_alias=True) -> Dict[str, Any]:
         cached = cls._schema_cache.get(by_alias)
         if cached is not None:
             return cached
-        s = {'title': cls.__config__.title or cls.__name__}
-        if cls.__doc__:
-            s['description'] = clean_docstring(cls.__doc__)
-
-        s.update(cls.type_schema(by_alias))
+        s = model_schema(cls, by_alias=by_alias)
         cls._schema_cache[by_alias] = s
         return s
 
     @classmethod
     def schema_json(cls, *, by_alias=True, **dumps_kwargs) -> str:
         from .json import pydantic_encoder
+
         return json.dumps(cls.schema(by_alias=by_alias), default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
@@ -377,10 +403,8 @@ class BaseModel(metaclass=MetaModel):
 
 
 def create_model(
-        model_name: str, *,
-        __config__: Type[BaseConfig]=None,
-        __base__: Type[BaseModel]=None,
-        **field_definitions):
+    model_name: str, *, __config__: Type[BaseConfig] = None, __base__: Type[BaseModel] = None, **field_definitions
+):
     """
     Dynamically create a model.
     :param model_name: name of the created model
@@ -390,50 +414,45 @@ def create_model(
         `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
     if __base__:
-        fields = deepcopy(__base__.__fields__)
-        validators = __base__.__validators__
         if __config__ is not None:
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
         __base__ = BaseModel
-        fields = {}
-        validators = {}
 
-    config = __config__ or BaseConfig
-    vg = ValidatorGroup(validators)
+    fields = {}
+    annotations = {}
 
     for f_name, f_def in field_definitions.items():
+        if f_name.startswith('_'):
+            warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
             try:
                 f_annotation, f_value = f_def
             except ValueError as e:
-                raise ConfigError(f'field definitions should either be a tuple of (<type>, <default>) or just a '
-                                  f'default value, unfortunately this means tuples as '
-                                  f'default values are not allowed') from e
+                raise ConfigError(
+                    f'field definitions should either be a tuple of (<type>, <default>) or just a '
+                    f'default value, unfortunately this means tuples as '
+                    f'default values are not allowed'
+                ) from e
         else:
             f_annotation, f_value = None, f_def
-        if f_name.startswith('_'):
-            warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
-        else:
-            fields[f_name] = Field.infer(
-                name=f_name,
-                value=f_value,
-                annotation=f_annotation,
-                class_validators=vg.get_validators(f_name),
-                config=config,
-            )
 
-    namespace = {
-        'config': config,
-        '__fields__': fields,
-    }
+        if f_annotation:
+            annotations[f_name] = f_annotation
+        fields[f_name] = f_value
+
+    namespace = {'__annotations__': annotations}
+    namespace.update(fields)
+    if __config__:
+        namespace['Config'] = __config__
+
     return type(model_name, (__base__,), namespace)
 
 
 _FUNCS = set()
 
 
-def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False, check_fields: bool=True):
+def validator(*fields, pre: bool = False, whole: bool = False, always: bool = False, check_fields: bool = True):
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
@@ -445,17 +464,23 @@ def validator(*fields, pre: bool=False, whole: bool=False, always: bool=False, c
     if not fields:
         raise ConfigError('validator with no fields specified')
     elif isinstance(fields[0], FunctionType):
-        raise ConfigError("validators should be used with fields and keyword arguments, not bare. "
-                          "E.g. usage should be `@validator('<field_name>', ...)`")
+        raise ConfigError(
+            "validators should be used with fields and keyword arguments, not bare. "
+            "E.g. usage should be `@validator('<field_name>', ...)`"
+        )
 
     def dec(f):
-        ref = f.__module__ + '.' + f.__qualname__
-        if ref in _FUNCS:
-            raise ConfigError(f'duplicate validator function "{ref}"')
-        _FUNCS.add(ref)
+        # avoid validators with duplicated names since without this validators can be overwritten silently
+        # which generally isn't the intended behaviour, don't run in ipython - see #312
+        if not in_ipython():  # pragma: no branch
+            ref = f.__module__ + '.' + f.__qualname__
+            if ref in _FUNCS:
+                raise ConfigError(f'duplicate validator function "{ref}"')
+            _FUNCS.add(ref)
         f_cls = classmethod(f)
         f_cls.__validator_config = fields, Validator(f, pre, whole, always, check_fields)
         return f_cls
+
     return dec
 
 

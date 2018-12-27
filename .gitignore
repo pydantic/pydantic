@@ -12,6 +12,7 @@ htmlcov/
 benchmarks/*.json
 docs/_build/
 docs/.TMP_HISTORY.rst
+docs/.tmp_schema_mappings.rst
 .pytest_cache/
 .vscode/
 _build/

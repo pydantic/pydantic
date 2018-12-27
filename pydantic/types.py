@@ -7,9 +7,18 @@ from uuid import UUID
 
 from . import errors
 from .utils import change_exception, import_string, make_dsn, url_regex_generator, validate_email
-from .validators import (anystr_length_validator, anystr_strip_whitespace, decimal_validator, float_validator,
-                         int_validator, not_none_validator, number_size_validator, path_exists_validator,
-                         path_validator, str_validator)
+from .validators import (
+    anystr_length_validator,
+    anystr_strip_whitespace,
+    decimal_validator,
+    float_validator,
+    int_validator,
+    not_none_validator,
+    number_size_validator,
+    path_exists_validator,
+    path_validator,
+    str_validator,
+)
 
 try:
     import email_validator
@@ -46,7 +55,8 @@ __all__ = [
     'UUID5',
     'FilePath',
     'DirectoryPath',
-    'Json'
+    'Json',
+    'JsonWrapper',
 ]
 
 NoneStr = Optional[str]
@@ -85,7 +95,7 @@ class ConstrainedStr(str):
     @classmethod
     def validate(cls, value: str) -> str:
         if cls.curtail_length and len(value) > cls.curtail_length:
-            value = value[:cls.curtail_length]
+            value = value[: cls.curtail_length]
 
         if cls.regex:
             if not cls.regex.match(value):
@@ -94,14 +104,14 @@ class ConstrainedStr(str):
         return value
 
 
-def constr(*, strip_whitespace=False, min_length=0, max_length=2**16, curtail_length=None, regex=None) -> Type[str]:
+def constr(*, strip_whitespace=False, min_length=None, max_length=None, curtail_length=None, regex=None) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
-        regex=regex and re.compile(regex)
+        regex=regex and re.compile(regex),
     )
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
 
@@ -157,10 +167,10 @@ def urlstr(
     *,
     strip_whitespace=True,
     min_length=1,
-    max_length=2**16,
+    max_length=2 ** 16,
     relative=False,
     require_tld=True,
-    schemes: Optional[Set[str]] = None
+    schemes: Optional[Set[str]] = None,
 ) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -210,8 +220,9 @@ class PyObject:
 
     @classmethod
     def validate(cls, value):
-        with change_exception(errors.PyObjectError, ImportError):
-            return import_string(value)
+        if value is not None:
+            with change_exception(errors.PyObjectError, ImportError):
+                return import_string(value)
 
 
 class DSN(str):
@@ -354,12 +365,7 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
 
 def condecimal(*, gt=None, ge=None, lt=None, le=None, max_digits=None, decimal_places=None) -> Type[Decimal]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(
-        gt=gt, ge=ge,
-        lt=lt, le=le,
-        max_digits=max_digits,
-        decimal_places=decimal_places
-    )
+    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, max_digits=max_digits, decimal_places=decimal_places)
     return type('ConstrainedDecimalValue', (ConstrainedDecimal,), namespace)
 
 
@@ -410,12 +416,12 @@ class DirectoryPath(Path):
 
 
 class JsonWrapper:
-    __slots__ = 'inner_type',
+    __slots__ = ('inner_type',)
 
 
 class JsonMeta(type):
     def __getitem__(self, t):
-        return type('JsonWrapperValue', (JsonWrapper, ), {'inner_type': t})
+        return type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t})
 
 
 class Json(metaclass=JsonMeta):

@@ -44,6 +44,7 @@ def test_inheritance():
     class BarModel(BaseModel):
         x = 1
         y = 2
+
     model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __base__=BarModel)
     assert model.__fields__.keys() == {'foo', 'bar', 'x', 'y'}
     m = model(foo='a', x=4)
@@ -52,13 +53,23 @@ def test_inheritance():
 
 def test_custom_config():
     class Config(BaseModel.Config):
-        fields = {
-            'foo': 'api-foo-field'
-        }
+        fields = {'foo': 'api-foo-field'}
+
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(**{'api-foo-field': '987'}).foo == 987
     with pytest.raises(ValidationError):
         model(foo=654)
+
+
+def test_custom_config_extras():
+    class Config(BaseModel.Config):
+        ignore_extra = False
+        allow_extra = False
+
+    model = create_model('FooModel', foo=(int, ...), __config__=Config)
+    assert model(foo=654)
+    with pytest.raises(ValidationError):
+        model(bar=654)
 
 
 def test_inheritance_validators():
@@ -71,6 +82,23 @@ def test_inheritance_validators():
 
     model = create_model('FooModel', a='cake', __base__=BarModel)
     assert model().a == 'cake'
+    assert model(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        model(a='something else')
+
+
+def test_inheritance_validators_always():
+    class BarModel(BaseModel):
+        @validator('a', check_fields=False, always=True)
+        def check_a(cls, v):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    model = create_model('FooModel', a='cake', __base__=BarModel)
+    with pytest.raises(ValidationError):
+        model()
+    assert model(a='this is foobar good').a == 'this is foobar good'
     with pytest.raises(ValidationError):
         model(a='something else')
 
@@ -92,11 +120,7 @@ def test_funky_name():
     with pytest.raises(ValidationError) as exc_info:
         model()
     assert exc_info.value.errors() == [
-        {
-            'loc': ('this-is-funky',),
-            'msg': 'field required',
-            'type': 'value_error.missing',
-        },
+        {'loc': ('this-is-funky',), 'msg': 'field required', 'type': 'value_error.missing'}
     ]
 
 

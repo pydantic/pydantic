@@ -1,42 +1,50 @@
 {
-  "type": "object",
   "title": "Main",
   "description": "This is the description of the main model",
+  "type": "object",
   "properties": {
     "foo_bar": {
-      "type": "object",
-      "title": "FooBar",
-      "properties": {
-        "count": {
-          "type": "int",
-          "title": "Count",
-          "required": true
-        },
-        "size": {
-          "type": "float",
-          "title": "Size",
-          "required": false
-        }
-      },
-      "required": true
+      "$ref": "#/definitions/FooBar"
     },
     "Gender": {
-      "type": "int",
       "title": "Gender",
-      "required": false,
-      "choices": [
-        [1, "Male"],
-        [2, "Female"],
-        [3, "Other"],
-        [4, "I'd rather not say"]
-      ]
+      "enum": [
+        "male",
+        "female",
+        "other",
+        "not_given"
+      ],
+      "type": "string"
     },
     "snap": {
-      "type": "int",
       "title": "The Snap",
-      "required": false,
+      "description": "this is the value of snap",
       "default": 42,
-      "description": "this is the value of snap"
+      "exclusiveMinimum": 30,
+      "exclusiveMaximum": 50,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "foo_bar"
+  ],
+  "definitions": {
+    "FooBar": {
+      "title": "FooBar",
+      "type": "object",
+      "properties": {
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "size": {
+          "title": "Size",
+          "type": "number"
+        }
+      },
+      "required": [
+        "count"
+      ]
     }
   }
 }

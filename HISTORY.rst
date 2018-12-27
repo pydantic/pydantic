@@ -3,12 +3,38 @@
 History
 -------
 
-v0.14.1 (2018-10-27)
+v0.17.0 (unreleased)
 ....................
+* fix schema for ``timedelta`` as number, #325 by @tiangolo
+* prevent validators being called repeatedly after inheritance, #327 by @samuelcolvin
+* prevent duplicate validator check in ipython, fix #312 by @samuelcolvin
+* add "Using Pydantic" section to docs, #323 by @tiangolo & #326 by @samuelcolvin
+* fix schema generation for fields annotated as ``: dict``, #330 by @nkonin
 * support for passing Config class in dataclasses decorator, #276 by @jarekkar
 
-v0.14 (2018-10-02)
-..................
+v0.16.1 (2018-12-10)
+....................
+* fix ``create_model`` to correctly use the passed ``__config__``, #320 by @hugoduncan
+
+v0.16.0 (2018-12-03)
+....................
+* **breaking change**: refactor schema generation to be compatible with JSON Schema and OpenAPI specs, #308 by @tiangolo
+* add ``schema`` to ``schema`` module to generate top-level schemas from base models, #308 by @tiangolo
+* add additional fields to ``Schema`` class to declare validation for ``str`` and numeric values, #311 by @tiangolo
+* rename ``_schema`` to ``schema`` on fields, #318 by @samuelcolvin
+* add ``case_insensitive`` option to ``BaseSettings`` ``Config``, #277 by @jasonkuhrt
+
+v0.15.0 (2018-11-18)
+....................
+* move codebase to use black, #287 by @samuelcolvin
+* fix alias use in settings, #286 by @jasonkuhrt and @samuelcolvin
+* fix datetime parsing in ``parse_date``, #298 by @samuelcolvin
+* allow dataclass inheritance, fix #293 by @samuelcolvin
+* fix ``PyObject = None``, fix #305 by @samuelcolvin
+* allow ``Pattern`` type, fix #303 by @samuelcolvin
+
+v0.14.0 (2018-10-02)
+....................
 * dataclasses decorator, #269 by @Gaunt and @samuelcolvin
 
 v0.13.1 (2018-09-21)

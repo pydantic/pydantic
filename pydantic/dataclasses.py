@@ -5,7 +5,7 @@ from pydantic import ValidationError
 from .main import BaseConfig, create_model, inherit_config, validate_model
 
 
-def post_init(self):
+def _pydantic_post_init(self):
     d = validate_model(self.__pydantic_model__, self.__dict__)
     object.__setattr__(self, '__dict__', d)
     object.__setattr__(self, '__initialised__', True)
@@ -26,7 +26,9 @@ def setattr_validate_assignment(self, name, value):
 
 def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
     post_init_original = getattr(_cls, '__post_init__', None)
-    _cls.__post_init__ = post_init
+    if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
+        post_init_original = None
+    _cls.__post_init__ = _pydantic_post_init
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)
 
     fields = {name: (field.type, field.default) for name, field in cls.__dataclass_fields__.items()}

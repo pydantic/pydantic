@@ -25,29 +25,15 @@ class UltraSimpleModel(BaseModel):
 def test_ultra_simple_missing():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'field required',
-            'type': 'value_error.missing',
-        },
-    ]
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 def test_ultra_simple_failed():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel(a='x', b='x')
     assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'value is not a valid float',
-            'type': 'type_error.float',
-        },
-        {
-            'loc': ('b',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        },
+        {'loc': ('a',), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
     ]
 
 
@@ -69,16 +55,20 @@ def test_str_truncate():
 
     m = Model(s1='132', s2='x' * 100, b1='123', b2='x' * 100)
     print(repr(m.to_string()))
-    assert m.to_string() == ("Model s1='132' "
-                             "s2='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…' "
-                             "b1=b'123' "
-                             "b2=b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…")
+    assert m.to_string() == (
+        "Model s1='132' "
+        "s2='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…' "
+        "b1=b'123' "
+        "b2=b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…"
+    )
     assert """\
 Model
   s1='132'
   s2='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…'
   b1=b'123'
-  b2=b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…""" == m.to_string(pretty=True)
+  b2=b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…""" == m.to_string(
+        pretty=True
+    )
 
 
 def test_comparing():
@@ -97,10 +87,7 @@ def test_nullable_strings_success():
         required_bytes_none_value: NoneBytes = ...
 
     m = NoneCheckModel(
-        required_str_value='v1',
-        required_str_none_value=None,
-        required_bytes_value='v2',
-        required_bytes_none_value=None,
+        required_str_value='v1', required_str_none_value=None, required_bytes_value='v2', required_bytes_none_value=None
     )
     assert m.required_str_value == 'v1'
     assert m.required_str_none_value is None
@@ -125,16 +112,8 @@ def test_nullable_strings_fails():
             required_bytes_none_value=None,
         )
     assert exc_info.value.errors() == [
-        {
-            'loc': ('required_str_value',),
-            'msg': 'none is not an allow value',
-            'type': 'type_error.none.not_allowed',
-        },
-        {
-            'loc': ('required_bytes_value',),
-            'msg': 'none is not an allow value',
-            'type': 'type_error.none.not_allowed',
-        },
+        {'loc': ('required_str_value',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('required_bytes_value',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
     ]
 
 
@@ -175,16 +154,8 @@ def test_prevent_extra_fails():
     with pytest.raises(ValidationError) as exc_info:
         PreventExtraModel(foo='ok', bar='wrong', spam='xx')
     assert exc_info.value.errors() == [
-        {
-            'loc': ('bar',),
-            'msg': 'extra fields not permitted',
-            'type': 'value_error.extra',
-        },
-        {
-            'loc': ('spam',),
-            'msg': 'extra fields not permitted',
-            'type': 'value_error.extra',
-        },
+        {'loc': ('bar',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+        {'loc': ('spam',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
     ]
 
 
@@ -200,15 +171,19 @@ class InvalidValidator:
 
 def test_invalid_validator():
     with pytest.raises(errors.ConfigError) as exc_info:
+
         class InvalidValidatorModel(BaseModel):
             x: InvalidValidator = ...
+
     assert exc_info.value.args[0].startswith('Invalid signature for validator')
 
 
 def test_unable_to_infer():
     with pytest.raises(errors.ConfigError) as exc_info:
+
         class InvalidDefinitionModel(BaseModel):
             x = None
+
     assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
 
 
@@ -276,40 +251,24 @@ def test_alias():
         c = 'barfoo'
 
         class Config:
-            fields = {
-                'c': {'alias': '_c'}
-            }
+            fields = {'c': {'alias': '_c'}}
 
     class Model(BaseModel):
         a = 'foobar'
         b: SubModel = SubModel()
 
         class Config:
-            fields = {
-                'a': {'alias': '_a'}
-            }
+            fields = {'a': {'alias': '_a'}}
 
     assert Model().a == 'foobar'
     assert Model().b.c == 'barfoo'
-    assert Model().dict() == {
-        'a': 'foobar',
-        'b': {
-            'c': 'barfoo',
-        },
-    }
+    assert Model().dict() == {'a': 'foobar', 'b': {'c': 'barfoo'}}
     assert Model(_a='different').a == 'different'
     assert Model(b={'_c': 'different'}).b.c == 'different'
-    assert Model(_a='different', b={'_c': 'different'}).dict() == {
-        'a': 'different',
-        'b': {
-            'c': 'different',
-        },
-    }
+    assert Model(_a='different', b={'_c': 'different'}).dict() == {'a': 'different', 'b': {'c': 'different'}}
     assert Model(_a='different', b={'_c': 'different'}).dict(by_alias=True) == {
         '_a': 'different',
-        'b': {
-            '_c': 'different',
-        },
+        'b': {'_c': 'different'},
     }
 
 
@@ -319,9 +278,7 @@ def test_population_by_alias():
 
         class Config:
             allow_population_by_alias = True
-            fields = {
-                'a': {'alias': '_a'}
-            }
+            fields = {'a': {'alias': '_a'}}
 
     assert Model(a='different').a == 'different'
     assert Model(a='different').dict() == {'a': 'different'}
@@ -350,13 +307,7 @@ def test_required():
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'field required',
-            'type': 'value_error.missing',
-        },
-    ]
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 def test_not_immutability():
@@ -418,11 +369,7 @@ def test_validating_assignment_fail():
     with pytest.raises(ValidationError) as exc_info:
         p.a = 'b'
     assert exc_info.value.errors() == [
-        {
-            'loc': ('a',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        },
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -432,10 +379,8 @@ def test_validating_assignment_fail():
             'loc': ('b',),
             'msg': 'ensure this value has at least 1 characters',
             'type': 'value_error.any_str.min_length',
-            'ctx': {
-                'limit_value': 1,
-            },
-        },
+            'ctx': {'limit_value': 1},
+        }
     ]
 
 
@@ -459,6 +404,7 @@ def test_enum_raw():
 
     class Model(BaseModel):
         foo: FooEnum = None
+
     m = Model(foo='foo')
     assert isinstance(m.foo, FooEnum)
     assert m.foo != 'foo'
@@ -518,15 +464,17 @@ def test_arbitrary_type_allowed_validation_fails():
             'loc': ('t',),
             'msg': "instance of ArbitraryType expected",
             'type': 'type_error.arbitrary_type',
-            'ctx': {'expected_arbitrary_type': 'ArbitraryType'}
-        },
+            'ctx': {'expected_arbitrary_type': 'ArbitraryType'},
+        }
     ]
 
 
 def test_arbitrary_types_not_allowed():
     with pytest.raises(RuntimeError) as exc_info:
+
         class ArbitraryTypeNotAllowedModel(BaseModel):
             t: ArbitraryType
+
     assert exc_info.value.args[0].startswith('no validator found for')
 
 
@@ -540,5 +488,6 @@ def test_annotation_field_name_shadows_attribute():
 def test_value_field_name_shadows_attribute():
     # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
     with pytest.raises(NameError):
+
         class BadModel(BaseModel):
             schema = 'abc'  # This conflicts with the BaseModel's schema() class method

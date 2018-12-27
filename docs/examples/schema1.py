@@ -1,15 +1,15 @@
-from enum import IntEnum
+from enum import Enum
 from pydantic import BaseModel, Schema
 
 class FooBar(BaseModel):
     count: int
     size: float = None
 
-class Gender(IntEnum):
-    male = 1
-    female = 2
-    other = 3
-    not_given = 4
+class Gender(str, Enum):
+    male = 'male'
+    female = 'female'
+    other = 'other'
+    not_given = 'not_given'
 
 class MainModel(BaseModel):
     """
@@ -19,12 +19,13 @@ class MainModel(BaseModel):
     gender: Gender = Schema(
         None,
         alias='Gender',
-        choice_names={3: 'Other Gender', 4: "I'd rather not say"}
     )
     snap: int = Schema(
         42,
         title='The Snap',
-        description='this is the value of snap'
+        description='this is the value of snap',
+        gt=30,
+        lt=50,
     )
 
     class Config:
