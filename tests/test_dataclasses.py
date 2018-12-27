@@ -1,7 +1,7 @@
 import pytest
 
 import pydantic
-from pydantic import ValidationError
+from pydantic import BaseConfig, ValidationError
 
 
 def test_simple():
@@ -155,6 +155,7 @@ def test_validate_assigment_long_string_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxxx'
 
+    assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseConfig)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),

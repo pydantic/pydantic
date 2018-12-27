@@ -52,11 +52,23 @@ def test_inheritance():
 
 
 def test_custom_config():
+    class Config:
+        fields = {'foo': 'api-foo-field'}
+
+    model = create_model('FooModel', foo=(int, ...), __config__=Config)
+    assert model(**{'api-foo-field': '987'}).foo == 987
+    assert issubclass(model.__config__, BaseModel.Config)
+    with pytest.raises(ValidationError):
+        model(foo=654)
+
+
+def test_custom_config_inherits():
     class Config(BaseModel.Config):
         fields = {'foo': 'api-foo-field'}
 
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(**{'api-foo-field': '987'}).foo == 987
+    assert issubclass(model.__config__, BaseModel.Config)
     with pytest.raises(ValidationError):
         model(foo=654)
 

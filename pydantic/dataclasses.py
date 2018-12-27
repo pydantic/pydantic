@@ -2,7 +2,7 @@ import dataclasses
 
 from pydantic import ValidationError
 
-from .main import BaseConfig, create_model, inherit_config, validate_model
+from .main import create_model, validate_model
 
 
 def _pydantic_post_init(self):
@@ -34,7 +34,7 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
     fields = {name: (field.type, field.default) for name, field in cls.__dataclass_fields__.items()}
     cls.__post_init_original__ = post_init_original
 
-    cls.__pydantic_model__ = create_model(cls.__name__, __config__=inherit_config(config, BaseConfig), **fields)
+    cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, **fields)
 
     cls.__initialised__ = False
 
