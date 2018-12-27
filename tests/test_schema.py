@@ -257,18 +257,23 @@ def test_any():
 def test_set():
     class Model(BaseModel):
         a: Set[int]
+        b: set
 
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}}},
-        'required': ['a'],
+        'properties': {
+            'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}},
+            'b': {'title': 'B', 'type': 'array', 'uniqueItems': True},
+        },
+        'required': ['a', 'b'],
     }
 
 
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
+        (tuple, None),
         (
             Tuple[str, int, Union[str, int, float], float],
             [
@@ -291,7 +296,10 @@ def test_tuple(field_type, expected_schema):
         'properties': {'a': {'title': 'A', 'type': 'array', 'items': None}},
         'required': ['a'],
     }
+    # noinspection PyTypeChecker
     base_schema['properties']['a']['items'] = expected_schema
+    if expected_schema is None:
+        base_schema['properties']['a'].pop('items', None)
 
     assert Model.schema() == base_schema
 
@@ -316,6 +324,18 @@ def test_dict():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'object'}},
+        'required': ['a'],
+    }
+
+
+def test_list():
+    class Model(BaseModel):
+        a: list
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'array'}},
         'required': ['a'],
     }
 
