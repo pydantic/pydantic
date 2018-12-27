@@ -6,7 +6,7 @@ from functools import partial
 from itertools import chain
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Callable, Dict, Set, Type, Union
+from typing import Any, Callable, Dict, Set, Type, Union, ClassVar
 
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
@@ -133,9 +133,12 @@ class MetaModel(ABCMeta):
                 f.prepare()
 
         annotations = namespace.get('__annotations__', {})
+        class_vars = set()
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
-            if not ann_name.startswith('_') and ann_name not in namespace:
+            if ann_type == ClassVar:
+                class_vars.add(ann_name)
+            elif not ann_name.startswith('_') and ann_name not in namespace:
                 validate_field_name(bases, ann_name)
                 fields[ann_name] = Field.infer(
                     name=ann_name,
@@ -146,7 +149,7 @@ class MetaModel(ABCMeta):
                 )
 
         for var_name, value in namespace.items():
-            if not var_name.startswith('_') and not isinstance(value, TYPE_BLACKLIST):
+            if not var_name.startswith('_') and not isinstance(value, TYPE_BLACKLIST) and var_name not in class_vars:
                 validate_field_name(bases, var_name)
                 fields[var_name] = Field.infer(
                     name=var_name,
