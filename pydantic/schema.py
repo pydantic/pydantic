@@ -406,12 +406,10 @@ def field_type_schema(  # noqa: C901 (ignore complexity)
         return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions
     elif field.shape is Shape.MAPPING:
         dict_schema = {'type': 'object'}
-        key_field = getattr(field, 'key_field', None)
         key_pattern = None
-        if key_field:
-            regex = getattr(key_field.type_, 'regex', None)
-            if regex:
-                key_pattern = regex.pattern
+        regex = getattr(field.key_field.type_, 'regex', None)
+        if regex:
+            key_pattern = regex.pattern
         f_schema, f_definitions = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
