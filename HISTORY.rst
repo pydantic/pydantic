@@ -10,6 +10,7 @@ v0.17.0 (unreleased)
 * prevent duplicate validator check in ipython, fix #312 by @samuelcolvin
 * add "Using Pydantic" section to docs, #323 by @tiangolo & #326 by @samuelcolvin
 * fix schema generation for fields annotated as ``: dict``, #330 by @nkonin
+* add support for constrained strings as dict keys in schema, by @tiangolo
 
 v0.16.1 (2018-12-10)
 ....................
