@@ -44,7 +44,7 @@ class BaseConfig:
         return field_config
 
 
-def inherit_config(self_config: Type[BaseConfig], parent_config: Type[BaseConfig]) -> Type[BaseConfig]:
+def inherit_config(self_config: Type, parent_config: Type[BaseConfig]) -> Type[BaseConfig]:
     if not self_config:
         base_classes = (parent_config,)
     elif self_config == parent_config:
@@ -402,9 +402,7 @@ class BaseModel(metaclass=MetaModel):
         return self.to_string()
 
 
-def create_model(
-    model_name: str, *, __config__: Type[BaseConfig] = None, __base__: Type[BaseModel] = None, **field_definitions
-):
+def create_model(model_name: str, *, __config__: Type = None, __base__: Type[BaseModel] = None, **field_definitions):
     """
     Dynamically create a model.
     :param model_name: name of the created model
@@ -444,7 +442,7 @@ def create_model(
     namespace = {'__annotations__': annotations}
     namespace.update(fields)
     if __config__:
-        namespace['Config'] = __config__
+        namespace['Config'] = inherit_config(__config__, BaseConfig)
 
     return type(model_name, (__base__,), namespace)
 

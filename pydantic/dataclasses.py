@@ -24,7 +24,7 @@ def setattr_validate_assignment(self, name, value):
     object.__setattr__(self, name, value)
 
 
-def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, validate_assignment):
+def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
     post_init_original = getattr(_cls, '__post_init__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
@@ -33,17 +33,18 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, validate_as
 
     fields = {name: (field.type, field.default) for name, field in cls.__dataclass_fields__.items()}
     cls.__post_init_original__ = post_init_original
-    cls.__pydantic_model__ = create_model(cls.__name__, **fields)
+
+    cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, **fields)
+
     cls.__initialised__ = False
 
-    if validate_assignment and not frozen:
+    if cls.__pydantic_model__.__config__.validate_assignment and not frozen:
         cls.__setattr__ = setattr_validate_assignment
+
     return cls
 
 
-def dataclass(
-    _cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, validate_assignment=False
-):
+def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, config=None):
     """
     Like the python standard lib dataclasses but with type validation.
 
@@ -52,7 +53,7 @@ def dataclass(
     """
 
     def wrap(cls):
-        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, validate_assignment)
+        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
 
     if _cls is None:
         return wrap
