@@ -13,6 +13,7 @@ v0.17.0 (unreleased)
 * add support for constrained strings as dict keys in schema, #332 by @tiangolo
 * support for passing Config class in dataclasses decorator, #276 by @jarekkar
   (**breaking change**: this supersedes the ``validate_assignment`` argument with ``config``)
+* support for nested dataclasses, #334 by @samuelcolvin
 
 v0.16.1 (2018-12-10)
 ....................

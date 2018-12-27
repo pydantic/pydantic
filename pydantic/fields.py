@@ -202,6 +202,7 @@ class Field:
         class_validators_ = self.class_validators.values()
         if not self.sub_fields:
             get_validators = getattr(self.type_, 'get_validators', None)
+            get_validators = get_validators or getattr(self.type_, '__get_validators__', None)
             v_funcs = (
                 *tuple(v.func for v in class_validators_ if not v.whole and v.pre),
                 *(

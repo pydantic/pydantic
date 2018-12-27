@@ -1,7 +1,9 @@
+import dataclasses
+
 import pytest
 
 import pydantic
-from pydantic import BaseConfig, ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 def test_simple():
@@ -155,7 +157,7 @@ def test_validate_assigment_long_string_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxxx'
 
-    assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseConfig)
+    assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseModel.Config)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -179,3 +181,82 @@ def test_no_validate_assigment_long_string_error():
     d.a = 'xxxx'
 
     assert d.a == 'xxxx'
+
+
+def test_nested_dataclass():
+    @pydantic.dataclasses.dataclass
+    class Nested:
+        number: int
+
+    @pydantic.dataclasses.dataclass
+    class Outer:
+        n: Nested
+
+    navbar = Outer(n=Nested(number='1'))
+    assert isinstance(navbar.n, Nested)
+    assert navbar.n.number == 1
+
+    navbar = Outer(n=('2',))
+    assert isinstance(navbar.n, Nested)
+    assert navbar.n.number == 2
+
+    navbar = Outer(n={'number': '3'})
+    assert isinstance(navbar.n, Nested)
+    assert navbar.n.number == 3
+
+    with pytest.raises(ValidationError) as exc_info:
+        Outer(n='not nested')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('n',),
+            'msg': 'instance of Nested, tuple or dict expected',
+            'type': 'type_error.dataclass',
+            'ctx': {'class_name': 'Nested'},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Outer(n=('x',))
+    assert exc_info.value.errors() == [
+        {'loc': ('n', 'number'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+def test_arbitrary_types_allowed():
+    @dataclasses.dataclass
+    class Button:
+        href: str
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @pydantic.dataclasses.dataclass(config=Config)
+    class Navbar:
+        button: Button
+
+    btn = Button(href='a')
+    navbar = Navbar(button=btn)
+    assert navbar.button.href == 'a'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Navbar(button=('b',))
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('button',),
+            'msg': 'instance of Button expected',
+            'type': 'type_error.arbitrary_type',
+            'ctx': {'expected_arbitrary_type': 'Button'},
+        }
+    ]
+
+
+def test_nested_dataclass_model():
+    @pydantic.dataclasses.dataclass
+    class Nested:
+        number: int
+
+    class Outer(BaseModel):
+        n: Nested
+
+    navbar = Outer(n=Nested(number='1'))
+    assert navbar.n.number == 1
