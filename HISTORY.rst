@@ -14,6 +14,7 @@ v0.17.0 (unreleased)
 * support for passing Config class in dataclasses decorator, #276 by @jarekkar
   (**breaking change**: this supersedes the ``validate_assignment`` argument with ``config``)
 * support for nested dataclasses, #334 by @samuelcolvin
+* better errors when getting an ``ImportError`` with ``PyObject``, #309 by @samuelcolvin
 
 v0.16.1 (2018-12-10)
 ....................

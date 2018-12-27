@@ -111,10 +111,27 @@ def test_module_import():
 
     m = PyObjectModel()
     assert m.module == os.path
+
     with pytest.raises(ValidationError) as exc_info:
         PyObjectModel(module='foobar')
     assert exc_info.value.errors() == [
-        {'loc': ('module',), 'msg': 'ensure this value contains valid import path', 'type': 'type_error.pyobject'}
+        {
+            'loc': ('module',),
+            'msg': 'ensure this value contains valid import path: ' '"foobar" doesn\'t look like a module path',
+            'type': 'type_error.pyobject',
+            'ctx': {'error_message': '"foobar" doesn\'t look like a module path'},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        PyObjectModel(module='os.missing')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('module',),
+            'msg': 'ensure this value contains valid import path: ' 'Module "os" does not define a "missing" attribute',
+            'type': 'type_error.pyobject',
+            'ctx': {'error_message': 'Module "os" does not define a "missing" attribute'},
+        }
     ]
 
 
