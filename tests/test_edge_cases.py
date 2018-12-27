@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr, validate_model
+from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr, errors, validate_model
 
 
 def test_str_bytes():
@@ -546,3 +546,48 @@ def test_optional_required():
     assert Model(bar=123).dict() == {'bar': 123}
     assert Model().dict() == {'bar': None}
     assert Model(bar=None).dict() == {'bar': None}
+
+
+def test_invalid_validator():
+    class InvalidValidator:
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.has_wrong_arguments
+
+        @classmethod
+        def has_wrong_arguments(cls, value, bar):
+            pass
+
+    with pytest.raises(errors.ConfigError) as exc_info:
+
+        class InvalidValidatorModel(BaseModel):
+            x: InvalidValidator = ...
+
+    assert exc_info.value.args[0].startswith('Invalid signature for validator')
+
+
+def test_unable_to_infer():
+    with pytest.raises(errors.ConfigError) as exc_info:
+
+        class InvalidDefinitionModel(BaseModel):
+            x = None
+
+    assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
+
+
+def test_get_validator():
+    class CustomClass:
+        @classmethod
+        def get_validators(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v):
+            return v * 2
+
+    with pytest.warns(DeprecationWarning):
+
+        class Model(BaseModel):
+            x: CustomClass
+
+    assert Model(x=42).x == 84

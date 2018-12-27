@@ -1,4 +1,5 @@
 import inspect
+import warnings
 from enum import IntEnum
 from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
 
@@ -201,8 +202,13 @@ class Field:
     def _populate_validators(self):
         class_validators_ = self.class_validators.values()
         if not self.sub_fields:
-            get_validators = getattr(self.type_, 'get_validators', None)
-            get_validators = get_validators or getattr(self.type_, '__get_validators__', None)
+            get_validators = getattr(self.type_, '__get_validators__', None)
+            if not get_validators:
+                get_validators = getattr(self.type_, 'get_validators', None)
+                if get_validators:
+                    warnings.warn(
+                        f'get_validators has been replaced by __get_validators__ (on {self.name})', DeprecationWarning
+                    )
             v_funcs = (
                 *tuple(v.func for v in class_validators_ if not v.whole and v.pre),
                 *(

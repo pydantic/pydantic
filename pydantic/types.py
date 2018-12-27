@@ -67,7 +67,7 @@ NoneStrBytes = Optional[StrBytes]
 
 class StrictStr(str):
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield cls.validate
 
     @classmethod
@@ -85,7 +85,7 @@ class ConstrainedStr(str):
     regex: Optional[Pattern] = None
 
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield not_none_validator
         yield str_validator
         yield anystr_strip_whitespace
@@ -118,7 +118,7 @@ def constr(*, strip_whitespace=False, min_length=None, max_length=None, curtail_
 
 class EmailStr(str):
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         # included here and below so the error happens straight away
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
@@ -140,7 +140,7 @@ class UrlStr(str):
     require_tld = True  # whether to reject non-FQDN hostnames
 
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield not_none_validator
         yield str_validator
         yield anystr_strip_whitespace
@@ -192,7 +192,7 @@ class NameEmail:
         self.email = email
 
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
@@ -214,7 +214,7 @@ class PyObject:
     validate_always = True
 
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield str_validator
         yield cls.validate
 
@@ -233,7 +233,7 @@ class DSN(str):
     validate_always = True
 
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield str_validator
         yield cls.validate
 
@@ -268,7 +268,7 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     le: Optional[int] = None
 
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield int_validator
         yield number_size_validator
 
@@ -294,7 +294,7 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     le: Union[None, int, float] = None
 
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield float_validator
         yield number_size_validator
 
@@ -322,7 +322,7 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     decimal_places: Optional[int] = None
 
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield not_none_validator
         yield decimal_validator
         yield number_size_validator
@@ -389,7 +389,7 @@ class UUID5(UUID):
 
 class FilePath(Path):
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield path_validator
         yield path_exists_validator
         yield cls.validate
@@ -404,7 +404,7 @@ class FilePath(Path):
 
 class DirectoryPath(Path):
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield path_validator
         yield path_exists_validator
         yield cls.validate
@@ -428,7 +428,7 @@ class JsonMeta(type):
 
 class Json(metaclass=JsonMeta):
     @classmethod
-    def get_validators(cls):
+    def __get_validators__(cls):
         yield str_validator
         yield cls.validate
 

@@ -159,34 +159,6 @@ def test_prevent_extra_fails():
     ]
 
 
-class InvalidValidator:
-    @classmethod
-    def get_validators(cls):
-        yield cls.has_wrong_arguments
-
-    @classmethod
-    def has_wrong_arguments(cls, value, bar):
-        pass
-
-
-def test_invalid_validator():
-    with pytest.raises(errors.ConfigError) as exc_info:
-
-        class InvalidValidatorModel(BaseModel):
-            x: InvalidValidator = ...
-
-    assert exc_info.value.args[0].startswith('Invalid signature for validator')
-
-
-def test_unable_to_infer():
-    with pytest.raises(errors.ConfigError) as exc_info:
-
-        class InvalidDefinitionModel(BaseModel):
-            x = None
-
-    assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
-
-
 def test_not_required():
     class Model(BaseModel):
         a: float = None
