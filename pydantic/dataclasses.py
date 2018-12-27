@@ -34,10 +34,7 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
     fields = {name: (field.type, field.default) for name, field in cls.__dataclass_fields__.items()}
     cls.__post_init_original__ = post_init_original
 
-    cls.__pydantic_model__ = create_model(cls.__name__,
-                                          __config__=inherit_config(config, BaseConfig),
-                                          **fields)
-    cls.__pydantic_model__.__config__ = cls.__pydantic_model__.config
+    cls.__pydantic_model__ = create_model(cls.__name__, __config__=inherit_config(config, BaseConfig), **fields)
 
     cls.__initialised__ = False
 
@@ -47,8 +44,7 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
     return cls
 
 
-def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
-              config=None):
+def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, config=None):
     """
     Like the python standard lib dataclasses but with type validation.
 

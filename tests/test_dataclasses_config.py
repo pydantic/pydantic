@@ -20,10 +20,8 @@ def test_validate_long_string_error():
             'loc': ('a',),
             'msg': 'ensure this value has at most 3 characters',
             'type': 'value_error.any_str.max_length',
-            'ctx': {
-                'limit_value': 3,
-            },
-        },
+            'ctx': {'limit_value': 3},
+        }
     ]
 
 
@@ -45,10 +43,8 @@ def test_validate_assigment_long_string_error():
             'loc': ('a',),
             'msg': 'ensure this value has at most 3 characters',
             'type': 'value_error.any_str.max_length',
-            'ctx': {
-                'limit_value': 3,
-            },
-        },
+            'ctx': {'limit_value': 3},
+        }
     ]
 
 
