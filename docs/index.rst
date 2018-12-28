@@ -170,6 +170,13 @@ A few things to note on validators:
   - If validation fails on another field (or that field is missing) it will not be included in ``values``, hence
     ``if 'password1' in values and ...`` in this example.
 
+
+.. note::
+
+   From ``v0.18`` onwards validators are not called on keys of dictionaries. If you wish to validate keys,
+   User ``whole`` (see below).
+
+
 Pre and Whole Validators
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

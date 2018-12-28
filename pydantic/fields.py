@@ -1,9 +1,9 @@
-import inspect
 import warnings
 from enum import IntEnum
-from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Pattern, Set, Tuple, Type, Union
+from typing import Any, Dict, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union
 
 from . import errors as errors_
+from .class_validators import Validator, ValidatorSignature, get_validator_signature
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
 from .utils import display_as_type, lenient_issubclass, list_like
@@ -12,27 +12,12 @@ from .validators import NoneType, dict_validator, find_validators, not_none_vali
 Required: Any = Ellipsis
 
 
-class ValidatorSignature(IntEnum):
-    JUST_VALUE = 1
-    VALUE_KWARGS = 2
-    CLS_JUST_VALUE = 3
-    CLS_VALUE_KWARGS = 4
-
-
 class Shape(IntEnum):
     SINGLETON = 1
     LIST = 2
     SET = 3
     MAPPING = 4
     TUPLE = 5
-
-
-class Validator(NamedTuple):
-    func: Callable
-    pre: bool
-    whole: bool
-    always: bool
-    check_fields: bool
 
 
 class Field:
@@ -62,7 +47,7 @@ class Field:
         *,
         name: str,
         type_: Type,
-        class_validators: Dict[str, Validator],
+        class_validators: Optional[Dict[str, Validator]],
         default: Any,
         required: bool,
         model_config: Any,
@@ -180,7 +165,7 @@ class Field:
             self.shape = Shape.SET
         else:
             assert issubclass(origin, Mapping)
-            self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name)
+            self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name, for_keys=True)
             self.type_ = self.type_.__args__[1]
             self.shape = Shape.MAPPING
 
@@ -188,11 +173,11 @@ class Field:
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
             self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
-    def _create_sub_type(self, type_, name):
+    def _create_sub_type(self, type_, name, *, for_keys=False):
         return self.__class__(
             type_=type_,
             name=name,
-            class_validators=self.class_validators,
+            class_validators=None if for_keys else self.class_validators,
             default=self.default,
             required=self.required,
             allow_none=self.allow_none,
@@ -229,7 +214,7 @@ class Field:
         for f in v_funcs:
             if not f or (self.allow_none and f is not_none_validator):
                 continue
-            v.append((_get_validator_signature(f), f))
+            v.append((get_validator_signature(f), f))
         return tuple(v)
 
     def validate(self, v, values, *, loc, cls=None):
@@ -384,32 +369,3 @@ class Field:
         if self.alt_alias:
             parts.append('alias=' + self.alias)
         return ' '.join(parts)
-
-
-def _get_validator_signature(validator):
-    signature = inspect.signature(validator)
-
-    # bind here will raise a TypeError so:
-    # 1. we can deal with it before validation begins
-    # 2. (more importantly) it doesn't get confused with a TypeError when executing the validator
-    try:
-        if 'cls' in signature._parameters:
-            if len(signature.parameters) == 2:
-                signature.bind(object(), 1)
-                return ValidatorSignature.CLS_JUST_VALUE
-            else:
-                signature.bind(object(), 1, values=2, config=3, field=4)
-                return ValidatorSignature.CLS_VALUE_KWARGS
-        else:
-            if len(signature.parameters) == 1:
-                signature.bind(1)
-                return ValidatorSignature.JUST_VALUE
-            else:
-                signature.bind(1, values=2, config=3, field=4)
-                return ValidatorSignature.VALUE_KWARGS
-    except TypeError as e:
-        raise errors_.ConfigError(
-            f'Invalid signature for validator {validator}: {signature}, should be: '
-            f'(value) or (value, *, values, config, field) or for class validators '
-            f'(cls, value) or (cls, value, *, values, config, field)'
-        ) from e

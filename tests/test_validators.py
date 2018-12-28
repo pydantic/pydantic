@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import pytest
 
@@ -456,3 +456,25 @@ def test_inheritance_new():
             return v + 5
 
     assert Child(a=0).a == 6
+
+
+def test_no_key_validation():
+    class Model(BaseModel):
+        foobar: Dict[int, int]
+
+        @validator('foobar')
+        def check_foobar(cls, v):
+            return v + 1
+
+    assert Model(foobar={1: 1}).foobar == {1: 2}
+
+
+def test_key_validation_whole():
+    class Model(BaseModel):
+        foobar: Dict[int, int]
+
+        @validator('foobar', whole=True)
+        def check_foobar(cls, value):
+            return {k + 1: v + 1 for k, v in value.items()}
+
+    assert Model(foobar={1: 1}).foobar == {2: 2}

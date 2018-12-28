@@ -3,19 +3,19 @@ import warnings
 from abc import ABCMeta
 from copy import deepcopy
 from functools import partial
-from itertools import chain
 from pathlib import Path
 from types import FunctionType
 from typing import Any, Callable, ClassVar, Dict, Set, Type, Union
 
+from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
-from .fields import Field, Validator
+from .fields import Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
-from .utils import in_ipython, truncate, validate_field_name
+from .utils import truncate, validate_field_name
 from .validators import dict_validator
 
 
@@ -57,58 +57,6 @@ def inherit_config(self_config: Type, parent_config: Type[BaseConfig]) -> Type[B
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
-class ValidatorGroup:
-    def __init__(self, validators):
-        self.validators: Dict[str, Validator] = validators
-        self.used_validators = {'*'}
-
-    def get_validators(self, name):
-        self.used_validators.add(name)
-        specific_validators = self.validators.get(name)
-        wildcard_validators = self.validators.get('*')
-        if specific_validators or wildcard_validators:
-            validators = (specific_validators or []) + (wildcard_validators or [])
-            return {v.func.__name__: v for v in validators}
-
-    def check_for_unused(self):
-        unused_validators = set(
-            chain(
-                *[
-                    (v.func.__name__ for v in self.validators[f] if v.check_fields)
-                    for f in (self.validators.keys() - self.used_validators)
-                ]
-            )
-        )
-        if unused_validators:
-            fn = ', '.join(unused_validators)
-            raise ConfigError(
-                f"Validators defined with incorrect fields: {fn} "
-                f"(use check_fields=False if you're inheriting from the model and intended this)"
-            )
-
-
-def _extract_validators(namespace):
-    validators = {}
-    for var_name, value in namespace.items():
-        validator_config = getattr(value, '__validator_config', None)
-        if validator_config:
-            fields, v = validator_config
-            for field in fields:
-                if field in validators:
-                    validators[field].append(v)
-                else:
-                    validators[field] = [v]
-    return validators
-
-
-def inherit_validators(base_validators, validators):
-    for field, field_validators in base_validators.items():
-        if field not in validators:
-            validators[field] = []
-        validators[field] += field_validators
-    return validators
-
-
 class MetaModel(ABCMeta):
     def __new__(mcs, name, bases, namespace):
         fields: Dict[name, Field] = {}
@@ -121,7 +69,7 @@ class MetaModel(ABCMeta):
                 validators = inherit_validators(base.__validators__, validators)
 
         config = inherit_config(namespace.get('Config'), config)
-        validators = inherit_validators(_extract_validators(namespace), validators)
+        validators = inherit_validators(extract_validators(namespace), validators)
         vg = ValidatorGroup(validators)
 
         for f in fields.values():
@@ -448,41 +396,6 @@ def create_model(model_name: str, *, __config__: Type = None, __base__: Type[Bas
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
     return type(model_name, (__base__,), namespace)
-
-
-_FUNCS = set()
-
-
-def validator(*fields, pre: bool = False, whole: bool = False, always: bool = False, check_fields: bool = True):
-    """
-    Decorate methods on the class indicating that they should be used to validate fields
-    :param fields: which field(s) the method should be called on
-    :param pre: whether or not this validator should be called before the standard validators (else after)
-    :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
-    :param always: whether this method and other validators should be called even if the value is missing
-    :param check_fields: whether to check that the fields actually exist on the model
-    """
-    if not fields:
-        raise ConfigError('validator with no fields specified')
-    elif isinstance(fields[0], FunctionType):
-        raise ConfigError(
-            "validators should be used with fields and keyword arguments, not bare. "
-            "E.g. usage should be `@validator('<field_name>', ...)`"
-        )
-
-    def dec(f):
-        # avoid validators with duplicated names since without this validators can be overwritten silently
-        # which generally isn't the intended behaviour, don't run in ipython - see #312
-        if not in_ipython():  # pragma: no branch
-            ref = f.__module__ + '.' + f.__qualname__
-            if ref in _FUNCS:
-                raise ConfigError(f'duplicate validator function "{ref}"')
-            _FUNCS.add(ref)
-        f_cls = classmethod(f)
-        f_cls.__validator_config = fields, Validator(f, pre, whole, always, check_fields)
-        return f_cls
-
-    return dec
 
 
 def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (ignore complexity)
