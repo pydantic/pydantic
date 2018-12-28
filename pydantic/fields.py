@@ -10,7 +10,6 @@ from .utils import display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators
 
 Required: Any = Ellipsis
-_ALLOW_NONE = object()
 
 
 class Shape(IntEnum):
@@ -53,7 +52,6 @@ class Field:
         default: Any = None,
         required: bool = True,
         alias: str = None,
-        allow_none: bool = False,
         schema=None,
     ):
 
@@ -63,11 +61,11 @@ class Field:
         self.type_: type = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
-        self.allow_none: bool = allow_none
         self.required: bool = required
         self.model_config = model_config
         self.schema: 'schema.Schema' = schema
 
+        self.allow_none: bool = False
         self.validate_always: bool = False
         self.sub_fields: List[Field] = None
         self.key_field: Field = None
@@ -179,8 +177,7 @@ class Field:
         return self.__class__(
             type_=type_,
             name=name,
-            class_validators=None if for_keys else self.class_validators,
-            allow_none=self.allow_none,
+            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if not v.whole},
             model_config=self.model_config,
         )
 
@@ -203,14 +200,11 @@ class Field:
                 ),
                 *tuple(v.func for v in class_validators_ if not v.whole and not v.pre),
             )
-            self.validators = self._prep_vals(v_funcs)
+            self.validators = _prep_validators(v_funcs)
 
         if class_validators_:
-            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre)
-            self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
-
-    def _prep_vals(self, v_funcs):
-        return tuple((get_validator_signature(f), f) for f in v_funcs if f)
+            self.whole_pre_validators = _prep_validators(v.func for v in class_validators_ if v.whole and v.pre)
+            self.whole_post_validators = _prep_validators(v.func for v in class_validators_ if v.whole and not v.pre)
 
     def validate(self, v, values, *, loc, cls=None):
         if v is None and self.allow_none and not self.validate_always:
@@ -330,7 +324,12 @@ class Field:
                     errors.append(error)
                 else:
                     return value, None
-            return v, errors
+            if v is None and self.allow_none:
+                # unusual case where we have allow_none and validate_always,
+                # see test_validators.py::test_validator_always_post_optional
+                return None, None
+            else:
+                return v, errors
         else:
             return self._apply_validators(v, values, loc, cls, self.validators)
 
@@ -364,3 +363,7 @@ class Field:
         if self.alt_alias:
             parts.append('alias=' + self.alias)
         return ' '.join(parts)
+
+
+def _prep_validators(v_funcs):
+    return tuple((get_validator_signature(f), f) for f in v_funcs if f)
