@@ -8,6 +8,7 @@ v0.18.0 (unreleased)
 * **breaking change**: don't call validators on keys of dictionaries, #254 by @samuelcolvin
 * Fix validators with ``always=True`` when the default is ``None`` or the type is optional, also prevent
   ``whole`` validators being called for sub-fields, fix #132 by @samuelcolvin
+* improve documentation for settings priority and allow it to be easily changed, #343 by @samuelcolvin
 
 v0.17.0 (2018-12-27)
 ....................
