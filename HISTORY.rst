@@ -3,6 +3,10 @@
 History
 -------
 
+v0.18.0 (unreleased)
+....................
+* **breaking change**: don't call validators on keys of dictionaries, #254 by @samuelcolvin
+
 v0.17.0 (2018-12-27)
 ....................
 * fix schema for ``timedelta`` as number, #325 by @tiangolo
