@@ -174,7 +174,7 @@ A few things to note on validators:
 .. note::
 
    From ``v0.18`` onwards validators are not called on keys of dictionaries. If you wish to validate keys,
-   User ``whole`` (see below).
+   use ``whole`` (see below).
 
 
 Pre and Whole Validators
