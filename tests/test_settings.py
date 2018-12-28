@@ -19,7 +19,7 @@ def test_sub_env(env):
 def test_sub_env_override(env):
     env.set('APP_APPLE', 'hello')
     s = SimpleSettings(apple='goodbye')
-    assert s.apple == 'goodbye'
+    assert s.apple == 'hello'
 
 
 def test_sub_env_missing():
