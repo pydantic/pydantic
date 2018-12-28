@@ -40,7 +40,6 @@ def test_str_bytes_none():
 
     m = Model(v=None)
     assert m.v is None
-    assert 'not_none_validator' not in [v[1].__qualname__ for v in m.fields['v'].sub_fields[0].validators]
 
 
 def test_union_int_str():

@@ -1,4 +1,5 @@
-from typing import Dict, List
+from datetime import datetime
+from typing import Dict, List, Optional
 
 import pytest
 
@@ -478,3 +479,60 @@ def test_key_validation_whole():
             return {k + 1: v + 1 for k, v in value.items()}
 
     assert Model(foobar={1: 1}).foobar == {2: 2}
+
+
+def test_validator_always_optional():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: Optional[str] = None
+
+        @validator('a', pre=True, always=True)
+        def check_a(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v or 'default value'
+
+    assert Model(a='y').a == 'y'
+    assert check_calls == 1
+    assert Model().a == 'default value'
+    assert check_calls == 2
+
+
+def test_validator_always_post():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: str = None
+
+        @validator('a', always=True)
+        def check_a(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v
+
+    assert Model(a='y').a == 'y'
+    assert check_calls == 1
+    with pytest.raises(ValidationError):
+        Model()
+    # assert check_calls == 1  # check_a comes after allow_none so check_a is never called
+
+
+def test_datetime_validator():
+    check_calls = 0
+
+    class Model(BaseModel):
+        d: datetime = None
+
+        @validator('d', pre=True, always=True)
+        def check_d(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v or datetime(2032, 1, 1)
+
+    assert Model(d='2023-01-01T00:00:00').d == datetime(2023, 1, 1)
+    assert check_calls == 1
+    assert Model().d == datetime(2032, 1, 1)
+    assert check_calls == 2
+    assert Model(d=datetime(2023, 1, 1)).d == datetime(2023, 1, 1)
+    assert check_calls == 3

@@ -7,9 +7,10 @@ from .class_validators import Validator, ValidatorSignature, get_validator_signa
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
 from .utils import display_as_type, lenient_issubclass, list_like
-from .validators import NoneType, dict_validator, find_validators, not_none_validator
+from .validators import NoneType, dict_validator, find_validators
 
 Required: Any = Ellipsis
+_ALLOW_NONE = object()
 
 
 class Shape(IntEnum):
@@ -48,9 +49,9 @@ class Field:
         name: str,
         type_: Type,
         class_validators: Optional[Dict[str, Validator]],
-        default: Any,
-        required: bool,
         model_config: Any,
+        default: Any = None,
+        required: bool = True,
         alias: str = None,
         allow_none: bool = False,
         schema=None,
@@ -61,19 +62,20 @@ class Field:
         self.alias: str = alias or name
         self.type_: type = type_
         self.class_validators = class_validators or {}
+        self.default: Any = default
+        self.allow_none: bool = allow_none
+        self.required: bool = required
+        self.model_config = model_config
+        self.schema: 'schema.Schema' = schema
+
         self.validate_always: bool = False
         self.sub_fields: List[Field] = None
         self.key_field: Field = None
         self.validators = []
         self.whole_pre_validators = None
         self.whole_post_validators = None
-        self.default: Any = default
-        self.required: bool = required
-        self.model_config = model_config
-        self.allow_none: bool = allow_none
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
-        self.schema: 'schema.Schema' = schema
         self.prepare()
 
     @classmethod
@@ -122,7 +124,7 @@ class Field:
             getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators.values())
         )
 
-        if not self.required and not self.validate_always and self.default is None:
+        if not self.required and self.default is None:
             self.allow_none = True
 
         self._populate_sub_fields()
@@ -178,8 +180,6 @@ class Field:
             type_=type_,
             name=name,
             class_validators=None if for_keys else self.class_validators,
-            default=self.default,
-            required=self.required,
             allow_none=self.allow_none,
             model_config=self.model_config,
         )
@@ -210,20 +210,15 @@ class Field:
             self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
 
     def _prep_vals(self, v_funcs):
-        v = []
-        for f in v_funcs:
-            if not f or (self.allow_none and f is not_none_validator):
-                continue
-            v.append((get_validator_signature(f), f))
-        return tuple(v)
+        return tuple((get_validator_signature(f), f) for f in v_funcs if f)
 
     def validate(self, v, values, *, loc, cls=None):
-        if self.allow_none and v is None:
+        if v is None and self.allow_none and not self.validate_always:
             return None, None
 
         loc = loc if isinstance(loc, tuple) else (loc,)
 
-        if self.parse_json:
+        if v is not None and self.parse_json:
             v, error = self._validate_json(v, loc)
             if error:
                 return v, error
