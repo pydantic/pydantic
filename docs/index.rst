@@ -491,14 +491,21 @@ Settings
 One of pydantic's most useful applications is to define default settings, allow them to be overridden by
 environment variables or keyword arguments (e.g. in unit tests).
 
-This usage example comes last as it uses numerous concepts described above.
-
 .. literalinclude:: examples/settings.py
 
 (This script is complete, it should run "as is")
 
 Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` or ``auth_key`` by
 ``export my_api_key=6380``.
+
+By default ``BaseSettings`` considers field values in the following priority (where 3. has the highest priority
+and overrides the other two):
+
+1. The default values set in your ``Settings`` class
+2. Environment variables eg. ``MY_PREFIX_REDIS_PORT`` as described above.
+3. Argument passed to the ``Settings`` class on initialisation.
+
+This behaviour can be changed by overriding the ``_build_values`` method on ``BaseSettings``.
 
 Complex types like ``list``, ``set``, ``dict`` and submodels can be set by using JSON environment variables.
 

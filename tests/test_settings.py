@@ -2,7 +2,7 @@ from typing import List, Set
 
 import pytest
 
-from pydantic import BaseModel, BaseSettings, NoneStr, ValidationError
+from pydantic import BaseModel, BaseSettings, NoneStr, ValidationError, dataclasses
 from pydantic.env_settings import SettingsError
 
 
@@ -125,3 +125,57 @@ def test_case_insensitive(env):
     s = Settings()
     assert s.foo == 'foo'
     assert s.bAR == 'bar'
+
+
+def test_nested_dataclass(env):
+    @dataclasses.dataclass
+    class MyDataclass:
+        foo: int
+        bar: str
+
+    class Settings(BaseSettings):
+        n: MyDataclass
+
+    env.set('APP_N', '[123, "bar value"]')
+    s = Settings()
+    assert isinstance(s.n, MyDataclass)
+    assert s.n.foo == 123
+    assert s.n.bar == 'bar value'
+
+
+def test_config_file_settings(env):
+    class Settings(BaseSettings):
+        foo: int
+        bar: str
+
+        def _build_values(self, init_kwargs):
+            return {**init_kwargs, **self._substitute_environ()}
+
+    env.set('APP_BAR', 'env setting')
+
+    s = Settings(foo='123', bar='argument')
+    assert s.foo == 123
+    assert s.bar == 'env setting'
+
+
+def test_config_file_settings_nornir(env):
+    """
+    See https://github.com/samuelcolvin/pydantic/pull/341#issuecomment-450378771
+    """
+
+    class Settings(BaseSettings):
+        a: str
+        b: str
+        c: str
+
+        def _build_values(self, init_kwargs):
+            config_settings = init_kwargs.pop('__config_settings__')
+            return {**config_settings, **init_kwargs, **self._substitute_environ()}
+
+    env.set('APP_C', 'env setting c')
+
+    config = {'a': 'config a', 'b': 'config b', 'c': 'config c'}
+    s = Settings(__config_settings__=config, b='argument b', c='argument c')
+    assert s.a == 'config a'
+    assert s.b == 'argument b'
+    assert s.c == 'env setting c'
