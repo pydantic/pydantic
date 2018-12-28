@@ -1,24 +1,11 @@
 import json
 import os
 
-from .fields import Shape
 from .main import BaseModel
 
 
 class SettingsError(ValueError):
     pass
-
-
-def _complex_field(field):
-    try:
-        return field and (
-            field.shape != Shape.SINGLETON
-            or issubclass(field.type_, (BaseModel, list, set, dict))
-            or hasattr(field.type_, '__pydantic_model__')
-        )
-    except TypeError:
-        # if field.type_ is not a class, eg. Union
-        return False
 
 
 class BaseSettings(BaseModel):
@@ -36,11 +23,11 @@ class BaseSettings(BaseModel):
         super().__init__(**self._build_values(values))
 
     def _build_values(self, init_kwargs):
-        return {**self._substitute_environ(), **init_kwargs}
+        return {**self._build_environ(), **init_kwargs}
 
-    def _substitute_environ(self):
+    def _build_environ(self):
         """
-        Substitute environment variables into values.
+        Build environment variables suitable for passing to the Model.
         """
         d = {}
 
@@ -59,7 +46,7 @@ class BaseSettings(BaseModel):
             env_val = env_vars.get(env_name_, None)
 
             if env_val:
-                if _complex_field(field):
+                if field.is_complex():
                     try:
                         env_val = json.loads(env_val)
                     except ValueError as e:

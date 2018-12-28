@@ -353,6 +353,18 @@ class Field:
         """
         return len(self.validators) > 1 or self.validators[0][1] != is_none_validator
 
+    def is_complex(self):
+        """
+        Whether the field is "complex" eg. env variables should be parsed as JSON.
+        """
+        from .main import BaseModel
+
+        return self and (
+            self.shape != Shape.SINGLETON
+            or lenient_issubclass(self.type_, (BaseModel, list, set, dict))
+            or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
+        )
+
     def __repr__(self):
         return f'<Field({self})>'
 

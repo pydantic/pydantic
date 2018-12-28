@@ -149,7 +149,7 @@ def test_config_file_settings(env):
         bar: str
 
         def _build_values(self, init_kwargs):
-            return {**init_kwargs, **self._substitute_environ()}
+            return {**init_kwargs, **self._build_environ()}
 
     env.set('APP_BAR', 'env setting')
 
@@ -170,7 +170,7 @@ def test_config_file_settings_nornir(env):
 
         def _build_values(self, init_kwargs):
             config_settings = init_kwargs.pop('__config_settings__')
-            return {**config_settings, **init_kwargs, **self._substitute_environ()}
+            return {**config_settings, **init_kwargs, **self._build_environ()}
 
     env.set('APP_C', 'env setting c')
 
