@@ -7,7 +7,7 @@ from .class_validators import Validator, ValidatorSignature, get_validator_signa
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
 from .utils import display_as_type, lenient_issubclass, list_like
-from .validators import NoneType, dict_validator, find_validators
+from .validators import NoneType, dict_validator, find_validators, is_none_validator
 
 Required: Any = Ellipsis
 
@@ -147,8 +147,7 @@ class Field:
                 if type_ is NoneType:
                     self.allow_none = True
                     self.required = False
-                else:
-                    types_.append(type_)
+                types_.append(type_)
             self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
 
@@ -200,14 +199,18 @@ class Field:
                 ),
                 *tuple(v.func for v in class_validators_ if not v.whole and not v.pre),
             )
-            self.validators = _prep_validators(v_funcs)
+            self.validators = self._prep_vals(v_funcs)
 
         if class_validators_:
-            self.whole_pre_validators = _prep_validators(v.func for v in class_validators_ if v.whole and v.pre)
-            self.whole_post_validators = _prep_validators(v.func for v in class_validators_ if v.whole and not v.pre)
+            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre)
+            self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
+
+    @staticmethod
+    def _prep_vals(v_funcs):
+        return tuple((get_validator_signature(f), f) for f in v_funcs if f)
 
     def validate(self, v, values, *, loc, cls=None):
-        if v is None and self.allow_none and not self.validate_always:
+        if self.allow_none and not self.validate_always and v is None:
             return None, None
 
         loc = loc if isinstance(loc, tuple) else (loc,)
@@ -324,12 +327,7 @@ class Field:
                     errors.append(error)
                 else:
                     return value, None
-            if v is None and self.allow_none:
-                # unusual case where we have allow_none and validate_always,
-                # see test_validators.py::test_validator_always_post_optional
-                return None, None
-            else:
-                return v, errors
+            return v, errors
         else:
             return self._apply_validators(v, values, loc, cls, self.validators)
 
@@ -349,6 +347,12 @@ class Field:
                 return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
         return v, None
 
+    def include_in_schema(self) -> bool:
+        """
+        False if this is a simple field just allowing None as used in Unions/Optional.
+        """
+        return len(self.validators) > 1 or self.validators[0][1] != is_none_validator
+
     def __repr__(self):
         return f'<Field({self})>'
 
@@ -363,7 +367,3 @@ class Field:
         if self.alt_alias:
             parts.append('alias=' + self.alias)
         return ' '.join(parts)
-
-
-def _prep_validators(v_funcs):
-    return tuple((get_validator_signature(f), f) for f in v_funcs if f)

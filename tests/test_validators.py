@@ -521,7 +521,7 @@ def test_validator_always_post_optional():
             return v or 'default value'
 
     assert Model(a='y').a == 'y'
-    assert Model().a is None
+    assert Model().a == 'default value'
 
 
 def test_datetime_validator():

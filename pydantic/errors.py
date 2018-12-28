@@ -42,6 +42,11 @@ class NoneIsNotAllowedError(PydanticTypeError):
     msg_template = 'none is not an allow value'
 
 
+class NoneIsAllowedError(PydanticTypeError):
+    code = 'none.allowed'
+    msg_template = 'value is not none'
+
+
 class BytesError(PydanticTypeError):
     msg_template = 'byte type expected'
 
