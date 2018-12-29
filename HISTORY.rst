@@ -9,6 +9,7 @@ v0.18.0 (unreleased)
 * Fix validators with ``always=True`` when the default is ``None`` or the type is optional, also prevent
   ``whole`` validators being called for sub-fields, fix #132 by @samuelcolvin
 * improve documentation for settings priority and allow it to be easily changed, #343 by @samuelcolvin
+* fix ``ignore_extra=False`` and ``allow_population_by_alias=True``, fix #257 by @samuelcolvin
 
 v0.17.0 (2018-12-27)
 ....................
