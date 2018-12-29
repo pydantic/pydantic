@@ -338,11 +338,7 @@ class BaseModel(metaclass=MetaModel):
         for f in cls.__fields__.values():
             if type(f.type_) == ForwardRef:
                 f.type_ = f.type_._evaluate(None, context)
-
-            if type(f.type_) != ForwardRef:
                 f.prepare()
-            else:
-                raise NameError(f'unable to evaluate ForwardRef for field {f.name}, type: {f.type_.__name__}')
 
     def __iter__(self):
         """

@@ -72,11 +72,10 @@ Foo = ForwardRef('Foo')
 class Foo(BaseModel):
     a: int = 123
     b: Foo = None
-    
+
 Foo.update_forward_refs()
     """
     )
 
     assert module.Foo().dict() == {'a': 123, 'b': None}
-    debug(module.Foo(b={'a': '321'}).dict())
     assert module.Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
