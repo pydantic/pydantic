@@ -1,11 +1,12 @@
 import json
+import sys
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Callable, ClassVar, Dict, Set, Type, Union
+from typing import Any, Callable, ClassVar, Dict, Set, Type, Union, get_type_hints
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -81,6 +82,12 @@ class MetaModel(ABCMeta):
                 f.prepare()
 
         annotations = namespace.get('__annotations__', {})
+        if sys.version_info >= (3, 7):
+            annotations_eval = get_type_hints(super().__new__(mcs, name, bases, namespace))
+            # use this rather than just annotations_eval so annotations of parent classes are not included
+            # in annotations here.
+            annotations = {k: annotations_eval[k] for k in annotations.keys()}
+
         class_vars = set()
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
