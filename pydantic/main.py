@@ -404,11 +404,15 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     """
     values = {}
     errors = []
+    names_used = set()
+    check_extra = (not model.__config__.ignore_extra) or model.__config__.allow_extra
 
     for name, field in model.__fields__.items():
         value = input_data.get(field.alias, _missing)
+        using_name = False
         if value is _missing and model.__config__.allow_population_by_alias and field.alt_alias:
             value = input_data.get(field.name, _missing)
+            using_name = True
 
         if value is _missing:
             if model.__config__.validate_all or field.validate_always:
@@ -419,6 +423,8 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
                 else:
                     values[name] = deepcopy(field.default)
                 continue
+        elif check_extra:
+            names_used.add(field.name if using_name else field.alias)
 
         v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)
         if isinstance(errors_, ErrorWrapper):
@@ -428,8 +434,8 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
         else:
             values[name] = v_
 
-    if (not model.__config__.ignore_extra) or model.__config__.allow_extra:
-        extra = input_data.keys() - {f.alias for f in model.__fields__.values()}
+    if check_extra:
+        extra = input_data.keys() - names_used
         if extra:
             if model.__config__.allow_extra:
                 for field in extra:
