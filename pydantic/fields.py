@@ -359,7 +359,7 @@ class Field:
         """
         from .main import BaseModel
 
-        return self and (
+        return (
             self.shape != Shape.SINGLETON
             or lenient_issubclass(self.type_, (BaseModel, list, set, dict))
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
