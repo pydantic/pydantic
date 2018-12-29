@@ -40,7 +40,6 @@ def test_str_bytes_none():
 
     m = Model(v=None)
     assert m.v is None
-    assert 'not_none_validator' not in [v[1].__qualname__ for v in m.fields['v'].sub_fields[0].validators]
 
 
 def test_union_int_str():
@@ -591,3 +590,20 @@ def test_get_validator():
             x: CustomClass
 
     assert Model(x=42).x == 84
+
+
+def test_multiple_errors():
+    class Model(BaseModel):
+        a: Union[None, int, float, Decimal]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='foobar')
+
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not none', 'type': 'type_error.none.allowed'},
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('a',), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
+        {'loc': ('a',), 'msg': 'value is not a valid decimal', 'type': 'type_error.decimal'},
+    ]
+    assert Model().a is None
+    assert Model(a=None).a is None

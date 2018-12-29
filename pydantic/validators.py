@@ -20,6 +20,11 @@ def not_none_validator(v):
     return v
 
 
+def is_none_validator(v):
+    if v is not None:
+        raise errors.NoneIsAllowedError()
+
+
 def str_validator(v) -> str:
     if isinstance(v, (str, NoneType)):
         return v
@@ -232,6 +237,7 @@ _VALIDATORS = [
     (bool, [bool_validator]),
     (int, [int_validator]),
     (float, [float_validator]),
+    (NoneType, [is_none_validator]),
     (Path, [path_validator]),
     (datetime, [parse_datetime]),
     (date, [parse_date]),

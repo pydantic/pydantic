@@ -512,6 +512,7 @@ def field_singleton_sub_fields_schema(
     """
     ref_prefix = ref_prefix or default_prefix
     definitions = {}
+    sub_fields = [sf for sf in sub_fields if sf.include_in_schema()]
     if len(sub_fields) == 1:
         return field_type_schema(
             sub_fields[0],

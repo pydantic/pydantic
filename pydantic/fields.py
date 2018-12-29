@@ -7,7 +7,7 @@ from .class_validators import Validator, ValidatorSignature, get_validator_signa
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
 from .utils import display_as_type, lenient_issubclass, list_like
-from .validators import NoneType, dict_validator, find_validators, not_none_validator
+from .validators import NoneType, dict_validator, find_validators, is_none_validator
 
 Required: Any = Ellipsis
 
@@ -48,11 +48,10 @@ class Field:
         name: str,
         type_: Type,
         class_validators: Optional[Dict[str, Validator]],
-        default: Any,
-        required: bool,
         model_config: Any,
+        default: Any = None,
+        required: bool = True,
         alias: str = None,
-        allow_none: bool = False,
         schema=None,
     ):
 
@@ -61,19 +60,20 @@ class Field:
         self.alias: str = alias or name
         self.type_: type = type_
         self.class_validators = class_validators or {}
+        self.default: Any = default
+        self.required: bool = required
+        self.model_config = model_config
+        self.schema: 'schema.Schema' = schema
+
+        self.allow_none: bool = False
         self.validate_always: bool = False
         self.sub_fields: List[Field] = None
         self.key_field: Field = None
         self.validators = []
         self.whole_pre_validators = None
         self.whole_post_validators = None
-        self.default: Any = default
-        self.required: bool = required
-        self.model_config = model_config
-        self.allow_none: bool = allow_none
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
-        self.schema: 'schema.Schema' = schema
         self.prepare()
 
     @classmethod
@@ -122,7 +122,7 @@ class Field:
             getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators.values())
         )
 
-        if not self.required and not self.validate_always and self.default is None:
+        if not self.required and self.default is None:
             self.allow_none = True
 
         self._populate_sub_fields()
@@ -147,8 +147,7 @@ class Field:
                 if type_ is NoneType:
                     self.allow_none = True
                     self.required = False
-                else:
-                    types_.append(type_)
+                types_.append(type_)
             self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
 
@@ -177,10 +176,7 @@ class Field:
         return self.__class__(
             type_=type_,
             name=name,
-            class_validators=None if for_keys else self.class_validators,
-            default=self.default,
-            required=self.required,
-            allow_none=self.allow_none,
+            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if not v.whole},
             model_config=self.model_config,
         )
 
@@ -209,21 +205,17 @@ class Field:
             self.whole_pre_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre)
             self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
 
-    def _prep_vals(self, v_funcs):
-        v = []
-        for f in v_funcs:
-            if not f or (self.allow_none and f is not_none_validator):
-                continue
-            v.append((get_validator_signature(f), f))
-        return tuple(v)
+    @staticmethod
+    def _prep_vals(v_funcs):
+        return tuple((get_validator_signature(f), f) for f in v_funcs if f)
 
     def validate(self, v, values, *, loc, cls=None):
-        if self.allow_none and v is None:
+        if self.allow_none and not self.validate_always and v is None:
             return None, None
 
         loc = loc if isinstance(loc, tuple) else (loc,)
 
-        if self.parse_json:
+        if v is not None and self.parse_json:
             v, error = self._validate_json(v, loc)
             if error:
                 return v, error
@@ -354,6 +346,12 @@ class Field:
             except (ValueError, TypeError) as exc:
                 return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
         return v, None
+
+    def include_in_schema(self) -> bool:
+        """
+        False if this is a simple field just allowing None as used in Unions/Optional.
+        """
+        return len(self.validators) > 1 or self.validators[0][1] != is_none_validator
 
     def __repr__(self):
         return f'<Field({self})>'
