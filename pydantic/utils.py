@@ -19,6 +19,11 @@ try:
 except ImportError:
     from typing import _Final as typing_base
 
+try:
+    from typing import ForwardRef
+except ImportError:
+    # python 3.6
+    ForwardRef = None
 
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
 

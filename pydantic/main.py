@@ -16,7 +16,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
-from .utils import truncate, validate_field_name
+from .utils import ForwardRef, truncate, validate_field_name
 from .validators import dict_validator
 
 
@@ -328,6 +328,21 @@ class BaseModel(metaclass=MetaModel):
             return tuple(cls._get_value(v_, by_alias=by_alias) for v_ in v)
         else:
             return v
+
+    @classmethod
+    def update_forward_refs(cls, **context):
+        """
+        Try to update ForwardRefs on fields based on this Model and context.
+        """
+        context.setdefault(cls.__name__, cls)
+        for f in cls.__fields__.values():
+            if type(f.type_) == ForwardRef:
+                f.type_ = f.type_._evaluate(None, context)
+
+            if type(f.type_) != ForwardRef:
+                f.prepare()
+            else:
+                raise NameError(f'unable to evaluate ForwardRef for field {f.name}, type: {f.type_.__name__}')
 
     def __iter__(self):
         """
