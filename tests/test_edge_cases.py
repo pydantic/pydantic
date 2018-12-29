@@ -607,3 +607,21 @@ def test_multiple_errors():
     ]
     assert Model().a is None
     assert Model(a=None).a is None
+
+
+def test_pop_by_alias():
+    class Model(BaseModel):
+        last_updated_by: Optional[str] = None
+
+        class Config:
+            ignore_extra = False
+            allow_population_by_alias = True
+            fields = {'last_updated_by': 'lastUpdatedBy'}
+
+    assert Model(lastUpdatedBy='foo').dict() == {'last_updated_by': 'foo'}
+    assert Model(last_updated_by='foo').dict() == {'last_updated_by': 'foo'}
+    with pytest.raises(ValidationError) as exc_info:
+        Model(lastUpdatedBy='foo', last_updated_by='bar')
+    assert exc_info.value.errors() == [
+        {'loc': ('last_updated_by',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'}
+    ]
