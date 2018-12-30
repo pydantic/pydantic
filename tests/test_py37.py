@@ -5,6 +5,8 @@ import sys
 
 import pytest
 
+from pydantic import ConfigError
+
 skip_not_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
 
@@ -61,7 +63,7 @@ class Bar(BaseModel):
 
 
 @skip_not_37
-def test_self_forward_ref(create_module):
+def test_self_forward_ref_module(create_module):
     module = create_module(
         """
 from typing import ForwardRef
@@ -79,3 +81,45 @@ Foo.update_forward_refs()
 
     assert module.Foo().dict() == {'a': 123, 'b': None}
     assert module.Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
+
+
+@skip_not_37
+def test_self_forward_ref_local(create_module):
+    module = create_module(
+        """
+from typing import ForwardRef
+from pydantic import BaseModel
+
+def main():
+    Foo = ForwardRef('Foo')
+
+    class Foo(BaseModel):
+        a: int = 123
+        b: Foo = None
+
+    Foo.update_forward_refs()
+    return Foo
+    """
+    )
+    Foo = module.main()
+    assert Foo().dict() == {'a': 123, 'b': None}
+    assert Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
+
+
+@skip_not_37
+def test_missing_update_forward_refs(create_module):
+    module = create_module(
+        """
+from typing import ForwardRef
+from pydantic import BaseModel
+
+Foo = ForwardRef('Foo')
+
+class Foo(BaseModel):
+    a: int = 123
+    b: Foo = None
+    """
+    )
+    with pytest.raises(ConfigError) as exc_info:
+        module.Foo(b=123)
+    assert str(exc_info.value).startswith('field b not yet prepared and type is still a ForwardRef')

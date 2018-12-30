@@ -1,4 +1,5 @@
 import os
+import secrets
 from importlib.machinery import SourceFileLoader
 
 import pytest
@@ -29,8 +30,9 @@ def env():
 @pytest.fixture
 def create_module(tmp_path):
     def run(code):
-        path = tmp_path / 'test_code.py'
+        name = f'test_code_{secrets.token_hex(5)}'
+        path = tmp_path / f'{name}.py'
         path.write_text(code)
-        return SourceFileLoader('test_code', str(path)).load_module()
+        return SourceFileLoader(name, str(path)).load_module()
 
     return run

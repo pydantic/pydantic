@@ -6,7 +6,7 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Callable, ClassVar, Dict, Set, Type, Union, get_type_hints
+from typing import Any, Callable, ClassVar, Dict, Set, Type, Union
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -16,7 +16,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
-from .utils import ForwardRef, truncate, validate_field_name
+from .utils import ForwardRef, resolve_annotations, truncate, validate_field_name
 from .validators import dict_validator
 
 
@@ -83,10 +83,7 @@ class MetaModel(ABCMeta):
 
         annotations = namespace.get('__annotations__', {})
         if sys.version_info >= (3, 7):
-            annotations_eval = get_type_hints(super().__new__(mcs, name, bases, namespace))
-            # use this rather than just annotations_eval so annotations of parent classes are not included
-            # in annotations here.
-            annotations = {k: annotations_eval[k] for k in annotations.keys()}
+            annotations = resolve_annotations(annotations, namespace.get('__module__', None))
 
         class_vars = set()
         # annotation only fields need to come first in fields
@@ -330,14 +327,15 @@ class BaseModel(metaclass=MetaModel):
             return v
 
     @classmethod
-    def update_forward_refs(cls, **context):
+    def update_forward_refs(cls, **localns):
         """
-        Try to update ForwardRefs on fields based on this Model and context.
+        Try to update ForwardRefs on fields based on this Model and globalns.
         """
-        context.setdefault(cls.__name__, cls)
+        globalns = sys.modules[cls.__module__].__dict__
+        globalns.setdefault(cls.__name__, cls)
         for f in cls.__fields__.values():
             if type(f.type_) == ForwardRef:
-                f.type_ = f.type_._evaluate(None, context)
+                f.type_ = f.type_._evaluate(globalns, localns or None)
                 f.prepare()
 
     def __iter__(self):
@@ -426,6 +424,11 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     check_extra = (not model.__config__.ignore_extra) or model.__config__.allow_extra
 
     for name, field in model.__fields__.items():
+        debug(type(field.type_))
+        if type(field.type_) == ForwardRef:
+            raise ConfigError(f"field {field.name} not yet prepared and type is still a ForwardRef, "
+                              f"you'll need to call update_forward_refs")
+
         value = input_data.get(field.alias, _missing)
         using_name = False
         if value is _missing and model.__config__.allow_population_by_alias and field.alt_alias:
