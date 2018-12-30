@@ -237,8 +237,6 @@ def resolve_annotations(raw_annotations, module):
         base_globals = None
     hints = {}
     for name, value in raw_annotations.items():
-        if value is None:
-            value = type(None)
         if isinstance(value, str):
             value = ForwardRef(value, is_argument=False)
         try:

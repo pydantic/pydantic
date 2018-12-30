@@ -424,10 +424,11 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     check_extra = (not model.__config__.ignore_extra) or model.__config__.allow_extra
 
     for name, field in model.__fields__.items():
-        debug(type(field.type_))
         if type(field.type_) == ForwardRef:
-            raise ConfigError(f"field {field.name} not yet prepared and type is still a ForwardRef, "
-                              f"you'll need to call update_forward_refs")
+            raise ConfigError(
+                f"field {field.name} not yet prepared and type is still a ForwardRef, "
+                f"you'll need to call update_forward_refs"
+            )
 
         value = input_data.get(field.alias, _missing)
         using_name = False
