@@ -22,8 +22,8 @@ from .validators import dict_validator
 class BaseConfig:
     title = None
     anystr_strip_whitespace = False
-    min_anystr_length = 0
-    max_anystr_length = 2 ** 16
+    min_anystr_length = None
+    max_anystr_length = None
     validate_all = False
     ignore_extra = True
     allow_extra = False
