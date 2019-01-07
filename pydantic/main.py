@@ -2,6 +2,7 @@ import json
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
+from enum import Enum, auto
 from functools import partial
 from pathlib import Path
 from types import FunctionType
@@ -19,14 +20,26 @@ from .utils import truncate, validate_field_name
 from .validators import dict_validator
 
 
+class ExtraAttributes(Enum):
+    DISALLOW_MUTATION = auto()
+    ALWAYS_DISALLOW = auto()
+    MUTATION_ONLY = auto()
+    ALWAYS_ALLOW = auto()
+
+    def allow_mutation(self):
+        return self in (self.MUTATION_ONLY, self.ALWAYS_ALLOW)
+
+    def should_ignore(self):
+        return self in (self.DISALLOW_MUTATION, self.MUTATION_ONLY)
+
+
 class BaseConfig:
     title = None
     anystr_strip_whitespace = False
     min_anystr_length = 0
     max_anystr_length = 2 ** 16
     validate_all = False
-    ignore_extra = True
-    allow_extra = False
+    extra = ExtraAttributes.DISALLOW_MUTATION
     allow_mutation = True
     allow_population_by_alias = False
     use_enum_values = False
@@ -144,7 +157,7 @@ class BaseModel(metaclass=MetaModel):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
-        if not self.__config__.allow_extra and name not in self.__fields__:
+        if not self.__config__.extra.allow_mutation() and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
@@ -402,10 +415,33 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     """
     validate data against a model.
     """
+
+    def _deprecated_values():
+        ignore_extra = getattr(model.__config__, 'ignore_extra', None)
+        allow_extra = getattr(model.__config__, 'allow_extra', None)
+        return ignore_extra is not None or allow_extra is not None
+
+    def _get_extra():
+        ignore_extra = getattr(model.__config__, 'ignore_extra', None)
+        allow_extra = getattr(model.__config__, 'allow_extra', None)
+
+        if ignore_extra is True:
+            if allow_extra is False:
+                extra_att = ExtraAttributes.DISALLOW_MUTATION
+            else:
+                extra_att = ExtraAttributes.MUTATION_ONLY
+        else:
+            if allow_extra is True:
+                extra_att = ExtraAttributes.ALWAYS_ALLOW
+            else:
+                extra_att = ExtraAttributes.ALWAYS_DISALLOW
+
+        return extra_att
+
     values = {}
     errors = []
     names_used = set()
-    check_extra = (not model.__config__.ignore_extra) or model.__config__.allow_extra
+    extra_ = _get_extra() if _deprecated_values() else model.__config__.extra
 
     for name, field in model.__fields__.items():
         value = input_data.get(field.alias, _missing)
@@ -423,7 +459,7 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
                 else:
                     values[name] = deepcopy(field.default)
                 continue
-        elif check_extra:
+        elif not extra_.should_ignore():
             names_used.add(field.name if using_name else field.alias)
 
         v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)
@@ -434,14 +470,14 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
         else:
             values[name] = v_
 
-    if check_extra:
+    if not extra_.should_ignore():
         extra = input_data.keys() - names_used
         if extra:
-            if model.__config__.allow_extra:
+            if extra_ is ExtraAttributes.ALWAYS_ALLOW:
                 for field in extra:
                     values[field] = input_data[field]
             else:
-                # config.ignore_extra is False
+                # config.extra is ExtraAttributes.DISALLOW
                 for field in sorted(extra):
                     errors.append(ErrorWrapper(ExtraError(), loc=field, config=model.__config__))
 
