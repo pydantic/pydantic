@@ -25,6 +25,18 @@ def test_construct_missing():
     assert "'Model' object has no attribute 'b'" in str(exc_info)
 
 
+def test_large_any_str():
+    class Model(BaseModel):
+        a: bytes
+        b: str
+
+    content_bytes = b"x" * (2 ** 16 + 1)
+    content_str = "x" * (2 ** 16 + 1)
+    m = Model(a=content_bytes, b=content_str)
+    assert m.a == content_bytes
+    assert m.b == content_str
+
+
 def test_simple_copy():
     m = Model(a=24)
     m2 = m.copy()
