@@ -179,7 +179,7 @@ def test_infer_type():
     assert Model().c == 0
 
 
-def test_allow_extra_deprecated():
+def test_allow_extra():
     """Will be removed in a future release"""
 
     class Model(BaseModel):
@@ -205,7 +205,7 @@ def test_always_disallow():
         a: float = ...
 
         class Config:
-            extra = ExtraAttributes.ALWAYS_DISALLOW
+            extra = ExtraAttributes.forbidden
 
     with pytest.raises(ValidationError, match='extra fields not permitted'):
         Model(a=0.2, b=0.1)
@@ -215,28 +215,12 @@ def test_always_disallow():
         model.b = 1
 
 
-def test_mutation_only():
-    class Model(BaseModel):
-        a: float = ...
-
-        class Config:
-            extra = ExtraAttributes.MUTATION_ONLY
-
-    model = Model(a=0.2, b=0.1)
-    assert not hasattr(model, 'b')
-
-    model = Model(a=0.2)
-    model.b = 1
-
-    assert getattr(model, 'b') == 1
-
-
 def test_always_allow():
     class Model(BaseModel):
         a: float = ...
 
         class Config:
-            extra = ExtraAttributes.ALWAYS_ALLOW
+            extra = ExtraAttributes.allowed
 
     model = Model(a=0.2, b=0.1)
     assert getattr(model, 'b') == 0.1
@@ -245,6 +229,20 @@ def test_always_allow():
     model.c = 1
 
     assert getattr(model, 'c') == 1
+
+
+def test_ignore_extra():
+    class Model(BaseModel):
+        a: float = ...
+
+        class Config:
+            extra = ExtraAttributes.ignored
+
+    model = Model(a=0.2, b=0.1)
+    assert not hasattr(model, 'b')
+
+    with pytest.raises(ValueError, match='"Model" object has no field "c"'):
+        model.c = 1
 
 
 def test_set_attr():

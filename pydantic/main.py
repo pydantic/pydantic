@@ -2,7 +2,7 @@ import json
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
-from enum import Enum, auto
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import FunctionType
@@ -20,17 +20,10 @@ from .utils import truncate, validate_field_name
 from .validators import dict_validator
 
 
-class ExtraAttributes(Enum):
-    DISALLOW_MUTATION = auto()
-    ALWAYS_DISALLOW = auto()
-    MUTATION_ONLY = auto()
-    ALWAYS_ALLOW = auto()
-
-    def allow_mutation(self):
-        return self in (self.MUTATION_ONLY, self.ALWAYS_ALLOW)
-
-    def should_ignore(self):
-        return self in (self.DISALLOW_MUTATION, self.MUTATION_ONLY)
+class ExtraAttributes(str, Enum):
+    allowed = 'allowed'
+    ignored = 'ignored'
+    forbidden = 'forbidden'
 
 
 class BaseConfig:
@@ -39,7 +32,7 @@ class BaseConfig:
     min_anystr_length = 0
     max_anystr_length = 2 ** 16
     validate_all = False
-    extra = ExtraAttributes.DISALLOW_MUTATION
+    extra = ExtraAttributes.ignored
     allow_mutation = True
     allow_population_by_alias = False
     use_enum_values = False
@@ -157,7 +150,7 @@ class BaseModel(metaclass=MetaModel):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
-        if not self.__config__.extra.allow_mutation() and name not in self.__fields__:
+        if self.__config__.extra is not ExtraAttributes.allowed and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
@@ -196,13 +189,13 @@ class BaseModel(metaclass=MetaModel):
         return lambda _, key: key
 
     def json(
-        self,
-        *,
-        include: Set[str] = None,
-        exclude: Set[str] = set(),
-        by_alias: bool = False,
-        encoder=None,
-        **dumps_kwargs,
+            self,
+            *,
+            include: Set[str] = None,
+            exclude: Set[str] = set(),
+            by_alias: bool = False,
+            encoder=None,
+            **dumps_kwargs,
     ) -> str:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
@@ -224,13 +217,13 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_raw(
-        cls,
-        b: StrBytes,
-        *,
-        content_type: str = None,
-        encoding: str = 'utf8',
-        proto: Protocol = None,
-        allow_pickle: bool = False,
+            cls,
+            b: StrBytes,
+            *,
+            content_type: str = None,
+            encoding: str = 'utf8',
+            proto: Protocol = None,
+            allow_pickle: bool = False,
     ):
         try:
             obj = load_str_bytes(
@@ -242,13 +235,13 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_file(
-        cls,
-        path: Union[str, Path],
-        *,
-        content_type: str = None,
-        encoding: str = 'utf8',
-        proto: Protocol = None,
-        allow_pickle: bool = False,
+            cls,
+            path: Union[str, Path],
+            *,
+            content_type: str = None,
+            encoding: str = 'utf8',
+            proto: Protocol = None,
+            allow_pickle: bool = False,
     ):
         obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
         return cls.parse_obj(obj)
@@ -264,7 +257,8 @@ class BaseModel(metaclass=MetaModel):
         return m
 
     def copy(
-        self, *, include: Set[str] = None, exclude: Set[str] = None, update: Dict[str, Any] = None, deep: bool = False
+            self, *, include: Set[str] = None, exclude: Set[str] = None, update: Dict[str, Any] = None,
+            deep: bool = False
     ):
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
@@ -415,30 +409,26 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     """
     validate data against a model.
     """
+
     def _deprecated_values(config) -> bool:
         """
         Returns True if either 'ignore_extra' or 'allow_extra' are explicitly defined in config
         """
         return hasattr(config, 'ignore_extra') or hasattr(config, 'allow_extra')
 
-    def _get_extra(config)-> ExtraAttributes:
+    def _get_extra(config) -> ExtraAttributes:
         """
         Returns the relevant ExtraAttributes type based on the deprecated extra attributes
         """
         ignore_extra = getattr(config, 'ignore_extra', True)
         allow_extra = getattr(config, 'allow_extra', False)
-        if ignore_extra is True:
-            if allow_extra is False:
-                extra_att = ExtraAttributes.DISALLOW_MUTATION
-            else:
-                extra_att = ExtraAttributes.MUTATION_ONLY
-        else:
-            if allow_extra is True:
-                extra_att = ExtraAttributes.ALWAYS_ALLOW
-            else:
-                extra_att = ExtraAttributes.ALWAYS_DISALLOW
 
-        return extra_att
+        if allow_extra:
+            return ExtraAttributes.allowed
+        elif ignore_extra:
+            return ExtraAttributes.ignored
+        else:
+            return ExtraAttributes.forbidden
 
     values = {}
     errors = []
@@ -462,7 +452,7 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
                 else:
                     values[name] = deepcopy(field.default)
                 continue
-        elif not extra_.should_ignore():
+        elif extra_ is not ExtraAttributes.ignored:
             names_used.add(field.name if using_name else field.alias)
 
         v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)
@@ -473,10 +463,10 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
         else:
             values[name] = v_
 
-    if not extra_.should_ignore():
+    if extra_ is not ExtraAttributes.ignored:
         extra = input_data.keys() - names_used
         if extra:
-            if extra_ is ExtraAttributes.ALWAYS_ALLOW:
+            if extra_ is ExtraAttributes.allowed:
                 for field in extra:
                     values[field] = input_data[field]
             else:
