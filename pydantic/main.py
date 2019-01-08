@@ -415,13 +415,12 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     """
     validate data against a model.
     """
+    def _deprecated_values() -> bool:
+        return hasattr(model.__config__, 'ignore_extra') or hasattr(model.__config__, 'allow_extra')
 
-    def _get_extra():
-        ignore_extra = getattr(model.__config__, 'ignore_extra', None)
-        allow_extra = getattr(model.__config__, 'allow_extra', None)
-        if not any((ignore_extra, allow_extra)):
-            return
-
+    def _get_extra()-> Union[ExtraAttributes, None]:
+        ignore_extra = getattr(model.__config__, 'ignore_extra', True)
+        allow_extra = getattr(model.__config__, 'allow_extra', False)
         if ignore_extra is True:
             if allow_extra is False:
                 extra_att = ExtraAttributes.DISALLOW_MUTATION
@@ -438,7 +437,7 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     values = {}
     errors = []
     names_used = set()
-    extra_ = _get_extra() or model.__config__.extra
+    extra_ = _get_extra() if _deprecated_values() else model.__config__.extra
 
     for name, field in model.__fields__.items():
         value = input_data.get(field.alias, _missing)
