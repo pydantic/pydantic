@@ -223,7 +223,7 @@ def test_mutation_only():
             extra = ExtraAttributes.MUTATION_ONLY
 
     model = Model(a=0.2, b=0.1)
-    assert not getattr(model, 'b', None)
+    assert not hasattr(model, 'b')
 
     model = Model(a=0.2)
     model.b = 1
