@@ -416,14 +416,11 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     validate data against a model.
     """
 
-    def _deprecated_values():
-        ignore_extra = getattr(model.__config__, 'ignore_extra', None)
-        allow_extra = getattr(model.__config__, 'allow_extra', None)
-        return ignore_extra is not None or allow_extra is not None
-
     def _get_extra():
         ignore_extra = getattr(model.__config__, 'ignore_extra', None)
         allow_extra = getattr(model.__config__, 'allow_extra', None)
+        if not any((ignore_extra, allow_extra)):
+            return
 
         if ignore_extra is True:
             if allow_extra is False:
@@ -441,7 +438,7 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     values = {}
     errors = []
     names_used = set()
-    extra_ = _get_extra() if _deprecated_values() else model.__config__.extra
+    extra_ = _get_extra() or model.__config__.extra
 
     for name, field in model.__fields__.items():
         value = input_data.get(field.alias, _missing)
