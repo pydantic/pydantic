@@ -415,12 +415,18 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     """
     validate data against a model.
     """
-    def _deprecated_values() -> bool:
-        return hasattr(model.__config__, 'ignore_extra') or hasattr(model.__config__, 'allow_extra')
+    def _deprecated_values(config) -> bool:
+        """
+        Returns True if either 'ignore_extra' or 'allow_extra' are explicitly defined in config
+        """
+        return hasattr(config, 'ignore_extra') or hasattr(config, 'allow_extra')
 
-    def _get_extra()-> Union[ExtraAttributes, None]:
-        ignore_extra = getattr(model.__config__, 'ignore_extra', True)
-        allow_extra = getattr(model.__config__, 'allow_extra', False)
+    def _get_extra(config)-> ExtraAttributes:
+        """
+        Returns the relevant ExtraAttributes type based on the deprecated extra attributes
+        """
+        ignore_extra = getattr(config, 'ignore_extra', True)
+        allow_extra = getattr(config, 'allow_extra', False)
         if ignore_extra is True:
             if allow_extra is False:
                 extra_att = ExtraAttributes.DISALLOW_MUTATION
@@ -437,21 +443,22 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     values = {}
     errors = []
     names_used = set()
-    extra_ = _get_extra() if _deprecated_values() else model.__config__.extra
+    config = model.__config__
+    extra_ = _get_extra(config) if _deprecated_values(config) else config.extra
 
     for name, field in model.__fields__.items():
         value = input_data.get(field.alias, _missing)
         using_name = False
-        if value is _missing and model.__config__.allow_population_by_alias and field.alt_alias:
+        if value is _missing and config.allow_population_by_alias and field.alt_alias:
             value = input_data.get(field.name, _missing)
             using_name = True
 
         if value is _missing:
-            if model.__config__.validate_all or field.validate_always:
+            if config.validate_all or field.validate_always:
                 value = deepcopy(field.default)
             else:
                 if field.required:
-                    errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
+                    errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=config))
                 else:
                     values[name] = deepcopy(field.default)
                 continue
@@ -473,9 +480,8 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
                 for field in extra:
                     values[field] = input_data[field]
             else:
-                # config.extra is ExtraAttributes.DISALLOW
                 for field in sorted(extra):
-                    errors.append(ErrorWrapper(ExtraError(), loc=field, config=model.__config__))
+                    errors.append(ErrorWrapper(ExtraError(), loc=field, config=config))
 
     if not raise_exc:
         return values, ValidationError(errors) if errors else None
