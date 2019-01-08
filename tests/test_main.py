@@ -180,15 +180,13 @@ def test_infer_type():
 
 
 def test_allow_extra():
-    """Will be removed in a future release"""
-
     class Model(BaseModel):
         a: float = ...
 
         class Config:
             allow_extra = True
-
-    assert Model(a='10.2', b=12).dict() == {'a': 10.2, 'b': 12}
+    with pytest.warns(PendingDeprecationWarning):
+        assert Model(a='10.2', b=12).dict() == {'a': 10.2, 'b': 12}
 
 
 def test_disallow_mutation():
