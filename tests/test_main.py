@@ -3,7 +3,7 @@ from typing import Any, ClassVar, List
 
 import pytest
 
-from pydantic import BaseModel, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, NoneBytes, NoneStr, Required, ValidationError, constr, ExtraAttributes
 
 
 def test_success():
@@ -179,7 +179,9 @@ def test_infer_type():
     assert Model().c == 0
 
 
-def test_allow_extra():
+def test_allow_extra_deprecated():
+    """Will be removed in a future release"""
+
     class Model(BaseModel):
         a: float = ...
 
@@ -187,6 +189,62 @@ def test_allow_extra():
             allow_extra = True
 
     assert Model(a='10.2', b=12).dict() == {'a': 10.2, 'b': 12}
+
+
+def test_disallow_mutation():
+    class Model(BaseModel):
+        a: float = ...
+
+    model = Model(a=0.2)
+    with pytest.raises(ValueError, match='"Model" object has no field "b"'):
+        model.b = 2
+
+
+def test_always_disallow():
+    class Model(BaseModel):
+        a: float = ...
+
+        class Config:
+            extra = ExtraAttributes.ALWAYS_DISALLOW
+
+    with pytest.raises(ValidationError, match='extra fields not permitted'):
+        Model(a=0.2, b=0.1)
+
+    model = Model(a=0.2)
+    with pytest.raises(ValueError, match='"Model" object has no field "b"'):
+        model.b = 1
+
+
+def test_mutation_only():
+    class Model(BaseModel):
+        a: float = ...
+
+        class Config:
+            extra = ExtraAttributes.MUTATION_ONLY
+
+    model = Model(a=0.2, b=0.1)
+    assert not getattr(model, 'b', None)
+
+    model = Model(a=0.2)
+    model.b = 1
+
+    assert getattr(model, 'b') == 1
+
+
+def test_always_allow():
+    class Model(BaseModel):
+        a: float = ...
+
+        class Config:
+            extra = ExtraAttributes.ALWAYS_ALLOW
+
+    model = Model(a=0.2, b=0.1)
+    assert getattr(model, 'b') == 0.1
+
+    model = Model(a=0.2)
+    model.c = 1
+
+    assert getattr(model, 'c') == 1
 
 
 def test_set_attr():
@@ -443,7 +501,6 @@ def test_arbitrary_type_allowed_validation_fails():
 
 def test_arbitrary_types_not_allowed():
     with pytest.raises(RuntimeError) as exc_info:
-
         class ArbitraryTypeNotAllowedModel(BaseModel):
             t: ArbitraryType
 
@@ -460,7 +517,6 @@ def test_annotation_field_name_shadows_attribute():
 def test_value_field_name_shadows_attribute():
     # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
     with pytest.raises(NameError):
-
         class BadModel(BaseModel):
             schema = 'abc'  # This conflicts with the BaseModel's schema() class method
 
