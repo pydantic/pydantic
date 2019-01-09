@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic import BaseModel, ValidationError, create_model, errors, validator
+from pydantic import BaseModel, Extra, ValidationError, create_model, errors, validator
 
 
 def test_create_model():
@@ -75,8 +75,7 @@ def test_custom_config_inherits():
 
 def test_custom_config_extras():
     class Config(BaseModel.Config):
-        ignore_extra = False
-        allow_extra = False
+        extra = Extra.forbidden
 
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(foo=654)

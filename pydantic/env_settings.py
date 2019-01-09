@@ -1,7 +1,7 @@
 import json
 import os
 
-from .main import BaseModel
+from .main import BaseModel, Extra
 
 
 class SettingsError(ValueError):
@@ -57,6 +57,6 @@ class BaseSettings(BaseModel):
     class Config:
         env_prefix = 'APP_'
         validate_all = True
-        ignore_extra = False
+        extra = Extra.forbidden
         arbitrary_types_allowed = True
         case_insensitive = False

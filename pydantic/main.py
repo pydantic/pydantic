@@ -20,7 +20,7 @@ from .utils import truncate, validate_field_name
 from .validators import dict_validator
 
 
-class ExtraAttributes(str, Enum):
+class Extra(str, Enum):
     allowed = 'allowed'
     ignored = 'ignored'
     forbidden = 'forbidden'
@@ -32,7 +32,7 @@ class BaseConfig:
     min_anystr_length = 0
     max_anystr_length = 2 ** 16
     validate_all = False
-    extra = ExtraAttributes.ignored
+    extra = Extra.ignored
     allow_mutation = True
     allow_population_by_alias = False
     use_enum_values = False
@@ -58,6 +58,40 @@ def inherit_config(self_config: Type, parent_config: Type[BaseConfig]) -> Type[B
     else:
         base_classes = self_config, parent_config
     return type('Config', base_classes, {})
+
+
+EXTRA_LINK = 'TODO/link/to/docs'
+
+
+def set_extra(config, cls_name):
+    has_ignore_extra, has_allow_extra = hasattr(config, 'ignore_extra'), hasattr(config, 'allow_extra')
+    if has_ignore_extra or has_allow_extra:
+        if getattr(config, 'allow_extra', False):
+            config.extra = Extra.allowed
+        elif getattr(config, 'ignore_extra', True):
+            config.extra = Extra.ignored
+        else:
+            config.extra = Extra.forbidden
+
+        if has_ignore_extra and has_allow_extra:
+            warnings.warn(
+                f'{cls_name}: "ignore_extra" and "allow_extra" are deprecated and replaced by "extra", '
+                f'see {EXTRA_LINK}',
+                DeprecationWarning,
+            )
+        elif has_ignore_extra:
+            warnings.warn(
+                f'{cls_name}: "ignore_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}',
+                DeprecationWarning,
+            )
+            del config.ignore_extra
+        elif has_allow_extra:
+            warnings.warn(
+                f'{cls_name}: "allow_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}', DeprecationWarning
+            )
+            del config.allow_extra
+    else:
+        config.extra = Extra(config.extra)
 
 
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
@@ -86,6 +120,7 @@ class MetaModel(ABCMeta):
                 # re-run prepare to add extra validators
                 f.prepare()
 
+        set_extra(config, name)
         annotations = namespace.get('__annotations__', {})
         class_vars = set()
         # annotation only fields need to come first in fields
@@ -150,7 +185,7 @@ class BaseModel(metaclass=MetaModel):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
-        if self.__config__.extra is not ExtraAttributes.allowed and name not in self.__fields__:
+        if self.__config__.extra is not Extra.allowed and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
@@ -408,32 +443,11 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     """
     validate data against a model.
     """
-
-    def _deprecated_values(config) -> bool:
-        """
-        Returns True if either 'ignore_extra' or 'allow_extra' are explicitly defined in config
-        """
-        return hasattr(config, 'ignore_extra') or hasattr(config, 'allow_extra')
-
-    def _get_extra(config) -> ExtraAttributes:
-        """
-        Returns the relevant ExtraAttributes type based on the deprecated extra attributes
-        """
-        ignore_extra = getattr(config, 'ignore_extra', True)
-        allow_extra = getattr(config, 'allow_extra', False)
-
-        if allow_extra:
-            return ExtraAttributes.allowed
-        elif ignore_extra:
-            return ExtraAttributes.ignored
-        else:
-            return ExtraAttributes.forbidden
-
     values = {}
     errors = []
     names_used = set()
     config = model.__config__
-    extra_ = _get_extra(config) if _deprecated_values(config) else config.extra
+    check_extra = config.extra is not Extra.ignored
 
     for name, field in model.__fields__.items():
         value = input_data.get(field.alias, _missing)
@@ -451,7 +465,7 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
                 else:
                     values[name] = deepcopy(field.default)
                 continue
-        elif extra_ is not ExtraAttributes.ignored:
+        elif check_extra:
             names_used.add(field.name if using_name else field.alias)
 
         v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)
@@ -462,10 +476,10 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
         else:
             values[name] = v_
 
-    if extra_ is not ExtraAttributes.ignored:
+    if check_extra:
         extra = input_data.keys() - names_used
         if extra:
-            if extra_ is ExtraAttributes.allowed:
+            if config.extra is Extra.allowed:
                 for field in extra:
                     values[field] = input_data[field]
             else:

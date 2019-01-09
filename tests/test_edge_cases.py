@@ -5,7 +5,17 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr, errors, validate_model
+from pydantic import (
+    BaseConfig,
+    BaseModel,
+    Extra,
+    NoneStrBytes,
+    StrBytes,
+    ValidationError,
+    constr,
+    errors,
+    validate_model,
+)
 
 
 def test_str_bytes():
@@ -463,7 +473,7 @@ def test_string_none():
         a: constr(min_length=20, max_length=1000) = ...
 
         class Config:
-            ignore_extra = True
+            extra = Extra.ignored
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=None)
@@ -614,7 +624,7 @@ def test_pop_by_alias():
         last_updated_by: Optional[str] = None
 
         class Config:
-            ignore_extra = False
+            extra = Extra.forbidden
             allow_population_by_alias = True
             fields = {'last_updated_by': 'lastUpdatedBy'}
 
