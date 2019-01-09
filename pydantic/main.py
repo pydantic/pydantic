@@ -84,12 +84,10 @@ def set_extra(config, cls_name):
                 f'{cls_name}: "ignore_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}',
                 DeprecationWarning,
             )
-            del config.ignore_extra
-        elif has_allow_extra:
+        else:
             warnings.warn(
                 f'{cls_name}: "allow_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}', DeprecationWarning
             )
-            del config.allow_extra
     else:
         config.extra = Extra(config.extra)
 

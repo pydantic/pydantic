@@ -635,3 +635,58 @@ def test_pop_by_alias():
     assert exc_info.value.errors() == [
         {'loc': ('last_updated_by',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'}
     ]
+
+
+def test_ignore_extra_true():
+    with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                ignore_extra = True
+
+    assert Model.__config__.extra is Extra.ignored
+
+
+def test_ignore_extra_false():
+    with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                ignore_extra = False
+
+    assert Model.__config__.extra is Extra.forbidden
+
+
+def test_allow_extra():
+    with pytest.warns(DeprecationWarning, match='Model: "allow_extra" is deprecated and replaced by "extra"'):
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                allow_extra = True
+
+    assert Model.__config__.extra is Extra.allowed
+
+
+def test_ignore_extra_allow_extra():
+    with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" and "allow_extra" are deprecated and'):
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                ignore_extra = False
+                allow_extra = False
+
+    assert Model.__config__.extra is Extra.forbidden
+
+
+def test_force_extra():
+    class Model(BaseModel):
+        foo: int
+
+        class Config:
+            extra = 'ignored'
+
+    assert Model.__config__.extra is Extra.ignored
