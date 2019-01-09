@@ -189,13 +189,13 @@ class BaseModel(metaclass=MetaModel):
         return lambda _, key: key
 
     def json(
-            self,
-            *,
-            include: Set[str] = None,
-            exclude: Set[str] = set(),
-            by_alias: bool = False,
-            encoder=None,
-            **dumps_kwargs,
+        self,
+        *,
+        include: Set[str] = None,
+        exclude: Set[str] = set(),
+        by_alias: bool = False,
+        encoder=None,
+        **dumps_kwargs,
     ) -> str:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
@@ -217,13 +217,13 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_raw(
-            cls,
-            b: StrBytes,
-            *,
-            content_type: str = None,
-            encoding: str = 'utf8',
-            proto: Protocol = None,
-            allow_pickle: bool = False,
+        cls,
+        b: StrBytes,
+        *,
+        content_type: str = None,
+        encoding: str = 'utf8',
+        proto: Protocol = None,
+        allow_pickle: bool = False,
     ):
         try:
             obj = load_str_bytes(
@@ -235,13 +235,13 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_file(
-            cls,
-            path: Union[str, Path],
-            *,
-            content_type: str = None,
-            encoding: str = 'utf8',
-            proto: Protocol = None,
-            allow_pickle: bool = False,
+        cls,
+        path: Union[str, Path],
+        *,
+        content_type: str = None,
+        encoding: str = 'utf8',
+        proto: Protocol = None,
+        allow_pickle: bool = False,
     ):
         obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
         return cls.parse_obj(obj)
@@ -257,8 +257,7 @@ class BaseModel(metaclass=MetaModel):
         return m
 
     def copy(
-            self, *, include: Set[str] = None, exclude: Set[str] = None, update: Dict[str, Any] = None,
-            deep: bool = False
+        self, *, include: Set[str] = None, exclude: Set[str] = None, update: Dict[str, Any] = None, deep: bool = False
     ):
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.

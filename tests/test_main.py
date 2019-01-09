@@ -185,6 +185,7 @@ def test_allow_extra():
 
         class Config:
             allow_extra = True
+
     with pytest.warns(PendingDeprecationWarning):
         assert Model(a='10.2', b=12).dict() == {'a': 10.2, 'b': 12}
 
@@ -497,6 +498,7 @@ def test_arbitrary_type_allowed_validation_fails():
 
 def test_arbitrary_types_not_allowed():
     with pytest.raises(RuntimeError) as exc_info:
+
         class ArbitraryTypeNotAllowedModel(BaseModel):
             t: ArbitraryType
 
@@ -513,6 +515,7 @@ def test_annotation_field_name_shadows_attribute():
 def test_value_field_name_shadows_attribute():
     # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
     with pytest.raises(NameError):
+
         class BadModel(BaseModel):
             schema = 'abc'  # This conflicts with the BaseModel's schema() class method
 
