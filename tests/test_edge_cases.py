@@ -639,6 +639,7 @@ def test_pop_by_alias():
 
 def test_ignore_extra_true():
     with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
+
         class Model(BaseModel):
             foo: int
 
@@ -650,6 +651,7 @@ def test_ignore_extra_true():
 
 def test_ignore_extra_false():
     with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
+
         class Model(BaseModel):
             foo: int
 
@@ -661,6 +663,7 @@ def test_ignore_extra_false():
 
 def test_allow_extra():
     with pytest.warns(DeprecationWarning, match='Model: "allow_extra" is deprecated and replaced by "extra"'):
+
         class Model(BaseModel):
             foo: int
 
@@ -672,6 +675,7 @@ def test_allow_extra():
 
 def test_ignore_extra_allow_extra():
     with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" and "allow_extra" are deprecated and'):
+
         class Model(BaseModel):
             foo: int
 
