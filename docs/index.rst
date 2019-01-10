@@ -446,7 +446,7 @@ Options:
 :max_anystr_length: max length for str & byte types (default: ``2 ** 16``)
 :validate_all: whether or not to validate field defaults (default: ``False``)
 :extra: whether to ignore, allow or forbid extra attributes in model. Can use either string values of ``ignore``,
-  ``allow`` or ``forbidden``, or use ``Extra`` enum. Default is ``Extra.ignore``
+  ``allow`` or ``forbidden``, or use ``Extra`` enum (default is ``Extra.ignore``)
 :allow_mutation: whether or not models are faux-immutable, e.g. __setattr__ fails (default: ``True``)
 :use_enum_values: whether to populate models with the ``value`` property of enums,
     rather than the raw enum - useful if you want to serialise ``model.dict()`` later (default: ``False``)
