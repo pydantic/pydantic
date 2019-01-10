@@ -393,7 +393,6 @@ def test_inheritance():
 
 def test_invalid_type():
     with pytest.raises(RuntimeError) as exc_info:
-
         class Model(BaseModel):
             x: 43 = 123
 
@@ -568,7 +567,6 @@ def test_invalid_validator():
             pass
 
     with pytest.raises(errors.ConfigError) as exc_info:
-
         class InvalidValidatorModel(BaseModel):
             x: InvalidValidator = ...
 
@@ -577,7 +575,6 @@ def test_invalid_validator():
 
 def test_unable_to_infer():
     with pytest.raises(errors.ConfigError) as exc_info:
-
         class InvalidDefinitionModel(BaseModel):
             x = None
 
@@ -595,7 +592,6 @@ def test_get_validator():
             return v * 2
 
     with pytest.warns(DeprecationWarning):
-
         class Model(BaseModel):
             x: CustomClass
 
@@ -639,7 +635,6 @@ def test_pop_by_alias():
 
 def test_ignore_extra_true():
     with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
-
         class Model(BaseModel):
             foo: int
 
@@ -651,7 +646,6 @@ def test_ignore_extra_true():
 
 def test_ignore_extra_false():
     with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
-
         class Model(BaseModel):
             foo: int
 
@@ -663,7 +657,6 @@ def test_ignore_extra_false():
 
 def test_allow_extra():
     with pytest.warns(DeprecationWarning, match='Model: "allow_extra" is deprecated and replaced by "extra"'):
-
         class Model(BaseModel):
             foo: int
 
@@ -675,7 +668,6 @@ def test_allow_extra():
 
 def test_ignore_extra_allow_extra():
     with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" and "allow_extra" are deprecated and'):
-
         class Model(BaseModel):
             foo: int
 
@@ -694,3 +686,12 @@ def test_force_extra():
             extra = 'ignored'
 
     assert Model.__config__.extra is Extra.ignored
+
+
+def test_illegal_extra_value():
+    with pytest.raises(ValueError, match='is not a valid value for "extra"'):
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                extra = 'foo'

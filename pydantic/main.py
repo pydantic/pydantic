@@ -89,7 +89,11 @@ def set_extra(config, cls_name):
                 f'{cls_name}: "allow_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}', DeprecationWarning
             )
     else:
-        config.extra = Extra(config.extra)
+        try:
+            config.extra = Extra(config.extra)
+        except ValueError:
+            raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
+
 
 
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
