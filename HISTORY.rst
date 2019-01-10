@@ -10,6 +10,7 @@ v0.18.0 (unreleased)
   ``whole`` validators being called for sub-fields, fix #132 by @samuelcolvin
 * improve documentation for settings priority and allow it to be easily changed, #343 by @samuelcolvin
 * fix ``ignore_extra=False`` and ``allow_population_by_alias=True``, fix #257 by @samuelcolvin
+* Deprecated ``ignore_extra`` and ``allow_extra`` Config fields in favor of ``extra``, #352 by @liiight
 
 v0.17.0 (2018-12-27)
 ....................
