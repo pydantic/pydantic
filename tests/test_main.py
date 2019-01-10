@@ -160,7 +160,7 @@ def test_allow_extra():
         a: float = ...
 
         class Config:
-            extra = Extra.allowed
+            extra = Extra.allow
 
     assert Model(a='10.2', b=12).dict() == {'a': 10.2, 'b': 12}
 
@@ -170,7 +170,7 @@ def test_forbidden_extra_success():
         foo = 'whatever'
 
         class Config:
-            extra = Extra.forbidden
+            extra = Extra.forbid
 
     m = ForbiddenExtra()
     assert m.foo == 'whatever'
@@ -184,7 +184,7 @@ def test_forbidden_extra_fails():
         foo = 'whatever'
 
         class Config:
-            extra = Extra.forbidden
+            extra = Extra.forbid
 
     with pytest.raises(ValidationError) as exc_info:
         ForbiddenExtra(foo='ok', bar='wrong', spam='xx')
@@ -208,7 +208,7 @@ def test_extra_allowed():
         a: float
 
         class Config:
-            extra = Extra.allowed
+            extra = Extra.allow
 
     model = Model(a=0.2, b=0.1)
     assert model.b == 0.1
@@ -224,7 +224,7 @@ def test_extra_ignored():
         a: float
 
         class Config:
-            extra = Extra.ignored
+            extra = Extra.ignore
 
     model = Model(a=0.2, b=0.1)
     assert not hasattr(model, 'b')
@@ -332,7 +332,7 @@ def test_not_immutability():
 
         class Config:
             allow_mutation = True
-            extra = Extra.forbidden
+            extra = Extra.forbid
 
     m = TestModel()
     assert m.a == 10
@@ -349,7 +349,7 @@ def test_immutability():
 
         class Config:
             allow_mutation = False
-            extra = Extra.forbidden
+            extra = Extra.forbid
 
     m = TestModel()
     assert m.a == 10

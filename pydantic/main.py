@@ -21,9 +21,9 @@ from .validators import dict_validator
 
 
 class Extra(str, Enum):
-    allowed = 'allowed'
-    ignored = 'ignored'
-    forbidden = 'forbidden'
+    allow = 'allow'
+    ignore = 'ignore'
+    forbid = 'forbid'
 
 
 class BaseConfig:
@@ -32,7 +32,7 @@ class BaseConfig:
     min_anystr_length = None
     max_anystr_length = None
     validate_all = False
-    extra = Extra.ignored
+    extra = Extra.ignore
     allow_mutation = True
     allow_population_by_alias = False
     use_enum_values = False
@@ -71,7 +71,7 @@ def set_extra(config, cls_name):
         elif getattr(config, 'ignore_extra', True):
             config.extra = Extra.ignored
         else:
-            config.extra = Extra.forbidden
+            config.extra = Extra.forbid
 
         if has_ignore_extra and has_allow_extra:
             warnings.warn(

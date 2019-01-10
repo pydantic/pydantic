@@ -57,6 +57,6 @@ class BaseSettings(BaseModel):
     class Config:
         env_prefix = 'APP_'
         validate_all = True
-        extra = Extra.forbidden
+        extra = Extra.forbid
         arbitrary_types_allowed = True
         case_insensitive = False

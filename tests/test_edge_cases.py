@@ -473,7 +473,7 @@ def test_string_none():
         a: constr(min_length=20, max_length=1000) = ...
 
         class Config:
-            extra = Extra.ignored
+            extra = Extra.ignore
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=None)
@@ -610,7 +610,7 @@ def test_multiple_errors():
         Model(a='foobar')
 
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not none', 'type': 'type_error.none.allowed'},
+        {'loc': ('a',), 'msg': 'value is not none', 'type': 'type_error.none.allow'},
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
         {'loc': ('a',), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
         {'loc': ('a',), 'msg': 'value is not a valid decimal', 'type': 'type_error.decimal'},
@@ -624,7 +624,7 @@ def test_pop_by_alias():
         last_updated_by: Optional[str] = None
 
         class Config:
-            extra = Extra.forbidden
+            extra = Extra.forbid
             allow_population_by_alias = True
             fields = {'last_updated_by': 'lastUpdatedBy'}
 
@@ -646,7 +646,7 @@ def test_ignore_extra_true():
             class Config:
                 ignore_extra = True
 
-    assert Model.__config__.extra is Extra.ignored
+    assert Model.__config__.extra is Extra.ignore
 
 
 def test_ignore_extra_false():
@@ -658,7 +658,7 @@ def test_ignore_extra_false():
             class Config:
                 ignore_extra = False
 
-    assert Model.__config__.extra is Extra.forbidden
+    assert Model.__config__.extra is Extra.forbid
 
 
 def test_allow_extra():
@@ -670,7 +670,7 @@ def test_allow_extra():
             class Config:
                 allow_extra = True
 
-    assert Model.__config__.extra is Extra.allowed
+    assert Model.__config__.extra is Extra.allow
 
 
 def test_ignore_extra_allow_extra():
@@ -683,7 +683,7 @@ def test_ignore_extra_allow_extra():
                 ignore_extra = False
                 allow_extra = False
 
-    assert Model.__config__.extra is Extra.forbidden
+    assert Model.__config__.extra is Extra.forbid
 
 
 def test_force_extra():
@@ -693,7 +693,7 @@ def test_force_extra():
         class Config:
             extra = 'ignored'
 
-    assert Model.__config__.extra is Extra.ignored
+    assert Model.__config__.extra is Extra.ignore
 
 
 def test_illegal_extra_value():
