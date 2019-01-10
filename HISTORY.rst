@@ -10,6 +10,8 @@ v0.18.0 (unreleased)
   ``whole`` validators being called for sub-fields, fix #132 by @samuelcolvin
 * improve documentation for settings priority and allow it to be easily changed, #343 by @samuelcolvin
 * fix ``ignore_extra=False`` and ``allow_population_by_alias=True``, fix #257 by @samuelcolvin
+* **breaking change**: Set ``BaseConfig`` attributes ``min_anystr_length`` and ``max_anystr_length`` to
+    ``None`` by default, fix #349 in #350, by @tiangolo
 * Deprecated ``ignore_extra`` and ``allow_extra`` Config fields in favor of ``extra``, #352 by @liiight
 
 v0.17.0 (2018-12-27)
