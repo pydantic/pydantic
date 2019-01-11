@@ -6,7 +6,7 @@ from . import errors as errors_
 from .class_validators import Validator, ValidatorSignature, get_validator_signature
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .utils import display_as_type, lenient_issubclass, list_like
+from .utils import ForwardRef, display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators, is_none_validator
 
 Required: Any = Ellipsis
@@ -117,6 +117,11 @@ class Field:
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
+
+        if type(self.type_) == ForwardRef:
+            # self.type_ is currently a ForwardRef and there's nothing we can do now,
+            # user will need to call model.update_forward_refs()
+            return
 
         self.validate_always: bool = (
             getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators.values())

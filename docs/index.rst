@@ -54,9 +54,9 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
     :ref:`mypy <usage_mypy>` and your intuition should all work properly with your validated data.
 
 **dual use**
-    *pydantic's* :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data" context
-    and "load my system settings" context. The main difference being that system settings can have defaults changed
-    by environment variables and more complex objects like DSNs and python objects are often required.
+    *pydantic's* :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data"
+    context and "load my system settings" context. The main difference being that system settings can have defaults
+    changed by environment variables and more complex objects like DSNs and python objects are often required.
 
 **fast**
     In :ref:`benchmarks <benchmarks_tag>` *pydantic* is faster than all other tested libraries.
@@ -261,8 +261,8 @@ and reference.
 "sub-models" with modifications (via the ``Schema`` class) like a custom title, description or default value,
 are recursively included instead of referenced.
 
-The ``description`` for models is taken from the docstring of the class or the argument ``description`` to the ``Schema``
-class.
+The ``description`` for models is taken from the docstring of the class or the argument ``description`` to
+the ``Schema`` class.
 
 Optionally the ``Schema`` class can be used to provide extra information about the field and validations, arguments:
 
@@ -316,7 +316,8 @@ Outputs:
 
 .. literalinclude:: examples/schema2.json
 
-You can customize the generated ``$ref`` JSON location, the definitions will still be in the key ``definitions`` and you can still get them from there, but the references will point to your defined prefix instead of the default.
+You can customize the generated ``$ref`` JSON location, the definitions will still be in the key ``definitions`` and
+you can still get them from there, but the references will point to your defined prefix instead of the default.
 
 This is useful if you need to extend or modify JSON Schema default definitions location, e.g. with OpenAPI:
 
@@ -651,6 +652,30 @@ Pydantic models can be used alongside Python's
 `Abstract Base Classes <https://docs.python.org/3/library/abc.html>`_ (ABCs).
 
 .. literalinclude:: examples/ex_abc.py
+
+(This script is complete, it should run "as is")
+
+Postponed Annotations
+.....................
+
+.. note::
+
+   Both postponed annotations via the future import and ``ForwardRef`` require python 3.7+.
+
+With globally postponed annotations *pydantic* should "just work".
+
+.. literalinclude:: examples/postponed_annotations.py
+
+(This script is complete, it should run "as is")
+
+Internally *pydantic*  will call a method similar to ``typing.get_type_hints`` to resolve annotations.
+
+To make use of ``ForwardRef`` you may need to call ``Model.update_forward_refs()`` after creating the model,
+this is because in the example below ``Foo`` doesn't exist before it has been created (obviously) so ``ForwardRef``
+can't initially be resolved. You have to wait until after ``Foo`` is created, then call ``update_forward_refs``
+to properly set types before the model can be used.
+
+.. literalinclude:: examples/forward_ref.py
 
 (This script is complete, it should run "as is")
 

@@ -1,4 +1,5 @@
 import json
+import sys
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
@@ -15,7 +16,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
-from .utils import truncate, validate_field_name
+from .utils import ForwardRef, resolve_annotations, truncate, validate_field_name
 from .validators import dict_validator
 
 
@@ -81,6 +82,9 @@ class MetaModel(ABCMeta):
                 f.prepare()
 
         annotations = namespace.get('__annotations__', {})
+        if sys.version_info >= (3, 7):
+            annotations = resolve_annotations(annotations, namespace.get('__module__', None))
+
         class_vars = set()
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
@@ -322,6 +326,18 @@ class BaseModel(metaclass=MetaModel):
         else:
             return v
 
+    @classmethod
+    def update_forward_refs(cls, **localns):
+        """
+        Try to update ForwardRefs on fields based on this Model, globalns and localns.
+        """
+        globalns = sys.modules[cls.__module__].__dict__
+        globalns.setdefault(cls.__name__, cls)
+        for f in cls.__fields__.values():
+            if type(f.type_) == ForwardRef:
+                f.type_ = f.type_._evaluate(globalns, localns or None)
+                f.prepare()
+
     def __iter__(self):
         """
         so `dict(model)` works
@@ -398,7 +414,7 @@ def create_model(model_name: str, *, __config__: Type = None, __base__: Type[Bas
     return type(model_name, (__base__,), namespace)
 
 
-def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (ignore complexity)
+def validate_model(model: BaseModel, input_data: dict, raise_exc=True):  # noqa: C901 (ignore complexity)
     """
     validate data against a model.
     """
@@ -408,6 +424,12 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
     check_extra = (not model.__config__.ignore_extra) or model.__config__.allow_extra
 
     for name, field in model.__fields__.items():
+        if type(field.type_) == ForwardRef:
+            raise ConfigError(
+                f"field {field.name} not yet prepared and type is still a ForwardRef, "
+                f"you'll need to call {model.__class__.__name__}.update_forward_refs()"
+            )
+
         value = input_data.get(field.alias, _missing)
         using_name = False
         if value is _missing and model.__config__.allow_population_by_alias and field.alt_alias:
