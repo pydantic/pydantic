@@ -329,7 +329,7 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def update_forward_refs(cls, **localns):
         """
-        Try to update ForwardRefs on fields based on this Model and globalns.
+        Try to update ForwardRefs on fields based on this Model, globalns and localns.
         """
         globalns = sys.modules[cls.__module__].__dict__
         globalns.setdefault(cls.__name__, cls)

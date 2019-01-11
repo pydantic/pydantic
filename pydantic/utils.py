@@ -235,7 +235,7 @@ def resolve_annotations(raw_annotations, module):
         base_globals = sys.modules[module].__dict__
     else:
         base_globals = None
-    hints = {}
+    annotations = {}
     for name, value in raw_annotations.items():
         if isinstance(value, str):
             value = ForwardRef(value, is_argument=False)
@@ -244,5 +244,5 @@ def resolve_annotations(raw_annotations, module):
         except NameError:
             # this is ok, it can be fixed with update_forward_refs
             pass
-        hints[name] = value
-    return hints
+        annotations[name] = value
+    return annotations

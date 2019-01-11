@@ -119,7 +119,8 @@ class Field:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
         if type(self.type_) == ForwardRef:
-            # self.type_ is currently a ForwardRef and there's nothing we can do now, user will need to call
+            # self.type_ is currently a ForwardRef and there's nothing we can do now,
+            # user will need to call model.update_forward_refs()
             return
 
         self.validate_always: bool = (

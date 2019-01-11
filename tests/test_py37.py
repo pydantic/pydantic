@@ -1,5 +1,5 @@
 """
-Tests for python 3.7 behaviour, eg postponed annotations and (in future maybe) ForwardRef.
+Tests for python 3.7 behaviour, eg postponed annotations and ForwardRef.
 """
 import sys
 
