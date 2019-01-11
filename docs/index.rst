@@ -683,12 +683,12 @@ To make contributing as easy and fast as possible, you'll want to run tests and 
 *pydantic* has few dependencies, doesn't require compiling and tests don't need access to databases etc., setting
 up and running tests should be very simple.
 
-You'll need to have ``python`` (3.6 or 3.7), ``virtualenv``, ``git``, and ``make`` installed.
+You'll need to have **python 3.6** or **3.7**, **virtualenv**, **git**, and **make** installed.
 
 .. literalinclude:: examples/contributing.sh
   :language: bash
 
-**tl;dr**:  ``make format`` to fix imports & formatting and use ``make`` to run tests and linting.
+**tl;dr**: use ``make format`` to fix formatting & ``make`` to run tests and linting.
 
 Using Pydantic
 --------------
