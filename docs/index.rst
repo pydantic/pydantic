@@ -669,6 +669,25 @@ Below are the results of crude benchmarks comparing *pydantic* to other validati
 (See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
 for more details on the test case. Feel free to submit more benchmarks or improve an existing one.)
 
+Contributing to Pydantic
+------------------------
+
+We'd love you to contribute to *pydantic*, it should be extremely simple to get started and create a Pull Request.
+*pydantic* is released regularly so you should see your improvements release in a matter of days or weeks.
+
+If you're looking for something to get your teeth into, check out the
+`"help wanted" <https://github.com/samuelcolvin/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22>`_
+label on github.
+
+To make contributing as easy and fast as possible, you'll want to run tests and linting locally. Luckily since
+*pydantic* has vew few dependencies, doesn't require compiling and tests don't need access to databases etc., setting
+up and running tests should be very simple.
+
+.. literalinclude:: examples/contributing.sh
+  :language: bash
+
+**tl;dr**: use ``make`` to run tests and ``make format`` to fix imports & formatting.
+
 Using Pydantic
 --------------
 

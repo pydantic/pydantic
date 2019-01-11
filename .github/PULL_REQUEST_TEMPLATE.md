@@ -1,4 +1,5 @@
 <!-- Thank you for your contribution! -->
+<!-- See https://pydantic-docs.helpmanual.io/#contributing-to-pydantic for help on Contributing -->
 <!-- Don't worry about making lots of commits on a pull request, they'll be squashed on merge anyway -->
 
 ## Change Summary
