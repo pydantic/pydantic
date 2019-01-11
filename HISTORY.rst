@@ -12,6 +12,7 @@ v0.18.0 (unreleased)
 * fix ``ignore_extra=False`` and ``allow_population_by_alias=True``, fix #257 by @samuelcolvin
 * **breaking change**: Set ``BaseConfig`` attributes ``min_anystr_length`` and ``max_anystr_length`` to
     ``None`` by default, fix #349 in #350, by @tiangolo
+* add support for postponed annotations, #348 by @samuelcolvin
 
 v0.17.0 (2018-12-27)
 ....................

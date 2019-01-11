@@ -414,7 +414,7 @@ def create_model(model_name: str, *, __config__: Type = None, __base__: Type[Bas
     return type(model_name, (__base__,), namespace)
 
 
-def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (ignore complexity)
+def validate_model(model: BaseModel, input_data: dict, raise_exc=True):  # noqa: C901 (ignore complexity)
     """
     validate data against a model.
     """
@@ -427,7 +427,7 @@ def validate_model(model, input_data: dict, raise_exc=True):  # noqa: C901 (igno
         if type(field.type_) == ForwardRef:
             raise ConfigError(
                 f"field {field.name} not yet prepared and type is still a ForwardRef, "
-                f"you'll need to call update_forward_refs"
+                f"you'll need to call {model.__class__.__name__}.update_forward_refs()"
             )
 
         value = input_data.get(field.alias, _missing)
