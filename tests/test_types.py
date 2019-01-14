@@ -30,6 +30,7 @@ from pydantic import (
     PyObject,
     StrictStr,
     ValidationError,
+    conbytes,
     condecimal,
     confloat,
     conint,
@@ -41,6 +42,33 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
+
+
+class ConBytesModel(BaseModel):
+    v: conbytes(max_length=10) = b'foobar'
+
+
+def test_constrained_bytes_good():
+    m = ConBytesModel(v=b'short')
+    assert m.v == b'short'
+
+
+def test_constrained_bytes_default():
+    m = ConBytesModel()
+    assert m.v == b'foobar'
+
+
+def test_constrained_bytes_too_long():
+    with pytest.raises(ValidationError) as exc_info:
+        ConBytesModel(v=b'this is too long')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'ensure this value has at most 10 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 10},
+        }
+    ]
 
 
 class ConStringModel(BaseModel):

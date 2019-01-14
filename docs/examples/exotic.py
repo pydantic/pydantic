@@ -4,8 +4,8 @@ from pathlib import Path
 from uuid import UUID
 
 from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
-                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, UrlStr, condecimal, confloat,
-                      conint, constr)
+                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, UrlStr, conbytes, condecimal,
+                      confloat, conint, constr)
 
 
 class Model(BaseModel):
@@ -14,6 +14,9 @@ class Model(BaseModel):
     path_to_something: Path = None
     path_to_file: FilePath = None
     path_to_directory: DirectoryPath = None
+
+    short_bytes: conbytes(min_length=2, max_length=10) = None
+    strip_bytes: conbytes(strip_whitespace=True)
 
     short_str: constr(min_length=2, max_length=10) = None
     regex_str: constr(regex='apple (pie|tart|sandwich)') = None
@@ -56,6 +59,8 @@ m = Model(
     path_to_something='/home',
     path_to_file='/home/file.py',
     path_to_directory='home/projects',
+    short_bytes=b'foo',
+    strip_bytes=b'   bar',
     short_str='foo',
     regex_str='apple pie',
     strip_str='   bar',
@@ -86,6 +91,8 @@ print(m.dict())
     'path_to_something': PosixPath('/home'),
     'path_to_file': PosixPath('/home/file.py'),
     'path_to_directory': PosixPath('/home/projects'),
+    'short_bytes': b'foo',
+    'strip_bytes': b'bar',
     'short_str': 'foo',
     'regex_str': 'apple pie',
     'strip_str': 'bar',

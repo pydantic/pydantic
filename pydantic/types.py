@@ -10,6 +10,7 @@ from .utils import import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
     anystr_strip_whitespace,
+    bytes_validator,
     decimal_validator,
     float_validator,
     int_validator,
@@ -31,6 +32,8 @@ __all__ = [
     'StrBytes',
     'NoneStrBytes',
     'StrictStr',
+    'ConstrainedBytes',
+    'conbytes',
     'ConstrainedStr',
     'constr',
     'EmailStr',
@@ -75,6 +78,25 @@ class StrictStr(str):
         if not isinstance(v, str):
             raise errors.StrError()
         return v
+
+
+class ConstrainedBytes(bytes):
+    strip_whitespace = False
+    min_length: Optional[int] = None
+    max_length: Optional[int] = None
+
+    @classmethod
+    def __get_validators__(cls):
+        yield not_none_validator
+        yield bytes_validator
+        yield anystr_strip_whitespace
+        yield anystr_length_validator
+
+
+def conbytes(*, strip_whitespace=False, min_length=None, max_length=None) -> Type[bytes]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(strip_whitespace=strip_whitespace, min_length=min_length, max_length=max_length)
+    return type('ConstrainedBytesValue', (ConstrainedBytes,), namespace)
 
 
 class ConstrainedStr(str):
