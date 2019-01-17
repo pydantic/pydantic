@@ -18,6 +18,7 @@ from pydantic.types import (
     UUID3,
     UUID4,
     UUID5,
+    ConstrainedBytes,
     ConstrainedDecimal,
     ConstrainedFloat,
     ConstrainedInt,
@@ -38,6 +39,7 @@ from pydantic.types import (
     StrBytes,
     StrictStr,
     UrlStr,
+    conbytes,
     condecimal,
     confloat,
     conint,
@@ -1056,3 +1058,23 @@ def test_schema_dict_constr():
             'a': {'type': 'object', 'title': 'A', 'default': {}, 'patternProperties': {regex_str: {'type': 'string'}}}
         },
     }
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (ConstrainedBytes, {'title': 'A', 'type': 'string', 'format': 'binary'}),
+        (
+            conbytes(min_length=3, max_length=5),
+            {'title': 'A', 'type': 'string', 'format': 'binary', 'minLength': 3, 'maxLength': 5},
+        ),
+    ],
+)
+def test_bytes_constrained_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
+    base_schema['properties']['a'] = expected_schema
+
+    assert Model.schema() == base_schema

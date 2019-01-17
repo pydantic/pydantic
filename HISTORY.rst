@@ -3,6 +3,10 @@
 History
 -------
 
+v0.19.0 (2019-XX-XX)
+....................
+* add ``ConstrainedBytes`` and ``conbytes`` types #315 @Gr1N
+
 v0.18.0 (2019-01-13)
 ....................
 * **breaking change**: don't call validators on keys of dictionaries, #254 by @samuelcolvin
