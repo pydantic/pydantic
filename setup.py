@@ -24,18 +24,16 @@ class ReplaceLinks:
 
 description = 'Data validation and settings management using python 3.6 type hinting'
 THIS_DIR = Path(__file__).resolve().parent
-try:
-    history = THIS_DIR.joinpath('HISTORY.rst').read_text()
+history = THIS_DIR.joinpath('HISTORY.rst').read_text()
 
-    replacer = ReplaceLinks()
-    history = re.sub(r'#(\d+)', replacer.replace_issues, history)
-    history = re.sub(r'( +)@(\w+)', replacer.replace_users, history, flags=re.I)
-    history = re.sub(r'@@', '@', history)
-    history += replacer.extra()
+replacer = ReplaceLinks()
+history = re.sub(r'#(\d+)', replacer.replace_issues, history)
+history = re.sub(r'( +)@(\w+)', replacer.replace_users, history, flags=re.I)
+history = re.sub(r'@@', '@', history)
+history += replacer.extra()
 
-    long_description = '\n\n'.join([THIS_DIR.joinpath('README.rst').read_text(), history])
-except FileNotFoundError:
-    long_description = description + '.\n\nSee https://pydantic-docs.helpmanual.io/ for documentation.'
+readme = THIS_DIR.joinpath('README.rst').read_text()
+long_description = readme + '\n\n' + history
 
 # avoid loading the package before requirements are installed:
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
