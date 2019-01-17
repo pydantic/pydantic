@@ -3,9 +3,10 @@
 History
 -------
 
-v0.19.0 (2019-XX-XX)
+v0.18.1 (2019-01-17)
 ....................
-* add ``ConstrainedBytes`` and ``conbytes`` types #315 @Gr1N
+* add ``ConstrainedBytes`` and ``conbytes`` types, #315 @Gr1N
+* adding ``MANIFEST.in`` to include license in package ``.tar.gz``, #358 by @samuelcolvin
 
 v0.18.0 (2019-01-13)
 ....................
