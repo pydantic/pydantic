@@ -1078,3 +1078,17 @@ def test_bytes_constrained_types(field_type, expected_schema):
     base_schema['properties']['a'] = expected_schema
 
     assert Model.schema() == base_schema
+
+
+def test_optional_dict():
+    class Model(BaseModel):
+        something: Optional[Dict[str, Any]]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'something': {'title': 'Something', 'type': 'object'}},
+    }
+
+    assert Model().dict() == {'something': None}
+    assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}

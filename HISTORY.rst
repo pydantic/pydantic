@@ -3,6 +3,10 @@
 History
 -------
 
+v0.19.0 (unreleased)
+....................
+* Fix to schema generation with ``Optional`` fields, fix #361 by @samuelcolvin
+
 v0.18.1 (2019-01-17)
 ....................
 * add ``ConstrainedBytes`` and ``conbytes`` types, #315 @Gr1N
