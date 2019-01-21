@@ -1,4 +1,5 @@
 import warnings
+from collections.abc import Callable
 from enum import IntEnum
 from typing import Any, Dict, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union
 
@@ -145,6 +146,8 @@ class Field:
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
+            return
+        if origin is Callable:
             return
         if origin is Union:
             types_ = []

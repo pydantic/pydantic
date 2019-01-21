@@ -1,10 +1,11 @@
+import collections.abc
 import re
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum
 from pathlib import Path
-from typing import Any, Pattern
+from typing import Any, Callable, Pattern
 from uuid import UUID
 
 from . import errors
@@ -214,6 +215,13 @@ def path_exists_validator(v) -> Path:
     return v
 
 
+def callable_validator(v) -> Callable:
+    if callable(v):
+        return v
+
+    raise errors.CallableError(value=v)
+
+
 def make_arbitrary_type_validator(type_):
     def arbitrary_type_validator(v) -> type_:
         if isinstance(v, type_):
@@ -258,6 +266,8 @@ def find_validators(type_, arbitrary_types_allowed=False):
         return []
     if type_ is Pattern:
         return pattern_validators
+    if getattr(type_, '__origin__', None) is collections.abc.Callable:
+        return [callable_validator]
 
     supertype = _find_supertype(type_)
     if supertype is not None:
