@@ -5,17 +5,19 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 
-def test_callable():
+@pytest.mark.parametrize("annotation", [Callable, Callable[[int], int]])
+def test_callable(annotation):
     class Model(BaseModel):
-        callback: Callable[[int], int]
+        callback: annotation
 
     m = Model(callback=lambda x: x)
     assert callable(m.callback)
 
 
-def test_non_callable():
+@pytest.mark.parametrize("annotation", [Callable, Callable[[int], int]])
+def test_non_callable(annotation):
     class Model(BaseModel):
-        callback: Callable[[int], int]
+        callback: annotation
 
     with pytest.raises(ValidationError):
         Model(callback=1)
