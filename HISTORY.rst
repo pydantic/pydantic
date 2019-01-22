@@ -3,7 +3,7 @@
 History
 -------
 
-v0.19.0 (unreleased)
+v0.18.2 (2019-01-22)
 ....................
 * Fix to schema generation with ``Optional`` fields, fix #361 by @samuelcolvin
 * Support ``Callable`` type hint, fix #279 by @proofit404
