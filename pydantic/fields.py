@@ -1,7 +1,7 @@
+import collections.abc
 import warnings
-from collections.abc import Callable
 from enum import IntEnum
-from typing import Any, Dict, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union
 
 from . import errors as errors_
 from .class_validators import Validator, ValidatorSignature, get_validator_signature
@@ -147,7 +147,7 @@ class Field:
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
-        if origin is Callable:
+        if origin is Callable or origin is collections.abc.Callable:
             return
         if origin is Union:
             types_ = []

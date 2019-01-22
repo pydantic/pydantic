@@ -263,12 +263,15 @@ _VALIDATORS = [
 ]
 
 
+_CALLABLES = {Callable, collections.abc.Callable}
+
+
 def find_validators(type_, arbitrary_types_allowed=False):
     if type_ is Any:
         return []
     if type_ is Pattern:
         return pattern_validators
-    if getattr(type_, '__origin__', None) is collections.abc.Callable:
+    if type_ in _CALLABLES or getattr(type_, '__origin__', None) in _CALLABLES:
         return [callable_validator]
 
     supertype = _find_supertype(type_)
