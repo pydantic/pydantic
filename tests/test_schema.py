@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
@@ -618,6 +618,18 @@ def test_json_type():
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
         'required': ['a'],
     }
+
+
+@pytest.mark.parametrize('annotation', [Callable, Callable[[int], int]])
+def test_callable_type(annotation):
+    class Model(BaseModel):
+        callback: annotation
+        foo: int
+
+    with pytest.warns(UserWarning):
+        model_schema = Model.schema()
+
+    assert 'callback' not in model_schema['properties']
 
 
 def test_error_non_supported_types():
