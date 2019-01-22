@@ -216,6 +216,8 @@ def path_exists_validator(v) -> Path:
 
 
 def callable_validator(v) -> Callable:
+    # Perform a simple check if the passed value is callable.
+    # Complete match of arguments type hints does not perform.
     if callable(v):
         return v
 

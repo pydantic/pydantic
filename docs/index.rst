@@ -217,6 +217,20 @@ On class creation validators are checked to confirm that the fields they specify
 Occasionally however this is not wanted: when you define a validator to validate fields on inheriting models.
 In this case you should set ``check_fields=False`` on the validator.
 
+Callables
+~~~~~~~~~
+
+It is possible to check if callable was passed to the class argument.
+
+.. literalinclude:: examples/callable.py
+
+(This script is complete, it should run "as is")
+
+.. warning::
+
+    Perform a simple check if the passed value is callable.  Complete
+    match of arguments type hints does not perform.
+
 .. _recursive_models:
 
 Recursive Models
