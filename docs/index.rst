@@ -217,20 +217,6 @@ On class creation validators are checked to confirm that the fields they specify
 Occasionally however this is not wanted: when you define a validator to validate fields on inheriting models.
 In this case you should set ``check_fields=False`` on the validator.
 
-Callables
-~~~~~~~~~
-
-It is possible to check if callable was passed to the class argument.
-
-.. literalinclude:: examples/callable.py
-
-(This script is complete, it should run "as is")
-
-.. warning::
-
-    Perform a simple check if the passed value is callable.  Complete
-    match of arguments type hints does not perform.
-
 .. _recursive_models:
 
 Recursive Models
@@ -297,7 +283,7 @@ Optionally the ``Schema`` class can be used to provide extra information about t
   JSON Schema
 * ``max_length`` for string values, adds a corresponding validation and an annotation of ``maxLength`` to the
   JSON Schema
-* ``regex`` for string values, adds a Regular Expression validation generated from the passed string and an 
+* ``regex`` for string values, adds a Regular Expression validation generated from the passed string and an
   annotation of ``pattern`` to the JSON Schema
 * ``**`` any other keyword arguments (eg. ``examples``) will be added verbatim to the field's schema
 
@@ -399,6 +385,18 @@ Exotic Types
 .. literalinclude:: examples/exotic.py
 
 (This script is complete, it should run "as is")
+
+It is possible to check if callable was passed to the class argument.
+
+.. literalinclude:: examples/callable.py
+
+(This script is complete, it should run "as is")
+
+.. warning::
+
+    Callable fields only perform a simple check that the argument is
+    callable, no validation of arguments, their types or the return
+    type is performed.
 
 Json Type
 .........
