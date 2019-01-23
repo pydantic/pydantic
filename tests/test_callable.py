@@ -14,7 +14,7 @@ def test_callable(annotation):
     assert callable(m.callback)
 
 
-@pytest.mark.parametrize("annotation", [Callable, Callable[[int], int]])
+@pytest.mark.parametrize('annotation', [Callable, Callable[[int], int]])
 def test_non_callable(annotation):
     class Model(BaseModel):
         callback: annotation
