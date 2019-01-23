@@ -483,7 +483,8 @@ def model_type_schema(
             f_schema, f_definitions = field_schema(
                 f, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
             )
-        except SkipField:
+        except SkipField as skip:
+            warnings.warn(skip.message, UserWarning)
             continue
         definitions.update(f_definitions)
         if by_alias:
@@ -614,8 +615,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if field.type_ is Any:
         return {}, definitions  # no restrictions
     if is_callable_type(field.type_):
-        warnings.warn(f'Callable {field.name} was excluded from schema', UserWarning)
-        raise SkipField
+        raise SkipField(f'Callable {field.name} was excluded from schema')
     f_schema = {}
     if issubclass(field.type_, Enum):
         f_schema.update({'enum': [item.value for item in field.type_]})
@@ -702,4 +702,5 @@ class SkipField(Exception):
     Utility exception used to skip fields from schema.
     """
 
-    pass
+    def __init__(self, message):
+        self.message = message
