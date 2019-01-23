@@ -1,7 +1,7 @@
-import collections.abc
+import sys
 import warnings
 from enum import IntEnum
-from typing import Any, Callable, Dict, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union
+from typing import Any, Dict, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union
 
 from . import errors as errors_
 from .class_validators import Validator, ValidatorSignature, get_validator_signature
@@ -9,6 +9,11 @@ from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
 from .utils import ForwardRef, display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators, is_none_validator
+
+if sys.version_info < (3, 7):
+    from typing import Callable
+else:
+    from collections.abc import Callable
 
 Required: Any = Ellipsis
 
@@ -147,7 +152,7 @@ class Field:
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
-        if origin is Callable or origin is collections.abc.Callable:
+        if origin is Callable:
             return
         if origin is Union:
             types_ = []
