@@ -26,6 +26,11 @@ except ImportError:
     # python 3.6
     ForwardRef = None
 
+if sys.version_info < (3, 7):
+    from typing import Callable
+else:
+    from collections.abc import Callable
+
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
 
 
@@ -246,3 +251,8 @@ def resolve_annotations(raw_annotations, module):
             pass
         annotations[name] = value
     return annotations
+
+
+def is_callable_type(type_):
+
+    return type_ is Callable or getattr(type_, '__origin__', None) is Callable

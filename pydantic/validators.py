@@ -1,4 +1,3 @@
-import collections.abc
 import re
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
@@ -10,7 +9,7 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import change_exception, display_as_type, list_like
+from .utils import change_exception, display_as_type, is_callable_type, list_like
 
 NoneType = type(None)
 
@@ -267,15 +266,12 @@ _VALIDATORS = [
 ]
 
 
-_CALLABLES = {Callable, collections.abc.Callable}
-
-
 def find_validators(type_, arbitrary_types_allowed=False):
     if type_ is Any:
         return []
     if type_ is Pattern:
         return pattern_validators
-    if type_ in _CALLABLES or getattr(type_, '__origin__', None) in _CALLABLES:
+    if is_callable_type(type_):
         return [callable_validator]
 
     supertype = _find_supertype(type_)

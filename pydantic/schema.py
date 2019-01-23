@@ -1,10 +1,9 @@
-import collections.abc
 import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, Sequence, Set, Tuple, Type
+from typing import Any, Dict, Sequence, Set, Tuple, Type
 from uuid import UUID
 
 from . import main
@@ -31,7 +30,7 @@ from .types import (
     conint,
     constr,
 )
-from .utils import clean_docstring, lenient_issubclass
+from .utils import clean_docstring, is_callable_type, lenient_issubclass
 
 __all__ = [
     'Schema',
@@ -588,9 +587,6 @@ field_class_to_schema_enum_disabled = (
 )
 
 
-_CALLABLES = {Callable, collections.abc.Callable}
-
-
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
     field: Field,
     *,
@@ -617,7 +613,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         )
     if field.type_ is Any:
         return {}, definitions  # no restrictions
-    if field.type_ in _CALLABLES or getattr(field.type_, '__origin__', None) in _CALLABLES:
+    if is_callable_type(field.type_):
         warnings.warn(f'Callable {field.name} was excluded from schema', UserWarning)
         raise SkipField
     f_schema = {}
