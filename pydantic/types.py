@@ -394,9 +394,13 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
         return value
 
 
-def condecimal(*, gt=None, ge=None, lt=None, le=None, max_digits=None, decimal_places=None, multiple_of=None) -> Type[Decimal]:
+def condecimal(
+    *, gt=None, ge=None, lt=None, le=None, max_digits=None, decimal_places=None, multiple_of=None
+) -> Type[Decimal]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, max_digits=max_digits, decimal_places=decimal_places, multiple_of=multiple_of)
+    namespace = dict(
+        gt=gt, ge=ge, lt=lt, le=le, max_digits=max_digits, decimal_places=decimal_places, multiple_of=multiple_of
+    )
     return type('ConstrainedDecimalValue', (ConstrainedDecimal,), namespace)
 
 
