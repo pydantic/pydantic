@@ -72,6 +72,8 @@ class Schema:
       will have an ``exclusiveMaximum`` validation keyword
     :param le: only applies to numbers, requires the field to be "less than or equal to". The
       schema will have a ``maximum`` validation keyword
+    :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
+      schema will have a ``multipleOf`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``maximum`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
@@ -90,6 +92,7 @@ class Schema:
         'ge',
         'lt',
         'le',
+        'multiple_of',
         'min_length',
         'max_length',
         'regex',
@@ -107,6 +110,7 @@ class Schema:
         ge: float = None,
         lt: float = None,
         le: float = None,
+        multiple_of: float = None,
         min_length: int = None,
         max_length: int = None,
         regex: str = None,
@@ -121,6 +125,7 @@ class Schema:
         self.ge = ge
         self.lt = lt
         self.le = le
+        self.multiple_of = multiple_of
         self.min_length = min_length
         self.max_length = max_length
         self.regex = regex
@@ -257,6 +262,7 @@ _numeric_types_attrs = (
     ('lt', numeric_types, 'exclusiveMaximum'),
     ('ge', numeric_types, 'minimum'),
     ('le', numeric_types, 'maximum'),
+    ('multiple_of', numeric_types, 'multipleOf'),
 )
 
 
@@ -544,6 +550,7 @@ validation_attribute_to_schema_keyword = {
     'lt': 'exclusiveMaximum',
     'ge': 'minimum',
     'le': 'maximum',
+    'multiple_of': 'multipleOf',
 }
 
 # Order is important, subclasses of str must go before str, etc
@@ -675,7 +682,7 @@ def get_annotation_from_schema(annotation, schema):
             annotation, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, bool)
         ):
             # Is numeric type
-            attrs = ('gt', 'lt', 'ge', 'le')
+            attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
             numeric_type = next(t for t in numeric_types if issubclass(annotation, t))  # pragma: no branch
             constraint_func = _map_types_constraint[numeric_type]
 

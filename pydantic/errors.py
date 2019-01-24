@@ -190,6 +190,11 @@ class NumberNotLeError(_NumberBoundError):
     msg_template = 'ensure this value is less than or equal to {limit_value}'
 
 
+class NumberNotMultipleError(_NumberBoundError):
+    code = 'number.not_multiple'
+    msg_template = 'ensure this value is a multiple of {limit_value}'
+
+
 class DecimalError(PydanticTypeError):
     msg_template = 'value is not a valid decimal'
 

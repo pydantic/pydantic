@@ -275,9 +275,9 @@ table = [
         )
     ],
     [
-        'conint(gt=1, ge=2, lt=6, le=5)',
+        'conint(gt=1, ge=2, lt=6, le=5, multiple_of=2)',
         'integer',
-        '{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1}',
+        '{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1, "multipleOf": 2}',
         '',
         'Any argument not passed to the function (not defined) will not be included in the schema.'
     ],
@@ -306,9 +306,9 @@ table = [
         )
     ],
     [
-        'confloat(gt=1, ge=2, lt=6, le=5)',
+        'confloat(gt=1, ge=2, lt=6, le=5, multiple_of=2)',
         'number',
-        '{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1}',
+        '{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1, "multipleOf": 2}',
         'JSON Schema Validation',
         'Any argument not passed to the function (not defined) will not be included in the schema.'
     ],
@@ -337,9 +337,9 @@ table = [
         )
     ],
     [
-        'condecimal(gt=1, ge=2, lt=6, le=5)',
+        'condecimal(gt=1, ge=2, lt=6, le=5, multiple_of=2)',
         'number',
-        '{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1}',
+        '{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1, "multipleOf": 2}',
         'JSON Schema Validation',
         'Any argument not passed to the function (not defined) will not be included in the schema.'
     ],

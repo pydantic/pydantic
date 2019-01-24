@@ -279,6 +279,8 @@ Optionally the ``Schema`` class can be used to provide extra information about t
   JSON Schema
 * ``le`` for numeric values, adds a validation of "less than or equal" and an annotation of ``maximum`` to the
   JSON Schema
+* ``multiple_of`` for numeric values, adds a validation of "a multiple of" and an annotation of ``multipleOf`` to the
+  JSON Schema
 * ``min_length`` for string values, adds a corresponding validation and an annotation of ``minLength`` to the
   JSON Schema
 * ``max_length`` for string values, adds a corresponding validation and an annotation of ``maxLength`` to the

@@ -23,11 +23,13 @@ class Model(BaseModel):
     strip_str: constr(strip_whitespace=True)
 
     big_int: conint(gt=1000, lt=1024) = None
+    mod_int: conint(multiple_of=5) = None
     pos_int: PositiveInt = None
     neg_int: NegativeInt = None
 
     big_float: confloat(gt=1000, lt=1024) = None
     unit_interval: confloat(ge=0, le=1) = None
+    mod_float: confloat(multiple_of=0.5) = None
     pos_float: PositiveFloat = None
     neg_float: NegativeFloat = None
 
@@ -48,6 +50,7 @@ class Model(BaseModel):
     decimal_positive: condecimal(gt=0) = None
     decimal_negative: condecimal(lt=0) = None
     decimal_max_digits_and_places: condecimal(max_digits=2, decimal_places=2) = None
+    mod_decimal: condecimal(multiple_of=Decimal('0.25')) = None
     uuid_any: UUID = None
     uuid_v1: UUID1 = None
     uuid_v3: UUID3 = None
@@ -65,9 +68,11 @@ m = Model(
     regex_str='apple pie',
     strip_str='   bar',
     big_int=1001,
+    mod_int=155,
     pos_int=1,
     neg_int=-1,
     big_float=1002.1,
+    mod_float=1.5,
     pos_float=2.2,
     neg_float=-2.3,
     unit_interval=0.5,
@@ -78,6 +83,7 @@ m = Model(
     decimal_positive=Decimal('21.12'),
     decimal_negative=Decimal('-21.12'),
     decimal_max_digits_and_places=Decimal('0.99'),
+    mod_decimal=Decimal('2.75'),
     uuid_any=uuid.uuid4(),
     uuid_v1=uuid.uuid1(),
     uuid_v3=uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org'),
@@ -97,9 +103,11 @@ print(m.dict())
     'regex_str': 'apple pie',
     'strip_str': 'bar',
     'big_int': 1001,
+    'mod_int': 155,
     'pos_int': 1,
     'neg_int': -1,
     'big_float': 1002.1,
+    'mod_float': 1.5,
     'pos_float': 2.2,
     'neg_float': -2.3,
     'unit_interval': 0.5,
@@ -112,6 +120,7 @@ print(m.dict())
     'decimal_positive': Decimal('21.12'),
     'decimal_negative': Decimal('-21.12'),
     'decimal_max_digits_and_places': Decimal('0.99'),
+    'mod_decimal': Decimal('2.75'),
     'uuid_any': UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'),
     'uuid_v1': UUID('c96e505c-4c62-11e8-a27c-dca90496b483'),
     'uuid_v3': UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e'),
