@@ -3,6 +3,12 @@
 History
 -------
 
+Unreleased
+..........
+* add ``multiple_of`` constraint to ``ConstrainedDecimal``, ``ConstrainedFloat``, ``ConstrainedInt``
+  and their related types ``condecimal``, ``confloat``, and ``conint`` #371, thanks @StephenBrown2
+
+
 v0.18.2 (2019-01-22)
 ....................
 * Fix to schema generation with ``Optional`` fields, fix #361 by @samuelcolvin
