@@ -2,7 +2,7 @@ import json
 import re
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional, Pattern, Set, Type, Union
+from typing import Optional, Pattern, Set, Type, Union, cast
 from uuid import UUID
 
 from . import errors
@@ -104,7 +104,7 @@ class ConstrainedStr(str):
     min_length: Optional[int] = None
     max_length: Optional[int] = None
     curtail_length: Optional[int] = None
-    regex: Optional[Pattern] = None
+    regex: Optional[Pattern[str]] = None
 
     @classmethod
     def __get_validators__(cls):
@@ -273,7 +273,7 @@ class DSN(str):
 
 class ConstrainedNumberMeta(type):
     def __new__(cls, name, bases, dct):
-        new_cls = type.__new__(cls, name, bases, dct)
+        new_cls = cast(ConstrainedInt, type.__new__(cls, name, bases, dct))
 
         if new_cls.gt is not None and new_cls.ge is not None:
             raise errors.ConfigError('bounds gt and ge cannot be specified at the same time')

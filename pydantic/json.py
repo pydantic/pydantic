@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 from enum import Enum
 from types import GeneratorType
+from typing import Any, Callable, Dict, Type
 from uuid import UUID
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
@@ -11,7 +12,7 @@ def isoformat(o):
     return o.isoformat()
 
 
-ENCODERS_BY_TYPE = {
+ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     UUID: str,
     datetime.datetime: isoformat,
     datetime.date: isoformat,

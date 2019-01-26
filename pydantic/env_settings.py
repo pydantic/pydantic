@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Dict, Mapping, Optional, cast
 
 from .main import BaseModel
 
@@ -29,12 +30,12 @@ class BaseSettings(BaseModel):
         """
         Build environment variables suitable for passing to the Model.
         """
-        d = {}
+        d: Dict[str, Optional[str]] = {}
 
         if self.__config__.case_insensitive:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
         else:
-            env_vars = os.environ
+            env_vars = cast(Dict[str, str], os.environ)
 
         for field in self.__fields__.values():
             if field.has_alias:

@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum
 from pathlib import Path
-from typing import Any, Pattern
+from typing import Any, Dict, List, Pattern, Set, Tuple, Type, TypeVar
 from uuid import UUID
 
 from . import errors
@@ -26,7 +26,7 @@ def is_none_validator(v):
 
 
 def str_validator(v) -> str:
-    if isinstance(v, (str, NoneType)):
+    if isinstance(v, (str, NoneType)):  # type: ignore
         return v
     elif isinstance(v, (bytes, bytearray)):
         return v.decode()
@@ -115,7 +115,7 @@ def anystr_strip_whitespace(v, field, config, **kwargs):
     return v
 
 
-def ordered_dict_validator(v) -> OrderedDict:
+def ordered_dict_validator(v) -> OrderedDict[Any, Any]:
     if isinstance(v, OrderedDict):
         return v
 
@@ -123,7 +123,7 @@ def ordered_dict_validator(v) -> OrderedDict:
         return OrderedDict(v)
 
 
-def dict_validator(v) -> dict:
+def dict_validator(v) -> Dict[Any, Any]:
     if isinstance(v, dict):
         return v
 
@@ -131,7 +131,7 @@ def dict_validator(v) -> dict:
         return dict(v)
 
 
-def list_validator(v) -> list:
+def list_validator(v) -> List[Any]:
     if isinstance(v, list):
         return v
     elif list_like(v):
@@ -140,7 +140,7 @@ def list_validator(v) -> list:
         raise errors.ListError()
 
 
-def tuple_validator(v) -> tuple:
+def tuple_validator(v) -> Tuple[Any, ...]:
     if isinstance(v, tuple):
         return v
     elif list_like(v):
@@ -149,7 +149,7 @@ def tuple_validator(v) -> tuple:
         raise errors.TupleError()
 
 
-def set_validator(v) -> set:
+def set_validator(v) -> Set[Any]:
     if isinstance(v, set):
         return v
     elif list_like(v):
@@ -214,8 +214,11 @@ def path_exists_validator(v) -> Path:
     return v
 
 
-def make_arbitrary_type_validator(type_):
-    def arbitrary_type_validator(v) -> type_:
+T = TypeVar('T')
+
+
+def make_arbitrary_type_validator(type_: Type[T]):
+    def arbitrary_type_validator(v) -> T:
         if isinstance(v, type_):
             return v
         raise errors.ArbitraryTypeError(expected_arbitrary_type=type_)
@@ -223,7 +226,7 @@ def make_arbitrary_type_validator(type_):
     return arbitrary_type_validator
 
 
-def pattern_validator(v) -> Pattern:
+def pattern_validator(v) -> Pattern[str]:
     with change_exception(errors.PatternError, re.error):
         return re.compile(v)
 
@@ -237,7 +240,7 @@ _VALIDATORS = [
     (bool, [bool_validator]),
     (int, [int_validator]),
     (float, [float_validator]),
-    (NoneType, [is_none_validator]),
+    (NoneType, [is_none_validator]),  # type: ignore
     (Path, [path_validator]),
     (datetime, [parse_datetime]),
     (date, [parse_date]),

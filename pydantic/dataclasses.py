@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Any, Dict
 
 from . import ValidationError, errors
 from .main import create_model, validate_model
@@ -43,12 +44,12 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
     _cls.__post_init__ = _pydantic_post_init
-    cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)
+    cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore
 
-    fields = {name: (field.type, field.default) for name, field in cls.__dataclass_fields__.items()}
+    fields: Dict[str, Any] = {name: (field.type, field.default) for name, field in cls.__dataclass_fields__.items()}
     cls.__post_init_original__ = post_init_original
 
-    cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, **fields)
+    cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, __base__=None, **fields)
 
     cls.__initialised__ = False
     cls.__validate__ = classmethod(_validate_dataclass)

@@ -6,9 +6,9 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Callable, ClassVar, Dict, Set, Type, Union
+from typing import Any, Callable, ClassVar, Dict, List, Set, Tuple, Type, Union, no_type_check
 
-from .class_validators import ValidatorGroup, extract_validators, inherit_validators
+from .class_validators import Validator, ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field
@@ -31,11 +31,11 @@ class BaseConfig:
     allow_mutation = True
     allow_population_by_alias = False
     use_enum_values = False
-    fields = {}
+    fields: Dict[str, Union[str, Dict[str, str]]] = {}
     validate_assignment = False
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
-    json_encoders = {}
+    json_encoders: Dict[Type[Any], Callable[..., Any]] = {}
 
     @classmethod
     def get_field_schema(cls, name):
@@ -45,9 +45,9 @@ class BaseConfig:
         return field_config
 
 
-def inherit_config(self_config: Type, parent_config: Type[BaseConfig]) -> Type[BaseConfig]:
+def inherit_config(self_config: Type[BaseConfig], parent_config: Type[BaseConfig]) -> Type[BaseConfig]:
     if not self_config:
-        base_classes = (parent_config,)
+        base_classes: Tuple[Type[BaseConfig], ...] = (parent_config,)
     elif self_config == parent_config:
         base_classes = (self_config,)
     else:
@@ -60,9 +60,9 @@ TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 class MetaModel(ABCMeta):
     def __new__(mcs, name, bases, namespace):
-        fields: Dict[name, Field] = {}
+        fields: Dict[str, Field] = {}
         config = BaseConfig
-        validators = {}
+        validators: Dict[str, List[Validator]] = {}
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(deepcopy(base.__fields__))
@@ -113,7 +113,7 @@ class MetaModel(ABCMeta):
 
         vg.check_for_unused()
         if config.json_encoders:
-            json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
+            json_encoder: Callable[[Any], Any] = partial(custom_pydantic_encoder, config.json_encoders)
         else:
             json_encoder = pydantic_encoder
         new_namespace = {
@@ -133,7 +133,8 @@ _missing = object()
 class BaseModel(metaclass=MetaModel):
     # populated by the metaclass, defined here to help IDEs only
     __fields__: Dict[str, Field] = {}
-    __validators__ = {}
+    __validators__: Dict[str, Callable[..., Any]] = {}
+    __config__: BaseConfig = BaseConfig()
 
     Config = BaseConfig
     __slots__ = ('__values__',)
@@ -147,6 +148,7 @@ class BaseModel(metaclass=MetaModel):
         except KeyError:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
+    @no_type_check
     def __setattr__(self, name, value):
         if not self.__config__.allow_extra and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
@@ -180,7 +182,7 @@ class BaseModel(metaclass=MetaModel):
             if k not in exclude and (not include or k in include)
         }
 
-    def _get_key_factory(self, by_alias: bool) -> Callable:
+    def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
             return lambda fields, key: fields[key].alias
 
@@ -286,11 +288,11 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def schema(cls, by_alias=True) -> Dict[str, Any]:
-        cached = cls._schema_cache.get(by_alias)
+        cached = cls._schema_cache.get(by_alias)  # type: ignore
         if cached is not None:
             return cached
         s = model_schema(cls, by_alias=by_alias)
-        cls._schema_cache[by_alias] = s
+        cls._schema_cache[by_alias] = s  # type: ignore
         return s
 
     @classmethod
@@ -308,7 +310,7 @@ class BaseModel(metaclass=MetaModel):
     def validate(cls, value):
         return cls(**value)
 
-    def _process_values(self, input_data: dict) -> Dict[str, Any]:
+    def _process_values(self, input_data: Any) -> Dict[str, Any]:
         return validate_model(self, input_data)
 
     @classmethod
@@ -369,7 +371,13 @@ class BaseModel(metaclass=MetaModel):
         return self.to_string()
 
 
-def create_model(model_name: str, *, __config__: Type = None, __base__: Type[BaseModel] = None, **field_definitions):
+def create_model(
+    model_name: str,
+    *,
+    __config__: Type[BaseConfig] = None,
+    __base__: Type[BaseModel] = None,
+    **field_definitions: Dict[str, Any],
+):
     """
     Dynamically create a model.
     :param model_name: name of the created model
@@ -385,7 +393,7 @@ def create_model(model_name: str, *, __config__: Type = None, __base__: Type[Bas
         __base__ = BaseModel
 
     fields = {}
-    annotations = {}
+    annotations: Dict[str, Any] = {}
 
     for f_name, f_def in field_definitions.items():
         if f_name.startswith('_'):
@@ -406,7 +414,7 @@ def create_model(model_name: str, *, __config__: Type = None, __base__: Type[Bas
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
-    namespace = {'__annotations__': annotations}
+    namespace: Dict[str, Any] = {'__annotations__': annotations}
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
@@ -414,7 +422,7 @@ def create_model(model_name: str, *, __config__: Type = None, __base__: Type[Bas
     return type(model_name, (__base__,), namespace)
 
 
-def validate_model(model: BaseModel, input_data: dict, raise_exc=True):  # noqa: C901 (ignore complexity)
+def validate_model(model: BaseModel, input_data: Dict[str, Any], raise_exc=True):  # noqa: C901 (ignore complexity)
     """
     validate data against a model.
     """
@@ -460,12 +468,12 @@ def validate_model(model: BaseModel, input_data: dict, raise_exc=True):  # noqa:
         extra = input_data.keys() - names_used
         if extra:
             if model.__config__.allow_extra:
-                for field in extra:
-                    values[field] = input_data[field]
+                for f in extra:
+                    values[f] = input_data[f]
             else:
                 # config.ignore_extra is False
-                for field in sorted(extra):
-                    errors.append(ErrorWrapper(ExtraError(), loc=field, config=model.__config__))
+                for f in sorted(extra):
+                    errors.append(ErrorWrapper(ExtraError(), loc=f, config=model.__config__))
 
     if not raise_exc:
         return values, ValidationError(errors) if errors else None

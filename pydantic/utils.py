@@ -6,7 +6,7 @@ from enum import Enum
 from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
-from typing import List, Pattern, Tuple, Type, _eval_type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Pattern, Tuple, Type, _eval_type  # type: ignore
 
 from . import errors
 
@@ -16,20 +16,23 @@ except ImportError:
     email_validator = None
 
 try:
-    from typing import _TypingBase as typing_base
+    from typing import _TypingBase as typing_base  # type: ignore
 except ImportError:
-    from typing import _Final as typing_base
+    from typing import _Final as typing_base  # type: ignore
 
 try:
-    from typing import ForwardRef
+    from typing import ForwardRef  # type: ignore
 except ImportError:
     # python 3.6
     ForwardRef = None
 
+if TYPE_CHECKING:
+    from .main import BaseModel
+
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
 
 
-def validate_email(value) -> Tuple[str, str]:
+def validate_email(value: str) -> Tuple[str, str]:
     """
     Brutally simple email address validation. Note unlike most email address validation
     * raw ip address (literal) domain parts are not allowed.
@@ -44,10 +47,9 @@ def validate_email(value) -> Tuple[str, str]:
         raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
     m = PRETTY_REGEX.fullmatch(value)
+    name: Optional[str] = None
     if m:
         name, value = m.groups()
-    else:
-        name = None
 
     email = value.strip()
 
@@ -71,7 +73,7 @@ def make_dsn(
     host: str = None,
     port: str = None,
     name: str = None,
-    query: str = None,
+    query: Dict[str, Any] = None,
 ):
     """
     Create a DSN from from connection settings.
@@ -179,7 +181,7 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
 
 
 @lru_cache(maxsize=None)
-def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern:
+def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
     """
     Url regex generator taken from Marshmallow library,
     for details please follow library source code:
@@ -218,7 +220,7 @@ def in_ipython():
     Check whether we're in an ipython environment, including jupyter notebooks.
     """
     try:
-        __IPYTHON__
+        __IPYTHON__  # type: ignore
     except NameError:
         return False
     else:  # pragma: no cover
@@ -232,7 +234,7 @@ def resolve_annotations(raw_annotations, module):
     Resolve string or ForwardRef annotations into type objects if possible.
     """
     if module:
-        base_globals = sys.modules[module].__dict__
+        base_globals: Optional[Dict[str, Any]] = sys.modules[module].__dict__
     else:
         base_globals = None
     annotations = {}

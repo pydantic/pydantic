@@ -1,6 +1,20 @@
 import warnings
 from enum import IntEnum
-from typing import Any, Dict, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Pattern,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
 from . import errors as errors_
 from .class_validators import Validator, ValidatorSignature, get_validator_signature
@@ -10,6 +24,10 @@ from .utils import ForwardRef, display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators, is_none_validator
 
 Required: Any = Ellipsis
+
+if TYPE_CHECKING:
+    from .schema import Schema
+    from .main import BaseConfig
 
 
 class Shape(IntEnum):
@@ -46,9 +64,9 @@ class Field:
         self,
         *,
         name: str,
-        type_: Type,
+        type_: Type[Any],
         class_validators: Optional[Dict[str, Validator]],
-        model_config: Any,
+        model_config: 'BaseConfig',
         default: Any = None,
         required: bool = True,
         alias: str = None,
@@ -63,13 +81,13 @@ class Field:
         self.default: Any = default
         self.required: bool = required
         self.model_config = model_config
-        self.schema: 'schema.Schema' = schema
+        self.schema: 'Schema' = schema
 
         self.allow_none: bool = False
         self.validate_always: bool = False
-        self.sub_fields: List[Field] = None
-        self.key_field: Field = None
-        self.validators = []
+        self.sub_fields: Optional[List[Field]] = None
+        self.key_field: Optional[Field] = None
+        self.validators: Tuple[Tuple[ValidatorSignature, Callable[..., Any]], ...] = ()
         self.whole_pre_validators = None
         self.whole_post_validators = None
         self.parse_json: bool = False
@@ -149,14 +167,14 @@ class Field:
         if origin is Union:
             types_ = []
             for type_ in self.type_.__args__:
-                if type_ is NoneType:
+                if type_ is NoneType:  # type: ignore
                     self.allow_none = True
                     self.required = False
                 types_.append(type_)
             self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
 
-        if issubclass(origin, Tuple):
+        if issubclass(origin, Tuple):  # type: ignore
             self.shape = Shape.TUPLE
             self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)]
             return
@@ -272,7 +290,7 @@ class Field:
             return result, None
 
     def _validate_tuple(self, v, values, loc, cls):
-        e = None
+        e: Optional[Exception] = None
         if not list_like(v):
             e = errors_.TupleError()
         else:

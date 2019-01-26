@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
 from types import FunctionType
-from typing import Callable, Dict
+from typing import Any, Callable, Dict, List, Set
 
 from .errors import ConfigError
 from .utils import in_ipython
@@ -18,14 +18,14 @@ class ValidatorSignature(IntEnum):
 
 @dataclass
 class Validator:
-    func: Callable
+    func: Callable[..., Any]
     pre: bool
     whole: bool
     always: bool
     check_fields: bool
 
 
-_FUNCS = set()
+_FUNCS: Set[str] = set()
 
 
 def validator(*fields, pre: bool = False, whole: bool = False, always: bool = False, check_fields: bool = True):
@@ -54,7 +54,7 @@ def validator(*fields, pre: bool = False, whole: bool = False, always: bool = Fa
                 raise ConfigError(f'duplicate validator function "{ref}"')
             _FUNCS.add(ref)
         f_cls = classmethod(f)
-        f_cls.__validator_config = fields, Validator(f, pre, whole, always, check_fields)
+        f_cls.__validator_config = fields, Validator(f, pre, whole, always, check_fields)  # type: ignore
         return f_cls
 
     return dec
@@ -90,8 +90,8 @@ class ValidatorGroup:
             )
 
 
-def extract_validators(namespace):
-    validators = {}
+def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
+    validators: Dict[str, List[Validator]] = {}
     for var_name, value in namespace.items():
         validator_config = getattr(value, '__validator_config', None)
         if validator_config:
@@ -112,14 +112,14 @@ def inherit_validators(base_validators, validators):
     return validators
 
 
-def get_validator_signature(validator):
+def get_validator_signature(validator) -> ValidatorSignature:
     signature = inspect.signature(validator)
 
     # bind here will raise a TypeError so:
     # 1. we can deal with it before validation begins
     # 2. (more importantly) it doesn't get confused with a TypeError when executing the validator
     try:
-        if 'cls' in signature._parameters:
+        if 'cls' in signature._parameters:  # type: ignore
             if len(signature.parameters) == 2:
                 signature.bind(object(), 1)
                 return ValidatorSignature.CLS_JUST_VALUE
