@@ -62,6 +62,7 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
 
 
 if TYPE_CHECKING:  # pragma: no cover
+    # see https://github.com/python/mypy/issues/6239 for explanation of why we do this
     from dataclasses import dataclass
 else:
 

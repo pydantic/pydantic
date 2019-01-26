@@ -126,6 +126,14 @@ created by the standard library ``dataclass`` decorator.
 ``pydantic.dataclasses.dataclass``'s arguments are the same as the standard decorator, except one extra
 key word argument ``config`` which has the same meaning as :ref:`Config <config>`.
 
+.. note::
+
+   As a side effect of getting pydantic dataclasses to play nicely with mypy the ``config`` argument will show
+   as invalid in IDEs and mypy, use ``@dataclass(..., config=Config) # type: ignore`` as a workaround. See
+   `python/mypy#6239 <https://github.com/python/mypy/issues/6239>`_ for an explanation of why this is.
+
+Nested dataclasses
+~~~~~~~~~~~~~~~~~~
 
 Since version ``v0.17`` nested dataclasses are support both in dataclasses and normal models.
 
