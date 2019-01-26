@@ -6,7 +6,7 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Callable, ClassVar, Dict, List, Set, Tuple, Type, Union, no_type_check
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Set, Tuple, Type, Union, cast, no_type_check
 
 from .class_validators import Validator, ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -59,6 +59,7 @@ TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
 class MetaModel(ABCMeta):
+    @no_type_check
     def __new__(mcs, name, bases, namespace):
         fields: Dict[str, Field] = {}
         config = BaseConfig
@@ -135,6 +136,7 @@ class BaseModel(metaclass=MetaModel):
     __fields__: Dict[str, Field] = {}
     __validators__: Dict[str, Callable[..., Any]] = {}
     __config__: BaseConfig = BaseConfig()
+    _json_encoder: Callable[[Any], Any] = lambda x: x
 
     Config = BaseConfig
     __slots__ = ('__values__',)
@@ -142,6 +144,7 @@ class BaseModel(metaclass=MetaModel):
     def __init__(self, **data):
         self.__setstate__(self._process_values(data))
 
+    @no_type_check
     def __getattr__(self, name):
         try:
             return self.__values__[name]
@@ -169,12 +172,13 @@ class BaseModel(metaclass=MetaModel):
     def __setstate__(self, state):
         object.__setattr__(self, '__values__', state)
 
-    def dict(self, *, include: Set[str] = None, exclude: Set[str] = set(), by_alias: bool = False) -> Dict[str, Any]:
+    def dict(self, *, include: Set[str] = None, exclude: Set[str] = None, by_alias: bool = False) -> Dict[str, Any]:
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.fields)
+        exclude = set() if exclude is None else exclude
 
         return {
             get_key(k): v
@@ -192,9 +196,9 @@ class BaseModel(metaclass=MetaModel):
         self,
         *,
         include: Set[str] = None,
-        exclude: Set[str] = set(),
+        exclude: Set[str] = None,
         by_alias: bool = False,
-        encoder=None,
+        encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs,
     ) -> str:
         """
@@ -202,10 +206,9 @@ class BaseModel(metaclass=MetaModel):
 
         `encoder` is an optional function to supply as `default` to json.dumps(), other arguments as per `json.dumps()`.
         """
+        encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
         return json.dumps(
-            self.dict(include=include, exclude=exclude, by_alias=by_alias),
-            default=encoder or self._json_encoder,
-            **dumps_kwargs,
+            self.dict(include=include, exclude=exclude, by_alias=by_alias), default=encoder, **dumps_kwargs
         )
 
     @classmethod
@@ -271,11 +274,12 @@ class BaseModel(metaclass=MetaModel):
         """
         if include is None and exclude is None and update is None:
             # skip constructing values if no arguments are passed
-            v = self.__values__
+            v = self.__values__  # type: ignore
         else:
             exclude = exclude or set()
+            v_ = self.__values__  # type: ignore
             v = {
-                **{k: v for k, v in self.__values__.items() if k not in exclude and (not include or k in include)},
+                **{k: v for k, v in v_.items() if k not in exclude and (not include or k in include)},
                 **(update or {}),
             }
         if deep:

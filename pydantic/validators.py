@@ -115,7 +115,7 @@ def anystr_strip_whitespace(v, field, config, **kwargs):
     return v
 
 
-def ordered_dict_validator(v) -> OrderedDict[Any, Any]:
+def ordered_dict_validator(v) -> OrderedDict:  # type: ignore
     if isinstance(v, OrderedDict):
         return v
 

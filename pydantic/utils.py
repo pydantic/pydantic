@@ -27,7 +27,7 @@ except ImportError:
     ForwardRef = None
 
 if TYPE_CHECKING:
-    from .main import BaseModel
+    from . import main  # noqa
 
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
 
@@ -168,7 +168,7 @@ def list_like(v):
     return isinstance(v, (list, tuple, set)) or inspect.isgenerator(v)
 
 
-def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
+def validate_field_name(bases: List[Type['main.BaseModel']], field_name: str) -> None:
     """
     Ensure that the field's name does not shadow an existing attribute of the model.
     """

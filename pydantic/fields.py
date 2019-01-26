@@ -1,20 +1,6 @@
 import warnings
 from enum import IntEnum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Pattern,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union
 
 from . import errors as errors_
 from .class_validators import Validator, ValidatorSignature, get_validator_signature

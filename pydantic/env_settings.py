@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Mapping, Optional, cast
+from typing import Dict, Optional, cast
 
 from .main import BaseModel
 

@@ -273,7 +273,7 @@ class DSN(str):
 
 class ConstrainedNumberMeta(type):
     def __new__(cls, name, bases, dct):
-        new_cls = cast(ConstrainedInt, type.__new__(cls, name, bases, dct))
+        new_cls = cast('ConstrainedInt', type.__new__(cls, name, bases, dct))
 
         if new_cls.gt is not None and new_cls.ge is not None:
             raise errors.ConfigError('bounds gt and ge cannot be specified at the same time')

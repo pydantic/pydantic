@@ -26,15 +26,18 @@ mypy:
 test:
 	pytest --cov=pydantic
 
-.PHONY: try-mypy
-try-mypy:
+.PHONY: external-mypy
+external-mypy:
 	@echo "testing simple example with mypy (and python to check it's sane)..."
-	mypy --ignore-missing-imports --follow-imports=skip --strict-optional tests/mypy_test_success.py
 	python tests/mypy_test_success.py
-	@echo "checking code with bad type annotations fails..."
-	@mypy --ignore-missing-imports --follow-imports=skip tests/mypy_test_fails.py 1>/dev/null; \
+	mypy tests/mypy_test_success.py
+	@echo "checking code with incorrect types fails..."
+	@mypy tests/mypy_test_fails1.py 1>/dev/null; \
 	  test $$? -eq 1 || \
-	  (echo "mypy passed when it shouldn't"; exit 1)
+	  (echo "mypy_test_fails1: mypy passed when it should have failed!"; exit 1)
+	@mypy tests/mypy_test_fails2.py 1>/dev/null; \
+	  test $$? -eq 1 || \
+	  (echo "mypy_test_fails2: mypy passed when it should have failed!"; exit 1)
 
 .PHONY: testcov
 testcov:
@@ -43,7 +46,7 @@ testcov:
 	@coverage html
 
 .PHONY: all
-all: testcov mypy lint
+all: testcov lint mypy external-mypy
 
 .PHONY: benchmark-all
 benchmark-all:
