@@ -92,6 +92,10 @@ as an optional dependency. Similarly if *pydantic's* email validation relies on
 
 Of course you can also install these requirements manually with ``pip install ...``.
 
+Pydantic is also available on `conda <https://www.anaconda.com>`_ under the `conda-forge <https://conda-forge.org>`_ channel::
+
+    conda install pydantic -c conda-forge
+
 Usage
 -----
 
