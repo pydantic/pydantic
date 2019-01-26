@@ -386,7 +386,7 @@ Exotic Types
 
 (This script is complete, it should run "as is")
 
-It is possible to check if callable was passed to the class argument.
+Fields can also be of type ``Callable``:
 
 .. literalinclude:: examples/callable.py
 
