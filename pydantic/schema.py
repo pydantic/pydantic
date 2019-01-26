@@ -615,7 +615,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if field.type_ is Any:
         return {}, definitions  # no restrictions
     if is_callable_type(field.type_):
-        raise SkipField(f'Callable {field.name} was excluded from schema')
+        raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema = {}
     if issubclass(field.type_, Enum):
         f_schema.update({'enum': [item.value for item in field.type_]})
