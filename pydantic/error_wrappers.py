@@ -2,7 +2,7 @@ import json
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Union, cast
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from pydantic import BaseConfig  # noqa
 
 __all__ = ('ErrorWrapper', 'ValidationError')

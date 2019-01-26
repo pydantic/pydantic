@@ -136,7 +136,7 @@ class BaseModel(metaclass=MetaModel):
     __fields__: Dict[str, Field] = {}
     __validators__: Dict[str, Callable[..., Any]] = {}
     __config__: BaseConfig = BaseConfig()
-    _json_encoder: Callable[[Any], Any] = lambda x: x
+    _json_encoder: Callable[[Any], Any] = lambda x: x  # pragma: no branch
 
     Config = BaseConfig
     __slots__ = ('__values__',)

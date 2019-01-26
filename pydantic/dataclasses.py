@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 from . import ValidationError, errors
 from .main import create_model, validate_model
@@ -61,18 +61,24 @@ def _process_class(_cls, init, repr, eq, order, unsafe_hash, frozen, config):
     return cls
 
 
-def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, config=None):
-    """
-    Like the python standard lib dataclasses but with type validation.
+if TYPE_CHECKING:  # pragma: no cover
+    from dataclasses import dataclass
+else:
 
-    Arguments are the same as for standard dataclasses, except for validate_assignment which has the same meaning
-    as Config.validate_assignment.
-    """
+    def dataclass(
+        _cls=None, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, config=None
+    ):
+        """
+        Like the python standard lib dataclasses but with type validation.
 
-    def wrap(cls):
-        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
+        Arguments are the same as for standard dataclasses, except for validate_assignment which has the same meaning
+        as Config.validate_assignment.
+        """
 
-    if _cls is None:
-        return wrap
+        def wrap(cls):
+            return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
 
-    return wrap(_cls)
+        if _cls is None:
+            return wrap
+
+        return wrap(_cls)

@@ -26,7 +26,7 @@ except ImportError:
     # python 3.6
     ForwardRef = None
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from . import main  # noqa
 
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')

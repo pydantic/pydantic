@@ -11,7 +11,7 @@ from .validators import NoneType, dict_validator, find_validators, is_none_valid
 
 Required: Any = Ellipsis
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .schema import Schema
     from .main import BaseConfig
 
