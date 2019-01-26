@@ -699,7 +699,7 @@ def get_annotation_from_schema(annotation, schema):
 
 class SkipField(Exception):
     """
-    Utility exception used to skip fields from schema.
+    Utility exception used to exclude fields from schema.
     """
 
     def __init__(self, message):
