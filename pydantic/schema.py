@@ -110,7 +110,7 @@ class Schema:
         min_length: int = None,
         max_length: int = None,
         regex: str = None,
-        **extra: Dict[str, Any],
+        **extra: Any,
     ) -> None:
         self.default = default
         self.alias = alias
@@ -680,7 +680,7 @@ def encode_default(dft: Any) -> Any:
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
 
 
-def get_annotation_from_schema(annotation: Any, schema: Schema) -> Any:
+def get_annotation_from_schema(annotation: Any, schema: Schema) -> Type[Any]:
     """
     Get an annotation with validation implemented for numbers and strings based on the schema.
 

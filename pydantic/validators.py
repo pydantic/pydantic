@@ -4,28 +4,38 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Pattern, Set, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
 from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .utils import change_exception, display_as_type, list_like
 
+if TYPE_CHECKING:  # pragma: no cover
+    from .fields import Field
+    from .main import BaseConfig
+    from .types import ConstrainedDecimal, ConstrainedFloat, ConstrainedInt
+
+    ConstrainedNumber = Union[ConstrainedDecimal, ConstrainedFloat, ConstrainedInt]
+    AnyOrderedDict = OrderedDict[Any, Any]
+    Number = Union[int, float, Decimal]
+    StrBytes = Union[str, bytes]
+
 NoneType = type(None)
 
 
-def not_none_validator(v):
+def not_none_validator(v: Any) -> Any:
     if v is None:
         raise errors.NoneIsNotAllowedError()
     return v
 
 
-def is_none_validator(v):
+def is_none_validator(v: Any) -> None:
     if v is not None:
         raise errors.NoneIsAllowedError()
 
 
-def str_validator(v) -> str:
+def str_validator(v: Any) -> str:
     if isinstance(v, (str, NoneType)):  # type: ignore
         return v
     elif isinstance(v, (bytes, bytearray)):
@@ -37,7 +47,7 @@ def str_validator(v) -> str:
         raise errors.StrError()
 
 
-def bytes_validator(v) -> bytes:
+def bytes_validator(v: Any) -> bytes:
     if isinstance(v, bytes):
         return v
     elif isinstance(v, bytearray):
@@ -53,7 +63,7 @@ def bytes_validator(v) -> bytes:
 BOOL_STRINGS = {'1', 'TRUE', 'ON', 'YES'}
 
 
-def bool_validator(v) -> bool:
+def bool_validator(v: Any) -> bool:
     if isinstance(v, bool):
         return v
     if isinstance(v, bytes):
@@ -63,7 +73,7 @@ def bool_validator(v) -> bool:
     return bool(v)
 
 
-def int_validator(v) -> int:
+def int_validator(v: Any) -> int:
     if not isinstance(v, bool) and isinstance(v, int):
         return v
 
@@ -71,7 +81,7 @@ def int_validator(v) -> int:
         return int(v)
 
 
-def float_validator(v) -> float:
+def float_validator(v: Any) -> float:
     if isinstance(v, float):
         return v
 
@@ -79,21 +89,22 @@ def float_validator(v) -> float:
         return float(v)
 
 
-def number_size_validator(v, field, config, **kwargs):
-    if field.type_.gt is not None and not v > field.type_.gt:
-        raise errors.NumberNotGtError(limit_value=field.type_.gt)
-    elif field.type_.ge is not None and not v >= field.type_.ge:
-        raise errors.NumberNotGeError(limit_value=field.type_.ge)
+def number_size_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'Number':
+    field_type = cast('ConstrainedNumber', field.type_)
+    if field_type.gt is not None and not v > field_type.gt:
+        raise errors.NumberNotGtError(limit_value=field_type.gt)
+    elif field_type.ge is not None and not v >= field_type.ge:
+        raise errors.NumberNotGeError(limit_value=field_type.ge)
 
-    if field.type_.lt is not None and not v < field.type_.lt:
-        raise errors.NumberNotLtError(limit_value=field.type_.lt)
-    if field.type_.le is not None and not v <= field.type_.le:
-        raise errors.NumberNotLeError(limit_value=field.type_.le)
+    if field_type.lt is not None and not v < field_type.lt:
+        raise errors.NumberNotLtError(limit_value=field_type.lt)
+    if field_type.le is not None and not v <= field_type.le:
+        raise errors.NumberNotLeError(limit_value=field_type.le)
 
     return v
 
 
-def anystr_length_validator(v, field, config, **kwargs):
+def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'StrBytes':
     v_len = len(v)
 
     min_length = getattr(field.type_, 'min_length', config.min_anystr_length)
@@ -107,7 +118,7 @@ def anystr_length_validator(v, field, config, **kwargs):
     return v
 
 
-def anystr_strip_whitespace(v, field, config, **kwargs):
+def anystr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'StrBytes':
     strip_whitespace = getattr(field.type_, 'strip_whitespace', config.anystr_strip_whitespace)
     if strip_whitespace:
         v = v.strip()
@@ -115,7 +126,7 @@ def anystr_strip_whitespace(v, field, config, **kwargs):
     return v
 
 
-def ordered_dict_validator(v) -> OrderedDict:  # type: ignore
+def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
     if isinstance(v, OrderedDict):
         return v
 
@@ -123,7 +134,7 @@ def ordered_dict_validator(v) -> OrderedDict:  # type: ignore
         return OrderedDict(v)
 
 
-def dict_validator(v) -> Dict[Any, Any]:
+def dict_validator(v: Any) -> Dict[Any, Any]:
     if isinstance(v, dict):
         return v
 
@@ -131,7 +142,7 @@ def dict_validator(v) -> Dict[Any, Any]:
         return dict(v)
 
 
-def list_validator(v) -> List[Any]:
+def list_validator(v: Any) -> List[Any]:
     if isinstance(v, list):
         return v
     elif list_like(v):
@@ -140,7 +151,7 @@ def list_validator(v) -> List[Any]:
         raise errors.ListError()
 
 
-def tuple_validator(v) -> Tuple[Any, ...]:
+def tuple_validator(v: Any) -> Tuple[Any, ...]:
     if isinstance(v, tuple):
         return v
     elif list_like(v):
@@ -149,7 +160,7 @@ def tuple_validator(v) -> Tuple[Any, ...]:
         raise errors.TupleError()
 
 
-def set_validator(v) -> Set[Any]:
+def set_validator(v: Any) -> Set[Any]:
     if isinstance(v, set):
         return v
     elif list_like(v):
@@ -158,14 +169,14 @@ def set_validator(v) -> Set[Any]:
         raise errors.SetError()
 
 
-def enum_validator(v, field, config, **kwargs) -> Enum:
+def enum_validator(v: Any, field: 'Field', config: 'BaseConfig', **kwargs: Any) -> Enum:
     with change_exception(errors.EnumError, ValueError):
         enum_v = field.type_(v)
 
     return enum_v.value if config.use_enum_values else enum_v
 
 
-def uuid_validator(v, field, config, **kwargs) -> UUID:
+def uuid_validator(v: Any, field: 'Field', config: 'BaseConfig', **kwargs: Any) -> UUID:
     with change_exception(errors.UUIDError, ValueError):
         if isinstance(v, str):
             v = UUID(v)
@@ -182,7 +193,7 @@ def uuid_validator(v, field, config, **kwargs) -> UUID:
     return v
 
 
-def decimal_validator(v) -> Decimal:
+def decimal_validator(v: Any) -> Decimal:
     if isinstance(v, Decimal):
         return v
     elif isinstance(v, (bytes, bytearray)):
@@ -199,7 +210,7 @@ def decimal_validator(v) -> Decimal:
     return v
 
 
-def path_validator(v) -> Path:
+def path_validator(v: Any) -> Path:
     if isinstance(v, Path):
         return v
 
@@ -207,7 +218,7 @@ def path_validator(v) -> Path:
         return Path(v)
 
 
-def path_exists_validator(v) -> Path:
+def path_exists_validator(v: Any) -> Path:
     if not v.exists():
         raise errors.PathNotExistsError(path=v)
 
@@ -217,8 +228,8 @@ def path_exists_validator(v) -> Path:
 T = TypeVar('T')
 
 
-def make_arbitrary_type_validator(type_: Type[T]):
-    def arbitrary_type_validator(v) -> T:
+def make_arbitrary_type_validator(type_: Type[T]) -> Callable[[T], T]:
+    def arbitrary_type_validator(v: Any) -> T:
         if isinstance(v, type_):
             return v
         raise errors.ArbitraryTypeError(expected_arbitrary_type=type_)
@@ -226,14 +237,14 @@ def make_arbitrary_type_validator(type_: Type[T]):
     return arbitrary_type_validator
 
 
-def pattern_validator(v) -> Pattern[str]:
+def pattern_validator(v: Any) -> Pattern[str]:
     with change_exception(errors.PatternError, re.error):
         return re.compile(v)
 
 
 pattern_validators = [not_none_validator, str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
-_VALIDATORS = [
+_VALIDATORS: List[Tuple[Type[Any], List[Callable[..., Any]]]] = [
     (Enum, [enum_validator]),
     (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
     (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
@@ -256,7 +267,7 @@ _VALIDATORS = [
 ]
 
 
-def find_validators(type_, arbitrary_types_allowed=False):
+def find_validators(type_: Type[Any], arbitrary_types_allowed: bool = False) -> List[Callable[..., Any]]:
     if type_ is Any:
         return []
     if type_ is Pattern:
@@ -279,7 +290,7 @@ def find_validators(type_, arbitrary_types_allowed=False):
         raise RuntimeError(f'no validator found for {type_}')
 
 
-def _find_supertype(type_):
+def _find_supertype(type_: Type[Any]) -> Optional[Type[Any]]:
     if not _is_new_type(type_):
         return None
 
@@ -290,5 +301,5 @@ def _find_supertype(type_):
     return supertype
 
 
-def _is_new_type(type_):
+def _is_new_type(type_: Type[Any]) -> bool:
     return hasattr(type_, '__name__') and hasattr(type_, '__supertype__')

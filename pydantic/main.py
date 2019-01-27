@@ -6,7 +6,22 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Set, Tuple, Type, Union, cast, no_type_check
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+    no_type_check,
+)
 
 from .class_validators import Validator, ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -38,7 +53,7 @@ class BaseConfig:
     json_encoders: Dict[Type[Any], Callable[..., Any]] = {}
 
     @classmethod
-    def get_field_schema(cls, name):
+    def get_field_schema(cls, name: str) -> Dict[str, str]:
         field_config = cls.fields.get(name) or {}
         if isinstance(field_config, str):
             field_config = {'alias': field_config}
@@ -132,16 +147,20 @@ _missing = object()
 
 
 class BaseModel(metaclass=MetaModel):
-    # populated by the metaclass, defined here to help IDEs only
-    __fields__: Dict[str, Field] = {}
-    __validators__: Dict[str, Callable[..., Any]] = {}
-    __config__: BaseConfig = BaseConfig()
-    _json_encoder: Callable[[Any], Any] = lambda x: x  # pragma: no branch
+    if TYPE_CHECKING:  # pragma: no cover
+        # populated by the metaclass, defined here to help IDEs only
+        __fields__: Dict[str, Field] = {}
+        __validators__: Dict[str, Callable[..., Any]] = {}
+        __config__: BaseConfig = BaseConfig()
+        _json_encoder: Callable[[Any], Any] = lambda x: x
+        _schema_cache: Dict[Any, Any] = {}
 
     Config = BaseConfig
     __slots__ = ('__values__',)
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
+        if TYPE_CHECKING:  # pragma: no cover
+            self.__values__: Dict[str, Any] = {}
         self.__setstate__(self._process_values(data))
 
     @no_type_check
@@ -166,10 +185,10 @@ class BaseModel(metaclass=MetaModel):
         else:
             self.__values__[name] = value
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[Any, Any]:
         return self.__values__
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
         object.__setattr__(self, '__values__', state)
 
     def dict(self, *, include: Set[str] = None, exclude: Set[str] = None, by_alias: bool = False) -> Dict[str, Any]:
@@ -199,7 +218,7 @@ class BaseModel(metaclass=MetaModel):
         exclude: Set[str] = None,
         by_alias: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
-        **dumps_kwargs,
+        **dumps_kwargs: Any,
     ) -> str:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
@@ -212,7 +231,7 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(cls, obj):
+    def parse_obj(cls, obj: Dict[Any, Any]) -> 'BaseModel':
         if not isinstance(obj, dict):
             exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
             raise ValidationError([ErrorWrapper(exc, loc='__obj__')])
@@ -227,7 +246,7 @@ class BaseModel(metaclass=MetaModel):
         encoding: str = 'utf8',
         proto: Protocol = None,
         allow_pickle: bool = False,
-    ):
+    ) -> 'BaseModel':
         try:
             obj = load_str_bytes(
                 b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle
@@ -245,12 +264,12 @@ class BaseModel(metaclass=MetaModel):
         encoding: str = 'utf8',
         proto: Protocol = None,
         allow_pickle: bool = False,
-    ):
+    ) -> 'BaseModel':
         obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls, **values):
+    def construct(cls, **values: Any) -> 'BaseModel':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
         Chances are you don't want to use this method directly.
@@ -261,7 +280,7 @@ class BaseModel(metaclass=MetaModel):
 
     def copy(
         self, *, include: Set[str] = None, exclude: Set[str] = None, update: Dict[str, Any] = None, deep: bool = False
-    ):
+    ) -> 'BaseModel':
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
 
@@ -274,10 +293,10 @@ class BaseModel(metaclass=MetaModel):
         """
         if include is None and exclude is None and update is None:
             # skip constructing values if no arguments are passed
-            v = self.__values__  # type: ignore
+            v = self.__values__
         else:
             exclude = exclude or set()
-            v_ = self.__values__  # type: ignore
+            v_ = self.__values__
             v = {
                 **{k: v for k, v in v_.items() if k not in exclude and (not include or k in include)},
                 **(update or {}),
@@ -287,38 +306,38 @@ class BaseModel(metaclass=MetaModel):
         return self.__class__.construct(**v)
 
     @property
-    def fields(self):
+    def fields(self) -> Dict[str, Field]:
         return self.__fields__
 
     @classmethod
-    def schema(cls, by_alias=True) -> Dict[str, Any]:
-        cached = cls._schema_cache.get(by_alias)  # type: ignore
+    def schema(cls, by_alias: bool = True) -> Dict[str, Any]:
+        cached = cls._schema_cache.get(by_alias)
         if cached is not None:
             return cached
         s = model_schema(cls, by_alias=by_alias)
-        cls._schema_cache[by_alias] = s  # type: ignore
+        cls._schema_cache[by_alias] = s
         return s
 
     @classmethod
-    def schema_json(cls, *, by_alias=True, **dumps_kwargs) -> str:
+    def schema_json(cls, *, by_alias: bool = True, **dumps_kwargs: Any) -> str:
         from .json import pydantic_encoder
 
         return json.dumps(cls.schema(by_alias=by_alias), default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[Any, None, None]:
         yield dict_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value: Dict[str, Any]) -> 'BaseModel':
         return cls(**value)
 
     def _process_values(self, input_data: Any) -> Dict[str, Any]:
-        return validate_model(self, input_data)
+        return cast(Dict[str, Any], validate_model(self, input_data))
 
     @classmethod
-    def _get_value(cls, v, by_alias=False):
+    def _get_value(cls, v: Any, by_alias: bool) -> Any:
         if isinstance(v, BaseModel):
             return v.dict(by_alias=by_alias)
         elif isinstance(v, list):
@@ -333,7 +352,7 @@ class BaseModel(metaclass=MetaModel):
             return v
 
     @classmethod
-    def update_forward_refs(cls, **localns):
+    def update_forward_refs(cls, **localns: Any) -> None:
         """
         Try to update ForwardRefs on fields based on this Model, globalns and localns.
         """
@@ -341,29 +360,29 @@ class BaseModel(metaclass=MetaModel):
         globalns.setdefault(cls.__name__, cls)
         for f in cls.__fields__.values():
             if type(f.type_) == ForwardRef:
-                f.type_ = f.type_._evaluate(globalns, localns or None)
+                f.type_ = f.type_._evaluate(globalns, localns or None)  # type: ignore
                 f.prepare()
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Any, None, None]:
         """
         so `dict(model)` works
         """
         yield from self._iter()
 
-    def _iter(self, by_alias=False):
+    def _iter(self, by_alias: bool = False) -> Generator[Tuple[str, Any], None, None]:
         for k, v in self.__values__.items():
             yield k, self._get_value(v, by_alias=by_alias)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseModel):
             return self.dict() == other.dict()
         else:
             return self.dict() == other
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<{self}>'
 
-    def to_string(self, pretty=False):
+    def to_string(self, pretty: bool = False) -> str:
         divider = '\n  ' if pretty else ' '
         return '{}{}{}'.format(
             self.__class__.__name__,
@@ -371,17 +390,13 @@ class BaseModel(metaclass=MetaModel):
             divider.join('{}={}'.format(k, truncate(v)) for k, v in self.__values__.items()),
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_string()
 
 
 def create_model(
-    model_name: str,
-    *,
-    __config__: Type[BaseConfig] = None,
-    __base__: Type[BaseModel] = None,
-    **field_definitions: Dict[str, Any],
-):
+    model_name: str, *, __config__: Type[BaseConfig] = None, __base__: Type[BaseModel] = None, **field_definitions: Any
+) -> BaseModel:
     """
     Dynamically create a model.
     :param model_name: name of the created model
@@ -423,17 +438,19 @@ def create_model(
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(model_name, (__base__,), namespace)
+    return cast(BaseModel, type(model_name, (__base__,), namespace))
 
 
-def validate_model(model: BaseModel, input_data: Dict[str, Any], raise_exc=True):  # noqa: C901 (ignore complexity)
+def validate_model(  # noqa: C901 (ignore complexity)
+    model: Union[BaseModel, Type[BaseModel]], input_data: Dict[str, Any], raise_exc: bool = True
+) -> Union[Dict[str, Any], Tuple[Dict[str, Any], Optional[ValidationError]]]:
     """
     validate data against a model.
     """
-    values = {}
-    errors = []
-    names_used = set()
-    check_extra = (not model.__config__.ignore_extra) or model.__config__.allow_extra
+    values: Dict[str, Any] = {}
+    errors: List[ErrorWrapper] = []
+    names_used: Set[str] = set()
+    check_extra: bool = (not model.__config__.ignore_extra) or model.__config__.allow_extra
 
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:
