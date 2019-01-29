@@ -4,12 +4,12 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum
 from pathlib import Path
-from typing import Any, Pattern
+from typing import Any, Callable, Pattern
 from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import change_exception, display_as_type, list_like
+from .utils import change_exception, display_as_type, is_callable_type, list_like
 
 NoneType = type(None)
 
@@ -214,6 +214,18 @@ def path_exists_validator(v) -> Path:
     return v
 
 
+def callable_validator(v) -> Callable:
+    """
+    Perform a simple check if the value is callable.
+
+    Note: complete matching of argument type hints and return types is not performed
+    """
+    if callable(v):
+        return v
+
+    raise errors.CallableError(value=v)
+
+
 def make_arbitrary_type_validator(type_):
     def arbitrary_type_validator(v) -> type_:
         if isinstance(v, type_):
@@ -258,6 +270,8 @@ def find_validators(type_, arbitrary_types_allowed=False):
         return []
     if type_ is Pattern:
         return pattern_validators
+    if is_callable_type(type_):
+        return [callable_validator]
 
     supertype = _find_supertype(type_)
     if supertype is not None:

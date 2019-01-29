@@ -1,3 +1,4 @@
+import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -29,7 +30,7 @@ from .types import (
     conint,
     constr,
 )
-from .utils import clean_docstring, lenient_issubclass
+from .utils import clean_docstring, is_callable_type, lenient_issubclass
 
 __all__ = [
     'Schema',
@@ -478,9 +479,13 @@ def model_type_schema(
     required = []
     definitions = {}
     for k, f in model.__fields__.items():
-        f_schema, f_definitions = field_schema(
-            f, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
-        )
+        try:
+            f_schema, f_definitions = field_schema(
+                f, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+            )
+        except SkipField as skip:
+            warnings.warn(skip.message, UserWarning)
+            continue
         definitions.update(f_definitions)
         if by_alias:
             properties[f.alias] = f_schema
@@ -609,6 +614,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         )
     if field.type_ is Any:
         return {}, definitions  # no restrictions
+    if is_callable_type(field.type_):
+        raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema = {}
     if issubclass(field.type_, Enum):
         f_schema.update({'enum': [item.value for item in field.type_]})
@@ -688,3 +695,12 @@ def get_annotation_from_schema(annotation, schema):
             if kwargs:
                 return constraint_func(**kwargs)
     return annotation
+
+
+class SkipField(Exception):
+    """
+    Utility exception used to exclude fields from schema.
+    """
+
+    def __init__(self, message):
+        self.message = message
