@@ -1,4 +1,3 @@
-import sys
 import warnings
 from enum import IntEnum
 from typing import Any, Dict, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union
@@ -7,13 +6,8 @@ from . import errors as errors_
 from .class_validators import Validator, ValidatorSignature, get_validator_signature
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .utils import ForwardRef, display_as_type, lenient_issubclass, list_like
+from .utils import Callable, ForwardRef, display_as_type, lenient_issubclass, list_like
 from .validators import NoneType, dict_validator, find_validators, is_none_validator
-
-if sys.version_info < (3, 7):
-    from typing import Callable
-else:
-    from collections.abc import Callable
 
 Required: Any = Ellipsis
 
