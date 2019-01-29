@@ -220,7 +220,6 @@ def callable_validator(v) -> Callable:
 
     Note: complete matching of argument type hints and return types is not performed
     """
-    # Complete match of arguments type hints does not perform.
     if callable(v):
         return v
 
