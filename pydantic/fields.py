@@ -7,7 +7,7 @@ from .class_validators import Validator, ValidatorSignature, get_validator_signa
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
 from .utils import Callable, ForwardRef, display_as_type, lenient_issubclass, list_like
-from .validators import NoneType, dict_validator, find_validators, is_none_validator
+from .validators import NoneType, dict_validator, find_validators
 
 Required: Any = Ellipsis
 
@@ -358,7 +358,7 @@ class Field:
         """
         False if this is a simple field just allowing None as used in Unions/Optional.
         """
-        return len(self.validators) != 1 or self.validators[0][1] != is_none_validator
+        return self.type_ != NoneType
 
     def is_complex(self):
         """
