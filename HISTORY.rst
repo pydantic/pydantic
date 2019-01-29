@@ -3,7 +3,7 @@
 History
 -------
 
-v0.18.2 (2019-01-22)
+v0.19.0 (unreleased)
 ....................
 * Support ``Callable`` type hint, fix #279 by @proofit404
 
