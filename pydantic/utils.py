@@ -254,5 +254,4 @@ def resolve_annotations(raw_annotations, module):
 
 
 def is_callable_type(type_):
-
     return type_ is Callable or getattr(type_, '__origin__', None) is Callable
