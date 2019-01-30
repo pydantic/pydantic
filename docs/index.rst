@@ -92,6 +92,10 @@ as an optional dependency. Similarly if *pydantic's* email validation relies on
 
 Of course you can also install these requirements manually with ``pip install ...``.
 
+Pydantic is also available on `conda <https://www.anaconda.com>`_ under the `conda-forge <https://conda-forge.org>`_ channel::
+
+    conda install pydantic -c conda-forge
+
 Usage
 -----
 
@@ -285,7 +289,7 @@ Optionally the ``Schema`` class can be used to provide extra information about t
   JSON Schema
 * ``max_length`` for string values, adds a corresponding validation and an annotation of ``maxLength`` to the
   JSON Schema
-* ``regex`` for string values, adds a Regular Expression validation generated from the passed string and an 
+* ``regex`` for string values, adds a Regular Expression validation generated from the passed string and an
   annotation of ``pattern`` to the JSON Schema
 * ``**`` any other keyword arguments (eg. ``examples``) will be added verbatim to the field's schema
 
@@ -387,6 +391,18 @@ Exotic Types
 .. literalinclude:: examples/exotic.py
 
 (This script is complete, it should run "as is")
+
+Fields can also be of type ``Callable``:
+
+.. literalinclude:: examples/callable.py
+
+(This script is complete, it should run "as is")
+
+.. warning::
+
+    Callable fields only perform a simple check that the argument is
+    callable, no validation of arguments, their types or the return
+    type is performed.
 
 Json Type
 .........

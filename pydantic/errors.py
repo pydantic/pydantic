@@ -284,3 +284,7 @@ class PatternError(PydanticValueError):
 class DataclassTypeError(PydanticTypeError):
     code = 'dataclass'
     msg_template = 'instance of {class_name}, tuple or dict expected'
+
+
+class CallableError(PydanticTypeError):
+    msg_template = '{value} is not callable'

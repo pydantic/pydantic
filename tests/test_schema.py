@@ -5,12 +5,12 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Schema, ValidationError
+from pydantic import BaseModel, Schema, ValidationError, validator
 from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_map, schema
 from pydantic.types import (
     DSN,
@@ -623,6 +623,18 @@ def test_json_type():
     }
 
 
+@pytest.mark.parametrize('annotation', [Callable, Callable[[int], int]])
+def test_callable_type(annotation):
+    class Model(BaseModel):
+        callback: annotation
+        foo: int
+
+    with pytest.warns(UserWarning):
+        model_schema = Model.schema()
+
+    assert 'callback' not in model_schema['properties']
+
+
 def test_error_non_supported_types():
     class Model(BaseModel):
         a: PyObject
@@ -1098,3 +1110,18 @@ def test_optional_dict():
 
     assert Model().dict() == {'something': None}
     assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}
+
+
+def test_field_with_validator():
+    class Model(BaseModel):
+        something: Optional[int] = None
+
+        @validator('something')
+        def check_field(cls, v, *, values, config, field):
+            return v
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'something': {'type': 'integer', 'title': 'Something'}},
+    }
