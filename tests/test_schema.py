@@ -10,7 +10,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Schema, ValidationError
+from pydantic import BaseModel, Schema, ValidationError, validator
 from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_map, schema
 from pydantic.types import (
     DSN,
@@ -1104,3 +1104,18 @@ def test_optional_dict():
 
     assert Model().dict() == {'something': None}
     assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}
+
+
+def test_field_with_validator():
+    class Model(BaseModel):
+        something: Optional[int] = None
+
+        @validator('something')
+        def check_field(cls, v, *, values, config, field):
+            return v
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'something': {'type': 'integer', 'title': 'Something'}},
+    }
