@@ -81,7 +81,7 @@ def float_validator(v) -> float:
 
 def number_multiple_validator(v, field, config, **kwargs):
     if field.type_.multiple_of is not None and v % field.type_.multiple_of != 0:
-        raise errors.NumberNotMultipleError(limit_value=field.type_.multiple_of)
+        raise errors.NumberNotMultipleError(multiple_of=field.type_.multiple_of)
 
     return v
 

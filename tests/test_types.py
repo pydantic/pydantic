@@ -590,7 +590,7 @@ def test_int_validation():
             'loc': ('e',),
             'msg': 'ensure this value is a multiple of 5',
             'type': 'value_error.number.not_multiple',
-            'ctx': {'limit_value': 5},
+            'ctx': {'multiple_of': 5},
         },
     ]
 
@@ -637,7 +637,7 @@ def test_float_validation():
             'loc': ('e',),
             'msg': 'ensure this value is a multiple of 0.5',
             'type': 'value_error.number.not_multiple',
-            'ctx': {'limit_value': 0.5},
+            'ctx': {'multiple_of': 0.5},
         },
     ]
 
@@ -912,7 +912,7 @@ def test_anystr_strip_whitespace_disabled():
                     'loc': ('foo',),
                     'msg': 'ensure this value is a multiple of 5',
                     'type': 'value_error.number.not_multiple',
-                    'ctx': {'limit_value': Decimal('5')},
+                    'ctx': {'multiple_of': Decimal('5')},
                 }
             ],
         ),
@@ -1134,7 +1134,8 @@ def test_number_multiple_of():
 
     assert Model(a=10).dict() == {'a': 10}
 
-    message = base_message.format(msg='a multiple of 5', ty='multiple', value=5)
+    multiple_message = base_message.replace('limit_value', 'multiple_of')
+    message = multiple_message.format(msg='a multiple of 5', ty='multiple', value=5)
     with pytest.raises(ValidationError, match=message):
         Model(a=42)
 

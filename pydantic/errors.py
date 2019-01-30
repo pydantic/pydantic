@@ -190,9 +190,12 @@ class NumberNotLeError(_NumberBoundError):
     msg_template = 'ensure this value is less than or equal to {limit_value}'
 
 
-class NumberNotMultipleError(_NumberBoundError):
+class NumberNotMultipleError(PydanticValueError):
     code = 'number.not_multiple'
-    msg_template = 'ensure this value is a multiple of {limit_value}'
+    msg_template = 'ensure this value is a multiple of {multiple_of}'
+
+    def __init__(self, *, multiple_of: str) -> None:
+        super().__init__(multiple_of=multiple_of)
 
 
 class DecimalError(PydanticTypeError):
