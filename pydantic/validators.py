@@ -79,6 +79,13 @@ def float_validator(v) -> float:
         return float(v)
 
 
+def number_multiple_validator(v, field, config, **kwargs):
+    if field.type_.multiple_of is not None and v % field.type_.multiple_of != 0:
+        raise errors.NumberNotMultipleError(multiple_of=field.type_.multiple_of)
+
+    return v
+
+
 def number_size_validator(v, field, config, **kwargs):
     if field.type_.gt is not None and not v > field.type_.gt:
         raise errors.NumberNotGtError(limit_value=field.type_.gt)
