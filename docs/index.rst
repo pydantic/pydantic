@@ -65,7 +65,7 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
     use of recursive *pydantic* models, ``typing``'s ``List`` and ``Dict`` etc. and validators allow
     complex data schemas to be clearly and easily defined and then checked.
 
-**extendible**
+**extensible**
     *pydantic* allows custom data types to be defined or you can extend validation with methods on a model decorated
     with the ``validator`` decorator.
 
