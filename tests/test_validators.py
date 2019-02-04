@@ -32,10 +32,10 @@ def test_int_validation():
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
-    assert Model(a=3).a is 3
-    assert Model(a=True).a is 1
-    assert Model(a=False).a is 0
-    assert Model(a=4.5).a is 4
+    assert Model(a=3).a == 3
+    assert Model(a=True).a == 1
+    assert Model(a=False).a == 0
+    assert Model(a=4.5).a == 4
 
 
 def test_validate_whole():
