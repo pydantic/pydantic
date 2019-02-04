@@ -3,6 +3,14 @@
 History
 -------
 
+v0.19.0 (unreleased)
+....................
+* Support ``Callable`` type hint, fix #279 by @proofit404
+* Fix schema for fields with ``validator`` decorator, fix #375 by @tiangolo
+* Add ``multiple_of`` constraint to ``ConstrainedDecimal``, ``ConstrainedFloat``, ``ConstrainedInt``
+  and their related types ``condecimal``, ``confloat``, and ``conint`` #371, thanks @StephenBrown2
+* Deprecated ``ignore_extra`` and ``allow_extra`` Config fields in favor of ``extra``, #352 by @liiight
+
 v0.18.2 (2019-01-22)
 ....................
 * Fix to schema generation with ``Optional`` fields, fix #361 by @samuelcolvin

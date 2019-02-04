@@ -9,7 +9,7 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import change_exception, display_as_type, list_like
+from .utils import change_exception, display_as_type, is_callable_type, list_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -89,7 +89,15 @@ def float_validator(v: Any) -> float:
         return float(v)
 
 
-def number_size_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'Number':
+def number_multiple_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any):
+    field_type = cast('ConstrainedNumber', field.type_)
+    if field_type.multiple_of is not None and v % field_type.multiple_of != 0:  # type: ignore
+        raise errors.NumberNotMultipleError(multiple_of=field_type.multiple_of)
+
+    return v
+
+
+def number_size_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any):
     field_type = cast('ConstrainedNumber', field.type_)
     if field_type.gt is not None and not v > field_type.gt:
         raise errors.NumberNotGtError(limit_value=field_type.gt)
@@ -225,6 +233,18 @@ def path_exists_validator(v: Any) -> Path:
     return v
 
 
+def callable_validator(v) -> Callable[..., Any]:
+    """
+    Perform a simple check if the value is callable.
+
+    Note: complete matching of argument type hints and return types is not performed
+    """
+    if callable(v):
+        return v
+
+    raise errors.CallableError(value=v)
+
+
 T = TypeVar('T')
 
 
@@ -272,6 +292,8 @@ def find_validators(type_: Type[Any], arbitrary_types_allowed: bool = False) -> 
         return []
     if type_ is Pattern:
         return pattern_validators
+    if is_callable_type(type_):
+        return [callable_validator]
 
     supertype = _find_supertype(type_)
     if supertype is not None:

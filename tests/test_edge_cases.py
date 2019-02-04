@@ -5,7 +5,17 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, NoneStrBytes, StrBytes, ValidationError, constr, errors, validate_model
+from pydantic import (
+    BaseConfig,
+    BaseModel,
+    Extra,
+    NoneStrBytes,
+    StrBytes,
+    ValidationError,
+    constr,
+    errors,
+    validate_model,
+)
 
 
 def test_str_bytes():
@@ -463,7 +473,7 @@ def test_string_none():
         a: constr(min_length=20, max_length=1000) = ...
 
         class Config:
-            ignore_extra = True
+            extra = Extra.ignore
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=None)
@@ -614,7 +624,7 @@ def test_pop_by_alias():
         last_updated_by: Optional[str] = None
 
         class Config:
-            ignore_extra = False
+            extra = Extra.forbid
             allow_population_by_alias = True
             fields = {'last_updated_by': 'lastUpdatedBy'}
 
@@ -625,3 +635,72 @@ def test_pop_by_alias():
     assert exc_info.value.errors() == [
         {'loc': ('last_updated_by',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'}
     ]
+
+
+def test_ignore_extra_true():
+    with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
+
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                ignore_extra = True
+
+    assert Model.__config__.extra is Extra.ignore
+
+
+def test_ignore_extra_false():
+    with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
+
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                ignore_extra = False
+
+    assert Model.__config__.extra is Extra.forbid
+
+
+def test_allow_extra():
+    with pytest.warns(DeprecationWarning, match='Model: "allow_extra" is deprecated and replaced by "extra"'):
+
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                allow_extra = True
+
+    assert Model.__config__.extra is Extra.allow
+
+
+def test_ignore_extra_allow_extra():
+    with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" and "allow_extra" are deprecated and'):
+
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                ignore_extra = False
+                allow_extra = False
+
+    assert Model.__config__.extra is Extra.forbid
+
+
+def test_force_extra():
+    class Model(BaseModel):
+        foo: int
+
+        class Config:
+            extra = 'ignore'
+
+    assert Model.__config__.extra is Extra.ignore
+
+
+def test_illegal_extra_value():
+    with pytest.raises(ValueError, match='is not a valid value for "extra"'):
+
+        class Model(BaseModel):
+            foo: int
+
+            class Config:
+                extra = 'foo'

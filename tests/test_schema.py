@@ -5,12 +5,12 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Schema, ValidationError
+from pydantic import BaseModel, Schema, ValidationError, validator
 from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_map, schema
 from pydantic.types import (
     DSN,
@@ -523,6 +523,7 @@ def test_email_str_types(field_type, expected_schema):
         (ConstrainedInt, {}),
         (conint(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (conint(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (conint(multiple_of=5), {'multipleOf': 5}),
         (PositiveInt, {'exclusiveMinimum': 0}),
         (NegativeInt, {'exclusiveMaximum': 0}),
     ],
@@ -548,11 +549,13 @@ def test_special_int_types(field_type, expected_schema):
         (ConstrainedFloat, {}),
         (confloat(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (confloat(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (confloat(multiple_of=5), {'multipleOf': 5}),
         (PositiveFloat, {'exclusiveMinimum': 0}),
         (NegativeFloat, {'exclusiveMaximum': 0}),
         (ConstrainedDecimal, {}),
         (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (condecimal(multiple_of=5), {'multipleOf': 5}),
     ],
 )
 def test_special_float_types(field_type, expected_schema):
@@ -618,6 +621,18 @@ def test_json_type():
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
         'required': ['a'],
     }
+
+
+@pytest.mark.parametrize('annotation', [Callable, Callable[[int], int]])
+def test_callable_type(annotation):
+    class Model(BaseModel):
+        callback: annotation
+        foo: int
+
+    with pytest.warns(UserWarning):
+        model_schema = Model.schema()
+
+    assert 'callback' not in model_schema['properties']
 
 
 def test_error_non_supported_types():
@@ -912,14 +927,17 @@ def test_dict_default():
         ({'lt': 5}, int, {'type': 'integer', 'exclusiveMaximum': 5}),
         ({'ge': 2}, int, {'type': 'integer', 'minimum': 2}),
         ({'le': 5}, int, {'type': 'integer', 'maximum': 5}),
+        ({'multiple_of': 5}, int, {'type': 'integer', 'multipleOf': 5}),
         ({'gt': 2}, float, {'type': 'number', 'exclusiveMinimum': 2}),
         ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
         ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
         ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
+        ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
         ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
         ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),
         ({'ge': 2}, Decimal, {'type': 'number', 'minimum': 2}),
         ({'le': 5}, Decimal, {'type': 'number', 'maximum': 5}),
+        ({'multiple_of': 5}, Decimal, {'type': 'number', 'multipleOf': 5}),
     ],
 )
 def test_constraints_schema(kwargs, type_, expected_extra):
@@ -1092,3 +1110,18 @@ def test_optional_dict():
 
     assert Model().dict() == {'something': None}
     assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}
+
+
+def test_field_with_validator():
+    class Model(BaseModel):
+        something: Optional[int] = None
+
+        @validator('something')
+        def check_field(cls, v, *, values, config, field):
+            return v
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'something': {'type': 'integer', 'title': 'Something'}},
+    }

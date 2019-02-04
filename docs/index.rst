@@ -65,7 +65,7 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
     use of recursive *pydantic* models, ``typing``'s ``List`` and ``Dict`` etc. and validators allow
     complex data schemas to be clearly and easily defined and then checked.
 
-**extendible**
+**extensible**
     *pydantic* allows custom data types to be defined or you can extend validation with methods on a model decorated
     with the ``validator`` decorator.
 
@@ -91,6 +91,10 @@ as an optional dependency. Similarly if *pydantic's* email validation relies on
     pip install pydantic[ujson,email]
 
 Of course you can also install these requirements manually with ``pip install ...``.
+
+Pydantic is also available on `conda <https://www.anaconda.com>`_ under the `conda-forge <https://conda-forge.org>`_ channel::
+
+    conda install pydantic -c conda-forge
 
 Usage
 -----
@@ -287,11 +291,13 @@ Optionally the ``Schema`` class can be used to provide extra information about t
   JSON Schema
 * ``le`` for numeric values, adds a validation of "less than or equal" and an annotation of ``maximum`` to the
   JSON Schema
+* ``multiple_of`` for numeric values, adds a validation of "a multiple of" and an annotation of ``multipleOf`` to the
+  JSON Schema
 * ``min_length`` for string values, adds a corresponding validation and an annotation of ``minLength`` to the
   JSON Schema
 * ``max_length`` for string values, adds a corresponding validation and an annotation of ``maxLength`` to the
   JSON Schema
-* ``regex`` for string values, adds a Regular Expression validation generated from the passed string and an 
+* ``regex`` for string values, adds a Regular Expression validation generated from the passed string and an
   annotation of ``pattern`` to the JSON Schema
 * ``**`` any other keyword arguments (eg. ``examples``) will be added verbatim to the field's schema
 
@@ -394,6 +400,18 @@ Exotic Types
 
 (This script is complete, it should run "as is")
 
+Fields can also be of type ``Callable``:
+
+.. literalinclude:: examples/callable.py
+
+(This script is complete, it should run "as is")
+
+.. warning::
+
+    Callable fields only perform a simple check that the argument is
+    callable, no validation of arguments, their types or the return
+    type is performed.
+
 Json Type
 .........
 
@@ -454,10 +472,8 @@ Options:
 :min_anystr_length: min length for str & byte types (default: ``0``)
 :max_anystr_length: max length for str & byte types (default: ``2 ** 16``)
 :validate_all: whether or not to validate field defaults (default: ``False``)
-:ignore_extra: whether to ignore any extra values in input data; if this option is set to be ``True``,
-  any extra attributes will be dropped without raising a ``ValidationError`` (default: ``True``)
-:allow_extra: whether or not to allow (and include on the model) any extra values from input data;
-  when ``allow_extra`` option is set to ``True`` it overrides ``ignore_extra`` (default: ``False``)
+:extra: whether to ignore, allow or forbid extra attributes in model. Can use either string values of ``ignore``,
+  ``allow`` or ``forbid``, or use ``Extra`` enum (default is ``Extra.ignore``)
 :allow_mutation: whether or not models are faux-immutable, e.g. __setattr__ fails (default: ``True``)
 :use_enum_values: whether to populate models with the ``value`` property of enums,
     rather than the raw enum - useful if you want to serialise ``model.dict()`` later (default: ``False``)
