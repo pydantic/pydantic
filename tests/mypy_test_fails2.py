@@ -17,5 +17,4 @@ class Model(BaseModel):
 
 m = Model(age=42, list_of_ints=[1, '2', b'3'])
 
-assert m.age == 42, m.age
-m.age = 'not integer'
+print(m.foobar)
