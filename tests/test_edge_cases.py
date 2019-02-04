@@ -697,7 +697,7 @@ def test_force_extra():
 
 
 def test_illegal_extra_value():
-    with pytest.raises(ValueError, match='is not a valid Extra'):
+    with pytest.raises(ValueError, match='is not a valid value for "extra"'):
 
         class Model(BaseModel):
             foo: int

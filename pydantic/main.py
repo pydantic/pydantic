@@ -191,7 +191,7 @@ class BaseModel(metaclass=MetaModel):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
-        if self.__config__.extra is not Extra.allowed and name not in self.__fields__:
+        if self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
@@ -503,7 +503,7 @@ def validate_model(model: BaseModel, input_data: dict, raise_exc=True):  # noqa:
     if check_extra:
         extra = input_data.keys() - names_used
         if extra:
-            if config.extra is Extra.allowed:
+            if config.extra is Extra.allow:
                 for field in extra:
                     values[field] = input_data[field]
             else:
