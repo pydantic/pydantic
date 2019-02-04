@@ -67,9 +67,9 @@ def set_extra(config, cls_name):
     has_ignore_extra, has_allow_extra = hasattr(config, 'ignore_extra'), hasattr(config, 'allow_extra')
     if has_ignore_extra or has_allow_extra:
         if getattr(config, 'allow_extra', False):
-            config.extra = Extra.allowed
+            config.extra = Extra.allow
         elif getattr(config, 'ignore_extra', True):
-            config.extra = Extra.ignored
+            config.extra = Extra.ignore
         else:
             config.extra = Extra.forbid
 
