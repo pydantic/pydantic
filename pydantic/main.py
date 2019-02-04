@@ -516,13 +516,12 @@ def validate_model(  # noqa: C901 (ignore complexity)
             using_name = True
 
         if value is _missing:
-            if config.validate_all or field.validate_always:
-                value = deepcopy(field.default)
-            else:
-                if field.required:
-                    errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=config))
-                else:
-                    values[name] = deepcopy(field.default)
+            if field.required:
+                errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
+                continue
+            value = deepcopy(field.default)
+            if not model.__config__.validate_all and not field.validate_always:
+                values[name] = value
                 continue
         elif check_extra:
             names_used.add(field.name if using_name else field.alias)

@@ -11,6 +11,7 @@ v0.19.0 (unreleased)
   and their related types ``condecimal``, ``confloat``, and ``conint`` #371, thanks @StephenBrown2
 * Deprecated ``ignore_extra`` and ``allow_extra`` Config fields in favor of ``extra``, #352 by @liiight
 * Add type annotations to all functions, test fully with mypy, #373 by @samuelcolvin
+* fix for 'missing' error with ``validate_all`` or ``validate_always``, #381 by @samuelcolvin
 
 v0.18.2 (2019-01-22)
 ....................

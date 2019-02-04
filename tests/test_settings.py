@@ -7,7 +7,7 @@ from pydantic.env_settings import SettingsError
 
 
 class SimpleSettings(BaseSettings):
-    apple: str = ...
+    apple: str
 
 
 def test_sub_env(env):
@@ -25,9 +25,7 @@ def test_sub_env_override(env):
 def test_sub_env_missing():
     with pytest.raises(ValidationError) as exc_info:
         SimpleSettings()
-    assert exc_info.value.errors() == [
-        {'loc': ('apple',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}
-    ]
+    assert exc_info.value.errors() == [{'loc': ('apple',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 def test_other_setting(env):

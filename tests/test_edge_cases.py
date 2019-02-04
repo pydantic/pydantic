@@ -637,6 +637,22 @@ def test_pop_by_alias():
     ]
 
 
+def test_validate_all():
+    class Model(BaseModel):
+        a: int
+        b: int
+
+        class Config:
+            validate_all = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
 def test_ignore_extra_true():
     with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
 
