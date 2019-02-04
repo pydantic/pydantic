@@ -8,7 +8,7 @@ from .types import StrBytes
 try:
     import ujson as json
 except ImportError:
-    import json
+    import json  # type: ignore
 
 
 class Protocol(str, Enum):
@@ -36,7 +36,8 @@ def load_str_bytes(
     elif proto == Protocol.pickle:
         if not allow_pickle:
             raise RuntimeError('Trying to decode with pickle with allow_pickle=False')
-        return pickle.loads(b)
+        bb = b if isinstance(b, bytes) else b.encode()
+        return pickle.loads(bb)
     else:
         raise TypeError(f'Unknown protocol: {proto}')
 

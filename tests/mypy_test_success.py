@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, NoneStr
+from pydantic.dataclasses import dataclass
 
 
 class Model(BaseModel):
@@ -44,3 +45,13 @@ assert m.first_name == 'Woof', m.first_name
 assert m.last_name == 'Woof', m.last_name
 assert m.signup_ts == datetime(2017, 6, 7), m.signup_ts
 assert day_of_week(m.signup_ts) == 3
+
+
+@dataclass
+class AddProject:
+    name: str
+    slug: Optional[str]
+    description: Optional[str]
+
+
+p = AddProject(name='x', slug='y', description='z')

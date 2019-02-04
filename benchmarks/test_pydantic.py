@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from pydantic import BaseModel, constr, EmailStr, PositiveInt, ValidationError
+from pydantic import BaseModel, Extra, PositiveInt, ValidationError, constr
 
 
 class TestPydantic:
@@ -36,7 +36,7 @@ class TestPydantic:
             skills: List[Skill] = []
 
             class Config:
-                ignore_extra = allow_extra
+                extra = Extra.allow if allow_extra else Extra.forbid
 
         self.model = Model
 

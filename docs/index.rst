@@ -65,7 +65,7 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
     use of recursive *pydantic* models, ``typing``'s ``List`` and ``Dict`` etc. and validators allow
     complex data schemas to be clearly and easily defined and then checked.
 
-**extendible**
+**extensible**
     *pydantic* allows custom data types to be defined or you can extend validation with methods on a model decorated
     with the ``validator`` decorator.
 
@@ -130,6 +130,14 @@ created by the standard library ``dataclass`` decorator.
 ``pydantic.dataclasses.dataclass``'s arguments are the same as the standard decorator, except one extra
 key word argument ``config`` which has the same meaning as :ref:`Config <config>`.
 
+.. note::
+
+   As a side effect of getting pydantic dataclasses to play nicely with mypy the ``config`` argument will show
+   as invalid in IDEs and mypy, use ``@dataclass(..., config=Config) # type: ignore`` as a workaround. See
+   `python/mypy#6239 <https://github.com/python/mypy/issues/6239>`_ for an explanation of why this is.
+
+Nested dataclasses
+~~~~~~~~~~~~~~~~~~
 
 Since version ``v0.17`` nested dataclasses are support both in dataclasses and normal models.
 
@@ -282,6 +290,8 @@ Optionally the ``Schema`` class can be used to provide extra information about t
 * ``lt`` for numeric values, adds a validation of "less than" and an annotation of ``exclusiveMaximum`` to the
   JSON Schema
 * ``le`` for numeric values, adds a validation of "less than or equal" and an annotation of ``maximum`` to the
+  JSON Schema
+* ``multiple_of`` for numeric values, adds a validation of "a multiple of" and an annotation of ``multipleOf`` to the
   JSON Schema
 * ``min_length`` for string values, adds a corresponding validation and an annotation of ``minLength`` to the
   JSON Schema
@@ -462,10 +472,8 @@ Options:
 :min_anystr_length: min length for str & byte types (default: ``0``)
 :max_anystr_length: max length for str & byte types (default: ``2 ** 16``)
 :validate_all: whether or not to validate field defaults (default: ``False``)
-:ignore_extra: whether to ignore any extra values in input data; if this option is set to be ``True``,
-  any extra attributes will be dropped without raising a ``ValidationError`` (default: ``True``)
-:allow_extra: whether or not to allow (and include on the model) any extra values from input data;
-  when ``allow_extra`` option is set to ``True`` it overrides ``ignore_extra`` (default: ``False``)
+:extra: whether to ignore, allow or forbid extra attributes in model. Can use either string values of ``ignore``,
+  ``allow`` or ``forbid``, or use ``Extra`` enum (default is ``Extra.ignore``)
 :allow_mutation: whether or not models are faux-immutable, e.g. __setattr__ fails (default: ``True``)
 :use_enum_values: whether to populate models with the ``value`` property of enums,
     rather than the raw enum - useful if you want to serialise ``model.dict()`` later (default: ``False``)

@@ -554,12 +554,13 @@ def test_int_validation():
         b: NegativeInt = None
         c: conint(gt=4, lt=10) = None
         d: conint(ge=0, le=10) = None
+        e: conint(multiple_of=5) = None
 
-    m = Model(a=5, b=-5, c=5, d=0)
-    assert m == {'a': 5, 'b': -5, 'c': 5, 'd': 0}
+    m = Model(a=5, b=-5, c=5, d=0, e=25)
+    assert m == {'a': 5, 'b': -5, 'c': 5, 'd': 0, 'e': 25}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-5, b=5, c=-5, d=11)
+        Model(a=-5, b=5, c=-5, d=11, e=42)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -585,6 +586,12 @@ def test_int_validation():
             'type': 'value_error.number.not_le',
             'ctx': {'limit_value': 10},
         },
+        {
+            'loc': ('e',),
+            'msg': 'ensure this value is a multiple of 5',
+            'type': 'value_error.number.not_multiple',
+            'ctx': {'multiple_of': 5},
+        },
     ]
 
 
@@ -594,12 +601,13 @@ def test_float_validation():
         b: NegativeFloat = None
         c: confloat(gt=4, lt=12.2) = None
         d: confloat(ge=0, le=9.9) = None
+        e: confloat(multiple_of=0.5) = None
 
-    m = Model(a=5.1, b=-5.2, c=5.3, d=9.9)
-    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 5.3, 'd': 9.9}
+    m = Model(a=5.1, b=-5.2, c=5.3, d=9.9, e=2.5)
+    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 5.3, 'd': 9.9, 'e': 2.5}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-5.1, b=5.2, c=-5.3, d=9.91)
+        Model(a=-5.1, b=5.2, c=-5.3, d=9.91, e=4.2)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -624,6 +632,12 @@ def test_float_validation():
             'msg': 'ensure this value is less than or equal to 9.9',
             'type': 'value_error.number.not_le',
             'ctx': {'limit_value': 9.9},
+        },
+        {
+            'loc': ('e',),
+            'msg': 'ensure this value is a multiple of 0.5',
+            'type': 'value_error.number.not_multiple',
+            'ctx': {'multiple_of': 0.5},
         },
     ]
 
@@ -890,6 +904,18 @@ def test_anystr_strip_whitespace_disabled():
                 '-Infinity',
             )
         ],
+        (
+            condecimal(multiple_of=Decimal('5')),
+            Decimal('42'),
+            [
+                {
+                    'loc': ('foo',),
+                    'msg': 'ensure this value is a multiple of 5',
+                    'type': 'value_error.number.not_multiple',
+                    'ctx': {'multiple_of': Decimal('5')},
+                }
+            ],
+        ),
     ],
 )
 def test_decimal_validation(type_, value, result):
@@ -1100,6 +1126,18 @@ def test_number_le():
     message = base_message.format(msg='less than or equal to 5', ty='le', value=5)
     with pytest.raises(ValidationError, match=message):
         Model(a=6)
+
+
+def test_number_multiple_of():
+    class Model(BaseModel):
+        a: conint(multiple_of=5)
+
+    assert Model(a=10).dict() == {'a': 10}
+
+    multiple_message = base_message.replace('limit_value', 'multiple_of')
+    message = multiple_message.format(msg='a multiple of 5', ty='multiple', value=5)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=42)
 
 
 @pytest.mark.parametrize('fn', [conint, confloat, condecimal])

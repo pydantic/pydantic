@@ -1,15 +1,15 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
-from .utils import display_as_type
+from .utils import AnyType, display_as_type
 
 
 class PydanticErrorMixin:
     code: str
     msg_template: str
 
-    def __init__(self, **ctx) -> None:
+    def __init__(self, **ctx: Any) -> None:
         self.ctx = ctx or None
         super().__init__()
 
@@ -190,6 +190,14 @@ class NumberNotLeError(_NumberBoundError):
     msg_template = 'ensure this value is less than or equal to {limit_value}'
 
 
+class NumberNotMultipleError(PydanticValueError):
+    code = 'number.not_multiple'
+    msg_template = 'ensure this value is a multiple of {multiple_of}'
+
+    def __init__(self, *, multiple_of: Union[int, float, Decimal]) -> None:
+        super().__init__(multiple_of=multiple_of)
+
+
 class DecimalError(PydanticTypeError):
     msg_template = 'value is not a valid decimal'
 
@@ -255,7 +263,7 @@ class ArbitraryTypeError(PydanticTypeError):
     code = 'arbitrary_type'
     msg_template = 'instance of {expected_arbitrary_type} expected'
 
-    def __init__(self, *, expected_arbitrary_type) -> None:
+    def __init__(self, *, expected_arbitrary_type: AnyType) -> None:
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
 
 
