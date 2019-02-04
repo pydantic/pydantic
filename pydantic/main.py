@@ -96,7 +96,6 @@ def set_extra(config, cls_name):
             raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
 
 
-
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
