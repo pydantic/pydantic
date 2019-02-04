@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
 from types import FunctionType
-from typing import Any, Dict, List, Set, Callable
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from .errors import ConfigError
 from .utils import AnyCallable, in_ipython
@@ -28,7 +28,9 @@ class Validator:
 _FUNCS: Set[str] = set()
 
 
-def validator(*fields: str, pre: bool = False, whole: bool = False, always: bool = False, check_fields: bool = True) -> Callable[[AnyCallable], classmethod]:
+def validator(
+    *fields: str, pre: bool = False, whole: bool = False, always: bool = False, check_fields: bool = True
+) -> Callable[[AnyCallable], classmethod]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
@@ -68,14 +70,14 @@ class ValidatorGroup:
         self.validators = validators
         self.used_validators = {'*'}
 
-    def get_validators(self, name: str) -> Dict[str, Validator]:
+    def get_validators(self, name: str) -> Optional[Dict[str, Validator]]:
         self.used_validators.add(name)
         specific_validators = self.validators.get(name)
         wildcard_validators = self.validators.get('*')
         if specific_validators or wildcard_validators:
             validators = (specific_validators or []) + (wildcard_validators or [])
             return {v.func.__name__: v for v in validators}
-        raise ValueError(f'no validators named "{name}" or "*"')
+        return None
 
     def check_for_unused(self) -> None:
         unused_validators = set(

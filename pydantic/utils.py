@@ -7,19 +7,7 @@ from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
 from typing import _eval_type  # type: ignore
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable as TypingCallable,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Pattern,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
 
 from . import errors
 
@@ -43,13 +31,18 @@ if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
 
 if sys.version_info < (3, 7):
-    Callable = TypingCallable
+    from typing import Callable
+
+    AnyCallable = Callable[..., Any]
 else:
     from collections.abc import Callable
+    from typing import Callable as TypingCallable
+
+    AnyCallable = TypingCallable[..., Any]
+
 
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
 AnyType = Type[Any]
-AnyCallable = TypingCallable[..., Any]
 
 
 def validate_email(value: str) -> Tuple[str, str]:

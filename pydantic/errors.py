@@ -1,8 +1,8 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Union, Any
+from typing import Any, Union
 
-from .utils import display_as_type, AnyType
+from .utils import AnyType, display_as_type
 
 
 class PydanticErrorMixin:
