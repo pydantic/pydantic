@@ -62,17 +62,16 @@ MS_WATERSHED = int(1e11)  # if greater than this, the number is in ms (in second
 StrIntFloat = Union[str, int, float]
 
 
-def get_numeric(value: StrIntFloat):
+def get_numeric(value: StrIntFloat) -> Union[None, int, float]:
     if isinstance(value, (int, float)):
         return value
     try:
         return int(value)
     except ValueError:
-        pass
-    try:
-        return float(value)
-    except ValueError:
-        pass
+        try:
+            return float(value)
+        except ValueError:
+            return None
 
 
 def from_unix_seconds(seconds: float) -> datetime:

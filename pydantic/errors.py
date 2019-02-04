@@ -1,15 +1,15 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Union
+from typing import Union, Any
 
-from .utils import display_as_type
+from .utils import display_as_type, AnyType
 
 
 class PydanticErrorMixin:
     code: str
     msg_template: str
 
-    def __init__(self, **ctx) -> None:
+    def __init__(self, **ctx: Any) -> None:
         self.ctx = ctx or None
         super().__init__()
 
@@ -263,7 +263,7 @@ class ArbitraryTypeError(PydanticTypeError):
     code = 'arbitrary_type'
     msg_template = 'instance of {expected_arbitrary_type} expected'
 
-    def __init__(self, *, expected_arbitrary_type) -> None:
+    def __init__(self, *, expected_arbitrary_type: AnyType) -> None:
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
 
 

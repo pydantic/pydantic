@@ -2,11 +2,11 @@ import json
 import re
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional, Pattern, Set, Type, Union, cast
+from typing import Any, Dict, Generator, Optional, Pattern, Set, Type, Union, cast
 from uuid import UUID
 
 from . import errors
-from .utils import AnyType, import_string, make_dsn, url_regex_generator, validate_email
+from .utils import AnyCallable, AnyType, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
     anystr_strip_whitespace,
@@ -74,11 +74,11 @@ OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 
 class StrictStr(str):
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield cls.validate
 
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v: Any) -> str:
         if not isinstance(v, str):
             raise errors.StrError()
         return v
@@ -90,14 +90,14 @@ class ConstrainedBytes(bytes):
     max_length: OptionalInt = None
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield not_none_validator
         yield bytes_validator
         yield anystr_strip_whitespace
         yield anystr_length_validator
 
 
-def conbytes(*, strip_whitespace=False, min_length=None, max_length=None) -> Type[bytes]:
+def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_length: int = None) -> Type[bytes]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(strip_whitespace=strip_whitespace, min_length=min_length, max_length=max_length)
     return type('ConstrainedBytesValue', (ConstrainedBytes,), namespace)
@@ -111,7 +111,7 @@ class ConstrainedStr(str):
     regex: Optional[Pattern[str]] = None
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield not_none_validator
         yield str_validator
         yield anystr_strip_whitespace
@@ -130,7 +130,14 @@ class ConstrainedStr(str):
         return value
 
 
-def constr(*, strip_whitespace=False, min_length=None, max_length=None, curtail_length=None, regex=None) -> Type[str]:
+def constr(
+    *,
+    strip_whitespace: bool = False,
+    min_length: int = None,
+    max_length: int = None,
+    curtail_length: int = None,
+    regex: str = None,
+) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
@@ -144,7 +151,7 @@ def constr(*, strip_whitespace=False, min_length=None, max_length=None, curtail_
 
 class EmailStr(str):
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         # included here and below so the error happens straight away
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
@@ -153,7 +160,7 @@ class EmailStr(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value: str) -> str:
         return validate_email(value)[1]
 
 
@@ -166,7 +173,7 @@ class UrlStr(str):
     require_tld = True  # whether to reject non-FQDN hostnames
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield not_none_validator
         yield str_validator
         yield anystr_strip_whitespace
@@ -191,11 +198,11 @@ class UrlStr(str):
 
 def urlstr(
     *,
-    strip_whitespace=True,
-    min_length=1,
-    max_length=2 ** 16,
-    relative=False,
-    require_tld=True,
+    strip_whitespace: bool = True,
+    min_length: int = 1,
+    max_length: int = 2 ** 16,
+    relative: bool = False,
+    require_tld: bool = True,
     schemes: Optional[Set[str]] = None,
 ) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
@@ -213,12 +220,12 @@ def urlstr(
 class NameEmail:
     __slots__ = 'name', 'email'
 
-    def __init__(self, name, email):
+    def __init__(self, name: str, email: str):
         self.name = name
         self.email = email
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
@@ -226,13 +233,13 @@ class NameEmail:
         yield cls.validate
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value: str) -> 'NameEmail':
         return cls(*validate_email(value))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.name} <{self.email}>'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<NameEmail("{self}")>'
 
 
@@ -240,12 +247,12 @@ class PyObject:
     validate_always = True
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield str_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value: Any) -> Any:
         if value is not None:
             try:
                 return import_string(value)
@@ -259,12 +266,12 @@ class DSN(str):
     validate_always = True
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield str_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value, values, **kwarg):
+    def validate(cls, value: str, values: Dict[str, Any], **kwarg: Any) -> str:
         if value:
             return value
 
@@ -272,11 +279,11 @@ class DSN(str):
         if kwargs['driver'] is None:
             raise errors.DSNDriverIsEmptyError()
 
-        return make_dsn(**kwargs)
+        return make_dsn(**kwargs)  # type: ignore
 
 
 class ConstrainedNumberMeta(type):
-    def __new__(cls, name, bases, dct):
+    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'ConstrainedInt':
         new_cls = cast('ConstrainedInt', type.__new__(cls, name, bases, dct))
 
         if new_cls.gt is not None and new_cls.ge is not None:
@@ -295,13 +302,13 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalInt = None
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield int_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
-def conint(*, gt=None, ge=None, lt=None, le=None, multiple_of=None) -> Type[int]:
+def conint(*, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None) -> Type[int]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
@@ -323,13 +330,15 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalIntFloat = None
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield float_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
-def confloat(*, gt=None, ge=None, lt=None, le=None, multiple_of=None) -> Type[float]:
+def confloat(
+    *, gt: float = None, ge: float = None, lt: float = None, le: float = None, multiple_of: float = None
+) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
@@ -353,7 +362,7 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalIntFloatDecimal = None
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield not_none_validator
         yield decimal_validator
         yield number_size_validator
@@ -398,7 +407,14 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
 
 
 def condecimal(
-    *, gt=None, ge=None, lt=None, le=None, max_digits=None, decimal_places=None, multiple_of=None
+    *,
+    gt: Decimal = None,
+    ge: Decimal = None,
+    lt: Decimal = None,
+    le: Decimal = None,
+    max_digits: int = None,
+    decimal_places: int = None,
+    multiple_of: Decimal = None,
 ) -> Type[Decimal]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -425,7 +441,7 @@ class UUID5(UUID):
 
 class FilePath(Path):
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield path_validator
         yield path_exists_validator
         yield cls.validate
@@ -440,7 +456,7 @@ class FilePath(Path):
 
 class DirectoryPath(Path):
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield path_validator
         yield path_exists_validator
         yield cls.validate
@@ -464,12 +480,12 @@ class JsonMeta(type):
 
 class Json(metaclass=JsonMeta):
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
         yield str_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: str):
+    def validate(cls, v: str) -> Any:
         try:
             return json.loads(v)
         except ValueError:

@@ -89,7 +89,7 @@ def float_validator(v: Any) -> float:
         return float(v)
 
 
-def number_multiple_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any):
+def number_multiple_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'Number':
     field_type = cast('ConstrainedNumber', field.type_)
     if field_type.multiple_of is not None and v % field_type.multiple_of != 0:  # type: ignore
         raise errors.NumberNotMultipleError(multiple_of=field_type.multiple_of)
@@ -97,7 +97,7 @@ def number_multiple_validator(v: 'Number', field: 'Field', config: 'BaseConfig',
     return v
 
 
-def number_size_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any):
+def number_size_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'Number':
     field_type = cast('ConstrainedNumber', field.type_)
     if field_type.gt is not None and not v > field_type.gt:
         raise errors.NumberNotGtError(limit_value=field_type.gt)
@@ -233,7 +233,7 @@ def path_exists_validator(v: Any) -> Path:
     return v
 
 
-def callable_validator(v) -> AnyCallable:
+def callable_validator(v: Any) -> AnyCallable:
     """
     Perform a simple check if the value is callable.
 

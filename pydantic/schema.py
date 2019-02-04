@@ -735,5 +735,5 @@ class SkipField(Exception):
     Utility exception used to exclude fields from schema.
     """
 
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.message = message
