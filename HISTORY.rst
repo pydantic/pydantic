@@ -9,6 +9,7 @@ v0.19.0 (unreleased)
 * Fix schema for fields with ``validator`` decorator, fix #375 by @tiangolo
 * Add ``multiple_of`` constraint to ``ConstrainedDecimal``, ``ConstrainedFloat``, ``ConstrainedInt``
   and their related types ``condecimal``, ``confloat``, and ``conint`` #371, thanks @StephenBrown2
+* Deprecated ``ignore_extra`` and ``allow_extra`` Config fields in favor of ``extra``, #352 by @liiight
 
 v0.18.2 (2019-01-22)
 ....................

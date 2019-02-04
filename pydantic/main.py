@@ -3,6 +3,7 @@ import sys
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import FunctionType
@@ -20,14 +21,19 @@ from .utils import ForwardRef, resolve_annotations, truncate, validate_field_nam
 from .validators import dict_validator
 
 
+class Extra(str, Enum):
+    allow = 'allow'
+    ignore = 'ignore'
+    forbid = 'forbid'
+
+
 class BaseConfig:
     title = None
     anystr_strip_whitespace = False
     min_anystr_length = None
     max_anystr_length = None
     validate_all = False
-    ignore_extra = True
-    allow_extra = False
+    extra = Extra.ignore
     allow_mutation = True
     allow_population_by_alias = False
     use_enum_values = False
@@ -53,6 +59,41 @@ def inherit_config(self_config: Type, parent_config: Type[BaseConfig]) -> Type[B
     else:
         base_classes = self_config, parent_config
     return type('Config', base_classes, {})
+
+
+EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/#model-config'
+
+
+def set_extra(config, cls_name):
+    has_ignore_extra, has_allow_extra = hasattr(config, 'ignore_extra'), hasattr(config, 'allow_extra')
+    if has_ignore_extra or has_allow_extra:
+        if getattr(config, 'allow_extra', False):
+            config.extra = Extra.allow
+        elif getattr(config, 'ignore_extra', True):
+            config.extra = Extra.ignore
+        else:
+            config.extra = Extra.forbid
+
+        if has_ignore_extra and has_allow_extra:
+            warnings.warn(
+                f'{cls_name}: "ignore_extra" and "allow_extra" are deprecated and replaced by "extra", '
+                f'see {EXTRA_LINK}',
+                DeprecationWarning,
+            )
+        elif has_ignore_extra:
+            warnings.warn(
+                f'{cls_name}: "ignore_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}',
+                DeprecationWarning,
+            )
+        else:
+            warnings.warn(
+                f'{cls_name}: "allow_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}', DeprecationWarning
+            )
+    else:
+        try:
+            config.extra = Extra(config.extra)
+        except ValueError:
+            raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
 
 
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
@@ -81,6 +122,7 @@ class MetaModel(ABCMeta):
                 # re-run prepare to add extra validators
                 f.prepare()
 
+        set_extra(config, name)
         annotations = namespace.get('__annotations__', {})
         if sys.version_info >= (3, 7):
             annotations = resolve_annotations(annotations, namespace.get('__module__', None))
@@ -148,7 +190,7 @@ class BaseModel(metaclass=MetaModel):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
-        if not self.__config__.allow_extra and name not in self.__fields__:
+        if self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
@@ -421,7 +463,8 @@ def validate_model(model: BaseModel, input_data: dict, raise_exc=True):  # noqa:
     values = {}
     errors = []
     names_used = set()
-    check_extra = (not model.__config__.ignore_extra) or model.__config__.allow_extra
+    config = model.__config__
+    check_extra = config.extra is not Extra.ignore
 
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:
@@ -432,16 +475,16 @@ def validate_model(model: BaseModel, input_data: dict, raise_exc=True):  # noqa:
 
         value = input_data.get(field.alias, _missing)
         using_name = False
-        if value is _missing and model.__config__.allow_population_by_alias and field.alt_alias:
+        if value is _missing and config.allow_population_by_alias and field.alt_alias:
             value = input_data.get(field.name, _missing)
             using_name = True
 
         if value is _missing:
-            if model.__config__.validate_all or field.validate_always:
+            if config.validate_all or field.validate_always:
                 value = deepcopy(field.default)
             else:
                 if field.required:
-                    errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
+                    errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=config))
                 else:
                     values[name] = deepcopy(field.default)
                 continue
@@ -459,13 +502,12 @@ def validate_model(model: BaseModel, input_data: dict, raise_exc=True):  # noqa:
     if check_extra:
         extra = input_data.keys() - names_used
         if extra:
-            if model.__config__.allow_extra:
+            if config.extra is Extra.allow:
                 for field in extra:
                     values[field] = input_data[field]
             else:
-                # config.ignore_extra is False
                 for field in sorted(extra):
-                    errors.append(ErrorWrapper(ExtraError(), loc=field, config=model.__config__))
+                    errors.append(ErrorWrapper(ExtraError(), loc=field, config=config))
 
     if not raise_exc:
         return values, ValidationError(errors) if errors else None
