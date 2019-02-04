@@ -465,7 +465,7 @@ def validate_model(model: BaseModel, input_data: dict, raise_exc=True):  # noqa:
     errors = []
     names_used = set()
     config = model.__config__
-    check_extra = config.extra is not Extra.ignored
+    check_extra = config.extra is not Extra.ignore
 
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:
