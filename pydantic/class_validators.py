@@ -62,11 +62,11 @@ def validator(
     return dec
 
 
-VDict = Dict[str, List[Validator]]
+ValidatorListDict = Dict[str, List[Validator]]
 
 
 class ValidatorGroup:
-    def __init__(self, validators: VDict) -> None:
+    def __init__(self, validators: ValidatorListDict) -> None:
         self.validators = validators
         self.used_validators = {'*'}
 
@@ -110,7 +110,7 @@ def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
     return validators
 
 
-def inherit_validators(base_validators: VDict, validators: VDict) -> VDict:
+def inherit_validators(base_validators: ValidatorListDict, validators: ValidatorListDict) -> ValidatorListDict:
     for field, field_validators in base_validators.items():
         if field not in validators:
             validators[field] = []

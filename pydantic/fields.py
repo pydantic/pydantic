@@ -57,7 +57,7 @@ class Field:
         name: str,
         type_: AnyType,
         class_validators: Optional[Dict[str, Validator]],
-        model_config: 'BaseConfig',
+        model_config: Type['BaseConfig'],
         default: Any = None,
         required: bool = True,
         alias: str = None,
@@ -93,7 +93,7 @@ class Field:
         value: Any,
         annotation: Any,
         class_validators: Optional[Dict[str, Validator]],
-        config: 'BaseConfig',
+        config: Type['BaseConfig'],
     ) -> 'Field':
         schema_from_config = config.get_field_schema(name)
         from .schema import Schema, get_annotation_from_schema  # noqa: F811
@@ -117,7 +117,7 @@ class Field:
             schema=schema,
         )
 
-    def set_config(self, config: 'BaseConfig') -> None:
+    def set_config(self, config: Type['BaseConfig']) -> None:
         self.model_config = config
         schema_from_config = config.get_field_schema(self.name)
         if schema_from_config:

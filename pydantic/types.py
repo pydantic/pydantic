@@ -2,11 +2,11 @@ import json
 import re
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Generator, Optional, Pattern, Set, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Pattern, Set, Type, Union, cast
 from uuid import UUID
 
 from . import errors
-from .utils import AnyCallable, AnyType, import_string, make_dsn, url_regex_generator, validate_email
+from .utils import AnyType, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
     anystr_strip_whitespace,
@@ -71,10 +71,15 @@ OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 
+if TYPE_CHECKING:  # pragma: no cover
+    from .utils import AnyCallable
+
+    CallableGenerator = Generator[AnyCallable, None, None]
+
 
 class StrictStr(str):
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
 
     @classmethod
@@ -90,7 +95,7 @@ class ConstrainedBytes(bytes):
     max_length: OptionalInt = None
 
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield bytes_validator
         yield anystr_strip_whitespace
@@ -111,7 +116,7 @@ class ConstrainedStr(str):
     regex: Optional[Pattern[str]] = None
 
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield str_validator
         yield anystr_strip_whitespace
@@ -151,7 +156,7 @@ def constr(
 
 class EmailStr(str):
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         # included here and below so the error happens straight away
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
@@ -173,7 +178,7 @@ class UrlStr(str):
     require_tld = True  # whether to reject non-FQDN hostnames
 
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield str_validator
         yield anystr_strip_whitespace
@@ -225,7 +230,7 @@ class NameEmail:
         self.email = email
 
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
@@ -247,7 +252,7 @@ class PyObject:
     validate_always = True
 
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator
         yield cls.validate
 
@@ -266,7 +271,7 @@ class DSN(str):
     validate_always = True
 
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator
         yield cls.validate
 
@@ -302,7 +307,7 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalInt = None
 
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield int_validator
         yield number_size_validator
         yield number_multiple_validator
@@ -330,7 +335,7 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalIntFloat = None
 
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield float_validator
         yield number_size_validator
         yield number_multiple_validator
@@ -362,7 +367,7 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalIntFloatDecimal = None
 
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield decimal_validator
         yield number_size_validator
@@ -441,7 +446,7 @@ class UUID5(UUID):
 
 class FilePath(Path):
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield path_validator
         yield path_exists_validator
         yield cls.validate
@@ -456,7 +461,7 @@ class FilePath(Path):
 
 class DirectoryPath(Path):
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield path_validator
         yield path_exists_validator
         yield cls.validate
@@ -480,7 +485,7 @@ class JsonMeta(type):
 
 class Json(metaclass=JsonMeta):
     @classmethod
-    def __get_validators__(cls) -> Generator[AnyCallable, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator
         yield cls.validate
 

@@ -14,7 +14,6 @@ from typing import (
     ClassVar,
     Dict,
     Generator,
-    List,
     Optional,
     Set,
     Tuple,
@@ -24,7 +23,7 @@ from typing import (
     no_type_check,
 )
 
-from .class_validators import Validator, ValidatorGroup, extract_validators, inherit_validators
+from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field
@@ -34,6 +33,15 @@ from .schema import model_schema
 from .types import StrBytes
 from .utils import AnyCallable, AnyType, ForwardRef, resolve_annotations, truncate, validate_field_name
 from .validators import dict_validator
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .types import CallableGenerator
+    from .class_validators import ValidatorListDict
+
+    AnyGenerator = Generator[Any, None, None]
+    TupleGenerator = Generator[Tuple[str, Any], None, None]
+    DictStrAny = Dict[str, Any]
+    ConfigType = Type['BaseConfig']
 
 
 class Extra(str, Enum):
@@ -66,13 +74,13 @@ class BaseConfig:
         return field_config
 
 
-def inherit_config(self_config: Type[BaseConfig], parent_config: Type[BaseConfig]) -> Type[BaseConfig]:
+def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'ConfigType':
     if not self_config:
-        base_classes: Tuple[Type[BaseConfig], ...] = (parent_config,)
+        base_classes = (parent_config,)
     elif self_config == parent_config:
         base_classes = (self_config,)
     else:
-        base_classes = self_config, parent_config
+        base_classes = self_config, parent_config  # type: ignore
     return type('Config', base_classes, {})
 
 
@@ -119,7 +127,7 @@ class MetaModel(ABCMeta):
     def __new__(mcs, name, bases, namespace):
         fields: Dict[str, Field] = {}
         config = BaseConfig
-        validators: Dict[str, List[Validator]] = {}
+        validators: 'ValidatorListDict' = {}
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(deepcopy(base.__fields__))
@@ -171,7 +179,7 @@ class MetaModel(ABCMeta):
 
         vg.check_for_unused()
         if config.json_encoders:
-            json_encoder: Callable[[Any], Any] = partial(custom_pydantic_encoder, config.json_encoders)
+            json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
         else:
             json_encoder = pydantic_encoder
         new_namespace = {
@@ -193,7 +201,7 @@ class BaseModel(metaclass=MetaModel):
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, Field] = {}
         __validators__: Dict[str, AnyCallable] = {}
-        __config__: BaseConfig = BaseConfig()
+        __config__: Type[BaseConfig] = BaseConfig
         _json_encoder: Callable[[Any], Any] = lambda x: x
         _schema_cache: Dict[Any, Any] = {}
 
@@ -233,13 +241,12 @@ class BaseModel(metaclass=MetaModel):
     def __setstate__(self, state: Dict[Any, Any]) -> None:
         object.__setattr__(self, '__values__', state)
 
-    def dict(self, *, include: Set[str] = None, exclude: Set[str] = None, by_alias: bool = False) -> Dict[str, Any]:
+    def dict(self, *, include: Set[str] = None, exclude: Set[str] = set(), by_alias: bool = False) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.fields)
-        exclude = set() if exclude is None else exclude
 
         return {
             get_key(k): v
@@ -256,8 +263,8 @@ class BaseModel(metaclass=MetaModel):
     def json(
         self,
         *,
-        include: Set[str] = None,
-        exclude: Set[str] = None,
+        include: Set[str] = set(),
+        exclude: Set[str] = set(),
         by_alias: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
@@ -321,7 +328,7 @@ class BaseModel(metaclass=MetaModel):
         return m
 
     def copy(
-        self, *, include: Set[str] = None, exclude: Set[str] = None, update: Dict[str, Any] = None, deep: bool = False
+        self, *, include: Set[str] = None, exclude: Set[str] = set(), update: 'DictStrAny' = None, deep: bool = False
     ) -> 'BaseModel':
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
@@ -337,10 +344,8 @@ class BaseModel(metaclass=MetaModel):
             # skip constructing values if no arguments are passed
             v = self.__values__
         else:
-            exclude = exclude or set()
-            v_ = self.__values__
             v = {
-                **{k: v for k, v in v_.items() if k not in exclude and (not include or k in include)},
+                **{k: v for k, v in self.__values__.items() if k not in exclude and (not include or k in include)},
                 **(update or {}),
             }
         if deep:
@@ -352,7 +357,7 @@ class BaseModel(metaclass=MetaModel):
         return self.__fields__
 
     @classmethod
-    def schema(cls, by_alias: bool = True) -> Dict[str, Any]:
+    def schema(cls, by_alias: bool = True) -> 'DictStrAny':
         cached = cls._schema_cache.get(by_alias)
         if cached is not None:
             return cached
@@ -367,16 +372,17 @@ class BaseModel(metaclass=MetaModel):
         return json.dumps(cls.schema(by_alias=by_alias), default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
-    def __get_validators__(cls) -> Generator[Any, None, None]:
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield dict_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Dict[str, Any]) -> 'BaseModel':
+    def validate(cls, value: 'DictStrAny') -> 'BaseModel':
         return cls(**value)
 
-    def _process_values(self, input_data: Any) -> Dict[str, Any]:
-        return cast(Dict[str, Any], validate_model(self, input_data))
+    def _process_values(self, input_data: Any) -> 'DictStrAny':
+        # (casting here is slow so use ignore)
+        return validate_model(self, input_data)  # type: ignore
 
     @classmethod
     def _get_value(cls, v: Any, by_alias: bool) -> Any:
@@ -405,13 +411,13 @@ class BaseModel(metaclass=MetaModel):
                 f.type_ = f.type_._evaluate(globalns, localns or None)  # type: ignore
                 f.prepare()
 
-    def __iter__(self) -> Generator[Any, None, None]:
+    def __iter__(self) -> 'AnyGenerator':
         """
         so `dict(model)` works
         """
         yield from self._iter()
 
-    def _iter(self, by_alias: bool = False) -> Generator[Tuple[str, Any], None, None]:
+    def _iter(self, by_alias: bool = False) -> 'TupleGenerator':
         for k, v in self.__values__.items():
             yield k, self._get_value(v, by_alias=by_alias)
 
@@ -454,7 +460,7 @@ def create_model(
         __base__ = BaseModel
 
     fields = {}
-    annotations: Dict[str, Any] = {}
+    annotations = {}
 
     for f_name, f_def in field_definitions.items():
         if f_name.startswith('_'):
@@ -475,25 +481,25 @@ def create_model(
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
-    namespace: Dict[str, Any] = {'__annotations__': annotations}
+    namespace: 'DictStrAny' = {'__annotations__': annotations}
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return cast(BaseModel, type(model_name, (__base__,), namespace))
+    return type(model_name, (__base__,), namespace)  # type: ignore
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Union[BaseModel, Type[BaseModel]], input_data: Dict[str, Any], raise_exc: bool = True
-) -> Union[Dict[str, Any], Tuple[Dict[str, Any], Optional[ValidationError]]]:
+    model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True
+) -> Union['DictStrAny', Tuple['DictStrAny', Optional[ValidationError]]]:
     """
     validate data against a model.
     """
-    values: Dict[str, Any] = {}
-    errors: List[ErrorWrapper] = []
-    names_used: Set[str] = set()
+    values = {}
+    errors = []
+    names_used = set()
     config = model.__config__
-    check_extra: bool = config.extra is not Extra.ignore
+    check_extra = config.extra is not Extra.ignore
 
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:

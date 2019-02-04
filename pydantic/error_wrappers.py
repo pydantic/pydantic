@@ -1,6 +1,6 @@
 import json
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union, cast
 
 if TYPE_CHECKING:  # pragma: no cover
     from pydantic import BaseConfig  # noqa: F401
@@ -12,7 +12,7 @@ class ErrorWrapper:
     __slots__ = 'exc', 'loc', 'msg_template'
 
     def __init__(
-        self, exc: Exception, *, loc: Union[Tuple[str, ...], str], config: Optional['BaseConfig'] = None
+        self, exc: Exception, *, loc: Union[Tuple[str, ...], str], config: Optional[Type['BaseConfig']] = None
     ) -> None:
         self.exc = exc
         self.loc: Tuple[str, ...] = cast(Tuple[str, ...], loc if isinstance(loc, tuple) else (loc,))
