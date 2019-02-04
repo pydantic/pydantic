@@ -58,7 +58,9 @@ iso8601_duration_re = re.compile(
 )
 
 EPOCH = datetime(1970, 1, 1)
-MS_WATERSHED = int(1e11)  # if greater than this, the number is in ms (in seconds this is 3rd March 5138)
+# if greater than this, the number is in ms, if less than or equal it's in seconds
+# (in seconds this is 11th October 2603, in ms it's 20th August 1970)
+MS_WATERSHED = int(2e10)
 StrIntFloat = Union[str, int, float]
 
 

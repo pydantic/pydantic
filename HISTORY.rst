@@ -3,7 +3,7 @@
 History
 -------
 
-v0.19.0 (unreleased)
+v0.19.0 (2019-02-04)
 ....................
 * Support ``Callable`` type hint, fix #279 by @proofit404
 * Fix schema for fields with ``validator`` decorator, fix #375 by @tiangolo
@@ -12,6 +12,7 @@ v0.19.0 (unreleased)
 * Deprecated ``ignore_extra`` and ``allow_extra`` Config fields in favor of ``extra``, #352 by @liiight
 * Add type annotations to all functions, test fully with mypy, #373 by @samuelcolvin
 * fix for 'missing' error with ``validate_all`` or ``validate_always``, #381 by @samuelcolvin
+* Change the second/millisecond watershed for date/datetime parsing to ``2e10``, #385 by @samuelcolvin
 
 v0.18.2 (2019-01-22)
 ....................
