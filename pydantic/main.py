@@ -328,7 +328,7 @@ class BaseModel(metaclass=MetaModel):
         return m
 
     def copy(
-        self, *, include: Set[str] = None, exclude: Set[str] = set(), update: 'DictStrAny' = None, deep: bool = False
+        self, *, include: Set[str] = None, exclude: Set[str] = None, update: 'DictStrAny' = None, deep: bool = False
     ) -> 'BaseModel':
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
@@ -344,6 +344,7 @@ class BaseModel(metaclass=MetaModel):
             # skip constructing values if no arguments are passed
             v = self.__values__
         else:
+            exclude = exclude or set()
             v = {
                 **{k: v for k, v in self.__values__.items() if k not in exclude and (not include or k in include)},
                 **(update or {}),
