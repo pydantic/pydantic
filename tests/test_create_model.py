@@ -75,7 +75,7 @@ def test_custom_config_inherits():
 
 def test_custom_config_extras():
     class Config(BaseModel.Config):
-        extra = Extra.forbidden
+        extra = Extra.forbid
 
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(foo=654)

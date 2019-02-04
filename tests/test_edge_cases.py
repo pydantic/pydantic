@@ -610,7 +610,7 @@ def test_multiple_errors():
         Model(a='foobar')
 
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not none', 'type': 'type_error.none.allow'},
+        {'loc': ('a',), 'msg': 'value is not none', 'type': 'type_error.none.allowed'},
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
         {'loc': ('a',), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
         {'loc': ('a',), 'msg': 'value is not a valid decimal', 'type': 'type_error.decimal'},
@@ -691,13 +691,13 @@ def test_force_extra():
         foo: int
 
         class Config:
-            extra = 'ignored'
+            extra = 'ignore'
 
     assert Model.__config__.extra is Extra.ignore
 
 
 def test_illegal_extra_value():
-    with pytest.raises(ValueError, match='is not a valid value for "extra"'):
+    with pytest.raises(ValueError, match='is not a valid Extra'):
 
         class Model(BaseModel):
             foo: int

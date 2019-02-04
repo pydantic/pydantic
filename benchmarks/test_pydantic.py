@@ -36,7 +36,7 @@ class TestPydantic:
             skills: List[Skill] = []
 
             class Config:
-                extra = Extra.allowed if allow_extra else Extra.forbidden
+                extra = Extra.allow if allow_extra else Extra.forbid
 
         self.model = Model
 
