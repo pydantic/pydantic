@@ -10,10 +10,12 @@ from .utils import import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
     anystr_strip_whitespace,
+    bytes_validator,
     decimal_validator,
     float_validator,
     int_validator,
     not_none_validator,
+    number_multiple_validator,
     number_size_validator,
     path_exists_validator,
     path_validator,
@@ -31,6 +33,8 @@ __all__ = [
     'StrBytes',
     'NoneStrBytes',
     'StrictStr',
+    'ConstrainedBytes',
+    'conbytes',
     'ConstrainedStr',
     'constr',
     'EmailStr',
@@ -75,6 +79,25 @@ class StrictStr(str):
         if not isinstance(v, str):
             raise errors.StrError()
         return v
+
+
+class ConstrainedBytes(bytes):
+    strip_whitespace = False
+    min_length: Optional[int] = None
+    max_length: Optional[int] = None
+
+    @classmethod
+    def __get_validators__(cls):
+        yield not_none_validator
+        yield bytes_validator
+        yield anystr_strip_whitespace
+        yield anystr_length_validator
+
+
+def conbytes(*, strip_whitespace=False, min_length=None, max_length=None) -> Type[bytes]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(strip_whitespace=strip_whitespace, min_length=min_length, max_length=max_length)
+    return type('ConstrainedBytesValue', (ConstrainedBytes,), namespace)
 
 
 class ConstrainedStr(str):
@@ -266,16 +289,18 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     ge: Optional[int] = None
     lt: Optional[int] = None
     le: Optional[int] = None
+    multiple_of: Optional[Union[int, float]] = None
 
     @classmethod
     def __get_validators__(cls):
         yield int_validator
         yield number_size_validator
+        yield number_multiple_validator
 
 
-def conint(*, gt=None, ge=None, lt=None, le=None) -> Type[int]:
+def conint(*, gt=None, ge=None, lt=None, le=None, multiple_of=None) -> Type[int]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
+    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
 
 
@@ -292,16 +317,18 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     ge: Union[None, int, float] = None
     lt: Union[None, int, float] = None
     le: Union[None, int, float] = None
+    multiple_of: Optional[Union[int, float]] = None
 
     @classmethod
     def __get_validators__(cls):
         yield float_validator
         yield number_size_validator
+        yield number_multiple_validator
 
 
-def confloat(*, gt=None, ge=None, lt=None, le=None) -> Type[float]:
+def confloat(*, gt=None, ge=None, lt=None, le=None, multiple_of=None) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
+    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
 
 
@@ -320,12 +347,14 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     le: Union[None, int, float, Decimal] = None
     max_digits: Optional[int] = None
     decimal_places: Optional[int] = None
+    multiple_of: Optional[Union[int, float]] = None
 
     @classmethod
     def __get_validators__(cls):
         yield not_none_validator
         yield decimal_validator
         yield number_size_validator
+        yield number_multiple_validator
         yield cls.validate
 
     @classmethod
@@ -365,9 +394,13 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
         return value
 
 
-def condecimal(*, gt=None, ge=None, lt=None, le=None, max_digits=None, decimal_places=None) -> Type[Decimal]:
+def condecimal(
+    *, gt=None, ge=None, lt=None, le=None, max_digits=None, decimal_places=None, multiple_of=None
+) -> Type[Decimal]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, max_digits=max_digits, decimal_places=decimal_places)
+    namespace = dict(
+        gt=gt, ge=ge, lt=lt, le=le, max_digits=max_digits, decimal_places=decimal_places, multiple_of=multiple_of
+    )
     return type('ConstrainedDecimalValue', (ConstrainedDecimal,), namespace)
 
 

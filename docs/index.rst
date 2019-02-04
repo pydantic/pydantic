@@ -54,9 +54,9 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
     :ref:`mypy <usage_mypy>` and your intuition should all work properly with your validated data.
 
 **dual use**
-    *pydantic's* :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data" context
-    and "load my system settings" context. The main difference being that system settings can have defaults changed
-    by environment variables and more complex objects like DSNs and python objects are often required.
+    *pydantic's* :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data"
+    context and "load my system settings" context. The main difference being that system settings can have defaults
+    changed by environment variables and more complex objects like DSNs and python objects are often required.
 
 **fast**
     In :ref:`benchmarks <benchmarks_tag>` *pydantic* is faster than all other tested libraries.
@@ -65,7 +65,7 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
     use of recursive *pydantic* models, ``typing``'s ``List`` and ``Dict`` etc. and validators allow
     complex data schemas to be clearly and easily defined and then checked.
 
-**extendible**
+**extensible**
     *pydantic* allows custom data types to be defined or you can extend validation with methods on a model decorated
     with the ``validator`` decorator.
 
@@ -91,6 +91,10 @@ as an optional dependency. Similarly if *pydantic's* email validation relies on
     pip install pydantic[ujson,email]
 
 Of course you can also install these requirements manually with ``pip install ...``.
+
+Pydantic is also available on `conda <https://www.anaconda.com>`_ under the `conda-forge <https://conda-forge.org>`_ channel::
+
+    conda install pydantic -c conda-forge
 
 Usage
 -----
@@ -261,8 +265,8 @@ and reference.
 "sub-models" with modifications (via the ``Schema`` class) like a custom title, description or default value,
 are recursively included instead of referenced.
 
-The ``description`` for models is taken from the docstring of the class or the argument ``description`` to the ``Schema``
-class.
+The ``description`` for models is taken from the docstring of the class or the argument ``description`` to
+the ``Schema`` class.
 
 Optionally the ``Schema`` class can be used to provide extra information about the field and validations, arguments:
 
@@ -279,11 +283,13 @@ Optionally the ``Schema`` class can be used to provide extra information about t
   JSON Schema
 * ``le`` for numeric values, adds a validation of "less than or equal" and an annotation of ``maximum`` to the
   JSON Schema
+* ``multiple_of`` for numeric values, adds a validation of "a multiple of" and an annotation of ``multipleOf`` to the
+  JSON Schema
 * ``min_length`` for string values, adds a corresponding validation and an annotation of ``minLength`` to the
   JSON Schema
 * ``max_length`` for string values, adds a corresponding validation and an annotation of ``maxLength`` to the
   JSON Schema
-* ``regex`` for string values, adds a Regular Expression validation generated from the passed string and an 
+* ``regex`` for string values, adds a Regular Expression validation generated from the passed string and an
   annotation of ``pattern`` to the JSON Schema
 * ``**`` any other keyword arguments (eg. ``examples``) will be added verbatim to the field's schema
 
@@ -316,7 +322,8 @@ Outputs:
 
 .. literalinclude:: examples/schema2.json
 
-You can customize the generated ``$ref`` JSON location, the definitions will still be in the key ``definitions`` and you can still get them from there, but the references will point to your defined prefix instead of the default.
+You can customize the generated ``$ref`` JSON location, the definitions will still be in the key ``definitions`` and
+you can still get them from there, but the references will point to your defined prefix instead of the default.
 
 This is useful if you need to extend or modify JSON Schema default definitions location, e.g. with OpenAPI:
 
@@ -384,6 +391,18 @@ Exotic Types
 .. literalinclude:: examples/exotic.py
 
 (This script is complete, it should run "as is")
+
+Fields can also be of type ``Callable``:
+
+.. literalinclude:: examples/callable.py
+
+(This script is complete, it should run "as is")
+
+.. warning::
+
+    Callable fields only perform a simple check that the argument is
+    callable, no validation of arguments, their types or the return
+    type is performed.
 
 Json Type
 .........
@@ -652,6 +671,30 @@ Pydantic models can be used alongside Python's
 
 (This script is complete, it should run "as is")
 
+Postponed Annotations
+.....................
+
+.. note::
+
+   Both postponed annotations via the future import and ``ForwardRef`` require python 3.7+.
+
+With globally postponed annotations *pydantic* should "just work".
+
+.. literalinclude:: examples/postponed_annotations.py
+
+(This script is complete, it should run "as is")
+
+Internally *pydantic*  will call a method similar to ``typing.get_type_hints`` to resolve annotations.
+
+To make use of ``ForwardRef`` you may need to call ``Model.update_forward_refs()`` after creating the model,
+this is because in the example below ``Foo`` doesn't exist before it has been created (obviously) so ``ForwardRef``
+can't initially be resolved. You have to wait until after ``Foo`` is created, then call ``update_forward_refs``
+to properly set types before the model can be used.
+
+.. literalinclude:: examples/forward_ref.py
+
+(This script is complete, it should run "as is")
+
 .. _benchmarks_tag:
 
 Benchmarks
@@ -666,6 +709,27 @@ Below are the results of crude benchmarks comparing *pydantic* to other validati
 
 (See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
 for more details on the test case. Feel free to submit more benchmarks or improve an existing one.)
+
+Contributing to Pydantic
+------------------------
+
+We'd love you to contribute to *pydantic*, it should be extremely simple to get started and create a Pull Request.
+*pydantic* is released regularly so you should see your improvements release in a matter of days or weeks.
+
+If you're looking for something to get your teeth into, check out the
+`"help wanted" <https://github.com/samuelcolvin/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22>`_
+label on github.
+
+To make contributing as easy and fast as possible, you'll want to run tests and linting locally. Luckily since
+*pydantic* has few dependencies, doesn't require compiling and tests don't need access to databases etc., setting
+up and running tests should be very simple.
+
+You'll need to have **python 3.6** or **3.7**, **virtualenv**, **git**, and **make** installed.
+
+.. literalinclude:: examples/contributing.sh
+  :language: bash
+
+**tl;dr**: use ``make format`` to fix formatting & ``make`` to run tests and linting.
 
 Using Pydantic
 --------------

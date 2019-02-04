@@ -3,7 +3,24 @@
 History
 -------
 
-v0.18.0 (unreleased)
+v0.19.0 (unreleased)
+....................
+* Support ``Callable`` type hint, fix #279 by @proofit404
+* Fix schema for fields with ``validator`` decorator, fix #375 by @tiangolo
+* Add ``multiple_of`` constraint to ``ConstrainedDecimal``, ``ConstrainedFloat``, ``ConstrainedInt``
+  and their related types ``condecimal``, ``confloat``, and ``conint`` #371, thanks @StephenBrown2
+* Deprecated ``ignore_extra`` and ``allow_extra`` Config fields in favor of ``extra``, #352 by @liiight
+
+v0.18.2 (2019-01-22)
+....................
+* Fix to schema generation with ``Optional`` fields, fix #361 by @samuelcolvin
+
+v0.18.1 (2019-01-17)
+....................
+* add ``ConstrainedBytes`` and ``conbytes`` types, #315 @Gr1N
+* adding ``MANIFEST.in`` to include license in package ``.tar.gz``, #358 by @samuelcolvin
+
+v0.18.0 (2019-01-13)
 ....................
 * **breaking change**: don't call validators on keys of dictionaries, #254 by @samuelcolvin
 * Fix validators with ``always=True`` when the default is ``None`` or the type is optional, also prevent
@@ -11,8 +28,8 @@ v0.18.0 (unreleased)
 * improve documentation for settings priority and allow it to be easily changed, #343 by @samuelcolvin
 * fix ``ignore_extra=False`` and ``allow_population_by_alias=True``, fix #257 by @samuelcolvin
 * **breaking change**: Set ``BaseConfig`` attributes ``min_anystr_length`` and ``max_anystr_length`` to
-    ``None`` by default, fix #349 in #350, by @tiangolo
-* Deprecated ``ignore_extra`` and ``allow_extra`` Config fields in favor of ``extra``, #352 by @liiight
+  ``None`` by default, fix #349 in #350 by @tiangolo
+* add support for postponed annotations, #348 by @samuelcolvin
 
 v0.17.0 (2018-12-27)
 ....................

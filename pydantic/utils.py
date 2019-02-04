@@ -1,11 +1,12 @@
 import inspect
 import re
+import sys
 from contextlib import contextmanager
 from enum import Enum
 from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
-from typing import List, Pattern, Tuple, Type
+from typing import List, Pattern, Tuple, Type, _eval_type
 
 from . import errors
 
@@ -19,6 +20,16 @@ try:
 except ImportError:
     from typing import _Final as typing_base
 
+try:
+    from typing import ForwardRef
+except ImportError:
+    # python 3.6
+    ForwardRef = None
+
+if sys.version_info < (3, 7):
+    from typing import Callable
+else:
+    from collections.abc import Callable
 
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
 
@@ -217,3 +228,30 @@ def in_ipython():
         return False
     else:  # pragma: no cover
         return True
+
+
+def resolve_annotations(raw_annotations, module):
+    """
+    Partially taken from typing.get_type_hints.
+
+    Resolve string or ForwardRef annotations into type objects if possible.
+    """
+    if module:
+        base_globals = sys.modules[module].__dict__
+    else:
+        base_globals = None
+    annotations = {}
+    for name, value in raw_annotations.items():
+        if isinstance(value, str):
+            value = ForwardRef(value, is_argument=False)
+        try:
+            value = _eval_type(value, base_globals, None)
+        except NameError:
+            # this is ok, it can be fixed with update_forward_refs
+            pass
+        annotations[name] = value
+    return annotations
+
+
+def is_callable_type(type_):
+    return type_ is Callable or getattr(type_, '__origin__', None) is Callable
