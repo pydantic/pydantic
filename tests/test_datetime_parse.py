@@ -34,6 +34,8 @@ def create_tz(minutes):
         # Invalid inputs
         ('x20120423', errors.DateError),
         ('2012-04-56', errors.DateError),
+        (19_999_999_999, date(2603, 10, 11)),  # just before watershed
+        (20_000_000_001, date(1970, 8, 20)),  # just after watershed
     ],
 )
 def test_date_parsing(value, result):
@@ -90,6 +92,9 @@ def test_time_parsing(value, result):
         # Invalid inputs
         ('x20120423091500', errors.DateTimeError),
         ('2012-04-56T09:15:90', errors.DateTimeError),
+        (19_999_999_999, datetime(2603, 10, 11, 11, 33, 19, tzinfo=timezone.utc)),  # just before watershed
+        (20_000_000_001, datetime(1970, 8, 20, 11, 33, 20, 1000, tzinfo=timezone.utc)),  # just after watershed
+        (int(4e22) + 1, datetime(1971, 4, 8, 23, 6, 40, tzinfo=timezone.utc)),  # divide twice
     ],
 )
 def test_datetime_parsing(value, result):
