@@ -6,7 +6,20 @@ from enum import Enum
 from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Pattern, Tuple, Type, _eval_type  # type: ignore
+from typing import _eval_type  # type: ignore
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable as TypingCallable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Pattern,
+    Tuple,
+    Type,
+    Union,
+)
 
 from . import errors
 
@@ -27,14 +40,16 @@ except ImportError:
     ForwardRef = None
 
 if TYPE_CHECKING:  # pragma: no cover
-    from . import main  # noqa
+    from .main import BaseModel  # noqa: F401
 
 if sys.version_info < (3, 7):
-    from typing import Callable
+    Callable = TypingCallable
 else:
     from collections.abc import Callable
 
 PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
+AnyType = Type[Any]
+AnyCallable = TypingCallable[..., Any]
 
 
 def validate_email(value: str) -> Tuple[str, str]:
@@ -66,7 +81,7 @@ def validate_email(value: str) -> Tuple[str, str]:
     return name or email[: email.index('@')], email.lower()
 
 
-def _rfc_1738_quote(text):
+def _rfc_1738_quote(text: str) -> str:
     return re.sub(r'[:@/]', lambda m: '%{:X}'.format(ord(m.group(0))), text)
 
 
@@ -79,7 +94,7 @@ def make_dsn(
     port: str = None,
     name: str = None,
     query: Dict[str, Any] = None,
-):
+) -> str:
     """
     Create a DSN from from connection settings.
 
@@ -108,7 +123,7 @@ def make_dsn(
     return s
 
 
-def import_string(dotted_path):
+def import_string(dotted_path: str) -> Any:
     """
     Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
     last name in the path. Raise ImportError if the import fails.
@@ -125,7 +140,7 @@ def import_string(dotted_path):
         raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
 
 
-def truncate(v, *, max_len=80):
+def truncate(v: str, *, max_len: int = 80) -> str:
     """
     Truncate a value and add a unicode ellipsis (three dots) to the end if it was too long
     """
@@ -138,7 +153,7 @@ def truncate(v, *, max_len=80):
     return v
 
 
-def display_as_type(v):
+def display_as_type(v: AnyType) -> str:
     if not isinstance(v, typing_base) and not isinstance(v, type):
         v = type(v)
 
@@ -157,23 +172,26 @@ def display_as_type(v):
         return str(v)
 
 
+ExcType = Type[Exception]
+
+
 @contextmanager
-def change_exception(raise_exc, *except_types):
+def change_exception(raise_exc: ExcType, *except_types: ExcType) -> Generator[None, None, None]:
     try:
         yield
     except except_types as e:
         raise raise_exc from e
 
 
-def clean_docstring(d):
+def clean_docstring(d: str) -> str:
     return dedent(d).strip(' \r\n\t')
 
 
-def list_like(v):
+def list_like(v: AnyType) -> bool:
     return isinstance(v, (list, tuple, set)) or inspect.isgenerator(v)
 
 
-def validate_field_name(bases: List[Type['main.BaseModel']], field_name: str) -> None:
+def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
     """
     Ensure that the field's name does not shadow an existing attribute of the model.
     """
@@ -216,11 +234,11 @@ def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
     )
 
 
-def lenient_issubclass(cls, class_or_tuple):
+def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
     return isinstance(cls, type) and issubclass(cls, class_or_tuple)
 
 
-def in_ipython():
+def in_ipython() -> bool:
     """
     Check whether we're in an ipython environment, including jupyter notebooks.
     """
@@ -232,14 +250,14 @@ def in_ipython():
         return True
 
 
-def resolve_annotations(raw_annotations, module):
+def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Optional[str]) -> Dict[str, AnyType]:
     """
     Partially taken from typing.get_type_hints.
 
     Resolve string or ForwardRef annotations into type objects if possible.
     """
-    if module:
-        base_globals: Optional[Dict[str, Any]] = sys.modules[module].__dict__
+    if module_name:
+        base_globals: Optional[Dict[str, Any]] = sys.modules[module_name].__dict__
     else:
         base_globals = None
     annotations = {}
@@ -255,5 +273,5 @@ def resolve_annotations(raw_annotations, module):
     return annotations
 
 
-def is_callable_type(type_):
+def is_callable_type(type_: AnyType) -> bool:
     return type_ is Callable or getattr(type_, '__origin__', None) is Callable

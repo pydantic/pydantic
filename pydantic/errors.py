@@ -194,7 +194,7 @@ class NumberNotMultipleError(PydanticValueError):
     code = 'number.not_multiple'
     msg_template = 'ensure this value is a multiple of {multiple_of}'
 
-    def __init__(self, *, multiple_of: Union[int, float]) -> None:
+    def __init__(self, *, multiple_of: Union[int, float, Decimal]) -> None:
         super().__init__(multiple_of=multiple_of)
 
 

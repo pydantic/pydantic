@@ -9,7 +9,7 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import change_exception, display_as_type, is_callable_type, list_like
+from .utils import AnyCallable, AnyType, change_exception, display_as_type, is_callable_type, list_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -233,7 +233,7 @@ def path_exists_validator(v: Any) -> Path:
     return v
 
 
-def callable_validator(v) -> Callable[..., Any]:
+def callable_validator(v) -> AnyCallable:
     """
     Perform a simple check if the value is callable.
 
@@ -264,7 +264,7 @@ def pattern_validator(v: Any) -> Pattern[str]:
 
 pattern_validators = [not_none_validator, str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
-_VALIDATORS: List[Tuple[Type[Any], List[Callable[..., Any]]]] = [
+_VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
     (Enum, [enum_validator]),
     (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
     (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
@@ -287,7 +287,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Callable[..., Any]]]] = [
 ]
 
 
-def find_validators(type_: Type[Any], arbitrary_types_allowed: bool = False) -> List[Callable[..., Any]]:
+def find_validators(type_: AnyType, arbitrary_types_allowed: bool = False) -> List[AnyCallable]:
     if type_ is Any:
         return []
     if type_ is Pattern:
@@ -312,7 +312,7 @@ def find_validators(type_: Type[Any], arbitrary_types_allowed: bool = False) -> 
         raise RuntimeError(f'no validator found for {type_}')
 
 
-def _find_supertype(type_: Type[Any]) -> Optional[Type[Any]]:
+def _find_supertype(type_: AnyType) -> Optional[AnyType]:
     if not _is_new_type(type_):
         return None
 
@@ -323,5 +323,5 @@ def _find_supertype(type_: Type[Any]) -> Optional[Type[Any]]:
     return supertype
 
 
-def _is_new_type(type_: Type[Any]) -> bool:
+def _is_new_type(type_: AnyType) -> bool:
     return hasattr(type_, '__name__') and hasattr(type_, '__supertype__')

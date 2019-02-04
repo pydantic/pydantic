@@ -3,9 +3,10 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type
 
 from . import ValidationError, errors
 from .main import create_model, validate_model
+from .utils import AnyType
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .main import BaseConfig, BaseModel  # noqa
+    from .main import BaseConfig, BaseModel  # noqa: F401
 
     class DataclassType:
         __pydantic_model__: Type[BaseModel]
@@ -55,7 +56,7 @@ def setattr_validate_assignment(self: 'DataclassType', name: str, value: Any) ->
 
 
 def _process_class(
-    _cls: Type[Any],
+    _cls: AnyType,
     init: bool,
     repr: bool,
     eq: bool,
@@ -91,7 +92,7 @@ if TYPE_CHECKING:  # pragma: no cover
 else:
 
     def dataclass(
-        _cls: Optional[Type[Any]] = None,
+        _cls: Optional[AnyType] = None,
         *,
         init: bool = True,
         repr: bool = True,
@@ -100,7 +101,7 @@ else:
         unsafe_hash: bool = False,
         frozen: bool = False,
         config: Type['BaseConfig'] = None,
-    ) -> Union[Callable[[Type[Any]], 'DataclassType'], 'DataclassType']:
+    ) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
         """
         Like the python standard lib dataclasses but with type validation.
 
@@ -108,7 +109,7 @@ else:
         as Config.validate_assignment.
         """
 
-        def wrap(cls: Type[Any]) -> 'DataclassType':
+        def wrap(cls: AnyType) -> 'DataclassType':
             return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
 
         if _cls is None:

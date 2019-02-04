@@ -3,7 +3,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Union, cast
 
 if TYPE_CHECKING:  # pragma: no cover
-    from pydantic import BaseConfig  # noqa
+    from pydantic import BaseConfig  # noqa: F401
 
 __all__ = ('ErrorWrapper', 'ValidationError')
 
@@ -46,10 +46,15 @@ class ErrorWrapper:
         return d
 
 
+# ErrorList is something like Union[List[Union[List[ErrorWrapper], ErrorWrapper]], ErrorWrapper]
+# but recursive, therefore just use:
+ErrorList = Union[Sequence[Any], ErrorWrapper]
+
+
 class ValidationError(ValueError):
     __slots__ = ('raw_errors',)
 
-    def __init__(self, errors: Sequence[ErrorWrapper]) -> None:
+    def __init__(self, errors: Sequence[ErrorList]) -> None:
         self.raw_errors = errors
 
     @lru_cache()

@@ -230,12 +230,13 @@ def field_schema(
     """
     ref_prefix = ref_prefix or default_prefix
     schema_overrides = False
-    s = dict(title=field.schema.title or field.alias.title())
-    if field.schema.title:
+    schema = cast('Schema', field.schema)
+    s = dict(title=schema.title or field.alias.title())
+    if schema.title:
         schema_overrides = True
 
-    if field.schema.description:
-        s['description'] = field.schema.description
+    if schema.description:
+        s['description'] = schema.description
         schema_overrides = True
 
     if not field.required and field.default is not None:
@@ -294,8 +295,9 @@ def get_field_schema_validations(field: Field) -> Dict[str, Any]:
             attr = getattr(field.schema, attr_name, None)
             if isinstance(attr, t):
                 f_schema[keyword] = attr
-    if field.schema.extra:
-        f_schema.update(field.schema.extra)
+    schema = cast('Schema', field.schema)
+    if schema.extra:
+        f_schema.update(schema.extra)
     return f_schema
 
 

@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
 from types import FunctionType
-from typing import Any, Callable, Dict, List, Set
+from typing import Any, Dict, List, Set
 
 from .errors import ConfigError
-from .utils import in_ipython
+from .utils import AnyCallable, in_ipython
 
 
 class ValidatorSignature(IntEnum):
@@ -18,7 +18,7 @@ class ValidatorSignature(IntEnum):
 
 @dataclass
 class Validator:
-    func: Callable[..., Any]
+    func: AnyCallable
     pre: bool
     whole: bool
     always: bool

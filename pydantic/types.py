@@ -6,7 +6,7 @@ from typing import Optional, Pattern, Set, Type, Union, cast
 from uuid import UUID
 
 from . import errors
-from .utils import import_string, make_dsn, url_regex_generator, validate_email
+from .utils import AnyType, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
     anystr_strip_whitespace,
@@ -67,6 +67,9 @@ NoneStr = Optional[str]
 NoneBytes = Optional[bytes]
 StrBytes = Union[str, bytes]
 NoneStrBytes = Optional[StrBytes]
+OptionalInt = Optional[int]
+OptionalIntFloat = Union[OptionalInt, float]
+OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 
 
 class StrictStr(str):
@@ -83,8 +86,8 @@ class StrictStr(str):
 
 class ConstrainedBytes(bytes):
     strip_whitespace = False
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
+    min_length: OptionalInt = None
+    max_length: OptionalInt = None
 
     @classmethod
     def __get_validators__(cls):
@@ -102,9 +105,9 @@ def conbytes(*, strip_whitespace=False, min_length=None, max_length=None) -> Typ
 
 class ConstrainedStr(str):
     strip_whitespace = False
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    curtail_length: Optional[int] = None
+    min_length: OptionalInt = None
+    max_length: OptionalInt = None
+    curtail_length: OptionalInt = None
     regex: Optional[Pattern[str]] = None
 
     @classmethod
@@ -285,11 +288,11 @@ class ConstrainedNumberMeta(type):
 
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
-    gt: Optional[int] = None
-    ge: Optional[int] = None
-    lt: Optional[int] = None
-    le: Optional[int] = None
-    multiple_of: Optional[Union[int, float]] = None
+    gt: OptionalInt = None
+    ge: OptionalInt = None
+    lt: OptionalInt = None
+    le: OptionalInt = None
+    multiple_of: OptionalInt = None
 
     @classmethod
     def __get_validators__(cls):
@@ -313,11 +316,11 @@ class NegativeInt(ConstrainedInt):
 
 
 class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
-    gt: Union[None, int, float] = None
-    ge: Union[None, int, float] = None
-    lt: Union[None, int, float] = None
-    le: Union[None, int, float] = None
-    multiple_of: Optional[Union[int, float]] = None
+    gt: OptionalIntFloat = None
+    ge: OptionalIntFloat = None
+    lt: OptionalIntFloat = None
+    le: OptionalIntFloat = None
+    multiple_of: OptionalIntFloat = None
 
     @classmethod
     def __get_validators__(cls):
@@ -341,13 +344,13 @@ class NegativeFloat(ConstrainedFloat):
 
 
 class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
-    gt: Union[None, int, float, Decimal] = None
-    ge: Union[None, int, float, Decimal] = None
-    lt: Union[None, int, float, Decimal] = None
-    le: Union[None, int, float, Decimal] = None
-    max_digits: Optional[int] = None
-    decimal_places: Optional[int] = None
-    multiple_of: Optional[Union[int, float]] = None
+    gt: OptionalIntFloatDecimal = None
+    ge: OptionalIntFloatDecimal = None
+    lt: OptionalIntFloatDecimal = None
+    le: OptionalIntFloatDecimal = None
+    max_digits: OptionalInt = None
+    decimal_places: OptionalInt = None
+    multiple_of: OptionalIntFloatDecimal = None
 
     @classmethod
     def __get_validators__(cls):
@@ -451,11 +454,11 @@ class DirectoryPath(Path):
 
 
 class JsonWrapper:
-    __slots__ = ('inner_type',)
+    pass
 
 
 class JsonMeta(type):
-    def __getitem__(self, t):
+    def __getitem__(self, t: AnyType) -> Type[JsonWrapper]:
         return type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t})
 
 

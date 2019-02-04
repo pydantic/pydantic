@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Optional, cast
+from typing import Any, Dict, Optional, cast
 
 from .main import BaseModel, Extra
 
@@ -20,13 +20,13 @@ class BaseSettings(BaseModel):
     Heroku and any 12 factor app design.
     """
 
-    def __init__(self, **values):
+    def __init__(self, **values: Any) -> None:
         super().__init__(**self._build_values(values))
 
-    def _build_values(self, init_kwargs):
+    def _build_values(self, init_kwargs: Dict[str, Any]) -> Dict[str, Any]:
         return {**self._build_environ(), **init_kwargs}
 
-    def _build_environ(self):
+    def _build_environ(self) -> Dict[str, Optional[str]]:
         """
         Build environment variables suitable for passing to the Model.
         """
@@ -61,3 +61,5 @@ class BaseSettings(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
         case_insensitive = False
+
+    __config__: Config  # type: ignore

@@ -32,7 +32,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
-from .utils import ForwardRef, resolve_annotations, truncate, validate_field_name
+from .utils import AnyCallable, AnyType, ForwardRef, resolve_annotations, truncate, validate_field_name
 from .validators import dict_validator
 
 
@@ -56,7 +56,7 @@ class BaseConfig:
     validate_assignment = False
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
-    json_encoders: Dict[Type[Any], Callable[..., Any]] = {}
+    json_encoders: Dict[AnyType, AnyCallable] = {}
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
@@ -79,7 +79,7 @@ def inherit_config(self_config: Type[BaseConfig], parent_config: Type[BaseConfig
 EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/#model-config'
 
 
-def set_extra(config, cls_name):
+def set_extra(config: BaseConfig, cls_name: str) -> None:
     has_ignore_extra, has_allow_extra = hasattr(config, 'ignore_extra'), hasattr(config, 'allow_extra')
     if has_ignore_extra or has_allow_extra:
         if getattr(config, 'allow_extra', False):
@@ -192,7 +192,7 @@ class BaseModel(metaclass=MetaModel):
     if TYPE_CHECKING:  # pragma: no cover
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, Field] = {}
-        __validators__: Dict[str, Callable[..., Any]] = {}
+        __validators__: Dict[str, AnyCallable] = {}
         __config__: BaseConfig = BaseConfig()
         _json_encoder: Callable[[Any], Any] = lambda x: x
         _schema_cache: Dict[Any, Any] = {}
@@ -520,7 +520,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
         elif check_extra:
             names_used.add(field.name if using_name else field.alias)
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)  # type: ignore
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):
