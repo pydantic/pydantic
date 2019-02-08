@@ -17,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .schema import Schema  # noqa: F401
 
-    ValidatorsTuple = Tuple[ValidatorCallable, ...]
+    ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocType = Union[Tuple[str, ...], str]
 
@@ -79,9 +79,9 @@ class Field:
         self.validate_always: bool = False
         self.sub_fields: Optional[List[Field]] = None
         self.key_field: Optional[Field] = None
-        self.validators: 'ValidatorsTuple' = ()
-        self.whole_pre_validators: Optional['ValidatorsTuple'] = None
-        self.whole_post_validators: Optional['ValidatorsTuple'] = None
+        self.validators: 'ValidatorsList' = []
+        self.whole_pre_validators: Optional['ValidatorsList'] = None
+        self.whole_post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
         self.prepare()
@@ -221,13 +221,13 @@ class Field:
                         f'get_validators has been replaced by __get_validators__ (on {self.name})', DeprecationWarning
                     )
             v_funcs = (
-                *tuple(v.func for v in class_validators_ if not v.whole and v.pre),
+                *[v.func for v in class_validators_ if not v.whole and v.pre],
                 *(
                     get_validators()
                     if get_validators
                     else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
                 ),
-                *tuple(v.func for v in class_validators_ if not v.whole and not v.pre),
+                *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
             self.validators = self._prep_vals(v_funcs)
 
@@ -236,8 +236,8 @@ class Field:
             self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
 
     @staticmethod
-    def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsTuple':
-        return tuple(make_generic_validator(f) for f in v_funcs if f)
+    def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
+        return [make_generic_validator(f) for f in v_funcs if f]
 
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional[Type['BaseModel']] = None
@@ -380,7 +380,7 @@ class Field:
         values: Dict[str, Any],
         loc: 'LocType',
         cls: Optional[Type['BaseModel']],
-        validators: 'ValidatorsTuple',
+        validators: 'ValidatorsList',
     ) -> 'ValidateReturn':
         for validator in validators:
             try:

@@ -3,6 +3,12 @@
 History
 -------
 
+v0.20.0 (unreleased)
+....................
+* **breaking change** (maybe): more sophisticated argument parsing for validators, unused arguments
+  will now be omitted meaning no need for ``**kwargs``, but key word arguments **must** now be called
+  ``kwargs``, #388 by @samuelcolvin
+
 v0.19.0 (2019-02-04)
 ....................
 * Support ``Callable`` type hint, fix #279 by @proofit404
