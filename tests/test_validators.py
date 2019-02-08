@@ -636,5 +636,4 @@ def test_make_generic_validator_self():
 
     with pytest.raises(ConfigError) as exc_info:
         make_generic_validator(test_validator)
-    debug(str(exc_info.value))
     assert ': (self, v), "self" not permitted as first argument, should be: (cls, value' in str(exc_info.value)

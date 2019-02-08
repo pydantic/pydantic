@@ -5,9 +5,9 @@ History
 
 v0.20.0 (unreleased)
 ....................
-* **breaking change** (maybe): more sophisticated argument parsing for validators, unused arguments
-  will now be omitted meaning no need for ``**kwargs``, but key word arguments **must** now be called
-  ``kwargs``, #388 by @samuelcolvin
+* **breaking change** (maybe): more sophisticated argument parsing for validators, any subset of
+  ``values``, ``config`` and ``field`` is now permitted, eg. ``(cls, value, field)``,
+  however the variadic key word argument ("``**kwargs``") **must** be called ``kwargs``, #388 by @samuelcolvin
 
 v0.19.0 (2019-02-04)
 ....................
