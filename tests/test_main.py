@@ -516,3 +516,30 @@ def test_class_var():
         c: int = 2
 
     assert list(MyModel.__fields__.keys()) == ['c']
+
+
+def test_fields_set():
+    class MyModel(BaseModel):
+        a: int
+        b: int = 2
+
+    m = MyModel(a=5)
+    assert m.__fields_set__ == {'a'}
+
+    m.b = 2
+    assert m.__fields_set__ == {'a', 'b'}
+
+    m = MyModel(a=5, b=2)
+    assert m.__fields_set__ == {'a', 'b'}
+
+
+def test_skip_defaults_dict():
+    class MyModel(BaseModel):
+        a: int
+        b: int = 2
+
+    m = MyModel(a=5)
+    assert m.dict(skip_defaults=True) == {"a": 5}
+
+    m = MyModel(a=5, b=2)
+    assert m.dict(skip_defaults=True) == {"a": 5, "b": 2}

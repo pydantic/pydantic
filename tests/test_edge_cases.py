@@ -370,6 +370,27 @@ def test_success_values_include():
     assert m.dict(include={'a', 'b'}, exclude={'a'}) == {'b': 2}
 
 
+def test_include_exclude_default():
+    class Model(BaseModel):
+        a: int
+        b: int
+        c: int = 3
+        d: int = 4
+
+    m = Model(a=1, b=2)
+    assert m.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+
+    assert m.dict(include={'a'}, skip_defaults=True) == {'a': 1}
+    assert m.dict(include={'c'}, skip_defaults=True) == {}
+
+    assert m.dict(exclude={'a'}, skip_defaults=True) == {'b': 2}
+    assert m.dict(exclude={'c'}, skip_defaults=True) == {'a': 1, 'b': 2}
+
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, skip_defaults=True) == {'a': 1}
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, skip_defaults=True) == {'b': 2}
+
+
 def test_values_order():
     class Model(BaseModel):
         a: int = 1

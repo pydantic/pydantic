@@ -206,12 +206,13 @@ class BaseModel(metaclass=MetaModel):
         _schema_cache: Dict[Any, Any] = {}
 
     Config = BaseConfig
-    __slots__ = ('__values__',)
+    __slots__ = ('__values__', '__fields_set__')
 
     def __init__(self, **data: Any) -> None:
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
-        self.__setstate__(self._process_values(data))
+            self.__fields_set__: Set[str] = set()
+        self.__setstate__(self._process_values(data), fields_set=data.pop("__fields_set__", None))
 
     @no_type_check
     def __getattr__(self, name):
@@ -232,27 +233,30 @@ class BaseModel(metaclass=MetaModel):
                 raise ValidationError([error_])
             else:
                 self.__values__[name] = value_
+                self.__fields_set__.update({name})
         else:
             self.__values__[name] = value
+            self.__fields_set__.update({name})
 
     def __getstate__(self) -> Dict[Any, Any]:
         return self.__values__
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
+    def __setstate__(self, state: Dict[Any, Any], fields_set: Optional[Set[str]] = None) -> None:
         object.__setattr__(self, '__values__', state)
+        if fields_set is None:
+            fields_set = set(state.keys())
+        object.__setattr__(self, '__fields_set__', fields_set)
 
-    def dict(self, *, include: Set[str] = None, exclude: Set[str] = set(), by_alias: bool = False) -> 'DictStrAny':
+    def dict(self, *, include: Set[str] = None, exclude: Set[str] = set(), by_alias: bool = False,
+             skip_defaults: bool = False) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.fields)
 
-        return {
-            get_key(k): v
-            for k, v in self._iter(by_alias=by_alias)
-            if k not in exclude and (not include or k in include)
-        }
+        return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
+        return {get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys}
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
@@ -266,6 +270,7 @@ class BaseModel(metaclass=MetaModel):
         include: Set[str] = set(),
         exclude: Set[str] = set(),
         by_alias: bool = False,
+        skip_defaults: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -276,7 +281,8 @@ class BaseModel(metaclass=MetaModel):
         """
         encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
         return json.dumps(
-            self.dict(include=include, exclude=exclude, by_alias=by_alias), default=encoder, **dumps_kwargs
+            self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults),
+            default=encoder, **dumps_kwargs
         )
 
     @classmethod
@@ -324,12 +330,13 @@ class BaseModel(metaclass=MetaModel):
         Chances are you don't want to use this method directly.
         """
         m = cls.__new__(cls)
-        m.__setstate__(values)
+        fields_set = values.pop("__fields_set__", None)
+        m.__setstate__(values, fields_set=fields_set)
         return m
 
     def copy(
         self, *, include: Set[str] = None, exclude: Set[str] = None, update: 'DictStrAny' = None, deep: bool = False
-    ) -> 'BaseModel':
+        ) -> 'BaseModel':
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
 
@@ -344,13 +351,14 @@ class BaseModel(metaclass=MetaModel):
             # skip constructing values if no arguments are passed
             v = self.__values__
         else:
-            exclude = exclude or set()
+            return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False)
             v = {
-                **{k: v for k, v in self.__values__.items() if k not in exclude and (not include or k in include)},
+                **{k: v for k, v in self.__values__.items() if k in return_keys},
                 **(update or {}),
             }
         if deep:
             v = deepcopy(v)
+        v["__fields_set__"] = self.__fields_set__.copy()
         return self.__class__.construct(**v)
 
     @property
@@ -386,17 +394,17 @@ class BaseModel(metaclass=MetaModel):
         return validate_model(self, input_data)  # type: ignore
 
     @classmethod
-    def _get_value(cls, v: Any, by_alias: bool) -> Any:
+    def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:
         if isinstance(v, BaseModel):
-            return v.dict(by_alias=by_alias)
+            return v.dict(by_alias=by_alias, skip_defaults=skip_defaults)
         elif isinstance(v, list):
-            return [cls._get_value(v_, by_alias=by_alias) for v_ in v]
+            return [cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v]
         elif isinstance(v, dict):
-            return {k_: cls._get_value(v_, by_alias=by_alias) for k_, v_ in v.items()}
+            return {k_: cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for k_, v_ in v.items()}
         elif isinstance(v, set):
-            return {cls._get_value(v_, by_alias=by_alias) for v_ in v}
+            return {cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v}
         elif isinstance(v, tuple):
-            return tuple(cls._get_value(v_, by_alias=by_alias) for v_ in v)
+            return tuple(cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v)
         else:
             return v
 
@@ -418,9 +426,24 @@ class BaseModel(metaclass=MetaModel):
         """
         yield from self._iter()
 
-    def _iter(self, by_alias: bool = False) -> 'TupleGenerator':
+    def _iter(self, by_alias: bool = False, skip_defaults: bool = True) -> 'TupleGenerator':
         for k, v in self.__values__.items():
-            yield k, self._get_value(v, by_alias=by_alias)
+            yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults)
+
+    def _calculate_keys(self, include: Set[str] = None, exclude: Set[str] = set(), skip_defaults: bool = False
+        ) -> Set[str]:
+        if skip_defaults:
+            keys = self.__fields_set__.copy()
+        else:
+            keys = set(self.__values__.keys())
+
+        if include:
+            keys &= set(include)
+
+        if exclude:
+            keys -= exclude
+
+        return keys
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseModel):
