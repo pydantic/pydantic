@@ -212,7 +212,7 @@ class BaseModel(metaclass=MetaModel):
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: Set[str] = set()
-        self.__setstate__(self._process_values(data), fields_set=data.pop("__fields_set__", None))
+        self.__setstate__(self._process_values(data), fields_set=set(data.keys()))
 
     @no_type_check
     def __getattr__(self, name):
@@ -349,7 +349,7 @@ class BaseModel(metaclass=MetaModel):
         """
         if include is None and exclude is None and update is None:
             # skip constructing values if no arguments are passed
-            v = self.__values__
+            v = self.__values__.copy()
         else:
             return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False)
             v = {
