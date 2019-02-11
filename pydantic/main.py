@@ -438,7 +438,7 @@ class BaseModel(metaclass=MetaModel):
             yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults)
 
     def _calculate_keys(
-        self, include: Set[str] = None, exclude: Set[str] = set(), skip_defaults: bool = False
+        self, include: Set[str] = None, exclude: Optional[Set[str]] = set(), skip_defaults: bool = False
     ) -> Set[str]:
         if skip_defaults:
             keys = self.__fields_set__.copy()
