@@ -116,8 +116,7 @@ def test_copy_set_fields():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy()
 
-    assert m.dict(skip_defaults=True) == {"a": 24.0, "d": {"a": 12}}
-    assert m.dict(skip_defaults=True) == m2.dict(skip_defaults=True)
+    assert m.dict(skip_defaults=True) == m2.dict(skip_defaults=True) == {'a': 24.0, 'd': {'a': 12}}
 
 
 def test_simple_pickle():

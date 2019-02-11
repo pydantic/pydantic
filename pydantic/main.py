@@ -212,7 +212,8 @@ class BaseModel(metaclass=MetaModel):
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: Set[str] = set()
-        self.__setstate__(self._process_values(data), fields_set=set(data.keys()))
+        fields_set = data.pop("__fields_set__", set(data.keys()))
+        self.__setstate__(self._process_values(data), fields_set=fields_set)
 
     @no_type_check
     def __getattr__(self, name):
@@ -247,8 +248,14 @@ class BaseModel(metaclass=MetaModel):
             fields_set = set(state.keys())
         object.__setattr__(self, '__fields_set__', fields_set)
 
-    def dict(self, *, include: Set[str] = None, exclude: Set[str] = set(), by_alias: bool = False,
-             skip_defaults: bool = False) -> 'DictStrAny':
+    def dict(
+        self,
+        *,
+        include: Set[str] = None,
+        exclude: Set[str] = set(),
+        by_alias: bool = False,
+        skip_defaults: bool = False,
+    ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
@@ -256,7 +263,9 @@ class BaseModel(metaclass=MetaModel):
         get_key = partial(get_key, self.fields)
 
         return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
-        return {get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys}
+        return {
+            get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys
+        }
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
@@ -282,7 +291,8 @@ class BaseModel(metaclass=MetaModel):
         encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
         return json.dumps(
             self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults),
-            default=encoder, **dumps_kwargs
+            default=encoder,
+            **dumps_kwargs,
         )
 
     @classmethod
@@ -336,7 +346,7 @@ class BaseModel(metaclass=MetaModel):
 
     def copy(
         self, *, include: Set[str] = None, exclude: Set[str] = None, update: 'DictStrAny' = None, deep: bool = False
-        ) -> 'BaseModel':
+    ) -> 'BaseModel':
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
 
@@ -352,10 +362,7 @@ class BaseModel(metaclass=MetaModel):
             v = self.__values__.copy()
         else:
             return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False)
-            v = {
-                **{k: v for k, v in self.__values__.items() if k in return_keys},
-                **(update or {}),
-            }
+            v = {**{k: v for k, v in self.__values__.items() if k in return_keys}, **(update or {})}
         if deep:
             v = deepcopy(v)
         v["__fields_set__"] = self.__fields_set__.copy()
@@ -386,8 +393,8 @@ class BaseModel(metaclass=MetaModel):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: 'DictStrAny') -> 'BaseModel':
-        return cls(**value)
+    def validate(cls, value: 'DictStrAny', values: 'DictStrAny', **kwargs: Any) -> 'BaseModel':
+        return cls(**value, __fields_set__=set(values.keys()))
 
     def _process_values(self, input_data: Any) -> 'DictStrAny':
         # (casting here is slow so use ignore)
@@ -430,8 +437,9 @@ class BaseModel(metaclass=MetaModel):
         for k, v in self.__values__.items():
             yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults)
 
-    def _calculate_keys(self, include: Set[str] = None, exclude: Set[str] = set(), skip_defaults: bool = False
-        ) -> Set[str]:
+    def _calculate_keys(
+        self, include: Set[str] = None, exclude: Set[str] = set(), skip_defaults: bool = False
+    ) -> Set[str]:
         if skip_defaults:
             keys = self.__fields_set__.copy()
         else:

@@ -539,7 +539,7 @@ def test_skip_defaults_dict():
         b: int = 2
 
     m = MyModel(a=5)
-    assert m.dict(skip_defaults=True) == {"a": 5}
+    assert m.dict(skip_defaults=True) == {'a': 5}
 
     m = MyModel(a=5, b=2)
-    assert m.dict(skip_defaults=True) == {"a": 5, "b": 2}
+    assert m.dict(skip_defaults=True) == {'a': 5, 'b': 2}
