@@ -3,6 +3,9 @@
 History
 -------
 
+* Adds ``skip_defaults`` argument to ``BaseModel.dict()`` to allow skipping of fields that were not
+  explicitly set, #389 by @dgasmith
+
 v0.19.0 (2019-02-04)
 ....................
 * Support ``Callable`` type hint, fix #279 by @proofit404
