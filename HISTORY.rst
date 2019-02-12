@@ -3,6 +3,8 @@
 History
 -------
 
+v0.20.0 (unreleased)
+....................
 * Adds ``skip_defaults`` argument to ``BaseModel.dict()`` to allow skipping of fields that were not
   explicitly set, #389 by @dgasmith
 
