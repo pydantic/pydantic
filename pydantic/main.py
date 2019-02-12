@@ -234,7 +234,7 @@ class BaseModel(metaclass=MetaModel):
                 raise ValidationError([error_])
             else:
                 self.__values__[name] = value_
-                self.__fields_set__.update({name})
+                self.__fields_set__.add(name)
         else:
             self.__values__[name] = value
             self.__fields_set__.update({name})
