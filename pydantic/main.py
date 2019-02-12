@@ -237,7 +237,7 @@ class BaseModel(metaclass=MetaModel):
                 self.__fields_set__.add(name)
         else:
             self.__values__[name] = value
-            self.__fields_set__.update({name})
+            self.__fields_set__.add(name)
 
     def __getstate__(self) -> Dict[Any, Any]:
         return self.__values__
