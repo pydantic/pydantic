@@ -14,6 +14,7 @@ from typing import (
     ClassVar,
     Dict,
     Generator,
+    KeysView,
     Optional,
     Set,
     Tuple,
@@ -31,7 +32,15 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
-from .utils import AnyCallable, AnyType, change_exception, ForwardRef, resolve_annotations, truncate, validate_field_name
+from .utils import (
+    AnyCallable,
+    AnyType,
+    ForwardRef,
+    change_exception,
+    resolve_annotations,
+    truncate,
+    validate_field_name,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .types import CallableGenerator
@@ -240,19 +249,14 @@ class BaseModel(metaclass=MetaModel):
     def __getstate__(self) -> Dict[Any, Any]:
         return self.__values__
 
-    def __setstate__(self, state: Dict[Any, Any], fields_set: Optional[Set[str]] = None) -> None:
+    def __setstate__(self, state: Dict[Any, Any], fields_set: Union[Set[str], KeysView[str], None] = None) -> None:
         object.__setattr__(self, '__values__', state)
         if fields_set is None:
             fields_set = state.keys()
         object.__setattr__(self, '__fields_set__', set(fields_set))
 
     def dict(
-        self,
-        *,
-        include: Set[str] = None,
-        exclude: Set[str] = None,
-        by_alias: bool = False,
-        skip_defaults: bool = False,
+        self, *, include: Set[str] = None, exclude: Set[str] = None, by_alias: bool = False, skip_defaults: bool = False
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -332,7 +336,7 @@ class BaseModel(metaclass=MetaModel):
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls, fields_set: Optional[Set[str]] = None, **values: Any) -> 'BaseModel':
+    def construct(cls, fields_set: Union[Set[str], KeysView[str], None] = None, **values: Any) -> 'BaseModel':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
         Chances are you don't want to use this method directly.
@@ -441,7 +445,7 @@ class BaseModel(metaclass=MetaModel):
 
     def _calculate_keys(
         self, include: Set[str] = None, exclude: Optional[Set[str]] = None, skip_defaults: bool = False
-    ) -> Set[str]:
+    ) -> Union[Set[str], KeysView[str]]:
 
         if include is None and exclude is None and skip_defaults is False:
             return self.__values__.keys()
@@ -449,7 +453,7 @@ class BaseModel(metaclass=MetaModel):
         if skip_defaults:
             keys = self.__fields_set__.copy()
         else:
-            keys = self.__values__.keys()
+            keys = set(self.__values__.keys())
 
         if include:
             keys &= include
