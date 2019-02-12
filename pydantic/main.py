@@ -269,7 +269,9 @@ class BaseModel(metaclass=MetaModel):
         if return_keys is None:
             return {get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults)}
         else:
-            return {get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys}
+            return {
+                get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys
+            }
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
