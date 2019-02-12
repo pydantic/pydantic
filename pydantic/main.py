@@ -25,14 +25,13 @@ from typing import (
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
-from .errors import ConfigError, ExtraError, MissingError
+from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
-from .utils import AnyCallable, AnyType, ForwardRef, resolve_annotations, truncate, validate_field_name
-from .validators import dict_validator
+from .utils import AnyCallable, AnyType, change_exception, ForwardRef, resolve_annotations, truncate, validate_field_name
 
 if TYPE_CHECKING:  # pragma: no cover
     from .types import CallableGenerator
@@ -212,8 +211,7 @@ class BaseModel(metaclass=MetaModel):
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: Set[str] = set()
-        fields_set = data.pop("__fields_set__", set(data.keys()))
-        self.__setstate__(self._process_values(data), fields_set=fields_set)
+        self.__setstate__(self._process_values(data), fields_set=data.keys())
 
     @no_type_check
     def __getattr__(self, name):
@@ -245,14 +243,14 @@ class BaseModel(metaclass=MetaModel):
     def __setstate__(self, state: Dict[Any, Any], fields_set: Optional[Set[str]] = None) -> None:
         object.__setattr__(self, '__values__', state)
         if fields_set is None:
-            fields_set = set(state.keys())
-        object.__setattr__(self, '__fields_set__', fields_set)
+            fields_set = state.keys()
+        object.__setattr__(self, '__fields_set__', set(fields_set))
 
     def dict(
         self,
         *,
         include: Set[str] = None,
-        exclude: Set[str] = set(),
+        exclude: Set[str] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
     ) -> 'DictStrAny':
@@ -276,8 +274,8 @@ class BaseModel(metaclass=MetaModel):
     def json(
         self,
         *,
-        include: Set[str] = set(),
-        exclude: Set[str] = set(),
+        include: Set[str] = None,
+        exclude: Set[str] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
@@ -340,9 +338,15 @@ class BaseModel(metaclass=MetaModel):
         Chances are you don't want to use this method directly.
         """
         m = cls.__new__(cls)
-        fields_set = values.pop("__fields_set__", None)
+        m.__setstate__(values)
+        return m
+
+    @classmethod
+    def construct_with_state(cls, values: Any, fields_set: Optional[Set[str]]) -> 'BaseModel':
+        m = cls.__new__(cls)
         m.__setstate__(values, fields_set=fields_set)
         return m
+
 
     def copy(
         self, *, include: Set[str] = None, exclude: Set[str] = None, update: 'DictStrAny' = None, deep: bool = False
@@ -359,14 +363,14 @@ class BaseModel(metaclass=MetaModel):
         """
         if include is None and exclude is None and update is None:
             # skip constructing values if no arguments are passed
-            v = self.__values__.copy()
+            v = self.__values__
         else:
             return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False)
             v = {**{k: v for k, v in self.__values__.items() if k in return_keys}, **(update or {})}
         if deep:
             v = deepcopy(v)
-        v["__fields_set__"] = self.__fields_set__.copy()
-        return self.__class__.construct(**v)
+        m = self.__class__.construct_with_state(v, self.__fields_set__)
+        return m
 
     @property
     def fields(self) -> Dict[str, Field]:
@@ -389,12 +393,17 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield dict_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: 'DictStrAny', values: 'DictStrAny', **kwargs: Any) -> 'BaseModel':
-        return cls(**value, __fields_set__=set(values.keys()))
+    def validate(cls, value: Union['DictStrAny', 'BaseModel']) -> 'BaseModel':
+        if isinstance(value, BaseModel):
+            return value.copy()
+        elif isinstance(value, dict):
+            return cls(**value)
+        else:
+            with change_exception(DictError, TypeError, ValueError):
+                return cls(**dict(value))
 
     def _process_values(self, input_data: Any) -> 'DictStrAny':
         # (casting here is slow so use ignore)
@@ -438,15 +447,19 @@ class BaseModel(metaclass=MetaModel):
             yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults)
 
     def _calculate_keys(
-        self, include: Set[str] = None, exclude: Optional[Set[str]] = set(), skip_defaults: bool = False
+        self, include: Set[str] = None, exclude: Optional[Set[str]] = None, skip_defaults: bool = False
     ) -> Set[str]:
+
+        if include is None and exclude is None and skip_defaults is False:
+            return self.__values__.keys()
+
         if skip_defaults:
             keys = self.__fields_set__.copy()
         else:
-            keys = set(self.__values__.keys())
+            keys = self.__values__.keys()
 
         if include:
-            keys &= set(include)
+            keys &= include
 
         if exclude:
             keys -= exclude
