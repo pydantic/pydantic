@@ -332,21 +332,14 @@ class BaseModel(metaclass=MetaModel):
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls, **values: Any) -> 'BaseModel':
+    def construct(cls, fields_set: Optional[Set[str]] = None, **values: Any) -> 'BaseModel':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
         Chances are you don't want to use this method directly.
         """
         m = cls.__new__(cls)
-        m.__setstate__(values)
-        return m
-
-    @classmethod
-    def construct_with_state(cls, values: Any, fields_set: Optional[Set[str]]) -> 'BaseModel':
-        m = cls.__new__(cls)
         m.__setstate__(values, fields_set=fields_set)
         return m
-
 
     def copy(
         self, *, include: Set[str] = None, exclude: Set[str] = None, update: 'DictStrAny' = None, deep: bool = False
@@ -369,7 +362,7 @@ class BaseModel(metaclass=MetaModel):
             v = {**{k: v for k, v in self.__values__.items() if k in return_keys}, **(update or {})}
         if deep:
             v = deepcopy(v)
-        m = self.__class__.construct_with_state(v, self.__fields_set__)
+        m = self.__class__.construct(fields_set=self.__fields_set__, **v)
         return m
 
     @property
