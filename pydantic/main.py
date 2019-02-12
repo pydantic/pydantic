@@ -50,6 +50,7 @@ if TYPE_CHECKING:  # pragma: no cover
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]
     ConfigType = Type['BaseConfig']
+    SetOrKeys = Union[Set[str], KeysView[str]]
 
 
 class Extra(str, Enum):
@@ -249,7 +250,7 @@ class BaseModel(metaclass=MetaModel):
     def __getstate__(self) -> Dict[Any, Any]:
         return self.__values__
 
-    def __setstate__(self, state: Dict[Any, Any], fields_set: Union[Set[str], KeysView[str], None] = None) -> None:
+    def __setstate__(self, state: Dict[Any, Any], fields_set: Optional['SetOrKeys'] = None) -> None:
         object.__setattr__(self, '__values__', state)
         if fields_set is None:
             fields_set = state.keys()
@@ -265,9 +266,10 @@ class BaseModel(metaclass=MetaModel):
         get_key = partial(get_key, self.fields)
 
         return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
-        return {
-            get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys
-        }
+        if return_keys is None:
+            return {get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults)}
+        else:
+            return {get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys}
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
@@ -336,7 +338,7 @@ class BaseModel(metaclass=MetaModel):
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls, fields_set: Union[Set[str], KeysView[str], None] = None, **values: Any) -> 'BaseModel':
+    def construct(cls, fields_set: Optional['SetOrKeys'] = None, **values: Any) -> 'BaseModel':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
         Chances are you don't want to use this method directly.
@@ -363,7 +365,11 @@ class BaseModel(metaclass=MetaModel):
             v = self.__values__
         else:
             return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False)
-            v = {**{k: v for k, v in self.__values__.items() if k in return_keys}, **(update or {})}
+            if return_keys:
+                v = {**{k: v for k, v in self.__values__.items() if k in return_keys}, **(update or {})}
+            else:
+                v = {**self.__values__, **(update or {})}
+
         if deep:
             v = deepcopy(v)
         m = self.__class__.construct(fields_set=self.__fields_set__, **v)
@@ -445,10 +451,10 @@ class BaseModel(metaclass=MetaModel):
 
     def _calculate_keys(
         self, include: Set[str] = None, exclude: Optional[Set[str]] = None, skip_defaults: bool = False
-    ) -> Union[Set[str], KeysView[str]]:
+    ) -> Optional[Set[str]]:
 
         if include is None and exclude is None and skip_defaults is False:
-            return self.__values__.keys()
+            return None
 
         if skip_defaults:
             keys = self.__fields_set__.copy()
