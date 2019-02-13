@@ -1,19 +1,18 @@
-import inspect
 from dataclasses import dataclass
-from enum import IntEnum
+from functools import wraps
+from inspect import Signature, signature
 from itertools import chain
 from types import FunctionType
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Type
 
 from .errors import ConfigError
 from .utils import AnyCallable, in_ipython
 
+if TYPE_CHECKING:  # pragma: no cover
+    from .main import BaseConfig, BaseModel
+    from .fields import Field
 
-class ValidatorSignature(IntEnum):
-    JUST_VALUE = 1
-    VALUE_KWARGS = 2
-    CLS_JUST_VALUE = 3
-    CLS_VALUE_KWARGS = 4
+    ValidatorCallable = Callable[[Optional[Type[BaseModel]], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
 
 
 @dataclass
@@ -118,30 +117,97 @@ def inherit_validators(base_validators: ValidatorListDict, validators: Validator
     return validators
 
 
-def get_validator_signature(validator: Any) -> ValidatorSignature:
-    signature = inspect.signature(validator)
+def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
+    """
+    Make a generic function which calls a validator with the right arguments.
 
-    # bind here will raise a TypeError so:
-    # 1. we can deal with it before validation begins
-    # 2. (more importantly) it doesn't get confused with a TypeError when executing the validator
-    try:
-        if 'cls' in signature._parameters:  # type: ignore
-            if len(signature.parameters) == 2:
-                signature.bind(object(), 1)
-                return ValidatorSignature.CLS_JUST_VALUE
-            else:
-                signature.bind(object(), 1, values=2, config=3, field=4)
-                return ValidatorSignature.CLS_VALUE_KWARGS
-        else:
-            if len(signature.parameters) == 1:
-                signature.bind(1)
-                return ValidatorSignature.JUST_VALUE
-            else:
-                signature.bind(1, values=2, config=3, field=4)
-                return ValidatorSignature.VALUE_KWARGS
-    except TypeError as e:
+    Unfortunately other approaches (eg. return a partial of a function that builds the arguments) is slow,
+    hence this laborious way of doing things.
+
+    It's done like this so validators don't all need **kwargs in their signature, eg. any combination of
+    the arguments "values", "fields" and/or "config" are permitted.
+    """
+    sig = signature(validator)
+    args = list(sig.parameters.keys())
+    first_arg = args.pop(0)
+    if first_arg == 'self':
         raise ConfigError(
-            f'Invalid signature for validator {validator}: {signature}, should be: '
-            f'(value) or (value, *, values, config, field) or for class validators '
-            f'(cls, value) or (cls, value, *, values, config, field)'
-        ) from e
+            f'Invalid signature for validator {validator}: {sig}, "self" not permitted as first argument, '
+            f'should be: (cls, value, values, config, field), "values", "config" and "field" are all optional.'
+        )
+    elif first_arg == 'cls':
+        # assume the second argument is value
+        return wraps(validator)(_generic_validator_cls(validator, sig, set(args[1:])))
+    else:
+        # assume the first argument was value which has already been removed
+        return wraps(validator)(_generic_validator_basic(validator, sig, set(args)))
+
+
+all_kwargs = {'values', 'field', 'config'}
+
+
+def _generic_validator_cls(validator: AnyCallable, sig: Signature, args: Set[str]) -> 'ValidatorCallable':
+    # assume the first argument is value
+    has_kwargs = False
+    if 'kwargs' in args:
+        has_kwargs = True
+        args -= {'kwargs'}
+
+    if not args.issubset(all_kwargs):
+        raise ConfigError(
+            f'Invalid signature for validator {validator}: {sig}, should be: '
+            f'(cls, value, values, config, field), "values", "config" and "field" are all optional.'
+        )
+
+    if has_kwargs:
+        return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field, config=config)
+    elif args == set():
+        return lambda cls, v, values, field, config: validator(cls, v)
+    elif args == {'values'}:
+        return lambda cls, v, values, field, config: validator(cls, v, values=values)
+    elif args == {'field'}:
+        return lambda cls, v, values, field, config: validator(cls, v, field=field)
+    elif args == {'config'}:
+        return lambda cls, v, values, field, config: validator(cls, v, config=config)
+    elif args == {'values', 'field'}:
+        return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field)
+    elif args == {'values', 'config'}:
+        return lambda cls, v, values, field, config: validator(cls, v, values=values, config=config)
+    elif args == {'field', 'config'}:
+        return lambda cls, v, values, field, config: validator(cls, v, field=field, config=config)
+    else:
+        # args == {'values', 'field', 'config'}
+        return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field, config=config)
+
+
+def _generic_validator_basic(validator: AnyCallable, sig: Signature, args: Set[str]) -> 'ValidatorCallable':
+    has_kwargs = False
+    if 'kwargs' in args:
+        has_kwargs = True
+        args -= {'kwargs'}
+
+    if not args.issubset(all_kwargs):
+        raise ConfigError(
+            f'Invalid signature for validator {validator}: {sig}, should be: '
+            f'(value, values, config, field), "values", "config" and "field" are all optional.'
+        )
+
+    if has_kwargs:
+        return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
+    elif args == set():
+        return lambda cls, v, values, field, config: validator(v)
+    elif args == {'values'}:
+        return lambda cls, v, values, field, config: validator(v, values=values)
+    elif args == {'field'}:
+        return lambda cls, v, values, field, config: validator(v, field=field)
+    elif args == {'config'}:
+        return lambda cls, v, values, field, config: validator(v, config=config)
+    elif args == {'values', 'field'}:
+        return lambda cls, v, values, field, config: validator(v, values=values, field=field)
+    elif args == {'values', 'config'}:
+        return lambda cls, v, values, field, config: validator(v, values=values, config=config)
+    elif args == {'field', 'config'}:
+        return lambda cls, v, values, field, config: validator(v, field=field, config=config)
+    else:
+        # args == {'values', 'field', 'config'}
+        return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)

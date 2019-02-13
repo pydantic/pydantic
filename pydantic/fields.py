@@ -3,7 +3,7 @@ from enum import IntEnum
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union, cast
 
 from . import errors as errors_
-from .class_validators import Validator, ValidatorSignature, get_validator_signature
+from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
 from .utils import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, lenient_issubclass, list_like
@@ -12,11 +12,12 @@ from .validators import NoneType, dict_validator, find_validators
 Required: Any = Ellipsis
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .schema import Schema  # noqa: F401
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .class_validators import ValidatorCallable  # noqa: F401
     from .error_wrappers import ErrorList
+    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .schema import Schema  # noqa: F401
 
-    ValidatorTuple = Tuple[Tuple[ValidatorSignature, AnyCallable], ...]
+    ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocType = Union[Tuple[str, ...], str]
 
@@ -78,9 +79,9 @@ class Field:
         self.validate_always: bool = False
         self.sub_fields: Optional[List[Field]] = None
         self.key_field: Optional[Field] = None
-        self.validators: 'ValidatorTuple' = ()
-        self.whole_pre_validators: Optional['ValidatorTuple'] = None
-        self.whole_post_validators: Optional['ValidatorTuple'] = None
+        self.validators: 'ValidatorsList' = []
+        self.whole_pre_validators: Optional['ValidatorsList'] = None
+        self.whole_post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
         self.prepare()
@@ -220,13 +221,13 @@ class Field:
                         f'get_validators has been replaced by __get_validators__ (on {self.name})', DeprecationWarning
                     )
             v_funcs = (
-                *tuple(v.func for v in class_validators_ if not v.whole and v.pre),
+                *[v.func for v in class_validators_ if not v.whole and v.pre],
                 *(
                     get_validators()
                     if get_validators
                     else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
                 ),
-                *tuple(v.func for v in class_validators_ if not v.whole and not v.pre),
+                *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
             self.validators = self._prep_vals(v_funcs)
 
@@ -235,8 +236,8 @@ class Field:
             self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
 
     @staticmethod
-    def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorTuple':
-        return tuple((get_validator_signature(f), f) for f in v_funcs if f)
+    def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
+        return [make_generic_validator(f) for f in v_funcs if f]
 
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional[Type['BaseModel']] = None
@@ -379,19 +380,11 @@ class Field:
         values: Dict[str, Any],
         loc: 'LocType',
         cls: Optional[Type['BaseModel']],
-        validators: 'ValidatorTuple',
+        validators: 'ValidatorsList',
     ) -> 'ValidateReturn':
-        for signature, validator in validators:
+        for validator in validators:
             try:
-                if signature is ValidatorSignature.JUST_VALUE:
-                    v = validator(v)
-                elif signature is ValidatorSignature.VALUE_KWARGS:
-                    v = validator(v, values=values, config=self.model_config, field=self)
-                elif signature is ValidatorSignature.CLS_JUST_VALUE:
-                    v = validator(cls, v)
-                else:
-                    # ValidatorSignature.CLS_VALUE_KWARGS
-                    v = validator(cls, v, values=values, config=self.model_config, field=self)
+                v = validator(cls, v, values, self, self.model_config)
             except (ValueError, TypeError) as exc:
                 return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
         return v, None

@@ -276,7 +276,7 @@ class DSN(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str, values: Dict[str, Any], **kwarg: Any) -> str:
+    def validate(cls, value: str, values: Dict[str, Any]) -> str:
         if value:
             return value
 

@@ -25,7 +25,7 @@ def test_str_bytes():
     m = Model(v='s')
     assert m.v == 's'
     assert '<Field(v type=typing.Union[str, bytes] required)>' == repr(m.fields['v'])
-    assert 'not_none_validator' in [v[1].__qualname__ for v in m.fields['v'].sub_fields[0].validators]
+    assert 'not_none_validator' in [v.__qualname__ for v in m.fields['v'].sub_fields[0].validators]
 
     m = Model(v=b'b')
     assert m.v == 'b'
