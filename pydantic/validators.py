@@ -89,7 +89,7 @@ def float_validator(v: Any) -> float:
         return float(v)
 
 
-def number_multiple_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'Number':
+def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
     field_type = cast('ConstrainedNumber', field.type_)
     if field_type.multiple_of is not None and v % field_type.multiple_of != 0:  # type: ignore
         raise errors.NumberNotMultipleError(multiple_of=field_type.multiple_of)
@@ -97,7 +97,7 @@ def number_multiple_validator(v: 'Number', field: 'Field', config: 'BaseConfig',
     return v
 
 
-def number_size_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'Number':
+def number_size_validator(v: 'Number', field: 'Field') -> 'Number':
     field_type = cast('ConstrainedNumber', field.type_)
     if field_type.gt is not None and not v > field_type.gt:
         raise errors.NumberNotGtError(limit_value=field_type.gt)
@@ -112,7 +112,7 @@ def number_size_validator(v: 'Number', field: 'Field', config: 'BaseConfig', **k
     return v
 
 
-def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'StrBytes':
+def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 
     min_length = getattr(field.type_, 'min_length', config.min_anystr_length)
@@ -126,7 +126,7 @@ def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig',
     return v
 
 
-def anystr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig', **kwargs: Any) -> 'StrBytes':
+def anystr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
     strip_whitespace = getattr(field.type_, 'strip_whitespace', config.anystr_strip_whitespace)
     if strip_whitespace:
         v = v.strip()
@@ -177,14 +177,14 @@ def set_validator(v: Any) -> Set[Any]:
         raise errors.SetError()
 
 
-def enum_validator(v: Any, field: 'Field', config: 'BaseConfig', **kwargs: Any) -> Enum:
+def enum_validator(v: Any, field: 'Field', config: 'BaseConfig') -> Enum:
     with change_exception(errors.EnumError, ValueError):
         enum_v = field.type_(v)
 
     return enum_v.value if config.use_enum_values else enum_v
 
 
-def uuid_validator(v: Any, field: 'Field', config: 'BaseConfig', **kwargs: Any) -> UUID:
+def uuid_validator(v: Any, field: 'Field') -> UUID:
     with change_exception(errors.UUIDError, ValueError):
         if isinstance(v, str):
             v = UUID(v)
