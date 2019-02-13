@@ -432,7 +432,6 @@ def test_field_set_allow_extra():
     assert m2.dict(skip_defaults=True) == {'a': 1, 'b': 2, 'd': 4}
 
 
-
 def test_field_set_field_name():
     class Model(BaseModel):
         a: int
