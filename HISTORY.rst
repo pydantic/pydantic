@@ -3,6 +3,10 @@
 History
 -------
 
+v0.19.1 (unreleased)
+....................
+* Fix ``extra`` behaviour for multiple inheritance/mix-ins, #394 by @YaraslauZhylko
+
 v0.19.0 (2019-02-04)
 ....................
 * Support ``Callable`` type hint, fix #279 by @proofit404
