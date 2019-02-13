@@ -516,3 +516,46 @@ def test_class_var():
         c: int = 2
 
     assert list(MyModel.__fields__.keys()) == ['c']
+
+
+def test_fields_set():
+    class MyModel(BaseModel):
+        a: int
+        b: int = 2
+
+    m = MyModel(a=5)
+    assert m.__fields_set__ == {'a'}
+
+    m.b = 2
+    assert m.__fields_set__ == {'a', 'b'}
+
+    m = MyModel(a=5, b=2)
+    assert m.__fields_set__ == {'a', 'b'}
+
+
+def test_skip_defaults_dict():
+    class MyModel(BaseModel):
+        a: int
+        b: int = 2
+
+    m = MyModel(a=5)
+    assert m.dict(skip_defaults=True) == {'a': 5}
+
+    m = MyModel(a=5, b=3)
+    assert m.dict(skip_defaults=True) == {'a': 5, 'b': 3}
+
+
+def test_skip_defaults_recursive():
+    class ModelA(BaseModel):
+        a: int
+        b: int = 1
+
+    class ModelB(BaseModel):
+        c: int
+        d: int = 2
+        e: ModelA
+
+    m = ModelB(c=5, e={'a': 0})
+    assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
+    assert m.dict(skip_defaults=True) == {'c': 5, 'e': {'a': 0}}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}

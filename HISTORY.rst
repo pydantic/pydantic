@@ -8,6 +8,8 @@ v0.20.0 (unreleased)
 * **breaking change** (maybe): more sophisticated argument parsing for validators, any subset of
   ``values``, ``config`` and ``field`` is now permitted, eg. ``(cls, value, field)``,
   however the variadic key word argument ("``**kwargs``") **must** be called ``kwargs``, #388 by @samuelcolvin
+* Adds ``skip_defaults`` argument to ``BaseModel.dict()`` to allow skipping of fields that were not
+  explicitly set, #389 by @dgasmith
 
 v0.19.0 (2019-02-04)
 ....................

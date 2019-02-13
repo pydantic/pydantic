@@ -6,18 +6,18 @@ from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    a: float = ...
+    a: float
     b: int = 10
 
 
 def test_simple_construct():
-    m = Model.construct(a=40, b=10)
+    m = Model.construct(dict(a=40, b=10), {'a', 'b'})
     assert m.a == 40
     assert m.b == 10
 
 
 def test_construct_missing():
-    m = Model.construct(a='not a float')
+    m = Model.construct(dict(a='not a float'), {'a'})
     assert m.a == 'not a float'
     with pytest.raises(AttributeError) as exc_info:
         print(m.b)
@@ -112,6 +112,14 @@ def test_copy_update():
     assert m != m2
 
 
+def test_copy_set_fields():
+    m = ModelTwo(a=24, d=Model(a='12'))
+    m2 = m.copy()
+
+    assert m.dict(skip_defaults=True) == {'a': 24.0, 'd': {'a': 12}}
+    assert m.dict(skip_defaults=True) == m2.dict(skip_defaults=True)
+
+
 def test_simple_pickle():
     m = Model(a='24')
     b = pickle.dumps(m)
@@ -150,3 +158,10 @@ def test_immutable_copy():
     assert str(m2) == 'Model a=40 b=12'
     with pytest.raises(TypeError):
         m2.b = 13
+
+
+def test_pickle_fields_set():
+    m = Model(a=24)
+    assert m.dict(skip_defaults=True) == {'a': 24}
+    m2 = pickle.loads(pickle.dumps(m))
+    assert m2.dict(skip_defaults=True) == {'a': 24}

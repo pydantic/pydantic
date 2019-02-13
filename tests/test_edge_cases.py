@@ -370,6 +370,79 @@ def test_success_values_include():
     assert m.dict(include={'a', 'b'}, exclude={'a'}) == {'b': 2}
 
 
+def test_include_exclude_default():
+    class Model(BaseModel):
+        a: int
+        b: int
+        c: int = 3
+        d: int = 4
+
+    m = Model(a=1, b=2)
+    assert m.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    assert m.__fields_set__ == {'a', 'b'}
+    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+
+    assert m.dict(include={'a'}, skip_defaults=True) == {'a': 1}
+    assert m.dict(include={'c'}, skip_defaults=True) == {}
+
+    assert m.dict(exclude={'a'}, skip_defaults=True) == {'b': 2}
+    assert m.dict(exclude={'c'}, skip_defaults=True) == {'a': 1, 'b': 2}
+
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, skip_defaults=True) == {'a': 1}
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, skip_defaults=True) == {'b': 2}
+
+
+def test_field_set_ignore_extra():
+    class Model(BaseModel):
+        a: int
+        b: int
+        c: int = 3
+
+        class Config:
+            extra = Extra.ignore
+
+    m = Model(a=1, b=2)
+    assert m.dict() == {'a': 1, 'b': 2, 'c': 3}
+    assert m.__fields_set__ == {'a', 'b'}
+    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+
+    m2 = Model(a=1, b=2, d=4)
+    assert m2.dict() == {'a': 1, 'b': 2, 'c': 3}
+    assert m2.__fields_set__ == {'a', 'b'}
+    assert m2.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+
+
+def test_field_set_allow_extra():
+    class Model(BaseModel):
+        a: int
+        b: int
+        c: int = 3
+
+        class Config:
+            extra = Extra.allow
+
+    m = Model(a=1, b=2)
+    assert m.dict() == {'a': 1, 'b': 2, 'c': 3}
+    assert m.__fields_set__ == {'a', 'b'}
+    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+
+    m2 = Model(a=1, b=2, d=4)
+    assert m2.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    assert m2.__fields_set__ == {'a', 'b', 'd'}
+    assert m2.dict(skip_defaults=True) == {'a': 1, 'b': 2, 'd': 4}
+
+
+def test_field_set_field_name():
+    class Model(BaseModel):
+        a: int
+        field_set: int
+        b: int = 3
+
+    assert Model(a=1, field_set=2).dict() == {'a': 1, 'field_set': 2, 'b': 3}
+    assert Model(a=1, field_set=2).dict(skip_defaults=True) == {'a': 1, 'field_set': 2}
+    assert Model.construct(dict(a=1, field_set=3), {'a', 'field_set'}).dict() == {'a': 1, 'field_set': 3}
+
+
 def test_values_order():
     class Model(BaseModel):
         a: int = 1

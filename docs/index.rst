@@ -634,6 +634,10 @@ converted to dicts, ``copy`` allows models to be duplicated, this is particularl
 respectively. ``copy`` accepts extra keyword arguments, ``update``, which accepts a ``dict`` mapping attributes
 to new values that will be applied as the model is duplicated and ``deep`` to make a deep copy of the model.
 
+``dict`` and ``json`` take the optional ``skip_defaults`` keyword argument which will skip attributes that were
+not explicitly set. This is useful to reduce the serialized size of models thats have many default fields that
+are not often changed.
+
 .. literalinclude:: examples/copy_dict.py
 
 Serialisation
