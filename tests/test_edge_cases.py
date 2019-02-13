@@ -391,6 +391,17 @@ def test_include_exclude_default():
     assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, skip_defaults=True) == {'b': 2}
 
 
+def test_field_set():
+    class Model(BaseModel):
+        a: int
+        field_set: int
+        b: int = 3
+
+    assert Model(a=1, field_set=2).dict() == {'a': 1, 'field_set': 2, 'b': 3}
+    assert Model(a=1, field_set=2).dict(skip_defaults=True) == {'a': 1, 'field_set': 2}
+    assert Model.construct(a=1, fields_set=3).dict() == {'a': 1, 'field_set': 2, 'b': 3}
+
+
 def test_values_order():
     class Model(BaseModel):
         a: int = 1

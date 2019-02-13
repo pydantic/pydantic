@@ -541,5 +541,21 @@ def test_skip_defaults_dict():
     m = MyModel(a=5)
     assert m.dict(skip_defaults=True) == {'a': 5}
 
-    m = MyModel(a=5, b=2)
-    assert m.dict(skip_defaults=True) == {'a': 5, 'b': 2}
+    m = MyModel(a=5, b=3)
+    assert m.dict(skip_defaults=True) == {'a': 5, 'b': 3}
+
+
+def test_skip_defaults_recursive():
+    class ModelA(BaseModel):
+        a: int
+        b: int = 1
+
+    class ModelB(BaseModel):
+        c: int
+        d: int = 2
+        e: ModelA
+
+    m = ModelB(c=5, e={'a': 0})
+    assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
+    assert m.dict(skip_defaults=True) == {'c': 5, 'e': {'a': 0}}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
