@@ -171,7 +171,9 @@ A few things to note on validators:
 
 * validators are "class methods", the first value they receive here will be the ``UserModel`` not an instance
   of ``UserModel``
-* their signature can be ``(cls, value)`` or ``(cls, value, *, values, config, field)``
+* their signature can be ``(cls, value)`` or ``(cls, value, values, config, field)``. As of **v0.20**, any subset of
+  ``values``, ``config`` and ``field`` is also permitted, eg. ``(cls, value, field)``, however due to the way
+  validators are inspected, the variadic key word argument ("``**kwargs``") **must** be called ``kwargs``.
 * validator should either return the new value or raise a ``ValueError`` or ``TypeError``
 * where validators rely on other values, you should be aware that:
 
@@ -631,6 +633,10 @@ converted to dicts, ``copy`` allows models to be duplicated, this is particularl
 ``include`` and ``exclude`` keyword arguments to control which attributes are returned or copied,
 respectively. ``copy`` accepts extra keyword arguments, ``update``, which accepts a ``dict`` mapping attributes
 to new values that will be applied as the model is duplicated and ``deep`` to make a deep copy of the model.
+
+``dict`` and ``json`` take the optional ``skip_defaults`` keyword argument which will skip attributes that were
+not explicitly set. This is useful to reduce the serialized size of models thats have many default fields that
+are not often changed.
 
 .. literalinclude:: examples/copy_dict.py
 

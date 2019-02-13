@@ -25,14 +25,21 @@ from typing import (
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
-from .errors import ConfigError, ExtraError, MissingError
+from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import StrBytes
-from .utils import AnyCallable, AnyType, ForwardRef, resolve_annotations, truncate, validate_field_name
-from .validators import dict_validator
+from .utils import (
+    AnyCallable,
+    AnyType,
+    ForwardRef,
+    change_exception,
+    resolve_annotations,
+    truncate,
+    validate_field_name,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .types import CallableGenerator
@@ -42,6 +49,7 @@ if TYPE_CHECKING:  # pragma: no cover
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]
     ConfigType = Type['BaseConfig']
+    DictAny = Dict[Any, Any]
 
 
 class Extra(str, Enum):
@@ -203,15 +211,21 @@ class BaseModel(metaclass=MetaModel):
         __validators__: Dict[str, AnyCallable] = {}
         __config__: Type[BaseConfig] = BaseConfig
         _json_encoder: Callable[[Any], Any] = lambda x: x
-        _schema_cache: Dict[Any, Any] = {}
+        _schema_cache: 'DictAny' = {}
 
     Config = BaseConfig
-    __slots__ = ('__values__',)
+    __slots__ = ('__values__', '__fields_set__')
 
     def __init__(self, **data: Any) -> None:
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
-        self.__setstate__(self._process_values(data))
+            self.__fields_set__: Set[str] = set()
+        object.__setattr__(self, '__values__', self._process_values(data))
+        if self.__config__.extra is Extra.allow:
+            fields_set = set(data.keys())
+        else:
+            fields_set = data.keys() & self.__values__.keys()  # type: ignore
+        object.__setattr__(self, '__fields_set__', fields_set)
 
     @no_type_check
     def __getattr__(self, name):
@@ -232,27 +246,34 @@ class BaseModel(metaclass=MetaModel):
                 raise ValidationError([error_])
             else:
                 self.__values__[name] = value_
+                self.__fields_set__.add(name)
         else:
             self.__values__[name] = value
+            self.__fields_set__.add(name)
 
-    def __getstate__(self) -> Dict[Any, Any]:
-        return self.__values__
+    def __getstate__(self) -> 'DictAny':
+        return {'__values__': self.__values__, '__fields_set__': self.__fields_set__}
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
-        object.__setattr__(self, '__values__', state)
+    def __setstate__(self, state: 'DictAny') -> None:
+        object.__setattr__(self, '__values__', state['__values__'])
+        object.__setattr__(self, '__fields_set__', state['__fields_set__'])
 
-    def dict(self, *, include: Set[str] = None, exclude: Set[str] = set(), by_alias: bool = False) -> 'DictStrAny':
+    def dict(
+        self, *, include: Set[str] = None, exclude: Set[str] = None, by_alias: bool = False, skip_defaults: bool = False
+    ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.fields)
 
-        return {
-            get_key(k): v
-            for k, v in self._iter(by_alias=by_alias)
-            if k not in exclude and (not include or k in include)
-        }
+        return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
+        if return_keys is None:
+            return {get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults)}
+        else:
+            return {
+                get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys
+            }
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
@@ -263,9 +284,10 @@ class BaseModel(metaclass=MetaModel):
     def json(
         self,
         *,
-        include: Set[str] = set(),
-        exclude: Set[str] = set(),
+        include: Set[str] = None,
+        exclude: Set[str] = None,
         by_alias: bool = False,
+        skip_defaults: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -276,11 +298,13 @@ class BaseModel(metaclass=MetaModel):
         """
         encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
         return json.dumps(
-            self.dict(include=include, exclude=exclude, by_alias=by_alias), default=encoder, **dumps_kwargs
+            self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults),
+            default=encoder,
+            **dumps_kwargs,
         )
 
     @classmethod
-    def parse_obj(cls, obj: Dict[Any, Any]) -> 'BaseModel':
+    def parse_obj(cls, obj: 'DictAny') -> 'BaseModel':
         if not isinstance(obj, dict):
             exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
             raise ValidationError([ErrorWrapper(exc, loc='__obj__')])
@@ -318,13 +342,14 @@ class BaseModel(metaclass=MetaModel):
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls, **values: Any) -> 'BaseModel':
+    def construct(cls, values: 'DictAny', fields_set: Set[str]) -> 'BaseModel':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
         Chances are you don't want to use this method directly.
         """
         m = cls.__new__(cls)
-        m.__setstate__(values)
+        object.__setattr__(m, '__values__', values)
+        object.__setattr__(m, '__fields_set__', fields_set)
         return m
 
     def copy(
@@ -344,14 +369,16 @@ class BaseModel(metaclass=MetaModel):
             # skip constructing values if no arguments are passed
             v = self.__values__
         else:
-            exclude = exclude or set()
-            v = {
-                **{k: v for k, v in self.__values__.items() if k not in exclude and (not include or k in include)},
-                **(update or {}),
-            }
+            return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False)
+            if return_keys:
+                v = {**{k: v for k, v in self.__values__.items() if k in return_keys}, **(update or {})}
+            else:
+                v = {**self.__values__, **(update or {})}
+
         if deep:
             v = deepcopy(v)
-        return self.__class__.construct(**v)
+        m = self.__class__.construct(v, self.__fields_set__.copy())
+        return m
 
     @property
     def fields(self) -> Dict[str, Field]:
@@ -374,29 +401,34 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield dict_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: 'DictStrAny') -> 'BaseModel':
-        return cls(**value)
+    def validate(cls, value: Union['DictStrAny', 'BaseModel']) -> 'BaseModel':
+        if isinstance(value, dict):
+            return cls(**value)
+        elif isinstance(value, BaseModel):
+            return value.copy()
+        else:
+            with change_exception(DictError, TypeError, ValueError):
+                return cls(**dict(value))
 
     def _process_values(self, input_data: Any) -> 'DictStrAny':
         # (casting here is slow so use ignore)
         return validate_model(self, input_data)  # type: ignore
 
     @classmethod
-    def _get_value(cls, v: Any, by_alias: bool) -> Any:
+    def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:
         if isinstance(v, BaseModel):
-            return v.dict(by_alias=by_alias)
+            return v.dict(by_alias=by_alias, skip_defaults=skip_defaults)
         elif isinstance(v, list):
-            return [cls._get_value(v_, by_alias=by_alias) for v_ in v]
+            return [cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v]
         elif isinstance(v, dict):
-            return {k_: cls._get_value(v_, by_alias=by_alias) for k_, v_ in v.items()}
+            return {k_: cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for k_, v_ in v.items()}
         elif isinstance(v, set):
-            return {cls._get_value(v_, by_alias=by_alias) for v_ in v}
+            return {cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v}
         elif isinstance(v, tuple):
-            return tuple(cls._get_value(v_, by_alias=by_alias) for v_ in v)
+            return tuple(cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v)
         else:
             return v
 
@@ -418,9 +450,29 @@ class BaseModel(metaclass=MetaModel):
         """
         yield from self._iter()
 
-    def _iter(self, by_alias: bool = False) -> 'TupleGenerator':
+    def _iter(self, by_alias: bool = False, skip_defaults: bool = False) -> 'TupleGenerator':
         for k, v in self.__values__.items():
-            yield k, self._get_value(v, by_alias=by_alias)
+            yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults)
+
+    def _calculate_keys(
+        self, include: Set[str] = None, exclude: Optional[Set[str]] = None, skip_defaults: bool = False
+    ) -> Optional[Set[str]]:
+
+        if include is None and exclude is None and skip_defaults is False:
+            return None
+
+        if skip_defaults:
+            keys = self.__fields_set__.copy()
+        else:
+            keys = set(self.__values__.keys())
+
+        if include:
+            keys &= include
+
+        if exclude:
+            keys -= exclude
+
+        return keys
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseModel):

@@ -3,7 +3,8 @@ from typing import Dict, List, Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, errors, validator
+from pydantic import BaseModel, ConfigError, ValidationError, errors, validator
+from pydantic.class_validators import make_generic_validator
 
 
 def test_simple():
@@ -558,3 +559,81 @@ def test_whole_called_once():
 
     assert Model(a=['1', '2', '3']).a == (1, 2, 3)
     assert check_calls == 1
+
+
+@pytest.mark.parametrize(
+    'fields,result',
+    [
+        (['val'], '_v_'),
+        (['foobar'], '_v_'),
+        (['val', 'field'], '_v_,_field_'),
+        (['val', 'config'], '_v_,_config_'),
+        (['val', 'values'], '_v_,_values_'),
+        (['val', 'field', 'config'], '_v_,_field_,_config_'),
+        (['val', 'field', 'values'], '_v_,_field_,_values_'),
+        (['val', 'config', 'values'], '_v_,_config_,_values_'),
+        (['val', 'field', 'values', 'config'], '_v_,_field_,_values_,_config_'),
+        (['cls', 'val'], '_cls_,_v_'),
+        (['cls', 'foobar'], '_cls_,_v_'),
+        (['cls', 'val', 'field'], '_cls_,_v_,_field_'),
+        (['cls', 'val', 'config'], '_cls_,_v_,_config_'),
+        (['cls', 'val', 'values'], '_cls_,_v_,_values_'),
+        (['cls', 'val', 'field', 'config'], '_cls_,_v_,_field_,_config_'),
+        (['cls', 'val', 'field', 'values'], '_cls_,_v_,_field_,_values_'),
+        (['cls', 'val', 'config', 'values'], '_cls_,_v_,_config_,_values_'),
+        (['cls', 'val', 'field', 'values', 'config'], '_cls_,_v_,_field_,_values_,_config_'),
+    ],
+)
+def test_make_generic_validator(fields, result):
+    exec(f"""def testing_function({', '.join(fields)}): return {' + "," + '.join(fields)}""")
+    func = locals()['testing_function']
+    validator = make_generic_validator(func)
+    assert validator.__qualname__ == 'testing_function'
+    assert validator.__name__ == 'testing_function'
+    # args: cls, v, values, field, config
+    assert validator('_cls_', '_v_', '_values_', '_field_', '_config_') == result
+
+
+def test_make_generic_validator_kwargs():
+    def test_validator(v, **kwargs):
+        return ', '.join(f'{k}: {v}' for k, v in kwargs.items())
+
+    validator = make_generic_validator(test_validator)
+    assert validator.__name__ == 'test_validator'
+    assert validator('_cls_', '_v_', '_vs_', '_f_', '_c_') == 'values: _vs_, field: _f_, config: _c_'
+
+
+def test_make_generic_validator_invalid():
+    def test_validator(v, foobar):
+        return foobar
+
+    with pytest.raises(ConfigError) as exc_info:
+        make_generic_validator(test_validator)
+    assert ': (v, foobar), should be: (value, values, config, field)' in str(exc_info.value)
+
+
+def test_make_generic_validator_cls_kwargs():
+    def test_validator(cls, v, **kwargs):
+        return ', '.join(f'{k}: {v}' for k, v in kwargs.items())
+
+    validator = make_generic_validator(test_validator)
+    assert validator.__name__ == 'test_validator'
+    assert validator('_cls_', '_v_', '_vs_', '_f_', '_c_') == 'values: _vs_, field: _f_, config: _c_'
+
+
+def test_make_generic_validator_cls_invalid():
+    def test_validator(cls, v, foobar):
+        return foobar
+
+    with pytest.raises(ConfigError) as exc_info:
+        make_generic_validator(test_validator)
+    assert ': (cls, v, foobar), should be: (cls, value, values, config, field)' in str(exc_info.value)
+
+
+def test_make_generic_validator_self():
+    def test_validator(self, v):
+        return v
+
+    with pytest.raises(ConfigError) as exc_info:
+        make_generic_validator(test_validator)
+    assert ': (self, v), "self" not permitted as first argument, should be: (cls, value' in str(exc_info.value)
