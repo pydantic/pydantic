@@ -221,7 +221,11 @@ class BaseModel(metaclass=MetaModel):
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: Set[str] = set()
         object.__setattr__(self, '__values__', self._process_values(data))
-        object.__setattr__(self, '__fields_set__', set(data.keys()))
+        if self.__config__.extra is Extra.allow:
+            fields_set = set(data.keys())
+        else:
+            fields_set = data.keys() & self.__values__.keys()  # type: ignore
+        object.__setattr__(self, '__fields_set__', fields_set)
 
     @no_type_check
     def __getattr__(self, name):
