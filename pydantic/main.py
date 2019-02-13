@@ -120,7 +120,7 @@ def set_extra(config: BaseConfig, cls_name: str) -> None:
             warnings.warn(
                 f'{cls_name}: "allow_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}', DeprecationWarning
             )
-    else:
+    elif not isinstance(config.extra, Extra):
         try:
             config.extra = Extra(config.extra)
         except ValueError:

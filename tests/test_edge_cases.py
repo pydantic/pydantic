@@ -793,3 +793,58 @@ def test_illegal_extra_value():
 
             class Config:
                 extra = 'foo'
+
+
+def test_multiple_inheritance_config():
+    class Parent(BaseModel):
+        class Config:
+            allow_mutation = False
+            extra = Extra.forbid
+
+    class Mixin(BaseModel):
+        class Config:
+            use_enum_values = True
+
+    class Child(Mixin, Parent):
+        class Config:
+            allow_population_by_alias = True
+
+    assert BaseModel.__config__.allow_mutation is True
+    assert BaseModel.__config__.allow_population_by_alias is False
+    assert BaseModel.__config__.extra is Extra.ignore
+    assert BaseModel.__config__.use_enum_values is False
+
+    assert Parent.__config__.allow_mutation is False
+    assert Parent.__config__.allow_population_by_alias is False
+    assert Parent.__config__.extra is Extra.forbid
+    assert Parent.__config__.use_enum_values is False
+
+    assert Mixin.__config__.allow_mutation is True
+    assert Mixin.__config__.allow_population_by_alias is False
+    assert Mixin.__config__.extra is Extra.ignore
+    assert Mixin.__config__.use_enum_values is True
+
+    assert Child.__config__.allow_mutation is False
+    assert Child.__config__.allow_population_by_alias is True
+    assert Child.__config__.extra is Extra.forbid
+    assert Child.__config__.use_enum_values is True
+
+
+def test_multiple_inheritance_config_legacy_extra():
+    with pytest.warns(DeprecationWarning, match='Parent: "ignore_extra" and "allow_extra" are deprecated and'):
+
+        class Parent(BaseModel):
+            class Config:
+                allow_extra = False
+                ignore_extra = False
+
+        class Mixin(BaseModel):
+            pass
+
+        class Child(Mixin, Parent):
+            pass
+
+    assert BaseModel.__config__.extra is Extra.ignore
+    assert Parent.__config__.extra is Extra.forbid
+    assert Mixin.__config__.extra is Extra.ignore
+    assert Child.__config__.extra is Extra.forbid
