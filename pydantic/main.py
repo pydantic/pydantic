@@ -14,7 +14,6 @@ from typing import (
     ClassVar,
     Dict,
     Generator,
-    KeysView,
     Optional,
     Set,
     Tuple,
@@ -50,7 +49,7 @@ if TYPE_CHECKING:  # pragma: no cover
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]
     ConfigType = Type['BaseConfig']
-    SetOrKeys = Union[Set[str], KeysView[str]]
+    DictAny = Dict[Any, Any]
 
 
 class Extra(str, Enum):
@@ -212,7 +211,7 @@ class BaseModel(metaclass=MetaModel):
         __validators__: Dict[str, AnyCallable] = {}
         __config__: Type[BaseConfig] = BaseConfig
         _json_encoder: Callable[[Any], Any] = lambda x: x
-        _schema_cache: Dict[Any, Any] = {}
+        _schema_cache: 'DictAny' = {}
 
     Config = BaseConfig
     __slots__ = ('__values__', '__fields_set__')
@@ -221,7 +220,8 @@ class BaseModel(metaclass=MetaModel):
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: Set[str] = set()
-        self.__setstate__(self._process_values(data), fields_set=data.keys())
+        object.__setattr__(self, '__values__', self._process_values(data))
+        object.__setattr__(self, '__fields_set__', set(data.keys()))
 
     @no_type_check
     def __getattr__(self, name):
@@ -247,14 +247,12 @@ class BaseModel(metaclass=MetaModel):
             self.__values__[name] = value
             self.__fields_set__.add(name)
 
-    def __getstate__(self) -> Dict[Any, Any]:
-        return self.__values__
+    def __getstate__(self) -> 'DictAny':
+        return {'__values__': self.__values__, '__fields_set__': self.__fields_set__}
 
-    def __setstate__(self, state: Dict[Any, Any], fields_set: Optional['SetOrKeys'] = None) -> None:
-        object.__setattr__(self, '__values__', state)
-        if fields_set is None:
-            fields_set = state.keys()
-        object.__setattr__(self, '__fields_set__', set(fields_set))
+    def __setstate__(self, state: 'DictAny') -> None:
+        object.__setattr__(self, '__values__', state['__values__'])
+        object.__setattr__(self, '__fields_set__', state['__fields_set__'])
 
     def dict(
         self, *, include: Set[str] = None, exclude: Set[str] = None, by_alias: bool = False, skip_defaults: bool = False
@@ -302,7 +300,7 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(cls, obj: Dict[Any, Any]) -> 'BaseModel':
+    def parse_obj(cls, obj: 'DictAny') -> 'BaseModel':
         if not isinstance(obj, dict):
             exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
             raise ValidationError([ErrorWrapper(exc, loc='__obj__')])
@@ -340,13 +338,14 @@ class BaseModel(metaclass=MetaModel):
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls, fields_set: Optional['SetOrKeys'] = None, **values: Any) -> 'BaseModel':
+    def construct(cls, values: 'DictAny', fields_set: Set[str]) -> 'BaseModel':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
         Chances are you don't want to use this method directly.
         """
         m = cls.__new__(cls)
-        m.__setstate__(values, fields_set=fields_set)
+        object.__setattr__(m, '__values__', values)
+        object.__setattr__(m, '__fields_set__', fields_set)
         return m
 
     def copy(
@@ -374,7 +373,7 @@ class BaseModel(metaclass=MetaModel):
 
         if deep:
             v = deepcopy(v)
-        m = self.__class__.construct(fields_set=self.__fields_set__, **v)
+        m = self.__class__.construct(v, self.__fields_set__.copy())
         return m
 
     @property
@@ -402,10 +401,10 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def validate(cls, value: Union['DictStrAny', 'BaseModel']) -> 'BaseModel':
-        if isinstance(value, BaseModel):
-            return value.copy()
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return cls(**value)
+        elif isinstance(value, BaseModel):
+            return value.copy()
         else:
             with change_exception(DictError, TypeError, ValueError):
                 return cls(**dict(value))
@@ -447,7 +446,7 @@ class BaseModel(metaclass=MetaModel):
         """
         yield from self._iter()
 
-    def _iter(self, by_alias: bool = False, skip_defaults: bool = True) -> 'TupleGenerator':
+    def _iter(self, by_alias: bool = False, skip_defaults: bool = False) -> 'TupleGenerator':
         for k, v in self.__values__.items():
             yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults)
 

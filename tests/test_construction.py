@@ -11,13 +11,13 @@ class Model(BaseModel):
 
 
 def test_simple_construct():
-    m = Model.construct(a=40, b=10)
+    m = Model.construct(dict(a=40, b=10), {'a', 'b'})
     assert m.a == 40
     assert m.b == 10
 
 
 def test_construct_missing():
-    m = Model.construct(a='not a float')
+    m = Model.construct(dict(a='not a float'), {'a'})
     assert m.a == 'not a float'
     with pytest.raises(AttributeError) as exc_info:
         print(m.b)

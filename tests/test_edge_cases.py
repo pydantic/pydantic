@@ -399,7 +399,7 @@ def test_field_set():
 
     assert Model(a=1, field_set=2).dict() == {'a': 1, 'field_set': 2, 'b': 3}
     assert Model(a=1, field_set=2).dict(skip_defaults=True) == {'a': 1, 'field_set': 2}
-    assert Model.construct(a=1, fields_set=3).dict() == {'a': 1, 'field_set': 2, 'b': 3}
+    assert Model.construct(dict(a=1, field_set=3), {'a', 'field_set'}).dict() == {'a': 1, 'field_set': 3}
 
 
 def test_values_order():
