@@ -29,7 +29,7 @@ try:
 
     replacer = ReplaceLinks()
     history = re.sub(r'#(\d+)', replacer.replace_issues, history)
-    history = re.sub(r'( +)@(\w+)', replacer.replace_users, history, flags=re.I)
+    history = re.sub(r'( +)@([\w\-]+)', replacer.replace_users, history, flags=re.I)
     history = re.sub(r'@@', '@', history)
     history += replacer.extra()
 
