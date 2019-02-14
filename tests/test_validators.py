@@ -189,7 +189,7 @@ def test_duplicates():
                 return v
 
             @validator('b')  # noqa
-            def duplicate_name(cls, v):
+            def duplicate_name(cls, v):  # noqa
                 return v
 
     assert str(exc_info.value) == (
