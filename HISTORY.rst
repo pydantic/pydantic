@@ -3,6 +3,10 @@
 History
 -------
 
+v0.20.0 (unreleased)
+....................
+* fix tests for python 3.8, #396 by @samuelcolvin
+
 v0.20.0a1 (2019-02-13)
 ......................
 * **breaking change** (maybe): more sophisticated argument parsing for validators, any subset of

@@ -50,6 +50,7 @@ if TYPE_CHECKING:  # pragma: no cover
     DictStrAny = Dict[str, Any]
     ConfigType = Type['BaseConfig']
     DictAny = Dict[Any, Any]
+    SetStr = Set[str]
 
 
 class Extra(str, Enum):
@@ -95,7 +96,7 @@ def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'C
 EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/#model-config'
 
 
-def set_extra(config: BaseConfig, cls_name: str) -> None:
+def set_extra(config: Type[BaseConfig], cls_name: str) -> None:
     has_ignore_extra, has_allow_extra = hasattr(config, 'ignore_extra'), hasattr(config, 'allow_extra')
     if has_ignore_extra or has_allow_extra:
         if getattr(config, 'allow_extra', False):
@@ -219,7 +220,7 @@ class BaseModel(metaclass=MetaModel):
     def __init__(self, **data: Any) -> None:
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
-            self.__fields_set__: Set[str] = set()
+            self.__fields_set__: 'SetStr' = set()
         object.__setattr__(self, '__values__', self._process_values(data))
         if self.__config__.extra is Extra.allow:
             fields_set = set(data.keys())
@@ -259,7 +260,7 @@ class BaseModel(metaclass=MetaModel):
         object.__setattr__(self, '__fields_set__', state['__fields_set__'])
 
     def dict(
-        self, *, include: Set[str] = None, exclude: Set[str] = None, by_alias: bool = False, skip_defaults: bool = False
+        self, *, include: 'SetStr' = None, exclude: 'SetStr' = None, by_alias: bool = False, skip_defaults: bool = False
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -284,8 +285,8 @@ class BaseModel(metaclass=MetaModel):
     def json(
         self,
         *,
-        include: Set[str] = None,
-        exclude: Set[str] = None,
+        include: 'SetStr' = None,
+        exclude: 'SetStr' = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
@@ -342,7 +343,7 @@ class BaseModel(metaclass=MetaModel):
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls, values: 'DictAny', fields_set: Set[str]) -> 'BaseModel':
+    def construct(cls, values: 'DictAny', fields_set: 'SetStr') -> 'BaseModel':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
         Chances are you don't want to use this method directly.
@@ -353,7 +354,7 @@ class BaseModel(metaclass=MetaModel):
         return m
 
     def copy(
-        self, *, include: Set[str] = None, exclude: Set[str] = None, update: 'DictStrAny' = None, deep: bool = False
+        self, *, include: 'SetStr' = None, exclude: 'SetStr' = None, update: 'DictStrAny' = None, deep: bool = False
     ) -> 'BaseModel':
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
@@ -455,8 +456,8 @@ class BaseModel(metaclass=MetaModel):
             yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults)
 
     def _calculate_keys(
-        self, include: Set[str] = None, exclude: Optional[Set[str]] = None, skip_defaults: bool = False
-    ) -> Optional[Set[str]]:
+        self, include: 'SetStr' = None, exclude: Optional['SetStr'] = None, skip_defaults: bool = False
+    ) -> Optional['SetStr']:
 
         if include is None and exclude is None and skip_defaults is False:
             return None
