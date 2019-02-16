@@ -559,3 +559,16 @@ def test_skip_defaults_recursive():
     assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
     assert m.dict(skip_defaults=True) == {'c': 5, 'e': {'a': 0}}
     assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
+
+
+def test_dir_fields():
+    class MyModel(BaseModel):
+        attribute_a: int
+        attribute_b: int = 2
+
+    m = MyModel(attribute_a=5)
+
+    assert "dict" in dir(m)
+    assert "json" in dir(m)
+    assert "attribute_a" in dir(m)
+    assert "attribute_b" in dir(m)

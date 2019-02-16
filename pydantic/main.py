@@ -14,6 +14,7 @@ from typing import (
     ClassVar,
     Dict,
     Generator,
+    List,
     Optional,
     Set,
     Tuple,
@@ -51,6 +52,7 @@ if TYPE_CHECKING:  # pragma: no cover
     ConfigType = Type['BaseConfig']
     DictAny = Dict[Any, Any]
     SetStr = Set[str]
+    ListStr = List[str]
 
 
 class Extra(str, Enum):
@@ -494,6 +496,11 @@ class BaseModel(metaclass=MetaModel):
 
     def __str__(self) -> str:
         return self.to_string()
+
+    def __dir__(self) -> 'ListStr':
+        ret = list(object.__dir__(self))
+        ret.extend(self.__values__.keys())
+        return ret
 
 
 def create_model(
