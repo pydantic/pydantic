@@ -122,4 +122,21 @@ class Foo(BaseModel):
     )
     with pytest.raises(ConfigError) as exc_info:
         module.Foo(b=123)
-    assert str(exc_info.value).startswith('field b not yet prepared and type is still a ForwardRef')
+    assert str(exc_info.value).startswith('field "b" not yet prepared so type is still a ForwardRef')
+
+
+@skip_not_37
+def test_forward_ref_dataclass(create_module):
+    module = create_module(
+        """
+from __future__ import annotations
+from pydantic import UrlStr
+from pydantic.dataclasses import dataclass
+
+@dataclass
+class Dataclass:
+    url: UrlStr
+    """
+    )
+    m = module.Dataclass('http://example.com  ')
+    assert m.url == 'http://example.com'

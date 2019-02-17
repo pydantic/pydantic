@@ -7,6 +7,7 @@ v0.20.0 (unreleased)
 ....................
 * fix tests for python 3.8, #396 by @samuelcolvin
 * Adds fields to the ``dir`` method for autocompletion in interactive sessions, #398 by @dgasmith
+* support ``ForwardRef`` (and therefore ``from __future__ import annotations``) with dataclasses, #397 by @samuelcolvin
 
 v0.20.0a1 (2019-02-13)
 ......................

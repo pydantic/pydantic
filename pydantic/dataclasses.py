@@ -74,7 +74,7 @@ def _process_class(
     fields: Dict[str, Any] = {name: (field.type, field.default) for name, field in cls.__dataclass_fields__.items()}
     cls.__post_init_original__ = post_init_original
 
-    cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, __base__=None, **fields)
+    cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, __module__=_cls.__module__, **fields)
 
     cls.__initialised__ = False
     cls.__validate__ = classmethod(_validate_dataclass)
