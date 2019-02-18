@@ -504,7 +504,12 @@ class BaseModel(metaclass=MetaModel):
 
 
 def create_model(
-    model_name: str, *, __config__: Type[BaseConfig] = None, __base__: Type[BaseModel] = None, **field_definitions: Any
+    model_name: str,
+    *,
+    __config__: Type[BaseConfig] = None,
+    __base__: Type[BaseModel] = None,
+    __module__: Optional[str] = None,
+    **field_definitions: Any,
 ) -> BaseModel:
     """
     Dynamically create a model.
@@ -542,7 +547,7 @@ def create_model(
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
-    namespace: 'DictStrAny' = {'__annotations__': annotations}
+    namespace: 'DictStrAny' = {'__annotations__': annotations, '__module__': __module__}
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
@@ -565,8 +570,8 @@ def validate_model(  # noqa: C901 (ignore complexity)
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:
             raise ConfigError(
-                f"field {field.name} not yet prepared and type is still a ForwardRef, "
-                f"you'll need to call {model.__class__.__name__}.update_forward_refs()"
+                f'field "{field.name}" not yet prepared so type is still a ForwardRef, '
+                f'you might need to call {model.__class__.__name__}.update_forward_refs().'
             )
 
         value = input_data.get(field.alias, _missing)
