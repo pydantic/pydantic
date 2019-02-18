@@ -3,7 +3,7 @@
 History
 -------
 
-v0.20.0 (unreleased)
+v0.20.0 (2019-02-18)
 ....................
 * fix tests for python 3.8, #396 by @samuelcolvin
 * Adds fields to the ``dir`` method for autocompletion in interactive sessions, #398 by @dgasmith
