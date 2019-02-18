@@ -709,6 +709,22 @@ to properly set types before the model can be used.
 
 (This script is complete, it should run "as is")
 
+.. warning::
+
+   To resolve strings (type names) into annotations (types) *pydantic* needs a dict to lookup,
+   for this is uses ``module.__dict__`` just as ``get_type_hints`` does. That means *pydantic* does not play well
+   with types not defined in the global scope of a module.
+
+   For example, this works fine:
+
+   .. literalinclude:: examples/postponed_works.py
+
+   While this will break:
+
+   .. literalinclude:: examples/postponed_broken.py
+
+   Resolving this is beyond the call for *pydantic*: either remove the future import or declare the types globally.
+
 .. _benchmarks_tag:
 
 Benchmarks
