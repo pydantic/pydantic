@@ -19,6 +19,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
     no_type_check,
@@ -53,6 +54,7 @@ if TYPE_CHECKING:  # pragma: no cover
     DictAny = Dict[Any, Any]
     SetStr = Set[str]
     ListStr = List[str]
+    Model = TypeVar('Model', bound='BaseModel')
 
 
 class Extra(str, Enum):
@@ -307,7 +309,7 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(cls, obj: 'DictAny') -> 'BaseModel':
+    def parse_obj(cls: Type['Model'], obj: 'DictAny') -> 'Model':
         if not isinstance(obj, dict):
             exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
             raise ValidationError([ErrorWrapper(exc, loc='__obj__')])
@@ -315,14 +317,14 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_raw(
-        cls,
+        cls: Type['Model'],
         b: StrBytes,
         *,
         content_type: str = None,
         encoding: str = 'utf8',
         proto: Protocol = None,
         allow_pickle: bool = False,
-    ) -> 'BaseModel':
+    ) -> 'Model':
         try:
             obj = load_str_bytes(
                 b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle
@@ -333,19 +335,19 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_file(
-        cls,
+        cls: Type['Model'],
         path: Union[str, Path],
         *,
         content_type: str = None,
         encoding: str = 'utf8',
         proto: Protocol = None,
         allow_pickle: bool = False,
-    ) -> 'BaseModel':
+    ) -> 'Model':
         obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls, values: 'DictAny', fields_set: 'SetStr') -> 'BaseModel':
+    def construct(cls: Type['Model'], values: 'DictAny', fields_set: 'SetStr') -> 'Model':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
         Chances are you don't want to use this method directly.
@@ -356,8 +358,13 @@ class BaseModel(metaclass=MetaModel):
         return m
 
     def copy(
-        self, *, include: 'SetStr' = None, exclude: 'SetStr' = None, update: 'DictStrAny' = None, deep: bool = False
-    ) -> 'BaseModel':
+        self: 'Model',
+        *,
+        include: 'SetStr' = None,
+        exclude: 'SetStr' = None,
+        update: 'DictStrAny' = None,
+        deep: bool = False,
+    ) -> 'Model':
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
 
@@ -407,7 +414,7 @@ class BaseModel(metaclass=MetaModel):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Union['DictStrAny', 'BaseModel']) -> 'BaseModel':
+    def validate(cls: Type['Model'], value: Union['DictStrAny', 'Model']) -> 'Model':
         if isinstance(value, dict):
             return cls(**value)
         elif isinstance(value, BaseModel):

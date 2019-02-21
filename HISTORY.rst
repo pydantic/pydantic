@@ -3,6 +3,10 @@
 History
 -------
 
+v0.20.1 (unreleased)
+....................
+* fix type hints of ``parse_obj`` and similar methods, #405 by @erosennin
+
 v0.20.0 (2019-02-18)
 ....................
 * fix tests for python 3.8, #396 by @samuelcolvin
