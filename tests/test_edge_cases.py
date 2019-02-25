@@ -848,3 +848,22 @@ def test_multiple_inheritance_config_legacy_extra():
     assert Parent.__config__.extra is Extra.forbid
     assert Mixin.__config__.extra is Extra.ignore
     assert Child.__config__.extra is Extra.forbid
+
+
+def test_submodel_different_type():
+    class Foo(BaseModel):
+        a: int
+
+    class Bar(BaseModel):
+        b: int
+
+    class Spam(BaseModel):
+        c: Foo
+
+    assert Spam(c={'a': '123'}).dict() == {'c': {'a': 123}}
+    with pytest.raises(ValidationError):
+        Spam(c={'b': '123'})
+
+    assert Spam(c=Foo(a='123')).dict() == {'c': {'a': 123}}
+    with pytest.raises(ValidationError):
+        Spam(c=Bar(b='123'))

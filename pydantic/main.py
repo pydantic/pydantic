@@ -417,11 +417,11 @@ class BaseModel(metaclass=MetaModel):
     def validate(cls: Type['Model'], value: Union['DictStrAny', 'Model']) -> 'Model':
         if isinstance(value, dict):
             return cls(**value)
-        elif isinstance(value, BaseModel):
+        elif isinstance(value, cls):
             return value.copy()
         else:
             with change_exception(DictError, TypeError, ValueError):
-                return cls(**dict(value))
+                return cls(**dict(value))  # type: ignore
 
     def _process_values(self, input_data: Any) -> 'DictStrAny':
         # (casting here is slow so use ignore)
