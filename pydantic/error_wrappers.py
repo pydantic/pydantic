@@ -61,7 +61,7 @@ class ValidationError(ValueError):
     def errors(self) -> List[Dict[str, Any]]:
         return list(flatten_errors(self.raw_errors))
 
-    def json(self, *, indent: int = 2) -> str:
+    def json(self, *, indent: Union[None, int, str] = 2) -> str:
         return json.dumps(self.errors(), indent=indent)
 
     def __str__(self) -> str:
