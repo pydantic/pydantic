@@ -63,6 +63,8 @@ class Schema:
     :param default: since the Schema is replacing the field’s default, its first argument is used
       to set the default, use ellipsis (``...``) to indicate the field is required
     :param alias: the public name of the field
+    :param compute: a callable that takes two params (validated_values, raw_values) which can be used
+      to have virtual fields that can still be validated
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
@@ -87,6 +89,7 @@ class Schema:
     __slots__ = (
         'default',
         'alias',
+        'compute',
         'title',
         'description',
         'gt',
@@ -105,6 +108,7 @@ class Schema:
         default: Any,
         *,
         alias: str = None,
+        compute: Callable[[Dict[str, Any], Dict[str, Any]], Any] = None,
         title: str = None,
         description: str = None,
         gt: float = None,
@@ -119,6 +123,7 @@ class Schema:
     ) -> None:
         self.default = default
         self.alias = alias
+        self.compute = compute
         self.title = title
         self.description = description
         self.extra = extra

@@ -283,6 +283,8 @@ Optionally the ``Schema`` class can be used to provide extra information about t
 * ``default`` (positional argument), since the ``Schema`` is replacing the field's default, its first
   argument is used to set the default, use ellipsis (``...``) to indicate the field is required
 * ``alias`` - the public name of the field
+* ``compute`` - a callable that takes two params (validated_values, raw_values) which can be used
+  to have virtual fields that can still be validated
 * ``title`` if omitted ``field_name.title()`` is used
 * ``description`` if omitted and the annotation is a sub-model, the docstring of the sub-model will be used
 * ``gt`` for numeric values (``int``, ``float``, ``Decimal``), adds a validation of "greater than" and an annotation
@@ -436,6 +438,16 @@ to get validators to parse and validate the input data.
    the old name is currently still supported but deprecated and will be removed in future.
 
 .. literalinclude:: examples/custom_data_types.py
+
+(This script is complete, it should run "as is")
+
+Computed Fields
+.................
+
+You can define computed fields from the input. By setting the ``compute`` schema property to a callable
+that takes the whole input data and returns the computed value. 
+
+.. literalinclude:: examples/computed_fields.py
 
 (This script is complete, it should run "as is")
 

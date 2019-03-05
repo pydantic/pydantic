@@ -568,13 +568,15 @@ def validate_model(  # noqa: C901 (ignore complexity)
     """
     validate data against a model.
     """
-    values = {}
-    errors = []
+    values: 'DictStrAny' = {}
+    errors: List[Any] = []
     names_used = set()
     config = model.__config__
     check_extra = config.extra is not Extra.ignore
 
-    for name, field in model.__fields__.items():
+    # sort non-computed fields first
+    items = sorted(model.__fields__.items(), key=lambda t: t[1].schema and t[1].schema.compute is not None)
+    for name, field in items:
         if type(field.type_) == ForwardRef:
             raise ConfigError(
                 f'field "{field.name}" not yet prepared so type is still a ForwardRef, '
@@ -586,6 +588,10 @@ def validate_model(  # noqa: C901 (ignore complexity)
         if value is _missing and config.allow_population_by_alias and field.alt_alias:
             value = input_data.get(field.name, _missing)
             using_name = True
+
+        # don't call the computing function if errors exist
+        if value is _missing and field.schema and field.schema.compute and not errors:
+            value = field.schema.compute(values, input_data)
 
         if value is _missing:
             if field.required:

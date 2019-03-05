@@ -1,3 +1,4 @@
+from datetime import date
 from enum import Enum
 from typing import Any, ClassVar, List
 
@@ -286,6 +287,95 @@ def test_alias():
         '_a': 'different',
         'b': {'_c': 'different'},
     }
+
+
+def test_computed():
+    def to_date(values, raw):
+        day = values['day']
+        month = values['month']
+        year = values['year']
+        return date(day=day, month=month, year=year)
+
+    class Model(BaseModel):
+        day: int
+        month: int
+        year: int
+        date: date
+
+        class Config:
+            fields = {'date': {'compute': to_date}}
+
+    assert Model(**{'day': '20', 'month': '2', 'year': '2019'}).date == date(day=20, month=2, year=2019)
+
+
+def test_computed_extra():
+    def to_date(values, raw):
+        day = int(raw['day'])
+        month = int(raw['month'])
+        year = int(raw['year'])
+        return date(day=day, month=month, year=year)
+
+    class Model(BaseModel):
+        date: date
+
+        class Config:
+            fields = {'date': {'compute': to_date}}
+            extra = Extra.allow
+
+    assert Model(**{'day': '20', 'month': '2', 'year': '2019'}).date == date(day=20, month=2, year=2019)
+
+
+def test_computed_nested():
+    def to_date(values, raw):
+        response = values['response']
+        day = response.day
+        month = response.month
+        year = response.year
+        return date(day=day, month=month, year=year)
+
+    class SubModel(BaseModel):
+        day: int
+        month: int
+        year: int
+
+    class Model(BaseModel):
+        response: SubModel
+        date: date
+
+        class Config:
+            fields = {'date': {'compute': to_date}}
+
+    assert Model(**{'response': {'day': '20', 'month': '2', 'year': '2019'}}).date == date(day=20, month=2, year=2019)
+
+
+def test_computed_nested_fail():
+    def to_date(values, raw):
+        day = values['day']
+        month = values['month']
+        year = values['year']
+        return date(day=day, month=month, year=year)
+
+    class SubModel(BaseModel):
+        day: int
+        month: int
+        year: int
+
+    class Model(BaseModel):
+        response: SubModel
+        date: date
+
+        class Config:
+            fields = {'date': {'compute': to_date}}
+
+    with pytest.raises(ValidationError) as exc_info:
+        assert Model(**{'response': {}}).date == date(day=20, month=2, year=2019)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('response', 'day'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('response', 'month'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('response', 'year'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('date',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
 
 
 def test_population_by_alias():
