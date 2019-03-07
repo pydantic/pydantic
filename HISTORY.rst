@@ -3,6 +3,10 @@
 History
 -------
 
+v0.20.2 (unreleased)
+....................
+* fix typo in `NoneIsNotAllowedError` message, #414 by @YaraslauZhylko
+
 v0.20.1 (2019-02-26)
 ....................
 * fix type hints of ``parse_obj`` and similar methods, #405 by @erosennin
