@@ -112,7 +112,7 @@ def test_url_str_absolute_success(value):
                 }
             ],
         ),
-        (None, [{'loc': ('v',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}]),
+        (None, [{'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}]),
     ],
 )
 def test_url_str_absolute_fails(value, errors):
@@ -187,7 +187,7 @@ def test_url_str_relative_success(value):
                 }
             ],
         ),
-        (None, [{'loc': ('v',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}]),
+        (None, [{'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}]),
     ],
 )
 def test_url_str_relative_fails(value, errors):
@@ -245,7 +245,7 @@ def test_url_str_dont_require_tld_success(value):
                 }
             ],
         ),
-        (None, [{'loc': ('v',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}]),
+        (None, [{'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}]),
     ],
 )
 def test_url_str_dont_require_tld_fails(value, errors):
