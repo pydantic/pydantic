@@ -39,7 +39,7 @@ class ExtraError(PydanticValueError):
 
 class NoneIsNotAllowedError(PydanticTypeError):
     code = 'none.not_allowed'
-    msg_template = 'none is not an allow value'
+    msg_template = 'none is not an allowed value'
 
 
 class NoneIsAllowedError(PydanticTypeError):

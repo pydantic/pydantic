@@ -33,8 +33,8 @@ def test_str_bytes():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
-        {'loc': ('v',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
 
 
@@ -73,7 +73,7 @@ def test_union_int_str():
         Model(v=None)
     assert exc_info.value.errors() == [
         {'loc': ('v',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
 
 
@@ -275,7 +275,7 @@ def test_list_unions():
         Model(v=[1, 2, None])
     assert exc_info.value.errors() == [
         {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 2), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('v', 2), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
 
 
@@ -551,7 +551,7 @@ def test_string_none():
     with pytest.raises(ValidationError) as exc_info:
         Model(a=None)
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'}
+        {'loc': ('a',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}
     ]
 
 

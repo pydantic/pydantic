@@ -21,7 +21,7 @@ from pydantic.error_wrappers import ValidationError, flatten_errors, get_exc_typ
                 {'loc': ('d',), 'msg': 'value is not a valid uuid', 'type': 'type_error.uuid'},
                 {'loc': ('e', '__key__'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
                 {'loc': ('f', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-                {'loc': ('f', 0), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
+                {'loc': ('f', 0), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
                 {
                     'loc': ('g',),
                     'msg': 'uuid version 1 expected',
@@ -107,7 +107,7 @@ from pydantic.error_wrappers import ValidationError, flatten_errors, get_exc_typ
       "f",
       0
     ],
-    "msg": "none is not an allow value",
+    "msg": "none is not an allowed value",
     "type": "type_error.none.not_allowed"
   },
   {
@@ -153,7 +153,7 @@ e -> __key__
 f -> 0
   value is not a valid integer (type=type_error.integer)
 f -> 0
-  none is not an allow value (type=type_error.none.not_allowed)
+  none is not an allowed value (type=type_error.none.not_allowed)
 g
   uuid version 1 expected (type=value_error.uuid.version; required_version=1)
 h

@@ -128,7 +128,7 @@ def test_dsn_no_driver():
     with pytest.raises(ValidationError) as exc_info:
         DsnModel(db_driver=None)
     assert exc_info.value.errors() == [
-        {'loc': ('db_driver',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('db_driver',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
         {'loc': ('dsn',), 'msg': '"driver" field may not be empty', 'type': 'value_error.dsn.driver_is_empty'},
     ]
 

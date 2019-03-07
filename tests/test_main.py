@@ -112,8 +112,12 @@ def test_nullable_strings_fails():
             required_bytes_none_value=None,
         )
     assert exc_info.value.errors() == [
-        {'loc': ('required_str_value',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
-        {'loc': ('required_bytes_value',), 'msg': 'none is not an allow value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('required_str_value',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
+        {
+            'loc': ('required_bytes_value',),
+            'msg': 'none is not an allowed value',
+            'type': 'type_error.none.not_allowed',
+        },
     ]
 
 
