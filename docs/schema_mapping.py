@@ -241,6 +241,24 @@ table = [
         ''
     ],
     [
+        'IPAddress',
+        'string',
+        '{"format": "ipaddress"},'
+        ' Pydantic standard "format" extension',
+    ],
+    [
+        'IPv4Address',
+        'string',
+        '{"format": "ipv4address"},'
+        ' Pydantic standard "format" extension',
+    ],
+    [
+        'IPv6Address',
+        'string',
+        '{"format": "ipv6address"},'
+        ' Pydantic standard "format" extension',
+    ],
+    [
         'StrictStr',
         'string',
         '',
