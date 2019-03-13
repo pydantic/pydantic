@@ -29,42 +29,42 @@ except ImportError:
     email_validator = None
 
 __all__ = [
-    "NoneStr",
-    "NoneBytes",
-    "StrBytes",
-    "NoneStrBytes",
-    "StrictStr",
-    "ConstrainedBytes",
-    "conbytes",
-    "ConstrainedStr",
-    "constr",
-    "EmailStr",
-    "UrlStr",
-    "urlstr",
-    "NameEmail",
-    "PyObject",
-    "DSN",
-    "ConstrainedInt",
-    "conint",
-    "PositiveInt",
-    "NegativeInt",
-    "ConstrainedFloat",
-    "confloat",
-    "PositiveFloat",
-    "NegativeFloat",
-    "ConstrainedDecimal",
-    "condecimal",
-    "UUID1",
-    "UUID3",
-    "UUID4",
-    "UUID5",
-    "FilePath",
-    "DirectoryPath",
-    "Json",
-    "JsonWrapper",
-    "IPAddress",
-    "IPv4Address",
-    "IPv6Address",
+    'NoneStr',
+    'NoneBytes',
+    'StrBytes',
+    'NoneStrBytes',
+    'StrictStr',
+    'ConstrainedBytes',
+    'conbytes',
+    'ConstrainedStr',
+    'constr',
+    'EmailStr',
+    'UrlStr',
+    'urlstr',
+    'NameEmail',
+    'PyObject',
+    'DSN',
+    'ConstrainedInt',
+    'conint',
+    'PositiveInt',
+    'NegativeInt',
+    'ConstrainedFloat',
+    'confloat',
+    'PositiveFloat',
+    'NegativeFloat',
+    'ConstrainedDecimal',
+    'condecimal',
+    'UUID1',
+    'UUID3',
+    'UUID4',
+    'UUID5',
+    'FilePath',
+    'DirectoryPath',
+    'Json',
+    'JsonWrapper',
+    'IPAddress',
+    'IPv4Address',
+    'IPv6Address',
 ]
 
 NoneStr = Optional[str]
@@ -85,7 +85,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class StrictStr(str):
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
 
     @classmethod
@@ -101,7 +101,7 @@ class ConstrainedBytes(bytes):
     max_length: OptionalInt = None
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield bytes_validator
         yield anystr_strip_whitespace
@@ -111,7 +111,7 @@ class ConstrainedBytes(bytes):
 def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_length: int = None) -> Type[bytes]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(strip_whitespace=strip_whitespace, min_length=min_length, max_length=max_length)
-    return type("ConstrainedBytesValue", (ConstrainedBytes,), namespace)
+    return type('ConstrainedBytesValue', (ConstrainedBytes,), namespace)
 
 
 class ConstrainedStr(str):
@@ -122,7 +122,7 @@ class ConstrainedStr(str):
     regex: Optional[Pattern[str]] = None
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield str_validator
         yield anystr_strip_whitespace
@@ -157,15 +157,15 @@ def constr(
         curtail_length=curtail_length,
         regex=regex and re.compile(regex),
     )
-    return type("ConstrainedStrValue", (ConstrainedStr,), namespace)
+    return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
 
 
 class EmailStr(str):
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         # included here and below so the error happens straight away
         if email_validator is None:
-            raise ImportError("email-validator is not installed, run `pip install pydantic[email]`")
+            raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
         yield str_validator
         yield cls.validate
@@ -184,7 +184,7 @@ class UrlStr(str):
     require_tld = True  # whether to reject non-FQDN hostnames
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield str_validator
         yield anystr_strip_whitespace
@@ -194,9 +194,9 @@ class UrlStr(str):
     @classmethod
     def validate(cls, value: str) -> str:
         # Check first if the scheme is valid
-        schemes = cls.schemes or {"http", "https", "ftp", "ftps"}
-        if "://" in value:
-            scheme = value.split("://")[0].lower()
+        schemes = cls.schemes or {'http', 'https', 'ftp', 'ftps'}
+        if '://' in value:
+            scheme = value.split('://')[0].lower()
             if scheme not in schemes:
                 raise errors.UrlSchemeError(scheme=scheme)
 
@@ -225,30 +225,30 @@ def urlstr(
         require_tld=require_tld,
         schemes=schemes,
     )
-    return type("UrlStrValue", (UrlStr,), namespace)
+    return type('UrlStrValue', (UrlStr,), namespace)
 
 
 class NameEmail:
-    __slots__ = "name", "email"
+    __slots__ = 'name', 'email'
 
     def __init__(self, name: str, email: str):
         self.name = name
         self.email = email
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         if email_validator is None:
-            raise ImportError("email-validator is not installed, run `pip install pydantic[email]`")
+            raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
         yield str_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> "NameEmail":
+    def validate(cls, value: str) -> 'NameEmail':
         return cls(*validate_email(value))
 
     def __str__(self) -> str:
-        return f"{self.name} <{self.email}>"
+        return f'{self.name} <{self.email}>'
 
     def __repr__(self) -> str:
         return f'<NameEmail("{self}")>'
@@ -258,7 +258,7 @@ class PyObject:
     validate_always = True
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator
         yield cls.validate
 
@@ -272,12 +272,12 @@ class PyObject:
 
 
 class DSN(str):
-    prefix = "db_"
-    fields = "driver", "user", "password", "host", "port", "name", "query"
+    prefix = 'db_'
+    fields = 'driver', 'user', 'password', 'host', 'port', 'name', 'query'
     validate_always = True
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator
         yield cls.validate
 
@@ -287,20 +287,20 @@ class DSN(str):
             return value
 
         kwargs = {f: values.get(cls.prefix + f) for f in cls.fields}
-        if kwargs["driver"] is None:
+        if kwargs['driver'] is None:
             raise errors.DSNDriverIsEmptyError()
 
         return make_dsn(**kwargs)  # type: ignore
 
 
 class ConstrainedNumberMeta(type):
-    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> "ConstrainedInt":
-        new_cls = cast("ConstrainedInt", type.__new__(cls, name, bases, dct))
+    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'ConstrainedInt':
+        new_cls = cast('ConstrainedInt', type.__new__(cls, name, bases, dct))
 
         if new_cls.gt is not None and new_cls.ge is not None:
-            raise errors.ConfigError("bounds gt and ge cannot be specified at the same time")
+            raise errors.ConfigError('bounds gt and ge cannot be specified at the same time')
         if new_cls.lt is not None and new_cls.le is not None:
-            raise errors.ConfigError("bounds lt and le cannot be specified at the same time")
+            raise errors.ConfigError('bounds lt and le cannot be specified at the same time')
 
         return new_cls
 
@@ -313,7 +313,7 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalInt = None
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield int_validator
         yield number_size_validator
         yield number_multiple_validator
@@ -322,7 +322,7 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
 def conint(*, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None) -> Type[int]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
-    return type("ConstrainedIntValue", (ConstrainedInt,), namespace)
+    return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
 
 
 class PositiveInt(ConstrainedInt):
@@ -341,7 +341,7 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalIntFloat = None
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield float_validator
         yield number_size_validator
         yield number_multiple_validator
@@ -352,7 +352,7 @@ def confloat(
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
-    return type("ConstrainedFloatValue", (ConstrainedFloat,), namespace)
+    return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
 
 
 class PositiveFloat(ConstrainedFloat):
@@ -373,7 +373,7 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalIntFloatDecimal = None
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield decimal_validator
         yield number_size_validator
@@ -383,7 +383,7 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     @classmethod
     def validate(cls, value: Decimal) -> Decimal:
         digit_tuple, exponent = value.as_tuple()[1:]
-        if exponent in {"F", "n", "N"}:
+        if exponent in {'F', 'n', 'N'}:
             raise errors.DecimalIsNotFiniteError()
 
         if exponent >= 0:
@@ -431,7 +431,7 @@ def condecimal(
     namespace = dict(
         gt=gt, ge=ge, lt=lt, le=le, max_digits=max_digits, decimal_places=decimal_places, multiple_of=multiple_of
     )
-    return type("ConstrainedDecimalValue", (ConstrainedDecimal,), namespace)
+    return type('ConstrainedDecimalValue', (ConstrainedDecimal,), namespace)
 
 
 class UUID1(UUID):
@@ -452,7 +452,7 @@ class UUID5(UUID):
 
 class FilePath(Path):
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield path_validator
         yield path_exists_validator
         yield cls.validate
@@ -467,7 +467,7 @@ class FilePath(Path):
 
 class DirectoryPath(Path):
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield path_validator
         yield path_exists_validator
         yield cls.validate
@@ -486,12 +486,12 @@ class JsonWrapper:
 
 class JsonMeta(type):
     def __getitem__(self, t: AnyType) -> Type[JsonWrapper]:
-        return type("JsonWrapperValue", (JsonWrapper,), {"inner_type": t})
+        return type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t})
 
 
 class Json(metaclass=JsonMeta):
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator
         yield cls.validate
 
@@ -517,7 +517,7 @@ class IPAddress(str):
     _exc = errors.IPAddressError
 
     @classmethod
-    def __get_validators__(cls) -> "CallableGenerator":
+    def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
 
     @classmethod
