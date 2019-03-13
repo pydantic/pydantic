@@ -243,20 +243,23 @@ table = [
     [
         'IPAddress',
         'string',
-        '{"format": "ipaddress"},'
-        ' Pydantic standard "format" extension',
+        '{"format": "ipaddress"}',
+        'Pydantic standard "format" extension',
+        'IPv4 or IPv4 address as used in ``ipaddress`` module',
     ],
     [
         'IPv4Address',
         'string',
-        '{"format": "ipv4address"},'
-        ' Pydantic standard "format" extension',
+        '{"format": "ipv4address"}',
+        'Pydantic standard "format" extension',
+        '',
     ],
     [
         'IPv6Address',
         'string',
-        '{"format": "ipv6address"},'
-        ' Pydantic standard "format" extension',
+        '{"format": "ipv6address"}',
+        'Pydantic standard "format" extension',
+        '',
     ],
     [
         'StrictStr',
