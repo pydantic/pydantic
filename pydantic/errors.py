@@ -288,3 +288,15 @@ class DataclassTypeError(PydanticTypeError):
 
 class CallableError(PydanticTypeError):
     msg_template = '{value} is not callable'
+
+
+class IPAddressError(PydanticValueError):
+    msg_template = 'value is not a valid IPv4 or IPv6 address'
+
+
+class IPv4AddressError(IPAddressError):
+    msg_template = 'value is not a valid IPv4 address'
+
+
+class IPv6AddressError(IPAddressError):
+    msg_template = 'value is not a valid IPv6 address'
