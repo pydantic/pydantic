@@ -1,65 +1,43 @@
-import ipaddress
+from ipaddress import IPv4Address, IPv6Address
 
 import pytest
 
-from pydantic import BaseModel, IPAddress, IPv4Address, IPv6Address, ValidationError
+from pydantic import BaseModel, IPvAnyAddress, ValidationError
 
 
 @pytest.mark.parametrize(
-    'value',
+    'value,cls',
     [
-        '0.0.0.0',
-        '1.1.1.1',
-        '10.10.10.10',
-        '192.168.0.1',
-        '255.255.255.255',
-        '::1:0:1',
-        'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff',
+        ('0.0.0.0', IPv4Address),
+        ('1.1.1.1', IPv4Address),
+        ('10.10.10.10', IPv4Address),
+        ('192.168.0.1', IPv4Address),
+        ('255.255.255.255', IPv4Address),
+        ('::1:0:1', IPv6Address),
+        ('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', IPv6Address),
+        (b'\x00\x00\x00\x00', IPv4Address),
+        (b'\x01\x01\x01\x01', IPv4Address),
+        (b'\n\n\n\n', IPv4Address),
+        (b'\xc0\xa8\x00\x01', IPv4Address),
+        (b'\xff\xff\xff\xff', IPv4Address),
+        (b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x01', IPv6Address),
+        (b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff', IPv6Address),
+        (0, IPv4Address),
+        (16_843_009, IPv4Address),
+        (168_430_090, IPv4Address),
+        (3_232_235_521, IPv4Address),
+        (4_294_967_295, IPv4Address),
+        (4_294_967_297, IPv6Address),
+        (340_282_366_920_938_463_463_374_607_431_768_211_455, IPv6Address),
+        (IPv4Address('192.168.0.1'), IPv4Address),
+        (IPv6Address('::1:0:1'), IPv6Address),
     ],
 )
-def test_ipaddress_str_success(value):
+def test_ipaddress_success(value, cls):
     class Model(BaseModel):
-        ip: IPAddress
+        ip: IPvAnyAddress
 
-    assert Model(ip=value).ip == value
-
-
-@pytest.mark.parametrize(
-    'value',
-    [
-        b'\x00\x00\x00\x00',
-        b'\x01\x01\x01\x01',
-        b'\n\n\n\n',
-        b'\xc0\xa8\x00\x01',
-        b'\xff\xff\xff\xff',
-        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x01',
-        b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff',
-    ],
-)
-def test_ipaddress_bytes_success(value):
-    class Model(BaseModel):
-        ip: IPAddress
-
-    assert Model(ip=value).ip == str(ipaddress.ip_address(value))
-
-
-@pytest.mark.parametrize(
-    'value',
-    [
-        0,
-        16_843_009,
-        168_430_090,
-        3_232_235_521,
-        4_294_967_295,
-        4_294_967_297,
-        340_282_366_920_938_463_463_374_607_431_768_211_455,
-    ],
-)
-def test_ipaddress_ints_success(value):
-    class Model(BaseModel):
-        ip: IPAddress
-
-    assert Model(ip=value).ip == str(ipaddress.ip_address(value))
+    assert Model(ip=value).ip == cls(value)
 
 
 @pytest.mark.parametrize(
@@ -86,7 +64,7 @@ def test_ipv4address_success(value):
     class Model(BaseModel):
         ipv4: IPv4Address
 
-    assert Model(ipv4=value).ipv4 == str(ipaddress.IPv4Address(value))
+    assert Model(ipv4=value).ipv4 == IPv4Address(value)
 
 
 @pytest.mark.parametrize(
@@ -104,7 +82,7 @@ def test_ipv6address_success(value):
     class Model(BaseModel):
         ipv6: IPv6Address
 
-    assert Model(ipv6=value).ipv6 == str(ipaddress.IPv6Address(value))
+    assert Model(ipv6=value).ipv6 == IPv6Address(value)
 
 
 @pytest.mark.parametrize(
@@ -112,22 +90,25 @@ def test_ipv6address_success(value):
     [
         (
             'hello,world',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipaddress'}],
+            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'type_error.ipvanyaddress'}],
         ),
         (
             '192.168.0.1.1.1',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipaddress'}],
+            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'type_error.ipvanyaddress'}],
         ),
-        (-1, [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipaddress'}]),
+        (
+            -1,
+            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'type_error.ipvanyaddress'}],
+        ),
         (
             2 ** 128 + 1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipaddress'}],
+            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'type_error.ipvanyaddress'}],
         ),
     ],
 )
 def test_ipaddress_fails(value, errors):
     class Model(BaseModel):
-        ip: IPAddress
+        ip: IPvAnyAddress
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
@@ -139,16 +120,20 @@ def test_ipaddress_fails(value, errors):
     [
         (
             'hello,world',
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
+            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}],
         ),
         (
             '192.168.0.1.1.1',
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
+            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}],
         ),
-        (-1, [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}]),
+        (-1, [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}]),
         (
             2 ** 32 + 1,
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
+            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}],
+        ),
+        (
+            IPv6Address('::0:1:0'),
+            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}],
         ),
     ],
 )
@@ -166,16 +151,20 @@ def test_ipv4address_fails(value, errors):
     [
         (
             'hello,world',
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
+            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}],
         ),
         (
             '192.168.0.1.1.1',
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
+            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}],
         ),
-        (-1, [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}]),
+        (-1, [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}]),
         (
             2 ** 128 + 1,
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
+            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}],
+        ),
+        (
+            IPv4Address('192.168.0.1'),
+            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}],
         ),
     ],
 )

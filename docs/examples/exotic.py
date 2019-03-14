@@ -1,11 +1,12 @@
 import uuid
 from decimal import Decimal
+from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from uuid import UUID
 
 from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
                       NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, UrlStr, conbytes, condecimal,
-                      confloat, conint, constr, IPAddress, IPv4Address, IPv6Address)
+                      confloat, conint, constr, IPvAnyAddress)
 
 
 class Model(BaseModel):
@@ -56,7 +57,7 @@ class Model(BaseModel):
     uuid_v3: UUID3 = None
     uuid_v4: UUID4 = None
     uuid_v5: UUID5 = None
-    ip: IPAddress = None
+    ipvany: IPvAnyAddress = None
     ipv4: IPv4Address = None
     ipv6: IPv6Address = None
 
@@ -92,9 +93,9 @@ m = Model(
     uuid_v3=uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org'),
     uuid_v4=uuid.uuid4(),
     uuid_v5=uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org'),
-    ip='192.168.0.1',
-    ipv4='255.255.255.255',
-    ipv6='ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'
+    ipvany=IPv4Address('192.168.0.1'),
+    ipv4=IPv4Address('255.255.255.255'),
+    ipv6=IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff')
 )
 print(m.dict())
 """

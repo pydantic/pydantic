@@ -1,7 +1,7 @@
-import ipaddress
 import json
 import re
 from decimal import Decimal
+from ipaddress import AddressValueError, IPv4Address, IPv6Address, NetmaskValueError, _BaseAddress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Pattern, Set, Type, Union, cast
 from uuid import UUID
@@ -62,9 +62,7 @@ __all__ = [
     'DirectoryPath',
     'Json',
     'JsonWrapper',
-    'IPAddress',
-    'IPv4Address',
-    'IPv6Address',
+    'IPvAnyAddress',
 ]
 
 NoneStr = Optional[str]
@@ -74,7 +72,6 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
-IPAddr = Union[str, bytes, int]
 
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -505,44 +502,21 @@ class Json(metaclass=JsonMeta):
             raise errors.JsonTypeError()
 
 
-class IPAddress(str):
-    """
-    Type fully compatible with ipaddress.IPAddress from the stdlib.
-
-    See more:
-    https://docs.python.org/library/ipaddress.html
-    """
-
-    _constructor = ipaddress.ip_address
-    _exc = errors.IPAddressError
-
+class IPvAnyAddress(_BaseAddress):
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: IPAddr) -> str:
+    def validate(cls, value: Union[str, bytes, int]) -> Union[IPv4Address, IPv6Address]:
         try:
-            ip = cls._constructor(value)
-        except ValueError:
-            raise cls._exc()
-        else:
-            return str(ip)
+            return IPv4Address(value)
+        except (AddressValueError, NetmaskValueError):
+            pass
 
+        try:
+            return IPv6Address(value)
+        except (AddressValueError, NetmaskValueError):
+            pass
 
-class IPv4Address(IPAddress):
-    """
-    Type compatible with ipaddress.IPv4Address
-    """
-
-    _constructor = ipaddress.IPv4Address
-    _exc = errors.IPv4AddressError
-
-
-class IPv6Address(IPAddress):
-    """
-    Type compatible with ipaddress.IPv6Address
-    """
-
-    _constructor = ipaddress.IPv6Address
-    _exc = errors.IPv6AddressError
+        raise errors.IPvAnyAddressError()
