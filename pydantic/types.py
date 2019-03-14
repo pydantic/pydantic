@@ -1,13 +1,13 @@
 import json
 import re
 from decimal import Decimal
-from ipaddress import AddressValueError, IPv4Address, IPv6Address, NetmaskValueError, _BaseAddress
+from ipaddress import IPv4Address, IPv6Address, _BaseAddress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Pattern, Set, Type, Union, cast
 from uuid import UUID
 
 from . import errors
-from .utils import AnyType, import_string, make_dsn, url_regex_generator, validate_email
+from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
     anystr_strip_whitespace,
@@ -511,12 +511,8 @@ class IPvAnyAddress(_BaseAddress):
     def validate(cls, value: Union[str, bytes, int]) -> Union[IPv4Address, IPv6Address]:
         try:
             return IPv4Address(value)
-        except (AddressValueError, NetmaskValueError):
+        except ValueError:
             pass
 
-        try:
+        with change_exception(errors.IPvAnyAddressError, ValueError):
             return IPv6Address(value)
-        except (AddressValueError, NetmaskValueError):
-            pass
-
-        raise errors.IPvAnyAddressError()

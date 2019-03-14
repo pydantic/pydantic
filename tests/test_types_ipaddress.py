@@ -90,19 +90,19 @@ def test_ipv6address_success(value):
     [
         (
             'hello,world',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'type_error.ipvanyaddress'}],
+            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
         ),
         (
             '192.168.0.1.1.1',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'type_error.ipvanyaddress'}],
+            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
         ),
         (
             -1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'type_error.ipvanyaddress'}],
+            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
         ),
         (
             2 ** 128 + 1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'type_error.ipvanyaddress'}],
+            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
         ),
     ],
 )
@@ -120,20 +120,20 @@ def test_ipaddress_fails(value, errors):
     [
         (
             'hello,world',
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}],
+            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
         ),
         (
             '192.168.0.1.1.1',
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}],
+            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
         ),
-        (-1, [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}]),
+        (-1, [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}]),
         (
             2 ** 32 + 1,
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}],
+            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
         ),
         (
             IPv6Address('::0:1:0'),
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'type_error.ipv4address'}],
+            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
         ),
     ],
 )
@@ -151,20 +151,20 @@ def test_ipv4address_fails(value, errors):
     [
         (
             'hello,world',
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}],
+            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
         ),
         (
             '192.168.0.1.1.1',
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}],
+            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
         ),
-        (-1, [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}]),
+        (-1, [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}]),
         (
             2 ** 128 + 1,
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}],
+            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
         ),
         (
             IPv4Address('192.168.0.1'),
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'type_error.ipv6address'}],
+            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
         ),
     ],
 )

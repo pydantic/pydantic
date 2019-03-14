@@ -290,13 +290,13 @@ class CallableError(PydanticTypeError):
     msg_template = '{value} is not callable'
 
 
-class IPvAnyAddressError(PydanticTypeError):
+class IPvAnyAddressError(PydanticValueError):
     msg_template = 'value is not a valid IPv4 or IPv6 address'
 
 
-class IPv4AddressError(PydanticTypeError):
+class IPv4AddressError(PydanticValueError):
     msg_template = 'value is not a valid IPv4 address'
 
 
-class IPv6AddressError(PydanticTypeError):
+class IPv6AddressError(PydanticValueError):
     msg_template = 'value is not a valid IPv6 address'
