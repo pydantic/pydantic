@@ -58,6 +58,11 @@ def test_ipaddress_success(value, cls):
         168_430_090,
         3_232_235_521,
         4_294_967_295,
+        IPv4Address('0.0.0.0'),
+        IPv4Address('1.1.1.1'),
+        IPv4Address('10.10.10.10'),
+        IPv4Address('192.168.0.1'),
+        IPv4Address('255.255.255.255'),
     ],
 )
 def test_ipv4address_success(value):
@@ -76,6 +81,8 @@ def test_ipv4address_success(value):
         b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff',
         4_294_967_297,
         340_282_366_920_938_463_463_374_607_431_768_211_455,
+        IPv6Address('::1:0:1'),
+        IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'),
     ],
 )
 def test_ipv6address_success(value):
