@@ -1,12 +1,13 @@
 import json
 import re
 from decimal import Decimal
+from ipaddress import IPv4Address, IPv6Address, _BaseAddress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Pattern, Set, Type, Union, cast
 from uuid import UUID
 
 from . import errors
-from .utils import AnyType, import_string, make_dsn, url_regex_generator, validate_email
+from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
     anystr_strip_whitespace,
@@ -61,6 +62,7 @@ __all__ = [
     'DirectoryPath',
     'Json',
     'JsonWrapper',
+    'IPvAnyAddress',
 ]
 
 NoneStr = Optional[str]
@@ -70,6 +72,7 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
+
 
 if TYPE_CHECKING:  # pragma: no cover
     from .utils import AnyCallable
@@ -497,3 +500,19 @@ class Json(metaclass=JsonMeta):
             raise errors.JsonError()
         except TypeError:
             raise errors.JsonTypeError()
+
+
+class IPvAnyAddress(_BaseAddress):
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: Union[str, bytes, int]) -> Union[IPv4Address, IPv6Address]:
+        try:
+            return IPv4Address(value)
+        except ValueError:
+            pass
+
+        with change_exception(errors.IPvAnyAddressError, ValueError):
+            return IPv6Address(value)

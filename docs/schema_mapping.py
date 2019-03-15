@@ -241,6 +241,13 @@ table = [
         ''
     ],
     [
+        'IPvAnyAddress',
+        'string',
+        '{"format": "ipvanyaddress"}',
+        'Pydantic standard "format" extension',
+        'IPv4 or IPv4 address as used in ``ipaddress`` module',
+    ],
+    [
         'StrictStr',
         'string',
         '',

@@ -3,6 +3,7 @@ from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum
+from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
 from uuid import UUID
@@ -218,6 +219,22 @@ def decimal_validator(v: Any) -> Decimal:
     return v
 
 
+def ip_v4_address_validator(v: Any) -> IPv4Address:
+    if isinstance(v, IPv4Address):
+        return v
+
+    with change_exception(errors.IPv4AddressError, ValueError):
+        return IPv4Address(v)
+
+
+def ip_v6_address_validator(v: Any) -> IPv6Address:
+    if isinstance(v, IPv6Address):
+        return v
+
+    with change_exception(errors.IPv6AddressError, ValueError):
+        return IPv6Address(v)
+
+
 def path_validator(v: Any) -> Path:
     if isinstance(v, Path):
         return v
@@ -284,6 +301,8 @@ _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
     (set, [set_validator]),
     (UUID, [not_none_validator, uuid_validator]),
     (Decimal, [not_none_validator, decimal_validator]),
+    (IPv4Address, [not_none_validator, ip_v4_address_validator]),
+    (IPv6Address, [not_none_validator, ip_v6_address_validator]),
 ]
 
 
