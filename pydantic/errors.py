@@ -294,9 +294,33 @@ class IPvAnyAddressError(PydanticValueError):
     msg_template = 'value is not a valid IPv4 or IPv6 address'
 
 
+class IPvAnyInterfaceError(PydanticValueError):
+    msg_template = 'value is not a valid IPv4 or IPv6 interface'
+
+
+class IPvAnyNetworkError(PydanticValueError):
+    msg_template = 'value is not a valid IPv4 or IPv6 network'
+
+
 class IPv4AddressError(PydanticValueError):
     msg_template = 'value is not a valid IPv4 address'
 
 
 class IPv6AddressError(PydanticValueError):
     msg_template = 'value is not a valid IPv6 address'
+
+
+class IPv4NetworkError(PydanticValueError):
+    msg_template = 'value is not a valid IPv4 network'
+
+
+class IPv6NetworkError(PydanticValueError):
+    msg_template = 'value is not a valid IPv6 network'
+
+
+class IPv4InterfaceError(PydanticValueError):
+    msg_template = 'value is not a valid IPv4 interface'
+
+
+class IPv6InterfaceError(PydanticValueError):
+    msg_template = 'value is not a valid IPv6 interface'

@@ -1,9 +1,18 @@
 import json
 import re
 from decimal import Decimal
-from ipaddress import IPv4Address, IPv6Address, _BaseAddress
+from ipaddress import (
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+    _BaseAddress,
+    _BaseNetwork,
+)
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Pattern, Set, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Pattern, Set, Tuple, Type, Union, cast
 from uuid import UUID
 
 from . import errors
@@ -63,6 +72,8 @@ __all__ = [
     'Json',
     'JsonWrapper',
     'IPvAnyAddress',
+    'IPvAnyInterface',
+    'IPvAnyNetwork',
 ]
 
 NoneStr = Optional[str]
@@ -72,6 +83,7 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
+NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, int]]]
 
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -516,3 +528,41 @@ class IPvAnyAddress(_BaseAddress):
 
         with change_exception(errors.IPvAnyAddressError, ValueError):
             return IPv6Address(value)
+
+
+class IPvAnyInterface(_BaseAddress):
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: Union[str, bytes, int, NetworkType]) -> Union[IPv4Interface, IPv6Interface]:
+        try:
+            return IPv4Interface(value)
+        except ValueError:
+            pass
+
+        with change_exception(errors.IPvAnyInterfaceError, ValueError):
+            return IPv6Interface(value)
+
+
+class IPvAnyNetwork(_BaseNetwork):  # type: ignore
+    field: str = 'ip_vany_network_strict'
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(
+        cls, value: Union[str, bytes, int, NetworkType], values: Dict[str, Any]
+    ) -> Union[IPv4Network, IPv6Network]:
+        strict = values.pop(cls.field, True)
+
+        try:
+            return IPv4Network(value, strict)
+        except ValueError:
+            pass
+
+        with change_exception(errors.IPvAnyNetworkError, ValueError):
+            return IPv6Network(value, strict)
