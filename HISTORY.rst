@@ -3,9 +3,9 @@
 History
 -------
 
-v0.20.2 (unreleased)
+v0.21.0 (2019-03-15)
 ....................
-* fix typo in `NoneIsNotAllowedError` message, #414 by @YaraslauZhylko
+* fix typo in ``NoneIsNotAllowedError`` message, #414 by @YaraslauZhylko
 * add ``IPAddress``, ``IPv4Address`` and ``IPv6Address`` types, #333 by @pilosus
 
 v0.20.1 (2019-02-26)
