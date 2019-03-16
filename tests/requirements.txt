@@ -2,7 +2,7 @@ attrs==18.2.0
 black==18.9b0
 coverage==4.5.2
 flake8==3.7.7
-isort==4.3.9
+isort==4.3.15
 mypy==0.670
 pycodestyle==2.5.0
 pyflakes==2.1.1
