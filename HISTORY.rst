@@ -3,6 +3,10 @@
 History
 -------
 
+v0.21.1 (2019-03-18)
+....................
+* fix ``isort`` config breaking imports in ``pydantic/__init__.py`` #420 by @pilosus
+
 v0.21.0 (2019-03-15)
 ....................
 * fix typo in ``NoneIsNotAllowedError`` message, #414 by @YaraslauZhylko
