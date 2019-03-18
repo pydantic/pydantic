@@ -1,7 +1,8 @@
 import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, Union
 
-from . import ValidationError, errors
+from .error_wrappers import ValidationError
+from .errors import DataclassTypeError
 from .main import create_model, validate_model
 from .utils import AnyType
 
@@ -37,7 +38,7 @@ def _validate_dataclass(cls: Type['DataclassType'], v: Any) -> 'DataclassType':
     elif isinstance(v, dict):
         return cls(**v)
     else:
-        raise errors.DataclassTypeError(class_name=cls.__name__)
+        raise DataclassTypeError(class_name=cls.__name__)
 
 
 def _get_validators(cls: Type['DataclassType']) -> Generator[Any, None, None]:
