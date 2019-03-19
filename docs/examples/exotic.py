@@ -60,9 +60,6 @@ class Model(BaseModel):
     ipvany: IPvAnyAddress = None
     ipv4: IPv4Address = None
     ipv6: IPv6Address = None
-    ip_vany_network_strict = True
-    ip_v4_network_strict = True
-    ip_v6_network_strict = True
     ip_vany_network: IPvAnyNetwork = None
     ip_v4_network: IPv4Network = None
     ip_v6_network: IPv6Network = None

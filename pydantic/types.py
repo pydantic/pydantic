@@ -547,22 +547,18 @@ class IPvAnyInterface(_BaseAddress):
 
 
 class IPvAnyNetwork(_BaseNetwork):  # type: ignore
-    field: str = 'ip_vany_network_strict'
-
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
 
     @classmethod
-    def validate(
-        cls, value: Union[str, bytes, int, NetworkType], values: Dict[str, Any]
-    ) -> Union[IPv4Network, IPv6Network]:
-        strict = values.pop(cls.field, True)
-
+    def validate(cls, value: Union[str, bytes, int, NetworkType]) -> Union[IPv4Network, IPv6Network]:
+        # Assume IP Network is defined with a default value for ``strict`` argument.
+        # Define your own class if you want to specify network address check strictness.
         try:
-            return IPv4Network(value, strict)
+            return IPv4Network(value)
         except ValueError:
             pass
 
         with change_exception(errors.IPvAnyNetworkError, ValueError):
-            return IPv6Network(value, strict)
+            return IPv6Network(value)
