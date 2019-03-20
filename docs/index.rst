@@ -139,7 +139,7 @@ key word argument ``config`` which has the same meaning as :ref:`Config <config>
 Nested dataclasses
 ~~~~~~~~~~~~~~~~~~
 
-Since version ``v0.17`` nested dataclasses are support both in dataclasses and normal models.
+Since version ``v0.17`` nested dataclasses are supported both in dataclasses and normal models.
 
 .. literalinclude:: examples/ex_nested_dataclasses.py
 
