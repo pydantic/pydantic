@@ -248,6 +248,20 @@ table = [
         'IPv4 or IPv4 address as used in ``ipaddress`` module',
     ],
     [
+        'IPvAnyInterface',
+        'string',
+        '{"format": "ipvanyinterface"}',
+        'Pydantic standard "format" extension',
+        'IPv4 or IPv4 interface as used in ``ipaddress`` module',
+    ],
+    [
+        'IPvAnyNetwork',
+        'string',
+        '{"format": "ipvanynetwork"}',
+        'Pydantic standard "format" extension',
+        'IPv4 or IPv4 network as used in ``ipaddress`` module',
+    ],
+    [
         'StrictStr',
         'string',
         '',

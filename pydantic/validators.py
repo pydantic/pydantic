@@ -3,7 +3,7 @@ from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum
-from ipaddress import IPv4Address, IPv6Address
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
 from uuid import UUID
@@ -235,6 +235,50 @@ def ip_v6_address_validator(v: Any) -> IPv6Address:
         return IPv6Address(v)
 
 
+def ip_v4_network_validator(v: Any) -> IPv4Network:
+    """
+    Assume IPv4Network initialised with a default ``strict`` argument
+
+    See more:
+    https://docs.python.org/library/ipaddress.html#ipaddress.IPv4Network
+    """
+    if isinstance(v, IPv4Network):
+        return v
+
+    with change_exception(errors.IPv4NetworkError, ValueError):
+        return IPv4Network(v)
+
+
+def ip_v6_network_validator(v: Any) -> IPv6Network:
+    """
+    Assume IPv6Network initialised with a default ``strict`` argument
+
+    See more:
+    https://docs.python.org/library/ipaddress.html#ipaddress.IPv6Network
+    """
+    if isinstance(v, IPv6Network):
+        return v
+
+    with change_exception(errors.IPv6NetworkError, ValueError):
+        return IPv6Network(v)
+
+
+def ip_v4_interface_validator(v: Any) -> IPv4Interface:
+    if isinstance(v, IPv4Interface):
+        return v
+
+    with change_exception(errors.IPv4InterfaceError, ValueError):
+        return IPv4Interface(v)
+
+
+def ip_v6_interface_validator(v: Any) -> IPv6Interface:
+    if isinstance(v, IPv6Interface):
+        return v
+
+    with change_exception(errors.IPv6InterfaceError, ValueError):
+        return IPv6Interface(v)
+
+
 def path_validator(v: Any) -> Path:
     if isinstance(v, Path):
         return v
@@ -280,7 +324,8 @@ def pattern_validator(v: Any) -> Pattern[str]:
 
 
 pattern_validators = [not_none_validator, str_validator, pattern_validator]
-# order is important here, for example: bool is a subclass of int so has to come first, datetime before date same
+# order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
+# IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
     (Enum, [enum_validator]),
     (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
@@ -301,8 +346,12 @@ _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
     (set, [set_validator]),
     (UUID, [not_none_validator, uuid_validator]),
     (Decimal, [not_none_validator, decimal_validator]),
+    (IPv4Interface, [not_none_validator, ip_v4_interface_validator]),
+    (IPv6Interface, [not_none_validator, ip_v6_interface_validator]),
     (IPv4Address, [not_none_validator, ip_v4_address_validator]),
     (IPv6Address, [not_none_validator, ip_v6_address_validator]),
+    (IPv4Network, [not_none_validator, ip_v4_network_validator]),
+    (IPv6Network, [not_none_validator, ip_v6_network_validator]),
 ]
 
 

@@ -1,12 +1,12 @@
 import uuid
 from decimal import Decimal
-from ipaddress import IPv4Address, IPv6Address
+from ipaddress import IPv4Address, IPv6Address, IPv4Interface, IPv6Interface, IPv4Network, IPv6Network
 from pathlib import Path
 from uuid import UUID
 
 from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
                       NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, UrlStr, conbytes, condecimal,
-                      confloat, conint, constr, IPvAnyAddress)
+                      confloat, conint, constr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork)
 
 
 class Model(BaseModel):
@@ -60,6 +60,12 @@ class Model(BaseModel):
     ipvany: IPvAnyAddress = None
     ipv4: IPv4Address = None
     ipv6: IPv6Address = None
+    ip_vany_network: IPvAnyNetwork = None
+    ip_v4_network: IPv4Network = None
+    ip_v6_network: IPv6Network = None
+    ip_vany_interface: IPvAnyInterface = None
+    ip_v4_interface: IPv4Interface = None
+    ip_v6_interface: IPv6Interface = None
 
 m = Model(
     cos_function='math.cos',
@@ -95,7 +101,13 @@ m = Model(
     uuid_v5=uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org'),
     ipvany=IPv4Address('192.168.0.1'),
     ipv4=IPv4Address('255.255.255.255'),
-    ipv6=IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff')
+    ipv6=IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'),
+    ip_vany_network=IPv4Network('192.168.0.0/24'),
+    ip_v4_network=IPv4Network('192.168.0.0/24'),
+    ip_v6_network=IPv6Network('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128'),
+    ip_vany_interface=IPv4Interface('192.168.0.0/24'),
+    ip_v4_interface=IPv4Interface('192.168.0.0/24'),
+    ip_v6_interface=IPv6Interface('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128')
 )
 print(m.dict())
 """
@@ -133,8 +145,14 @@ print(m.dict())
     'uuid_v3': UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e'),
     'uuid_v4': UUID('22209f7a-aad1-491c-bb83-ea19b906d210'),
     'uuid_v5': UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d'),
-    'ip'='192.168.0.1',
-    'ipv4'='255.255.255.255',
-    'ipv6'='ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff',
+    'ipvany': IPv4Address('192.168.0.1'),
+    'ipv4': IPv4Address('255.255.255.255'),
+    'ipv6': IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'),
+    'ip_vany_network': IPv4Network('192.168.0.0/24'),
+    'ip_v4_network': IPv4Network('192.168.0.0/24'),
+    'ip_v6_network': IPv4Network('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128'),
+    'ip_vany_interface': IPv4Interface('192.168.0.0/24'),
+    'ip_v4_interface': IPv4Interface('192.168.0.0/24'),
+    'ip_v6_interface': IPv6Interface('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128')
 }
 """
