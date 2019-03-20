@@ -536,7 +536,7 @@ class IPvAnyInterface(_BaseAddress):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Union[str, bytes, int, NetworkType]) -> Union[IPv4Interface, IPv6Interface]:
+    def validate(cls, value: NetworkType) -> Union[IPv4Interface, IPv6Interface]:
         try:
             return IPv4Interface(value)
         except ValueError:
@@ -552,7 +552,7 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Union[str, bytes, int, NetworkType]) -> Union[IPv4Network, IPv6Network]:
+    def validate(cls, value: NetworkType) -> Union[IPv4Network, IPv6Network]:
         # Assume IP Network is defined with a default value for ``strict`` argument.
         # Define your own class if you want to specify network address check strictness.
         try:

@@ -235,33 +235,32 @@ def ip_v6_address_validator(v: Any) -> IPv6Address:
         return IPv6Address(v)
 
 
-def ip_v4_network_validator(v: Any, values: Dict[str, Any]) -> IPv4Network:
+def ip_v4_network_validator(v: Any) -> IPv4Network:
     """
-    Use ``ip_v4_network_strict`` field for initialisation of IPv4Network
-    with explicit ``strict`` argument.
+    Assume IPv4Network initialised with a default ``strict`` argument
 
     See more:
     https://docs.python.org/library/ipaddress.html#ipaddress.IPv4Network
     """
-    field: str = 'ip_v4_network_strict'
-    strict: bool = values.pop(field, True)
-
     if isinstance(v, IPv4Network):
         return v
 
     with change_exception(errors.IPv4NetworkError, ValueError):
-        return IPv4Network(v, strict)
+        return IPv4Network(v)
 
 
-def ip_v6_network_validator(v: Any, values: Dict[str, Any]) -> IPv6Network:
-    field: str = 'ip_v6_network_strict'
-    strict: bool = values.pop(field, True)
+def ip_v6_network_validator(v: Any) -> IPv6Network:
+    """
+    Assume IPv6Network initialised with a default ``strict`` argument
 
+    See more:
+    https://docs.python.org/library/ipaddress.html#ipaddress.IPv6Network
+    """
     if isinstance(v, IPv6Network):
         return v
 
     with change_exception(errors.IPv6NetworkError, ValueError):
-        return IPv6Network(v, strict)
+        return IPv6Network(v)
 
 
 def ip_v4_interface_validator(v: Any) -> IPv4Interface:
