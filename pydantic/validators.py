@@ -5,7 +5,22 @@ from decimal import Decimal, DecimalException
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Pattern,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from . import errors
@@ -323,6 +338,13 @@ def pattern_validator(v: Any) -> Pattern[str]:
         return re.compile(v)
 
 
+def sequence_validator(v: Any) -> Sequence[Any]:
+    if isinstance(v, Sequence):
+        return v
+    else:
+        raise errors.SequenceError()
+
+
 pattern_validators = [not_none_validator, str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
@@ -344,6 +366,7 @@ _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
     (list, [list_validator]),
     (tuple, [tuple_validator]),
     (set, [set_validator]),
+    (Sequence, [sequence_validator]),
     (UUID, [not_none_validator, uuid_validator]),
     (Decimal, [not_none_validator, decimal_validator]),
     (IPv4Interface, [not_none_validator, ip_v4_interface_validator]),

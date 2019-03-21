@@ -1,6 +1,21 @@
 import warnings
 from enum import IntEnum
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional, Pattern, Set, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Pattern,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
@@ -28,6 +43,7 @@ class Shape(IntEnum):
     SET = 3
     MAPPING = 4
     TUPLE = 5
+    SEQUENCE = 6
 
 
 class Field:
@@ -152,7 +168,7 @@ class Field:
         self._populate_sub_fields()
         self._populate_validators()
 
-    def _populate_sub_fields(self) -> None:
+    def _populate_sub_fields(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
         if lenient_issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type  # type: ignore
@@ -190,6 +206,9 @@ class Field:
         elif issubclass(origin, Set):
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = Shape.SET
+        elif issubclass(origin, Sequence):
+            self.type_ = self.type_.__args__[0]  # type: ignore
+            self.shape = Shape.SEQUENCE
         else:
             assert issubclass(origin, Mapping)
             self.key_field = self._create_sub_type(
@@ -264,6 +283,8 @@ class Field:
             v, errors = self._validate_mapping(v, values, loc, cls)
         elif self.shape is Shape.TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
+        elif self.shape is Shape.SEQUENCE:
+            v, errors = self._validate_sequence(v, values, loc, cls)
         else:
             # list or set
             v, errors = self._validate_list_set(v, values, loc, cls)
@@ -279,6 +300,34 @@ class Field:
             return Json.validate(v), None
         except (ValueError, TypeError) as exc:
             return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
+
+    def _validate_sequence(
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
+    ) -> 'ValidateReturn':
+        # For now only list and tuple are supported for Sequence type
+        type_cls: type
+        if isinstance(v, list):
+            type_cls = list
+        elif isinstance(v, tuple):
+            type_cls = tuple
+        else:
+            e = errors_.SequenceError()
+            return v, ErrorWrapper(e, loc=loc, config=self.model_config)
+
+        result = []
+        errors: List[ErrorList] = []
+        for i, v_ in enumerate(v):
+            v_loc = *loc, i
+            r, ee = self._validate_singleton(v_, values, v_loc, cls)
+            if ee:
+                errors.append(ee)
+            else:
+                result.append(r)
+
+        if errors:
+            return v, errors
+        else:
+            return result if type_cls is list else type_cls(result), None
 
     def _validate_list_set(
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
