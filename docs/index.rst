@@ -393,6 +393,15 @@ You can also define your own error class with abilities to specify custom error 
 
 (This script is complete, it should run "as is")
 
+datetime Types
+...............
+
+*Pydantic* supports types from the `datetime <https://docs.python.org/library/datetime.html#available-types>`__
+module and allows to parse values in a variety of formats.
+
+.. literalinclude:: examples/datetime.py
+
+
 Exotic Types
 ............
 
