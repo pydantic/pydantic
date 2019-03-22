@@ -396,8 +396,43 @@ You can also define your own error class with abilities to specify custom error 
 datetime Types
 ...............
 
-*Pydantic* supports types from the `datetime <https://docs.python.org/library/datetime.html#available-types>`__
-module and allows to parse values in a variety of formats.
+*Pydantic* supports the following `datetime <https://docs.python.org/library/datetime.html#available-types>`__
+types:
+
+* ``datetime`` fields can be:
+
+  * ``datetime``, existing ``datetime`` object
+  * ``int`` or ``float``, assumed as Unix time, e.g. seconds (if <= ``2e10``) or milliseconds (if > ``2e10``) since 1 January 1970
+  * ``str``, following formats work:
+
+    * ``YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z[±]HH[:]MM]]]``
+    * ``int`` or ``float`` as a string (assumed as Unix time)
+
+* ``date`` fields can be:
+
+  * ``date``, existing ``date`` object
+  * ``int`` or ``float``, see ``datetime``
+  * ``str``, following formats work:
+
+    * ``YYYY-MM-DD``
+    * ``int`` or ``float``, see ``datetime``
+
+* ``time`` fields can be:
+
+  * ``time``, existing ``time`` object
+  * ``str``, following formats work:
+
+    * ``HH:MM[:SS[.ffffff]]``
+
+* ``timedelta`` fields can be:
+
+  * ``timedelta``, existing ``timedelta`` object
+  * ``int`` or ``float``, assumed as seconds
+  * ``str``, following formats work:
+
+    * ``[-][DD ][HH:MM]SS[.ffffff]``
+    * ``[±]P[DD]T[HH]H[MM]M[SS]S`` (ISO 8601 format for timedelta)
+
 
 .. literalinclude:: examples/datetime.py
 
