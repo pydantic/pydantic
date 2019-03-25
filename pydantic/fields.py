@@ -21,7 +21,7 @@ from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .utils import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, lenient_issubclass, list_like
+from .utils import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, lenient_issubclass, sequence_like
 from .validators import NoneType, dict_validator, find_validators
 
 Required: Any = Ellipsis
@@ -283,13 +283,9 @@ class Field:
             v, errors = self._validate_mapping(v, values, loc, cls)
         elif self.shape is Shape.TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
-        elif self.shape is Shape.SEQUENCE:
-            v, errors = self._validate_sequence(v, values, loc, cls)
         else:
-            # list or set
-            v, errors = self._validate_list_set(v, values, loc, cls)
-            if not errors and self.shape is Shape.SET:
-                v = set(v)
+            #  sequence, list, tuple, set, generator
+            v, errors = self._validate_sequence_like(v, values, loc, cls)
 
         if not errors and self.whole_post_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
@@ -301,17 +297,21 @@ class Field:
         except (ValueError, TypeError) as exc:
             return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
-    def _validate_sequence(
+    def _validate_sequence_like(
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
     ) -> 'ValidateReturn':
-        # For now only list and tuple are supported for Sequence type
-        type_cls: type
-        if isinstance(v, list):
-            type_cls = list
-        elif isinstance(v, tuple):
-            type_cls = tuple
-        else:
-            e = errors_.SequenceError()
+        """
+        Validate sequence-like containers: lists, tuples, sets and generators
+        """
+
+        if not sequence_like(v):
+            e: errors_.PydanticTypeError
+            if self.shape is Shape.LIST:
+                e = errors_.ListError()
+            elif self.shape is Shape.SET:
+                e = errors_.SetError()
+            else:
+                e = errors_.SequenceError()
             return v, ErrorWrapper(e, loc=loc, config=self.model_config)
 
         result = []
@@ -324,38 +324,24 @@ class Field:
             else:
                 result.append(r)
 
-        if errors:
-            return v, errors
-        else:
-            return result if type_cls is list else type_cls(result), None
-
-    def _validate_list_set(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
-    ) -> 'ValidateReturn':
-        if not list_like(v):
-            e = errors_.ListError() if self.shape is Shape.LIST else errors_.SetError()
-            return v, ErrorWrapper(e, loc=loc, config=self.model_config)
-
-        result = []
-        errors: List[ErrorList] = []
-        for i, v_ in enumerate(v):
-            v_loc = *loc, i
-            r, ee = self._validate_singleton(v_, values, v_loc, cls)
-            if ee:
-                errors.append(ee)
-            else:
-                result.append(r)
+        # if no errors found, convert validated sets and tuples
+        # to their original container types, return other types as a list
+        convert_cls: Optional[type] = None
+        if self.shape is Shape.SEQUENCE and isinstance(v, tuple):
+            convert_cls = tuple
+        elif self.shape is Shape.SET:
+            convert_cls = set
 
         if errors:
             return v, errors
         else:
-            return result, None
+            return result if not convert_cls else convert_cls(result), None
 
     def _validate_tuple(
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
     ) -> 'ValidateReturn':
         e: Optional[Exception] = None
-        if not list_like(v):
+        if not sequence_like(v):
             e = errors_.TupleError()
         else:
             actual_length, expected_length = len(v), len(self.sub_fields)  # type: ignore

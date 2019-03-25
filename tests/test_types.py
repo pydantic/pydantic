@@ -569,6 +569,7 @@ def test_sequence_success(cls, value, result):
     (
         (int, [1, 'a', 3], [{'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
         (int, (1, 2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
+        (float, range(10), [{'loc': ('v',), 'msg': 'value is not a valid sequence', 'type': 'type_error.sequence'}]),
         (float, ('a', 2.2, 3.3), [{'loc': ('v', 0), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
         (float, (1.1, 2.2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
         (
@@ -583,8 +584,8 @@ def test_sequence_success(cls, value, result):
         ),
         (
             List[int],
-            {1, 2, 3},
-            [{'loc': ('v',), 'msg': 'value is not a valid sequence', 'type': 'type_error.sequence'}],
+            [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
+            [{'loc': ('v', 0), 'msg': 'value is not a valid list', 'type': 'type_error.list'}],
         ),
     ),
 )

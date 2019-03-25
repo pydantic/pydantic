@@ -10,7 +10,7 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import AnyCallable, AnyType, change_exception, display_as_type, is_callable_type, list_like
+from .utils import AnyCallable, AnyType, change_exception, display_as_type, is_callable_type, sequence_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -154,7 +154,7 @@ def dict_validator(v: Any) -> Dict[Any, Any]:
 def list_validator(v: Any) -> List[Any]:
     if isinstance(v, list):
         return v
-    elif list_like(v):
+    elif sequence_like(v):
         return list(v)
     else:
         raise errors.ListError()
@@ -163,7 +163,7 @@ def list_validator(v: Any) -> List[Any]:
 def tuple_validator(v: Any) -> Tuple[Any, ...]:
     if isinstance(v, tuple):
         return v
-    elif list_like(v):
+    elif sequence_like(v):
         return tuple(v)
     else:
         raise errors.TupleError()
@@ -172,7 +172,7 @@ def tuple_validator(v: Any) -> Tuple[Any, ...]:
 def set_validator(v: Any) -> Set[Any]:
     if isinstance(v, set):
         return v
-    elif list_like(v):
+    elif sequence_like(v):
         return set(v)
     else:
         raise errors.SetError()
