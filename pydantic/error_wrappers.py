@@ -93,7 +93,11 @@ def flatten_errors(
     for error in errors:
         if isinstance(error, ErrorWrapper):
             if isinstance(error.exc, ValidationError):
-                yield from flatten_errors(error.exc.raw_errors, loc=error.loc)
+                if loc is not None:
+                    error_loc = loc + error.loc
+                else:
+                    error_loc = error.loc
+                yield from flatten_errors(error.exc.raw_errors, loc=error_loc)
             else:
                 yield error.dict(loc_prefix=loc)
         elif isinstance(error, list):

@@ -243,3 +243,21 @@ x
 x
   field required (type=value_error.missing)"""
     )
+
+
+def test_nested_error():
+    class NestedModel3(BaseModel):
+        x: str
+
+    class NestedModel2(BaseModel):
+        data2: List[NestedModel3]
+
+    class NestedModel1(BaseModel):
+        data1: List[NestedModel2]
+
+    with pytest.raises(ValidationError) as exc_info:
+        NestedModel1(data1=[{'data2': [{'y': 1}]}])
+
+    expected = [{'loc': ('data1', 0, 'data2', 0, 'x'), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+    assert exc_info.value.errors() == expected
