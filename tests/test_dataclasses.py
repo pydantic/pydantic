@@ -1,4 +1,5 @@
 import dataclasses
+from datetime import datetime
 
 import pytest
 
@@ -260,3 +261,43 @@ def test_nested_dataclass_model():
 
     navbar = Outer(n=Nested(number='1'))
     assert navbar.n.number == 1
+
+
+def test_fields():
+    @pydantic.dataclasses.dataclass
+    class User:
+        id: int
+        name: str = 'John Doe'
+        signup_ts: datetime = None
+
+    user = User(id=123)
+    fields = user.__pydantic_model__.__fields__
+
+    assert fields['id'].required is True
+    assert fields['id'].default is None
+
+    assert fields['name'].required is False
+    assert fields['name'].default == 'John Doe'
+
+    assert fields['signup_ts'].required is False
+    assert fields['signup_ts'].default is None
+
+
+def test_schema():
+    @pydantic.dataclasses.dataclass
+    class User:
+        id: int
+        name: str = 'John Doe'
+        signup_ts: datetime = None
+
+    user = User(id=123)
+    assert user.__pydantic_model__.schema() == {
+        'title': 'User',
+        'type': 'object',
+        'properties': {
+            'id': {'title': 'Id', 'type': 'integer'},
+            'name': {'title': 'Name', 'default': 'John Doe', 'type': 'string'},
+            'signup_ts': {'title': 'Signup_Ts', 'type': 'string', 'format': 'date-time'},
+        },
+        'required': ['id'],
+    }
