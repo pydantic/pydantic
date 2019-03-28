@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type
 
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
+from .fields import Required
 from .main import create_model, validate_model
 from .utils import AnyType
 
@@ -72,7 +73,10 @@ def _process_class(
     _cls.__post_init__ = _pydantic_post_init
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore
 
-    fields: Dict[str, Any] = {name: (field.type, field.default) for name, field in cls.__dataclass_fields__.items()}
+    fields: Dict[str, Any] = {
+        name: (field.type, field.default if field.default != dataclasses.MISSING else Required)
+        for name, field in cls.__dataclass_fields__.items()
+    }
     cls.__post_init_original__ = post_init_original
 
     cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, __module__=_cls.__module__, **fields)
