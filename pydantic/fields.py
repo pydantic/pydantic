@@ -4,7 +4,9 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Generator,
     Iterable,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -324,18 +326,21 @@ class Field:
             else:
                 result.append(r)
 
-        # if no errors found, convert validated sets and tuples
-        # to their original container types, return other types as a list
-        convert_cls: Optional[type] = None
-        if self.shape is Shape.SEQUENCE and isinstance(v, tuple):
-            convert_cls = tuple
-        elif self.shape is Shape.SET:
-            convert_cls = set
-
         if errors:
             return v, errors
-        else:
-            return result if not convert_cls else convert_cls(result), None
+
+        converted: Union[List[Any], Set[Any], Tuple[Any, ...], Iterator[Any]] = result
+
+        if self.shape is Shape.SET:
+            converted = set(result)
+        elif self.shape is Shape.SEQUENCE:
+            if isinstance(v, tuple):
+                converted = tuple(result)
+            elif isinstance(v, set):
+                converted = set(result)
+            elif isinstance(v, Generator):
+                converted = iter(result)
+        return converted, None
 
     def _validate_tuple(
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]

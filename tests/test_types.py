@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import List, NewType, Pattern, Sequence, Set, Tuple
+from typing import Iterator, List, NewType, Pattern, Sequence, Set, Tuple
 from uuid import UUID
 
 import pytest
@@ -553,6 +553,7 @@ def test_set_type_fails():
     (
         (int, [1, 2, 3], [1, 2, 3]),
         (int, (1, 2, 3), (1, 2, 3)),
+        (float, {1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}),
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
     ),
@@ -562,6 +563,55 @@ def test_sequence_success(cls, value, result):
         v: Sequence[cls]
 
     assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize(
+    'cls, value,result',
+    (
+        (int, (i for i in range(3)), iter([0, 1, 2])),
+        (float, (float(i) for i in range(3)), iter([0.0, 1.0, 2.0])),
+        (str, (str(i) for i in range(3)), iter(['0', '1', '2'])),
+    ),
+)
+def test_sequence_generator_success(cls, value, result):
+    class Model(BaseModel):
+        v: Sequence[cls]
+
+    validated = Model(v=value).v
+    assert isinstance(validated, Iterator)
+    assert list(validated) == list(result)
+
+
+@pytest.mark.parametrize(
+    'cls,value,errors',
+    (
+        (
+            int,
+            (i for i in ['a', 'b', 'c']),
+            [
+                {'loc': ('v', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+                {'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+                {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+            ],
+        ),
+        (
+            float,
+            (i for i in ['a', 'b', 'c']),
+            [
+                {'loc': ('v', 0), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
+                {'loc': ('v', 1), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
+                {'loc': ('v', 2), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
+            ],
+        ),
+    ),
+)
+def test_sequence_generator_fails(cls, value, errors):
+    class Model(BaseModel):
+        v: Sequence[cls]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=value)
+    assert exc_info.value.errors() == errors
 
 
 @pytest.mark.parametrize(
