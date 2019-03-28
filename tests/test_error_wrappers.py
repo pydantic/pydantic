@@ -1,3 +1,4 @@
+from textwrap import dedent
 from typing import Dict, List, Union
 from uuid import UUID, uuid4
 
@@ -243,3 +244,24 @@ x
 x
   field required (type=value_error.missing)"""
     )
+
+
+def test_nested_error():
+    class NestedModel1(BaseModel):
+        class NestedModel2(BaseModel):
+            class NestedModel3(BaseModel):
+                x: str
+
+            data2: List[NestedModel3]
+
+        data1: List[NestedModel2]
+
+    with pytest.raises(ValidationError) as exc_info:
+        NestedModel1(data1=[{'data2': [{'y': 1}]}])
+
+    expected = """\
+    1 validation error
+    data1 -> 0 -> data2 -> 0 -> x
+      field required (type=value_error.missing)"""
+
+    assert str(exc_info.value) == dedent(expected)
