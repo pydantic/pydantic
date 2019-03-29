@@ -117,6 +117,10 @@ class PyObjectError(PydanticTypeError):
     msg_template = 'ensure this value contains valid import path: {error_message}'
 
 
+class SequenceError(PydanticTypeError):
+    msg_template = 'value is not a valid sequence'
+
+
 class ListError(PydanticTypeError):
     msg_template = 'value is not a valid list'
 

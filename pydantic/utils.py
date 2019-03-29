@@ -180,7 +180,7 @@ def clean_docstring(d: str) -> str:
     return dedent(d).strip(' \r\n\t')
 
 
-def list_like(v: AnyType) -> bool:
+def sequence_like(v: AnyType) -> bool:
     return isinstance(v, (list, tuple, set)) or inspect.isgenerator(v)
 
 
