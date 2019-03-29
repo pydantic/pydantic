@@ -3,12 +3,12 @@
 History
 -------
 
-v0.22 (unreleased)
+v0.22 (2019-03-29)
 ....................
 * add ``IPv{4,6,Any}Network`` and ``IPv{4,6,Any}Interface`` types from ``ipaddress`` stdlib, #333 by @pilosus
 * add docs for ``datetime`` types, #386 by @pilosus
 * fix to schema generation in dataclass-based models, #408 by @pilosus
-* fix path in nested models #437, by @kataev
+* fix path in nested models, #437 by @kataev
 * add ``Sequence`` support, #304 by @pilosus
 
 v0.21.0 (2019-03-15)
