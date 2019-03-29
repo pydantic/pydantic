@@ -48,6 +48,10 @@ class ConBytesModel(BaseModel):
     v: conbytes(max_length=10) = b'foobar'
 
 
+def foo():
+    return 42
+
+
 def test_constrained_bytes_good():
     m = ConBytesModel(v=b'short')
     assert m.v == b'short'
@@ -162,6 +166,16 @@ def test_module_import():
         }
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        PyObjectModel(module=[1, 2, 3])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('module',),
+            'msg': 'value is neither a valid import path not a valid callable',
+            'type': 'type_error.pyobject',
+        }
+    ]
+
 
 def test_pyobject_none():
     class PyObjectModel(BaseModel):
@@ -169,6 +183,15 @@ def test_pyobject_none():
 
     m = PyObjectModel()
     assert m.module is None
+
+
+def test_pyobject_callable():
+    class PyObjectModel(BaseModel):
+        foo: PyObject = foo
+
+    m = PyObjectModel()
+    assert m.foo is foo
+    assert m.foo() == 42
 
 
 class CheckModel(BaseModel):
