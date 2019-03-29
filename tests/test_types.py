@@ -146,7 +146,7 @@ def test_module_import():
         {
             'loc': ('module',),
             'msg': 'ensure this value contains valid import path: ' '"foobar" doesn\'t look like a module path',
-            'type': 'type_error.pyobject',
+            'type': 'type_error.pyobjectimport',
             'ctx': {'error_message': '"foobar" doesn\'t look like a module path'},
         }
     ]
@@ -157,7 +157,7 @@ def test_module_import():
         {
             'loc': ('module',),
             'msg': 'ensure this value contains valid import path: ' 'Module "os" does not define a "missing" attribute',
-            'type': 'type_error.pyobject',
+            'type': 'type_error.pyobjectimport',
             'ctx': {'error_message': 'Module "os" does not define a "missing" attribute'},
         }
     ]
