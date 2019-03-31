@@ -10,7 +10,6 @@ v0.23 (unreleased)
 * ``IntEnum`` support, #444 by @potykion
 * add SecretStr and SecretBytes types, #447 by @atheuz
 
-
 v0.22 (2019-03-29)
 ....................
 * add ``IPv{4,6,Any}Network`` and ``IPv{4,6,Any}Interface`` types from ``ipaddress`` stdlib, #333 by @pilosus
