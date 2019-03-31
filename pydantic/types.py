@@ -567,8 +567,6 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
 
 
 class SecretStr(str):
-    __slots__ = '_secret_value'
-
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator

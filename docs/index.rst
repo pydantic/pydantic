@@ -458,6 +458,16 @@ Fields can also be of type ``Callable``:
     callable, no validation of arguments, their types or the return
     type is performed.
 
+Secret Types
+............
+
+You can use the ``SecretStr`` and the ``SecretBytes`` data types for storing sensitive information
+that you do not want to be visible in logging or tracebacks.
+
+.. literalinclude:: examples/ex_secret_types.py
+
+(This script is complete, it should run "as is")
+
 Json Type
 .........
 
