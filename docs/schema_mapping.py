@@ -108,6 +108,20 @@ table = [
         'All the literal values in the enum are included in the definition.'
     ],
     [
+        'SecretStr',
+        'string',
+        '{"format": "secret-str"}',
+        'Pydantic standard "format" extension',
+        ''
+    ],
+    [
+        'SecretBytes',
+        'string',
+        '{"format": "secret-bytes"}',
+        'Pydantic standard "format" extension',
+        ''
+    ],
+    [
         'EmailStr',
         'string',
         '{"format": "email"}',
