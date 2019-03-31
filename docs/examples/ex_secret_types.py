@@ -7,7 +7,7 @@ class SimpleModel(BaseModel):
     password_bytes: SecretBytes
 
 print(SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes'))
-# > SimpleModel password=SecretStr('**********') password_bytes=SecretBytes('**********')
+# > SimpleModel password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
 
 
 try:
