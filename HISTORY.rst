@@ -5,7 +5,7 @@ History
 
 v0.22.1 (2019-03-31)
 ....................
-* add SecretStr and SecretBytes types, #446 by @atheuz
+* add SecretStr and SecretBytes types, #447 by @atheuz
 
 v0.22 (2019-03-29)
 ....................
