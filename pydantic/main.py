@@ -520,6 +520,7 @@ def create_model(
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
     __module__: Optional[str] = None,
+    validators: Dict[str, classmethod] = None,
     **field_definitions: Any,
 ) -> BaseModel:
     """
@@ -527,6 +528,7 @@ def create_model(
     :param model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
+    :param validators: a dictionary of method names and @validator class methods
     :param **field_definitions: fields of the model (or extra fields if a base is supplied) in the format
         `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
@@ -559,6 +561,13 @@ def create_model(
         fields[f_name] = f_value
 
     namespace: 'DictStrAny' = {'__annotations__': annotations, '__module__': __module__}
+    if validators:
+        try:
+            if any(not hasattr(v, '__validator_config') for k, v in validators.items()):
+                raise ConfigError('Validator methods must be decorated with @validator')
+        except AttributeError:
+            raise ConfigError('Validators should be a dictionary containing name key and method values')
+        namespace.update(validators)
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)

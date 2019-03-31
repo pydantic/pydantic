@@ -5,7 +5,7 @@ from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
 from .main import create_model, validate_model
-from .utils import AnyType
+from .utils import AnyType, gather_validators
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseConfig, BaseModel  # noqa: F401
@@ -79,7 +79,10 @@ def _process_class(
     }
     cls.__post_init_original__ = post_init_original
 
-    cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, __module__=_cls.__module__, **fields)
+    validators = gather_validators(cls)
+
+    cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, __module__=_cls.__module__,
+                                          validators=validators, **fields)
 
     cls.__initialised__ = False
     cls.__validate__ = classmethod(_validate_dataclass)
