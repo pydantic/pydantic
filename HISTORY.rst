@@ -3,6 +3,10 @@
 History
 -------
 
+v0.23 (unreleased)
+...................
+* improve documentation for contributing section, # 441 @pilosus
+
 v0.22 (2019-03-29)
 ....................
 * add ``IPv{4,6,Any}Network`` and ``IPv{4,6,Any}Interface`` types from ``ipaddress`` stdlib, #333 by @pilosus
