@@ -567,7 +567,7 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
 
 
 class SecretStr(str):
-    __slots__ = 'value'
+    __slots__ = '_secret_value'
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -579,16 +579,16 @@ class SecretStr(str):
         return cls(value)
 
     def __init__(self, value: str):
-        self.value = value
+        self._secret_value = value
 
     def __repr__(self) -> str:
-        return "SecretStr('**********')" if self.value else "SecretStr('')"
+        return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
 
     def __str__(self) -> str:
-        return "SecretStr('**********')" if self.value else "SecretStr('')"
+        return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
 
     def get_secret_value(self) -> str:
-        return self.value
+        return self._secret_value
 
 
 class SecretBytes(bytes):
@@ -602,13 +602,13 @@ class SecretBytes(bytes):
         return cls(value)
 
     def __init__(self, value: bytes):
-        self.value = value
+        self._secret_value = value
 
     def __repr__(self) -> str:
-        return "SecretBytes(b'**********')" if self.value else "SecretBytes(b'')"
+        return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
 
     def __str__(self) -> str:
-        return "SecretBytes(b'**********')" if self.value else "SecretBytes(b'')"
+        return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
 
     def get_secret_value(self) -> bytes:
-        return self.value
+        return self._secret_value
