@@ -37,10 +37,10 @@ from .utils import (
     AnyType,
     ForwardRef,
     change_exception,
+    is_classvar,
     resolve_annotations,
     truncate,
     validate_field_name,
-    is_classvar
 )
 
 if TYPE_CHECKING:  # pragma: no cover
