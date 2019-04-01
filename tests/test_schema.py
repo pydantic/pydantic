@@ -536,7 +536,7 @@ def test_secret_str_type(field_type, expected_schema):
 
 
 @pytest.mark.parametrize('field_type,expected_schema', [(SecretBytes, 'secret-bytes')])
-def test_secret_bytrs_type(field_type, expected_schema):
+def test_secret_bytes_type(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
