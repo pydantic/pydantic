@@ -278,13 +278,13 @@ class PyObject:
         try:
             value = str_validator(value)
         except errors.StrError:
-            raise errors.PyObjectError()
+            raise errors.PyObjectError(error_message='value is neither a valid import path not a valid callable')
 
         if value is not None:
             try:
                 return import_string(value)
             except ImportError as e:
-                raise errors.PyObjectImportError(error_message=str(e))
+                raise errors.PyObjectError(error_message=str(e))
 
 
 class DSN(str):

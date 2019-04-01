@@ -149,8 +149,9 @@ def test_module_import():
     assert exc_info.value.errors() == [
         {
             'loc': ('module',),
-            'msg': 'ensure this value contains valid import path: ' '"foobar" doesn\'t look like a module path',
-            'type': 'type_error.pyobjectimport',
+            'msg': 'ensure this value contains valid import path or valid callable: '
+            '"foobar" doesn\'t look like a module path',
+            'type': 'type_error.pyobject',
             'ctx': {'error_message': '"foobar" doesn\'t look like a module path'},
         }
     ]
@@ -160,8 +161,9 @@ def test_module_import():
     assert exc_info.value.errors() == [
         {
             'loc': ('module',),
-            'msg': 'ensure this value contains valid import path: ' 'Module "os" does not define a "missing" attribute',
-            'type': 'type_error.pyobjectimport',
+            'msg': 'ensure this value contains valid import path or valid callable: '
+            'Module "os" does not define a "missing" attribute',
+            'type': 'type_error.pyobject',
             'ctx': {'error_message': 'Module "os" does not define a "missing" attribute'},
         }
     ]
@@ -171,8 +173,10 @@ def test_module_import():
     assert exc_info.value.errors() == [
         {
             'loc': ('module',),
-            'msg': 'value is neither a valid import path not a valid callable',
+            'msg': 'ensure this value contains valid import path or valid callable: '
+            'value is neither a valid import path not a valid callable',
             'type': 'type_error.pyobject',
+            'ctx': {'error_message': 'value is neither a valid import path not a valid callable'},
         }
     ]
 

@@ -113,12 +113,8 @@ class PathNotADirectoryError(_PathValueError):
     msg_template = 'path "{path}" does not point to a directory'
 
 
-class PyObjectImportError(PydanticTypeError):
-    msg_template = 'ensure this value contains valid import path: {error_message}'
-
-
 class PyObjectError(PydanticTypeError):
-    msg_template = 'value is neither a valid import path not a valid callable'
+    msg_template = 'ensure this value contains valid import path or valid callable: {error_message}'
 
 
 class SequenceError(PydanticTypeError):
