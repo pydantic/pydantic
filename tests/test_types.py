@@ -346,6 +346,12 @@ def test_enum_fails():
     ]
 
 
+def test_int_enum_successful_for_str_int():
+    m = CookingModel(tool="2")
+    assert m.tool == ToolEnum.wrench
+    assert repr(m.tool) == '<ToolEnum.wrench: 2>'
+
+
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):
