@@ -6,7 +6,7 @@ History
 v0.23 (unreleased)
 ...................
 * improve README.rst to include essential information about the package, #446 by @pilosus
-
+* ``IntEnum`` support, #444 by @potykion
 
 v0.22 (2019-03-29)
 ....................

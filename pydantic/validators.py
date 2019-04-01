@@ -2,7 +2,7 @@ import re
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
-from enum import Enum
+from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
@@ -327,6 +327,7 @@ pattern_validators = [not_none_validator, str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
+    (IntEnum, [int_validator, enum_validator]),
     (Enum, [enum_validator]),
     (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
     (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
