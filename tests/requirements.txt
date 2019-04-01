@@ -1,4 +1,4 @@
-attrs==18.2.0
+attrs==19.1.0
 black==18.9b0
 coverage==4.5.2
 flake8==3.7.7
