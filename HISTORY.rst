@@ -5,6 +5,7 @@ History
 
 v0.23 (unreleased)
 ...................
+* improve documentation for contributing section, # 441 @pilosus
 * improve README.rst to include essential information about the package, #446 by @pilosus
 * ``IntEnum`` support, #444 by @potykion
 

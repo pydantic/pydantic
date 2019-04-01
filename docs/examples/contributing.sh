@@ -24,4 +24,8 @@ make
 # there are a few sub-commands in Makefile like `test`, `testcov` and `lint`
 # which you might want to use, but generally just `make` should be all you need
 
+# 7. Build documentation
+make docs
+# if you have changed the documentation make sure it builds successfully
+
 # ... commit, push, and create your pull request

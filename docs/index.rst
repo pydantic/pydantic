@@ -803,7 +803,8 @@ You'll need to have **python 3.6** or **3.7**, **virtualenv**, **git**, and **ma
 .. literalinclude:: examples/contributing.sh
   :language: bash
 
-**tl;dr**: use ``make format`` to fix formatting & ``make`` to run tests and linting.
+**tl;dr**: use ``make format`` to fix formatting, ``make`` to run tests and linting & ``make docs``
+to build docs.
 
 Using Pydantic
 --------------
