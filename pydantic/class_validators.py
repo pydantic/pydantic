@@ -9,10 +9,14 @@ from .errors import ConfigError
 from .utils import AnyCallable, in_ipython
 
 if TYPE_CHECKING:  # pragma: no cover
+    from .dataclasses import DataclassType
     from .main import BaseConfig, BaseModel
     from .fields import Field
+    from typing import Union
 
-    ValidatorCallable = Callable[[Optional[Type[BaseModel]], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
+    ValidatorCallable = Callable[
+        [Optional[Type[Union[BaseModel, DataclassType]]], Any, Dict[str, Any], Field, Type[BaseConfig]], Any
+    ]
 
 
 @dataclass
