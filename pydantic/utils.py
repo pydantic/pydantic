@@ -7,7 +7,7 @@ from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
 from typing import _eval_type  # type: ignore
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union, ClassVar
 
 from . import errors
 
@@ -268,3 +268,9 @@ def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Option
 
 def is_callable_type(type_: AnyType) -> bool:
     return type_ is Callable or getattr(type_, '__origin__', None) is Callable
+
+def _check_classvar(v):
+    return type(v) == type(ClassVar) and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
+
+def is_classvar(ann_type):
+    return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
