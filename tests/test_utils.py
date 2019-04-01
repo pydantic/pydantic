@@ -146,3 +146,18 @@ def test_lenient_issubclass():
 
 def test_lenient_issubclass_is_lenient():
     assert lenient_issubclass('a', 'a') is False
+<<<<<<< HEAD
+=======
+
+
+def test_gather_validators():
+    class A:
+        @validator('a')
+        def test(cls, value):
+            return value
+
+    validators = gather_validators(A)
+    assert list(validators.keys()) == ['test']
+    value = list(validators.values())[0]
+    assert hasattr(value, '__validator_config')
+>>>>>>> Added dataclass validators
