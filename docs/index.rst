@@ -221,7 +221,7 @@ You'll often want to use this together with ``pre`` since otherwise the with ``a
 *pydantic* would try to validate the default ``None`` which would cause an error.
 
 Dataclass Validators
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 Validators also work in Dataclasses.
 
