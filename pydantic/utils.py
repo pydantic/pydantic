@@ -570,6 +570,11 @@ def gather_validators(type_: AnyType) -> Dict[str, classmethod]:
 >>>>>>> Added dataclass validators
 =======
 def gather_validators(type_: AnyType) -> Dict[str, classmethod]:
+<<<<<<< HEAD
     full_object = ChainMap(type_.__dict__, *[base.__dict__ for base in type_.__bases__])
     return {k: v for k, v in full_object.items() if hasattr(v, '__validator_config')}
 >>>>>>> Updated docs for added validating to dataclass
+=======
+    all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])
+    return {k: v for k, v in all_attributes.items() if hasattr(v, '__validator_config')}
+>>>>>>> Use __mro__ instead of __bases__ for gather_validators
