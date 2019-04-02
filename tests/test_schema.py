@@ -36,6 +36,8 @@ from pydantic.types import (
     PositiveFloat,
     PositiveInt,
     PyObject,
+    SecretBytes,
+    SecretStr,
     StrBytes,
     StrictStr,
     UrlStr,
@@ -510,6 +512,38 @@ def test_email_str_types(field_type, expected_schema):
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize('field_type,expected_schema', [(SecretStr, 'secret-str')])
+def test_secret_str_type(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize('field_type,expected_schema', [(SecretBytes, 'secret-bytes')])
+def test_secret_bytes_type(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'bytes'}},
         'required': ['a'],
     }
     base_schema['properties']['a']['format'] = expected_schema

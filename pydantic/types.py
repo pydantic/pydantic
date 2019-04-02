@@ -74,6 +74,8 @@ __all__ = [
     'IPvAnyAddress',
     'IPvAnyInterface',
     'IPvAnyNetwork',
+    'SecretStr',
+    'SecretBytes',
 ]
 
 NoneStr = Optional[str]
@@ -562,3 +564,49 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
 
         with change_exception(errors.IPvAnyNetworkError, ValueError):
             return IPv6Network(value)
+
+
+class SecretStr(str):
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield str_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: str) -> 'SecretStr':
+        return cls(value)
+
+    def __init__(self, value: str):
+        self._secret_value = value
+
+    def __repr__(self) -> str:
+        return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
+
+    def __str__(self) -> str:
+        return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
+
+    def get_secret_value(self) -> str:
+        return self._secret_value
+
+
+class SecretBytes(bytes):
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield bytes_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: bytes) -> 'SecretBytes':
+        return cls(value)
+
+    def __init__(self, value: bytes):
+        self._secret_value = value
+
+    def __repr__(self) -> str:
+        return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
+
+    def __str__(self) -> str:
+        return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
+
+    def get_secret_value(self) -> bytes:
+        return self._secret_value
