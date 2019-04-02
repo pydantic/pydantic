@@ -519,34 +519,19 @@ def test_email_str_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
-@pytest.mark.parametrize('field_type,expected_schema', [(SecretStr, 'secret-str')])
-def test_secret_str_type(field_type, expected_schema):
+@pytest.mark.parametrize(
+    'field_type,inner_type,format', [(SecretBytes, 'bytes', 'secret-bytes'), (SecretStr, 'string', 'secret-str')]
+)
+def test_secret_types(field_type, inner_type, format):
     class Model(BaseModel):
         a: field_type
 
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'properties': {'a': {'title': 'A', 'type': inner_type, "format": format}},
         'required': ['a'],
     }
-    base_schema['properties']['a']['format'] = expected_schema
-
-    assert Model.schema() == base_schema
-
-
-@pytest.mark.parametrize('field_type,expected_schema', [(SecretBytes, 'secret-bytes')])
-def test_secret_bytes_type(field_type, expected_schema):
-    class Model(BaseModel):
-        a: field_type
-
-    base_schema = {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'bytes'}},
-        'required': ['a'],
-    }
-    base_schema['properties']['a']['format'] = expected_schema
 
     assert Model.schema() == base_schema
 

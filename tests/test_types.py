@@ -1394,11 +1394,11 @@ def test_secretstr():
         empty_password: SecretStr
 
     # Initialize the model.
-    f = Foobar(password="1234", empty_password="")
+    f = Foobar(password='1234', empty_password='')
 
     # Assert correct types.
-    assert f.password.__class__.__name__ == "SecretStr"
-    assert f.empty_password.__class__.__name__ == "SecretStr"
+    assert f.password.__class__.__name__ == 'SecretStr'
+    assert f.empty_password.__class__.__name__ == 'SecretStr'
 
     # Assert str and repr are correct.
     assert str(f.password) == "SecretStr('**********')"
@@ -1407,8 +1407,8 @@ def test_secretstr():
     assert repr(f.empty_password) == "SecretStr('')"
 
     # Assert retrieval of secret value is correct
-    assert f.password.get_secret_value() == "1234"
-    assert f.empty_password.get_secret_value() == ""
+    assert f.password.get_secret_value() == '1234'
+    assert f.empty_password.get_secret_value() == ''
 
 
 def test_secretstr_error():
@@ -1416,7 +1416,7 @@ def test_secretstr_error():
         password: SecretStr
 
     with pytest.raises(ValidationError) as exc_info:
-        Foobar(password=[6, 23, "abc"])
+        Foobar(password=[6, 23, 'abc'])
     assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 
 
@@ -1426,11 +1426,11 @@ def test_secretbytes():
         empty_password: SecretBytes
 
     # Initialize the model.
-    f = Foobar(password=b"wearebytes", empty_password=b"")
+    f = Foobar(password=b'wearebytes', empty_password=b'')
 
     # Assert correct types.
-    assert f.password.__class__.__name__ == "SecretBytes"
-    assert f.empty_password.__class__.__name__ == "SecretBytes"
+    assert f.password.__class__.__name__ == 'SecretBytes'
+    assert f.empty_password.__class__.__name__ == 'SecretBytes'
 
     # Assert str and repr are correct.
     assert str(f.password) == "SecretBytes(b'**********')"
@@ -1439,8 +1439,8 @@ def test_secretbytes():
     assert repr(f.empty_password) == "SecretBytes(b'')"
 
     # Assert retrieval of secret value is correct
-    assert f.password.get_secret_value() == b"wearebytes"
-    assert f.empty_password.get_secret_value() == b""
+    assert f.password.get_secret_value() == b'wearebytes'
+    assert f.empty_password.get_secret_value() == b''
 
 
 def test_secretbytes_error():
@@ -1448,5 +1448,5 @@ def test_secretbytes_error():
         password: SecretBytes
 
     with pytest.raises(ValidationError) as exc_info:
-        Foobar(password=[6, 23, "abc"])
+        Foobar(password=[6, 23, 'abc'])
     assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'byte type expected', 'type': 'type_error.bytes'}]

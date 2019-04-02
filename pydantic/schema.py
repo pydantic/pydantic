@@ -711,9 +711,7 @@ def get_annotation_from_schema(annotation: Any, schema: Schema) -> Type[Any]:
     if isinstance(annotation, type):
         attrs: Optional[Tuple[str, ...]] = None
         constraint_func: Optional[Callable[..., type]] = None
-        if issubclass(annotation, str) and not issubclass(
-            annotation, (EmailStr, SecretStr, DSN, UrlStr, ConstrainedStr)
-        ):
+        if issubclass(annotation, str) and not issubclass(annotation, (EmailStr, DSN, UrlStr, ConstrainedStr)):
             attrs = ('max_length', 'min_length', 'regex')
             constraint_func = constr
         elif lenient_issubclass(annotation, numeric_types) and not issubclass(

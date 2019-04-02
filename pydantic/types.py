@@ -566,7 +566,7 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
             return IPv6Network(value)
 
 
-class SecretStr(str):
+class SecretStr:
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator
@@ -583,13 +583,13 @@ class SecretStr(str):
         return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
 
     def __str__(self) -> str:
-        return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
+        return repr(self)
 
     def get_secret_value(self) -> str:
         return self._secret_value
 
 
-class SecretBytes(bytes):
+class SecretBytes:
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield bytes_validator
@@ -606,7 +606,7 @@ class SecretBytes(bytes):
         return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
 
     def __str__(self) -> str:
-        return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
+        return repr(self)
 
     def get_secret_value(self) -> bytes:
         return self._secret_value

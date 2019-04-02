@@ -9,6 +9,12 @@ class SimpleModel(BaseModel):
 print(SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes'))
 # > SimpleModel password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
 
+sm = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
+print(sm.password.get_secret_value())
+# > IAmSensitive
+print(sm.password_bytes.get_secret_value())
+# > b'IAmSensitiveBytes'
+
 
 try:
     SimpleModel(password=[1,2,3], password_bytes=[1,2,3])
