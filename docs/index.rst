@@ -147,8 +147,6 @@ Since version ``v0.17`` nested dataclasses are supported both in dataclasses and
 
 Dataclasses attributes can be populated by tuples, dictionaries or instances of that dataclass.
 
-Currently validators don't work with dataclasses, if it's something you want please create an issue on github.
-
 Choices
 .......
 
@@ -222,6 +220,14 @@ to set a dynamic default value.
 You'll often want to use this together with ``pre`` since otherwise the with ``always=True``
 *pydantic* would try to validate the default ``None`` which would cause an error.
 
+Dataclass Validators
+~~~~~~~~~~~~~~~
+
+Validators also work in Dataclasses.
+
+.. literalinclude:: examples/validators_dataclass.py
+
+(This script is complete, it should run "as is")
 
 Field Checks
 ~~~~~~~~~~~~
@@ -434,7 +440,7 @@ types:
     * ``[±]P[DD]T[HH]H[MM]M[SS]S`` (ISO 8601 format for timedelta)
 
 
-.. literalinclude:: examples/datetime.py
+.. literalinclude:: examples/datetime_example.py
 
 
 Exotic Types
