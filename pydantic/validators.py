@@ -10,7 +10,7 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import AnyCallable, AnyType, change_exception, display_as_type, is_callable_type, sequence_like, ForwardRef
+from .utils import AnyCallable, AnyType, ForwardRef, change_exception, display_as_type, is_callable_type, sequence_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field

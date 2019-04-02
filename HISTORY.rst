@@ -8,6 +8,7 @@ v0.23 (unreleased)
 * improve documentation for contributing section, # 441 @pilosus
 * improve README.rst to include essential information about the package, #446 by @pilosus
 * ``IntEnum`` support, #444 by @potykion
+
 v0.22 (2019-03-29)
 ....................
 * add ``IPv{4,6,Any}Network`` and ``IPv{4,6,Any}Interface`` types from ``ipaddress`` stdlib, #333 by @pilosus

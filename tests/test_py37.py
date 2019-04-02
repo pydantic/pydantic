@@ -84,7 +84,7 @@ Foo.update_forward_refs()
 
 
 @skip_not_37
-def test_self_forward_ref_module(create_module):
+def test_self_forward_ref_collection(create_module):
     module = create_module(
         """
 from typing import ForwardRef, List, Dict
@@ -95,7 +95,7 @@ Foo = ForwardRef('Foo')
 class Foo(BaseModel):
     a: int = 123
     b: Foo = None
-    c: List[Foo] = [] 
+    c: List[Foo] = []
     d: Dict[str, Foo] = {}
 
 Foo.update_forward_refs()
@@ -107,11 +107,12 @@ Foo.update_forward_refs()
         'a': 123,
         'b': {'a': 321, 'b': None, 'c': [], 'd': {}},
         'c': [{'a': 234, 'b': None, 'c': [], 'd': {}}],
-        'd': {'bar': {'a': 345, 'b': None, 'c': [], 'd': {}}}}
+        'd': {'bar': {'a': 345, 'b': None, 'c': [], 'd': {}}},
+    }
 
 
 @skip_not_37
-def test_self_forward_ref_module(create_module):
+def test_self_forward_ref_validation(create_module):
     module = create_module(
         """
 from typing import ForwardRef, List, Dict
@@ -122,7 +123,7 @@ Foo = ForwardRef('Foo')
 class Foo(BaseModel):
     a: int = 123
     b: Foo = None
-    c: List[Foo] = [] 
+    c: List[Foo] = []
     d: Dict[str, Foo] = {}
 
 Foo.update_forward_refs()
@@ -131,8 +132,9 @@ Foo.update_forward_refs()
 
     with pytest.raises(ValidationError) as exc_info:
         module.Foo(b={'a': '321'}, c=[{'b': 234}], d={'bar': {'a': 345}})
-    assert exc_info.value.errors() == [{'loc': ('c', 0, 'b'), 'msg': 'value is not a valid dict',
-                                        'type': 'type_error.dict'}, ]
+    assert exc_info.value.errors() == [
+        {'loc': ('c', 0, 'b'), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}
+    ]
 
 
 @skip_not_37
