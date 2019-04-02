@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Fixed line endings
 import json
 import sys
 import warnings
@@ -12,6 +15,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+<<<<<<< HEAD
+=======
+    ClassVar,
+>>>>>>> Fixed line endings
     Dict,
     Generator,
     List,
@@ -32,19 +39,30 @@ from .fields import Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
+<<<<<<< HEAD
 from .types import PyObject, StrBytes
+=======
+from .types import StrBytes
+>>>>>>> Fixed line endings
 from .utils import (
     AnyCallable,
     AnyType,
     ForwardRef,
     change_exception,
+<<<<<<< HEAD
     is_classvar,
+=======
+>>>>>>> Fixed line endings
     resolve_annotations,
     truncate,
     validate_field_name,
 )
 
 if TYPE_CHECKING:  # pragma: no cover
+<<<<<<< HEAD
+=======
+    from .dataclasses import DataclassType  # noqa: F401
+>>>>>>> Fixed line endings
     from .types import CallableGenerator
     from .class_validators import ValidatorListDict
 
@@ -168,7 +186,11 @@ class MetaModel(ABCMeta):
         class_vars = set()
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
+<<<<<<< HEAD
             if is_classvar(ann_type):
+=======
+            if ann_type == ClassVar:
+>>>>>>> Fixed line endings
                 class_vars.add(ann_name)
             elif not ann_name.startswith('_') and ann_name not in namespace:
                 validate_field_name(bases, ann_name)
@@ -181,11 +203,15 @@ class MetaModel(ABCMeta):
                 )
 
         for var_name, value in namespace.items():
+<<<<<<< HEAD
             if (
                 not var_name.startswith('_')
                 and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
                 and var_name not in class_vars
             ):
+=======
+            if not var_name.startswith('_') and not isinstance(value, TYPE_BLACKLIST) and var_name not in class_vars:
+>>>>>>> Fixed line endings
                 validate_field_name(bases, var_name)
                 fields[var_name] = Field.infer(
                     name=var_name,
@@ -515,13 +541,21 @@ class BaseModel(metaclass=MetaModel):
         return ret
 
 
+<<<<<<< HEAD
 def create_model(
+=======
+def create_model(  # noqa: C901 (ignore complexity)
+>>>>>>> Fixed line endings
     model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
     __module__: Optional[str] = None,
+<<<<<<< HEAD
     validators: Dict[str, classmethod] = None,
+=======
+    __validators__: Dict[str, classmethod] = None,
+>>>>>>> Fixed line endings
     **field_definitions: Any,
 ) -> BaseModel:
     """
@@ -529,7 +563,11 @@ def create_model(
     :param model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
+<<<<<<< HEAD
     :param validators: a dictionary of method names and @validator class methods
+=======
+    :param __validators__: a dictionary of method names and @validator class methods
+>>>>>>> Fixed line endings
     :param **field_definitions: fields of the model (or extra fields if a base is supplied) in the format
         `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
@@ -562,6 +600,7 @@ def create_model(
         fields[f_name] = f_value
 
     namespace: 'DictStrAny' = {'__annotations__': annotations, '__module__': __module__}
+<<<<<<< HEAD
     if validators:
         try:
             if any(not hasattr(v, '__validator_config') for k, v in validators.items()):
@@ -569,6 +608,15 @@ def create_model(
         except AttributeError:
             raise ConfigError('Validators should be a dictionary containing name key and method values')
         namespace.update(validators)
+=======
+    if __validators__:
+        try:
+            if any(not hasattr(v, '__validator_config') for k, v in __validators__.items()):
+                raise ConfigError('Validator methods must be decorated with @validator')
+        except AttributeError:
+            raise ConfigError('Validators should be a dictionary containing name key and method values')
+        namespace.update(__validators__)
+>>>>>>> Fixed line endings
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
@@ -577,11 +625,22 @@ def create_model(
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
+<<<<<<< HEAD
     model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True
+=======
+    model: Union[BaseModel, Type[BaseModel]],
+    input_data: 'DictStrAny',
+    raise_exc: bool = True,
+    cls: Type[Union[BaseModel, 'DataclassType']] = None,
+>>>>>>> Fixed line endings
 ) -> Union['DictStrAny', Tuple['DictStrAny', Optional[ValidationError]]]:
     """
     validate data against a model.
     """
+<<<<<<< HEAD
+=======
+
+>>>>>>> Fixed line endings
     values = {}
     errors = []
     names_used = set()
@@ -612,7 +671,11 @@ def validate_model(  # noqa: C901 (ignore complexity)
         elif check_extra:
             names_used.add(field.name if using_name else field.alias)
 
+<<<<<<< HEAD
         v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)  # type: ignore
+=======
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls or model.__class__)  # type: ignore
+>>>>>>> Fixed line endings
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):
@@ -636,6 +699,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
     if errors:
         raise ValidationError(errors)
     return values
+<<<<<<< HEAD
 =======
 import json
 import sys
@@ -1276,3 +1340,5 @@ def validate_model(  # noqa: C901 (ignore complexity)
         raise ValidationError(errors)
     return values
 >>>>>>> Added dataclass validators
+=======
+>>>>>>> Fixed line endings
