@@ -21,8 +21,12 @@ v0.23 (unreleased)
 * improve documentation for contributing section, # 441 @pilosus
 * improve README.rst to include essential information about the package, #446 by @pilosus
 * ``IntEnum`` support, #444 by @potykion
+<<<<<<< HEAD
 * Support validators in dataclasses, #453 by @primal100
 >>>>>>> Update History
+=======
+* Support validators in dataclasses, #454 by @primal100
+>>>>>>> Fix PR number
 
 v0.22 (2019-03-29)
 ..................
