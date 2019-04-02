@@ -270,9 +270,9 @@ def is_callable_type(type_: AnyType) -> bool:
     return type_ is Callable or getattr(type_, '__origin__', None) is Callable
 
 
-def _check_classvar(v):
+def _check_classvar(v: AnyType) -> bool:
     return type(v) == type(ClassVar) and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
 
 
-def is_classvar(ann_type):
+def is_classvar(ann_type: AnyType) -> bool:
     return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
