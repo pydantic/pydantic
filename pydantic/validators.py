@@ -2,7 +2,11 @@ import re
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
+<<<<<<< HEAD
 from enum import Enum, IntEnum
+=======
+from enum import Enum
+>>>>>>> Updated docs for added validating to dataclass
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
@@ -10,7 +14,11 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
+<<<<<<< HEAD
 from .utils import AnyCallable, AnyType, ForwardRef, change_exception, display_as_type, is_callable_type, sequence_like
+=======
+from .utils import AnyCallable, AnyType, change_exception, display_as_type, is_callable_type, sequence_like
+>>>>>>> Updated docs for added validating to dataclass
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -327,7 +335,10 @@ pattern_validators = [not_none_validator, str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
+<<<<<<< HEAD
     (IntEnum, [int_validator, enum_validator]),
+=======
+>>>>>>> Updated docs for added validating to dataclass
     (Enum, [enum_validator]),
     (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
     (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
@@ -357,7 +368,11 @@ _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
 
 
 def find_validators(type_: AnyType, arbitrary_types_allowed: bool = False) -> List[AnyCallable]:
+<<<<<<< HEAD
     if type_ is Any or type(type_) == ForwardRef:
+=======
+    if type_ is Any:
+>>>>>>> Updated docs for added validating to dataclass
         return []
     if type_ is Pattern:
         return pattern_validators

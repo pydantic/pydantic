@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Updated docs for added validating to dataclass
 import warnings
 from enum import IntEnum
 from typing import (
@@ -31,6 +34,10 @@ Required: Any = Ellipsis
 
 if TYPE_CHECKING:  # pragma: no cover
     from .class_validators import ValidatorCallable  # noqa: F401
+<<<<<<< HEAD
+=======
+    from .dataclasses import DataclassType  # noqa: F401
+>>>>>>> Updated docs for added validating to dataclass
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .schema import Schema  # noqa: F401
@@ -262,7 +269,16 @@ class Field:
         return [make_generic_validator(f) for f in v_funcs if f]
 
     def validate(
+<<<<<<< HEAD
         self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional[Type['BaseModel']] = None
+=======
+        self,
+        v: Any,
+        values: Dict[str, Any],
+        *,
+        loc: 'LocType',
+        cls: Optional[Type[Union['BaseModel', 'DataclassType']]] = None,
+>>>>>>> Updated docs for added validating to dataclass
     ) -> 'ValidateReturn':
         if self.allow_none and not self.validate_always and v is None:
             return None, None
@@ -301,7 +317,11 @@ class Field:
             return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
     def _validate_sequence_like(
+<<<<<<< HEAD
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
+=======
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type[Union['BaseModel', 'DataclassType']]]
+>>>>>>> Updated docs for added validating to dataclass
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
@@ -344,7 +364,11 @@ class Field:
         return converted, None
 
     def _validate_tuple(
+<<<<<<< HEAD
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
+=======
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type[Union['BaseModel', 'DataclassType']]]
+>>>>>>> Updated docs for added validating to dataclass
     ) -> 'ValidateReturn':
         e: Optional[Exception] = None
         if not sequence_like(v):
@@ -373,7 +397,11 @@ class Field:
             return tuple(result), None
 
     def _validate_mapping(
+<<<<<<< HEAD
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
+=======
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type[Union['BaseModel', 'DataclassType']]]
+>>>>>>> Updated docs for added validating to dataclass
     ) -> 'ValidateReturn':
         try:
             v_iter = dict_validator(v)
@@ -401,7 +429,11 @@ class Field:
             return result, None
 
     def _validate_singleton(
+<<<<<<< HEAD
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
+=======
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type[Union['BaseModel', 'DataclassType']]]
+>>>>>>> Updated docs for added validating to dataclass
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
@@ -420,7 +452,11 @@ class Field:
         v: Any,
         values: Dict[str, Any],
         loc: 'LocType',
+<<<<<<< HEAD
         cls: Optional[Type['BaseModel']],
+=======
+        cls: Optional[Type[Union['BaseModel', 'DataclassType']]],
+>>>>>>> Updated docs for added validating to dataclass
         validators: 'ValidatorsList',
     ) -> 'ValidateReturn':
         for validator in validators:
@@ -462,6 +498,7 @@ class Field:
         if self.alt_alias:
             parts.append('alias=' + self.alias)
         return ' '.join(parts)
+<<<<<<< HEAD
 =======
 import warnings
 from enum import IntEnum
@@ -933,3 +970,5 @@ class Field:
             parts.append('alias=' + self.alias)
         return ' '.join(parts)
 >>>>>>> Added dataclass validators
+=======
+>>>>>>> Updated docs for added validating to dataclass

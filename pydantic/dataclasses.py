@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Updated docs for added validating to dataclass
 import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, Union
 
@@ -25,7 +28,11 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def _pydantic_post_init(self: 'DataclassType') -> None:
+<<<<<<< HEAD
     d = validate_model(self.__pydantic_model__, self.__dict__)
+=======
+    d = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)
+>>>>>>> Updated docs for added validating to dataclass
     object.__setattr__(self, '__dict__', d)
     object.__setattr__(self, '__initialised__', True)
     if self.__post_init_original__:
@@ -51,7 +58,11 @@ def setattr_validate_assignment(self: 'DataclassType', name: str, value: Any) ->
     if self.__initialised__:
         d = dict(self.__dict__)
         d.pop(name)
+<<<<<<< HEAD
         value, error_ = self.__pydantic_model__.__fields__[name].validate(value, d, loc=name)
+=======
+        value, error_ = self.__pydantic_model__.__fields__[name].validate(value, d, loc=name, cls=self.__class__)
+>>>>>>> Updated docs for added validating to dataclass
         if error_:
             raise ValidationError([error_])
 
@@ -82,8 +93,14 @@ def _process_class(
 
     validators = gather_validators(cls)
 
+<<<<<<< HEAD
     cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, __module__=_cls.__module__,
                                           validators=validators, **fields)
+=======
+    cls.__pydantic_model__ = create_model(
+        cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **fields
+    )
+>>>>>>> Updated docs for added validating to dataclass
 
     cls.__initialised__ = False
     cls.__validate__ = classmethod(_validate_dataclass)
@@ -125,6 +142,7 @@ else:
             return wrap
 
         return wrap(_cls)
+<<<<<<< HEAD
 =======
 import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, Union
@@ -254,3 +272,5 @@ else:
 
         return wrap(_cls)
 >>>>>>> Added dataclass validators
+=======
+>>>>>>> Updated docs for added validating to dataclass

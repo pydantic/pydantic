@@ -1,14 +1,25 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import inspect
 import re
 import sys
+=======
+import inspect
+import re
+import sys
+from collections import ChainMap
+>>>>>>> Updated docs for added validating to dataclass
 from contextlib import contextmanager
 from enum import Enum
 from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
 from typing import _eval_type  # type: ignore
+<<<<<<< HEAD
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
+=======
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
+>>>>>>> Updated docs for added validating to dataclass
 
 from . import errors
 
@@ -271,6 +282,7 @@ def is_callable_type(type_: AnyType) -> bool:
     return type_ is Callable or getattr(type_, '__origin__', None) is Callable
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 def _check_classvar(v: AnyType) -> bool:
     return type(v) == type(ClassVar) and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
@@ -556,3 +568,8 @@ def gather_validators(type_: AnyType) -> Dict[str, classmethod]:
     full_object = ChainMap(type_.__dict__, *[base.__dict__ for base in type_.__bases__])
     return {k: v for k, v in full_object.items() if hasattr(v, '__validator_config')}
 >>>>>>> Added dataclass validators
+=======
+def gather_validators(type_: AnyType) -> Dict[str, classmethod]:
+    full_object = ChainMap(type_.__dict__, *[base.__dict__ for base in type_.__bases__])
+    return {k: v for k, v in full_object.items() if hasattr(v, '__validator_config')}
+>>>>>>> Updated docs for added validating to dataclass
