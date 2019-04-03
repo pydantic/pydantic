@@ -11,7 +11,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ClassVar,
     Dict,
     Generator,
     List,
@@ -38,6 +37,7 @@ from .utils import (
     AnyType,
     ForwardRef,
     change_exception,
+    is_classvar,
     resolve_annotations,
     truncate,
     validate_field_name,
@@ -167,7 +167,7 @@ class MetaModel(ABCMeta):
         class_vars = set()
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
-            if ann_type == ClassVar:
+            if is_classvar(ann_type):
                 class_vars.add(ann_name)
             elif not ann_name.startswith('_') and ann_name not in namespace:
                 validate_field_name(bases, ann_name)
