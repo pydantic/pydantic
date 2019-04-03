@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from pydantic import ConfigError
+from pydantic import ConfigError, ValidationError
 
 skip_not_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
@@ -81,6 +81,40 @@ Foo.update_forward_refs()
 
     assert module.Foo().dict() == {'a': 123, 'b': None}
     assert module.Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
+
+
+@skip_not_37
+def test_self_forward_ref_collection(create_module):
+    module = create_module(
+        """
+from typing import ForwardRef, List, Dict
+from pydantic import BaseModel
+
+Foo = ForwardRef('Foo')
+
+class Foo(BaseModel):
+    a: int = 123
+    b: Foo = None
+    c: List[Foo] = []
+    d: Dict[str, Foo] = {}
+
+Foo.update_forward_refs()
+    """
+    )
+
+    assert module.Foo().dict() == {'a': 123, 'b': None, 'c': [], 'd': {}}
+    assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).dict() == {
+        'a': 123,
+        'b': {'a': 321, 'b': None, 'c': [], 'd': {}},
+        'c': [{'a': 234, 'b': None, 'c': [], 'd': {}}],
+        'd': {'bar': {'a': 345, 'b': None, 'c': [], 'd': {}}},
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        module.Foo(b={'a': '321'}, c=[{'b': 234}], d={'bar': {'a': 345}})
+    assert exc_info.value.errors() == [
+        {'loc': ('c', 0, 'b'), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}
+    ]
 
 
 @skip_not_37
