@@ -36,6 +36,8 @@ from pydantic.types import (
     PositiveFloat,
     PositiveInt,
     PyObject,
+    SecretBytes,
+    SecretStr,
     StrBytes,
     StrictStr,
     UrlStr,
@@ -513,6 +515,21 @@ def test_email_str_types(field_type, expected_schema):
         'required': ['a'],
     }
     base_schema['properties']['a']['format'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize('field_type,inner_type', [(SecretBytes, 'string'), (SecretStr, 'string')])
+def test_secret_types(field_type, inner_type):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True}},
+        'required': ['a'],
+    }
 
     assert Model.schema() == base_schema
 

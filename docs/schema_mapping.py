@@ -108,6 +108,20 @@ table = [
         'All the literal values in the enum are included in the definition.'
     ],
     [
+        'SecretStr',
+        'string',
+        '{"writeOnly": true}',
+        'JSON Schema Validation',
+        ''
+    ],
+    [
+        'SecretBytes',
+        'string',
+        '{"writeOnly": true}',
+        'JSON Schema Validation',
+        ''
+    ],
+    [
         'EmailStr',
         'string',
         '{"format": "email"}',

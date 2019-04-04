@@ -13,6 +13,7 @@ v0.23 (unreleased)
 * fix ``ForwardRef`` collection bug, #450 by @tigerwings
 * Support specialized ``ClassVars``, #455 by @tyrylu
 * fix JSON serialization for ``ipaddress`` types, #333 by @pilosus
+* add SecretStr and SecretBytes types, #452 by @atheuz
 
 v0.22 (2019-03-29)
 ....................
