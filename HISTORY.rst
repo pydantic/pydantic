@@ -4,6 +4,7 @@ History
 -------
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 v0.23 (2019-04-04)
 ..................
 * improve documentation for contributing section, #441 by @pilosus
@@ -25,6 +26,19 @@ v0.23 (unreleased)
 * Support validators in dataclasses, #453 by @primal100
 >>>>>>> Update History
 =======
+=======
+v0.23 (2019-04-04)
+..................
+* improve documentation for contributing section, #441 by @pilosus
+* improve README.rst to include essential information about the package, #446 by @pilosus
+* ``IntEnum`` support, #444 by @potykion
+* fix PyObject callable value, #409 by @pilosus
+* fix ``black`` deprecation warnings after update, #451 by @pilosus
+* fix ``ForwardRef`` collection bug, #450 by @tigerwings
+* Support specialized ``ClassVars``, #455 by @tyrylu
+* fix JSON serialization for ``ipaddress`` types, #333 by @pilosus
+* add ``SecretStr`` and ``SecretBytes`` types, #452 by @atheuz
+>>>>>>> Fix HISTORY.rst merge conflict
 * Support validators in dataclasses, #454 by @primal100
 >>>>>>> Fix PR number
 
