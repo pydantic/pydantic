@@ -114,7 +114,7 @@ class PathNotADirectoryError(_PathValueError):
 
 
 class PyObjectError(PydanticTypeError):
-    msg_template = 'ensure this value contains valid import path: {error_message}'
+    msg_template = 'ensure this value contains valid import path or valid callable: {error_message}'
 
 
 class SequenceError(PydanticTypeError):

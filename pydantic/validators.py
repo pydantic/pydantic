@@ -10,7 +10,7 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import AnyCallable, AnyType, change_exception, display_as_type, is_callable_type, sequence_like
+from .utils import AnyCallable, AnyType, ForwardRef, change_exception, display_as_type, is_callable_type, sequence_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -357,7 +357,7 @@ _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
 
 
 def find_validators(type_: AnyType, arbitrary_types_allowed: bool = False) -> List[AnyCallable]:
-    if type_ is Any:
+    if type_ is Any or type(type_) == ForwardRef:
         return []
     if type_ is Pattern:
         return pattern_validators

@@ -11,7 +11,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ClassVar,
     Dict,
     Generator,
     List,
@@ -32,12 +31,13 @@ from .fields import Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
-from .types import StrBytes
+from .types import PyObject, StrBytes
 from .utils import (
     AnyCallable,
     AnyType,
     ForwardRef,
     change_exception,
+    is_classvar,
     resolve_annotations,
     truncate,
     validate_field_name,
@@ -167,7 +167,7 @@ class MetaModel(ABCMeta):
         class_vars = set()
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
-            if ann_type == ClassVar:
+            if is_classvar(ann_type):
                 class_vars.add(ann_name)
             elif not ann_name.startswith('_') and ann_name not in namespace:
                 validate_field_name(bases, ann_name)
@@ -180,7 +180,11 @@ class MetaModel(ABCMeta):
                 )
 
         for var_name, value in namespace.items():
-            if not var_name.startswith('_') and not isinstance(value, TYPE_BLACKLIST) and var_name not in class_vars:
+            if (
+                not var_name.startswith('_')
+                and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
+                and var_name not in class_vars
+            ):
                 validate_field_name(bases, var_name)
                 fields[var_name] = Field.infer(
                     name=var_name,

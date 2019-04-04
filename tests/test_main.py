@@ -516,7 +516,7 @@ def test_value_field_name_shadows_attribute():
 def test_class_var():
     class MyModel(BaseModel):
         a: ClassVar
-        b: ClassVar = 1
+        b: ClassVar[int] = 1
         c: int = 2
 
     assert list(MyModel.__fields__.keys()) == ['c']
