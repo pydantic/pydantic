@@ -31,7 +31,7 @@ from .fields import Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
-from .types import StrBytes
+from .types import PyObject, StrBytes
 from .utils import (
     AnyCallable,
     AnyType,
@@ -180,7 +180,11 @@ class MetaModel(ABCMeta):
                 )
 
         for var_name, value in namespace.items():
-            if not var_name.startswith('_') and not isinstance(value, TYPE_BLACKLIST) and var_name not in class_vars:
+            if (
+                not var_name.startswith('_')
+                and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
+                and var_name not in class_vars
+            ):
                 validate_field_name(bases, var_name)
                 fields[var_name] = Field.infer(
                     name=var_name,

@@ -5,11 +5,14 @@ History
 
 v0.23 (unreleased)
 ...................
-* improve documentation for contributing section, # 441 @pilosus
+* improve documentation for contributing section, #441 @pilosus
 * improve README.rst to include essential information about the package, #446 by @pilosus
 * ``IntEnum`` support, #444 by @potykion
+* fix PyObject callable value, #409 by @pilosus
+* fix ``black`` deprecation warnings after update, #451 by @pilosus
 * fix ``ForwardRef`` collection bug, #450 by @tigerwings
 * Support specialized ``ClassVars``, #455 by @tyrylu
+* fix JSON serialization for ``ipaddress`` types, #333 by @pilosus
 * add SecretStr and SecretBytes types, #452 by @atheuz
 
 v0.22 (2019-03-29)

@@ -50,6 +50,10 @@ class ConBytesModel(BaseModel):
     v: conbytes(max_length=10) = b'foobar'
 
 
+def foo():
+    return 42
+
+
 def test_constrained_bytes_good():
     m = ConBytesModel(v=b'short')
     assert m.v == b'short'
@@ -147,7 +151,8 @@ def test_module_import():
     assert exc_info.value.errors() == [
         {
             'loc': ('module',),
-            'msg': 'ensure this value contains valid import path: ' '"foobar" doesn\'t look like a module path',
+            'msg': 'ensure this value contains valid import path or valid callable: '
+            '"foobar" doesn\'t look like a module path',
             'type': 'type_error.pyobject',
             'ctx': {'error_message': '"foobar" doesn\'t look like a module path'},
         }
@@ -158,9 +163,22 @@ def test_module_import():
     assert exc_info.value.errors() == [
         {
             'loc': ('module',),
-            'msg': 'ensure this value contains valid import path: ' 'Module "os" does not define a "missing" attribute',
+            'msg': 'ensure this value contains valid import path or valid callable: '
+            'Module "os" does not define a "missing" attribute',
             'type': 'type_error.pyobject',
             'ctx': {'error_message': 'Module "os" does not define a "missing" attribute'},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        PyObjectModel(module=[1, 2, 3])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('module',),
+            'msg': 'ensure this value contains valid import path or valid callable: '
+            'value is neither a valid import path not a valid callable',
+            'type': 'type_error.pyobject',
+            'ctx': {'error_message': 'value is neither a valid import path not a valid callable'},
         }
     ]
 
@@ -171,6 +189,15 @@ def test_pyobject_none():
 
     m = PyObjectModel()
     assert m.module is None
+
+
+def test_pyobject_callable():
+    class PyObjectModel(BaseModel):
+        foo: PyObject = foo
+
+    m = PyObjectModel()
+    assert m.foo is foo
+    assert m.foo() == 42
 
 
 class CheckModel(BaseModel):

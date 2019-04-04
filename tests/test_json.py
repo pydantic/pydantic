@@ -2,6 +2,7 @@ import datetime
 import json
 from decimal import Decimal
 from enum import Enum
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from uuid import UUID
 
 import pytest
@@ -19,6 +20,12 @@ class MyEnum(Enum):
     'input,output',
     [
         (UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
+        (IPv4Address('192.168.0.1'), '"192.168.0.1"'),
+        (IPv6Address('::1:0:1'), '"::1:0:1"'),
+        (IPv4Interface('192.168.0.0/24'), '"192.168.0.0/24"'),
+        (IPv6Interface('2001:db00::/120'), '"2001:db00::/120"'),
+        (IPv4Network('192.168.0.0/24'), '"192.168.0.0/24"'),
+        (IPv6Network('2001:db00::/120'), '"2001:db00::/120"'),
         (datetime.datetime(2032, 1, 1, 1, 1), '"2032-01-01T01:01:00"'),
         (datetime.datetime(2032, 1, 1, 1, 1, tzinfo=datetime.timezone.utc), '"2032-01-01T01:01:00+00:00"'),
         (datetime.datetime(2032, 1, 1), '"2032-01-01T00:00:00"'),

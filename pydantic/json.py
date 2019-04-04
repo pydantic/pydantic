@@ -1,6 +1,7 @@
 import datetime
 from decimal import Decimal
 from enum import Enum
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
@@ -13,6 +14,12 @@ def isoformat(o: Union[datetime.date, datetime.time]) -> str:
 
 
 ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
+    IPv4Address: str,
+    IPv6Address: str,
+    IPv4Interface: str,
+    IPv6Interface: str,
+    IPv4Network: str,
+    IPv6Network: str,
     UUID: str,
     datetime.datetime: isoformat,
     datetime.date: isoformat,

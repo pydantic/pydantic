@@ -12,7 +12,7 @@ from ipaddress import (
     _BaseNetwork,
 )
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Pattern, Set, Tuple, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Pattern, Set, Tuple, Type, Union, cast
 from uuid import UUID
 
 from . import errors
@@ -270,11 +270,18 @@ class PyObject:
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
         yield cls.validate
 
     @classmethod
     def validate(cls, value: Any) -> Any:
+        if isinstance(value, Callable):  # type: ignore
+            return value
+
+        try:
+            value = str_validator(value)
+        except errors.StrError:
+            raise errors.PyObjectError(error_message='value is neither a valid import path not a valid callable')
+
         if value is not None:
             try:
                 return import_string(value)
