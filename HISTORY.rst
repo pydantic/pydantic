@@ -10,6 +10,7 @@ v0.23 (unreleased)
 * ``IntEnum`` support, #444 by @potykion
 * fix ``ForwardRef`` collection bug, #450 by @tigerwings
 * Support specialized ``ClassVars``, #455 by @tyrylu
+* fix JSON serialization for ``ipaddress`` types, #333 by @pilosus
 
 v0.22 (2019-03-29)
 ....................
