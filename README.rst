@@ -61,7 +61,7 @@ contribution to *pydantic*, see the `Contributing to Pydantic`_.
 .. |CondaForge| image:: https://img.shields.io/conda/v/conda-forge/pydantic.svg
    :target: https://anaconda.org/conda-forge/pydantic
 .. |downloads| image:: https://img.shields.io/pypi/dm/pydantic.svg
-   :target: https://pypi.python.org/pypi/pydantic
+   :target: https://pypistats.org/packages/pydantic
 .. |versions| image:: https://img.shields.io/pypi/pyversions/pydantic.svg
    :target: https://github.com/samuelcolvin/pydantic
 .. |license| image:: https://img.shields.io/github/license/samuelcolvin/pydantic.svg
