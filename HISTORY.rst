@@ -12,6 +12,7 @@ v0.23 (unreleased)
 * fix ``black`` deprecation warnings after update, #451 by @pilosus
 * fix ``ForwardRef`` collection bug, #450 by @tigerwings
 * Support specialized ``ClassVars``, #455 by @tyrylu
+* fix JSON serialization for ``ipaddress`` types, #333 by @pilosus
 
 v0.22 (2019-03-29)
 ....................
