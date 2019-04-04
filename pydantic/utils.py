@@ -3,6 +3,7 @@
 import inspect
 import re
 import sys
+<<<<<<< HEAD
 =======
 import inspect
 import re
@@ -13,7 +14,10 @@ from collections import ChainMap
 =======
 >>>>>>> Fix utils.py merge conflict
 from contextlib import contextmanager
+=======
+>>>>>>> fix utils.py
 from collections import ChainMap
+from contextlib import contextmanager
 from enum import Enum
 from functools import lru_cache
 from importlib import import_module
