@@ -3,9 +3,9 @@
 History
 -------
 
-v0.23 (unreleased)
-...................
-* improve documentation for contributing section, #441 @pilosus
+v0.23 (2019-04-04)
+..................
+* improve documentation for contributing section, #441 by @pilosus
 * improve README.rst to include essential information about the package, #446 by @pilosus
 * ``IntEnum`` support, #444 by @potykion
 * fix PyObject callable value, #409 by @pilosus
@@ -13,10 +13,10 @@ v0.23 (unreleased)
 * fix ``ForwardRef`` collection bug, #450 by @tigerwings
 * Support specialized ``ClassVars``, #455 by @tyrylu
 * fix JSON serialization for ``ipaddress`` types, #333 by @pilosus
-* add SecretStr and SecretBytes types, #452 by @atheuz
+* add ``SecretStr`` and ``SecretBytes`` types, #452 by @atheuz
 
 v0.22 (2019-03-29)
-....................
+..................
 * add ``IPv{4,6,Any}Network`` and ``IPv{4,6,Any}Interface`` types from ``ipaddress`` stdlib, #333 by @pilosus
 * add docs for ``datetime`` types, #386 by @pilosus
 * fix to schema generation in dataclass-based models, #408 by @pilosus
