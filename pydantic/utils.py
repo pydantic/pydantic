@@ -7,19 +7,27 @@ import sys
 import inspect
 import re
 import sys
+<<<<<<< HEAD
 from collections import ChainMap
 >>>>>>> Updated docs for added validating to dataclass
+=======
+>>>>>>> Fix utils.py merge conflict
 from contextlib import contextmanager
+from collections import ChainMap
 from enum import Enum
 from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
 from typing import _eval_type  # type: ignore
 <<<<<<< HEAD
+<<<<<<< HEAD
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
 =======
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
 >>>>>>> Updated docs for added validating to dataclass
+=======
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
+>>>>>>> Fix utils.py merge conflict
 
 from . import errors
 
@@ -284,12 +292,16 @@ def is_callable_type(type_: AnyType) -> bool:
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Fix utils.py merge conflict
 def _check_classvar(v: AnyType) -> bool:
     return type(v) == type(ClassVar) and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
 
 
 def is_classvar(ann_type: AnyType) -> bool:
     return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
+<<<<<<< HEAD
 =======
 import inspect
 import re
@@ -569,6 +581,10 @@ def gather_validators(type_: AnyType) -> Dict[str, classmethod]:
     return {k: v for k, v in full_object.items() if hasattr(v, '__validator_config')}
 >>>>>>> Added dataclass validators
 =======
+=======
+
+
+>>>>>>> Fix utils.py merge conflict
 def gather_validators(type_: AnyType) -> Dict[str, classmethod]:
 <<<<<<< HEAD
     full_object = ChainMap(type_.__dict__, *[base.__dict__ for base in type_.__bases__])
