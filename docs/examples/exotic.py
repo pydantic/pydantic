@@ -139,7 +139,7 @@ print(m.dict())
     'email_and_name': <NameEmail("Samuel Colvin <s@muelcolvin.com>")>,
     'url': 'http://example.com',
     'password': SecretStr('**********'),
-    'password_bytes': SecretStr(b'**********'),
+    'password_bytes': SecretBytes(b'**********'),
     ...
     'dsn': 'postgres://postgres@localhost:5432/foobar',
     'decimal': Decimal('42.24'),
