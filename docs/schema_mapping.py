@@ -110,14 +110,14 @@ table = [
     [
         'SecretStr',
         'string',
-        '{"format": "secret-str"}',
+        '{"writeOnly": true}',
         'Pydantic standard "format" extension',
         ''
     ],
     [
         'SecretBytes',
         'string',
-        '{"format": "secret-bytes"}',
+        '{"writeOnly": true}',
         'Pydantic standard "format" extension',
         ''
     ],
