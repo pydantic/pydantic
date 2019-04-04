@@ -1,4 +1,6 @@
 .DEFAULT_GOAL := all
+isort = isort -rc pydantic tests
+black = black -S -l 120 --target-version py36 pydantic tests
 
 .PHONY: install
 install:
@@ -8,15 +10,15 @@ install:
 
 .PHONY: format
 format:
-	isort -rc -w 120 pydantic tests
-	black -S -l 120 --target-version py36 pydantic tests
+	$(isort)
+	$(black)
 
 .PHONY: lint
 lint:
 	python setup.py check -rms
 	flake8 pydantic/ tests/
-	pytest pydantic -p no:sugar -q
-	black -S -l 120 --target-version py36 --check pydantic tests
+	$(isort) --check-only
+	$(black) --check
 
 .PHONY: mypy
 mypy:
