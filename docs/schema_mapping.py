@@ -111,14 +111,14 @@ table = [
         'SecretStr',
         'string',
         '{"writeOnly": true}',
-        'Pydantic standard "format" extension',
+        'JSON Schema Validation',
         ''
     ],
     [
         'SecretBytes',
         'string',
         '{"writeOnly": true}',
-        'Pydantic standard "format" extension',
+        'JSON Schema Validation',
         ''
     ],
     [
