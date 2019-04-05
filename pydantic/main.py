@@ -213,6 +213,18 @@ class MetaModel(ABCMeta):
 _missing = object()
 
 
+def update_field_forward_refs(field: Field, globalns: Any, localns: Any) -> None:
+    """
+    Try to update ForwardRefs on fields based on this Model, globalns and localns.
+    """
+    if type(field.type_) == ForwardRef:
+        field.type_ = field.type_._evaluate(globalns, localns or None)  # type: ignore
+        field.prepare()
+    if field.sub_fields:
+        for sub_f in field.sub_fields:
+            update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
+
+
 class BaseModel(metaclass=MetaModel):
     if TYPE_CHECKING:  # pragma: no cover
         # populated by the metaclass, defined here to help IDEs only
@@ -454,14 +466,7 @@ class BaseModel(metaclass=MetaModel):
         globalns = sys.modules[cls.__module__].__dict__
         globalns.setdefault(cls.__name__, cls)
         for f in cls.__fields__.values():
-            if type(f.type_) == ForwardRef:
-                f.type_ = f.type_._evaluate(globalns, localns or None)  # type: ignore
-                f.prepare()
-            if f.sub_fields:
-                for sub_f in f.sub_fields:
-                    if type(sub_f.type_) == ForwardRef:
-                        sub_f.type_ = sub_f.type_._evaluate(globalns, localns or None)  # type: ignore
-                        sub_f.prepare()
+            update_field_forward_refs(f, globalns=globalns, localns=localns)
 
     def __iter__(self) -> 'AnyGenerator':
         """
