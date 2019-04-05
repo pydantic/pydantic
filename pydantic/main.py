@@ -457,6 +457,11 @@ class BaseModel(metaclass=MetaModel):
             if type(f.type_) == ForwardRef:
                 f.type_ = f.type_._evaluate(globalns, localns or None)  # type: ignore
                 f.prepare()
+            if f.sub_fields:
+                for sub_f in f.sub_fields:
+                    if type(sub_f.type_) == ForwardRef:
+                        sub_f.type_ = sub_f.type_._evaluate(globalns, localns or None)  # type: ignore
+                        sub_f.prepare()
 
     def __iter__(self) -> 'AnyGenerator':
         """

@@ -174,3 +174,37 @@ class Dataclass:
     )
     m = module.Dataclass('http://example.com  ')
     assert m.url == 'http://example.com'
+
+
+@skip_not_37
+def test_forward_ref_sub_types(create_module):
+    module = create_module(
+        """
+from typing import ForwardRef, Union
+
+from pydantic import BaseModel
+
+
+class Leaf(BaseModel):
+    a: str
+
+
+TreeType = Union[ForwardRef('Node'), Leaf]
+
+
+class Node(BaseModel):
+    value: int
+    left: TreeType
+    right: TreeType
+
+
+Node.update_forward_refs()
+    """
+    )
+    Node = module.Node
+    Leaf = module.Leaf
+    data = {"value": 3, "left": {"a": "foo"}, "right": {"value": 5, "left": {"a": "bar"}, "right": {"a": "buzz"}}}
+
+    node = Node(**data)
+    assert isinstance(node.left, Leaf), str(type(node.left))
+    assert isinstance(node.right, Node), str(type(node.right))
