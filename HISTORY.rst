@@ -3,6 +3,10 @@
 History
 -------
 
+v0.x (xxxx-xx-xx)
+..................
+* fix handling ``ForwardRef`` in sub-types, like ``Union``, #464 by @tiangolo
+
 v0.23 (2019-04-04)
 ..................
 * improve documentation for contributing section, #441 by @pilosus
