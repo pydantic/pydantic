@@ -6,6 +6,8 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
 
+from pydantic.types import SecretBytes, SecretStr
+
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
 
 
@@ -20,6 +22,8 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     IPv6Interface: str,
     IPv4Network: str,
     IPv6Network: str,
+    SecretStr: str,
+    SecretBytes: str,
     UUID: str,
     datetime.datetime: isoformat,
     datetime.date: isoformat,
