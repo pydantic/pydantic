@@ -6,27 +6,13 @@ class SimpleModel(BaseModel):
     password: SecretStr
     password_bytes: SecretBytes
 
-sm1 = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
-print(sm)
+print(SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes'))
 # > SimpleModel password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
-print(sm.password)
-# > **********
-print(repr(sm.password))
-# > SecretStr('**********')
-print(sm.password_bytes)
-# > **********
-print(repr(sm.password_bytes))
-# > SecretStr(b'**********')
-print(sm.dict())
-# > {'password': SecretStr('**********'), 'password_bytes': SecretBytes(b'**********')}
-print(sm.json())
-# > {"password": "**********", "password_bytes": "**********"}
 
-
-sm2 = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
-print(sm2.password.get_secret_value())
+sm = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
+print(sm.password.get_secret_value())
 # > IAmSensitive
-print(sm2.password_bytes.get_secret_value())
+print(sm.password_bytes.get_secret_value())
 # > b'IAmSensitiveBytes'
 
 

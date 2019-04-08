@@ -1428,8 +1428,8 @@ def test_secretstr():
     assert f.empty_password.__class__.__name__ == 'SecretStr'
 
     # Assert str and repr are correct.
-    assert str(f.password) == '**********'
-    assert str(f.empty_password) == ''
+    assert str(f.password) == "SecretStr('**********')"
+    assert str(f.empty_password) == "SecretStr('')"
     assert repr(f.password) == "SecretStr('**********')"
     assert repr(f.empty_password) == "SecretStr('')"
 
@@ -1460,8 +1460,8 @@ def test_secretbytes():
     assert f.empty_password.__class__.__name__ == 'SecretBytes'
 
     # Assert str and repr are correct.
-    assert str(f.password) == '**********'
-    assert str(f.empty_password) == ''
+    assert str(f.password) == "SecretBytes(b'**********')"
+    assert str(f.empty_password) == "SecretBytes(b'')"
     assert repr(f.password) == "SecretBytes(b'**********')"
     assert repr(f.empty_password) == "SecretBytes(b'')"
 

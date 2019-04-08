@@ -590,7 +590,7 @@ class SecretStr:
         return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
 
     def __str__(self) -> str:
-        return '**********' if self._secret_value else ''
+        return repr(self)
 
     def get_secret_value(self) -> str:
         return self._secret_value
@@ -613,7 +613,7 @@ class SecretBytes:
         return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
 
     def __str__(self) -> str:
-        return '**********' if self._secret_value else ''
+        return repr(self)
 
     def get_secret_value(self) -> bytes:
         return self._secret_value
