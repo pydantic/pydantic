@@ -463,7 +463,7 @@ Secret Types
 
 You can use the ``SecretStr`` and the ``SecretBytes`` data types for storing sensitive information
 that you do not want to be visible in logging or tracebacks.
-The SecretStr and SecretBytes will be formatted as either `'**********'` or `'null'` on conversion to json.
+The SecretStr and SecretBytes will be formatted as either `'**********'` or `''` on conversion to json.
 
 .. literalinclude:: examples/ex_secret_types.py
 
