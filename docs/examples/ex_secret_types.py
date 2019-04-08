@@ -5,7 +5,7 @@ from pydantic import BaseModel, SecretStr, SecretBytes, ValidationError
 class SimpleModel(BaseModel):
     password: SecretStr
     password_bytes: SecretBytes
-
+    
 print(SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes'))
 # > SimpleModel password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
 
@@ -14,6 +14,10 @@ print(sm.password.get_secret_value())
 # > IAmSensitive
 print(sm.password_bytes.get_secret_value())
 # > b'IAmSensitiveBytes'
+print(sm.password.display())
+# > '**********'
+print(sm.json())
+# > '{"password": "**********", "password_bytes": "**********"}'
 
 
 try:
