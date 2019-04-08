@@ -520,6 +520,7 @@ def create_model(
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
     __module__: Optional[str] = None,
+    __validators__: Optional[List[classmethod]] = None,
     **field_definitions: Any,
 ) -> BaseModel:
     """
@@ -527,6 +528,8 @@ def create_model(
     :param model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
+    :param __module__: optional model name for the new model
+    :param __validators__: optional list of standalone validator class methods
     :param **field_definitions: fields of the model (or extra fields if a base is supplied) in the format
         `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
@@ -559,9 +562,14 @@ def create_model(
         fields[f_name] = f_value
 
     namespace: 'DictStrAny' = {'__annotations__': annotations, '__module__': __module__}
+
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
+
+    if __validators__:
+        validators = {v.__func__.__name__: v for v in __validators__}
+        namespace.update(validators)
 
     return type(model_name, (__base__,), namespace)  # type: ignore
 

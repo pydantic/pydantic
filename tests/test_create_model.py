@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 
 from pydantic import BaseModel, Extra, ValidationError, create_model, errors, validator
@@ -158,3 +160,145 @@ def test_repeat_base_usage():
     assert model.__fields__.keys() == {'a', 'b'}
     assert model2.__fields__.keys() == {'a', 'c'}
     assert model3.__fields__.keys() == {'a', 'b', 'd'}
+
+
+def test_explicit_validators_single():
+    @validator('a')
+    def check_a(v):
+        if 'foobar' not in v:
+            raise ValueError('"foobar" not found in a')
+        return v
+
+    model = create_model('FooModel', __validators__=[check_a], a=(str, ...), bar=123)
+    m = model(a='this is foobar good', bar=456)
+    assert m.a == 'this is foobar good'
+
+    with pytest.raises(ValidationError):
+        model(a='something else', bar=456)
+
+
+def test_explicit_validators_multiple():
+    @validator('name')
+    def name_must_contain_space(v):
+        if ' ' not in v:
+            raise ValueError('must contain a space')
+        return v.title()
+
+    @validator('password2')
+    def passwords_match(v, values, **kwargs):
+        if 'password1' in values and v != values['password1']:
+            raise ValueError('passwords do not match')
+        return v
+
+    DynamicUserModel = create_model(
+        'DynamicUserModel',
+        __validators__=[name_must_contain_space, passwords_match],
+        name=(str, ...),
+        password1=(str, ...),
+        password2=(str, ...),
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        DynamicUserModel(name='FirstSecond', password1=123, password2=234)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('name',), 'msg': 'must contain a space', 'type': 'value_error'},
+        {'loc': ('password2',), 'msg': 'passwords do not match', 'type': 'value_error'},
+    ]
+
+
+def test_explicit_validators_with_inherited_validators():
+    @validator('a', check_fields=False)
+    def is_bar_in_a(v):
+        if 'bar' not in v:
+            raise ValueError('"bar" not found in a')
+        return v
+
+    class BarModel(BaseModel):
+        @validator('a', check_fields=False)
+        def check_a(v):
+            if 'foo' not in v:
+                raise ValueError('"foo" not found in a')
+            return v
+
+    model = create_model('FooModel', a='cake', __base__=BarModel, __validators__=[is_bar_in_a])
+    assert model().a == 'cake'
+    assert model(a='this is foobar good').a == 'this is foobar good'
+
+    with pytest.raises(ValidationError):
+        model(a='this is foo good')
+
+    with pytest.raises(ValidationError):
+        model(a='this is bar good')
+
+
+def test_explicit_validators_multiple_fields():
+    @validator('a', 'b')
+    def check_ab(v):
+        if 'foo' not in v:
+            raise ValueError('"foo" not found in a')
+        return v
+
+    model = create_model('FooModel', __validators__=[check_ab], a=(str, ...), b=(str, ...))
+    m = model(a='foobar', b='foobaz')
+    assert m.a == 'foobar'
+    assert m.b == 'foobaz'
+
+    with pytest.raises(ValidationError):
+        model(a='something else', b='foobar')
+
+    with pytest.raises(ValidationError):
+        model(a='foobar', b='something else')
+
+
+def test_explicit_validators_star():
+    @validator('*')
+    def check_ab(v):
+        if 'foo' not in v:
+            raise ValueError('"foo" not found in a')
+        return v
+
+    model = create_model('FooModel', __validators__=[check_ab], a=(str, ...), b=(str, ...))
+    m = model(a='foobar', b='foobaz')
+    assert m.a == 'foobar'
+    assert m.b == 'foobaz'
+
+    with pytest.raises(ValidationError):
+        model(a='something else', b='foobar')
+
+    with pytest.raises(ValidationError):
+        model(a='foobar', b='something else')
+
+
+def test_explicit_validators_pre_whole():
+    @validator('a', whole=True)
+    def check_a1(v):
+        v.append(456)
+        return v
+
+    @validator('a', whole=True, pre=True)
+    def check_a2(v):
+        v.append('123')
+        return v
+
+    model = create_model('FooModel', __validators__=[check_a1, check_a2], a=(List[int], ...))
+    m = model(a=[1, 2])
+    assert m.a == [1, 2, 123, 456]
+
+
+def test_explicit_validators_always():
+    check_calls = 0
+
+    @validator('a', pre=True, always=True)
+    def check_a(v):
+        nonlocal check_calls
+        check_calls += 1
+        return v or 'xxx'
+
+    model = create_model('FooModel', __validators__=[check_a], a=(str, None))
+    m = model()
+
+    assert m.a == 'xxx'
+    assert check_calls == 1
+    assert model(a='y').a == 'y'
+    assert check_calls == 2
