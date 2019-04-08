@@ -1,8 +1,9 @@
 import pickle
+from typing import Union
 
 import pytest
 
-from pydantic import BaseModel, Protocol, ValidationError
+from pydantic import BaseModel, Protocol, Schema, ValidationError
 
 
 class Model(BaseModel):
@@ -83,3 +84,19 @@ def test_file_pickle_no_ext(tmpdir):
     p = tmpdir.join('test')
     p.write_binary(pickle.dumps(dict(a=12, b=8)))
     assert Model.parse_file(str(p), content_type='application/pickle', allow_pickle=True) == Model(a=12, b=8)
+
+
+def test_const_differentiates_union():
+    class SubModelA(BaseModel):
+        key: str = Schema('A', const=True)
+        foo: int
+
+    class SubModelB(BaseModel):
+        key: str = Schema('B', const=True)
+        foo: int
+
+    class Model(BaseModel):
+        a: Union[SubModelA, SubModelB]
+
+    m = Model.parse_obj({'a': {'key': 'B', 'foo': 3}})
+    assert isinstance(m.a, SubModelB)

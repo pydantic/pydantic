@@ -113,6 +113,13 @@ def number_size_validator(v: 'Number', field: 'Field') -> 'Number':
     return v
 
 
+def constant_validator(v: 'Any', field: 'Field') -> 'Any':
+    if field.const and v != field.default:
+        raise errors.WrongConstantError(given=v, expected=field.default)
+
+    return v
+
+
 def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 

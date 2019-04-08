@@ -3,7 +3,7 @@ from typing import Any, ClassVar, List
 
 import pytest
 
-from pydantic import BaseModel, Extra, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, Extra, NoneBytes, NoneStr, Required, Schema, ValidationError, constr
 
 
 def test_success():
@@ -363,6 +363,25 @@ def test_immutability():
     with pytest.raises(ValueError) as exc_info:
         m.b = 11
     assert '"TestModel" object has no field "b"' in str(exc_info)
+
+
+class ConstModel(BaseModel):
+    a: int = Schema(3, const=True)
+
+
+def test_const_validates():
+    m = ConstModel(a=3)
+    assert m.a == 3
+
+
+def test_const_is_required():
+    with pytest.raises(ValidationError):
+        ConstModel()
+
+
+def test_const_with_wrong_value():
+    with pytest.raises(ValidationError):
+        ConstModel(a=4)
 
 
 class ValidateAssignmentModel(BaseModel):

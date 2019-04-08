@@ -47,6 +47,10 @@ class NoneIsAllowedError(PydanticTypeError):
     msg_template = 'value is not none'
 
 
+class WrongConstantError(PydanticTypeError):
+    msg_template = 'constant value {given} is not expected value {expected}'
+
+
 class BytesError(PydanticTypeError):
     msg_template = 'byte type expected'
 

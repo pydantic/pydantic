@@ -3,6 +3,11 @@
 History
 -------
 
+v0.24
+.....
+
+* support ``const`` keyword in ``Schema``, #434 by @Sean1708
+
 v0.23 (2019-04-04)
 ..................
 * improve documentation for contributing section, #441 by @pilosus

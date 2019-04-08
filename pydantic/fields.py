@@ -24,7 +24,7 @@ from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
 from .utils import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, lenient_issubclass, sequence_like
-from .validators import NoneType, dict_validator, find_validators
+from .validators import NoneType, constant_validator, dict_validator, find_validators
 
 Required: Any = Ellipsis
 
@@ -58,6 +58,7 @@ class Field:
         'whole_post_validators',
         'default',
         'required',
+        'const',
         'model_config',
         'name',
         'alias',
@@ -79,6 +80,7 @@ class Field:
         model_config: Type['BaseConfig'],
         default: Any = None,
         required: bool = True,
+        const: bool = False,
         alias: str = None,
         schema: Optional['Schema'] = None,
     ) -> None:
@@ -89,7 +91,8 @@ class Field:
         self.type_: type = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
-        self.required: bool = required
+        self.required: bool = required or const
+        self.const: bool = const
         self.model_config = model_config
         self.schema: Optional['Schema'] = schema
 
@@ -132,6 +135,8 @@ class Field:
             class_validators=class_validators,
             default=None if required else value,
             required=required,
+            # cast since ``const`` could be None
+            const=bool(schema.const),
             model_config=config,
             schema=schema,
         )
@@ -248,6 +253,7 @@ class Field:
                     if get_validators
                     else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
                 ),
+                constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
             self.validators = self._prep_vals(v_funcs)
