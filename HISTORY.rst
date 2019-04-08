@@ -3,6 +3,11 @@
 History
 -------
 
+v0.24 (unreleased)
+..................
+
+* add validators support for ``create_model``, #262 by @pilosus
+
 v0.23 (2019-04-04)
 ..................
 * improve documentation for contributing section, #441 by @pilosus

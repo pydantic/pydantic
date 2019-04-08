@@ -158,6 +158,8 @@ Choices
 
 (This script is complete, it should run "as is")
 
+.. _validators_section:
+
 Validators
 ..........
 
@@ -609,10 +611,17 @@ the ``create_model`` method to allow models to be created on the fly.
 Here ``StaticFoobarModel`` and ``DynamicFoobarModel`` are identical.
 
 Fields are defined by either a a tuple of the form ``(<type>, <default value>)`` or just a default value. The
-special key word arguments ``__config__`` and ``__base__`` can be used to customise the new model. This includes
-extending a base model with extra fields.
+special key word arguments ``__config__``, ``__base__`` and ``__validators__`` can be used to customise the new model.
+This includes extending a base model with extra fields:
 
 .. literalinclude:: examples/dynamic_inheritance.py
+
+and custom validators:
+
+.. literalinclude:: examples/dynamic_models_validators.py
+
+Validators are defined as functions and support all the features ``BaseModel``'s :ref:`validators <validators_section>`
+support.
 
 .. _usage_mypy:
 
