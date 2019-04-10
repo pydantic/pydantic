@@ -40,6 +40,7 @@ from .utils import (
     is_classvar,
     resolve_annotations,
     truncate,
+    update_field_forward_refs,
     validate_field_name,
 )
 
@@ -211,18 +212,6 @@ class MetaModel(ABCMeta):
 
 
 _missing = object()
-
-
-def update_field_forward_refs(field: Field, globalns: Any, localns: Any) -> None:
-    """
-    Try to update ForwardRefs on fields based on this Model, globalns and localns.
-    """
-    if type(field.type_) == ForwardRef:
-        field.type_ = field.type_._evaluate(globalns, localns or None)  # type: ignore
-        field.prepare()
-    if field.sub_fields:
-        for sub_f in field.sub_fields:
-            update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
 
 
 class BaseModel(metaclass=MetaModel):
