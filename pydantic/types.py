@@ -89,9 +89,12 @@ NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, in
 
 
 if TYPE_CHECKING:  # pragma: no cover
+    from .dataclasses import DataclassType  # noqa: F401
+    from .main import BaseModel  # noqa: F401
     from .utils import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
+    ModelType = Optional[Type[Union['BaseModel', 'DataclassType']]]
 
 
 class StrictStr(str):

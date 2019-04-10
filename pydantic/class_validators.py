@@ -1,22 +1,21 @@
+from collections import ChainMap
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Signature, signature
 from itertools import chain
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Type, Union
 
 from .errors import ConfigError
 from .utils import AnyCallable, in_ipython
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .dataclasses import DataclassType
-    from .main import BaseConfig, BaseModel
+    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .dataclasses import DataclassType  # noqa: F401
     from .fields import Field
-    from typing import Union
+    from .types import ModelType
 
-    ValidatorCallable = Callable[
-        [Optional[Type[Union[BaseModel, DataclassType]]], Any, Dict[str, Any], Field, Type[BaseConfig]], Any
-    ]
+    ValidatorCallable = Callable[[ModelType, Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
 
 
 @dataclass
@@ -215,3 +214,8 @@ def _generic_validator_basic(validator: AnyCallable, sig: Signature, args: Set[s
     else:
         # args == {'values', 'field', 'config'}
         return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
+
+
+def gather_validators(type_: Type[Union['BaseModel', 'DataclassType']]) -> Dict[str, classmethod]:
+    all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])
+    return {k: v for k, v in all_attributes.items() if hasattr(v, '__validator_config')}
