@@ -566,8 +566,8 @@ def create_model(  # noqa: C901 (ignore complexity)
         fields[f_name] = f_value
 
     namespace: 'DictStrAny' = {'__annotations__': annotations, '__module__': __module__}
-    if validators:`
-        namespace.update(validators)
+    if __validators__:
+        namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
