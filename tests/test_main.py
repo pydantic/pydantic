@@ -374,9 +374,9 @@ def test_const_validates():
     assert m.a == 3
 
 
-def test_const_is_required():
-    with pytest.raises(ValidationError):
-        ConstModel()
+def test_const_uses_default():
+    m = ConstModel()
+    assert m.a == 3
 
 
 def test_const_with_wrong_value():

@@ -91,7 +91,7 @@ class Field:
         self.type_: type = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
-        self.required: bool = required or const
+        self.required: bool = required
         self.const: bool = const
         self.model_config = model_config
         self.schema: Optional['Schema'] = schema

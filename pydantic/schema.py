@@ -63,7 +63,7 @@ class Schema:
     apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``
 
     :param default: since the Schema is replacing the field’s default, its first argument is used
-      to set the default, use ellipsis (``...``) or ``const`` to indicate the field is required
+      to set the default, use ellipsis (``...``) to indicate the field is required
     :param alias: the public name of the field
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
@@ -245,7 +245,7 @@ def field_schema(
         s['description'] = schema.description
         schema_overrides = True
 
-    if not field.required and field.default is not None:
+    if not field.required and not field.const and field.default is not None:
         s['default'] = encode_default(field.default)
         schema_overrides = True
 

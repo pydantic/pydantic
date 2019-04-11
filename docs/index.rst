@@ -281,11 +281,11 @@ the ``Schema`` class.
 Optionally the ``Schema`` class can be used to provide extra information about the field and validations, arguments:
 
 * ``default`` (positional argument), since the ``Schema`` is replacing the field's default, its first
-  argument is used to set the default, use ellipsis (``...``) or ``const`` to indicate the field is required
+  argument is used to set the default, use ellipsis (``...``) to indicate the field is required
 * ``alias`` - the public name of the field
 * ``title`` if omitted ``field_name.title()`` is used
 * ``description`` if omitted and the annotation is a sub-model, the docstring of the sub-model will be used
-* ``const`` the field is required and *must* take it's default value
+* ``const`` this field *must* take it's default value if it is present
 * ``gt`` for numeric values (``int``, ``float``, ``Decimal``), adds a validation of "greater than" and an annotation
   of ``exclusiveMinimum`` to the JSON Schema
 * ``ge`` for numeric values, adds a validation of "greater than or equal" and an annotation of ``minimum`` to the

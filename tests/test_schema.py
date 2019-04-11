@@ -282,7 +282,6 @@ def test_const_str():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string'}},
-        'required': ['a'],
     }
 
 
