@@ -1437,6 +1437,10 @@ def test_secretstr():
     assert f.password.get_secret_value() == '1234'
     assert f.empty_password.get_secret_value() == ''
 
+    # Assert display function is correct
+    assert f.password.display() == '**********'
+    assert f.empty_password.display() == ''
+
 
 def test_secretstr_error():
     class Foobar(BaseModel):
@@ -1468,6 +1472,10 @@ def test_secretbytes():
     # Assert retrieval of secret value is correct
     assert f.password.get_secret_value() == b'wearebytes'
     assert f.empty_password.get_secret_value() == b''
+
+    # Assert display function is correct
+    assert f.password.display() == '**********'
+    assert f.empty_password.display() == ''
 
 
 def test_secretbytes_error():
