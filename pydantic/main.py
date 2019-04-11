@@ -11,11 +11,9 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ClassVar,
     Dict,
     Generator,
     List,
-    Mapping,
     Optional,
     Set,
     Tuple,
@@ -171,7 +169,6 @@ class MetaModel(ABCMeta):
         # annotation only fields need to come first in fields
         for ann_name, ann_type in annotations.items():
             if is_classvar(ann_type):
-            if ann_type == ClassVar:
                 class_vars.add(ann_name)
             elif not ann_name.startswith('_') and ann_name not in namespace:
                 validate_field_name(bases, ann_name)
@@ -189,7 +186,6 @@ class MetaModel(ABCMeta):
                 and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
                 and var_name not in class_vars
             ):
-            if not var_name.startswith('_') and not isinstance(value, TYPE_BLACKLIST) and var_name not in class_vars:
                 validate_field_name(bases, var_name)
                 fields[var_name] = Field.infer(
                     name=var_name,

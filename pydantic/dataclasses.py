@@ -6,7 +6,7 @@ from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
 from .main import create_model, validate_model
-from .utils import AnyType, gather_validators
+from .utils import AnyType
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseConfig, BaseModel  # noqa: F401
