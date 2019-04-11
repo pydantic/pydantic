@@ -94,7 +94,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .utils import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
-    ModelOrDc = Optional[Type[Union['BaseModel', 'DataclassType']]]
+    ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
 
 
 class StrictStr(str):

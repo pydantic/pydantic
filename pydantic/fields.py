@@ -30,7 +30,6 @@ Required: Any = Ellipsis
 
 if TYPE_CHECKING:  # pragma: no cover
     from .class_validators import ValidatorCallable  # noqa: F401
-    from .dataclasses import DataclassType  # noqa: F401
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .schema import Schema  # noqa: F401
@@ -300,7 +299,7 @@ class Field:
             return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
     def _validate_sequence_like(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc'
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
@@ -369,7 +368,9 @@ class Field:
         else:
             return tuple(result), None
 
-    def _validate_mapping(self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc') -> 'ValidateReturn':
+    def _validate_mapping(
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+    ) -> 'ValidateReturn':
         try:
             v_iter = dict_validator(v)
         except TypeError as exc:
@@ -395,7 +396,9 @@ class Field:
         else:
             return result, None
 
-    def _validate_singleton(self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc') -> 'ValidateReturn':
+    def _validate_singleton(
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+    ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
             for field in self.sub_fields:
@@ -409,7 +412,7 @@ class Field:
             return self._apply_validators(v, values, loc, cls, self.validators)
 
     def _apply_validators(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc', validators: 'ValidatorsList'
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
     ) -> 'ValidateReturn':
         for validator in validators:
             try:

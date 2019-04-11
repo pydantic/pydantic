@@ -10,12 +10,11 @@ from .errors import ConfigError
 from .utils import AnyCallable, in_ipython
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .main import BaseConfig, BaseModel  # noqa: F401
-    from .dataclasses import DataclassType  # noqa: F401
+    from .main import BaseConfig
     from .fields import Field
     from .types import ModelOrDc
 
-    ValidatorCallable = Callable[[ModelOrDc, Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
+    ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
 
 
 @dataclass
@@ -216,6 +215,6 @@ def _generic_validator_basic(validator: AnyCallable, sig: Signature, args: Set[s
         return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
 
 
-def gather_validators(type_: Type[Union['BaseModel', 'DataclassType']]) -> Dict[str, classmethod]:
+def gather_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:
     all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])
     return {k: v for k, v in all_attributes.items() if hasattr(v, '__validator_config')}
