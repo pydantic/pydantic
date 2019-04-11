@@ -3,6 +3,11 @@
 History
 -------
 
+v0.24
+.....
+
+* ``load_only`` field of BaseConfig, #471 by @Paul-Ilyin
+
 v0.23 (2019-04-04)
 ..................
 * improve documentation for contributing section, #441 by @pilosus
