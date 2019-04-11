@@ -102,3 +102,21 @@ def test_validate_parent():
         Parent(a='snap')
     with pytest.raises(ValidationError):
         Child(a='snap')
+
+
+def test_inheritance_replace():
+    @dataclass
+    class Parent:
+        a: int
+
+        @validator('a')
+        def add_to_a(cls, v):
+            return v + 1
+
+    @dataclass
+    class Child(Parent):
+        @validator('a')
+        def add_to_a(cls, v):
+            return v + 5
+
+    assert Child(a=0).a == 5
