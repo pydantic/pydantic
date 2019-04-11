@@ -33,7 +33,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .schema import Schema  # noqa: F401
-    from .types import ModelOrDc
+    from .types import ModelOrDc  # noqa: F401
 
     ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
@@ -261,7 +261,9 @@ class Field:
     def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
         return [make_generic_validator(f) for f in v_funcs if f]
 
-    def validate(self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: 'ModelOrDc' = None) -> 'ValidateReturn':
+    def validate(
+        self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional['ModelOrDc'] = None
+    ) -> 'ValidateReturn':
         if self.allow_none and not self.validate_always and v is None:
             return None, None
 
@@ -341,7 +343,9 @@ class Field:
                 converted = iter(result)
         return converted, None
 
-    def _validate_tuple(self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc') -> 'ValidateReturn':
+    def _validate_tuple(
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+    ) -> 'ValidateReturn':
         e: Optional[Exception] = None
         if not sequence_like(v):
             e = errors_.TupleError()
