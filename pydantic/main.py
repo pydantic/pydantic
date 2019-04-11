@@ -78,6 +78,7 @@ class BaseConfig:
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
     json_encoders: Dict[AnyType, AnyCallable] = {}
+    load_only: 'SetStr' = set()
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
@@ -471,6 +472,11 @@ class BaseModel(metaclass=MetaModel):
     def _calculate_keys(
         self, include: 'SetStr' = None, exclude: Optional['SetStr'] = None, skip_defaults: bool = False
     ) -> Optional['SetStr']:
+        if self.__config__.load_only:
+            if exclude is None:
+                exclude = self.Config.load_only
+            else:
+                exclude.update(self.Config.load_only)
 
         if include is None and exclude is None and skip_defaults is False:
             return None

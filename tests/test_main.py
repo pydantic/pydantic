@@ -576,3 +576,24 @@ def test_dir_fields():
     assert "json" in dir(m)
     assert "attribute_a" in dir(m)
     assert "attribute_b" in dir(m)
+
+
+def test_load_only():
+    class InnerModel(BaseModel):
+        a: int
+        b: str
+
+        class Config:
+            load_only = {"b"}
+
+    class OuterModel(BaseModel):
+        inner: InnerModel
+        a: int
+        b: str
+
+        class Config:
+            load_only = {"a"}
+
+    model = OuterModel(inner=InnerModel(a=2, b="str_b"), a=5, b="str_b")
+
+    assert model.dict() == {"inner": {"a": 2}, "b": "str_b"}

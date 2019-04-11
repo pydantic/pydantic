@@ -545,6 +545,7 @@ Options:
     value is instance of that type). If False - RuntimeError will be raised on model declaration (default: ``False``)
 :json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
     details.
+:load_only: set of fields which should not be serialized in dict() method, e.g. passwords and fields for internal use.
 
 .. warning::
 
