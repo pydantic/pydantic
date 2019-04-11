@@ -597,3 +597,17 @@ def test_load_only():
     model = OuterModel(inner=InnerModel(a=2, b="str_b"), a=5, b="str_b")
 
     assert model.dict() == {"inner": {"a": 2}, "b": "str_b"}
+
+
+def test_load_only_with_exclude():
+    class MyModel(BaseModel):
+        a: int
+        b: bool
+        c: int
+
+        class Config:
+            load_only = {"a"}
+
+    model = MyModel(a=5, b=True, c=10)
+
+    assert model.dict(exclude={"b"}) == {"c": 10}
