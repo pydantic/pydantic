@@ -34,7 +34,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .schema import Schema  # noqa: F401
-    from .types import ModelType
+    from .types import ModelOrDc
 
     ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
@@ -262,7 +262,7 @@ class Field:
     def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
         return [make_generic_validator(f) for f in v_funcs if f]
 
-    def validate(self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: 'ModelType' = None) -> 'ValidateReturn':
+    def validate(self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: 'ModelOrDc' = None) -> 'ValidateReturn':
         if self.allow_none and not self.validate_always and v is None:
             return None, None
 
@@ -300,7 +300,7 @@ class Field:
             return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
     def _validate_sequence_like(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelType'
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc'
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
@@ -342,7 +342,7 @@ class Field:
                 converted = iter(result)
         return converted, None
 
-    def _validate_tuple(self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelType') -> 'ValidateReturn':
+    def _validate_tuple(self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc') -> 'ValidateReturn':
         e: Optional[Exception] = None
         if not sequence_like(v):
             e = errors_.TupleError()
@@ -369,7 +369,7 @@ class Field:
         else:
             return tuple(result), None
 
-    def _validate_mapping(self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelType') -> 'ValidateReturn':
+    def _validate_mapping(self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc') -> 'ValidateReturn':
         try:
             v_iter = dict_validator(v)
         except TypeError as exc:
@@ -395,7 +395,7 @@ class Field:
         else:
             return result, None
 
-    def _validate_singleton(self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelType') -> 'ValidateReturn':
+    def _validate_singleton(self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc') -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
             for field in self.sub_fields:
@@ -409,7 +409,7 @@ class Field:
             return self._apply_validators(v, values, loc, cls, self.validators)
 
     def _apply_validators(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelType', validators: 'ValidatorsList'
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: 'ModelOrDc', validators: 'ValidatorsList'
     ) -> 'ValidateReturn':
         for validator in validators:
             try:

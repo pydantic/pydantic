@@ -13,9 +13,9 @@ if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .dataclasses import DataclassType  # noqa: F401
     from .fields import Field
-    from .types import ModelType
+    from .types import ModelOrDc
 
-    ValidatorCallable = Callable[[ModelType, Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
+    ValidatorCallable = Callable[[ModelOrDc, Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
 
 
 @dataclass

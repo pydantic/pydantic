@@ -45,7 +45,7 @@ from .utils import (
 
 if TYPE_CHECKING:  # pragma: no cover
     from .dataclasses import DataclassType  # noqa: F401
-    from .types import CallableGenerator, ModelType
+    from .types import CallableGenerator, ModelOrDc
     from .class_validators import ValidatorListDict
 
     AnyGenerator = Generator[Any, None, None]
@@ -572,7 +572,7 @@ def create_model(  # noqa: C901 (ignore complexity)
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True, cls: 'ModelType' = None
+    model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True, cls: 'ModelOrDc' = None
 ) -> Union['DictStrAny', Tuple['DictStrAny', Optional[ValidationError]]]:
     """
     validate data against a model.
