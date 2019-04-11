@@ -40,6 +40,7 @@ from .utils import (
     is_classvar,
     resolve_annotations,
     truncate,
+    update_field_forward_refs,
     validate_field_name,
 )
 
@@ -455,9 +456,7 @@ class BaseModel(metaclass=MetaModel):
         globalns = sys.modules[cls.__module__].__dict__
         globalns.setdefault(cls.__name__, cls)
         for f in cls.__fields__.values():
-            if type(f.type_) == ForwardRef:
-                f.type_ = f.type_._evaluate(globalns, localns or None)  # type: ignore
-                f.prepare()
+            update_field_forward_refs(f, globalns=globalns, localns=localns)
 
     def __iter__(self) -> 'AnyGenerator':
         """

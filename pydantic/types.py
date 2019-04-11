@@ -595,6 +595,9 @@ class SecretStr:
     def __str__(self) -> str:
         return repr(self)
 
+    def display(self) -> str:
+        return '**********' if self._secret_value else ''
+
     def get_secret_value(self) -> str:
         return self._secret_value
 
@@ -617,6 +620,9 @@ class SecretBytes:
 
     def __str__(self) -> str:
         return repr(self)
+
+    def display(self) -> str:
+        return '**********' if self._secret_value else ''
 
     def get_secret_value(self) -> bytes:
         return self._secret_value
