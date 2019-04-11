@@ -6,6 +6,7 @@ History
 v0.x (xxxx-xx-xx)
 ..................
 * fix handling ``ForwardRef`` in sub-types, like ``Union``, #464 by @tiangolo
+* fix secret serialization, #465 by @Atheuz
 
 v0.23 (2019-04-04)
 ..................
