@@ -13,16 +13,10 @@ def test_simple():
         a: str
 
         @validator('a')
-        def check_a(cls, v):
-            if 'foobar' not in v:
-                raise ValueError('"foobar" not found in a')
-            return v
+        def change_a(cls, v):
+            return v + ' changed'
 
-    assert MyDataclass(a='this is foobar good').a == 'this is foobar good'
-
-    with pytest.raises(ValidationError) as exc_info:
-        MyDataclass(a='snap')
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': '"foobar" not found in a', 'type': 'value_error'}]
+    assert MyDataclass(a='this is foobar good').a == 'this is foobar good changed'
 
 
 def test_validate_whole():
@@ -87,21 +81,15 @@ def test_validate_parent():
         a: str
 
         @validator('a')
-        def check_a(cls, v):
-            if 'foobar' not in v:
-                raise ValueError('"foobar" not found in a')
-            return v
+        def change_a(cls, v):
+            return v + ' changed'
 
     @dataclass
     class Child(Parent):
         pass
 
-    assert Parent(a='this is foobar good').a == 'this is foobar good'
-    assert Child(a='this is foobar good').a == 'this is foobar good'
-    with pytest.raises(ValidationError):
-        Parent(a='snap')
-    with pytest.raises(ValidationError):
-        Child(a='snap')
+    assert Parent(a='this is foobar good').a == 'this is foobar good changed'
+    assert Child(a='this is foobar good').a == 'this is foobar good changed'
 
 
 def test_inheritance_replace():
