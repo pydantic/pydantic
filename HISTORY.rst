@@ -3,6 +3,11 @@
 History
 -------
 
+v0.x (xxxx-xx-xx)
+..................
+* fix handling ``ForwardRef`` in sub-types, like ``Union``, #464 by @tiangolo
+* fix secret serialization, #465 by @Atheuz
+
 v0.23 (2019-04-04)
 ..................
 * improve documentation for contributing section, #441 by @pilosus
@@ -14,7 +19,6 @@ v0.23 (2019-04-04)
 * Support specialized ``ClassVars``, #455 by @tyrylu
 * fix JSON serialization for ``ipaddress`` types, #333 by @pilosus
 * add ``SecretStr`` and ``SecretBytes`` types, #452 by @atheuz
-* Support validators in dataclasses, #454 by @primal100 
 
 v0.22 (2019-03-29)
 ..................
