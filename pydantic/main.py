@@ -45,7 +45,8 @@ from .utils import (
 )
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .types import CallableGenerator
+    from .dataclasses import DataclassType  # noqa: F401
+    from .types import CallableGenerator, ModelOrDc
     from .class_validators import ValidatorListDict
 
     AnyGenerator = Generator[Any, None, None]
@@ -513,12 +514,13 @@ class BaseModel(metaclass=MetaModel):
         return ret
 
 
-def create_model(
+def create_model(  # noqa: C901 (ignore complexity)
     model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
     __module__: Optional[str] = None,
+    __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
 ) -> BaseModel:
     """
@@ -526,6 +528,7 @@ def create_model(
     :param model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
+    :param __validators__: a dict of method names and @validator class methods
     :param **field_definitions: fields of the model (or extra fields if a base is supplied) in the format
         `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
@@ -558,6 +561,8 @@ def create_model(
         fields[f_name] = f_value
 
     namespace: 'DictStrAny' = {'__annotations__': annotations, '__module__': __module__}
+    if __validators__:
+        namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
@@ -566,7 +571,7 @@ def create_model(
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True
+    model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True, cls: 'ModelOrDc' = None
 ) -> Union['DictStrAny', Tuple['DictStrAny', Optional[ValidationError]]]:
     """
     validate data against a model.
@@ -601,7 +606,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
         elif check_extra:
             names_used.add(field.name if using_name else field.alias)
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)  # type: ignore
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls or model.__class__)  # type: ignore
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):

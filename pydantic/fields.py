@@ -33,6 +33,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .schema import Schema  # noqa: F401
+    from .types import ModelOrDc  # noqa: F401
 
     ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
@@ -261,7 +262,7 @@ class Field:
         return [make_generic_validator(f) for f in v_funcs if f]
 
     def validate(
-        self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional[Type['BaseModel']] = None
+        self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
         if self.allow_none and not self.validate_always and v is None:
             return None, None
@@ -300,7 +301,7 @@ class Field:
             return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
     def _validate_sequence_like(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
@@ -343,7 +344,7 @@ class Field:
         return converted, None
 
     def _validate_tuple(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         e: Optional[Exception] = None
         if not sequence_like(v):
@@ -372,7 +373,7 @@ class Field:
             return tuple(result), None
 
     def _validate_mapping(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         try:
             v_iter = dict_validator(v)
@@ -400,7 +401,7 @@ class Field:
             return result, None
 
     def _validate_singleton(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional[Type['BaseModel']]
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
@@ -415,12 +416,7 @@ class Field:
             return self._apply_validators(v, values, loc, cls, self.validators)
 
     def _apply_validators(
-        self,
-        v: Any,
-        values: Dict[str, Any],
-        loc: 'LocType',
-        cls: Optional[Type['BaseModel']],
-        validators: 'ValidatorsList',
+        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
     ) -> 'ValidateReturn':
         for validator in validators:
             try:

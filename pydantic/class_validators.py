@@ -1,3 +1,4 @@
+from collections import ChainMap
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Signature, signature
@@ -9,10 +10,11 @@ from .errors import ConfigError
 from .utils import AnyCallable, in_ipython
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .main import BaseConfig, BaseModel
+    from .main import BaseConfig
     from .fields import Field
+    from .types import ModelOrDc
 
-    ValidatorCallable = Callable[[Optional[Type[BaseModel]], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
+    ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
 
 
 @dataclass
@@ -211,3 +213,8 @@ def _generic_validator_basic(validator: AnyCallable, sig: Signature, args: Set[s
     else:
         # args == {'values', 'field', 'config'}
         return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
+
+
+def gather_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:
+    all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])
+    return {k: v for k, v in all_attributes.items() if hasattr(v, '__validator_config')}
