@@ -316,10 +316,14 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: 'DictAny') -> 'Model':
-        if not isinstance(obj, dict):
-            exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-            raise ValidationError([ErrorWrapper(exc, loc='__obj__')])
-        return cls(**obj)
+        if isinstance(obj, dict):
+            return cls(**obj)
+        else:
+            try:
+                return cls(**dict(obj))
+            except (TypeError, ValueError) as e:
+                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
 
     @classmethod
     def parse_raw(

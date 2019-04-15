@@ -6,7 +6,7 @@ from pydantic import BaseModel, Protocol, ValidationError
 
 
 class Model(BaseModel):
-    a: float = ...
+    a: float
     b: int = 10
 
 
@@ -15,12 +15,17 @@ def test_obj():
     assert str(m) == 'Model a=10.2 b=10'
 
 
-def test_fails():
+def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj([1, 2, 3])
     assert exc_info.value.errors() == [
         {'loc': ('__obj__',), 'msg': 'Model expected dict not list', 'type': 'type_error'}
     ]
+
+
+def test_parse_obj_submodel():
+    m = Model.parse_obj(Model(a=10.2))
+    assert m.dict() == {'a': 10.2, 'b': 10}
 
 
 def test_json():
