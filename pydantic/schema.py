@@ -363,6 +363,10 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
         flat_models |= get_flat_models_from_fields(field.sub_fields)
     elif lenient_issubclass(field.type_, main.BaseModel):
         flat_models |= get_flat_models_from_model(field.type_)
+    elif hasattr(field.type_, '__pydantic_model__') and lenient_issubclass(
+        field.type_.__pydantic_model__, main.BaseModel
+    ):
+        flat_models |= get_flat_models_from_model(field.type_.__pydantic_model__)
     return flat_models
 
 
@@ -671,13 +675,17 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     for type_, t_schema in field_class_to_schema_enum_disabled:
         if issubclass(field.type_, type_):
             return t_schema, definitions
-    if issubclass(field.type_, main.BaseModel):
+    # Handle dataclass-based models
+    field_type = field.type_
+    if hasattr(field_type, '__pydantic_model__'):
+        field_type = field_type.__pydantic_model__
+    if issubclass(field_type, main.BaseModel):
         sub_schema, sub_definitions = model_process_schema(
-            field.type_, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+            field_type, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
         definitions.update(sub_definitions)
         if not schema_overrides:
-            model_name = model_name_map[field.type_]
+            model_name = model_name_map[field_type]
             definitions[model_name] = sub_schema
             return {'$ref': f'{ref_prefix}{model_name}'}, definitions
         else:
