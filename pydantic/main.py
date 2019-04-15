@@ -14,6 +14,7 @@ from typing import (
     Dict,
     Generator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -315,15 +316,14 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: 'DictAny') -> 'Model':
-        if isinstance(obj, dict):
-            return cls(**obj)
-        else:
+    def parse_obj(cls: Type['Model'], obj: Mapping[Any, Any]) -> 'Model':
+        if not isinstance(obj, dict):
             try:
-                return cls(**dict(obj))
+                obj = dict(obj)
             except (TypeError, ValueError) as e:
                 exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
                 raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
+        return cls(**obj)
 
     @classmethod
     def parse_raw(

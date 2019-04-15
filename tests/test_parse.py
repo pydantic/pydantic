@@ -28,6 +28,15 @@ def test_parse_obj_submodel():
     assert m.dict() == {'a': 10.2, 'b': 10}
 
 
+def test_parse_obj_wrong_model():
+    class Foo(BaseModel):
+        c = 123
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj(Foo())
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
 def test_json():
     assert Model.parse_raw('{"a": 12, "b": 8}') == Model(a=12, b=8)
 
