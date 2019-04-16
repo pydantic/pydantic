@@ -8,6 +8,7 @@ v0.x (xxxx-xx-xx)
 * fix handling ``ForwardRef`` in sub-types, like ``Union``, #464 by @tiangolo
 * fix secret serialization, #465 by @atheuz
 * Support custom validators for dataclasses, #454 by @primal100  
+* fix to schema generation in nested dataclass-based models, #474 by @NoAnyLove
 
 v0.23 (2019-04-04)
 ..................
