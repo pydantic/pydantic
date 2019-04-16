@@ -3,7 +3,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
 from uuid import UUID
 
 from . import main
@@ -33,6 +33,9 @@ from .types import (
     constr,
 )
 from .utils import clean_docstring, is_callable_type, lenient_issubclass
+
+if TYPE_CHECKING:  # pragma: no cover
+    from . import dataclasses  # noqa: F401
 
 __all__ = [
     'Schema',
@@ -364,8 +367,9 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
     elif lenient_issubclass(field.type_, main.BaseModel):
         flat_models |= get_flat_models_from_model(field.type_)
     elif hasattr(field.type_, '__pydantic_model__') and lenient_issubclass(
-        field.type_.__pydantic_model__, main.BaseModel
+        field.type_.__pydantic_model__, main.BaseModel  # type: ignore
     ):
+        field.type_ = cast(Type['dataclasses.DataclassType'], field.type_)
         flat_models |= get_flat_models_from_model(field.type_.__pydantic_model__)
     return flat_models
 
@@ -678,6 +682,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     # Handle dataclass-based models
     field_type = field.type_
     if hasattr(field_type, '__pydantic_model__'):
+        field_type = cast(Type['dataclasses.DataclassType'], field_type)
         field_type = field_type.__pydantic_model__
     if issubclass(field_type, main.BaseModel):
         sub_schema, sub_definitions = model_process_schema(
