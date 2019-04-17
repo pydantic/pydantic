@@ -313,16 +313,16 @@ def test_nested_schema():
         n: Nested
 
     assert Outer.__pydantic_model__.schema() == {
-        "title": "Outer",
-        "type": "object",
-        "properties": {"n": {"$ref": "#/definitions/Nested"}},
-        "required": ["n"],
-        "definitions": {
-            "Nested": {
-                "title": "Nested",
-                "type": "object",
-                "properties": {"number": {"title": "Number", "type": "integer"}},
-                "required": ["number"],
+        'title': 'Outer',
+        'type': 'object',
+        'properties': {'n': {'$ref': '#/definitions/Nested'}},
+        'required': ['n'],
+        'definitions': {
+            'Nested': {
+                'title': 'Nested',
+                'type': 'object',
+                'properties': {'number': {'title': 'Number', 'type': 'integer'}},
+                'required': ['number'],
             }
         },
     }

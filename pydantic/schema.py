@@ -366,9 +366,7 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
         flat_models |= get_flat_models_from_fields(field.sub_fields)
     elif lenient_issubclass(field.type_, main.BaseModel):
         flat_models |= get_flat_models_from_model(field.type_)
-    elif hasattr(field.type_, '__pydantic_model__') and lenient_issubclass(
-        field.type_.__pydantic_model__, main.BaseModel  # type: ignore
-    ):
+    elif lenient_issubclass(getattr(field.type_, '__pydantic_model__', None), main.BaseModel):
         field.type_ = cast(Type['dataclasses.DataclassType'], field.type_)
         flat_models |= get_flat_models_from_model(field.type_.__pydantic_model__)
     return flat_models
@@ -681,7 +679,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             return t_schema, definitions
     # Handle dataclass-based models
     field_type = field.type_
-    if hasattr(field_type, '__pydantic_model__'):
+    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), main.BaseModel):
         field_type = cast(Type['dataclasses.DataclassType'], field_type)
         field_type = field_type.__pydantic_model__
     if issubclass(field_type, main.BaseModel):
