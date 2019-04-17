@@ -1,4 +1,5 @@
 .idea/
+.hypothesis
 env/
 env36/
 env37/
