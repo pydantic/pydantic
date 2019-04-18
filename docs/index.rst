@@ -437,7 +437,7 @@ types:
   * ``str``, following formats work:
 
     * ``[-][DD ][HH:MM]SS[.ffffff]``
-    * ``[±]P[DD]T[HH]H[MM]M[SS]S`` (ISO 8601 format for timedelta)
+    * ``[±]P[DD]DT[HH]H[MM]M[SS]S`` (ISO 8601 format for timedelta)
 
 
 .. literalinclude:: examples/datetime_example.py
