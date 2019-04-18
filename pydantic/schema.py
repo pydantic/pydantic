@@ -3,7 +3,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
 from uuid import UUID
 
 from . import main
@@ -33,6 +33,9 @@ from .types import (
     constr,
 )
 from .utils import clean_docstring, is_callable_type, lenient_issubclass
+
+if TYPE_CHECKING:  # pragma: no cover
+    from . import dataclasses  # noqa: F401
 
 __all__ = [
     'Schema',
@@ -363,6 +366,9 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
         flat_models |= get_flat_models_from_fields(field.sub_fields)
     elif lenient_issubclass(field.type_, main.BaseModel):
         flat_models |= get_flat_models_from_model(field.type_)
+    elif lenient_issubclass(getattr(field.type_, '__pydantic_model__', None), main.BaseModel):
+        field.type_ = cast(Type['dataclasses.DataclassType'], field.type_)
+        flat_models |= get_flat_models_from_model(field.type_.__pydantic_model__)
     return flat_models
 
 
@@ -671,13 +677,18 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     for type_, t_schema in field_class_to_schema_enum_disabled:
         if issubclass(field.type_, type_):
             return t_schema, definitions
-    if issubclass(field.type_, main.BaseModel):
+    # Handle dataclass-based models
+    field_type = field.type_
+    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), main.BaseModel):
+        field_type = cast(Type['dataclasses.DataclassType'], field_type)
+        field_type = field_type.__pydantic_model__
+    if issubclass(field_type, main.BaseModel):
         sub_schema, sub_definitions = model_process_schema(
-            field.type_, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+            field_type, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
         definitions.update(sub_definitions)
         if not schema_overrides:
-            model_name = model_name_map[field.type_]
+            model_name = model_name_map[field_type]
             definitions[model_name] = sub_schema
             return {'$ref': f'{ref_prefix}{model_name}'}, definitions
         else:

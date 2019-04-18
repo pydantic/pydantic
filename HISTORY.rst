@@ -9,6 +9,7 @@ v0.24 (unreleased)
 * fix secret serialization, #465 by @atheuz
 * Support custom validators for dataclasses, #454 by @primal100
 * fix ``parse_obj`` to cope with dict-like objects, #472 by @samuelcolvin
+* fix to schema generation in nested dataclass-based models, #474 by @NoAnyLove
 
 v0.23 (2019-04-04)
 ..................
