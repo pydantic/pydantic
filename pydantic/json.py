@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from pathlib import PosixPath, WindowsPath
 from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
@@ -34,6 +35,8 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     GeneratorType: list,
     bytes: lambda o: o.decode(),
     Decimal: float,
+    PosixPath: str,
+    WindowsPath: str,
 }
 
 
