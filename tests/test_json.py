@@ -57,13 +57,13 @@ def test_path_encoding(tmpdir):
         dir_path: DirectoryPath
 
     tmpdir = Path(tmpdir)
-    path = tmpdir / "foo"
-    file_path = tmpdir / "bar"
+    path = tmpdir / 'foo'
+    file_path = tmpdir / 'bar'
     file_path.touch()
-    dir_path = tmpdir / "baz"
+    dir_path = tmpdir / 'baz'
     dir_path.mkdir()
     model = PathModel(path=path, file_path=file_path, dir_path=dir_path)
-    expected = json.dumps({"path": str(path), "file_path": str(file_path), "dir_path": str(dir_path)})
+    expected = json.dumps({'path': str(path), 'file_path': str(file_path), 'dir_path': str(dir_path)})
     assert json.dumps(model, default=pydantic_encoder) == expected
 
 
