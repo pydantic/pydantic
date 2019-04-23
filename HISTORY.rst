@@ -3,6 +3,10 @@
 History
 -------
 
+v0.25 (unreleased)
+..................
+* Improve documentation on self-referencing models and annotations, #487 by @theenglishway
+
 v0.24 (2019-04-23)
 ..................
 * fix handling ``ForwardRef`` in sub-types, like ``Union``, #464 by @tiangolo
