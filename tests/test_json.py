@@ -3,13 +3,14 @@ import json
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from pathlib import Path
 from uuid import UUID
 
 import pytest
 
 from pydantic import BaseModel, create_model
 from pydantic.json import pydantic_encoder, timedelta_isoformat
-from pydantic.types import SecretBytes, SecretStr
+from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
 
 
 class MyEnum(Enum):
@@ -47,6 +48,22 @@ class MyEnum(Enum):
 )
 def test_encoding(input, output):
     assert output == json.dumps(input, default=pydantic_encoder)
+
+
+def test_path_encoding(tmpdir):
+    class PathModel(BaseModel):
+        path: Path
+        file_path: FilePath
+        dir_path: DirectoryPath
+
+    tmpdir = Path(tmpdir)
+    file_path = tmpdir / 'bar'
+    file_path.touch()
+    dir_path = tmpdir / 'baz'
+    dir_path.mkdir()
+    model = PathModel(path=Path('/path/test/example/'), file_path=file_path, dir_path=dir_path)
+    expected = '{{"path": "/path/test/example", "file_path": "{}", "dir_path": "{}"}}'.format(file_path, dir_path)
+    assert json.dumps(model, default=pydantic_encoder) == expected
 
 
 def test_model_encoding():

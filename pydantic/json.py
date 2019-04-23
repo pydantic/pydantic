@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
@@ -44,6 +45,8 @@ def pydantic_encoder(obj: Any) -> Any:
         return obj.dict()
     elif isinstance(obj, Enum):
         return obj.value
+    elif isinstance(obj, Path):
+        return str(obj)
 
     try:
         encoder = ENCODERS_BY_TYPE[type(obj)]

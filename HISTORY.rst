@@ -10,6 +10,7 @@ v0.24 (unreleased)
 * Support custom validators for dataclasses, #454 by @primal100
 * fix ``parse_obj`` to cope with dict-like objects, #472 by @samuelcolvin
 * fix to schema generation in nested dataclass-based models, #474 by @NoAnyLove
+* fix ``json`` for ``Path``, ``FilePath``, and ``DirectoryPath`` objects, #473 by @mikegoodspeed
 
 v0.23 (2019-04-04)
 ..................
