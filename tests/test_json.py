@@ -63,7 +63,7 @@ def test_path_encoding(tmpdir):
     dir_path = tmpdir / 'baz'
     dir_path.mkdir()
     model = PathModel(path=path, file_path=file_path, dir_path=dir_path)
-    expected = json.dumps({'path': str(path), 'file_path': str(file_path), 'dir_path': str(dir_path)})
+    expected = '{{"path": "{}", "file_path": "{}", "dir_path": "{}"}}'.format(path, file_path, dir_path)
     assert json.dumps(model, default=pydantic_encoder) == expected
 
 
