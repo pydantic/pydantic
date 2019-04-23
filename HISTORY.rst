@@ -3,7 +3,7 @@
 History
 -------
 
-v0.24 (unreleased)
+v0.24 (2019-04-23)
 ..................
 * fix handling ``ForwardRef`` in sub-types, like ``Union``, #464 by @tiangolo
 * fix secret serialization, #465 by @atheuz
