@@ -245,7 +245,7 @@ def field_schema(
         s['description'] = schema.description
         schema_overrides = True
 
-    if not field.required and not field.const and field.default is not None:
+    if not field.required and not getattr(field.schema, 'const', False) and field.default is not None:
         s['default'] = encode_default(field.default)
         schema_overrides = True
 
@@ -301,7 +301,7 @@ def get_field_schema_validations(field: Field) -> Dict[str, Any]:
             attr = getattr(field.schema, attr_name, None)
             if isinstance(attr, t):
                 f_schema[keyword] = attr
-    if field.const:
+    if getattr(field.schema, 'const', False):
         f_schema['const'] = field.default
     schema = cast('Schema', field.schema)
     if schema.extra:
@@ -658,7 +658,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}
-    if field.const:
+    if getattr(field.schema, 'const', False):
         f_schema['const'] = field.default
     if issubclass(field.type_, Enum):
         f_schema.update({'enum': [item.value for item in field.type_]})  # type: ignore

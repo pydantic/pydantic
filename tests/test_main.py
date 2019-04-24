@@ -365,23 +365,28 @@ def test_immutability():
     assert '"TestModel" object has no field "b"' in str(exc_info)
 
 
-class ConstModel(BaseModel):
-    a: int = Schema(3, const=True)
-
-
 def test_const_validates():
-    m = ConstModel(a=3)
+    class Model(BaseModel):
+        a: int = Schema(3, const=True)
+
+    m = Model(a=3)
     assert m.a == 3
 
 
 def test_const_uses_default():
-    m = ConstModel()
+    class Model(BaseModel):
+        a: int = Schema(3, const=True)
+
+    m = Model()
     assert m.a == 3
 
 
 def test_const_with_wrong_value():
+    class Model(BaseModel):
+        a: int = Schema(3, const=True)
+
     with pytest.raises(ValidationError):
-        ConstModel(a=4)
+        Model(a=4)
 
 
 class ValidateAssignmentModel(BaseModel):

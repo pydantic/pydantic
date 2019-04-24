@@ -114,7 +114,13 @@ def number_size_validator(v: 'Number', field: 'Field') -> 'Number':
 
 
 def constant_validator(v: 'Any', field: 'Field') -> 'Any':
-    if field.const and v != field.default:
+    """Validate ``const`` fields.
+
+    The value provided for a ``const`` field must be equal to the default value
+    of the field. This is to support the keyword of the same name in JSON
+    Schema.
+    """
+    if v != field.default:
         raise errors.WrongConstantError(given=v, expected=field.default)
 
     return v

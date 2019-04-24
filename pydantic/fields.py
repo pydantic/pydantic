@@ -58,7 +58,6 @@ class Field:
         'whole_post_validators',
         'default',
         'required',
-        'const',
         'model_config',
         'name',
         'alias',
@@ -80,7 +79,6 @@ class Field:
         model_config: Type['BaseConfig'],
         default: Any = None,
         required: bool = True,
-        const: bool = False,
         alias: str = None,
         schema: Optional['Schema'] = None,
     ) -> None:
@@ -92,7 +90,6 @@ class Field:
         self.class_validators = class_validators or {}
         self.default: Any = default
         self.required: bool = required
-        self.const: bool = const
         self.model_config = model_config
         self.schema: Optional['Schema'] = schema
 
@@ -135,8 +132,6 @@ class Field:
             class_validators=class_validators,
             default=None if required else value,
             required=required,
-            # cast since ``const`` could be None
-            const=bool(schema.const),
             model_config=config,
             schema=schema,
         )
@@ -253,7 +248,7 @@ class Field:
                     if get_validators
                     else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
                 ),
-                constant_validator,
+                getattr(self.schema, 'const', False) and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
             self.validators = self._prep_vals(v_funcs)
