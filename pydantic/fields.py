@@ -248,7 +248,7 @@ class Field:
                     if get_validators
                     else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
                 ),
-                getattr(self.schema, 'const', False) and constant_validator,
+                self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
             self.validators = self._prep_vals(v_funcs)
