@@ -3,7 +3,7 @@ from typing import Any, ClassVar, List
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, Extra, NoneBytes, NoneStr, Required, Schema, ValidationError, constr
+from pydantic import BaseModel, Extra, NoneBytes, NoneStr, Required, Schema, ValidationError, constr
 
 
 def test_success():
@@ -582,7 +582,7 @@ def test_dict_with_extra_keys():
     class MyModel(BaseModel):
         a: str = Schema(None, alias='alias_a')
 
-        class Config(BaseConfig):
+        class Config:
             extra = Extra.allow
 
     m = MyModel(extra_key='extra')
