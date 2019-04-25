@@ -3,7 +3,7 @@ from typing import Any, ClassVar, List
 
 import pytest
 
-from pydantic import BaseModel, Extra, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, Extra, NoneBytes, NoneStr, Required, Schema, ValidationError, constr
 
 
 def test_success():
@@ -576,3 +576,15 @@ def test_dir_fields():
     assert "json" in dir(m)
     assert "attribute_a" in dir(m)
     assert "attribute_b" in dir(m)
+
+
+def test_dict_with_extra_keys():
+    class MyModel(BaseModel):
+        a: str = Schema(None, alias='alias_a')
+
+        class Config:
+            extra = Extra.allow
+
+    m = MyModel(extra_key='extra')
+    assert m.dict() == {'a': None, 'extra_key': 'extra'}
+    assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
