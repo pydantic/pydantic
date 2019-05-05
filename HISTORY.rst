@@ -3,7 +3,7 @@
 History
 -------
 
-v0.25 (unreleased)
+v0.25 (2019-05-05)
 ..................
 * Improve documentation on self-referencing models and annotations, #487 by @theenglishway
 * fix ``.dict()`` with extra keys, #490 by @JaewonKim
