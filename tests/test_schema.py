@@ -274,6 +274,28 @@ def test_set():
     }
 
 
+def test_const_str():
+    class Model(BaseModel):
+        a: str = Schema('some string', const=True)
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string'}},
+    }
+
+
+def test_const_false():
+    class Model(BaseModel):
+        a: str = Schema('some string', const=False)
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'default': 'some string'}},
+    }
+
+
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [

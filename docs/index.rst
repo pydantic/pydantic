@@ -314,6 +314,7 @@ Optionally the ``Schema`` class can be used to provide extra information about t
 * ``alias`` - the public name of the field
 * ``title`` if omitted ``field_name.title()`` is used
 * ``description`` if omitted and the annotation is a sub-model, the docstring of the sub-model will be used
+* ``const`` this field *must* take it's default value if it is present
 * ``gt`` for numeric values (``int``, ``float``, ``Decimal``), adds a validation of "greater than" and an annotation
   of ``exclusiveMinimum`` to the JSON Schema
 * ``ge`` for numeric values, adds a validation of "greater than or equal" and an annotation of ``minimum`` to the

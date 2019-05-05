@@ -24,7 +24,7 @@ from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
 from .utils import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, lenient_issubclass, sequence_like
-from .validators import NoneType, dict_validator, find_validators
+from .validators import NoneType, constant_validator, dict_validator, find_validators
 
 Required: Any = Ellipsis
 
@@ -249,6 +249,7 @@ class Field:
                     if get_validators
                     else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
                 ),
+                self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
             self.validators = self._prep_vals(v_funcs)

@@ -70,6 +70,7 @@ class Schema:
     :param alias: the public name of the field
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
+    :param const: this field is required and *must* take it's default value
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
       will have an ``exclusiveMinimum`` validation keyword
     :param ge: only applies to numbers, requires the field to be "greater than or equal to". The
@@ -94,6 +95,7 @@ class Schema:
         'alias',
         'title',
         'description',
+        'const',
         'gt',
         'ge',
         'lt',
@@ -112,6 +114,7 @@ class Schema:
         alias: str = None,
         title: str = None,
         description: str = None,
+        const: bool = None,
         gt: float = None,
         ge: float = None,
         lt: float = None,
@@ -126,6 +129,7 @@ class Schema:
         self.alias = alias
         self.title = title
         self.description = description
+        self.const = const
         self.extra = extra
         self.gt = gt
         self.ge = ge
@@ -244,7 +248,7 @@ def field_schema(
         s['description'] = schema.description
         schema_overrides = True
 
-    if not field.required and field.default is not None:
+    if not field.required and not (field.schema is not None and field.schema.const) and field.default is not None:
         s['default'] = encode_default(field.default)
         schema_overrides = True
 
@@ -300,6 +304,8 @@ def get_field_schema_validations(field: Field) -> Dict[str, Any]:
             attr = getattr(field.schema, attr_name, None)
             if isinstance(attr, t):
                 f_schema[keyword] = attr
+    if field.schema is not None and field.schema.const:
+        f_schema['const'] = field.default
     schema = cast('Schema', field.schema)
     if schema.extra:
         f_schema.update(schema.extra)
@@ -658,6 +664,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}
+    if field.schema is not None and field.schema.const:
+        f_schema['const'] = field.default
     if issubclass(field.type_, Enum):
         f_schema.update({'enum': [item.value for item in field.type_]})  # type: ignore
         # Don't return immediately, to allow adding specific types

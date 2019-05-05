@@ -365,6 +365,39 @@ def test_immutability():
     assert '"TestModel" object has no field "b"' in str(exc_info)
 
 
+def test_const_validates():
+    class Model(BaseModel):
+        a: int = Schema(3, const=True)
+
+    m = Model(a=3)
+    assert m.a == 3
+
+
+def test_const_uses_default():
+    class Model(BaseModel):
+        a: int = Schema(3, const=True)
+
+    m = Model()
+    assert m.a == 3
+
+
+def test_const_with_wrong_value():
+    class Model(BaseModel):
+        a: int = Schema(3, const=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=4)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'expected constant value 3',
+            'type': 'value_error.const',
+            'ctx': {'given': 4, 'const': 3},
+        }
+    ]
+
+
 class ValidateAssignmentModel(BaseModel):
     a: int = 2
     b: constr(min_length=1)

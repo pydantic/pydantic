@@ -7,6 +7,7 @@ v0.25 (unreleased)
 ..................
 * Improve documentation on self-referencing models and annotations, #487 by @theenglishway
 * fix ``.dict()`` with extra keys, #490 by @JaewonKim
+* support ``const`` keyword in ``Schema``, #434 by @Sean1708
 
 v0.24 (2019-04-23)
 ..................
