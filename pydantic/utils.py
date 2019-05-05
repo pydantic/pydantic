@@ -29,6 +29,7 @@ except ImportError:
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
+    from .main import Field  # noqa: F401
 
 if sys.version_info < (3, 7):
     from typing import Callable
@@ -276,3 +277,15 @@ def _check_classvar(v: AnyType) -> bool:
 
 def is_classvar(ann_type: AnyType) -> bool:
     return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
+
+
+def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> None:
+    """
+    Try to update ForwardRefs on fields based on this Field, globalns and localns.
+    """
+    if type(field.type_) == ForwardRef:
+        field.type_ = field.type_._evaluate(globalns, localns or None)  # type: ignore
+        field.prepare()
+    if field.sub_fields:
+        for sub_f in field.sub_fields:
+            update_field_forward_refs(sub_f, globalns=globalns, localns=localns)

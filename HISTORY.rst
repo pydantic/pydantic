@@ -3,10 +3,20 @@
 History
 -------
 
-v0.24
-.....
-
+v0.25 (unreleased)
+..................
+* Improve documentation on self-referencing models and annotations, #487 by @theenglishway
+* fix ``.dict()`` with extra keys, #490 by @JaewonKim
 * support ``const`` keyword in ``Schema``, #434 by @Sean1708
+
+v0.24 (2019-04-23)
+..................
+* fix handling ``ForwardRef`` in sub-types, like ``Union``, #464 by @tiangolo
+* fix secret serialization, #465 by @atheuz
+* Support custom validators for dataclasses, #454 by @primal100
+* fix ``parse_obj`` to cope with dict-like objects, #472 by @samuelcolvin
+* fix to schema generation in nested dataclass-based models, #474 by @NoAnyLove
+* fix ``json`` for ``Path``, ``FilePath``, and ``DirectoryPath`` objects, #473 by @mikegoodspeed
 
 v0.23 (2019-04-04)
 ..................

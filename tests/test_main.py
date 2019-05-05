@@ -40,7 +40,7 @@ def test_ultra_simple_failed():
 def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert repr(m) == '<UltraSimpleModel a=10.2 b=10>'
-    assert repr(m.fields['a']) == "<Field(a type=float required)>"
+    assert repr(m.fields['a']) == '<Field(a type=float required)>'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
     assert m.json() == '{"a": 10.2, "b": 10}'
@@ -506,7 +506,7 @@ def test_arbitrary_type_allowed_validation_fails():
     assert exc_info.value.errors() == [
         {
             'loc': ('t',),
-            'msg': "instance of ArbitraryType expected",
+            'msg': 'instance of ArbitraryType expected',
             'type': 'type_error.arbitrary_type',
             'ctx': {'expected_arbitrary_type': 'ArbitraryType'},
         }
@@ -596,7 +596,19 @@ def test_dir_fields():
 
     m = MyModel(attribute_a=5)
 
-    assert "dict" in dir(m)
-    assert "json" in dir(m)
-    assert "attribute_a" in dir(m)
-    assert "attribute_b" in dir(m)
+    assert 'dict' in dir(m)
+    assert 'json' in dir(m)
+    assert 'attribute_a' in dir(m)
+    assert 'attribute_b' in dir(m)
+
+
+def test_dict_with_extra_keys():
+    class MyModel(BaseModel):
+        a: str = Schema(None, alias='alias_a')
+
+        class Config:
+            extra = Extra.allow
+
+    m = MyModel(extra_key='extra')
+    assert m.dict() == {'a': None, 'extra_key': 'extra'}
+    assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}

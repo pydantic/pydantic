@@ -14,6 +14,7 @@ from typing import (
     Dict,
     Generator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -40,11 +41,13 @@ from .utils import (
     is_classvar,
     resolve_annotations,
     truncate,
+    update_field_forward_refs,
     validate_field_name,
 )
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .types import CallableGenerator
+    from .dataclasses import DataclassType  # noqa: F401
+    from .types import CallableGenerator, ModelOrDc
     from .class_validators import ValidatorListDict
 
     AnyGenerator = Generator[Any, None, None]
@@ -286,7 +289,7 @@ class BaseModel(metaclass=MetaModel):
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
-            return lambda fields, key: fields[key].alias
+            return lambda fields, key: fields[key].alias if key in fields else key
 
         return lambda _, key: key
 
@@ -313,10 +316,13 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: 'DictAny') -> 'Model':
+    def parse_obj(cls: Type['Model'], obj: Mapping[Any, Any]) -> 'Model':
         if not isinstance(obj, dict):
-            exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-            raise ValidationError([ErrorWrapper(exc, loc='__obj__')])
+            try:
+                obj = dict(obj)
+            except (TypeError, ValueError) as e:
+                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
         return cls(**obj)
 
     @classmethod
@@ -454,9 +460,7 @@ class BaseModel(metaclass=MetaModel):
         globalns = sys.modules[cls.__module__].__dict__
         globalns.setdefault(cls.__name__, cls)
         for f in cls.__fields__.values():
-            if type(f.type_) == ForwardRef:
-                f.type_ = f.type_._evaluate(globalns, localns or None)  # type: ignore
-                f.prepare()
+            update_field_forward_refs(f, globalns=globalns, localns=localns)
 
     def __iter__(self) -> 'AnyGenerator':
         """
@@ -514,12 +518,13 @@ class BaseModel(metaclass=MetaModel):
         return ret
 
 
-def create_model(
+def create_model(  # noqa: C901 (ignore complexity)
     model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
     __module__: Optional[str] = None,
+    __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
 ) -> BaseModel:
     """
@@ -527,6 +532,7 @@ def create_model(
     :param model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
+    :param __validators__: a dict of method names and @validator class methods
     :param **field_definitions: fields of the model (or extra fields if a base is supplied) in the format
         `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
     """
@@ -559,6 +565,8 @@ def create_model(
         fields[f_name] = f_value
 
     namespace: 'DictStrAny' = {'__annotations__': annotations, '__module__': __module__}
+    if __validators__:
+        namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
@@ -567,7 +575,7 @@ def create_model(
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True
+    model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True, cls: 'ModelOrDc' = None
 ) -> Union['DictStrAny', Tuple['DictStrAny', Optional[ValidationError]]]:
     """
     validate data against a model.
@@ -602,7 +610,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
         elif check_extra:
             names_used.add(field.name if using_name else field.alias)
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=model.__class__)  # type: ignore
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls or model.__class__)  # type: ignore
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):

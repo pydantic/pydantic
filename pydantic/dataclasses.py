@@ -1,6 +1,7 @@
 import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, Union
 
+from .class_validators import gather_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
@@ -24,7 +25,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def _pydantic_post_init(self: 'DataclassType') -> None:
-    d = validate_model(self.__pydantic_model__, self.__dict__)
+    d = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)
     object.__setattr__(self, '__dict__', d)
     object.__setattr__(self, '__initialised__', True)
     if self.__post_init_original__:
@@ -50,7 +51,7 @@ def setattr_validate_assignment(self: 'DataclassType', name: str, value: Any) ->
     if self.__initialised__:
         d = dict(self.__dict__)
         d.pop(name)
-        value, error_ = self.__pydantic_model__.__fields__[name].validate(value, d, loc=name)
+        value, error_ = self.__pydantic_model__.__fields__[name].validate(value, d, loc=name, cls=self.__class__)
         if error_:
             raise ValidationError([error_])
 
@@ -79,7 +80,10 @@ def _process_class(
     }
     cls.__post_init_original__ = post_init_original
 
-    cls.__pydantic_model__ = create_model(cls.__name__, __config__=config, __module__=_cls.__module__, **fields)
+    validators = gather_validators(cls)
+    cls.__pydantic_model__ = create_model(
+        cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **fields
+    )
 
     cls.__initialised__ = False
     cls.__validate__ = classmethod(_validate_dataclass)

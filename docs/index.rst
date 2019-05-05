@@ -147,8 +147,6 @@ Since version ``v0.17`` nested dataclasses are supported both in dataclasses and
 
 Dataclasses attributes can be populated by tuples, dictionaries or instances of that dataclass.
 
-Currently validators don't work with dataclasses, if it's something you want please create an issue on github.
-
 Choices
 .......
 
@@ -222,6 +220,14 @@ to set a dynamic default value.
 You'll often want to use this together with ``pre`` since otherwise the with ``always=True``
 *pydantic* would try to validate the default ``None`` which would cause an error.
 
+Dataclass Validators
+~~~~~~~~~~~~~~~~~~~~
+
+Validators also work in Dataclasses.
+
+.. literalinclude:: examples/validators_dataclass.py
+
+(This script is complete, it should run "as is")
 
 Field Checks
 ~~~~~~~~~~~~
@@ -241,6 +247,29 @@ More complex hierarchical data structures can be defined using models as types i
 The ellipsis ``...`` just means "Required" same as annotation only declarations above.
 
 .. literalinclude:: examples/recursive.py
+
+(This script is complete, it should run "as is")
+
+.. _self_ref_models:
+
+Self-referencing Models
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Data structures with self-referencing models are also supported, provided the function
+``update_forward_refs()`` is called once the model is created (you will be reminded
+with a friendly error message if you don't).
+
+Within the model, you can refer to the not-yet-constructed model by a string :
+
+.. literalinclude:: examples/self_referencing_string.py
+
+(This script is complete, it should run "as is")
+
+You can also refer it by its type, provided you import ``annotations`` (see
+:ref:`the relevant paragraph <postponed_annotations>` for support depending on Python
+and pydantic versions).
+
+.. literalinclude:: examples/self_referencing_annotations.py
 
 (This script is complete, it should run "as is")
 
@@ -432,10 +461,10 @@ types:
   * ``str``, following formats work:
 
     * ``[-][DD ][HH:MM]SS[.ffffff]``
-    * ``[±]P[DD]T[HH]H[MM]M[SS]S`` (ISO 8601 format for timedelta)
+    * ``[±]P[DD]DT[HH]H[MM]M[SS]S`` (ISO 8601 format for timedelta)
 
 
-.. literalinclude:: examples/datetime.py
+.. literalinclude:: examples/datetime_example.py
 
 
 Exotic Types
@@ -464,6 +493,7 @@ Secret Types
 
 You can use the ``SecretStr`` and the ``SecretBytes`` data types for storing sensitive information
 that you do not want to be visible in logging or tracebacks.
+The SecretStr and SecretBytes will be formatted as either `'**********'` or `''` on conversion to json.
 
 .. literalinclude:: examples/ex_secret_types.py
 
@@ -740,6 +770,8 @@ Pydantic models can be used alongside Python's
 
 (This script is complete, it should run "as is")
 
+.. _postponed_annotations:
+
 Postponed Annotations
 .....................
 
@@ -747,7 +779,10 @@ Postponed Annotations
 
    Both postponed annotations via the future import and ``ForwardRef`` require python 3.7+.
 
-With globally postponed annotations *pydantic* should "just work".
+   Support for those features starts from *pydantic* v0.18.
+
+Postponed annotations (as described in `PEP563 <https://www.python.org/dev/peps/pep-0563/>`_)
+"just work".
 
 .. literalinclude:: examples/postponed_annotations.py
 
@@ -755,7 +790,11 @@ With globally postponed annotations *pydantic* should "just work".
 
 Internally *pydantic*  will call a method similar to ``typing.get_type_hints`` to resolve annotations.
 
-To make use of ``ForwardRef`` you may need to call ``Model.update_forward_refs()`` after creating the model,
+In cases where the referenced type is not yet defined, ``ForwardRef`` can be used (although referencing the
+type directly or by its string is a simpler solution in the case of
+:ref:`self-referencing models <self_ref_models>`).
+
+You may need to call ``Model.update_forward_refs()`` after creating the model,
 this is because in the example below ``Foo`` doesn't exist before it has been created (obviously) so ``ForwardRef``
 can't initially be resolved. You have to wait until after ``Foo`` is created, then call ``update_forward_refs``
 to properly set types before the model can be used.

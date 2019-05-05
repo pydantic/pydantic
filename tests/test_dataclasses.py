@@ -301,3 +301,28 @@ def test_schema():
         },
         'required': ['id'],
     }
+
+
+def test_nested_schema():
+    @pydantic.dataclasses.dataclass
+    class Nested:
+        number: int
+
+    @pydantic.dataclasses.dataclass
+    class Outer:
+        n: Nested
+
+    assert Outer.__pydantic_model__.schema() == {
+        'title': 'Outer',
+        'type': 'object',
+        'properties': {'n': {'$ref': '#/definitions/Nested'}},
+        'required': ['n'],
+        'definitions': {
+            'Nested': {
+                'title': 'Nested',
+                'type': 'object',
+                'properties': {'number': {'title': 'Number', 'type': 'integer'}},
+                'required': ['number'],
+            }
+        },
+    }
