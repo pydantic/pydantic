@@ -385,8 +385,17 @@ def test_const_with_wrong_value():
     class Model(BaseModel):
         a: int = Schema(3, const=True)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc_info:
         Model(a=4)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'expected constant value 3',
+            'type': 'value_error.const',
+            'ctx': {'given': 4, 'const': 3},
+        }
+    ]
 
 
 class ValidateAssignmentModel(BaseModel):

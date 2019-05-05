@@ -121,7 +121,7 @@ def constant_validator(v: 'Any', field: 'Field') -> 'Any':
     Schema.
     """
     if v != field.default:
-        raise errors.WrongConstantError(given=v, expected=field.default)
+        raise errors.WrongConstantError(given=v, const=field.default)
 
     return v
 
