@@ -2,11 +2,11 @@ attrs==19.1.0
 black==19.3b0
 coverage==4.5.3
 flake8==3.7.7
-isort==4.3.16
-mypy==0.670
+isort==4.3.17
+mypy==0.701
 pycodestyle==2.5.0
 pyflakes==2.1.1
-pytest==4.4.0
+pytest==4.4.1
 pytest-cov==2.6.1
-pytest-mock==1.10.3
+pytest-mock==1.10.4
 pytest-sugar==0.9.2

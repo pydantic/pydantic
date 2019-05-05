@@ -667,7 +667,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if field.schema is not None and field.schema.const:
         f_schema['const'] = field.default
     if issubclass(field.type_, Enum):
-        f_schema.update({'enum': [item.value for item in field.type_]})  # type: ignore
+        f_schema.update({'enum': [item.value for item in field.type_]})
         # Don't return immediately, to allow adding specific types
     for field_name, schema_name in validation_attribute_to_schema_keyword.items():
         field_value = getattr(field.type_, field_name, None)
