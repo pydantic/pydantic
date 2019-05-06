@@ -1532,31 +1532,33 @@ def test_secretbytes_error():
     'color, as_name, as_tuple, as_hex, as_hls',
     [
         # named colors
-        ('aliceblue', 'aliceblue', (240, 248, 255), '0xf0f8ff', (0.5777777777777778, 0.9705882352941176, 1.0)),
+        ('aliceblue', 'aliceblue', (240, 248, 255), 'f0f8ff', (0.5777777777777778, 0.9705882352941176, 1.0)),
         (
             'Antiquewhite',
             'antiquewhite',
             (250, 235, 215),
-            '0xfaebd7',
+            'faebd7',
             (0.09523809523809519, 0.9117647058823529, 0.7777777777777779),
         ),
-        ('AQUA', 'aqua', (0, 255, 255), '0x0ff', (0.5, 0.5, 1.0)),
-        ('aquaMarine', 'aquamarine', (127, 255, 212), '0x7fffd4', (0.4440104166666667, 0.7490196078431373, 1.0)),
+        ('AQUA', 'aqua', (0, 255, 255), '0ff', (0.5, 0.5, 1.0)),
+        ('aquaMarine', 'aquamarine', (127, 255, 212), '7fffd4', (0.4440104166666667, 0.7490196078431373, 1.0)),
         # hex: 6-digit and 3-digit
-        ('#000000', 'black', (0, 0, 0), '0x000', (0.0, 0.0, 0.0)),
-        ('#000', 'black', (0, 0, 0), '0x000', (0.0, 0.0, 0.0)),
-        ('0x000080', 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
-        ('0x00F', 'blue', (0, 0, 255), '0x00f', (0.6666666666666666, 0.5, 1.0)),
+        ('#000000', 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
+        ('#000', 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
+        ('0x000080', 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
+        ('0x00F', 'blue', (0, 0, 255), '00f', (0.6666666666666666, 0.5, 1.0)),
+        ('000000', 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
+        ('000', 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
         # rgb/rgba tuples
-        ((0, 0, 0), 'black', (0, 0, 0), '0x000', (0.0, 0.0, 0.0)),
-        ((0, 0, 128), 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
-        ((0, 0, 205, 1.0), 'mediumblue', (0, 0, 205), '0x0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
-        ((0, 0, 128, 1.0), 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
+        ((0, 0, 0), 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
+        ((0, 0, 128), 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
+        ((0, 0, 205, 1.0), 'mediumblue', (0, 0, 205), '0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
+        ((0, 0, 128, 1.0), 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
         # rgb/rgba strings
-        ('rgb(0, 0, 205)', 'mediumblue', (0, 0, 205), '0x0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
-        ('rgb(0, 0, 128)', 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
-        ('rgba(0, 0, 205, 1.0)', 'mediumblue', (0, 0, 205), '0x0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
-        ('rgba(0, 0, 128, 1.0)', 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
+        ('rgb(0, 0, 205)', 'mediumblue', (0, 0, 205), '0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
+        ('rgb(0, 0, 128)', 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
+        ('rgba(0, 0, 205, 1.0)', 'mediumblue', (0, 0, 205), '0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
+        ('rgba(0, 0, 128, 1.0)', 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
     ],
 )
 def test_color_success(color, as_name, as_tuple, as_hex, as_hls):
@@ -1565,13 +1567,16 @@ def test_color_success(color, as_name, as_tuple, as_hex, as_hls):
 
     obj = Model(color=color).color
     assert obj.original() == color
-    assert str(obj) == str(color)
+    assert str(obj) == str(color).lower()
     assert obj.as_named_color() == as_name
-    assert obj.as_rgb(add_alpha=False) == 'rgb{}'.format(as_tuple)
-    assert obj.as_rgb(add_alpha=True) == 'rgba{}'.format(as_tuple + (1.0,))
-    assert obj.as_tuple(add_alpha=False) == as_tuple
-    assert obj.as_tuple(add_alpha=True) == as_tuple + (1.0,)
-    assert obj.as_hex() == as_hex
+    assert obj.as_rgb(alpha=False) == 'rgb{}'.format(as_tuple)
+    assert obj.as_rgb(alpha=True) == 'rgba{}'.format(as_tuple + (1.0,))
+    assert obj.as_tuple(alpha=False) == as_tuple
+    assert obj.as_tuple(alpha=True) == as_tuple + (1.0,)
+    assert obj.as_hex(prefix='') == as_hex
+    assert obj.as_hex(prefix='0x') == '0x{}'.format(as_hex)
+    expanded_hex = as_hex if len(as_hex) == 6 else f'{as_hex[0]}{as_hex[0]}{as_hex[1]}{as_hex[1]}{as_hex[2]}{as_hex[2]}'
+    assert obj.as_hex(prefix='0x', reduce=False) == '0x{}'.format(expanded_hex)
 
     r, g, b = obj.as_hls()
     assert obj._almost_equal(r, as_hls[0])
@@ -1606,7 +1611,7 @@ def test_color_fail(color):
     class Model(BaseModel):
         color: Color = None
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         Model(color=color).as_named_color()
 
 
