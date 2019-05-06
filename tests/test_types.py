@@ -1568,6 +1568,7 @@ def test_color_success(color, as_name, as_tuple, as_hex, as_hls):
     obj = Model(color=color).color
     assert obj.original() == color
     assert str(obj) == str(color).lower()
+    assert obj.__repr__() == '<Color("{}")>'.format(obj._color_match)
     assert obj.as_named_color() == as_name
     assert obj.as_rgb(alpha=False) == 'rgb{}'.format(as_tuple)
     assert obj.as_rgb(alpha=True) == 'rgba{}'.format(as_tuple + (1.0,))
@@ -1605,6 +1606,10 @@ def test_color_success(color, as_name, as_tuple, as_hex, as_hls):
         'rgb(0, 0, 1128)',
         'rgba(0, 0, 11205, 0.1)',
         'rgba(0, 0, 128, 11.5)',
+        # neither a tuple, not a string
+        datetime(2017, 10, 5, 19, 47, 7),
+        object,
+        range(10),
     ],
 )
 def test_color_fail(color):
