@@ -637,16 +637,16 @@ class SecretBytes:
 
 
 class Color:
-    __slots__ = '_rgba', '_original', '_color_match'
+    __slots__ = '_rgb', '_original', '_color_match'
 
     def __init__(self, value: ColorType) -> None:
         self._original: ColorType = value
-        self._rgba: AnyRGBType
+        self._rgb: AnyRGBType
         self._color_match: Optional[str] = None
         self._parse_color()
 
     @staticmethod
-    def _match_rgba(value: str) -> Optional[RGBAType]:
+    def _rgb_str_to_tuple(value: str) -> Optional[RGBAType]:
         """
         Return RGB/RGBA tuple from the passed string.
 
@@ -660,24 +660,15 @@ class Color:
             re.IGNORECASE,
         )
         match = r.match(value)
-        if match is not None:
-            try:
-                result = (int(match.group('red')), int(match.group('green')), int(match.group('blue')))
-            except (IndexError, ValueError, AttributeError):
-                return None
 
-            if match.group('alpha'):
-                try:
-                    alpha = float(match.group('alpha'))
-                except ValueError:
-                    return None
-                else:
-                    # As of mypy==0.670 concatenation of tuples still doesn't type check
-                    # See: https://github.com/python/mypy/issues/224
-                    result += (alpha,)  # type: ignore
+        if match is None:
+            return None
 
-            return result  # type: ignore
-        return None
+        red = int(match.group('red'))
+        green = int(match.group('green'))
+        blue = int(match.group('blue'))
+        alpha = float(match.group('alpha')) if match.group('alpha') is not None else 1.0
+        return red, green, blue, alpha
 
     @staticmethod
     def _almost_equal(value_1: float, value_2: float = 1.0) -> bool:
@@ -686,84 +677,101 @@ class Color:
         """
         return abs(value_1 - value_2) <= 1e-8
 
-    @staticmethod
-    def _check_tuple(value: Tuple[Any, ...]) -> AnyRGBType:
+    def _is_int_color(self, c: Any) -> bool:
         """
-        Return RGB/RGBA tuple if possible, raise error otherwise
+        Return True if value passed is an integer in range (0, 256)
         """
-        if len(value) not in range(3, 5):
-            raise ValueError('RGBA/RGBA tuple should have length of 3 or 4, ' 'got {} instead'.format(len(value)))
-        result = value[:3]
-
         try:
-            alpha = float(value[3])
-        except IndexError:
-            alpha = None  # type: ignore
+            color = int(c)
         except ValueError:
-            raise errors.ColorError()
+            return False
+        return color in range(0, 256)
 
-        if alpha:
-            if Color._almost_equal(alpha, 1.0):
-                # alpha is almost equal to 1.0, we can drop it
-                pass
-            if not (0.0 <= alpha <= 1.0):
-                raise errors.ColorError()
-            else:
-                result += (alpha,)
+    def _tuple_to_rgb(self, value: Optional[Tuple[Any, ...]]) -> Optional[RGBType]:
+        """
+        Convert a tuple to RGB tuple, if it fails raise an error
+        """
+        result = None
+        if value is None:
+            return result
 
-        return result  # type: ignore
+        length = len(value)
+        if length not in range(3, 5):
+            return result
+
+        if length == 4:
+            try:
+                self._almost_equal(float(value[3]), 1.0)
+            except ValueError:
+                return result
+
+        if any(map(lambda color: not self._is_int_color(color), value)):
+            return result
+
+        r, g, b = value[:3]
+        return r, g, b
+
+    def _parse_tuple(self, value: Optional[Tuple[Any, ...]]) -> Optional[str]:
+        """
+        Get name of the color by its RGB
+        """
+        rgb = self._tuple_to_rgb(value)
+        name, _ = colors.BY_RGB.get(rgb, (None, None))  # type: ignore
+        return name
+
+    def _parse_rgb_str(self, value: str) -> Optional[str]:
+        """
+        Get name of the color by its RGB/RGBA string
+        """
+        rgba = self._rgb_str_to_tuple(value)
+        return self._parse_tuple(rgba)
+
+    def _parse_hex_str(self, value: str) -> Optional[str]:
+        """
+        Get name of the color by its hexadecimal string
+        """
+        is_sharp_prefix = value.startswith('#')
+        is_zero_x_prefix = value.startswith('0x')
+        is_hex_value = is_sharp_prefix or is_zero_x_prefix
+        pure_hex = value[1:] if is_sharp_prefix else value[2:]
+        is_valid_hex = pure_hex in colors.BY_HEX
+
+        if is_hex_value and is_valid_hex:
+            name, _ = colors.BY_HEX[pure_hex]
+            return name
+        return None
 
     def _parse_color(self) -> None:
         """
         Main logic of color parsing
         """
         if isinstance(self._original, tuple):
-            self._rgba = self._check_tuple(self._original)
-            name_hex = colors.BY_RGB.get(self._rgba[:3])  # type: ignore
-            if name_hex:
-                self._color_match = name_hex[0]
-            return
+            self._color_match = self._parse_tuple(self._original)
 
         elif isinstance(self._original, str):
-            value_lower = self._original.lower()
-            # try to match named colour
-            if value_lower in colors.BY_NAME:
-                self._rgba = colors.BY_NAME[value_lower][1]
-                self._color_match = value_lower
+            color = self._original.lower()
+
+            # rgb/rgba string
+            self._color_match = self._parse_rgb_str(color)
+            if self._color_match is not None:
                 return
 
-            # try to match hex
-            is_hex_value = value_lower.startswith('#') or value_lower.startswith('0x')
-            pure_hex = value_lower[1:] if value_lower.startswith('#') else value_lower[2:]
-            is_valid_hex_color = pure_hex in colors.BY_HEX
-            if is_hex_value and is_valid_hex_color:
-                self._color_match = colors.BY_HEX[pure_hex][0]
-                self._rgba = colors.BY_HEX[pure_hex][1]
+            # hex string
+            self._color_match = self._parse_hex_str(color)
+            if self._color_match is not None:
                 return
 
-            # try to match rgb/rgba
-            rgba_match = self._match_rgba(value_lower)
-            if rgba_match:
-                self._rgba = self._check_tuple(rgba_match)
-                try:
-                    self._color_match = colors.BY_RGB.get(self._rgba[:3])[0]  # type: ignore
-                except TypeError:
-                    pass
+            # named colour
+            if color in colors.BY_NAME:
+                self._color_match = color
+                return
 
-    @property
-    def _has_alpha(self) -> bool:
-        try:
-            self._rgba[3]
-        except (IndexError, AttributeError):
-            return False
-        return True
-
-    @property
-    def _has_significant_alpha(self) -> bool:
+    def get_color_or_raise(self) -> None:
         """
-        Return True if original colour has an alpha channel and it's not equal to 1.0
+        Raise error if color name not found
         """
-        return self._has_alpha and not self._almost_equal(self._rgba[3], 1.0)
+        if self._color_match is None:
+            raise errors.ColorError()
 
     def original(self) -> ColorType:
         """
@@ -773,100 +781,53 @@ class Color:
 
     def as_hex(self) -> str:
         """
-        Return hexidecimal value of the color
+        Return hexadecimal value of the color
 
-        Return in 3-digit format if possible, otherwise as a standard 6-digit value.
-        If original value has an alpha channel raises an error.
+        Try reduce hex code to 3-digit format, fallback to 6-digit.
         """
-        hex_rgb = colors.BY_NAME.get(self._color_match)  # type: ignore
-        if hex_rgb:
-            return colors.reduce_6_digit_hex(hex_rgb[0])
-        raise ValueError('Cannot get hexadecimal color code')
+        self.get_color_or_raise()
+        hexadecimal, _ = colors.BY_NAME[self._color_match or '']
+        return colors.reduce_6_digit_hex(hexadecimal)
 
-    def as_rgba(self) -> str:
+    def as_tuple(self, add_alpha: bool = False) -> AnyRGBType:
         """
-        Return RGBA representation of the value
+        Return RGB or RGBA tuple
         """
-        if self._has_alpha:
-            r, g, b, a = self._rgba  # type: ignore
-            return 'rgba({r}, {g}, {b}, {a})'.format(r=r, g=g, b=b, a=a)
-        raise ValueError('Cannot get RGBA representation of color')
+        self.get_color_or_raise()
+        _, rgb = colors.BY_NAME[self._color_match or '']
+        r, g, b = rgb
 
-    def as_rgb(self) -> str:
+        if add_alpha:
+            return r, g, b, 1.0
+        return r, g, b
+
+    def as_rgb(self, add_alpha: bool = False) -> str:
         """
-        Return RGB representation of the value
-
-        If original value has an alpha channel raises an error.
+        Return RGB or RGBA string representation of the color
         """
-        if self._has_significant_alpha:
-            raise ValueError('Cannot derive RGB from RGBA')
-        r, g, b = self._rgba[:3]
-        return 'rgb({r}, {g}, {b})'.format(r=r, g=g, b=b)
+        rgb = self.as_tuple(add_alpha)
+        if add_alpha:
+            return 'rgba({}, {}, {}, {})'.format(*rgb)
+        return 'rgb({}, {}, {})'.format(*rgb)
 
-    @staticmethod
-    def _rgb_int_to_float(value: RGBAType) -> RGBFractionType:
+    def as_named_color(self) -> str:
         """
-        Convert RGB integer triplets to RGB floats
-
-        See more:
-        https://en.wikipedia.org/wiki/RGB_color_model#Numeric_representations
+        Return name of the color as per CSS3 specification.
         """
-
-        def normalize(v: Union[int, float, str]) -> float:
-            return float(v) / 255
-
-        return tuple(map(normalize, value[:3]))  # type: ignore
+        self.get_color_or_raise()
+        return self._color_match  # type: ignore
 
     def as_hls(self) -> HLSType:
         """
         Return tuple of floats representing Hue Lightness Saturation (HLS) color
         """
-        if self._has_significant_alpha:
-            raise ValueError('Cannot convert RGBA to HLS, use for RGB only')
 
-        r, g, b = self._rgb_int_to_float(self.as_tuple(alpha='exclude'))  # type: ignore
-        return rgb_to_hls(r, g, b)
+        def normalize(v: Union[int, float, str]) -> float:
+            return float(v) / 255
 
-    def as_tuple(self, alpha: str = 'auto') -> AnyRGBType:
-        """
-        Format RGB/RGBA tuple
-
-        :param alpha: `include` include alpha channel, if not present force alpha 1.0;
-                      `exclude` drop alpha channel;
-                      `auto` try to return RGBA, fallback to RGB;
-        :return: AnyRGBType
-        """
-        alpha_opts = {'include', 'exclude', 'auto'}
-        assert alpha in alpha_opts, 'alpha argument should be one of: {}'.format(alpha_opts)
-
-        if alpha == 'exclude':
-            try:
-                rgb = self._rgba[:3]
-            except (IndexError, AttributeError):
-                raise ValueError('Cannot get RGB representation of color')
-            return rgb  # type: ignore
-        elif alpha == 'include':
-            if self._has_alpha:
-                return self._rgba
-            else:
-                return self._rgba + (1.0,)  # type: ignore
-        # auto
-        else:
-            try:
-                rgba = self._rgba
-            except AttributeError:
-                raise ValueError('Cannot get RGBA or RGB representation of color')
-            return rgba
-
-    def as_named_color(self) -> str:
-        """
-        Return name of the color as per CSS3 specification.
-
-        If a name cannot be found raise an error.
-        """
-        if self._color_match:
-            return self._color_match
-        raise ValueError('Color name not found')
+        self.get_color_or_raise()
+        r, g, b = self.as_tuple(add_alpha=False)  # type: ignore
+        return rgb_to_hls(normalize(r), normalize(g), normalize(b))
 
     def __str__(self) -> str:
         return str(self._original)
@@ -878,6 +839,5 @@ class Color:
     @classmethod
     def validate(cls, value: ColorType) -> 'Color':
         color = cls(value)
-        if not color._color_match:
-            raise errors.ColorError()
+        color.get_color_or_raise()
         return color

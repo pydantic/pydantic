@@ -1554,10 +1554,10 @@ def test_color_fail(color):
 @pytest.mark.parametrize(
     'color, result',
     [
-        ('rgb(0, 128, 0)', (0, 128, 0)),
-        ('rgb(255, 255, 0)', (255, 255, 0)),
-        ('rgb(255,255,0)', (255, 255, 0)),
-        ('RGB(255,   255,0)', (255, 255, 0)),
+        ('rgb(0, 128, 0)', (0, 128, 0, 1.0)),
+        ('rgb(255, 255, 0)', (255, 255, 0, 1.0)),
+        ('rgb(255,255,0)', (255, 255, 0, 1.0)),
+        ('RGB(255,   255,0)', (255, 255, 0, 1.0)),
         ('rgba(0, 128, 0, 0.5)', (0, 128, 0, 0.5)),
         ('rgba(255, 255, 0, 0.123)', (255, 255, 0, 0.123)),
         ('rgba(255,255,0,0.123)', (255, 255, 0, 0.123)),
@@ -1565,7 +1565,7 @@ def test_color_fail(color):
     ],
 )
 def test_color_rgba_regex_success(color, result):
-    assert Color._match_rgba(color) == result
+    assert Color._rgb_str_to_tuple(color) == result
 
 
 @pytest.mark.parametrize(
@@ -1573,4 +1573,4 @@ def test_color_rgba_regex_success(color, result):
     ['rgb(1000000, 128, 0)', 'rgb(255, 255, 10000000)', 'rgba(0, 128, 0, 1110.5)', 'rgba(255, 255, 0, 1110.123)'],
 )
 def test_color_rgba_regex_fail(color):
-    assert Color._match_rgba(color) is None
+    assert Color._rgb_str_to_tuple(color) is None
