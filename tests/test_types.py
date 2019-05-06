@@ -17,6 +17,7 @@ from pydantic import (
     UUID4,
     UUID5,
     BaseModel,
+    Color,
     ConfigError,
     DirectoryPath,
     EmailStr,
@@ -1485,3 +1486,91 @@ def test_secretbytes_error():
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=[6, 23, 'abc'])
     assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'byte type expected', 'type': 'type_error.bytes'}]
+
+
+@pytest.mark.parametrize(
+    'color, result',
+    [
+        # named colors
+        ('aliceblue', 'aliceblue'),
+        ('Antiquewhite', 'antiquewhite'),
+        ('AQUA', 'aqua'),
+        ('aquaMarine', 'aquamarine'),
+        # hex: 6-digit and 3-digit
+        ('#000000', 'black'),
+        ('#000', 'black'),
+        ('0x000080', 'navy'),
+        ('0x00F', 'blue'),
+        # rgb/rgba tuples
+        ((0, 0, 0), 'black'),
+        ((0, 0, 128), 'navy'),
+        ((0, 0, 205, 1.0), 'mediumblue'),
+        ((0, 0, 128, 1.0), 'navy'),
+        # rgb/rgba strings
+        ('rgb(0, 0, 205)', 'mediumblue'),
+        ('rgb(0, 0, 128)', 'navy'),
+        ('rgba(0, 0, 205, 1.0)', 'mediumblue'),
+        ('rgba(0, 0, 128, 1.0)', 'navy'),
+    ],
+)
+def test_color_success(color, result):
+    class Model(BaseModel):
+        color: Color = None
+
+    assert Model(color=color).color.as_named_color() == result
+
+
+@pytest.mark.parametrize(
+    'color',
+    [
+        # named colors
+        'nosuchname',
+        'chucknorris',
+        # hex
+        '#0000000',
+        '#0000',
+        '0x797979',
+        '0x777',
+        # rgb/rgba tuples
+        (256, 256, 256),
+        (0, 0, 1280),
+        (0, 0, 1205, 0.1),
+        (0, 0, 1128, 0.5),
+        # rgb/rgba strings
+        'rgb(0, 0, 1205)',
+        'rgb(0, 0, 1128)',
+        'rgba(0, 0, 11205, 0.1)',
+        'rgba(0, 0, 128, 11.5)',
+    ],
+)
+def test_color_fail(color):
+    class Model(BaseModel):
+        color: Color = None
+
+    with pytest.raises(ValueError):
+        Model(color=color).as_named_color()
+
+
+@pytest.mark.parametrize(
+    'color, result',
+    [
+        ('rgb(0, 128, 0)', (0, 128, 0)),
+        ('rgb(255, 255, 0)', (255, 255, 0)),
+        ('rgb(255,255,0)', (255, 255, 0)),
+        ('RGB(255,   255,0)', (255, 255, 0)),
+        ('rgba(0, 128, 0, 0.5)', (0, 128, 0, 0.5)),
+        ('rgba(255, 255, 0, 0.123)', (255, 255, 0, 0.123)),
+        ('rgba(255,255,0,0.123)', (255, 255, 0, 0.123)),
+        ('RGBA(255,   255,0,0.123)', (255, 255, 0, 0.123)),
+    ],
+)
+def test_color_rgba_regex_success(color, result):
+    assert Color._match_rgba(color) == result
+
+
+@pytest.mark.parametrize(
+    'color',
+    ['rgb(1000000, 128, 0)', 'rgb(255, 255, 10000000)', 'rgba(0, 128, 0, 1110.5)', 'rgba(255, 255, 0, 1110.123)'],
+)
+def test_color_rgba_regex_fail(color):
+    assert Color._match_rgba(color) is None

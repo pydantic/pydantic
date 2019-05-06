@@ -1,5 +1,6 @@
 import json
 import re
+from colorsys import rgb_to_hls
 from decimal import Decimal
 from ipaddress import (
     IPv4Address,
@@ -15,7 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Pattern, Set, Tuple, Type, Union, cast
 from uuid import UUID
 
-from . import errors
+from . import colors, errors
 from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
@@ -76,6 +77,7 @@ __all__ = [
     'IPvAnyNetwork',
     'SecretStr',
     'SecretBytes',
+    'Color',
 ]
 
 NoneStr = Optional[str]
@@ -86,6 +88,12 @@ OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, int]]]
+RGBType = Tuple[int, int, int]
+RGBAType = Tuple[int, int, int, float]
+AnyRGBType = Union[RGBType, RGBAType]
+RGBFractionType = Tuple[float, float, float]
+HLSType = Tuple[float, float, float]
+ColorType = Union[str, AnyRGBType]
 
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -626,3 +634,250 @@ class SecretBytes:
 
     def get_secret_value(self) -> bytes:
         return self._secret_value
+
+
+class Color:
+    __slots__ = '_rgba', '_original', '_color_match'
+
+    def __init__(self, value: ColorType) -> None:
+        self._original: ColorType = value
+        self._rgba: AnyRGBType
+        self._color_match: Optional[str] = None
+        self._parse_color()
+
+    @staticmethod
+    def _match_rgba(value: str) -> Optional[RGBAType]:
+        """
+        Return RGB/RGBA tuple from the passed string.
+
+        If RGBA cannot be matched, return None
+        """
+        r = re.compile(
+            r'rgba?\((?P<red>\d{1,3}),\s*'
+            r'(?P<green>\d{1,3}),\s*'
+            r'(?P<blue>\d{1,3})'
+            r'(,\s*(?P<alpha>\d{1}\.\d{1,}))?\)',
+            re.IGNORECASE,
+        )
+        match = r.match(value)
+        if match is not None:
+            try:
+                result = (int(match.group('red')), int(match.group('green')), int(match.group('blue')))
+            except (IndexError, ValueError, AttributeError):
+                return None
+
+            if match.group('alpha'):
+                try:
+                    alpha = float(match.group('alpha'))
+                except ValueError:
+                    return None
+                else:
+                    # As of mypy==0.670 concatenation of tuples still doesn't type check
+                    # See: https://github.com/python/mypy/issues/224
+                    result += (alpha,)  # type: ignore
+
+            return result  # type: ignore
+        return None
+
+    @staticmethod
+    def _almost_equal(value_1: float, value_2: float = 1.0) -> bool:
+        """
+        Return True if two floats are almost equal
+        """
+        return abs(value_1 - value_2) <= 1e-8
+
+    @staticmethod
+    def _check_tuple(value: Tuple[Any, ...]) -> AnyRGBType:
+        """
+        Return RGB/RGBA tuple if possible, raise error otherwise
+        """
+        if len(value) not in range(3, 5):
+            raise ValueError('RGBA/RGBA tuple should have length of 3 or 4, ' 'got {} instead'.format(len(value)))
+        result = value[:3]
+
+        try:
+            alpha = float(value[3])
+        except IndexError:
+            alpha = None  # type: ignore
+        except ValueError:
+            raise errors.ColorError()
+
+        if alpha:
+            if Color._almost_equal(alpha, 1.0):
+                # alpha is almost equal to 1.0, we can drop it
+                pass
+            if not (0.0 <= alpha <= 1.0):
+                raise errors.ColorError()
+            else:
+                result += (alpha,)
+
+        return result  # type: ignore
+
+    def _parse_color(self) -> None:
+        """
+        Main logic of color parsing
+        """
+        if isinstance(self._original, tuple):
+            self._rgba = self._check_tuple(self._original)
+            name_hex = colors.BY_RGB.get(self._rgba[:3])  # type: ignore
+            if name_hex:
+                self._color_match = name_hex[0]
+            return
+
+        elif isinstance(self._original, str):
+            value_lower = self._original.lower()
+            # try to match named colour
+            if value_lower in colors.BY_NAME:
+                self._rgba = colors.BY_NAME[value_lower][1]
+                self._color_match = value_lower
+                return
+
+            # try to match hex
+            is_hex_value = value_lower.startswith('#') or value_lower.startswith('0x')
+            pure_hex = value_lower[1:] if value_lower.startswith('#') else value_lower[2:]
+            is_valid_hex_color = pure_hex in colors.BY_HEX
+            if is_hex_value and is_valid_hex_color:
+                self._color_match = colors.BY_HEX[pure_hex][0]
+                self._rgba = colors.BY_HEX[pure_hex][1]
+                return
+
+            # try to match rgb/rgba
+            rgba_match = self._match_rgba(value_lower)
+            if rgba_match:
+                self._rgba = self._check_tuple(rgba_match)
+                try:
+                    self._color_match = colors.BY_RGB.get(self._rgba[:3])[0]  # type: ignore
+                except TypeError:
+                    pass
+
+    @property
+    def _has_alpha(self) -> bool:
+        try:
+            self._rgba[3]
+        except (IndexError, AttributeError):
+            return False
+        return True
+
+    @property
+    def _has_significant_alpha(self) -> bool:
+        """
+        Return True if original colour has an alpha channel and it's not equal to 1.0
+        """
+        return self._has_alpha and not self._almost_equal(self._rgba[3], 1.0)
+
+    def original(self) -> ColorType:
+        """
+        Return original value passed to the model
+        """
+        return self._original
+
+    def as_hex(self) -> str:
+        """
+        Return hexidecimal value of the color
+
+        Return in 3-digit format if possible, otherwise as a standard 6-digit value.
+        If original value has an alpha channel raises an error.
+        """
+        hex_rgb = colors.BY_NAME.get(self._color_match)  # type: ignore
+        if hex_rgb:
+            return colors.reduce_6_digit_hex(hex_rgb[0])
+        raise ValueError('Cannot get hexadecimal color code')
+
+    def as_rgba(self) -> str:
+        """
+        Return RGBA representation of the value
+        """
+        if self._has_alpha:
+            r, g, b, a = self._rgba  # type: ignore
+            return 'rgba({r}, {g}, {b}, {a})'.format(r=r, g=g, b=b, a=a)
+        raise ValueError('Cannot get RGBA representation of color')
+
+    def as_rgb(self) -> str:
+        """
+        Return RGB representation of the value
+
+        If original value has an alpha channel raises an error.
+        """
+        if self._has_significant_alpha:
+            raise ValueError('Cannot derive RGB from RGBA')
+        r, g, b = self._rgba[:3]
+        return 'rgb({r}, {g}, {b})'.format(r=r, g=g, b=b)
+
+    @staticmethod
+    def _rgb_int_to_float(value: RGBAType) -> RGBFractionType:
+        """
+        Convert RGB integer triplets to RGB floats
+
+        See more:
+        https://en.wikipedia.org/wiki/RGB_color_model#Numeric_representations
+        """
+
+        def normalize(v: Union[int, float, str]) -> float:
+            return float(v) / 255
+
+        return tuple(map(normalize, value[:3]))  # type: ignore
+
+    def as_hls(self) -> HLSType:
+        """
+        Return tuple of floats representing Hue Lightness Saturation (HLS) color
+        """
+        if self._has_significant_alpha:
+            raise ValueError('Cannot convert RGBA to HLS, use for RGB only')
+
+        r, g, b = self._rgb_int_to_float(self.as_tuple(alpha='exclude'))  # type: ignore
+        return rgb_to_hls(r, g, b)
+
+    def as_tuple(self, alpha: str = 'auto') -> AnyRGBType:
+        """
+        Format RGB/RGBA tuple
+
+        :param alpha: `include` include alpha channel, if not present force alpha 1.0;
+                      `exclude` drop alpha channel;
+                      `auto` try to return RGBA, fallback to RGB;
+        :return: AnyRGBType
+        """
+        alpha_opts = {'include', 'exclude', 'auto'}
+        assert alpha in alpha_opts, 'alpha argument should be one of: {}'.format(alpha_opts)
+
+        if alpha == 'exclude':
+            try:
+                rgb = self._rgba[:3]
+            except (IndexError, AttributeError):
+                raise ValueError('Cannot get RGB representation of color')
+            return rgb  # type: ignore
+        elif alpha == 'include':
+            if self._has_alpha:
+                return self._rgba
+            else:
+                return self._rgba + (1.0,)  # type: ignore
+        # auto
+        else:
+            try:
+                rgba = self._rgba
+            except AttributeError:
+                raise ValueError('Cannot get RGBA or RGB representation of color')
+            return rgba
+
+    def as_named_color(self) -> str:
+        """
+        Return name of the color as per CSS3 specification.
+
+        If a name cannot be found raise an error.
+        """
+        if self._color_match:
+            return self._color_match
+        raise ValueError('Color name not found')
+
+    def __str__(self) -> str:
+        return str(self._original)
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: ColorType) -> 'Color':
+        color = cls(value)
+        if not color._color_match:
+            raise errors.ColorError()
+        return color
