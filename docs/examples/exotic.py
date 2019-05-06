@@ -4,7 +4,7 @@ from ipaddress import IPv4Address, IPv6Address, IPv4Interface, IPv6Interface, IP
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
+from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, Color, DirectoryPath, EmailStr, FilePath, NameEmail,
                       NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, UrlStr, conbytes, condecimal,
                       confloat, conint, constr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, SecretStr, SecretBytes)
 
@@ -38,6 +38,8 @@ class Model(BaseModel):
     email_and_name: NameEmail = None
 
     url: UrlStr = None
+
+    color: Color = None
 
     password: SecretStr = None
     password_bytes: SecretBytes = None
@@ -92,6 +94,7 @@ m = Model(
     email_address='Samuel Colvin <s@muelcolvin.com >',
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
     url='http://example.com',
+    color='#000',
     password='password',
     password_bytes=b'password2',
     decimal=Decimal('42.24'),
@@ -138,6 +141,7 @@ print(m.dict())
     'email_address': 's@muelcolvin.com',
     'email_and_name': <NameEmail("Samuel Colvin <s@muelcolvin.com>")>,
     'url': 'http://example.com',
+    'color': <Color("black")>,
     'password': SecretStr('**********'),
     'password_bytes': SecretBytes(b'**********'),
     ...
