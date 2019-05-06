@@ -488,6 +488,26 @@ Fields can also be of type ``Callable``:
     callable, no validation of arguments, their types or the return
     type is performed.
 
+Color Type
+..........
+
+You can use ``Color`` data type for storing colors as per
+`CSS3 specification <http://www.w3.org/TR/css3-color/#svg-color>`_.
+Color can be defined either as a `name <http://www.w3.org/TR/SVG11/types.html#ColorKeywords>`_
+(case ignored) or as a `hexadecimal value <https://en.wikipedia.org/wiki/Web_colors#Hex_triplet>`_
+(both three- or six- digit form, prefixed with ``0x``, ``#`` or without a prefix) or as
+an RGB/RGBA tuple or string.
+
+.. warning::
+
+    RGBA tuple or string with alpha channel not equal to ``1.0`` will never be
+    a valid CSS3 color as no `alpha bleding <https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending>`_
+    is done to match the RGBA to existing RGB colors.
+
+.. literalinclude:: examples/ex_color_type.py
+
+(This script is complete, it should run "as is")
+
 Secret Types
 ............
 
