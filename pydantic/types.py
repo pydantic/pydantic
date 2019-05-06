@@ -728,19 +728,17 @@ class Color:
         """
         Get name of the color by its hexadecimal string
         """
-        is_sharp_prefix = value.startswith('#')
-        is_zero_x_prefix = value.startswith('0x')
-        is_hex_value = is_sharp_prefix or is_zero_x_prefix
-        pure_hex = value[1:] if is_sharp_prefix else value[2:]
+        if value.startswith('#'):
+            pure_hex = value[1:]
+        elif value.startswith('0x'):
+            pure_hex = value[2:]
+        else:
+            pure_hex = value
 
         if len(pure_hex) == 3:
             pure_hex = colors.expand_3_digit_hex(pure_hex)
 
-        is_valid_hex = pure_hex in colors.BY_HEX
-
-        if is_hex_value and is_valid_hex:
-            return colors.BY_HEX[pure_hex]
-        return None
+        return colors.BY_HEX.get(pure_hex)
 
     def _parse_color(self) -> None:
         """
@@ -780,7 +778,7 @@ class Color:
         """
         return self._original
 
-    def as_hex(self) -> str:
+    def as_hex(self, prefix: str = '0x', reduce: bool = True) -> str:
         """
         Return hexadecimal value of the color
 
@@ -788,9 +786,9 @@ class Color:
         """
         self._get_color_or_raise()
         hexadecimal, _ = colors.BY_NAME[self._color_match or '']
-        return '0x{}'.format(colors.reduce_6_digit_hex(hexadecimal))
+        return '{}{}'.format(prefix, colors.reduce_6_digit_hex(hexadecimal) if reduce else hexadecimal)
 
-    def as_tuple(self, add_alpha: bool = False) -> AnyRGBType:
+    def as_tuple(self, alpha: bool = False) -> AnyRGBType:
         """
         Return RGB or RGBA tuple
         """
@@ -798,16 +796,16 @@ class Color:
         _, rgb = colors.BY_NAME[self._color_match or '']
         r, g, b = rgb
 
-        if add_alpha:
+        if alpha:
             return r, g, b, 1.0
         return r, g, b
 
-    def as_rgb(self, add_alpha: bool = False) -> str:
+    def as_rgb(self, alpha: bool = False) -> str:
         """
         Return RGB or RGBA string representation of the color
         """
-        rgb = self.as_tuple(add_alpha)
-        if add_alpha:
+        rgb = self.as_tuple(alpha)
+        if alpha:
             return 'rgba({}, {}, {}, {})'.format(*rgb)
         return 'rgb({}, {}, {})'.format(*rgb)
 
@@ -827,11 +825,21 @@ class Color:
             return float(v) / 255
 
         self._get_color_or_raise()
-        r, g, b = self.as_tuple(add_alpha=False)  # type: ignore
+        r, g, b = self.as_tuple(alpha=False)  # type: ignore
         return rgb_to_hls(normalize(r), normalize(g), normalize(b))
 
     def __str__(self) -> str:
-        return str(self._original)
+        return str(self._original).lower()
+
+    def __repr__(self) -> str:
+        return '<Color("{}")>'.format(self._color_match or self._original)
+
+    @staticmethod
+    def dumps(value: 'Color') -> str:
+        """
+        Encoder for json.dumps
+        """
+        return value.as_named_color()
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
