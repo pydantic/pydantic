@@ -637,11 +637,10 @@ class SecretBytes:
 
 
 class Color:
-    __slots__ = '_rgb', '_original', '_color_match'
+    __slots__ = '_original', '_color_match'
 
     def __init__(self, value: ColorType) -> None:
         self._original: ColorType = value
-        self._rgb: AnyRGBType
         self._color_match: Optional[str] = None
         self._parse_color()
 
@@ -677,20 +676,19 @@ class Color:
         """
         return abs(value_1 - value_2) <= 1e-8
 
-    def _is_int_color(self, c: Any) -> bool:
-        """
-        Return True if value passed is an integer in range (0, 256)
-        """
-        try:
-            color = int(c)
-        except ValueError:
-            return False
-        return color in range(0, 256)
-
-    def _tuple_to_rgb(self, value: Optional[Tuple[Any, ...]]) -> Optional[RGBType]:
+    @staticmethod
+    def _tuple_to_rgb(value: Optional[Tuple[Any, ...]]) -> Optional[RGBType]:
         """
         Convert a tuple to RGB tuple, if it fails raise an error
         """
+
+        def is_int_color(c: Any) -> bool:
+            try:
+                color = int(c)
+            except ValueError:
+                return False
+            return color in range(0, 256)
+
         result = None
         if value is None:
             return result
@@ -701,11 +699,11 @@ class Color:
 
         if length == 4:
             try:
-                self._almost_equal(float(value[3]), 1.0)
+                Color._almost_equal(float(value[3]), 1.0)
             except ValueError:
                 return result
 
-        if any(map(lambda color: not self._is_int_color(color), value)):
+        if any(map(lambda color: not is_int_color(color), value)):
             return result
 
         r, g, b = value[:3]
@@ -716,7 +714,7 @@ class Color:
         Get name of the color by its RGB
         """
         rgb = self._tuple_to_rgb(value)
-        name, _ = colors.BY_RGB.get(rgb, (None, None))  # type: ignore
+        name = colors.BY_RGB.get(rgb, None)  # type: ignore
         return name
 
     def _parse_rgb_str(self, value: str) -> Optional[str]:
@@ -734,11 +732,14 @@ class Color:
         is_zero_x_prefix = value.startswith('0x')
         is_hex_value = is_sharp_prefix or is_zero_x_prefix
         pure_hex = value[1:] if is_sharp_prefix else value[2:]
+
+        if len(pure_hex) == 3:
+            pure_hex = colors.expand_3_digit_hex(pure_hex)
+
         is_valid_hex = pure_hex in colors.BY_HEX
 
         if is_hex_value and is_valid_hex:
-            name, _ = colors.BY_HEX[pure_hex]
-            return name
+            return colors.BY_HEX[pure_hex]
         return None
 
     def _parse_color(self) -> None:
@@ -766,7 +767,7 @@ class Color:
                 self._color_match = color
                 return
 
-    def get_color_or_raise(self) -> None:
+    def _get_color_or_raise(self) -> None:
         """
         Raise error if color name not found
         """
@@ -785,15 +786,15 @@ class Color:
 
         Try reduce hex code to 3-digit format, fallback to 6-digit.
         """
-        self.get_color_or_raise()
+        self._get_color_or_raise()
         hexadecimal, _ = colors.BY_NAME[self._color_match or '']
-        return colors.reduce_6_digit_hex(hexadecimal)
+        return '0x{}'.format(colors.reduce_6_digit_hex(hexadecimal))
 
     def as_tuple(self, add_alpha: bool = False) -> AnyRGBType:
         """
         Return RGB or RGBA tuple
         """
-        self.get_color_or_raise()
+        self._get_color_or_raise()
         _, rgb = colors.BY_NAME[self._color_match or '']
         r, g, b = rgb
 
@@ -814,7 +815,7 @@ class Color:
         """
         Return name of the color as per CSS3 specification.
         """
-        self.get_color_or_raise()
+        self._get_color_or_raise()
         return self._color_match  # type: ignore
 
     def as_hls(self) -> HLSType:
@@ -825,7 +826,7 @@ class Color:
         def normalize(v: Union[int, float, str]) -> float:
             return float(v) / 255
 
-        self.get_color_or_raise()
+        self._get_color_or_raise()
         r, g, b = self.as_tuple(add_alpha=False)  # type: ignore
         return rgb_to_hls(normalize(r), normalize(g), normalize(b))
 
@@ -839,5 +840,5 @@ class Color:
     @classmethod
     def validate(cls, value: ColorType) -> 'Color':
         color = cls(value)
-        color.get_color_or_raise()
+        color._get_color_or_raise()
         return color
