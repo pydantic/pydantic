@@ -13,9 +13,7 @@ http://www.w3.org/TR/SVG11/types.html#ColorKeywords
 
 def expand_3_digit_hex(value: str) -> str:
     """
-    Return 6-digit hexadecimal value from the 3-digit format
-
-    Fallback to original value
+    Return 6-digit hexadecimal value from the 3-digit format, fallback to original value
     """
     if len(value) != 3:
         return value
@@ -24,13 +22,10 @@ def expand_3_digit_hex(value: str) -> str:
 
 def reduce_6_digit_hex(value: str) -> str:
     """
-    Return 3-digit hexadecimal value from 6-digit
-
-    Fallback to original value
+    Return 3-digit hexadecimal value from 6-digit, fallback to original value
     """
     if len(value) != 6:
         return value
-
     a, b, c, d, e, f = value
     return '{a}{c}{e}'.format(a=a, c=c, e=e) if (a == b and c == d and e == f) else value
 
@@ -192,21 +187,17 @@ BY_NAME = {
 }
 
 
-# {hex: (name, rgb)}
+# {hex: name}
 
-# Watch out! A few named colours have the same hex/rgb codes.
+# Watch out! A few named colors have the same hex/rgb codes.
 # This usually applies to the shades of gray because of the variations in spelling,
-# e.g. `slategrey` and `slategray`. A few colours have completely different names
+# e.g. `slategrey` and `slategray`. A few colors have completely different names
 # but the same hex/rgb though, e.g. `aqua` and `cyan`.
-# A complete list of non-unique colours in hex format:
+# A complete list of non-unique colors in hex format:
 # ['00ffff', '2f4f4f', '696969', '708090', '778899', '808080', 'a9a9a9', 'd3d3d3', 'ff00ff']
 # Because of this overlap only one named colour with non-unique hex/rgb will be represented
 # in the following dictionaries
-BY_HEX = {BY_NAME[k][0]: (k, BY_NAME[k][1]) for k in BY_NAME.keys()}
+BY_HEX = {BY_NAME[k][0]: k for k in BY_NAME.keys()}
 
-# extend with 3-digit equivalents
-THREE_DIGIT_HEX = {reduce_6_digit_hex(k): BY_HEX[k] for k in BY_HEX.keys()}
-BY_HEX.update(THREE_DIGIT_HEX)
-
-# {rgb: (name, hex)}
-BY_RGB = {BY_NAME[k][1]: (k, BY_NAME[k][0]) for k in BY_NAME.keys()}
+# {rgb: name}
+BY_RGB = {BY_NAME[k][1]: k for k in BY_NAME.keys()}
