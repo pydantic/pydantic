@@ -33,6 +33,7 @@ from pydantic import (
     SecretStr,
     StrictStr,
     ValidationError,
+    colors,
     conbytes,
     condecimal,
     confloat,
@@ -1528,35 +1529,54 @@ def test_secretbytes_error():
 
 
 @pytest.mark.parametrize(
-    'color, result',
+    'color, as_name, as_tuple, as_hex, as_hls',
     [
         # named colors
-        ('aliceblue', 'aliceblue'),
-        ('Antiquewhite', 'antiquewhite'),
-        ('AQUA', 'aqua'),
-        ('aquaMarine', 'aquamarine'),
+        ('aliceblue', 'aliceblue', (240, 248, 255), '0xf0f8ff', (0.5777777777777778, 0.9705882352941176, 1.0)),
+        (
+            'Antiquewhite',
+            'antiquewhite',
+            (250, 235, 215),
+            '0xfaebd7',
+            (0.09523809523809519, 0.9117647058823529, 0.7777777777777779),
+        ),
+        ('AQUA', 'aqua', (0, 255, 255), '0x0ff', (0.5, 0.5, 1.0)),
+        ('aquaMarine', 'aquamarine', (127, 255, 212), '0x7fffd4', (0.4440104166666667, 0.7490196078431373, 1.0)),
         # hex: 6-digit and 3-digit
-        ('#000000', 'black'),
-        ('#000', 'black'),
-        ('0x000080', 'navy'),
-        ('0x00F', 'blue'),
+        ('#000000', 'black', (0, 0, 0), '0x000', (0.0, 0.0, 0.0)),
+        ('#000', 'black', (0, 0, 0), '0x000', (0.0, 0.0, 0.0)),
+        ('0x000080', 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
+        ('0x00F', 'blue', (0, 0, 255), '0x00f', (0.6666666666666666, 0.5, 1.0)),
         # rgb/rgba tuples
-        ((0, 0, 0), 'black'),
-        ((0, 0, 128), 'navy'),
-        ((0, 0, 205, 1.0), 'mediumblue'),
-        ((0, 0, 128, 1.0), 'navy'),
+        ((0, 0, 0), 'black', (0, 0, 0), '0x000', (0.0, 0.0, 0.0)),
+        ((0, 0, 128), 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
+        ((0, 0, 205, 1.0), 'mediumblue', (0, 0, 205), '0x0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
+        ((0, 0, 128, 1.0), 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
         # rgb/rgba strings
-        ('rgb(0, 0, 205)', 'mediumblue'),
-        ('rgb(0, 0, 128)', 'navy'),
-        ('rgba(0, 0, 205, 1.0)', 'mediumblue'),
-        ('rgba(0, 0, 128, 1.0)', 'navy'),
+        ('rgb(0, 0, 205)', 'mediumblue', (0, 0, 205), '0x0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
+        ('rgb(0, 0, 128)', 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
+        ('rgba(0, 0, 205, 1.0)', 'mediumblue', (0, 0, 205), '0x0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
+        ('rgba(0, 0, 128, 1.0)', 'navy', (0, 0, 128), '0x000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
     ],
 )
-def test_color_success(color, result):
+def test_color_success(color, as_name, as_tuple, as_hex, as_hls):
     class Model(BaseModel):
         color: Color = None
 
-    assert Model(color=color).color.as_named_color() == result
+    obj = Model(color=color).color
+    assert obj.original() == color
+    assert str(obj) == str(color)
+    assert obj.as_named_color() == as_name
+    assert obj.as_rgb(add_alpha=False) == 'rgb{}'.format(as_tuple)
+    assert obj.as_rgb(add_alpha=True) == 'rgba{}'.format(as_tuple + (1.0,))
+    assert obj.as_tuple(add_alpha=False) == as_tuple
+    assert obj.as_tuple(add_alpha=True) == as_tuple + (1.0,)
+    assert obj.as_hex() == as_hex
+
+    r, g, b = obj.as_hls()
+    assert obj._almost_equal(r, as_hls[0])
+    assert obj._almost_equal(g, as_hls[1])
+    assert obj._almost_equal(b, as_hls[2])
 
 
 @pytest.mark.parametrize(
@@ -1613,3 +1633,33 @@ def test_color_rgba_regex_success(color, result):
 )
 def test_color_rgba_regex_fail(color):
     assert Color._rgb_str_to_tuple(color) is None
+
+
+@pytest.mark.parametrize(
+    'value, result',
+    [
+        ((255, 255, 255), (255, 255, 255)),
+        ((0, 0, 0), (0, 0, 0)),
+        ((0, 0, 0, 0, 0), None),
+        ((0, 0, 0, 'hello'), None),
+        (('hello', 'hello', 'hello'), None),
+    ],
+)
+def test_tuple_to_rgb(value, result):
+    assert Color._tuple_to_rgb(value) == result
+
+
+@pytest.mark.parametrize(
+    'color, result',
+    [('FFF', 'FFFFFF'), ('FfF', 'FFffFF'), ('123', '112233'), ('F', 'F'), ('FFFF', 'FFFF'), ('222222', '222222')],
+)
+def test_expand_3_digit_hex(color, result):
+    assert colors.expand_3_digit_hex(color) == result
+
+
+@pytest.mark.parametrize(
+    'color, result',
+    [('FFFFFF', 'FFF'), ('FFffFF', 'FfF'), ('112233', '123'), ('F', 'F'), ('FFFF', 'FFFF'), ('22', '22')],
+)
+def test_reduce_6_digit_hex(color, result):
+    assert colors.reduce_6_digit_hex(color) == result
