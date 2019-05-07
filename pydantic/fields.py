@@ -67,6 +67,7 @@ class Field:
         'validate_always',
         'allow_none',
         'shape',
+        'has_ellipsis',
         'class_validators',
         'parse_json',
     )
@@ -103,6 +104,7 @@ class Field:
         self.whole_post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
+        self.has_ellipsis: bool = False
         self.prepare()
 
     @classmethod
@@ -198,9 +200,12 @@ class Field:
 
         if issubclass(origin, Tuple):  # type: ignore
             self.shape = Shape.TUPLE
-            self.sub_fields = [
-                self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)  # type: ignore
-            ]
+            self.sub_fields = []
+            for i, t in enumerate(self.type_.__args__):  # type: ignore
+                if t is Ellipsis:
+                    self.has_ellipsis = True
+                    return
+                self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
 
         if issubclass(origin, List):
@@ -351,6 +356,10 @@ class Field:
         if not sequence_like(v):
             e = errors_.TupleError()
         else:
+            if self.has_ellipsis:
+                sub_field = self.sub_fields[0]
+                self.sub_fields = [self._create_sub_type(sub_field.type_, f'{self.name}_{f}') for f in range(len(v))]
+
             actual_length, expected_length = len(v), len(self.sub_fields)  # type: ignore
             if actual_length != expected_length:
                 e = errors_.TupleLengthError(actual_length=actual_length, expected_length=expected_length)
