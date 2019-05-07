@@ -33,7 +33,6 @@ from pydantic import (
     SecretStr,
     StrictStr,
     ValidationError,
-    colors,
     conbytes,
     condecimal,
     confloat,
@@ -1664,7 +1663,7 @@ def test_tuple_to_rgb(value, result):
     [('FFF', 'FFFFFF'), ('FfF', 'FFffFF'), ('123', '112233'), ('F', 'F'), ('FFFF', 'FFFF'), ('222222', '222222')],
 )
 def test_expand_3_digit_hex(color, result):
-    assert colors.expand_3_digit_hex(color) == result
+    assert Color.expand_3_digit_hex(color) == result
 
 
 @pytest.mark.parametrize(
@@ -1672,4 +1671,4 @@ def test_expand_3_digit_hex(color, result):
     [('FFFFFF', 'FFF'), ('FFffFF', 'FfF'), ('112233', '123'), ('F', 'F'), ('FFFF', 'FFFF'), ('22', '22')],
 )
 def test_reduce_6_digit_hex(color, result):
-    assert colors.reduce_6_digit_hex(color) == result
+    assert Color.reduce_6_digit_hex(color) == result

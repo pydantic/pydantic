@@ -6,34 +6,6 @@ In turn CSS3 is based on SVG specification for color names:
 http://www.w3.org/TR/SVG11/types.html#ColorKeywords
 """
 
-#
-# Helpers
-#
-
-
-def expand_3_digit_hex(value: str) -> str:
-    """
-    Return 6-digit hexadecimal value from the 3-digit format, fallback to original value
-    """
-    if len(value) != 3:
-        return value
-    return '{0}{0}{1}{1}{2}{2}'.format(value[0], value[1], value[2])
-
-
-def reduce_6_digit_hex(value: str) -> str:
-    """
-    Return 3-digit hexadecimal value from 6-digit, fallback to original value
-    """
-    if len(value) != 6:
-        return value
-    a, b, c, d, e, f = value
-    return '{a}{c}{e}'.format(a=a, c=c, e=e) if (a == b and c == d and e == f) else value
-
-
-#
-# Mappings
-#
-
 
 # {name: (hex, rgb)}
 BY_NAME = {
