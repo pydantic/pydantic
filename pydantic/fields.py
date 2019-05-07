@@ -357,9 +357,11 @@ class Field:
             e = errors_.TupleError()
         else:
             if self.has_ellipsis:
-                sub_field = self.sub_fields[0]
+                if not isinstance(v, tuple):
+                    # generators
+                    v = tuple(v)
+                sub_field = self.sub_fields[0]  # type: ignore
                 self.sub_fields = [self._create_sub_type(sub_field.type_, f'{self.name}_{f}') for f in range(len(v))]
-
             actual_length, expected_length = len(v), len(self.sub_fields)  # type: ignore
             if actual_length != expected_length:
                 e = errors_.TupleLengthError(actual_length=actual_length, expected_length=expected_length)

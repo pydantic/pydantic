@@ -540,6 +540,46 @@ def test_tuple_fails(value):
 
 
 @pytest.mark.parametrize(
+    'value,cls,result',
+    (
+        ([1, 2, '3'], int, (1, 2, 3)),
+        ((1, 2, '3'), int, (1, 2, 3)),
+        ({1, 2, '3'}, int, tuple({1, 2, 3})),
+        ((i ** 2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        (('a', 'b', 'c'), str, ('a', 'b', 'c')),
+    ),
+)
+def test_tuple_variable_len_success(value, cls, result):
+    class Model(BaseModel):
+        v: Tuple[cls, ...]
+
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize(
+    'value, cls, exc',
+    [
+        (('a', 'b', [1, 2], 'c'), str, [{'loc': ('v', 2), 'msg': 'str type expected', 'type': 'type_error.str'}]),
+        (
+            ('a', 'b', [1, 2], 'c', [3, 4]),
+            str,
+            [
+                {'loc': ('v', 2), 'msg': 'str type expected', 'type': 'type_error.str'},
+                {'loc': ('v', 4), 'msg': 'str type expected', 'type': 'type_error.str'},
+            ],
+        ),
+    ],
+)
+def test_tuple_variable_len_fails(value, cls, exc):
+    class Model(BaseModel):
+        v: Tuple[cls, ...]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=value)
+    assert exc_info.value.errors() == exc
+
+
+@pytest.mark.parametrize(
     'value,result',
     (
         ({1, 2, 2, '3'}, {1, 2, '3'}),
