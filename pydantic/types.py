@@ -717,6 +717,25 @@ class Color:
         name = colors.BY_RGB.get(rgb, None)  # type: ignore
         return name
 
+    @staticmethod
+    def expand_3_digit_hex(value: str) -> str:
+        """
+        Return 6-digit hexadecimal value from the 3-digit format, fallback to original value
+        """
+        if len(value) != 3:
+            return value
+        return '{0}{0}{1}{1}{2}{2}'.format(value[0], value[1], value[2])
+
+    @staticmethod
+    def reduce_6_digit_hex(value: str) -> str:
+        """
+        Return 3-digit hexadecimal value from 6-digit, fallback to original value
+        """
+        if len(value) != 6:
+            return value
+        a, b, c, d, e, f = value
+        return '{a}{c}{e}'.format(a=a, c=c, e=e) if (a == b and c == d and e == f) else value
+
     def _parse_rgb_str(self, value: str) -> Optional[str]:
         """
         Get name of the color by its RGB/RGBA string
@@ -736,7 +755,7 @@ class Color:
             pure_hex = value
 
         if len(pure_hex) == 3:
-            pure_hex = colors.expand_3_digit_hex(pure_hex)
+            pure_hex = self.expand_3_digit_hex(pure_hex)
 
         return colors.BY_HEX.get(pure_hex)
 
@@ -786,7 +805,7 @@ class Color:
         """
         self._get_color_or_raise()
         hexadecimal, _ = colors.BY_NAME[self._color_match or '']
-        return '{}{}'.format(prefix, colors.reduce_6_digit_hex(hexadecimal) if reduce else hexadecimal)
+        return '{}{}'.format(prefix, self.reduce_6_digit_hex(hexadecimal) if reduce else hexadecimal)
 
     def as_tuple(self, alpha: bool = False) -> AnyRGBType:
         """
