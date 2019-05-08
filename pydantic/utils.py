@@ -289,3 +289,10 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
     if field.sub_fields:
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
+
+
+def almost_equal_floats(value_1: float, value_2: float = 1.0) -> bool:
+    """
+    Return True if two floats are almost equal
+    """
+    return abs(value_1 - value_2) <= 1e-8

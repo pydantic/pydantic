@@ -1,6 +1,7 @@
 # flake8: noqa
 from . import dataclasses
 from .class_validators import validator
+from .color import Color
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
 from .errors import *
