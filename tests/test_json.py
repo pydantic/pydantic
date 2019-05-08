@@ -9,8 +9,9 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, create_model
+from pydantic.color import Color
 from pydantic.json import pydantic_encoder, timedelta_isoformat
-from pydantic.types import Color, DirectoryPath, FilePath, SecretBytes, SecretStr
+from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
 
 
 class MyEnum(Enum):

@@ -1,6 +1,5 @@
 import json
 import re
-from colorsys import rgb_to_hls
 from decimal import Decimal
 from ipaddress import (
     IPv4Address,
@@ -16,7 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Pattern, Set, Tuple, Type, Union, cast
 from uuid import UUID
 
-from . import colors, errors
+from . import errors
 from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     anystr_length_validator,
@@ -77,7 +76,6 @@ __all__ = [
     'IPvAnyNetwork',
     'SecretStr',
     'SecretBytes',
-    'Color',
 ]
 
 NoneStr = Optional[str]
@@ -88,12 +86,6 @@ OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, int]]]
-RGBType = Tuple[int, int, int]
-RGBAType = Tuple[int, int, int, float]
-AnyRGBType = Union[RGBType, RGBAType]
-RGBFractionType = Tuple[float, float, float]
-HLSType = Tuple[float, float, float]
-ColorType = Union[str, AnyRGBType]
 
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -634,238 +626,3 @@ class SecretBytes:
 
     def get_secret_value(self) -> bytes:
         return self._secret_value
-
-
-class Color:
-    __slots__ = '_original', '_color_match'
-
-    def __init__(self, value: ColorType) -> None:
-        self._original: ColorType = value
-        self._color_match: Optional[str] = None
-        self._parse_color()
-
-    @staticmethod
-    def _rgb_str_to_tuple(value: str) -> Optional[RGBAType]:
-        """
-        Return RGB/RGBA tuple from the passed string.
-
-        If RGBA cannot be matched, return None
-        """
-        r = re.compile(
-            r'rgba?\((?P<red>\d{1,3}),\s*'
-            r'(?P<green>\d{1,3}),\s*'
-            r'(?P<blue>\d{1,3})'
-            r'(,\s*(?P<alpha>\d{1}\.\d{1,}))?\)',
-            re.IGNORECASE,
-        )
-        match = r.match(value)
-
-        if match is None:
-            return None
-
-        red = int(match.group('red'))
-        green = int(match.group('green'))
-        blue = int(match.group('blue'))
-        alpha = float(match.group('alpha')) if match.group('alpha') is not None else 1.0
-        return red, green, blue, alpha
-
-    @staticmethod
-    def _almost_equal(value_1: float, value_2: float = 1.0) -> bool:
-        """
-        Return True if two floats are almost equal
-        """
-        return abs(value_1 - value_2) <= 1e-8
-
-    @staticmethod
-    def _tuple_to_rgb(value: Optional[Tuple[Any, ...]]) -> Optional[RGBType]:
-        """
-        Convert a tuple to RGB tuple, if it fails raise an error
-        """
-
-        def is_int_color(c: Any) -> bool:
-            try:
-                color = int(c)
-            except ValueError:
-                return False
-            return color in range(0, 256)
-
-        result = None
-        if value is None:
-            return result
-
-        length = len(value)
-        if length not in range(3, 5):
-            return result
-
-        if length == 4:
-            try:
-                Color._almost_equal(float(value[3]), 1.0)
-            except ValueError:
-                return result
-
-        if any(map(lambda color: not is_int_color(color), value)):
-            return result
-
-        r, g, b = value[:3]
-        return r, g, b
-
-    def _parse_tuple(self, value: Optional[Tuple[Any, ...]]) -> Optional[str]:
-        """
-        Get name of the color by its RGB
-        """
-        rgb = self._tuple_to_rgb(value)
-        name = colors.BY_RGB.get(rgb, None)  # type: ignore
-        return name
-
-    @staticmethod
-    def expand_3_digit_hex(value: str) -> str:
-        """
-        Return 6-digit hexadecimal value from the 3-digit format, fallback to original value
-        """
-        if len(value) != 3:
-            return value
-        return '{0}{0}{1}{1}{2}{2}'.format(value[0], value[1], value[2])
-
-    @staticmethod
-    def reduce_6_digit_hex(value: str) -> str:
-        """
-        Return 3-digit hexadecimal value from 6-digit, fallback to original value
-        """
-        if len(value) != 6:
-            return value
-        a, b, c, d, e, f = value
-        return '{a}{c}{e}'.format(a=a, c=c, e=e) if (a == b and c == d and e == f) else value
-
-    def _parse_rgb_str(self, value: str) -> Optional[str]:
-        """
-        Get name of the color by its RGB/RGBA string
-        """
-        rgba = self._rgb_str_to_tuple(value)
-        return self._parse_tuple(rgba)
-
-    def _parse_hex_str(self, value: str) -> Optional[str]:
-        """
-        Get name of the color by its hexadecimal string
-        """
-        if value.startswith('#'):
-            pure_hex = value[1:]
-        elif value.startswith('0x'):
-            pure_hex = value[2:]
-        else:
-            pure_hex = value
-
-        if len(pure_hex) == 3:
-            pure_hex = self.expand_3_digit_hex(pure_hex)
-
-        return colors.BY_HEX.get(pure_hex)
-
-    def _parse_color(self) -> None:
-        """
-        Main logic of color parsing
-        """
-        if isinstance(self._original, tuple):
-            self._color_match = self._parse_tuple(self._original)
-
-        elif isinstance(self._original, str):
-            color = self._original.lower()
-
-            # rgb/rgba string
-            self._color_match = self._parse_rgb_str(color)
-            if self._color_match is not None:
-                return
-
-            # hex string
-            self._color_match = self._parse_hex_str(color)
-            if self._color_match is not None:
-                return
-
-            # named colour
-            if color in colors.BY_NAME:
-                self._color_match = color
-                return
-
-    def _get_color_or_raise(self) -> None:
-        """
-        Raise error if color name not found
-        """
-        if self._color_match is None:
-            raise errors.ColorError()
-
-    def original(self) -> ColorType:
-        """
-        Return original value passed to the model
-        """
-        return self._original
-
-    def as_hex(self, prefix: str = '0x', reduce: bool = True) -> str:
-        """
-        Return hexadecimal value of the color
-
-        Try reduce hex code to 3-digit format, fallback to 6-digit.
-        """
-        self._get_color_or_raise()
-        hexadecimal, _ = colors.BY_NAME[self._color_match or '']
-        return '{}{}'.format(prefix, self.reduce_6_digit_hex(hexadecimal) if reduce else hexadecimal)
-
-    def as_tuple(self, alpha: bool = False) -> AnyRGBType:
-        """
-        Return RGB or RGBA tuple
-        """
-        self._get_color_or_raise()
-        _, rgb = colors.BY_NAME[self._color_match or '']
-        r, g, b = rgb
-
-        if alpha:
-            return r, g, b, 1.0
-        return r, g, b
-
-    def as_rgb(self, alpha: bool = False) -> str:
-        """
-        Return RGB or RGBA string representation of the color
-        """
-        rgb = self.as_tuple(alpha)
-        if alpha:
-            return 'rgba({}, {}, {}, {})'.format(*rgb)
-        return 'rgb({}, {}, {})'.format(*rgb)
-
-    def as_named_color(self) -> str:
-        """
-        Return name of the color as per CSS3 specification.
-        """
-        self._get_color_or_raise()
-        return self._color_match  # type: ignore
-
-    def as_hls(self) -> HLSType:
-        """
-        Return tuple of floats representing Hue Lightness Saturation (HLS) color
-        """
-
-        def normalize(v: Union[int, float, str]) -> float:
-            return float(v) / 255
-
-        self._get_color_or_raise()
-        r, g, b = self.as_tuple(alpha=False)  # type: ignore
-        return rgb_to_hls(normalize(r), normalize(g), normalize(b))
-
-    def __str__(self) -> str:
-        return str(self._original).lower()
-
-    def __repr__(self) -> str:
-        return '<Color("{}")>'.format(self._color_match or self._original)
-
-    @staticmethod
-    def dumps(value: 'Color') -> str:
-        """
-        Encoder for json.dumps
-        """
-        return value.as_named_color()
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: ColorType) -> 'Color':
-        color = cls(value)
-        color._get_color_or_raise()
-        return color
