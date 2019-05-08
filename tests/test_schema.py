@@ -26,6 +26,9 @@ from pydantic.types import (
     DirectoryPath,
     EmailStr,
     FilePath,
+    IPvAnyAddress,
+    IPvAnyInterface,
+    IPvAnyNetwork,
     Json,
     NameEmail,
     NegativeFloat,
@@ -659,6 +662,45 @@ def test_json_type():
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
         'required': ['a'],
+    }
+
+
+def test_ipvanyaddress_type():
+    class Model(BaseModel):
+        ip_address: IPvAnyAddress
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipvanyaddress'}},
+        'required': ['ip_address'],
+    }
+
+
+def test_ipvanyinterface_type():
+    class Model(BaseModel):
+        ip_interface: IPvAnyInterface
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipvanyinterface'}},
+        'required': ['ip_interface'],
+    }
+
+
+def test_ipvanynetwork_type():
+    class Model(BaseModel):
+        ip_network: IPvAnyNetwork
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipvanynetwork'}},
+        'required': ['ip_network'],
     }
 
 

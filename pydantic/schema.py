@@ -22,6 +22,9 @@ from .types import (
     DirectoryPath,
     EmailStr,
     FilePath,
+    IPvAnyAddress,
+    IPvAnyInterface,
+    IPvAnyNetwork,
     Json,
     NameEmail,
     SecretBytes,
@@ -632,6 +635,9 @@ field_class_to_schema_enum_disabled = (
     (time, {'type': 'string', 'format': 'time'}),
     (timedelta, {'type': 'number', 'format': 'time-delta'}),
     (Json, {'type': 'string', 'format': 'json-string'}),
+    (IPvAnyAddress, {'type': 'string', 'format': 'ipvanyaddress'}),
+    (IPvAnyInterface, {'type': 'string', 'format': 'ipvanyinterface'}),
+    (IPvAnyNetwork, {'type': 'string', 'format': 'ipvanynetwork'}),
 )
 
 
