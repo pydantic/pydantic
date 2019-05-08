@@ -493,10 +493,12 @@ Color Type
 
 You can use ``Color`` data type for storing colors as per
 `CSS3 specification <http://www.w3.org/TR/css3-color/#svg-color>`_.
-Color can be defined either as a `name <http://www.w3.org/TR/SVG11/types.html#ColorKeywords>`_
-(case ignored) or as a `hexadecimal value <https://en.wikipedia.org/wiki/Web_colors#Hex_triplet>`_
-(both three- or six- digit form, prefixed with ``0x``, ``#`` or without a prefix) or as
-an RGB/RGBA tuple or string.
+Color can be defined as:
+
+- `name <http://www.w3.org/TR/SVG11/types.html#ColorKeywords>`_ (e.g. ``Black``, ``azure``)
+- `hexadecimal value <https://en.wikipedia.org/wiki/Web_colors#Hex_triplet>`_ (e.g. ``0x000``, ``#FFFFFF``, ``7fffd4``)
+- RGB/RGBA tuple (e.g. ``(255, 255, 255)``, ``(255, 255, 255, 1.0)``
+- RGB/RGBA string (e.g. ``"rgb(255, 255, 255)"``)
 
 .. warning::
 
