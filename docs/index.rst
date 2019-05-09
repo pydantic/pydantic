@@ -831,6 +831,13 @@ Below are the results of crude benchmarks comparing *pydantic* to other validati
    :align: center
    :file: benchmarks.csv
 
+And here are some more results of similarly crude benchmarks comparing *pydantic* to other similar libraries.
+
+.. csv-table::
+   :header: "Package", "Relative Performance", "Mean validation time", "std. dev."
+   :align: center
+   :file: benchmarks_attrs.csv
+
 (See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
 for more details on the test case. Feel free to submit more benchmarks or improve an existing one.)
 
