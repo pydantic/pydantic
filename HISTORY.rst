@@ -5,6 +5,7 @@ History
 
 v0.26 (unreleased)
 * fix to schema generation for ``IPvAnyAddress``, ``IPvAnyInterface``, ``IPvAnyNetwork`` #498 by @pilosus
+* added benchmark against attr @sebastianmika
 
 v0.25 (2019-05-05)
 ..................
