@@ -34,6 +34,10 @@ try:
     from test_toasted_marshmallow import TestToastedMarshmallow
 except Exception:
     TestToastedMarshmallow = None
+try:
+    from test_attr import TestAttr
+except Exception:
+    TestAttr = None
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
@@ -44,7 +48,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
+    [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF, TestAttr]
     if t is not None
 ]
 
