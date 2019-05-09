@@ -46,7 +46,8 @@ class Shape(IntEnum):
     SET = 3
     MAPPING = 4
     TUPLE = 5
-    SEQUENCE = 6
+    TUPLE_ELLIPS = 6
+    SEQUENCE = 7
 
 
 class Field:
@@ -67,7 +68,6 @@ class Field:
         'validate_always',
         'allow_none',
         'shape',
-        'has_ellipsis',
         'class_validators',
         'parse_json',
     )
@@ -104,7 +104,6 @@ class Field:
         self.whole_post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
         self.shape: Shape = Shape.SINGLETON
-        self.has_ellipsis: bool = False
         self.prepare()
 
     @classmethod
@@ -203,7 +202,8 @@ class Field:
             self.sub_fields = []
             for i, t in enumerate(self.type_.__args__):  # type: ignore
                 if t is Ellipsis:
-                    self.has_ellipsis = True
+                    self.type_ = self.type_.__args__[0]  # type: ignore
+                    self.shape = Shape.TUPLE_ELLIPS
                     return
                 self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
@@ -306,13 +306,12 @@ class Field:
         except (ValueError, TypeError) as exc:
             return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
-    def _validate_sequence_like(
+    def _validate_sequence_like(  # noqa: C901 (ignore complexity)
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
         """
-
         if not sequence_like(v):
             e: errors_.PydanticTypeError
             if self.shape is Shape.LIST:
@@ -340,6 +339,8 @@ class Field:
 
         if self.shape is Shape.SET:
             converted = set(result)
+        elif self.shape is Shape.TUPLE_ELLIPS:
+            converted = tuple(result)
         elif self.shape is Shape.SEQUENCE:
             if isinstance(v, tuple):
                 converted = tuple(result)
@@ -356,12 +357,6 @@ class Field:
         if not sequence_like(v):
             e = errors_.TupleError()
         else:
-            if self.has_ellipsis:
-                if not isinstance(v, tuple):
-                    # generators
-                    v = tuple(v)
-                sub_field = self.sub_fields[0]  # type: ignore
-                self.sub_fields = [self._create_sub_type(sub_field.type_, f'{self.name}_{f}') for f in range(len(v))]
             actual_length, expected_length = len(v), len(self.sub_fields)  # type: ignore
             if actual_length != expected_length:
                 e = errors_.TupleLengthError(actual_length=actual_length, expected_length=expected_length)
