@@ -200,11 +200,12 @@ BY_HEX = {v: k for k, v in BY_NAME.items()}
 
 
 class Color:
-    __slots__ = '_original', '_color_match'
+    __slots__ = '_original', '_color_match', '_is_valid_noname'
 
     def __init__(self, value: ColorType) -> None:
         self._original: ColorType = value
         self._color_match: Optional[str] = None
+        self._is_valid_noname: bool = False
         self._parse_color()
 
     def original(self) -> ColorType:
@@ -261,7 +262,13 @@ class Color:
     @classmethod
     def validate(cls, value: ColorType) -> 'Color':
         color = cls(value)
-        color._get_color_or_raise()
+
+        if color._is_valid_noname and color._color_match is None:
+            raise errors.ColorNoNameError(value=color.original())
+
+        if color._color_match is None:
+            raise errors.ColorError()
+
         return color
 
     @staticmethod
@@ -300,8 +307,7 @@ class Color:
             return False
         return color in range(0, 256)
 
-    @staticmethod
-    def _tuple_to_rgb(value: Optional[Tuple[Any, ...]]) -> Optional[RGBType]:
+    def _tuple_to_rgb(self, value: Optional[Tuple[Any, ...]]) -> Optional[RGBType]:
         """
         Convert an arbitrary tuple to RGB tuple of ints
 
@@ -310,17 +316,26 @@ class Color:
         if (value is None) or (len(value) not in range(3, 5)):
             return None
 
+        alpha = None
         if len(value) == 4:
             try:
-                almost_equal_floats(float(value[3]), 1.0)
+                alpha = float(value[3])
             except ValueError:
                 return None
 
         if any(not Color._is_int_color(c) for c in value):
             return None
 
-        r, g, b = value[:3]
-        return r, g, b
+        self._is_valid_noname = True
+
+        if alpha:
+            if alpha < 0.0 or alpha > 1.0:
+                self._is_valid_noname = False
+
+            if not almost_equal_floats(alpha, 1.0):
+                return None
+
+        return value[:3]  # type: ignore
 
     def _parse_tuple(self, value: Optional[Tuple[Any, ...]]) -> Optional[str]:
         """
@@ -380,16 +395,32 @@ class Color:
         rgba = self._rgb_str_to_tuple(value)
         return self._parse_tuple(rgba)
 
+    def _is_valid_hex_color(self, value: str) -> bool:
+        """
+        Return True if value is a valid 3-digit or 6-digit hex string
+        """
+        value = self._strip_hex(value)
+        if len(value) not in {3, 6}:
+            return False
+        try:
+            int(value, 16)
+        except ValueError:
+            return False
+        return True
+
     def _parse_hex_str(self, value: str) -> Optional[str]:
         """
         Get name of the color by its hexadecimal string
         """
         h = self._strip_hex(value)
-
         if len(h) == 3:
             h = self._expand_3_digit_hex(h)  # type: ignore
 
-        return BY_HEX.get(h)
+        hex_named = BY_HEX.get(h)
+        if hex_named is None and self._is_valid_hex_color(h):
+            self._is_valid_noname = True
+
+        return hex_named
 
     def _parse_color(self) -> None:
         """
@@ -415,13 +446,6 @@ class Color:
             if color in BY_NAME:
                 self._color_match = color
                 return
-
-    def _get_color_or_raise(self) -> None:
-        """
-        Raise error if color name not found
-        """
-        if self._color_match is None:
-            raise errors.ColorError()
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
