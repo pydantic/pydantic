@@ -4,6 +4,7 @@ import pytest
 
 from pydantic import BaseModel, ValidationError
 from pydantic.color import Color
+from pydantic.errors import ColorNoNameError
 from pydantic.utils import almost_equal_floats
 
 
@@ -80,6 +81,8 @@ def test_color_success(color, as_name, as_tuple, as_hex, as_hls):
         (0, 0, 1280),
         (0, 0, 1205, 0.1),
         (0, 0, 1128, 0.5),
+        (0, 0, 1128, -0.5),
+        (0, 0, 1128, 1.5),
         # rgb/rgba strings
         'rgb(0, 0, 1205)',
         'rgb(0, 0, 1128)',
@@ -97,6 +100,49 @@ def test_color_fail(color):
 
     with pytest.raises(ValidationError):
         Model(color=color).as_named_color()
+
+
+@pytest.mark.parametrize(
+    'color',
+    [
+        # hex
+        '#bad',
+        '0xBAD',
+        # rgb/rgba tuple
+        (187, 170, 221),
+        (187, 170, 221, 1.0),
+        (187, 170, 221, 0.5),
+        # rgb/rgba string
+        'rgb(187, 170, 221)',
+        'rgba(187, 170, 221, 1.0)',
+        'rgba(187, 170, 221, 0.5)',
+    ],
+)
+def test_color_noname_fail(color):
+    with pytest.raises(ColorNoNameError):
+        Color.validate(color)
+
+
+@pytest.mark.parametrize(
+    'color, result',
+    [
+        ('#bad', True),
+        ('0xBAD', True),
+        ((187, 170, 221), True),
+        ((187, 170, 221, 1.0), True),
+        ((187, 170, 221, 0.5), True),
+        ('rgb(187, 170, 221)', True),
+        ('rgba(187, 170, 221, 1.0)', True),
+        ('rgba(187, 170, 221, 0.5)', True),
+        ((187, 170, 221, 1.5), False),
+        ((187, 170, 221, -1.0), False),
+        ('#badbadbad', False),
+        ('rgb(555, 170, 221)', False),
+        ('#XYZ', False),
+    ],
+)
+def test_color_is_valid_noname(color, result):
+    assert Color(color)._is_valid_noname is result
 
 
 @pytest.mark.parametrize(
@@ -135,7 +181,7 @@ def test_color_rgba_regex_fail(color):
     ],
 )
 def test_color_tuple_to_rgb(value, result):
-    assert Color._tuple_to_rgb(value) == result
+    assert Color(value)._tuple_to_rgb(value) == result
 
 
 @pytest.mark.parametrize(
