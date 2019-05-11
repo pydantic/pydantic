@@ -503,7 +503,7 @@ Color can be defined as:
 .. warning::
 
     RGBA tuple or string with alpha channel not equal to ``1.0`` will never be
-    a valid CSS3 color as no `alpha bleding <https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending>`_
+    a valid CSS3 color as no `alpha blending <https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending>`_
     is done to match the RGBA to existing RGB colors.
 
 .. literalinclude:: examples/ex_color_type.py
