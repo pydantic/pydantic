@@ -1,22 +1,23 @@
-from pydantic import BaseModel, Color, ValidationError
+from pydantic import BaseModel, ValidationError
+from pydantic.color import Color
+
+c = Color('ff00ff')
+print(c.as_named())
+#> magenta
+print(c.as_hex())
+#> #f0f
+
+c2 = Color('green')
+print(c2.as_tuple())
+#> (0, 128, 0)
+print(c2.original())
+#> green
 
 class Model(BaseModel):
-    color: Color = None
+    color: Color
 
-c_named = Model(color='Black').color
-c_hex_3_prefix_zero = Model(color='0x000').color
-c_tuple_3 = Model(color=(0, 0, 0)).color
-
-print(c_named.as_named_color())
-# > black
-print(c_named.as_hex(prefix='#', reduce=False))
-# > #000000
-print(c_named.as_tuple(alpha=True))
-# > (0, 0, 0, 1.0)
-print(c_named.as_rgb(alpha=False))
-# > rgb(0, 0, 0)
-print(c_named.as_hls())
-# > (0.0, 0.0, 0.0)
+print(Model(color='purple'))
+# > Model color=<Color('purple', (128, 0, 128))>
 
 try:
     Model(color='hello')

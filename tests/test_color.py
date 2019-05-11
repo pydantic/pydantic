@@ -33,6 +33,8 @@ from pydantic.utils import almost_equal_floats
         ('rgba(0, 0, 128, 0.6)', (0, 0, 128, 0.6)),
         (' rgba(0, 0, 128,0.6) ', (0, 0, 128, 0.6)),
         ('rgba(00,0,128,0.6  )', (0, 0, 128, 0.6)),
+        ('rgba(0, 0, 128, 0)', (0, 0, 128, 0)),
+        ('rgba(0, 0, 128, 1)', (0, 0, 128)),
     ],
 )
 def test_color_success(raw_color, as_tuple):
@@ -83,8 +85,16 @@ def test_model_validation():
         color: Color
 
     assert Model(color='red').color.as_hex() == '#f00'
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc_info:
         Model(color='snot')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('color',),
+            'msg': 'value is not a valid color: string not recognised as a valid color',
+            'type': 'value_error.color',
+            'ctx': {'reason': 'string not recognised as a valid color'},
+        }
+    ]
 
 
 def test_as_tuple():
@@ -131,6 +141,7 @@ def test_as_hex():
     assert Color((1, 2, 3)).as_hex() == '#010203'
     assert Color((119, 119, 119)).as_hex() == '#777'
     assert Color((119, 0, 238)).as_hex() == '#70e'
+    assert Color('B0B').as_hex() == '#b0b'
     with pytest.raises(ValueError) as exc_info:
         Color((1, 2, 3, 0.123456)).as_hex()
     assert exc_info.value.args[0] == (
@@ -141,6 +152,9 @@ def test_as_hex():
 
 
 def test_as_named():
+    assert Color((0, 255, 255)).as_named() == 'cyan'
+    assert Color('#808000').as_named() == 'olive'
+
     assert Color((240, 248, 255)).as_named() == 'aliceblue'
     with pytest.raises(ValueError) as exc_info:
         Color((1, 2, 3)).as_named()

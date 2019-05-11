@@ -491,24 +491,34 @@ Fields can also be of type ``Callable``:
 Color Type
 ..........
 
-You can use ``Color`` data type for storing colors as per
-`CSS3 specification <http://www.w3.org/TR/css3-color/#svg-color>`_.
-Color can be defined as:
+You can use the ``Color`` data type for storing colors as per
+`CSS3 specification <http://www.w3.org/TR/css3-color/#svg-color>`_. Color can be defined via:
 
 - `name <http://www.w3.org/TR/SVG11/types.html#ColorKeywords>`_ (e.g. ``Black``, ``azure``)
 - `hexadecimal value <https://en.wikipedia.org/wiki/Web_colors#Hex_triplet>`_ (e.g. ``0x000``, ``#FFFFFF``, ``7fffd4``)
-- RGB/RGBA tuple (e.g. ``(255, 255, 255)``, ``(255, 255, 255, 1.0)``
-- RGB/RGBA string (e.g. ``"rgb(255, 255, 255)"``)
-
-.. warning::
-
-    RGBA tuple or string with alpha channel not equal to ``1.0`` will never be
-    a valid CSS3 color as no `alpha blending <https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending>`_
-    is done to match the RGBA to existing RGB colors.
+- RGB/RGBA tuple (e.g. ``(255, 255, 255)``, ``(255, 255, 255, 0.5)``
+- RGB/RGBA string (e.g. ``"rgb(255, 255, 255)"`` or ``"rgba(255, 255, 255, 0.5)"``)
 
 .. literalinclude:: examples/ex_color_type.py
 
 (This script is complete, it should run "as is")
+
+``Color`` has the following methods:
+
+:original: the original string or tuple passed to ``Color``
+:as_tuple: returns a 3- or 4-tuple, the ``alpha`` kwargs can be used to define whether the alpha channel should be
+  included
+:as_hls_tuple: 3-tuple of HLS color, ``ValueError`` raised if the alpha channel is set.
+:as_rgba: string in the format ``rgba(<red>, <green>, <blue>, <alpha>)``
+:as_rgba: string in the format ``rgb(<red>, <green>, <blue>)``, fails if the alpha channel is set unless
+  ``fallback=True`` is supplied when it falls back to ``as_rgba``
+:as_hex: string in the format ``#ffffff`` or ``#fff`` if it's valid, fails if the alpha channel is set unless
+  ``fallback=True`` is supplied when it falls back to ``as_rgba``
+:as_named: returns a named CSS3 color, fails if the alpha channel is set unless
+  ``fallback=True`` is supplied when it falls back to ``as_rgba``,
+  also fails if no such color exists unless ``fallback=True`` is supplied when it falls back to ``as_hex``
+
+The ``__str__`` method for ``Color`` returns ``str(original)``.
 
 Secret Types
 ............

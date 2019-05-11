@@ -2,13 +2,10 @@
 Color definitions are  used as per CSS3 specification:
 http://www.w3.org/TR/css3-color/#svg-color
 
-In turn CSS3 is based on SVG specification for color names:
-http://www.w3.org/TR/SVG11/types.html#ColorKeywords
+A few colors have multiple names referring to the sames colors, eg. `grey` and `gray` or `aqua` and `cyan`.
 
-Watch out! A few named colors have the same hex/rgb codes. This usually applies to the shades of gray because of
-the variations in spelling, e.g. `grey` vs. `gray` or `slategrey` vs. `slategray`.
-
-A few colors have completely different names but the same hex/rgb though, e.g. `aqua` and `cyan`.
+In these cases the LAST color when sorted alphabetically takes preferences,
+eg. Color((0, 255, 255)).as_named() == 'cyan' because "cyan" comes after "aqua".
 """
 import re
 from colorsys import rgb_to_hls
@@ -38,8 +35,9 @@ class RGBA(NamedTuple):
 
 regex_hex_short = re.compile(r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])\s*')
 regex_hex_long = re.compile(r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})\s*')
-regex_rgb = re.compile(r'\s*rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)\s*')
-regex_rgba = re.compile(r'\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d(?:\.\d+))\s*\)\s*')
+rgb_color_re = r'\s*(\d{1,3})\s*'
+regex_rgb = re.compile(fr'\s*rgb\({rgb_color_re},{rgb_color_re},{rgb_color_re}\)\s*')
+regex_rgba = re.compile(fr'\s*rgba\({rgb_color_re},{rgb_color_re},{rgb_color_re},\s*(\d(?:\.\d+)?)\s*\)\s*')
 
 # colors where the two hex characters are the same, if all colors match this the short version of hex colors can be used
 repeat_colors = {int(c * 2, 16) for c in '0123456789abcdef'}
@@ -165,7 +163,7 @@ class Color:
 
 def parse_tuple(value: Tuple[Any, ...]) -> RGBA:
     """
-    Check if a tuple is valid as a color.
+    Parse a tuple or list as a color.
     """
     if len(value) == 3:
         r, g, b = [parse_int_color(v) for v in value]
@@ -179,7 +177,7 @@ def parse_tuple(value: Tuple[Any, ...]) -> RGBA:
 
 def parse_str(value: str) -> RGBA:
     """
-    Return RGBA from a string, trying the following formats (in this order):
+    Parse a string to an RGBA tuple, trying the following formats (in this order):
     * named color, see COLORS_BY_NAME below
     * hex short eg. `<prefix>fff` (prefix can be `#`, `0x` or nothing)
     * hex long eg. `<prefix>ffffff` (prefix can be `#`, `0x` or nothing)
@@ -220,7 +218,7 @@ def parse_str(value: str) -> RGBA:
 
 def parse_int_color(value: Any) -> int:
     """
-    Parse a value checking it's a valid int the range 0 to 255
+    Parse a value checking it's a valid int in the range 0 to 255
     """
     try:
         color = int(value)
@@ -234,7 +232,7 @@ def parse_int_color(value: Any) -> int:
 
 def parse_float_alpha(value: Any) -> Optional[float]:
     """
-    Parse a value checking it's a valid float the range 0 to 1
+    Parse a value checking it's a valid float in the range 0 to 1
     """
     try:
         alpha = float(value)
