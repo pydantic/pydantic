@@ -18,7 +18,7 @@ def isoformat(o: Union[datetime.date, datetime.time]) -> str:
 
 
 ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
-    Color: lambda o: o.as_named_color(),
+    Color: lambda o: o.original(),
     IPv4Address: str,
     IPv6Address: str,
     IPv4Interface: str,

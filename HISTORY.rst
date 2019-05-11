@@ -11,7 +11,7 @@ v0.26 (unreleased)
 * **Breaking Change:** fix ``.dict(skip_keys=True)`` skipping values set via alias (this involves changing
   ``validate_model()`` to always returns ``Tuple[Dict[str, Any], Set[str], Optional[ValidationError]]``), #517 by @sommd
 * fix to schema generation for ``IPv4Address``, ``IPv6Address``, ``IPv4Interface``, ``IPv6Interface``, ``IPv4Network``, ``IPv6Network`` #532 by @euri10
-* add ``Color`` type, #504 by @pilosus
+* add ``Color`` type, #504 by @pilosus and @samuelcolvin
 
 v0.25 (2019-05-05)
 ..................

@@ -24,7 +24,8 @@ class MyEnum(Enum):
     [
         (UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
         (IPv4Address('192.168.0.1'), '"192.168.0.1"'),
-        (Color('#000'), '"black"'),
+        (Color('#000'), '"#000"'),
+        (Color((1, 12, 123)), '[1, 12, 123]'),
         (SecretStr('abcd'), '"**********"'),
         (SecretStr(''), '""'),
         (SecretBytes(b'xyz'), '"**********"'),

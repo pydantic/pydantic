@@ -4,64 +4,41 @@ import pytest
 
 from pydantic import BaseModel, ValidationError
 from pydantic.color import Color
+from pydantic.errors import ColorError
 from pydantic.utils import almost_equal_floats
 
 
 @pytest.mark.parametrize(
-    'color, as_name, as_tuple, as_hex, as_hls',
+    'raw_color, as_tuple',
     [
         # named colors
-        ('aliceblue', 'aliceblue', (240, 248, 255), 'f0f8ff', (0.5777777777777778, 0.9705882352941176, 1.0)),
-        (
-            'Antiquewhite',
-            'antiquewhite',
-            (250, 235, 215),
-            'faebd7',
-            (0.09523809523809519, 0.9117647058823529, 0.7777777777777779),
-        ),
-        ('AQUA', 'aqua', (0, 255, 255), '0ff', (0.5, 0.5, 1.0)),
-        ('aquaMarine', 'aquamarine', (127, 255, 212), '7fffd4', (0.4440104166666667, 0.7490196078431373, 1.0)),
-        # hex: 6-digit and 3-digit
-        ('#000000', 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
-        ('#000', 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
-        ('0x000080', 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
-        ('0x00F', 'blue', (0, 0, 255), '00f', (0.6666666666666666, 0.5, 1.0)),
-        ('000000', 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
-        ('000', 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
-        # rgb/rgba tuples
-        ((0, 0, 0), 'black', (0, 0, 0), '000', (0.0, 0.0, 0.0)),
-        ((0, 0, 128), 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
-        ((0, 0, 205, 1.0), 'mediumblue', (0, 0, 205), '0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
-        ((0, 0, 128, 1.0), 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
-        # rgb/rgba strings
-        ('rgb(0, 0, 205)', 'mediumblue', (0, 0, 205), '0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
-        ('rgb(0, 0, 128)', 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
-        ('rgba(0, 0, 205, 1.0)', 'mediumblue', (0, 0, 205), '0000cd', (0.6666666666666666, 0.4019607843137255, 1.0)),
-        ('rgba(0, 0, 128, 1.0)', 'navy', (0, 0, 128), '000080', (0.6666666666666666, 0.25098039215686274, 1.0)),
+        ('aliceblue', (240, 248, 255)),
+        ('Antiquewhite', (250, 235, 215)),
+        ('#000000', (0, 0, 0)),
+        ('#DAB', (221, 170, 187)),
+        ('#dab', (221, 170, 187)),
+        ('#000', (0, 0, 0)),
+        ('0x797979', (121, 121, 121)),
+        ('0x777', (119, 119, 119)),
+        ('0x777777', (119, 119, 119)),
+        ('777', (119, 119, 119)),
+        (' 777', (119, 119, 119)),
+        ('777 ', (119, 119, 119)),
+        (' 777 ', (119, 119, 119)),
+        ((0, 0, 128), (0, 0, 128)),
+        ([0, 0, 128], (0, 0, 128)),
+        ((0, 0, 205, 1.0), (0, 0, 205)),
+        ((0, 0, 205, 0.5), (0, 0, 205, 0.5)),
+        ('rgb(0, 0, 205)', (0, 0, 205)),
+        ('rgba(0, 0, 128, 0.6)', (0, 0, 128, 0.6)),
+        (' rgba(0, 0, 128,0.6) ', (0, 0, 128, 0.6)),
+        ('rgba(00,0,128,0.6  )', (0, 0, 128, 0.6)),
     ],
 )
-def test_color_success(color, as_name, as_tuple, as_hex, as_hls):
-    class Model(BaseModel):
-        color: Color = None
-
-    obj = Model(color=color).color
-    assert obj.original() == color
-    assert str(obj) == str(color).lower()
-    assert obj.__repr__() == '<Color("{}")>'.format(obj._color_match)
-    assert obj.as_named_color() == as_name
-    assert obj.as_rgb(alpha=False) == 'rgb{}'.format(as_tuple)
-    assert obj.as_rgb(alpha=True) == 'rgba{}'.format(as_tuple + (1.0,))
-    assert obj.as_tuple(alpha=False) == as_tuple
-    assert obj.as_tuple(alpha=True) == as_tuple + (1.0,)
-    assert obj.as_hex(prefix='') == as_hex
-    assert obj.as_hex(prefix='0x') == '0x{}'.format(as_hex)
-    expanded_hex = as_hex if len(as_hex) == 6 else f'{as_hex[0]}{as_hex[0]}{as_hex[1]}{as_hex[1]}{as_hex[2]}{as_hex[2]}'
-    assert obj.as_hex(prefix='0x', reduce=False) == '0x{}'.format(expanded_hex)
-
-    r, g, b = obj.as_hls()
-    assert almost_equal_floats(r, as_hls[0])
-    assert almost_equal_floats(g, as_hls[1])
-    assert almost_equal_floats(b, as_hls[2])
+def test_color_success(raw_color, as_tuple):
+    c = Color(raw_color)
+    assert c.as_tuple() == as_tuple
+    assert c.original() == raw_color
 
 
 @pytest.mark.parametrize(
@@ -73,10 +50,13 @@ def test_color_success(color, as_name, as_tuple, as_hex, as_hls):
         # hex
         '#0000000',
         '#0000',
-        '0x797979',
-        '0x777',
+        'x000',
         # rgb/rgba tuples
         (256, 256, 256),
+        (128, 128, 128, 0.5, 128),
+        (0, 0, 'x'),
+        (0, 0, 0, 1.5),
+        (0, 0, 0, 'x'),
         (0, 0, 1280),
         (0, 0, 1205, 0.1),
         (0, 0, 1128, 0.5),
@@ -94,149 +74,88 @@ def test_color_success(color, as_name, as_tuple, as_hex, as_hls):
     ],
 )
 def test_color_fail(color):
+    with pytest.raises(ColorError):
+        Color(color)
+
+
+def test_model_validation():
     class Model(BaseModel):
-        color: Color = None
+        color: Color
 
+    assert Model(color='red').color.as_hex() == '#f00'
     with pytest.raises(ValidationError):
-        Model(color=color).as_named_color()
+        Model(color='snot')
 
 
-@pytest.mark.parametrize(
-    'color',
-    [
-        # hex
-        '#bad',
-        '0xBAD',
-        # rgb/rgba tuple
-        (187, 170, 221),
-        (187, 170, 221, 1.0),
-        (187, 170, 221, 0.5),
-        # rgb/rgba string
-        'rgb(187, 170, 221)',
-        'rgba(187, 170, 221, 1.0)',
-        'rgba(187, 170, 221, 0.5)',
-    ],
-)
-def test_color_noname_fail(color):
-    with pytest.raises(ColorNoNameError):
-        Color.validate(color)
+def test_as_tuple():
+    assert Color((1, 2, 3)).as_tuple() == (1, 2, 3)
+    assert Color((1, 2, 3, 1)).as_tuple() == (1, 2, 3)
+    assert Color((1, 2, 3, 0.3)).as_tuple() == (1, 2, 3, 0.3)
+    assert Color((1, 2, 3, 0.3)).as_tuple(alpha=None) == (1, 2, 3, 0.3)
+
+    assert Color((1, 2, 3)).as_tuple(alpha=False) == (1, 2, 3)
+    assert Color((1, 2, 3, 0.3)).as_tuple(alpha=False) == (1, 2, 3)
+
+    assert Color((1, 2, 3)).as_tuple(alpha=True) == (1, 2, 3, 1)
+    assert Color((1, 2, 3, 0.3)).as_tuple(alpha=True) == (1, 2, 3, 0.3)
 
 
-@pytest.mark.parametrize(
-    'color, result',
-    [
-        ('#bad', True),
-        ('0xBAD', True),
-        ((187, 170, 221), True),
-        ((187, 170, 221, 1.0), True),
-        ((187, 170, 221, 0.5), True),
-        ('rgb(187, 170, 221)', True),
-        ('rgba(187, 170, 221, 1.0)', True),
-        ('rgba(187, 170, 221, 0.5)', True),
-        ((187, 170, 221, 1.5), False),
-        ((187, 170, 221, -1.0), False),
-        ('#badbadbad', False),
-        ('rgb(555, 170, 221)', False),
-        ('#XYZ', False),
-    ],
-)
-def test_color_is_valid_noname(color, result):
-    assert Color(color)._is_valid_noname is result
+def test_as_hls():
+    h, l, s = Color('016997').as_hls_tuple()
+    assert almost_equal_floats(h, 0.551, delta=0.01)
+    assert almost_equal_floats(l, 0.298, delta=0.01)
+    assert almost_equal_floats(s, 0.986, delta=0.01)
 
 
-@pytest.mark.parametrize(
-    'color, result',
-    [
-        ('rgb(0, 128, 0)', (0, 128, 0, 1.0)),
-        ('rgb(255, 255, 0)', (255, 255, 0, 1.0)),
-        ('rgb(255,255,0)', (255, 255, 0, 1.0)),
-        ('RGB(255,   255,0)', (255, 255, 0, 1.0)),
-        ('rgba(0, 128, 0, 0.5)', (0, 128, 0, 0.5)),
-        ('rgba(255, 255, 0, 0.123)', (255, 255, 0, 0.123)),
-        ('rgba(255,255,0,0.123)', (255, 255, 0, 0.123)),
-        ('RGBA(255,   255,0,0.123)', (255, 255, 0, 0.123)),
-    ],
-)
-def test_color_rgba_regex_success(color, result):
-    assert Color._rgb_str_to_tuple(color) == result
+def test_as_hls_with_alpha():
+    with pytest.raises(ValueError):
+        assert Color((1, 2, 3, 0.1)).as_hls_tuple()
 
 
-@pytest.mark.parametrize(
-    'color',
-    ['rgb(1000000, 128, 0)', 'rgb(255, 255, 10000000)', 'rgba(0, 128, 0, 1110.5)', 'rgba(255, 255, 0, 1110.123)'],
-)
-def test_color_rgba_regex_fail(color):
-    assert Color._rgb_str_to_tuple(color) is None
+def test_as_rgba():
+    assert Color('bad').as_rgba() == 'rgba(187, 170, 221, 1)'
+    assert Color((1, 2, 3, 0.123456)).as_rgba() == 'rgba(1, 2, 3, 0.123)'
 
 
-@pytest.mark.parametrize(
-    'value, result',
-    [
-        ((255, 255, 255), (255, 255, 255)),
-        ((0, 0, 0), (0, 0, 0)),
-        ((0, 0, 0, 0, 0), None),
-        ((0, 0, 0, 'hello'), None),
-        (('hello', 'hello', 'hello'), None),
-    ],
-)
-def test_color_tuple_to_rgb(value, result):
-    assert Color(value)._tuple_to_rgb(value) == result
+def test_as_rgb():
+    assert Color('bad').as_rgb() == 'rgb(187, 170, 221)'
+    with pytest.raises(ValueError) as exc_info:
+        Color((1, 2, 3, 0.123456)).as_rgb()
+    assert exc_info.value.args[0] == (
+        'a non-null alpha channel means an rgb() color is not possible, use fallback=True or as_rgba()'
+    )
+    assert Color((1, 2, 3, 0.1)).as_rgb(fallback=True) == 'rgba(1, 2, 3, 0.1)'
 
 
-@pytest.mark.parametrize(
-    'color, result',
-    [('FFF', 'FFFFFF'), ('FfF', 'FFffFF'), ('123', '112233'), ('F', 'F'), ('FFFF', 'FFFF'), ('222222', '222222')],
-)
-def test_color_expand_3_digit_hex(color, result):
-    assert Color(color)._expand_3_digit_hex(color) == result
+def test_as_hex():
+    assert Color((1, 2, 3)).as_hex() == '#010203'
+    assert Color((119, 119, 119)).as_hex() == '#777'
+    assert Color((119, 0, 238)).as_hex() == '#70e'
+    with pytest.raises(ValueError) as exc_info:
+        Color((1, 2, 3, 0.123456)).as_hex()
+    assert exc_info.value.args[0] == (
+        'a non-null alpha channel means a hex color is not possible, use fallback=True or as_rgba()'
+    )
+    assert Color((1, 2, 3, 0.1)).as_hex(fallback=True) == 'rgba(1, 2, 3, 0.1)'
+    assert Color((119, 119, 119, 0.1)).as_hex(fallback=True) == 'rgba(119, 119, 119, 0.1)'
 
 
-@pytest.mark.parametrize(
-    'color, result',
-    [('FFFFFF', 'FFF'), ('FFffFF', 'FfF'), ('112233', '123'), ('F', 'F'), ('FFFF', 'FFFF'), ('22', '22')],
-)
-def test_color_reduce_6_digit_hex(color, result):
-    assert Color(color)._reduce_6_digit_hex(color) == result
+def test_as_named():
+    assert Color((240, 248, 255)).as_named() == 'aliceblue'
+    with pytest.raises(ValueError) as exc_info:
+        Color((1, 2, 3)).as_named()
+    assert exc_info.value.args[0] == 'no named color found, use fallback=True, as_hex() or as_rgb()'
+    with pytest.raises(ValueError) as exc_info:
+        Color((1, 2, 3, 0.1)).as_named()
+    assert exc_info.value.args[0] == (
+        'a non-null alpha channel means named colors are not possible, use fallback=True or as_rgba()'
+    )
+    assert Color((1, 2, 3)).as_named(fallback=True) == '#010203'
+    assert Color((1, 2, 3, 0.1)).as_named(fallback=True) == 'rgba(1, 2, 3, 0.1)'
 
 
-@pytest.mark.parametrize(
-    'rgb, hex_str',
-    [((0, 0, 0), '000000'), ((255, 0, 0), 'ff0000'), ((128, 0, 128), '800080'), ((128, 255, 128), '80ff80')],
-)
-def test_color_rgb_to_hex(rgb, hex_str):
-    assert Color(rgb)._rgb_to_hex(rgb) == hex_str
-
-
-@pytest.mark.parametrize(
-    'hex_str, rgb',
-    [
-        ('000000', (0, 0, 0)),
-        ('0x000000', (0, 0, 0)),
-        ('#000000', (0, 0, 0)),
-        ('#000', (0, 0, 0)),
-        ('0x000', (0, 0, 0)),
-        ('ff0000', (255, 0, 0)),
-        ('800080', (128, 0, 128)),
-        ('80ff80', (128, 255, 128)),
-    ],
-)
-def test_color_hex_to_rgb(hex_str, rgb):
-    assert Color(hex_str)._hex_to_rgb(hex_str) == rgb
-
-
-@pytest.mark.parametrize(
-    'value, result',
-    [
-        (128, True),
-        (0, True),
-        (255, True),
-        ('12', True),
-        ('0', True),
-        (256, False),
-        (-1, False),
-        ('hello', False),
-        ('0x8', False),
-    ],
-)
-def test_color_is_int_color(value, result):
-    assert Color._is_int_color(value) == result
+def test_str_repr():
+    assert str(Color('red')) == 'red'
+    assert repr(Color('red')) == "<Color('red', (255, 0, 0))>"
+    assert str(Color((1, 2, 3))) == '(1, 2, 3)'
+    assert repr(Color((1, 2, 3))) == '<Color((1, 2, 3))>'
