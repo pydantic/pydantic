@@ -4,7 +4,6 @@ import pytest
 
 from pydantic import BaseModel, ValidationError
 from pydantic.color import Color
-from pydantic.errors import ColorNoNameError
 from pydantic.utils import almost_equal_floats
 
 

@@ -291,8 +291,8 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
 
 
-def almost_equal_floats(value_1: float, value_2: float = 1.0, epsilon: float = 1e-8) -> bool:
+def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
     """
     Return True if two floats are almost equal
     """
-    return abs(value_1 - value_2) <= epsilon
+    return abs(value_1 - value_2) <= delta

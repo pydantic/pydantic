@@ -336,8 +336,4 @@ class IPv6InterfaceError(PydanticValueError):
 
 
 class ColorError(PydanticValueError):
-    msg_template = 'value is not a valid color'
-
-
-class ColorNoNameError(ColorError):
-    msg_template = 'color {value} is valid but does not have a name'
+    msg_template = 'value is not a valid color: {reason}'
