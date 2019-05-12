@@ -233,11 +233,7 @@ class BaseModel(metaclass=MetaModel):
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
         object.__setattr__(self, '__values__', self._process_values(data))
-        if self.__config__.extra is Extra.allow:
-            fields_set = set(data.keys())
-        else:
-            fields_set = data.keys() & self.__values__.keys()  # type: ignore
-        object.__setattr__(self, '__fields_set__', fields_set)
+        object.__setattr__(self, '__fields_set__', self._process_fields(data))
 
     @no_type_check
     def __getattr__(self, name):
@@ -436,6 +432,20 @@ class BaseModel(metaclass=MetaModel):
     def _process_values(self, input_data: Any) -> 'DictStrAny':
         # (casting here is slow so use ignore)
         return validate_model(self, input_data)  # type: ignore
+
+    def _process_fields(self, input_data: Any) -> 'SetStr':
+        config = self.__config__
+        populate_by_alias = config.allow_population_by_alias
+
+        fields = set()
+        for name, field in self.__fields__.items():
+            if name in input_data or populate_by_alias and field.alias in input_data:
+                fields.add(name)
+
+        if config.extra is Extra.allow:
+            fields |= input_data.keys()
+
+        return fields
 
     @classmethod
     def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:
