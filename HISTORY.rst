@@ -7,6 +7,7 @@ v0.26 (unreleased)
 ..................
 * fix to schema generation for ``IPvAnyAddress``, ``IPvAnyInterface``, ``IPvAnyNetwork`` #498 by @pilosus
 * fix variable length tuples support, #495 by @pilosus
+* fix ``.dict(skip_keys=True)`` skipping values set via alias, #517 by @sommd
 
 v0.25 (2019-05-05)
 ..................
