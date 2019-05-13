@@ -27,7 +27,7 @@ from typing import (
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
-from .errors import ConfigError, DictError, ExtraError, MissingError
+from .errors import ConfigError, ExtractModelError, ExtraError, MissingError
 from .fields import Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
@@ -37,7 +37,6 @@ from .utils import (
     AnyCallable,
     AnyType,
     ForwardRef,
-    change_exception,
     is_classvar,
     resolve_annotations,
     truncate,
@@ -228,7 +227,7 @@ class BaseModel(metaclass=MetaModel):
     Config = BaseConfig
     __slots__ = ('__values__', '__fields_set__')
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, _object: Any = None, **data: Any) -> None:
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
@@ -427,8 +426,10 @@ class BaseModel(metaclass=MetaModel):
         elif isinstance(value, cls):
             return value.copy()
         else:
-            with change_exception(DictError, TypeError, ValueError):
+            try:
                 return cls(**dict(value))  # type: ignore
+            except (TypeError, ValueError):
+                return cls(value)
 
     @classmethod
     def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:
@@ -567,6 +568,16 @@ def create_model(  # noqa: C901 (ignore complexity)
     return type(model_name, (__base__,), namespace)
 
 
+def _get_input_value(input_data: Any, key: str) -> Any:
+    try:
+        return input_data.get(key, _missing)
+    except AttributeError:
+        try:
+            return getattr(input_data, key, _missing)
+        except AttributeError as e:
+            raise ExtractModelError from e
+
+
 def validate_model(  # noqa: C901 (ignore complexity)
     model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True, cls: 'ModelOrDc' = None
 ) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
@@ -581,6 +592,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
     fields_set = set()
     config = model.__config__
     check_extra = config.extra is not Extra.ignore
+    fields_set = set()
 
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:
@@ -589,11 +601,15 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 f'you might need to call {model.__class__.__name__}.update_forward_refs().'
             )
 
-        value = input_data.get(field.alias, _missing)
+        value = _get_input_value(input_data, field.alias)
+        if value is not _missing:
+            fields_set.add(field.alias)
         using_name = False
         if value is _missing and config.allow_population_by_alias and field.alt_alias:
-            value = input_data.get(field.name, _missing)
+            value = _get_input_value(input_data, field.name)
             using_name = True
+            if value is not _missing:
+                fields_set.add(field.name)
 
         if value is _missing:
             if field.required:
@@ -617,12 +633,13 @@ def validate_model(  # noqa: C901 (ignore complexity)
             values[name] = v_
 
     if check_extra:
-        extra = input_data.keys() - names_used
+        extra = getattr(input_data, 'keys', {}.keys)() - names_used
         if extra:
             fields_set |= extra
             if config.extra is Extra.allow:
                 for f in extra:
                     values[f] = input_data[f]
+                    fields_set.add(f)
             else:
                 for f in sorted(extra):
                     errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
