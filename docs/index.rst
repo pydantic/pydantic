@@ -273,6 +273,24 @@ and pydantic versions).
 
 (This script is complete, it should run "as is")
 
+.. _arbitrary_class_instances:
+
+Arbitrary Class Instances
+.........................
+
+The same way key-value pairs can be passed as keyword arguments at model creation, or ``dict`` s
+can be unpacked (with ``**data`` ), you can pass an instance of any arbitrary class as a single first argument.
+
+The instance object must have attributes for the fields declared in the model.
+
+This makes it compatible with virtually every object/document relational mapper and many other tools.
+
+.. literalinclude:: examples/class_instance.py
+
+(This script is complete, it should run "as is")
+
+Everything described in the documentation is also compatible. Including field validators, Recursive Models, etc.
+
 .. _schema:
 
 Schema Creation
