@@ -111,9 +111,9 @@ Foo.update_forward_refs()
     }
 
     with pytest.raises(ValidationError) as exc_info:
-        module.Foo(b={'a': '321'}, c=[{'b': 234}], d={'bar': {'a': 345}})
+        module.Foo(b={'a': '321'}, c=[{'a': "foo"}], d={'bar': {'a': 345}})
     assert exc_info.value.errors() == [
-        {'loc': ('c', 0, 'b'), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}
+        {'loc': ('c', 0, 'a'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
