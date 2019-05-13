@@ -27,7 +27,7 @@ from typing import (
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
-from .errors import ConfigError, ExtractModelError, ExtraError, MissingError
+from .errors import ConfigError, ExtraError, MissingError
 from .fields import Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
@@ -572,10 +572,7 @@ def _get_input_value(input_data: Any, key: str) -> Any:
     try:
         return input_data.get(key, _missing)
     except AttributeError:
-        try:
-            return getattr(input_data, key, _missing)
-        except AttributeError as e:
-            raise ExtractModelError from e
+        return getattr(input_data, key, _missing)
 
 
 def validate_model(  # noqa: C901 (ignore complexity)

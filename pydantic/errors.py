@@ -60,10 +60,6 @@ class DictError(PydanticTypeError):
     msg_template = 'value is not a valid dict'
 
 
-class ExtractModelError(PydanticTypeError):
-    msg_template = 'model fields cannot be extracted from value'
-
-
 class DSNDriverIsEmptyError(PydanticValueError):
     code = 'dsn.driver_is_empty'
     msg_template = '"driver" field may not be empty'
