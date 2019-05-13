@@ -649,3 +649,87 @@ def test_dict_with_extra_keys():
     m = MyModel(extra_key='extra')
     assert m.dict() == {'a': None, 'extra_key': 'extra'}
     assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
+
+
+class Foo:
+    def __init__(self, foo, bar):
+        self.foo = foo
+        self.bar = bar
+
+
+class ClassFooModel(BaseModel):
+    foo: str
+    bar: int
+
+
+def test_object_with_attrs():
+    foo_valid = Foo(foo='Foo', bar=1)
+    model = ClassFooModel(foo_valid)
+    assert model.foo == foo_valid.foo
+    assert model.bar == foo_valid.bar
+
+
+def test_object_with_attrs_invalid():
+    foo_invalid = Foo(foo='Foo', bar='Bar')
+    with pytest.raises(ValidationError):
+        ClassFooModel(foo_invalid)
+
+
+class FooGetAttr:
+    def __getattr__(self, key: str):
+        if key == 'foo':
+            return 'Foo'
+        else:
+            raise AttributeError
+
+
+def test_object_with_getattr():
+    class Model(BaseModel):
+        foo: str
+        bar: int = 1
+
+    foo_valid = FooGetAttr()
+    model = Model(foo_valid)
+    assert model.foo == 'Foo'
+    assert model.bar == 1
+    assert model.dict(skip_defaults=True) == {'foo': 'Foo'}
+
+
+def test_object_with_getattr_invalid():
+    class Model(BaseModel):
+        foo: str
+        bar: int
+
+    foo_invalid = FooGetAttr()
+    with pytest.raises(ValidationError):
+        Model(foo_invalid)
+
+
+def test_object_with_subobject():
+    class Bar:
+        def __init__(self):
+            self.a = [Foo(foo='Foo', bar=1), Foo(foo='oof', bar=2)]
+            self.b = 5
+
+    class ClassBarModel(BaseModel):
+        a: List[ClassFooModel]
+        b: int
+
+    valid_object = Bar()
+    model = ClassBarModel(valid_object)
+    assert model.dict() == {'a': [{'foo': 'Foo', 'bar': 1}, {'foo': 'oof', 'bar': 2}], 'b': 5}
+
+
+def test_object_with_subobject_invalid():
+    class Bar:
+        def __init__(self):
+            self.a = [Foo(foo='Foo', bar='Bar'), Foo(foo='oof', bar=1)]
+            self.b = 5
+
+    class ClassBarModel(BaseModel):
+        a: List[ClassFooModel]
+        b: int
+
+    invalid_object = Bar()
+    with pytest.raises(ValidationError):
+        ClassBarModel(invalid_object)
