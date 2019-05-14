@@ -227,11 +227,14 @@ class BaseModel(metaclass=MetaModel):
     Config = BaseConfig
     __slots__ = ('__values__', '__fields_set__')
 
-    def __init__(self, _object: Any = None, **data: Any) -> None:
+    def __init__(self, *args: Any, **data: Any) -> None:
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
-        values, fields_set, _ = validate_model(self, data)
+        if not data and args:
+            values, fields_set = self._process_values(args[0])
+        else:
+            values, fields_set = self._process_values(data)
         object.__setattr__(self, '__values__', values)
         object.__setattr__(self, '__fields_set__', fields_set)
 
