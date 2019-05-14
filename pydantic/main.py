@@ -434,15 +434,12 @@ class BaseModel(metaclass=MetaModel):
         return validate_model(self, input_data)  # type: ignore
 
     def _process_fields(self, input_data: Any) -> 'SetStr':
-        config = self.__config__
-        populate_by_alias = config.allow_population_by_alias
-
         fields = set()
         for name, field in self.__fields__.items():
-            if name in input_data or populate_by_alias and field.alias in input_data:
+            if name in input_data or field.alias in input_data:
                 fields.add(name)
 
-        if config.extra is Extra.allow:
+        if self.__config__.extra is Extra.allow:
             fields |= input_data.keys()
 
         return fields
