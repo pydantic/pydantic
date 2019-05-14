@@ -602,14 +602,12 @@ def validate_model(  # noqa: C901 (ignore complexity)
             )
 
         value = _get_input_value(input_data, field.alias)
-        if value is not _missing:
-            fields_set.add(field.alias)
         using_name = False
         if value is _missing and config.allow_population_by_alias and field.alt_alias:
             value = _get_input_value(input_data, field.name)
             using_name = True
-            if value is not _missing:
-                fields_set.add(field.name)
+        if value is not _missing:
+            fields_set.add(field.name)
 
         if value is _missing:
             if field.required:
