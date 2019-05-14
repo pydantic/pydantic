@@ -25,8 +25,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def _pydantic_post_init(self: 'DataclassType') -> None:
-    d = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)[0]
-    object.__setattr__(self, '__dict__', d)
+    d = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)
+    object.__setattr__(self, '__dict__', d[0])
     object.__setattr__(self, '__initialised__', True)
     if self.__post_init_original__:
         self.__post_init_original__()
