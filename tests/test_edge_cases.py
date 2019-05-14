@@ -247,7 +247,6 @@ def test_recursive_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=['x'])
-    print(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {'loc': ('v', 0, 'name'), 'msg': 'field required', 'type': 'value_error.missing'},
         {'loc': ('v', 0, 'count'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
