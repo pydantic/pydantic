@@ -526,7 +526,7 @@ def create_model(  # noqa: C901 (ignore complexity)
     __module__: Optional[str] = None,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
-) -> BaseModel:
+) -> Type[BaseModel]:
     """
     Dynamically create a model.
     :param model_name: name of the created model
