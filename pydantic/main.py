@@ -519,7 +519,7 @@ def create_model(  # noqa: C901 (ignore complexity)
     __module__: Optional[str] = None,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
-) -> BaseModel:
+) -> Type[BaseModel]:
     """
     Dynamically create a model.
     :param model_name: name of the created model
@@ -564,7 +564,7 @@ def create_model(  # noqa: C901 (ignore complexity)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(model_name, (__base__,), namespace)  # type: ignore
+    return type(model_name, (__base__,), namespace)
 
 
 def validate_model(  # noqa: C901 (ignore complexity)

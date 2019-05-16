@@ -7,10 +7,9 @@ v0.26 (unreleased)
 ..................
 * fix to schema generation for ``IPvAnyAddress``, ``IPvAnyInterface``, ``IPvAnyNetwork`` #498 by @pilosus
 * fix variable length tuples support, #495 by @pilosus
+* fix return type hint for ``create_model``, #526 by @dmontagu
 * **Breaking Change:** fix ``.dict(skip_keys=True)`` skipping values set via alias (this involves changing
   ``validate_model()`` to always returns ``Tuple[Dict[str, Any], Set[str], Optional[ValidationError]]``), #517 by @sommd
-
-
 
 v0.25 (2019-05-05)
 ..................
