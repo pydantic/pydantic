@@ -600,11 +600,11 @@ def test_skip_defaults_recursive():
 
 def test_dict_skip_defaults_populated_by_alias():
     class MyModel(BaseModel):
-        class Config:
-            allow_population_by_alias = True
-
         a: str = Schema('default', alias='alias_a')
         b: str = Schema('default', alias='alias_b')
+
+        class Config:
+            allow_population_by_alias = True
 
     m = MyModel(alias_a='a')
 
@@ -614,12 +614,11 @@ def test_dict_skip_defaults_populated_by_alias():
 
 def test_dict_skip_defaults_populated_by_alias_with_extra():
     class MyModel(BaseModel):
-        class Config:
-            allow_population_by_alias = True
-            extra = 'allow'
-
         a: str = Schema('default', alias='alias_a')
         b: str = Schema('default', alias='alias_b')
+
+        class Config:
+            extra = 'allow'
 
     m = MyModel(alias_a='a', c='c')
 
