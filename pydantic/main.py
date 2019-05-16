@@ -603,7 +603,6 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 continue
         else:
             fields_set.add(name)
-
             if check_extra:
                 names_used.add(field.name if using_name else field.alias)
 
@@ -617,8 +616,8 @@ def validate_model(  # noqa: C901 (ignore complexity)
 
     if check_extra:
         extra = input_data.keys() - names_used
-        fields_set |= extra
         if extra:
+            fields_set |= extra
             if config.extra is Extra.allow:
                 for f in extra:
                     values[f] = input_data[f]
