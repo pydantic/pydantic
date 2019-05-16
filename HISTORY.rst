@@ -7,6 +7,7 @@ v0.26 (unreleased)
 ..................
 * fix to schema generation for ``IPvAnyAddress``, ``IPvAnyInterface``, ``IPvAnyNetwork`` #498 by @pilosus
 * fix variable length tuples support, #495 by @pilosus
+* fix return type hint for ``create_model``, #526 by @dmontagu
 
 v0.25 (2019-05-05)
 ..................
