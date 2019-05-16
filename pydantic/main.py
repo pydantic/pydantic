@@ -575,7 +575,9 @@ def validate_model(  # noqa: C901 (ignore complexity)
     """
     values = {}
     errors = []
+    # input_data names, possibly alias
     names_used = set()
+    # field names, never aliases
     fields_set = set()
     config = model.__config__
     check_extra = config.extra is not Extra.ignore
