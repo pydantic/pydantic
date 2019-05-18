@@ -232,11 +232,8 @@ class BaseModel(metaclass=MetaModel):
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
-        object.__setattr__(self, '__values__', self._process_values(data))
-        if self.__config__.extra is Extra.allow:
-            fields_set = set(data.keys())
-        else:
-            fields_set = data.keys() & self.__values__.keys()  # type: ignore
+        values, fields_set, _ = validate_model(self, data)
+        object.__setattr__(self, '__values__', values)
         object.__setattr__(self, '__fields_set__', fields_set)
 
     @no_type_check
@@ -433,10 +430,6 @@ class BaseModel(metaclass=MetaModel):
             with change_exception(DictError, TypeError, ValueError):
                 return cls(**dict(value))  # type: ignore
 
-    def _process_values(self, input_data: Any) -> 'DictStrAny':
-        # (casting here is slow so use ignore)
-        return validate_model(self, input_data)  # type: ignore
-
     @classmethod
     def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:
         if isinstance(v, BaseModel):
@@ -576,13 +569,16 @@ def create_model(  # noqa: C901 (ignore complexity)
 
 def validate_model(  # noqa: C901 (ignore complexity)
     model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True, cls: 'ModelOrDc' = None
-) -> Union['DictStrAny', Tuple['DictStrAny', Optional[ValidationError]]]:
+) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
     """
     validate data against a model.
     """
     values = {}
     errors = []
+    # input_data names, possibly alias
     names_used = set()
+    # field names, never aliases
+    fields_set = set()
     config = model.__config__
     check_extra = config.extra is not Extra.ignore
 
@@ -607,8 +603,10 @@ def validate_model(  # noqa: C901 (ignore complexity)
             if not model.__config__.validate_all and not field.validate_always:
                 values[name] = value
                 continue
-        elif check_extra:
-            names_used.add(field.name if using_name else field.alias)
+        else:
+            fields_set.add(name)
+            if check_extra:
+                names_used.add(field.name if using_name else field.alias)
 
         v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls or model.__class__)  # type: ignore
         if isinstance(errors_, ErrorWrapper):
@@ -621,6 +619,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
     if check_extra:
         extra = input_data.keys() - names_used
         if extra:
+            fields_set |= extra
             if config.extra is Extra.allow:
                 for f in extra:
                     values[f] = input_data[f]
@@ -629,8 +628,8 @@ def validate_model(  # noqa: C901 (ignore complexity)
                     errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
 
     if not raise_exc:
-        return values, ValidationError(errors) if errors else None
+        return values, fields_set, ValidationError(errors) if errors else None
 
     if errors:
         raise ValidationError(errors)
-    return values
+    return values, fields_set, None

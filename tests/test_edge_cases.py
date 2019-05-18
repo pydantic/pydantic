@@ -601,9 +601,14 @@ def test_return_errors_ok():
         foo: int
         bar: List[int]
 
-    assert validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}) == {'foo': 123, 'bar': [1, 2, 3]}
-    d, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}, False)
+    assert validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}) == (
+        {'foo': 123, 'bar': [1, 2, 3]},
+        {'foo', 'bar'},
+        None,
+    )
+    d, f, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}, False)
     assert d == {'foo': 123, 'bar': [1, 2, 3]}
+    assert f == {'foo', 'bar'}
     assert e is None
 
 
@@ -612,12 +617,14 @@ def test_return_errors_error():
         foo: int
         bar: List[int]
 
-    d, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 'x')}, False)
+    d, f, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 'x')}, False)
     assert d == {'foo': 123}
+    assert f == {'foo', 'bar'}
     assert e.errors() == [{'loc': ('bar', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]
 
-    d, e = validate_model(Model, {'bar': (1, 2, 3)}, False)
+    d, f, e = validate_model(Model, {'bar': (1, 2, 3)}, False)
     assert d == {'bar': [1, 2, 3]}
+    assert f == {'bar'}
     assert e.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 

@@ -598,6 +598,34 @@ def test_skip_defaults_recursive():
     assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
 
 
+def test_dict_skip_defaults_populated_by_alias():
+    class MyModel(BaseModel):
+        a: str = Schema('default', alias='alias_a')
+        b: str = Schema('default', alias='alias_b')
+
+        class Config:
+            allow_population_by_alias = True
+
+    m = MyModel(alias_a='a')
+
+    assert m.dict(skip_defaults=True) == {'a': 'a'}
+    assert m.dict(skip_defaults=True, by_alias=True) == {'alias_a': 'a'}
+
+
+def test_dict_skip_defaults_populated_by_alias_with_extra():
+    class MyModel(BaseModel):
+        a: str = Schema('default', alias='alias_a')
+        b: str = Schema('default', alias='alias_b')
+
+        class Config:
+            extra = 'allow'
+
+    m = MyModel(alias_a='a', c='c')
+
+    assert m.dict(skip_defaults=True) == {'a': 'a', 'c': 'c'}
+    assert m.dict(skip_defaults=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
+
+
 def test_dir_fields():
     class MyModel(BaseModel):
         attribute_a: int
