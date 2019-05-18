@@ -232,9 +232,9 @@ class BaseModel(metaclass=MetaModel):
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
         if not data and args:
-            values, fields_set = self._process_values(args[0])
+            values, fields_set, _ = validate_model(self, args[0])
         else:
-            values, fields_set = self._process_values(data)
+            values, fields_set, _ = validate_model(self, data)
         object.__setattr__(self, '__values__', values)
         object.__setattr__(self, '__fields_set__', fields_set)
 
@@ -592,7 +592,6 @@ def validate_model(  # noqa: C901 (ignore complexity)
     fields_set = set()
     config = model.__config__
     check_extra = config.extra is not Extra.ignore
-    fields_set = set()
 
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:

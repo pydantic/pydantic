@@ -605,7 +605,7 @@ def test_return_errors_ok():
         bar: List[int]
 
     assert validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)})[0] == {'foo': 123, 'bar': [1, 2, 3]}
-    d, _, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}, False)
+    d, f, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}, False)
     assert d == {'foo': 123, 'bar': [1, 2, 3]}
     assert f == {'foo', 'bar'}
     assert e is None
