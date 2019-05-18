@@ -6,6 +6,7 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
+from dataclasses import is_dataclass, asdict
 
 from pydantic.types import SecretBytes, SecretStr
 
@@ -43,6 +44,8 @@ def pydantic_encoder(obj: Any) -> Any:
 
     if isinstance(obj, BaseModel):
         return obj.dict()
+    elif is_dataclass(obj):
+        return asdict(obj)
     elif isinstance(obj, Enum):
         return obj.value
     elif isinstance(obj, Path):
