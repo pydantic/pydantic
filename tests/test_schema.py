@@ -26,6 +26,12 @@ from pydantic.types import (
     DirectoryPath,
     EmailStr,
     FilePath,
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
     IPvAnyAddress,
     IPvAnyInterface,
     IPvAnyNetwork,
@@ -665,6 +671,32 @@ def test_json_type():
     }
 
 
+def test_ipv4address_type():
+    class Model(BaseModel):
+        ip_address: IPv4Address
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv4address'}},
+        'required': ['ip_address'],
+    }
+
+
+def test_ipv6address_type():
+    class Model(BaseModel):
+        ip_address: IPv6Address
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv6address'}},
+        'required': ['ip_address'],
+    }
+
+
 def test_ipvanyaddress_type():
     class Model(BaseModel):
         ip_address: IPvAnyAddress
@@ -678,6 +710,32 @@ def test_ipvanyaddress_type():
     }
 
 
+def test_ipv4interface_type():
+    class Model(BaseModel):
+        ip_interface: IPv4Interface
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipv4interface'}},
+        'required': ['ip_interface'],
+    }
+
+
+def test_ipv6interface_type():
+    class Model(BaseModel):
+        ip_interface: IPv6Interface
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipv6interface'}},
+        'required': ['ip_interface'],
+    }
+
+
 def test_ipvanyinterface_type():
     class Model(BaseModel):
         ip_interface: IPvAnyInterface
@@ -688,6 +746,32 @@ def test_ipvanyinterface_type():
         'type': 'object',
         'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipvanyinterface'}},
         'required': ['ip_interface'],
+    }
+
+
+def test_ipv4network_type():
+    class Model(BaseModel):
+        ip_network: IPv4Network
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipv4network'}},
+        'required': ['ip_network'],
+    }
+
+
+def test_ipv6network_type():
+    class Model(BaseModel):
+        ip_network: IPv6Network
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipv6network'}},
+        'required': ['ip_network'],
     }
 
 
