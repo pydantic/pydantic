@@ -34,11 +34,13 @@ class RGBA(NamedTuple):
     alpha: Optional[float]
 
 
-regex_hex_short = re.compile(r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])\s*')
-regex_hex_long = re.compile(r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})\s*')
-rgb_color_re = r'\s*(\d{1,3})\s*'
-regex_rgb = re.compile(fr'\s*rgb\({rgb_color_re},{rgb_color_re},{rgb_color_re}\)\s*')
-regex_rgba = re.compile(fr'\s*rgba\({rgb_color_re},{rgb_color_re},{rgb_color_re},\s*(\d(?:\.\d+)?)\s*\)\s*')
+r_hex_short = re.compile(r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])\s*')
+r_hex_long = re.compile(r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})\s*')
+r_255 = r'(\d{1,3}(?:\.\d+)?)'
+r_comma = r'\s*,\s*'
+r_rgb = re.compile(fr'\s*rgb\(\s*{r_255}{r_comma}{r_255}{r_comma}{r_255}\)\s*')
+r_alpha = r'(\d(?:\.\d+)?|\.\d+|\d{1,2}%)'
+r_rgba = re.compile(fr'\s*rgba\(\s*{r_255}{r_comma}{r_255}{r_comma}{r_255}{r_comma}{r_alpha}\s*\)\s*')
 
 # colors where the two hex characters are the same, if all colors match this the short version of hex colors can be used
 repeat_colors = {int(c * 2, 16) for c in '0123456789abcdef'}
@@ -223,22 +225,22 @@ def parse_str(value: str) -> RGBA:
     else:
         return RGBA(r, g, b, None)
 
-    m = regex_hex_short.fullmatch(value_lower)
+    m = r_hex_short.fullmatch(value_lower)
     if m:
         r, g, b = [int(v * 2, 16) for v in m.groups()]
         return RGBA(r, g, b, None)
 
-    m = regex_hex_long.fullmatch(value_lower)
+    m = r_hex_long.fullmatch(value_lower)
     if m:
         r, g, b = [int(v, 16) for v in m.groups()]
         return RGBA(r, g, b, None)
 
-    m = regex_rgb.fullmatch(value_lower)
+    m = r_rgb.fullmatch(value_lower)
     if m:
         r, g, b = [parse_int_color(v) for v in m.groups()]
         return RGBA(r, g, b, None)
 
-    m = regex_rgba.fullmatch(value_lower)
+    m = r_rgba.fullmatch(value_lower)
     if m:
         r, g, b = [parse_int_color(v) for v in m.groups()[:3]]
         alpha = parse_float_alpha(m.group(4))
@@ -252,6 +254,10 @@ def parse_int_color(value: Any) -> int:
     Parse a value checking it's a valid int in the range 0 to 255
     """
     try:
+        if isinstance(value, str) and '.' in value:
+            # floats are allowed in rgb(a) colors
+            # https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#RGB_transparency_variations
+            value = float(value)
         color = int(value)
     except ValueError:
         raise ColorError(reason='color values must be a valid integer')
@@ -266,7 +272,10 @@ def parse_float_alpha(value: Any) -> Optional[float]:
     Parse a value checking it's a valid float in the range 0 to 1
     """
     try:
-        alpha = float(value)
+        if isinstance(value, str) and value.endswith('%'):
+            alpha = float(value[:-1]) / 100
+        else:
+            alpha = float(value)
     except ValueError:
         raise ColorError(reason='alpha values must be a valid float')
 
