@@ -255,6 +255,20 @@ table = [
         ''
     ],
     [
+        'IPv4Address',
+        'string',
+        '{"format": "ipv4"}',
+        'JSON Schema Validation',
+        ''
+    ],
+    [
+        'IPv6Address',
+        'string',
+        '{"format": "ipv6"}',
+        'JSON Schema Validation',
+        ''
+    ],
+    [
         'IPvAnyAddress',
         'string',
         '{"format": "ipvanyaddress"}',
@@ -262,11 +276,39 @@ table = [
         'IPv4 or IPv6 address as used in ``ipaddress`` module',
     ],
     [
+        'IPv4Interface',
+        'string',
+        '{"format": "ipv4interface"}',
+        'Pydantic standard "format" extension',
+        'IPv4 interface as used in ``ipaddress`` module',
+    ],
+    [
+        'IPv6Interface',
+        'string',
+        '{"format": "ipv6interface"}',
+        'Pydantic standard "format" extension',
+        'IPv6 interface as used in ``ipaddress`` module',
+    ],
+    [
         'IPvAnyInterface',
         'string',
         '{"format": "ipvanyinterface"}',
         'Pydantic standard "format" extension',
         'IPv4 or IPv6 interface as used in ``ipaddress`` module',
+    ],
+    [
+        'IPv4Network',
+        'string',
+        '{"format": "ipv4network"}',
+        'Pydantic standard "format" extension',
+        'IPv4 network as used in ``ipaddress`` module',
+    ],
+    [
+        'IPv6Network',
+        'string',
+        '{"format": "ipv6network"}',
+        'Pydantic standard "format" extension',
+        'IPv6 network as used in ``ipaddress`` module',
     ],
     [
         'IPvAnyNetwork',
