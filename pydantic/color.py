@@ -22,8 +22,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 RGBType = Tuple[int, int, int]
 RGBAType = Tuple[int, int, int, float]
-RGBFractionType = Tuple[float, float, float]
-ColorType = Union[RGBType, RGBAType, RGBFractionType, str]
+ColorType = Union[RGBType, RGBAType, str]
 
 
 class RGBA(NamedTuple):
@@ -152,13 +151,10 @@ class Color:
         yield cls
 
     def __str__(self) -> str:
-        return str(self._original)
+        return self.as_named(fallback=True)
 
     def __repr__(self) -> str:
-        if isinstance(self._original, str):
-            return f'<Color({self._original!r}, {self.as_tuple()})>'
-        else:
-            return f'<Color({self._original!r})>'
+        return f'<Color({str(self)!r}, {self.as_tuple()})>'
 
 
 def parse_tuple(value: Tuple[Any, ...]) -> RGBA:

@@ -26,5 +26,6 @@ except ValidationError as e:
 """
 1 validation error
 color
-  value is not a valid color (type=value_error.color)
+  value is not a valid color: string not recognised as a valid color 
+  (type=value_error.color; reason=string not recognised as a valid color)
 """

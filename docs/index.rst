@@ -506,11 +506,11 @@ You can use the ``Color`` data type for storing colors as per
 ``Color`` has the following methods:
 
 :original: the original string or tuple passed to ``Color``
-:as_tuple: returns a 3- or 4-tuple, the ``alpha`` kwargs can be used to define whether the alpha channel should be
-  included
-:as_hls_tuple: 3-tuple of HLS color, ``ValueError`` raised if the alpha channel is set.
+:as_tuple: returns a 3- or 4-tuple, the ``alpha`` keyword argument can be used to define whether the alpha channel
+  should be included
+:as_hls_tuple: 3-tuple of HLS color, ``ValueError`` is raised if the alpha channel is set.
 :as_rgba: string in the format ``rgba(<red>, <green>, <blue>, <alpha>)``
-:as_rgba: string in the format ``rgb(<red>, <green>, <blue>)``, fails if the alpha channel is set unless
+:as_rgb: string in the format ``rgb(<red>, <green>, <blue>)``, fails if the alpha channel is set unless
   ``fallback=True`` is supplied when it falls back to ``as_rgba``
 :as_hex: string in the format ``#ffffff`` or ``#fff`` if it's valid, fails if the alpha channel is set unless
   ``fallback=True`` is supplied when it falls back to ``as_rgba``
@@ -518,7 +518,7 @@ You can use the ``Color`` data type for storing colors as per
   ``fallback=True`` is supplied when it falls back to ``as_rgba``,
   also fails if no such color exists unless ``fallback=True`` is supplied when it falls back to ``as_hex``
 
-The ``__str__`` method for ``Color`` returns ``str(original)``.
+The ``__str__`` method for ``Color`` returns ``self.as_named(fallback=True)``.
 
 Secret Types
 ............
