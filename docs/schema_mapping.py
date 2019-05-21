@@ -257,14 +257,14 @@ table = [
     [
         'IPv4Address',
         'string',
-        '{"format": "ipv4address"}',
+        '{"format": "ipv4"}',
         'Pydantic standard "format" extension',
         'IPv4 as used in ``ipaddress`` module',
     ],
     [
         'IPv6Address',
         'string',
-        '{"format": "ipv6address"}',
+        '{"format": "ipv6"}',
         'Pydantic standard "format" extension',
         'IPv6 as used in ``ipaddress`` module',
     ],

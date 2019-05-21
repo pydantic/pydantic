@@ -647,8 +647,8 @@ field_class_to_schema_enum_disabled = (
     (IPv4Interface, {'type': 'string', 'format': 'ipv4interface'}),
     (IPv6Interface, {'type': 'string', 'format': 'ipv6interface'}),
     (IPvAnyInterface, {'type': 'string', 'format': 'ipvanyinterface'}),
-    (IPv4Address, {'type': 'string', 'format': 'ipv4address'}),
-    (IPv6Address, {'type': 'string', 'format': 'ipv6address'}),
+    (IPv4Address, {'type': 'string', 'format': 'ipv4'}),
+    (IPv6Address, {'type': 'string', 'format': 'ipv6'}),
     (IPvAnyAddress, {'type': 'string', 'format': 'ipvanyaddress'}),
 )
 

@@ -679,7 +679,7 @@ def test_ipv4address_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv4address'}},
+        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv4'}},
         'required': ['ip_address'],
     }
 
@@ -692,7 +692,7 @@ def test_ipv6address_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv6address'}},
+        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv6'}},
         'required': ['ip_address'],
     }
 
