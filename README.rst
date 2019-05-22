@@ -8,7 +8,7 @@ Data validation and settings management using Python type hinting.
 Fast and extensible, *pydantic* plays nicely with your linters/IDE/brain.
 Define how data should be in pure, canonical Python 3.6+; validate it with *pydantic*.
 
-TEST PR
+TEST PR.
 
 Help
 ----
