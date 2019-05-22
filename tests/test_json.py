@@ -9,6 +9,7 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, create_model
+from pydantic.color import Color
 from pydantic.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
 
@@ -23,6 +24,8 @@ class MyEnum(Enum):
     [
         (UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
         (IPv4Address('192.168.0.1'), '"192.168.0.1"'),
+        (Color('#000'), '"black"'),
+        (Color((1, 12, 123)), '"#010c7b"'),
         (SecretStr('abcd'), '"**********"'),
         (SecretStr(''), '""'),
         (SecretBytes(b'xyz'), '"**********"'),

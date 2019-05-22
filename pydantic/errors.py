@@ -333,3 +333,7 @@ class IPv4InterfaceError(PydanticValueError):
 
 class IPv6InterfaceError(PydanticValueError):
     msg_template = 'value is not a valid IPv6 interface'
+
+
+class ColorError(PydanticValueError):
+    msg_template = 'value is not a valid color: {reason}'

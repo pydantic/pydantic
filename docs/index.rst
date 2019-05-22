@@ -488,6 +488,50 @@ Fields can also be of type ``Callable``:
     callable, no validation of arguments, their types or the return
     type is performed.
 
+Color Type
+..........
+
+You can use the ``Color`` data type for storing colors as per
+`CSS3 specification <http://www.w3.org/TR/css3-color/#svg-color>`_. Color can be defined via:
+
+- `name <http://www.w3.org/TR/SVG11/types.html#ColorKeywords>`_ (e.g. ``"Black"``, ``"azure"``)
+- `hexadecimal value <https://en.wikipedia.org/wiki/Web_colors#Hex_triplet>`_
+  (e.g. ``"0x000"``, ``"#FFFFFF"``, ``"7fffd4"``)
+- RGB/RGBA tuples (e.g. ``(255, 255, 255)``, ``(255, 255, 255, 0.5)``
+- `RGB/RGBA strings <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#RGB_colors>`_
+  (e.g. ``"rgb(255, 255, 255)"`` or ``"rgba(255, 255, 255, 0.5)"``)
+- `HSL strings <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#HSL_colors>`_
+  (e.g. ``"hsl(270, 60%, 70%)"`` or ``"hsl(270, 60%, 70%, .5)"``)
+
+.. literalinclude:: examples/ex_color_type.py
+
+(This script is complete, it should run "as is")
+
+``Color`` has the following methods:
+
+:original: the original string or tuple passed to ``Color``
+:as_named: returns a named CSS3 color, fails if the alpha channel is set or no such color exists unless
+  ``fallback=True`` is supplied when it falls back to ``as_hex``
+:as_hex: string in the format ``#ffffff`` or ``#fff``, can also be a 4 or 8 hex values if the alpha channel is set,
+  e.g. ``#7f33cc26``
+:as_rgb: string in the format ``rgb(<red>, <green>, <blue>)`` or ``rgba(<red>, <green>, <blue>, <alpha>)``
+  if the alpha channel is set
+:as_rgb_tuple: returns a 3- or 4-tuple in RGB(a) format, the ``alpha`` keyword argument can be used to define whether
+  the alpha channel should be included,
+  options: ``True`` - always include, ``False`` - never include, ``None`` (the default) - include if set
+:as_hsl: string in the format ``hsl(<hue deg>, <saturation %>, <lightness %>)``
+  or ``hsl(<hue deg>, <saturation %>, <lightness %>, <alpha>)`` if the alpha channel is set
+:as_hsl_tuple: returns a 3- or 4-tuple in HSL(a) format, the ``alpha`` keyword argument can be used to define whether
+  the alpha channel should be included,
+  options: ``True`` - always include, ``False`` - never include, ``None`` (the default)  - include if set
+
+The ``__str__`` method for ``Color`` returns ``self.as_named(fallback=True)``.
+
+.. note::
+
+   the ``as_hsl*`` refer to hue, saturation, lightness "HSL" as used in html and most of the world, **not**
+   "HLS" as used in python's ``colorsys``.
+
 Secret Types
 ............
 

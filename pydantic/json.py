@@ -7,6 +7,7 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
 
+from pydantic.color import Color
 from pydantic.types import SecretBytes, SecretStr
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
@@ -17,6 +18,7 @@ def isoformat(o: Union[datetime.date, datetime.time]) -> str:
 
 
 ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
+    Color: str,
     IPv4Address: str,
     IPv6Address: str,
     IPv4Interface: str,
