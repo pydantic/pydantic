@@ -12,6 +12,8 @@ print(c2.as_rgba_tuple())
 #> (0, 128, 0, 1)
 print(c2.original())
 #> green
+print(repr(Color('hsl(180, 100%, 50%)')))
+#> <Color('cyan', (0, 255, 255))>
 
 class Model(BaseModel):
     color: Color

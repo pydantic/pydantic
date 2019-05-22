@@ -43,7 +43,7 @@ r_rgb = re.compile(fr'\s*rgb\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}\)\
 _r_alpha = r'(\d(?:\.\d+)?|\.\d+|\d{1,2}%)'
 r_rgba = re.compile(fr'\s*rgba\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_alpha}\s*\)\s*')
 _r_h = r'(-?\d+(?:\.\d+)?|-?\.\d+)(deg|rad|turn)?'
-_r_sl = r'(\d{1,2}(?:\.\d+)?)%'
+_r_sl = r'(\d{1,3}(?:\.\d+)?)%'
 r_hsl = re.compile(fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}\s*\)\s*')
 r_hsla = re.compile(fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}{_r_comma}{_r_alpha}\s*\)\s*')
 

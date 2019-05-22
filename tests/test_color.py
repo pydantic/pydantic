@@ -42,6 +42,7 @@ from pydantic.utils import almost_equal_floats
         ('rgba(0, 0, 128, 0)', (0, 0, 128, 0)),
         ('rgba(0, 0, 128, 1)', (0, 0, 128)),
         ('hsl(270, 60%, 70%)', (178, 133, 224)),
+        ('hsl(180, 100%, 50%)', (0, 255, 255)),
         ('hsl(630, 60%, 70%)', (178, 133, 224)),
         ('hsl(270deg, 60%, 70%)', (178, 133, 224)),
         ('hsl(.75turn, 60%, 70%)', (178, 133, 224)),
@@ -84,6 +85,7 @@ def test_color_success(raw_color, as_tuple):
         'rgb(0, 0, 1128)',
         'rgba(0, 0, 11205, 0.1)',
         'rgba(0, 0, 128, 11.5)',
+        'hsl(180, 101%, 50%)',
         # neither a tuple, not a string
         datetime(2017, 10, 5, 19, 47, 7),
         object,
@@ -188,6 +190,7 @@ def test_as_hex():
 def test_as_named():
     assert Color((0, 255, 255)).as_named() == 'cyan'
     assert Color('#808000').as_named() == 'olive'
+    assert Color('hsl(180, 100%, 50%)').as_named() == 'cyan'
 
     assert Color((240, 248, 255)).as_named() == 'aliceblue'
     with pytest.raises(ValueError) as exc_info:
