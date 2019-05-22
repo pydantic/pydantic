@@ -494,12 +494,14 @@ Color Type
 You can use the ``Color`` data type for storing colors as per
 `CSS3 specification <http://www.w3.org/TR/css3-color/#svg-color>`_. Color can be defined via:
 
-- `name <http://www.w3.org/TR/SVG11/types.html#ColorKeywords>`_ (e.g. ``Black``, ``azure``)
-- `hexadecimal value <https://en.wikipedia.org/wiki/Web_colors#Hex_triplet>`_ (e.g. ``0x000``, ``#FFFFFF``, ``7fffd4``)
+- `name <http://www.w3.org/TR/SVG11/types.html#ColorKeywords>`_ (e.g. ``"Black"``, ``"azure"``)
+- `hexadecimal value <https://en.wikipedia.org/wiki/Web_colors#Hex_triplet>`_
+  (e.g. ``"0x000"``, ``"#FFFFFF"``, ``"7fffd4"``)
 - RGB/RGBA tuples (e.g. ``(255, 255, 255)``, ``(255, 255, 255, 0.5)``
 - `RGB/RGBA strings <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#RGB_colors>`_
   (e.g. ``"rgb(255, 255, 255)"`` or ``"rgba(255, 255, 255, 0.5)"``)
-- `HSL strings <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#HSL_colors>`_ (e.g. ``hsl(270, 60%, 70%)``)
+- `HSL strings <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#HSL_colors>`_
+  (e.g. ``"hsl(270, 60%, 70%)"`` or ``"hsl(270, 60%, 70%, .5)"``)
 
 .. literalinclude:: examples/ex_color_type.py
 
