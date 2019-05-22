@@ -3,14 +3,15 @@
 History
 -------
 
-v0.26 (unreleased)
+v0.26 (2019-05-22)
 ..................
 * fix to schema generation for ``IPvAnyAddress``, ``IPvAnyInterface``, ``IPvAnyNetwork`` #498 by @pilosus
 * fix variable length tuples support, #495 by @pilosus
 * fix return type hint for ``create_model``, #526 by @dmontagu
 * **Breaking Change:** fix ``.dict(skip_keys=True)`` skipping values set via alias (this involves changing
   ``validate_model()`` to always returns ``Tuple[Dict[str, Any], Set[str], Optional[ValidationError]]``), #517 by @sommd
-* fix to schema generation for ``IPv4Address``, ``IPv6Address``, ``IPv4Interface``, ``IPv6Interface``, ``IPv4Network``, ``IPv6Network`` #532 by @euri10
+* fix to schema generation for ``IPv4Address``, ``IPv6Address``, ``IPv4Interface``,
+  ``IPv6Interface``, ``IPv4Network``, ``IPv6Network`` #532 by @euri10
 * add ``Color`` type, #504 by @pilosus and @samuelcolvin
 
 v0.25 (2019-05-05)
