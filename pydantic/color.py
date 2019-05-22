@@ -10,7 +10,7 @@ eg. Color((0, 255, 255)).as_named() == 'cyan' because "cyan" comes after "aqua".
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Tuple, Union, cast
 
 from pydantic.validators import not_none_validator
 
@@ -35,14 +35,14 @@ class RGBA(NamedTuple):
     alpha: Optional[float]
 
 
-r_hex_short = re.compile(r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])\s*')
-r_hex_long = re.compile(r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})\s*')
+r_hex_short = re.compile(r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?\s*')
+r_hex_long = re.compile(r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?\s*')
 _r_255 = r'(\d{1,3}(?:\.\d+)?)'
 _r_comma = r'\s*,\s*'
 r_rgb = re.compile(fr'\s*rgb\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}\)\s*')
 _r_alpha = r'(\d(?:\.\d+)?|\.\d+|\d{1,2}%)'
 r_rgba = re.compile(fr'\s*rgba\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_alpha}\s*\)\s*')
-_r_h = r'(-?\d+(?:\.\d+)?|-?\.\d+)((?:deg|rad|turn)?)'
+_r_h = r'(-?\d+(?:\.\d+)?|-?\.\d+)(deg|rad|turn)?'
 _r_sl = r'(\d{1,2}(?:\.\d+)?)%'
 r_hsl = re.compile(fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}\s*\)\s*')
 r_hsla = re.compile(fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}{_r_comma}{_r_alpha}\s*\)\s*')
@@ -233,13 +233,23 @@ def parse_str(value: str) -> RGBA:
 
     m = r_hex_short.fullmatch(value_lower)
     if m:
-        r, g, b = [int(v * 2, 16) for v in m.groups()]
-        return RGBA(r, g, b, None)
+        *rgb, a = m.groups()
+        r, g, b = [int(v * 2, 16) for v in rgb]
+        if a:
+            alpha: Optional[float] = int(a * 2, 16) / 255
+        else:
+            alpha = None
+        return RGBA(r, g, b, alpha)
 
     m = r_hex_long.fullmatch(value_lower)
     if m:
-        r, g, b = [int(v, 16) for v in m.groups()]
-        return RGBA(r, g, b, None)
+        *rgb, a = m.groups()
+        r, g, b = [int(v, 16) for v in rgb]
+        if a:
+            alpha = int(a, 16) / 255
+        else:
+            alpha = None
+        return RGBA(r, g, b, cast(float, alpha))
 
     m = r_rgb.fullmatch(value_lower)
     if m:
@@ -259,8 +269,8 @@ def parse_str(value: str) -> RGBA:
 
     m = r_hsla.fullmatch(value_lower)
     if m:
-        h, h_units, s, l_, alpha = m.groups()
-        return parse_hsl(h, h_units, s, l_, parse_float_alpha(alpha))
+        h, h_units, s, l_, a = m.groups()
+        return parse_hsl(h, h_units, s, l_, parse_float_alpha(a))
 
     raise ColorError(reason='string not recognised as a valid color')
 
@@ -303,26 +313,26 @@ def parse_float_alpha(value: Any) -> Optional[float]:
         raise ColorError(reason='alpha values must be in the range 0 to 1')
 
 
-def parse_hsl(h: str, h_units: str, s: str, l_: str, alpha: Optional[float] = None) -> RGBA:
+def parse_hsl(h: str, h_units: str, s: str, l: str, alpha: Optional[float] = None) -> RGBA:
     """
     Parse raw hue, saturation, lightness and alpha values and convert to RGBA.
     """
-    s, l_ = parse_int_color(s, 100) / 100, parse_int_color(l_, 100) / 100
+    s_value, l_value = parse_int_color(s, 100) / 100, parse_int_color(l, 100) / 100
 
-    h = float(h)
-    if h_units in {'', 'deg'}:
-        h = h % 360 / 360
+    h_value = float(h)
+    if h_units in {None, 'deg'}:
+        h_value = h_value % 360 / 360
     elif h_units == 'rad':
-        h = h % rads / rads
+        h_value = h_value % rads / rads
     else:
         # turns
-        h = h % 1
+        h_value = h_value % 1
 
-    r, g, b = hls_to_rgb(h, l_, s)
+    r, g, b = hls_to_rgb(h_value, l_value, s_value)
     return RGBA(float_to_255(r), float_to_255(g), float_to_255(b), alpha)
 
 
-def float_to_255(v: float):
+def float_to_255(v: float) -> int:
     return int(round(v * 255))
 
 
