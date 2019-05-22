@@ -10,7 +10,7 @@ eg. Color((0, 255, 255)).as_named() == 'cyan' because "cyan" comes after "aqua".
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Tuple, Union, cast
 
 from pydantic.validators import not_none_validator
 
@@ -21,8 +21,9 @@ if TYPE_CHECKING:  # pragma: no cover
     from .types import CallableGenerator
 
 
-ColorTuple = Union[Tuple[float, float, float], Tuple[float, float, float, float]]
+ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]
+HslColorTuple = Union[Tuple[float, float, float], Tuple[float, float, float, float]]
 
 
 class RGBA(NamedTuple):
@@ -77,7 +78,7 @@ class Color:
 
     def as_named(self, *, fallback: bool = False) -> str:
         if self._rgba.alpha is None:
-            rgb = self.as_rgb_tuple()
+            rgb = cast(Tuple[int, int, int], self.as_rgb_tuple())
             try:
                 return COLORS_BY_VALUE[rgb]
             except KeyError as e:
@@ -147,7 +148,7 @@ class Color:
             h, s, li, a = self.as_hsl_tuple(alpha=True)  # type: ignore
             return f'hsl({h * 360:0.0f}, {s * 100:0.0f}%, {li * 100:0.0f}%, {round(a, 2)})'
 
-    def as_hsl_tuple(self, *, alpha: Optional[bool] = None) -> ColorTuple:
+    def as_hsl_tuple(self, *, alpha: Optional[bool] = None) -> HslColorTuple:
         """
         Color as an HSL or HSLA tuple, e.g. hue, saturation, lightness and optionally alpha; all elements are in
         the range 0 to 1.
@@ -239,11 +240,11 @@ def parse_str(value: str) -> RGBA:
 
     m = r_rgb.fullmatch(value_lower)
     if m:
-        return ints_to_rgba(*m.groups(), None)
+        return ints_to_rgba(*m.groups(), None)  # type: ignore
 
     m = r_rgba.fullmatch(value_lower)
     if m:
-        return ints_to_rgba(*m.groups())
+        return ints_to_rgba(*m.groups())  # type: ignore
 
     m = r_hsl.fullmatch(value_lower)
     if m:
@@ -277,7 +278,7 @@ def parse_color_value(value: Union[int, str], max_val: int = 255) -> float:
         raise ColorError(reason=f'color values must be in the range 0 to {max_val}')
 
 
-def parse_float_alpha(value: Union[str, float, int]) -> Optional[float]:
+def parse_float_alpha(value: Union[None, str, float, int]) -> Optional[float]:
     """
     Parse a value checking it's a valid float in the range 0 to 1
     """
