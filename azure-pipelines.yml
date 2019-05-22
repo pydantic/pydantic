@@ -17,7 +17,9 @@ steps:
   displayName: 'Use Python $(python.version)'
 
 - script: |
-    make install
+    pip install --user -U setuptools pip
+    pip install --user -U -r requirements.txt
+    pip install --user -e .
     pip freeze
   displayName: install
 
