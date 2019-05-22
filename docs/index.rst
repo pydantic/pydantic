@@ -508,23 +508,20 @@ You can use the ``Color`` data type for storing colors as per
 ``Color`` has the following methods:
 
 :original: the original string or tuple passed to ``Color``
-:as_named: returns a named CSS3 color, fails if the alpha channel is set unless
-  ``fallback=True`` is supplied when it falls back to ``as_rgba``,
-  also fails if no such color exists unless ``fallback=True`` is supplied when it falls back to ``as_hex``
-:as_hex: string in the format ``#ffffff`` or ``#fff`` if it's valid, fails if the alpha channel is set unless
-  ``fallback=True`` is supplied when it falls back to ``as_rgba``
-:as_rgba: string in the format ``rgba(<red>, <green>, <blue>, <alpha>)``
-:as_rgb: string in the format ``rgb(<red>, <green>, <blue>)``, fails if the alpha channel is set unless
-  ``fallback=True`` is supplied when it falls back to ``as_rgba``
-:as_rgba_tuple: returns a 3- or 4-tuple in RGB(a) format, the ``alpha`` keyword argument can be used to define whether
+:as_named: returns a named CSS3 color, fails if the alpha channel is set or no such color exists unless
+  ``fallback=True`` is supplied when it falls back to ``as_hex``
+:as_hex: string in the format ``#ffffff`` or ``#fff``, can also be a 4 or 8 hex values if the alpha channel is set,
+  e.g. ``#7f33cc26``
+:as_rgb: string in the format ``rgb(<red>, <green>, <blue>)`` or ``rgba(<red>, <green>, <blue>, <alpha>)``
+  if the alpha channel is set
+:as_rgb_tuple: returns a 3- or 4-tuple in RGB(a) format, the ``alpha`` keyword argument can be used to define whether
   the alpha channel should be included,
-  options: ``True`` (the default) - always include, ``False`` - never include, ``None`` - include if set
-:as_hsla: string in the format ``hsla(<hue deg>, <saturation %>, <lightness %>, <alpha>)``
-:as_hsl: string in the format ``hsl(<hue deg>, <saturation %>, <lightness %>)``, fails if the alpha channel is set
-  unless ``fallback=True`` is supplied when it falls back to ``as_hsla``
-:as_hsla_tuple: returns a 3- or 4-tuple in HSL(a) format, the ``alpha`` keyword argument can be used to define whether
+  options: ``True`` - always include, ``False`` - never include, ``None`` (the default) - include if set
+:as_hsl: string in the format ``hsl(<hue deg>, <saturation %>, <lightness %>)``
+  or ``hsl(<hue deg>, <saturation %>, <lightness %>, <alpha>)`` if the alpha channel is set
+:as_hsl_tuple: returns a 3- or 4-tuple in HSL(a) format, the ``alpha`` keyword argument can be used to define whether
   the alpha channel should be included,
-  options: ``True`` (the default) - always include, ``False`` - never include, ``None`` - include if set
+  options: ``True`` - always include, ``False`` - never include, ``None`` (the default)  - include if set
 
 The ``__str__`` method for ``Color`` returns ``self.as_named(fallback=True)``.
 

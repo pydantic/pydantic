@@ -29,6 +29,10 @@ HSLAType = Tuple[float, float, float, float]
 
 
 class RGBA(NamedTuple):
+    """
+    Internal use only as a representation of a color.
+    """
+
     r: int
     g: int
     b: int
@@ -85,82 +89,65 @@ class Color:
                 else:
                     raise ValueError('no named color found, use fallback=True, as_hex() or as_rgb()') from e
         else:
-            if fallback:
-                return self.as_rgba()
-            else:
-                raise ValueError(
-                    'a non-null alpha channel means named colors are not possible, use fallback=True or as_rgba()'
-                )
+            return self.as_hex()
 
-    def as_hex(self, *, fallback: bool = False) -> str:
-        if self._rgba.alpha is None:
-            rgb = self.as_rgba_tuple(alpha=False)
-            as_hex = '{:02x}{:02x}{:02x}'.format(*rgb)
-            if all(c in repeat_colors for c in rgb):
-                as_hex = as_hex[0] + as_hex[2] + as_hex[4]
-            return '#' + as_hex
-        else:
-            if fallback:
-                return self.as_rgba()
-            else:
-                raise ValueError(
-                    'a non-null alpha channel means a hex color is not possible, use fallback=True or as_rgba()'
-                )
+    def as_hex(self) -> str:
+        """
+        Hex string representing the color can be 3, 4, 6 or 8 characters depending on whether the string
+        a "short" representation of the color is possible and whether there's an alpha channel.
+        """
+        values = list(self._rgba[:3])
+        if self._rgba.alpha is not None:
+            values.append(float_to_255(self._rgba.alpha))
 
-    def as_rgba(self) -> str:
-        return f'rgba({self._rgba.r}, {self._rgba.g}, {self._rgba.b}, {round(self._alpha_float(), 2)})'
+        as_hex = ''.join(f'{v:02x}' for v in values)
+        if all(c in repeat_colors for c in values):
+            as_hex = ''.join(as_hex[c] for c in range(0, len(as_hex), 2))
+        return '#' + as_hex
 
-    def as_rgb(self, *, fallback: bool = False) -> str:
+    def as_rgb(self) -> str:
+        """
+        Color as an rgb(<r>, <g>, <b>) or rgba(<r>, <g>, <b>, <a>) string.
+        """
         if self._rgba.alpha is None:
             return f'rgb({self._rgba.r}, {self._rgba.g}, {self._rgba.b})'
         else:
-            if fallback:
-                return self.as_rgba()
-            else:
-                raise ValueError(
-                    'a non-null alpha channel means an rgb() color is not possible, use fallback=True or as_rgba()'
-                )
+            return f'rgba({self._rgba.r}, {self._rgba.g}, {self._rgba.b}, {round(self._alpha_float(), 2)})'
 
-    def as_rgba_tuple(self, *, alpha: Optional[bool] = True) -> Union[RGBType, RGBAType]:
+    def as_rgb_tuple(self, *, alpha: Optional[bool] = None) -> Union[RGBType, RGBAType]:
         """
         Color as an RGB or RGBA tuple; red, green and blue are in the range 0 to 255, alpha if included is
         in the range 0 to 1.
 
         :param alpha: whether to include the alpha channel, options are
-          True - (default) always include alpha,
+          None - (default) include alpha only if it's set (e.g. not None)
+          True - always include alpha,
           False - always omit alpha,
-          None - include alpha only if it's set (e.g. not None)
         """
         r, g, b = self._rgba[:3]
-        if alpha:
-            # alpha is true
-            return r, g, b, self._alpha_float()
-        elif alpha is False:
-            return r, g, b
-        else:
-            # alpha is None
+        if alpha is None:
             if self._rgba.alpha is None:
                 return r, g, b
             else:
                 return r, g, b, self._alpha_float()
+        elif alpha:
+            return r, g, b, self._alpha_float()
+        else:
+            # alpha is False
+            return r, g, b
 
-    def as_hsla(self) -> str:
-        h, s, li, a = self.as_hsla_tuple(alpha=True)  # type: ignore
-        return f'hsla({h * 360:0.0f}, {s * 100:0.0f}%, {li * 100:0.0f}%, {round(a, 2)})'
-
-    def as_hsl(self, *, fallback: bool = False) -> str:
+    def as_hsl(self) -> str:
+        """
+        Color as an hsl(<h>, <s>, <l>) or hsl(<h>, <s>, <l>, <a>) string.
+        """
         if self._rgba.alpha is None:
-            h, s, li = self.as_hsla_tuple(alpha=False)  # type: ignore
+            h, s, li = self.as_hsl_tuple(alpha=False)  # type: ignore
             return f'hsl({h * 360:0.0f}, {s * 100:0.0f}%, {li * 100:0.0f}%)'
         else:
-            if fallback:
-                return self.as_hsla()
-            else:
-                raise ValueError(
-                    'a non-null alpha channel means an hsl() color is not possible, use fallback=True or as_hsla()'
-                )
+            h, s, li, a = self.as_hsl_tuple(alpha=True)  # type: ignore
+            return f'hsl({h * 360:0.0f}, {s * 100:0.0f}%, {li * 100:0.0f}%, {round(a, 2)})'
 
-    def as_hsla_tuple(self, *, alpha: Optional[bool] = True) -> Union[HSLType, HSLAType]:
+    def as_hsl_tuple(self, *, alpha: Optional[bool] = None) -> Union[HSLType, HSLAType]:
         """
         Color as an HSL or HSLA tuple, e.g. hue, saturation, lightness and optionally alpha; all elements are in
         the range 0 to 1.
@@ -168,22 +155,21 @@ class Color:
         NOTE: this is HSL as used in HTML and most other places, not HLS as used in python's colorsys.
 
         :param alpha: whether to include the alpha channel, options are
-          True - (default) always include alpha,
+          None - (default) include alpha only if it's set (e.g. not None)
+          True - always include alpha,
           False - always omit alpha,
-          None - include alpha only if it's set (e.g. not None)
         """
         h, l, s = rgb_to_hls(self._rgba.r / 255, self._rgba.g / 255, self._rgba.b / 255)
-        if alpha:
-            # alpha is true
-            return h, s, l, self._alpha_float()
-        elif alpha is False:
-            return h, s, l
-        else:
-            # alpha is None
+        if alpha is None:
             if self._rgba.alpha is None:
                 return h, s, l
             else:
                 return h, s, l, self._alpha_float()
+        if alpha:
+            return h, s, l, self._alpha_float()
+        else:
+            # alpha is False
+            return h, s, l
 
     def _alpha_float(self) -> float:
         return 1 if self._rgba.alpha is None else self._rgba.alpha
@@ -197,7 +183,7 @@ class Color:
         return self.as_named(fallback=True)
 
     def __repr__(self) -> str:
-        return f'<Color({str(self)!r}, {self.as_rgba_tuple(alpha=None)})>'
+        return f'<Color({str(self)!r}, {self.as_rgb_tuple()})>'
 
 
 def parse_tuple(value: Tuple[Any, ...]) -> RGBA:

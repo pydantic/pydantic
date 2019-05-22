@@ -56,7 +56,7 @@ from pydantic.utils import almost_equal_floats
 )
 def test_color_success(raw_color, as_tuple):
     c = Color(raw_color)
-    assert c.as_rgba_tuple(alpha=None) == as_tuple
+    assert c.as_rgb_tuple() == as_tuple
     assert c.original() == raw_color
 
 
@@ -114,61 +114,42 @@ def test_model_validation():
     ]
 
 
-def test_as_rgba():
-    assert Color('bad').as_rgba() == 'rgba(187, 170, 221, 1)'
-    assert Color((1, 2, 3, 0.123456)).as_rgba() == 'rgba(1, 2, 3, 0.12)'
-
-
 def test_as_rgb():
     assert Color('bad').as_rgb() == 'rgb(187, 170, 221)'
-    with pytest.raises(ValueError) as exc_info:
-        Color((1, 2, 3, 0.123456)).as_rgb()
-    assert exc_info.value.args[0] == (
-        'a non-null alpha channel means an rgb() color is not possible, use fallback=True or as_rgba()'
-    )
-    assert Color((1, 2, 3, 0.1)).as_rgb(fallback=True) == 'rgba(1, 2, 3, 0.1)'
+    assert Color((1, 2, 3, 0.123456)).as_rgb() == 'rgba(1, 2, 3, 0.12)'
+    assert Color((1, 2, 3, 0.1)).as_rgb() == 'rgba(1, 2, 3, 0.1)'
 
 
-def test_as_rgba_tuple():
-    assert Color((1, 2, 3)).as_rgba_tuple(alpha=None) == (1, 2, 3)
-    assert Color((1, 2, 3, 1)).as_rgba_tuple(alpha=None) == (1, 2, 3)
-    assert Color((1, 2, 3, 0.3)).as_rgba_tuple(alpha=None) == (1, 2, 3, 0.3)
-    assert Color((1, 2, 3, 0.3)).as_rgba_tuple(alpha=None) == (1, 2, 3, 0.3)
+def test_as_rgb_tuple():
+    assert Color((1, 2, 3)).as_rgb_tuple(alpha=None) == (1, 2, 3)
+    assert Color((1, 2, 3, 1)).as_rgb_tuple(alpha=None) == (1, 2, 3)
+    assert Color((1, 2, 3, 0.3)).as_rgb_tuple(alpha=None) == (1, 2, 3, 0.3)
+    assert Color((1, 2, 3, 0.3)).as_rgb_tuple(alpha=None) == (1, 2, 3, 0.3)
 
-    assert Color((1, 2, 3)).as_rgba_tuple(alpha=False) == (1, 2, 3)
-    assert Color((1, 2, 3, 0.3)).as_rgba_tuple(alpha=False) == (1, 2, 3)
+    assert Color((1, 2, 3)).as_rgb_tuple(alpha=False) == (1, 2, 3)
+    assert Color((1, 2, 3, 0.3)).as_rgb_tuple(alpha=False) == (1, 2, 3)
 
-    assert Color((1, 2, 3)).as_rgba_tuple() == (1, 2, 3, 1)
-    assert Color((1, 2, 3, 0.3)).as_rgba_tuple() == (1, 2, 3, 0.3)
-
-
-def test_as_hsla():
-    assert Color('bad').as_hsla() == 'hsla(260, 43%, 77%, 1)'
-    assert Color((1, 2, 3, 0.123456)).as_hsla() == 'hsla(210, 50%, 1%, 0.12)'
+    assert Color((1, 2, 3)).as_rgb_tuple(alpha=True) == (1, 2, 3, 1)
+    assert Color((1, 2, 3, 0.3)).as_rgb_tuple(alpha=True) == (1, 2, 3, 0.3)
 
 
 def test_as_hsl():
     assert Color('bad').as_hsl() == 'hsl(260, 43%, 77%)'
-    with pytest.raises(ValueError) as exc_info:
-        Color((1, 2, 3, 0.123456)).as_hsl()
-    assert exc_info.value.args[0] == (
-        'a non-null alpha channel means an hsl() color is not possible, use fallback=True or as_hsla()'
-    )
-    assert Color((1, 2, 3, 0.123456)).as_hsl(fallback=True) == 'hsla(210, 50%, 1%, 0.12)'
+    assert Color((1, 2, 3, 0.123456)).as_hsl() == 'hsl(210, 50%, 1%, 0.12)'
 
 
-def test_as_hsla_tuple():
+def test_as_hsl_tuple():
     c = Color('016997')
-    h, s, l, a = c.as_hsla_tuple()
+    h, s, l, a = c.as_hsl_tuple(alpha=True)
     assert almost_equal_floats(h, 0.551, delta=0.01)
     assert almost_equal_floats(s, 0.986, delta=0.01)
     assert almost_equal_floats(l, 0.298, delta=0.01)
     assert a == 1
 
-    assert c.as_hsla_tuple(alpha=False) == c.as_hsla_tuple(alpha=None) == (h, s, l)
+    assert c.as_hsl_tuple(alpha=False) == c.as_hsl_tuple(alpha=None) == (h, s, l)
 
     c = Color((3, 40, 50, 0.5))
-    hsla = c.as_hsla_tuple(alpha=None)
+    hsla = c.as_hsl_tuple(alpha=None)
     assert len(hsla) == 4
     assert hsla[3] == 0.5
 
@@ -178,13 +159,8 @@ def test_as_hex():
     assert Color((119, 119, 119)).as_hex() == '#777'
     assert Color((119, 0, 238)).as_hex() == '#70e'
     assert Color('B0B').as_hex() == '#b0b'
-    with pytest.raises(ValueError) as exc_info:
-        Color((1, 2, 3, 0.123456)).as_hex()
-    assert exc_info.value.args[0] == (
-        'a non-null alpha channel means a hex color is not possible, use fallback=True or as_rgba()'
-    )
-    assert Color((1, 2, 3, 0.1)).as_hex(fallback=True) == 'rgba(1, 2, 3, 0.1)'
-    assert Color((119, 119, 119, 0.1)).as_hex(fallback=True) == 'rgba(119, 119, 119, 0.1)'
+    assert Color((1, 2, 3, 0.123456)).as_hex() == '#0102031f'
+    assert Color((1, 2, 3, 0.1)).as_hex() == '#0102031a'
 
 
 def test_as_named():
@@ -196,13 +172,9 @@ def test_as_named():
     with pytest.raises(ValueError) as exc_info:
         Color((1, 2, 3)).as_named()
     assert exc_info.value.args[0] == 'no named color found, use fallback=True, as_hex() or as_rgb()'
-    with pytest.raises(ValueError) as exc_info:
-        Color((1, 2, 3, 0.1)).as_named()
-    assert exc_info.value.args[0] == (
-        'a non-null alpha channel means named colors are not possible, use fallback=True or as_rgba()'
-    )
+
     assert Color((1, 2, 3)).as_named(fallback=True) == '#010203'
-    assert Color((1, 2, 3, 0.1)).as_named(fallback=True) == 'rgba(1, 2, 3, 0.1)'
+    assert Color((1, 2, 3, 0.1)).as_named(fallback=True) == '#0102031a'
 
 
 def test_str_repr():

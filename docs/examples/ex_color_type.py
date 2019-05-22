@@ -8,7 +8,7 @@ print(c.as_hex())
 #> #f0f
 
 c2 = Color('green')
-print(c2.as_rgba_tuple())
+print(c2.as_rgb_tuple())
 #> (0, 128, 0, 1)
 print(c2.original())
 #> green
