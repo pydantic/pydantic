@@ -1,5 +1,6 @@
 import datetime
 import json
+import sys
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -53,6 +54,7 @@ def test_encoding(input, output):
     assert output == json.dumps(input, default=pydantic_encoder)
 
 
+@pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
 def test_path_encoding(tmpdir):
     class PathModel(BaseModel):
         path: Path
