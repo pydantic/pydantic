@@ -10,7 +10,7 @@ eg. Color((0, 255, 255)).as_named() == 'cyan' because "cyan" comes after "aqua".
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Tuple, Union
 
 from pydantic.validators import not_none_validator
 
@@ -21,11 +21,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from .types import CallableGenerator
 
 
-RGBType = Tuple[int, int, int]
-RGBAType = Tuple[int, int, int, float]
-ColorType = Union[RGBType, RGBAType, str]
-HSLType = Tuple[float, float, float]
-HSLAType = Tuple[float, float, float, float]
+ColorTuple = Union[Tuple[float, float, float], Tuple[float, float, float, float]]
+ColorType = Union[ColorTuple, str]
 
 
 class RGBA(NamedTuple):
@@ -33,9 +30,9 @@ class RGBA(NamedTuple):
     Internal use only as a representation of a color.
     """
 
-    r: int
-    g: int
-    b: int
+    r: float
+    g: float
+    b: float
     alpha: Optional[float]
 
 
@@ -80,7 +77,7 @@ class Color:
 
     def as_named(self, *, fallback: bool = False) -> str:
         if self._rgba.alpha is None:
-            rgb = self._rgba.r, self._rgba.g, self._rgba.b
+            rgb = self.as_rgb_tuple()
             try:
                 return COLORS_BY_VALUE[rgb]
             except KeyError as e:
@@ -96,7 +93,7 @@ class Color:
         Hex string representing the color can be 3, 4, 6 or 8 characters depending on whether the string
         a "short" representation of the color is possible and whether there's an alpha channel.
         """
-        values = list(self._rgba[:3])
+        values = [float_to_255(c) for c in self._rgba[:3]]
         if self._rgba.alpha is not None:
             values.append(float_to_255(self._rgba.alpha))
 
@@ -110,11 +107,14 @@ class Color:
         Color as an rgb(<r>, <g>, <b>) or rgba(<r>, <g>, <b>, <a>) string.
         """
         if self._rgba.alpha is None:
-            return f'rgb({self._rgba.r}, {self._rgba.g}, {self._rgba.b})'
+            return f'rgb({float_to_255(self._rgba.r)}, {float_to_255(self._rgba.g)}, {float_to_255(self._rgba.b)})'
         else:
-            return f'rgba({self._rgba.r}, {self._rgba.g}, {self._rgba.b}, {round(self._alpha_float(), 2)})'
+            return (
+                f'rgba({float_to_255(self._rgba.r)}, {float_to_255(self._rgba.g)}, {float_to_255(self._rgba.b)}, '
+                f'{round(self._alpha_float(), 2)})'
+            )
 
-    def as_rgb_tuple(self, *, alpha: Optional[bool] = None) -> Union[RGBType, RGBAType]:
+    def as_rgb_tuple(self, *, alpha: Optional[bool] = None) -> ColorTuple:
         """
         Color as an RGB or RGBA tuple; red, green and blue are in the range 0 to 255, alpha if included is
         in the range 0 to 1.
@@ -124,7 +124,7 @@ class Color:
           True - always include alpha,
           False - always omit alpha,
         """
-        r, g, b = self._rgba[:3]
+        r, g, b = [float_to_255(c) for c in self._rgba[:3]]
         if alpha is None:
             if self._rgba.alpha is None:
                 return r, g, b
@@ -147,7 +147,7 @@ class Color:
             h, s, li, a = self.as_hsl_tuple(alpha=True)  # type: ignore
             return f'hsl({h * 360:0.0f}, {s * 100:0.0f}%, {li * 100:0.0f}%, {round(a, 2)})'
 
-    def as_hsl_tuple(self, *, alpha: Optional[bool] = None) -> Union[HSLType, HSLAType]:
+    def as_hsl_tuple(self, *, alpha: Optional[bool] = None) -> ColorTuple:
         """
         Color as an HSL or HSLA tuple, e.g. hue, saturation, lightness and optionally alpha; all elements are in
         the range 0 to 1.
@@ -159,7 +159,7 @@ class Color:
           True - always include alpha,
           False - always omit alpha,
         """
-        h, l, s = rgb_to_hls(self._rgba.r / 255, self._rgba.g / 255, self._rgba.b / 255)
+        h, l, s = rgb_to_hls(self._rgba.r, self._rgba.g, self._rgba.b)
         if alpha is None:
             if self._rgba.alpha is None:
                 return h, s, l
@@ -191,10 +191,10 @@ def parse_tuple(value: Tuple[Any, ...]) -> RGBA:
     Parse a tuple or list as a color.
     """
     if len(value) == 3:
-        r, g, b = [parse_int_color(v) for v in value]
+        r, g, b = [parse_color_value(v) for v in value]
         return RGBA(r, g, b, None)
     elif len(value) == 4:
-        r, g, b = [parse_int_color(v) for v in value[:3]]
+        r, g, b = [parse_color_value(v) for v in value[:3]]
         return RGBA(r, g, b, parse_float_alpha(value[3]))
     else:
         raise ColorError(reason='tuples must have length 3 or 4')
@@ -215,7 +215,7 @@ def parse_str(value: str) -> RGBA:
     except KeyError:
         pass
     else:
-        return RGBA(r, g, b, None)
+        return ints_to_rgba(r, g, b, None)
 
     m = r_hex_short.fullmatch(value_lower)
     if m:
@@ -225,7 +225,7 @@ def parse_str(value: str) -> RGBA:
             alpha: Optional[float] = int(a * 2, 16) / 255
         else:
             alpha = None
-        return RGBA(r, g, b, alpha)
+        return ints_to_rgba(r, g, b, alpha)
 
     m = r_hex_long.fullmatch(value_lower)
     if m:
@@ -235,18 +235,15 @@ def parse_str(value: str) -> RGBA:
             alpha = int(a, 16) / 255
         else:
             alpha = None
-        return RGBA(r, g, b, cast(float, alpha))
+        return ints_to_rgba(r, g, b, alpha)
 
     m = r_rgb.fullmatch(value_lower)
     if m:
-        r, g, b = [parse_int_color(v) for v in m.groups()]
-        return RGBA(r, g, b, None)
+        return ints_to_rgba(*m.groups(), None)
 
     m = r_rgba.fullmatch(value_lower)
     if m:
-        r, g, b = [parse_int_color(v) for v in m.groups()[:3]]
-        alpha = parse_float_alpha(m.group(4))
-        return RGBA(r, g, b, alpha)
+        return ints_to_rgba(*m.groups())
 
     m = r_hsl.fullmatch(value_lower)
     if m:
@@ -261,28 +258,31 @@ def parse_str(value: str) -> RGBA:
     raise ColorError(reason='string not recognised as a valid color')
 
 
-def parse_int_color(value: Any, max: int = 255) -> int:
+def ints_to_rgba(r: Union[int, str], g: Union[int, str], b: Union[int, str], alpha: Optional[float]) -> RGBA:
+    return RGBA(parse_color_value(r), parse_color_value(g), parse_color_value(b), parse_float_alpha(alpha))
+
+
+def parse_color_value(value: Union[int, str], max_val: int = 255) -> float:
     """
-    Parse a value checking it's a valid int in the range 0 to max
+    Parse a value checking it's a valid int in the range 0 to max_val and divide by max_val to give a number
+    in the range 0 to 1
     """
     try:
-        if isinstance(value, str) and '.' in value:
-            # floats are allowed in rgb(a) colors
-            # https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#RGB_transparency_variations
-            value = float(value)
-        color = int(value)
+        color = float(value)
     except ValueError:
-        raise ColorError(reason='color values must be a valid integer')
-    if 0 <= color <= max:
-        return color
+        raise ColorError(reason='color values must be a valid number')
+    if 0 <= color <= max_val:
+        return color / max_val
     else:
-        raise ColorError(reason=f'color values must be in the range 0 to {max}')
+        raise ColorError(reason=f'color values must be in the range 0 to {max_val}')
 
 
-def parse_float_alpha(value: Any) -> Optional[float]:
+def parse_float_alpha(value: Union[str, float, int]) -> Optional[float]:
     """
     Parse a value checking it's a valid float in the range 0 to 1
     """
+    if value is None:
+        return None
     try:
         if isinstance(value, str) and value.endswith('%'):
             alpha = float(value[:-1]) / 100
@@ -303,7 +303,7 @@ def parse_hsl(h: str, h_units: str, s: str, l: str, alpha: Optional[float] = Non
     """
     Parse raw hue, saturation, lightness and alpha values and convert to RGBA.
     """
-    s_value, l_value = parse_int_color(s, 100) / 100, parse_int_color(l, 100) / 100
+    s_value, l_value = parse_color_value(s, 100), parse_color_value(l, 100)
 
     h_value = float(h)
     if h_units in {None, 'deg'}:
@@ -315,11 +315,11 @@ def parse_hsl(h: str, h_units: str, s: str, l: str, alpha: Optional[float] = Non
         h_value = h_value % 1
 
     r, g, b = hls_to_rgb(h_value, l_value, s_value)
-    return RGBA(float_to_255(r), float_to_255(g), float_to_255(b), alpha)
+    return RGBA(r, g, b, alpha)
 
 
-def float_to_255(v: float) -> int:
-    return int(round(v * 255))
+def float_to_255(c: float) -> int:
+    return int(round(c * 255))
 
 
 COLORS_BY_NAME = {

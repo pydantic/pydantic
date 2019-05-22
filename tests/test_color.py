@@ -136,6 +136,7 @@ def test_as_rgb_tuple():
 def test_as_hsl():
     assert Color('bad').as_hsl() == 'hsl(260, 43%, 77%)'
     assert Color((1, 2, 3, 0.123456)).as_hsl() == 'hsl(210, 50%, 1%, 0.12)'
+    assert Color('hsl(260, 43%, 77%)').as_hsl() == 'hsl(260, 43%, 77%)'
 
 
 def test_as_hsl_tuple():
