@@ -496,8 +496,10 @@ You can use the ``Color`` data type for storing colors as per
 
 - `name <http://www.w3.org/TR/SVG11/types.html#ColorKeywords>`_ (e.g. ``Black``, ``azure``)
 - `hexadecimal value <https://en.wikipedia.org/wiki/Web_colors#Hex_triplet>`_ (e.g. ``0x000``, ``#FFFFFF``, ``7fffd4``)
-- RGB/RGBA tuple (e.g. ``(255, 255, 255)``, ``(255, 255, 255, 0.5)``
-- RGB/RGBA string (e.g. ``"rgb(255, 255, 255)"`` or ``"rgba(255, 255, 255, 0.5)"``)
+- RGB/RGBA tuples (e.g. ``(255, 255, 255)``, ``(255, 255, 255, 0.5)``
+- `RGB/RGBA strings <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#RGB_colors>`_
+  (e.g. ``"rgb(255, 255, 255)"`` or ``"rgba(255, 255, 255, 0.5)"``)
+- `HSL strings <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#HSL_colors>`_ (e.g. ``hsl(270, 60%, 70%)``)
 
 .. literalinclude:: examples/ex_color_type.py
 
