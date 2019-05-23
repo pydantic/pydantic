@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
@@ -1197,6 +1198,7 @@ def test_directory_path_validation_success(value, result):
     assert Model(foo=value).foo == result
 
 
+@pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
 @pytest.mark.parametrize(
     'value,errors',
     (

@@ -1,0 +1,33 @@
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+pool:
+  vmImage: 'windows-2019'
+
+strategy:
+  matrix:
+    Python36:
+      python.version: '3.6'
+    Python37:
+      python.version: '3.7'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(python.version)'
+  displayName: 'Use Python $(python.version)'
+
+- script: |
+    pip install --user -U setuptools pip
+    pip install --user -U -r requirements.txt
+    pip install --user -e .
+    pip freeze
+  displayName: install
+
+- script: make test
+  displayName: test
+
+- script: make lint
+  displayName: lint
+
+- script: make mypy
+  displayName: mypy
