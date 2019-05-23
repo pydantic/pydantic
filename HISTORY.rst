@@ -5,7 +5,7 @@ History
 
 v0.xx (xxxx-xx-xx)
 ..................
-* fix JSON Schema for ``list``, ``tuple``, and ``set``, by @tiangolo
+* fix JSON Schema for ``list``, ``tuple``, and ``set``, #540 by @tiangolo
 
 v0.26 (2019-05-22)
 ..................
