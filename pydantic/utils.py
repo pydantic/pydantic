@@ -232,9 +232,7 @@ def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
             r'(?P<DOMAIN>(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
             r'(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
             r'(?P<LOCAL>localhost)|',  # localhost...
-            (
-                r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|' if not require_tld else r''
-            ),  # allow dotless hostnames
+            (r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|' if not require_tld else r''),  # allow dotless hostnames
             r'(?P<IPV4>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|',  # ...or ipv4
             r'(?P<IPV6>\[[A-F0-9]*:[A-F0-9:]+\]))',  # ...or ipv6
             r'(?P<PORT>:\d+)?',  # optional port
@@ -242,10 +240,7 @@ def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
             r'(?P<ENDURL>/?|[/?]\S+)$',
         )
     )
-    return re.compile(
-        tweaked,
-        re.IGNORECASE,
-    )
+    return re.compile(tweaked, re.IGNORECASE)
 
 
 def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
