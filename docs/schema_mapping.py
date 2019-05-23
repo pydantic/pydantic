@@ -46,21 +46,21 @@ table = [
     [
         'list',
         'array',
-        '',
+        '{"items": {}}',
         'JSON Schema Core',
         ''
     ],
     [
         'tuple',
         'array',
-        '',
+        '{"items": {}}',
         'JSON Schema Core',
         ''
     ],
     [
         'set',
         'array',
-        '{"uniqueItems": true}',
+        '{"items": {}, {"uniqueItems": true}',
         'JSON Schema Validation',
         ''
     ],

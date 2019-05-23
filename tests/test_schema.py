@@ -277,7 +277,7 @@ def test_set():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}},
-            'b': {'title': 'B', 'type': 'array', 'uniqueItems': True},
+            'b': {'title': 'B', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
         'required': ['a', 'b'],
     }
@@ -308,7 +308,7 @@ def test_const_false():
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (tuple, None),
+        (tuple, {}),
         (
             Tuple[str, int, Union[str, int, float], float],
             [
@@ -370,7 +370,7 @@ def test_list():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'array'}},
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {}}},
         'required': ['a'],
     }
 
