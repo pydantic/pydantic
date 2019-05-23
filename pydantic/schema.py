@@ -625,9 +625,9 @@ field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (UUID, {'type': 'string', 'format': 'uuid'}),
     (NameEmail, {'type': 'string', 'format': 'name-email'}),
     (dict, {'type': 'object'}),
-    (list, {'type': 'array'}),
-    (tuple, {'type': 'array'}),
-    (set, {'type': 'array', 'uniqueItems': True}),
+    (list, {'type': 'array', 'items': {}}),
+    (tuple, {'type': 'array', 'items': {}}),
+    (set, {'type': 'array', 'items': {}, 'uniqueItems': True}),
 )
 
 

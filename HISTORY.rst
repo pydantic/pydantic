@@ -3,6 +3,10 @@
 History
 -------
 
+v0.xx (xxxx-xx-xx)
+..................
+* fix JSON Schema for ``list``, ``tuple``, and ``set``, by @tiangolo
+
 v0.26 (2019-05-22)
 ..................
 * fix to schema generation for ``IPvAnyAddress``, ``IPvAnyInterface``, ``IPvAnyNetwork`` #498 by @pilosus
