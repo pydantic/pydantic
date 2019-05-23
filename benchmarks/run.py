@@ -35,6 +35,11 @@ try:
 except Exception:
     TestToastedMarshmallow = None
 
+try:
+    from test_cattrs import TestCattrs
+except Exception as e:
+    TestCattrs = None
+
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
 UNICODE = '\xa0\xad¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
@@ -44,7 +49,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
+    [TestCattrs, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
     if t is not None
 ]
 
