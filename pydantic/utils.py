@@ -204,8 +204,7 @@ def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
     for details please follow library source code:
         https://github.com/marshmallow-code/marshmallow/blob/298870ef6c089fb4d91efae9ca4168453ffe00d2/marshmallow/validate.py#L37
     """
-    return re.compile(
-        r''.join(
+    original = r''.join(
             (
                 r'^',
                 r'(' if relative else r'',
@@ -223,7 +222,28 @@ def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
                 r')?' if relative else r'',  # host is optional, allow for relative URLs
                 r'(?:/?|[/?]\S+)$',
             )
-        ),
+        )
+    tweaked = r''.join(
+        (
+            r'^',
+            r'(' if relative else r'',
+            r'(?P<SCHEME>[a-z0-9\.\-\+]*)://',  # scheme is validated separately
+            r'(?P<BASICAUTH>[^:@]+?:[^:@]*?@|)',  # basic auth
+            r'(?P<DOMAIN>(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
+            r'(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
+            r'(?P<LOCAL>localhost)|',  # localhost...
+            (
+                r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|' if not require_tld else r''
+            ),  # allow dotless hostnames
+            r'(?P<IPV4>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|',  # ...or ipv4
+            r'(?P<IPV6>\[[A-F0-9]*:[A-F0-9:]+\]))',  # ...or ipv6
+            r'(?P<PORT>:\d+)?',  # optional port
+            r')?' if relative else r'',  # host is optional, allow for relative URLs
+            r'(?P<ENDURL>/?|[/?]\S+)$',
+        )
+    )
+    return re.compile(
+        tweaked,
         re.IGNORECASE,
     )
 
