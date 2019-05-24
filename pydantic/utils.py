@@ -7,8 +7,7 @@ from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
 from typing import _eval_type  # type: ignore
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generator, List, Optional, \
-    Pattern, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
 
 from . import errors
 
@@ -58,8 +57,7 @@ def validate_email(value: str) -> Tuple[str, str]:
     See RFC 5322 but treat it with suspicion, there seems to exist no universally acknowledged test for a valid email!
     """
     if email_validator is None:
-        raise ImportError(
-            'email-validator is not installed, run `pip install pydantic[email]`')
+        raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
     m = PRETTY_REGEX.fullmatch(value)
     name: Optional[str] = None
@@ -81,14 +79,14 @@ def _rfc_1738_quote(text: str) -> str:
 
 
 def make_dsn(
-        *,
-        driver: str,
-        user: str = None,
-        password: str = None,
-        host: str = None,
-        port: str = None,
-        name: str = None,
-        query: Dict[str, Any] = None,
+    *,
+    driver: str,
+    user: str = None,
+    password: str = None,
+    host: str = None,
+    port: str = None,
+    name: str = None,
+    query: Dict[str, Any] = None,
 ) -> str:
     """
     Create a DSN from from connection settings.
@@ -132,8 +130,7 @@ def import_string(dotted_path: str) -> Any:
     try:
         return getattr(module, class_name)
     except AttributeError as e:
-        raise ImportError(
-            f'Module "{module_path}" does not define a "{class_name}" attribute') from e
+        raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
 
 
 def truncate(v: str, *, max_len: int = 80) -> str:
@@ -172,8 +169,7 @@ ExcType = Type[Exception]
 
 
 @contextmanager
-def change_exception(raise_exc: ExcType, *except_types: ExcType) -> Generator[
-    None, None, None]:
+def change_exception(raise_exc: ExcType, *except_types: ExcType) -> Generator[None, None, None]:
     try:
         yield
     except except_types as e:
@@ -248,13 +244,12 @@ def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
     #     named_r
     # )
 
-    omg = r'^(?=(?P<SCHEME0>[a-z0-9\.\-\+]*))?(?=(?P<SCHEME1>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH1>://))?(?=(?P<SCHEME2>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH2>://)(?P<BASICAUTH2>[^:@]+?:[^:@]*?@|))?(?=(?P<SCHEME3>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH3>://)(?P<BASICAUTH3>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS3>(?P<SUBDOMAIN3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION3>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL3>localhost)|(?P<TLD3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV43>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV63>\[[A-F0-9]*:[A-F0-9:]+\])))?(?=(?P<SCHEME4>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH4>://)(?P<BASICAUTH4>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS4>(?P<SUBDOMAIN4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION4>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL4>localhost)|(?P<TLD4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV44>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV64>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT4>:\d+)?)?(?=(?P<SCHEME5>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH5>://)(?P<BASICAUTH5>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS5>(?P<SUBDOMAIN5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION5>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL5>localhost)|(?P<TLD5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV45>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV65>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT5>:\d+)?(?P<ENDURL5>/?|[/?]\S+))?.'
+    omg = r'^(?=(?P<SCHEME0>[a-z0-9\.\-\+]*))?(?=(?P<SCHEME1>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH1>://))?(?=(?P<SCHEME2>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH2>://)(?P<BASICAUTH2>[^:@]+?:[^:@]*?@|))?(?=(?P<SCHEME3>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH3>://)(?P<BASICAUTH3>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS3>(?P<SUBDOMAIN3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION3>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL3>localhost)|(?P<TLD3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV43>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV63>\[[A-F0-9]*:[A-F0-9:]+\])))?(?=(?P<SCHEME4>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH4>://)(?P<BASICAUTH4>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS4>(?P<SUBDOMAIN4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION4>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL4>localhost)|(?P<TLD4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV44>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV64>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT4>:\d+)?)?(?=(?P<SCHEME5>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH5>://)(?P<BASICAUTH5>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS5>(?P<SUBDOMAIN5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION5>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL5>localhost)|(?P<TLD5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV45>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV65>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT5>:\d+)?(?P<ENDURL5>/?|[/?]\S+$))?.'
     # return re.compile(tweaked, re.IGNORECASE)
     return re.compile(omg, re.IGNORECASE)
 
 
-def lenient_issubclass(cls: Any,
-                       class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
+def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
     return isinstance(cls, type) and issubclass(cls, class_or_tuple)
 
 
@@ -270,8 +265,7 @@ def in_ipython() -> bool:
         return True
 
 
-def resolve_annotations(raw_annotations: Dict[str, AnyType],
-                        module_name: Optional[str]) -> Dict[str, AnyType]:
+def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Optional[str]) -> Dict[str, AnyType]:
     """
     Partially taken from typing.get_type_hints.
 
@@ -299,13 +293,11 @@ def is_callable_type(type_: AnyType) -> bool:
 
 
 def _check_classvar(v: AnyType) -> bool:
-    return type(v) == type(ClassVar) and (
-                sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
+    return type(v) == type(ClassVar) and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
 
 
 def is_classvar(ann_type: AnyType) -> bool:
-    return _check_classvar(ann_type) or _check_classvar(
-        getattr(ann_type, '__origin__', None))
+    return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
 
 
 def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> None:
