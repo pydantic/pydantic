@@ -215,15 +215,11 @@ class UrlStr(str):
                 raise errors.UrlSchemeError(scheme=scheme)
 
         regex = url_regex_generator(relative=cls.relative, require_tld=cls.require_tld)
-        # if not regex.match(value):
-        #     raise errors.UrlRegexError()
 
         m = regex.match(value)
         if m.lastgroup == 'ENDURL5':
             return value
         else:
-            print(m.lastgroup)
-            print(m.lastindex)
             raise errors.UrlRegexError(position=m.lastindex)
 
         return value

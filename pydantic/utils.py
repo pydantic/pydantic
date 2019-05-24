@@ -198,54 +198,7 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
 
 @lru_cache(maxsize=None)
 def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
-    """
-    Url regex generator taken from Marshmallow library,
-    for details please follow library source code:
-        https://github.com/marshmallow-code/marshmallow/blob/298870ef6c089fb4d91efae9ca4168453ffe00d2/marshmallow/validate.py#L37
-    """
-    # original = r''.join(
-    #     (
-    #         r'^',
-    #         r'(' if relative else r'',
-    #         r'(?:[a-z0-9\.\-\+]*)://',  # scheme is validated separately
-    #         r'(?:[^:@]+?:[^:@]*?@|)',  # basic auth
-    #         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
-    #         r'(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
-    #         r'localhost|',  # localhost...
-    #         (
-    #             r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|' if not require_tld else r''
-    #         ),  # allow dotless hostnames
-    #         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|',  # ...or ipv4
-    #         r'\[[A-F0-9]*:[A-F0-9:]+\])',  # ...or ipv6
-    #         r'(?::\d+)?',  # optional port
-    #         r')?' if relative else r'',  # host is optional, allow for relative URLs
-    #         r'(?:/?|[/?]\S+)$',
-    #     )
-    # )
-    # named_r = (
-    #     r'^',
-    #     r'(' if relative else r'',
-    #     r'(?P<SCHEME>[a-z0-9\.\-\+]*)',
-    #     r'(?P<DOUBLESLASH>(:\/\/){1})',  # scheme is validated separately
-    #     r'(?P<BASICAUTH>[^:@]+?:[^:@]*?@|)',  # basic auth
-    #     r'(?P<DOMAINOPTIONS>(?P<SUBDOMAIN>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
-    #     r'(?P<EXTENSION>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
-    #     r'(?P<LOCAL>localhost)|',  # localhost...
-    #     (
-    #         r'(?P<TLD>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|' if not require_tld else r''),
-    #     # allow dotless hostnames
-    #     r'(?P<IPV4>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|',  # ...or ipv4
-    #     r'(?P<IPV6>\[[A-F0-9]*:[A-F0-9:]+\]))',  # ...or ipv6
-    #     r'(?P<PORT>:\d+)?',  # optional port
-    #     r')?' if relative else r'',  # host is optional, allow for relative URLs
-    #     r'(?P<ENDURL>/?|[/?]\S+)$',
-    # )
-    # tweaked = r''.join(
-    #     named_r
-    # )
-
     omg = r'^(?=(?P<SCHEME0>[a-z0-9\.\-\+]*))?(?=(?P<SCHEME1>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH1>://))?(?=(?P<SCHEME2>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH2>://)(?P<BASICAUTH2>[^:@]+?:[^:@]*?@|))?(?=(?P<SCHEME3>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH3>://)(?P<BASICAUTH3>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS3>(?P<SUBDOMAIN3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION3>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL3>localhost)|(?P<TLD3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV43>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV63>\[[A-F0-9]*:[A-F0-9:]+\])))?(?=(?P<SCHEME4>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH4>://)(?P<BASICAUTH4>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS4>(?P<SUBDOMAIN4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION4>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL4>localhost)|(?P<TLD4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV44>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV64>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT4>:\d+)?)?(?=(?P<SCHEME5>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH5>://)(?P<BASICAUTH5>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS5>(?P<SUBDOMAIN5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION5>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL5>localhost)|(?P<TLD5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV45>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV65>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT5>:\d+)?(?P<ENDURL5>/?|[/?]\S+$))?.'
-    # return re.compile(tweaked, re.IGNORECASE)
     return re.compile(omg, re.IGNORECASE)
 
 
