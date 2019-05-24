@@ -198,7 +198,14 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
 
 @lru_cache(maxsize=None)
 def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
-    omg = r'^(?=(?P<SCHEME0>[a-z0-9\.\-\+]*))?(?=(?P<SCHEME1>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH1>://))?(?=(?P<SCHEME2>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH2>://)(?P<BASICAUTH2>[^:@]+?:[^:@]*?@|))?(?=(?P<SCHEME3>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH3>://)(?P<BASICAUTH3>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS3>(?P<SUBDOMAIN3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION3>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL3>localhost)|(?P<TLD3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV43>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV63>\[[A-F0-9]*:[A-F0-9:]+\])))?(?=(?P<SCHEME4>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH4>://)(?P<BASICAUTH4>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS4>(?P<SUBDOMAIN4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION4>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL4>localhost)|(?P<TLD4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV44>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV64>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT4>:\d+)?)?(?=(?P<SCHEME5>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH5>://)(?P<BASICAUTH5>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS5>(?P<SUBDOMAIN5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION5>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL5>localhost)|(?P<TLD5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV45>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV65>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT5>:\d+)?(?P<ENDURL5>/?|[/?]\S+$))?.'
+    omg = (
+        r'^(?=(?P<SCHEME0>[a-z0-9\.\-\+]*))?'
+        + r'(?=(?P<SCHEME1>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH1>://))?'
+        + r'(?=(?P<SCHEME2>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH2>://)(?P<BASICAUTH2>[^:@]+?:[^:@]*?@|))?'
+        + r'(?=(?P<SCHEME3>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH3>://)(?P<BASICAUTH3>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS3>(?P<SUBDOMAIN3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION3>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL3>localhost)|(?P<TLD3>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV43>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV63>\[[A-F0-9]*:[A-F0-9:]+\])))?'
+        + r'(?=(?P<SCHEME4>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH4>://)(?P<BASICAUTH4>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS4>(?P<SUBDOMAIN4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION4>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL4>localhost)|(?P<TLD4>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV44>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV64>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT4>(:\d+)?))?'
+        + r'(?=(?P<SCHEME5>[a-z0-9\.\-\+]*)(?P<DOUBLESLASH5>://)(?P<BASICAUTH5>[^:@]+?:[^:@]*?@|)(?P<DOMAINOPTIONS5>(?P<SUBDOMAIN5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?P<EXTENSION5>[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|(?P<LOCAL5>localhost)|(?P<TLD5>[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|(?P<IPV45>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(?P<IPV65>\[[A-F0-9]*:[A-F0-9:]+\]))(?P<PORT5>(:\d+)?)(?P<ENDURL5>/?|[/?]\S+))?.'
+    )
     return re.compile(omg, re.IGNORECASE)
 
 
