@@ -79,7 +79,10 @@ class UrlSchemeError(PydanticValueError):
 
 class UrlRegexError(PydanticValueError):
     code = 'url.regex'
-    msg_template = 'url string does not match regex'
+    msg_template = 'url string does not match regex, failed at position {position}'
+
+    def __init__(self, *, position: str) -> None:
+        super().__init__(position=position)
 
 
 class EnumError(PydanticTypeError):

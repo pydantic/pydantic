@@ -221,8 +221,10 @@ class UrlStr(str):
         m = regex.match(value)
         if m.lastgroup == 'ENDURL5':
             return value
-        if len([n for n in m.groups() if n is not None]) < 39:
-            raise errors.UrlRegexError()
+        else:
+            print(m.lastgroup)
+            print(m.lastindex)
+            raise errors.UrlRegexError(position=m.lastindex)
 
         return value
 
