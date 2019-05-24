@@ -37,11 +37,25 @@ def test_url_str_absolute_success(value):
     [
         (
             'http:///example.com/',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 6', 'type': 'value_error.url.regex', 'ctx': {'position': 6}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 6',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 6},
+                }
+            ],
         ),
         (
             'https:///example.com/',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 6', 'type': 'value_error.url.regex', 'ctx': {'position': 6}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 6',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 6},
+                }
+            ],
         ),
         (
             'https://example.org\\',
@@ -49,22 +63,58 @@ def test_url_str_absolute_success(value):
         ),
         (
             'ftp:///example.com/',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 6', 'type': 'value_error.url.regex', 'ctx': {'position': 6}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 6',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 6},
+                }
+            ],
         ),
         (
             'ftps:///example.com/',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 6', 'type': 'value_error.url.regex', 'ctx': {'position': 6}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 6',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 6},
+                }
+            ],
         ),
         (
             'http//example.org',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
         ),
-        ('http:///',             [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 6', 'type': 'value_error.url.regex', 'ctx': {'position': 6}}],),
+        (
+            'http:///',
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 6',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 6},
+                }
+            ],
+        ),
         (
             'http:/example.org',
-            [{'loc': ('v',),
-              'msg': 'url string does not match regex, failed at position 1',
-              'type': 'value_error.url.regex', 'ctx': {'position': 1}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
         ),
         (
             'foo://example.org',
@@ -79,7 +129,14 @@ def test_url_str_absolute_success(value):
         ),
         (
             '../icons/logo.gif',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
         ),
         (
             'http://2001:db8::ff00:42:8329',
@@ -87,14 +144,48 @@ def test_url_str_absolute_success(value):
         ),
         (
             'http://[192.168.1.1]:8329',
-            [{'loc': ('v',),
-              'msg': 'url string does not match regex, failed at position 6',
-              'type': 'value_error.url.regex', 'ctx': {'position': 6}}],
-
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 6',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 6},
+                }
+            ],
         ),
-        ('abc', [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}]),
-        ('..', [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}]),
-        ('/', [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}]),
+        (
+            'abc',
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
+        ),
+        (
+            '..',
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
+        ),
+        (
+            '/',
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
+        ),
         (
             ' ',
             [
@@ -153,25 +244,81 @@ def test_url_str_relative_success(value):
     [
         (
             'http//example.org',
-            [{'loc': ('v',),
-              'msg': 'url string does not match regex, failed at position 1',
-              'type': 'value_error.url.regex', 'ctx': {'position': 1}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
         ),
         (
             'suppliers.html',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
         ),
         (
             '../icons/logo.gif',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
         ),
         (
             '\\icons/logo.gif',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
         ),
-        ('../.../g', [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}]),
-        ('...', [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}]),
-        ('\\', [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}]),
+        (
+            '../.../g',
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
+        ),
+        (
+            '...',
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
+        ),
+        (
+            '\\',
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
+        ),
         (
             ' ',
             [
@@ -228,18 +375,49 @@ def test_url_str_dont_require_tld_success(value):
 @pytest.mark.parametrize(
     'value,errors',
     [
-        ('http//example', [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 1', 'type': 'value_error.url.regex', 'ctx': {'position': 1}}]),
+        (
+            'http//example',
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 1',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 1},
+                }
+            ],
+        ),
         (
             'http://.example.org',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 6', 'type': 'value_error.url.regex', 'ctx': {'position': 6}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 6',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 6},
+                }
+            ],
         ),
         (
             'http:///foo/bar',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 6', 'type': 'value_error.url.regex', 'ctx': {'position': 6}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 6',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 6},
+                }
+            ],
         ),
         (
             'http:// /foo/bar',
-            [{'loc': ('v',), 'msg': 'url string does not match regex, failed at position 6', 'type': 'value_error.url.regex', 'ctx': {'position': 6}}],
+            [
+                {
+                    'loc': ('v',),
+                    'msg': 'url string does not match regex, failed at position 6',
+                    'type': 'value_error.url.regex',
+                    'ctx': {'position': 6},
+                }
+            ],
         ),
         (
             '',
