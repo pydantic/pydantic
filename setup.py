@@ -40,6 +40,21 @@ except FileNotFoundError:
 # avoid loading the package before requirements are installed:
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    ext_modules = None
+else:
+    ext_modules = cythonize(
+        [
+            'pydantic/fields.py',
+            'pydantic/parse.py',
+            'pydantic/validators.py',
+        ],
+        nthreads=4,
+        language_level=3
+    )
+
 setup(
     name='pydantic',
     version=str(version.VERSION),
@@ -78,5 +93,6 @@ setup(
     extras_require={
         'ujson': ['ujson>=1.35'],
         'email': ['email-validator>=1.0.3'],
-    }
+    },
+    ext_modules=ext_modules,
 )

@@ -5,7 +5,7 @@ from .class_validators import gather_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
-from .main import create_model, validate_model
+from .main import create_model, parse_model
 from .utils import AnyType
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -25,7 +25,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def _pydantic_post_init(self: 'DataclassType') -> None:
-    d = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)[0]
+    d = parse_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)[0]
     object.__setattr__(self, '__dict__', d)
     object.__setattr__(self, '__initialised__', True)
     if self.__post_init_original__:

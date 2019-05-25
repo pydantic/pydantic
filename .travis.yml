@@ -26,6 +26,9 @@ script:
 - make test && mv .coverage .coverage.extra
 - pip uninstall -y ujson email-validator
 - make test && mv .coverage .coverage.no-extra
+- pip install -U cython
+- pip install -e .
+- make test && mv .coverage .coverage.cython
 - coverage combine
 
 - make mypy

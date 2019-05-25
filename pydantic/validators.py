@@ -36,9 +36,14 @@ def is_none_validator(v: Any) -> None:
         raise errors.NoneIsAllowedError()
 
 
-def str_validator(v: Any) -> str:
-    if isinstance(v, (str, NoneType)):  # type: ignore
+def str_validator(v: Any) -> Optional[str]:
+    if type(v) == str or v is None:
         return v
+    elif isinstance(v, str):
+        if isinstance(v, Enum):
+            return v.value
+        else:
+            return str(v)
     elif isinstance(v, (bytes, bytearray)):
         return v.decode()
     elif isinstance(v, (float, int, Decimal)):

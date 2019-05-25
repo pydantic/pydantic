@@ -300,7 +300,7 @@ class Field:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
         return v, errors
 
-    def _validate_json(self, v: str, loc: Tuple[str, ...]) -> Tuple[Optional[Any], Optional[ErrorWrapper]]:
+    def _validate_json(self, v: Any, loc: Tuple[str, ...]) -> Tuple[Optional[Any], Optional[ErrorWrapper]]:
         try:
             return Json.validate(v), None
         except (ValueError, TypeError) as exc:
