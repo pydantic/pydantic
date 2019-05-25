@@ -65,7 +65,7 @@ jobs:
     after_success: skip
     env:
     - 'CIBW_BUILD="cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686"'
-    - 'CIBW_BEFORE_BUILD="pip install -U pip setuptools cython"'
+    - 'CIBW_BEFORE_BUILD="pip install -U cython"'
     - 'PIP=pip'
     deploy:
       provider: pypi
@@ -89,4 +89,4 @@ jobs:
       script: make publish
       on:
         tags: true
-        all_branches: true
+        # all_branches: true
