@@ -14,6 +14,17 @@ if TYPE_CHECKING:  # pragma: no cover
     SetStr = Set[str]
 
 
+__all__ = ['Extra', 'compiled', 'parse_model']
+
+
+try:
+    import cython
+except ImportError:
+    compiled = False
+else:
+    compiled = cython.compiled
+
+
 class Extra(str, Enum):
     allow = 'allow'
     ignore = 'ignore'

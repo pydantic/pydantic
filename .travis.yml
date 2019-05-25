@@ -24,8 +24,10 @@ script:
 
 # test with and without ujson and email-validator then combine coverage
 - make test && mv .coverage .coverage.extra-cython
+- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(not pydantic.compiled)"
 - pip uninstall -y cython
 - make clean
+- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(pydantic.compiled)"
 - make test && mv .coverage .coverage.no-cython
 - pip uninstall -y ujson email-validator
 - make test && mv .coverage .coverage.no-extra
