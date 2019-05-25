@@ -249,11 +249,7 @@ class Field:
                     )
             v_funcs = (
                 *[v.func for v in class_validators_ if not v.whole and v.pre],
-                *(
-                    get_validators()
-                    if get_validators
-                    else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
-                ),
+                *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
                 self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
