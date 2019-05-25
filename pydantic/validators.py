@@ -94,7 +94,7 @@ def bool_validator(v: Any) -> bool:
 
 
 def int_validator(v: Any) -> int:
-    if not isinstance(v, bool) and isinstance(v, int):
+    if isinstance(v, int) and not isinstance(v, bool):
         return v
 
     with change_exception(errors.IntegerError, TypeError, ValueError):

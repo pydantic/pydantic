@@ -18,9 +18,9 @@ __all__ = ['Extra', 'compiled', 'parse_model']
 
 
 try:
-    import cython
+    import cython  # type: ignore
 except ImportError:
-    compiled = False
+    compiled: bool = False
 else:
     compiled = cython.compiled
 
