@@ -19,6 +19,7 @@ from typing import (
     cast,
 )
 
+from benchmarks.get_profiler import get_line_profiler
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
@@ -422,6 +423,8 @@ class Field:
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
     ) -> 'ValidateReturn':
         for validator in validators:
+            get_line_profiler().add_function(validator)  # just adds lambdas
+            # The added lambdas are from class_validators.py lines 202, 206, 214 (see that file's line 198)
             try:
                 v = validator(cls, v, values, self, self.model_config)
             except (ValueError, TypeError) as exc:

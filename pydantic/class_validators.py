@@ -6,6 +6,7 @@ from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Type
 
+from benchmarks.get_profiler import get_line_profiler
 from .errors import ConfigError
 from .utils import AnyCallable, in_ipython
 
@@ -194,6 +195,7 @@ def _generic_validator_basic(validator: AnyCallable, sig: Signature, args: Set[s
             f'(value, values, config, field), "values", "config" and "field" are all optional.'
         )
 
+    get_line_profiler().add_function(validator)
     if has_kwargs:
         return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
     elif args == set():
