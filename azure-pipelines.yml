@@ -17,21 +17,21 @@ steps:
   displayName: 'Use Python $(python.version)'
 
 - script: |
-    pip install --user -U setuptools pip
-    pip install --user -U -r requirements.txt
-    pip install --user -e .
-    pip freeze
+    pip install --user -U setuptools pip 2>&1
+    pip install --user -U -r requirements.txt 2>&1
+    pip install --user -e . 2>&1
+    pip freeze 2>&1
   displayName: install
   failOnStderr: false
 
-- script: make test
+- script: make test 2>&1
   displayName: test
   failOnStderr: false
 
-- script: make lint
+- script: make lint 2>&1
   displayName: lint
   failOnStderr: false
 
-- script: make mypy
+- script: make mypy 2>&1
   displayName: mypy
   failOnStderr: false
