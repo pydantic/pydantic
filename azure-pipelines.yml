@@ -22,12 +22,16 @@ steps:
     pip install --user -e .
     pip freeze
   displayName: install
+  failOnStderr: false
 
 - script: make test
   displayName: test
+  failOnStderr: false
 
 - script: make lint
   displayName: lint
+  failOnStderr: false
 
 - script: make mypy
   displayName: mypy
+  failOnStderr: false
