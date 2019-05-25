@@ -160,10 +160,7 @@ def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig')
 
 
 def anystr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
-    if config.anystr_strip_whitespace:
-        v = v.strip()
-
-    return v
+    return v.strip()
 
 
 def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
