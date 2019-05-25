@@ -1,4 +1,5 @@
 import re
+import sys
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 from setuptools import setup
@@ -40,20 +41,22 @@ except FileNotFoundError:
 # avoid loading the package before requirements are installed:
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 
-try:
-    from Cython.Build import cythonize
-except ImportError:
-    ext_modules = None
-else:
-    ext_modules = cythonize(
-        [
-            'pydantic/fields.py',
-            'pydantic/parse.py',
-            'pydantic/validators.py',
-        ],
-        nthreads=4,
-        language_level=3
-    )
+ext_modules = None
+if 'clean' not in sys.argv:
+    try:
+        from Cython.Build import cythonize
+    except ImportError:
+        pass
+    else:
+        ext_modules = cythonize(
+            [
+                'pydantic/fields.py',
+                'pydantic/parse.py',
+                'pydantic/validators.py',
+            ],
+            nthreads=4,
+            language_level=3
+        )
 
 setup(
     name='pydantic',
