@@ -1,3 +1,11 @@
+from distutils.extension import Extension
+
+from Cython.Compiler.Options import _directive_defaults
+
+
+_directive_defaults['linetrace'] = True
+_directive_defaults['binding'] = True
+
 import re
 import sys
 from importlib.machinery import SourceFileLoader
@@ -49,13 +57,16 @@ if 'clean' not in sys.argv:
         pass
     else:
         ext_modules = cythonize(
-            [
-                'pydantic/error_wrappers.py',
-                'pydantic/errors.py',
-                'pydantic/fields.py',
-                'pydantic/parse.py',
-                'pydantic/validators.py',
-            ],
+            [Extension('.'.join(filename[:-3].split("/")),
+                       [filename],
+                       define_macros=[('CYTHON_TRACE', '1'), ('CYTHON_TRACE_NOGIL', '1')])
+             for filename in [
+                 'pydantic/error_wrappers.py',
+                 'pydantic/errors.py',
+                 'pydantic/fields.py',
+                 'pydantic/parse.py',
+                 'pydantic/validators.py',
+             ]],
             nthreads=4,
             language_level=3,
         )

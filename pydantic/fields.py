@@ -423,7 +423,7 @@ class Field:
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
     ) -> 'ValidateReturn':
         for validator in validators:
-            get_line_profiler().add_function(validator)  # just adds lambdas
+            # get_line_profiler().add_function(validator)  # just adds lambdas
             # The added lambdas are from class_validators.py lines 202, 206, 214 (see that file's line 198)
             try:
                 v = validator(cls, v, values, self, self.model_config)
