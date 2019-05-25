@@ -50,6 +50,8 @@ if 'clean' not in sys.argv:
     else:
         ext_modules = cythonize(
             [
+                'pydantic/error_wrappers.py',
+                'pydantic/errors.py',
                 'pydantic/fields.py',
                 'pydantic/parse.py',
                 'pydantic/validators.py',
