@@ -14,8 +14,6 @@ install:
 - pip freeze
 
 script:
-- make lint
-
 # test with and without cython, ujson and email-validator then combine coverage
 - make test && mv .coverage .coverage.extra-cython
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(not pydantic.compiled)"
@@ -23,6 +21,7 @@ script:
 
 - pip uninstall -y cython
 - make clean
+- make install -e .
 - make test && mv .coverage .coverage.no-cython
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(pydantic.compiled)"
 
@@ -30,52 +29,57 @@ script:
 - make test && mv .coverage .coverage.no-extra
 - coverage combine
 
-- make mypy
-- make external-mypy
-- make docs
-- ./tests/check_tag.py
-
-after_success:
-- ls -lha
-- bash <(curl -s https://codecov.io/bash)
-
 jobs:
   allow_failures:
-    - python: '3.8-dev'
+  - python: '3.8-dev'
 
   include:
-    - stage: deploy
-      services:
+  - stage: test
+    after_success:
+    - ls -lha
+    - bash <(curl -s https://codecov.io/bash)
+
+  - stage: test
+    python: 3.7
+    name: 'linting'
+    script:
+    - make lint
+    - make mypy
+    - make external-mypy
+
+  - stage: deploy
+    name: 'python pypi upload'
+    python: 3.7
+    services:
       - docker
-      script:
-      - make install
+    script:
+      - ./tests/check_tag.py
       - pip install -U cibuildwheel wheel
       - cibuildwheel --output-dir wheelhouse
-      deploy:
-        provider: pypi
-        # `skip_cleanup: true` is required to preserve binary wheels, built
-        # inside of manylinux1 docker container during `script` step above.
-        skip_cleanup: true
-        # `skip-existing: true` is required to skip uploading dists, already
-        # present in PYPI instead of failing the whole process.
-        skip-existing: true
-        user: samuelcolvin
-        password:
-          secure: 'QbXFF2puEWjhFUpD0yu2R+wP4QI1IKIomBkMizsiCyMutlexERElranyYB8bsakvjPaJ+zU14ufffh2u7UA7Zhep/iE4skRHq4XWxnnRLHGu5nyGf3+zSM3F9MOzV32eZ4CDLJtFb6I0ensjTpodJH2EsIYHYxTgndIZn56Qbh6CStj7Xg1zm0Ujxdzm4ZLgcS28SOF/tpjsDW9+GXwc6L1mAZWYiS98gVgzL1vBd9tL9uFbbuFwGz9uhFMzFJko7vXSl8urWB4qeCspKXa9iKH7/AOYSwXTCwcg8U2hhC9UsOapnga2BubZKlU5HRfSs9fQcpnzcP2lwhSmkrEFa8VOw83hX6+bL564xK1Q4kanfGZ1fLU4FYge3iOnqjH7ajO7xEcUrcOEYUPfxM4EfdiDw0xnAzE1ITGH1/pZikF+wjlu+ez7RmmnejgK7quT1WU7keo7pSlRSfQtNgNl6xu818x0xZ1TScfN6e9npNy4TYyIooMOOeI4tMdfcR4JClkjGKhAtBk81DH7isZgPv3uwocGnKZ2S7La97CE3ADzU3MTA9xVIOSOjzwuvAe72uS2nwzqXkS9KATdATkC9QCvheJ9jIBB4UcqnHbD8L1gkqdmZwXZqHZldq8wcqNYZb+81lumy5EZ6xSoEzlLDpXHe80EjMUOBkb5fz3D44s='
-        on:
-          tags: true
-          all_branches: true
-    - python: 3.7
-      env:
-      - secure: "vpTd8bkwPBP0CV3EJBAwSMNMnNK3m/71dvTvBd1T4YGuefyJvYhtA7wauA5xRL9jpK2mu5QR5eo0owTUJhKi4DjpafMMd1bc4PnXlrdZFzkn3VsGmlKt74D/aJgiuiNyhd/Qvq4OxMHrMhf4f6lKWoMM1vh6yT0yp3+51SexSh2Me0Q+npxbjXwoxX5XUHRcoSLtFk4GbYI88a2I+08XWI6v+Awo/giQ5QurUJhjAklbosrrQVr1FCOkU0em5jeyZvEbZSLmaMtbX1JlRdKoJm6WMU+y9I7zj35w6ue/vgfcLz7b/HDZrBx7/L9g1LxRo80briueX/IbHvN7DOVFKvaXVmnEa6lIDdCeOLOyESpIbmjqmDKi8JeexdPNxKq4Tvo2VEA9dL2w2aw+aALNtU2OF5iEMfPTUQyosu/CNu2PKtiuZkSOdvpYbSy1WUNHJRvomdR4Olzg8ZIScNsxU3IIPdrlG/LUA8auXcE9juFeZfD6D2hQZATqWeEe/C2J7amNSD+mLLaTf6nMQw8oNtKYOvYK17M7xyvi7HXDy711Bi18U3x6Ye0xGx8CDbFwl0ICNzIk9rrSAh9hEHTvfdUUkk35pxifvO0Hrh4SArCA20ozcH/hHWBhyqGdxoIQ6KoDgNbIFIGQ6/vugxL/pt8z1sJwPfJnq8tRDAyWZvE="
-      script: skip
-      deploy:
-        provider: script
-        script: make publish
-        on:
-          tags: true
-          all_branches: true
+      - ls -lha
+    env:
+    - CIBW_BUILD=cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686
+    deploy:
+      provider: pypi
+      # `skip_cleanup: true` is required to preserve binary wheels, built
+      # inside of manylinux1 docker container during `script` step above.
+      skip_cleanup: true
+      user: samuelcolvin
+      password:
+        secure: 'QbXFF2puEWjhFUpD0yu2R+wP4QI1IKIomBkMizsiCyMutlexERElranyYB8bsakvjPaJ+zU14ufffh2u7UA7Zhep/iE4skRHq4XWxnnRLHGu5nyGf3+zSM3F9MOzV32eZ4CDLJtFb6I0ensjTpodJH2EsIYHYxTgndIZn56Qbh6CStj7Xg1zm0Ujxdzm4ZLgcS28SOF/tpjsDW9+GXwc6L1mAZWYiS98gVgzL1vBd9tL9uFbbuFwGz9uhFMzFJko7vXSl8urWB4qeCspKXa9iKH7/AOYSwXTCwcg8U2hhC9UsOapnga2BubZKlU5HRfSs9fQcpnzcP2lwhSmkrEFa8VOw83hX6+bL564xK1Q4kanfGZ1fLU4FYge3iOnqjH7ajO7xEcUrcOEYUPfxM4EfdiDw0xnAzE1ITGH1/pZikF+wjlu+ez7RmmnejgK7quT1WU7keo7pSlRSfQtNgNl6xu818x0xZ1TScfN6e9npNy4TYyIooMOOeI4tMdfcR4JClkjGKhAtBk81DH7isZgPv3uwocGnKZ2S7La97CE3ADzU3MTA9xVIOSOjzwuvAe72uS2nwzqXkS9KATdATkC9QCvheJ9jIBB4UcqnHbD8L1gkqdmZwXZqHZldq8wcqNYZb+81lumy5EZ6xSoEzlLDpXHe80EjMUOBkb5fz3D44s='
+      on:
+        tags: true
+        all_branches: true
 
-stages:
-- test
-- deploy
+  - stage: deploy
+    name: 'docs upload'
+    python: 3.7
+    script: make docs
+    env:
+    - secure: "vpTd8bkwPBP0CV3EJBAwSMNMnNK3m/71dvTvBd1T4YGuefyJvYhtA7wauA5xRL9jpK2mu5QR5eo0owTUJhKi4DjpafMMd1bc4PnXlrdZFzkn3VsGmlKt74D/aJgiuiNyhd/Qvq4OxMHrMhf4f6lKWoMM1vh6yT0yp3+51SexSh2Me0Q+npxbjXwoxX5XUHRcoSLtFk4GbYI88a2I+08XWI6v+Awo/giQ5QurUJhjAklbosrrQVr1FCOkU0em5jeyZvEbZSLmaMtbX1JlRdKoJm6WMU+y9I7zj35w6ue/vgfcLz7b/HDZrBx7/L9g1LxRo80briueX/IbHvN7DOVFKvaXVmnEa6lIDdCeOLOyESpIbmjqmDKi8JeexdPNxKq4Tvo2VEA9dL2w2aw+aALNtU2OF5iEMfPTUQyosu/CNu2PKtiuZkSOdvpYbSy1WUNHJRvomdR4Olzg8ZIScNsxU3IIPdrlG/LUA8auXcE9juFeZfD6D2hQZATqWeEe/C2J7amNSD+mLLaTf6nMQw8oNtKYOvYK17M7xyvi7HXDy711Bi18U3x6Ye0xGx8CDbFwl0ICNzIk9rrSAh9hEHTvfdUUkk35pxifvO0Hrh4SArCA20ozcH/hHWBhyqGdxoIQ6KoDgNbIFIGQ6/vugxL/pt8z1sJwPfJnq8tRDAyWZvE="
+    deploy:
+      provider: script
+      script: make publish
+      on:
+        tags: true
+        all_branches: true

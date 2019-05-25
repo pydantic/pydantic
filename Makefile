@@ -6,6 +6,7 @@ black = black -S -l 120 --target-version py36 pydantic tests
 install:
 	pip install -U setuptools pip
 	pip install -U -r requirements.txt
+	pip install -e .
 
 .PHONY: format
 format:
@@ -25,7 +26,6 @@ mypy:
 
 .PHONY: test
 test:
-	pip install -e .
 	pytest --cov=pydantic
 
 .PHONY: external-mypy
