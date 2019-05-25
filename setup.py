@@ -57,7 +57,7 @@ if 'clean' not in sys.argv:
                 'pydantic/validators.py',
             ],
             nthreads=4,
-            language_level=3
+            language_level=3,
         )
 
 setup(

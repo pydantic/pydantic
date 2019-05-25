@@ -19,7 +19,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 from uuid import UUID
 
@@ -58,7 +57,7 @@ def str_validator(v: Any) -> Optional[str]:
         if isinstance(v, Enum):
             return v.value
         else:
-            return str(v)
+            return v
     elif isinstance(v, (bytes, bytearray)):
         return v.decode()
     elif isinstance(v, (float, int, Decimal)):
@@ -111,7 +110,7 @@ def float_validator(v: Any) -> float:
 
 
 def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
-    field_type = cast('ConstrainedNumber', field.type_)
+    field_type: ConstrainedNumber = field.type_  # type: ignore
     if field_type.multiple_of is not None and v % field_type.multiple_of != 0:  # type: ignore
         raise errors.NumberNotMultipleError(multiple_of=field_type.multiple_of)
 
@@ -119,7 +118,7 @@ def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
 
 
 def number_size_validator(v: 'Number', field: 'Field') -> 'Number':
-    field_type = cast('ConstrainedNumber', field.type_)
+    field_type: ConstrainedNumber = field.type_  # type: ignore
     if field_type.gt is not None and not v > field_type.gt:
         raise errors.NumberNotGtError(limit_value=field_type.gt)
     elif field_type.ge is not None and not v >= field_type.ge:
@@ -356,12 +355,12 @@ def pattern_validator(v: Any) -> Pattern[str]:
 
 
 class IfConfig:
-    def __init__(self, validator: AnyCallable, *config_attrs: str) -> None:
+    def __init__(self, validator: AnyCallable, *config_attr_names: str) -> None:
         self.validator = validator
-        self.config_attrs = config_attrs
+        self.config_attr_names = config_attr_names
 
     def check(self, config: Type['BaseConfig']) -> bool:
-        return any(getattr(config, attr) is not None for attr in self.config_attrs)
+        return any(getattr(config, name) not in {None, False} for name in self.config_attr_names)
 
 
 pattern_validators = [not_none_validator, str_validator, pattern_validator]
