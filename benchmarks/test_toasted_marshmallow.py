@@ -1,5 +1,5 @@
 import toastedmarshmallow
-from test_marshmallow import TestMarshmallow
+from .test_marshmallow import TestMarshmallow
 
 
 class TestToastedMarshmallow(TestMarshmallow):

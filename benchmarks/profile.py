@@ -1,5 +1,5 @@
 import json
-from test_pydantic import TestPydantic
+from .test_pydantic import TestPydantic
 
 with open('./benchmarks/cases.json') as f:
     cases = json.load(f)

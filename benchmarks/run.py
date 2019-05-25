@@ -8,6 +8,7 @@ import string
 import sys
 from datetime import datetime
 from io import StringIO
+from typing import Type, List
 
 from devtools import debug
 from functools import partial
@@ -15,23 +16,23 @@ from pathlib import Path
 from statistics import StatisticsError, mean
 from statistics import stdev as stdev_
 
-from test_pydantic import TestPydantic
+from .test_pydantic import TestPydantic
 
 # trafaret currently (2018-07-02) fails on python 3.7
 try:
-    from test_trafaret import TestTrafaret
+    from .test_trafaret import TestTrafaret
 except Exception:
     TestTrafaret = None
 try:
-    from test_drf import TestDRF
+    from .test_drf import TestDRF
 except Exception:
     TestDRF = None
 try:
-    from test_marshmallow import TestMarshmallow
+    from .test_marshmallow import TestMarshmallow
 except Exception:
     TestMarshmallow = None
 try:
-    from test_toasted_marshmallow import TestToastedMarshmallow
+    from .test_toasted_marshmallow import TestToastedMarshmallow
 except Exception:
     TestToastedMarshmallow = None
 
@@ -138,6 +139,14 @@ def stdev(d):
 
 
 def main():
+    tests = [TestPydantic]
+    if 'pydantic-only' not in sys.argv:
+        tests += other_tests
+
+    run_tests(tests)
+
+
+def run_tests(tests: List[Type]):
     json_path = THIS_DIR / 'cases.json'
     if not json_path.exists():
         print('generating test cases...')
@@ -147,11 +156,6 @@ def main():
     else:
         with json_path.open() as f:
             cases = json.load(f)
-
-    tests = [TestPydantic]
-    if 'pydantic-only' not in sys.argv:
-        tests += other_tests
-
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     results = []
     csv_results = []
@@ -179,10 +183,8 @@ def main():
                        f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter')
         csv_results.append([p, avg, sd])
         print()
-
     for r in results:
         print(r)
-
     if 'SAVE' in os.environ:
         csv_file = StringIO()
         csv_writer = csv.writer(csv_file)
