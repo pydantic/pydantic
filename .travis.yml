@@ -39,7 +39,7 @@ jobs:
   include:
   - stage: test
     python: 3.7
-    name: 'linting'
+    name: 'Linting'
     script:
     - make lint
     - make mypy
@@ -47,27 +47,28 @@ jobs:
     after_success: skip
   - stage: test
     python: 3.7
-    name: 'benchmarks'
+    name: 'Benchmarks'
     script: BENCHMARK_REPEATS=1 make benchmark-all
     after_success: skip
 
   - stage: deploy
     name: 'PyPI Upload'
+    # condition: tag IS present
     python: 3.7
     services:
-      - docker
+    - docker
     script:
-      - ./tests/check_tag.py
-      - pip install -U cibuildwheel wheel
-      - cibuildwheel --output-dir dist
-      - ls -lha dist
+    - ./tests/check_tag.py
+    - pip install -U cibuildwheel wheel
+    - cibuildwheel --output-dir dist
+    - ls -lha dist
     after_success: skip
     env:
-    - CIBW_BUILD=cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686
+    - 'CIBW_BUILD="cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686"'
+    - 'CIBW_BEFORE_BUILD="pip install -U pip setuptools cython"'
+    - 'PIP=pip'
     deploy:
       provider: pypi
-      # `skip_cleanup: true` is required to preserve binary wheels, built
-      # inside of manylinux1 docker container during `script` step above.
       skip_cleanup: true
       user: samuelcolvin
       password:
@@ -77,7 +78,7 @@ jobs:
         all_branches: true
 
   - stage: deploy
-    name: 'docs upload'
+    name: 'Docs Upload'
     python: 3.7
     script: make docs
     after_success: skip
