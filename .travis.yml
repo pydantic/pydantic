@@ -22,13 +22,16 @@ install:
 script:
 - make lint
 
-# test with and without ujson and email-validator then combine coverage
+# test with and without cython, ujson and email-validator then combine coverage
 - make test && mv .coverage .coverage.extra-cython
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(not pydantic.compiled)"
+- BENCHMARK_REPEATS=1 make benchmark-all
+
 - pip uninstall -y cython
 - make clean
-- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(pydantic.compiled)"
 - make test && mv .coverage .coverage.no-cython
+- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(pydantic.compiled)"
+
 - pip uninstall -y ujson email-validator
 - make test && mv .coverage .coverage.no-extra
 - coverage combine
@@ -36,7 +39,6 @@ script:
 - make mypy
 - make external-mypy
 - make docs
-- BENCHMARK_REPEATS=1 make benchmark-all
 - ./tests/check_tag.py
 
 after_success:
