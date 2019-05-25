@@ -17,11 +17,10 @@ script:
 # test with and without cython, ujson and email-validator then combine coverage
 - make test && mv .coverage .coverage.extra-cython
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(not pydantic.compiled)"
-- BENCHMARK_REPEATS=1 make benchmark-all
 
 - pip uninstall -y cython
 - make clean
-- make install -e .
+- pip install -e .
 - make test && mv .coverage .coverage.no-cython
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(pydantic.compiled)"
 
@@ -29,16 +28,15 @@ script:
 - make test && mv .coverage .coverage.no-extra
 - coverage combine
 
+after_success:
+- ls -lha
+- bash <(curl -s https://codecov.io/bash)
+
 jobs:
   allow_failures:
   - python: '3.8-dev'
 
   include:
-  - stage: test
-    after_success:
-    - ls -lha
-    - bash <(curl -s https://codecov.io/bash)
-
   - stage: test
     python: 3.7
     name: 'linting'
@@ -46,9 +44,15 @@ jobs:
     - make lint
     - make mypy
     - make external-mypy
+    after_success: skip
+  - stage: test
+    python: 3.7
+    name: 'benchmarks'
+    script: BENCHMARK_REPEATS=1 make benchmark-all
+    after_success: skip
 
   - stage: deploy
-    name: 'python pypi upload'
+    name: 'PyPI Upload'
     python: 3.7
     services:
       - docker
@@ -57,6 +61,7 @@ jobs:
       - pip install -U cibuildwheel wheel
       - cibuildwheel --output-dir wheelhouse
       - ls -lha
+    after_success: skip
     env:
     - CIBW_BUILD=cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686
     deploy:
@@ -75,6 +80,7 @@ jobs:
     name: 'docs upload'
     python: 3.7
     script: make docs
+    after_success: skip
     env:
     - secure: "vpTd8bkwPBP0CV3EJBAwSMNMnNK3m/71dvTvBd1T4YGuefyJvYhtA7wauA5xRL9jpK2mu5QR5eo0owTUJhKi4DjpafMMd1bc4PnXlrdZFzkn3VsGmlKt74D/aJgiuiNyhd/Qvq4OxMHrMhf4f6lKWoMM1vh6yT0yp3+51SexSh2Me0Q+npxbjXwoxX5XUHRcoSLtFk4GbYI88a2I+08XWI6v+Awo/giQ5QurUJhjAklbosrrQVr1FCOkU0em5jeyZvEbZSLmaMtbX1JlRdKoJm6WMU+y9I7zj35w6ue/vgfcLz7b/HDZrBx7/L9g1LxRo80briueX/IbHvN7DOVFKvaXVmnEa6lIDdCeOLOyESpIbmjqmDKi8JeexdPNxKq4Tvo2VEA9dL2w2aw+aALNtU2OF5iEMfPTUQyosu/CNu2PKtiuZkSOdvpYbSy1WUNHJRvomdR4Olzg8ZIScNsxU3IIPdrlG/LUA8auXcE9juFeZfD6D2hQZATqWeEe/C2J7amNSD+mLLaTf6nMQw8oNtKYOvYK17M7xyvi7HXDy711Bi18U3x6Ye0xGx8CDbFwl0ICNzIk9rrSAh9hEHTvfdUUkk35pxifvO0Hrh4SArCA20ozcH/hHWBhyqGdxoIQ6KoDgNbIFIGQ6/vugxL/pt8z1sJwPfJnq8tRDAyWZvE="
     deploy:
