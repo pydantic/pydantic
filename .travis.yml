@@ -15,14 +15,14 @@ install:
 
 script:
 # test with and without cython, ujson and email-validator then combine coverage
-- make test && mv .coverage .coverage.extra-cython
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(not pydantic.compiled)"
+- make test && mv .coverage .coverage.extra-cython
 
 - pip uninstall -y cython
 - make clean
 - pip install -e .
-- make test && mv .coverage .coverage.no-cython
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(pydantic.compiled)"
+- make test && mv .coverage .coverage.no-cython
 
 - pip uninstall -y ujson email-validator
 - make test && mv .coverage .coverage.no-extra
@@ -59,8 +59,8 @@ jobs:
     script:
       - ./tests/check_tag.py
       - pip install -U cibuildwheel wheel
-      - cibuildwheel --output-dir wheelhouse
-      - ls -lha
+      - cibuildwheel --output-dir dist
+      - ls -lha dist
     after_success: skip
     env:
     - CIBW_BUILD=cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686
