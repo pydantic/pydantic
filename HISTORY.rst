@@ -3,9 +3,10 @@
 History
 -------
 
-v0.xx (xxxx-xx-xx)
-..................
+v0.27.0a1 (2019-05-26)
+......................
 * fix JSON Schema for ``list``, ``tuple``, and ``set``, #540 by @tiangolo
+* compiling with cython, ``manylinux`` binaries, some other performance improvements, #548 by @samuelcolvin
 
 v0.26 (2019-05-22)
 ..................
