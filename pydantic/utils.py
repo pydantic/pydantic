@@ -9,7 +9,7 @@ from textwrap import dedent
 from typing import _eval_type  # type: ignore
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
 
-from . import errors
+import pydantic
 
 try:
     import email_validator
@@ -70,7 +70,7 @@ def validate_email(value: str) -> Tuple[str, str]:
     try:
         email_validator.validate_email(email, check_deliverability=False)
     except email_validator.EmailNotValidError as e:
-        raise errors.EmailError() from e
+        raise pydantic.errors.EmailError() from e
 
     return name or email[: email.index('@')], email.lower()
 
@@ -140,8 +140,8 @@ def truncate(v: str, *, max_len: int = 80) -> str:
     """
     if isinstance(v, str) and len(v) > (max_len - 2):
         # -3 so quote + string + … + quote has correct length
-        return repr(v[: (max_len - 3)] + '…')
-    v = repr(v)
+        return (v[: (max_len - 3)] + '…').__repr__()
+    v = v.__repr__()
     if len(v) > max_len:
         v = v[: max_len - 1] + '…'
     return v
@@ -237,7 +237,7 @@ def in_ipython() -> bool:
     Check whether we're in an ipython environment, including jupyter notebooks.
     """
     try:
-        __IPYTHON__  # type: ignore
+        eval("__IPYTHON__")  # type: ignore
     except NameError:
         return False
     else:  # pragma: no cover
