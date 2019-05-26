@@ -30,6 +30,7 @@ except ImportError:
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
     from .main import Field  # noqa: F401
+    from . import errors  # noqa: F401
 
 if sys.version_info < (3, 7):
     from typing import Callable
@@ -134,7 +135,7 @@ def import_string(dotted_path: str) -> Any:
         raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
 
 
-def truncate(v: str, *, max_len: int = 80) -> str:
+def truncate(v: Union[str], *, max_len: int = 80) -> str:
     """
     Truncate a value and add a unicode ellipsis (three dots) to the end if it was too long
     """
@@ -237,7 +238,7 @@ def in_ipython() -> bool:
     Check whether we're in an ipython environment, including jupyter notebooks.
     """
     try:
-        eval("__IPYTHON__")  # type: ignore
+        eval('__IPYTHON__')
     except NameError:
         return False
     else:  # pragma: no cover

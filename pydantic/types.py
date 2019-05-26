@@ -515,7 +515,7 @@ class Json(metaclass=JsonMeta):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: str) -> Any:
+    def validate(cls, v: Union[str]) -> Any:
         try:
             return json.loads(v)
         except ValueError:

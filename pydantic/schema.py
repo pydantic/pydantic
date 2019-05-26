@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence,
 from uuid import UUID
 
 import pydantic
+
 from .fields import Field, Shape
 from .json import pydantic_encoder
 from .types import (
@@ -44,6 +45,7 @@ from .types import (
 from .utils import clean_docstring, is_callable_type, lenient_issubclass
 
 if TYPE_CHECKING:  # pragma: no cover
+    from . import main  # noqa: F401
     from . import dataclasses  # noqa: F401
 
 __all__ = [
@@ -404,7 +406,9 @@ def get_flat_models_from_fields(fields: Sequence[Field]) -> Set[Type['pydantic.m
     return flat_models
 
 
-def get_flat_models_from_models(models: Sequence[Type['pydantic.main.BaseModel']]) -> Set[Type['pydantic.main.BaseModel']]:
+def get_flat_models_from_models(
+    models: Sequence[Type['pydantic.main.BaseModel']]
+) -> Set[Type['pydantic.main.BaseModel']]:
     """
     Take a list of ``models`` and generate a set with them and all their sub-models in their trees. I.e. if you pass
     a list of two models, ``Foo`` and ``Bar``, both subclasses of Pydantic ``BaseModel`` as models, and ``Bar`` has
