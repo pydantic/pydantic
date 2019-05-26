@@ -3,6 +3,7 @@ import sys
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import FunctionType
@@ -26,16 +27,16 @@ from typing import (
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
-from .errors import ConfigError, DictError
+from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import Field
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .parse import Extra, parse_model
-from .parse_files import Protocol, load_file, load_str_bytes
+from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .utils import (
     AnyCallable,
     AnyType,
+    ForwardRef,
     change_exception,
     is_classvar,
     resolve_annotations,
@@ -46,7 +47,7 @@ from .utils import (
 
 if TYPE_CHECKING:  # pragma: no cover
     from .dataclasses import DataclassType  # noqa: F401
-    from .types import CallableGenerator
+    from .types import CallableGenerator, ModelOrDc
     from .class_validators import ValidatorListDict
 
     AnyGenerator = Generator[Any, None, None]
@@ -57,6 +58,20 @@ if TYPE_CHECKING:  # pragma: no cover
     SetStr = Set[str]
     ListStr = List[str]
     Model = TypeVar('Model', bound='BaseModel')
+
+
+try:
+    import cython  # type: ignore
+except ImportError:
+    compiled: bool = False
+else:
+    compiled = cython.compiled
+
+
+class Extra(str, Enum):
+    allow = 'allow'
+    ignore = 'ignore'
+    forbid = 'forbid'
 
 
 class BaseConfig:
@@ -161,34 +176,35 @@ class MetaModel(ABCMeta):
             annotations = resolve_annotations(annotations, namespace.get('__module__', None))
 
         class_vars = set()
-        # annotation only fields need to come first in fields
-        for ann_name, ann_type in annotations.items():
-            if is_classvar(ann_type):
-                class_vars.add(ann_name)
-            elif not ann_name.startswith('_') and ann_name not in namespace:
-                validate_field_name(bases, ann_name)
-                fields[ann_name] = Field.infer(
-                    name=ann_name,
-                    value=...,
-                    annotation=ann_type,
-                    class_validators=vg.get_validators(ann_name),
-                    config=config,
-                )
+        if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
+            # annotation only fields need to come first in fields
+            for ann_name, ann_type in annotations.items():
+                if is_classvar(ann_type):
+                    class_vars.add(ann_name)
+                elif not ann_name.startswith('_') and ann_name not in namespace:
+                    validate_field_name(bases, ann_name)
+                    fields[ann_name] = Field.infer(
+                        name=ann_name,
+                        value=...,
+                        annotation=ann_type,
+                        class_validators=vg.get_validators(ann_name),
+                        config=config,
+                    )
 
-        for var_name, value in namespace.items():
-            if (
-                not var_name.startswith('_')
-                and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
-                and var_name not in class_vars
-            ):
-                validate_field_name(bases, var_name)
-                fields[var_name] = Field.infer(
-                    name=var_name,
-                    value=value,
-                    annotation=annotations.get(var_name),
-                    class_validators=vg.get_validators(var_name),
-                    config=config,
-                )
+            for var_name, value in namespace.items():
+                if (
+                    not var_name.startswith('_')
+                    and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
+                    and var_name not in class_vars
+                ):
+                    validate_field_name(bases, var_name)
+                    fields[var_name] = Field.infer(
+                        name=var_name,
+                        value=value,
+                        annotation=annotations.get(var_name),
+                        class_validators=vg.get_validators(var_name),
+                        config=config,
+                    )
 
         vg.check_for_unused()
         if config.json_encoders:
@@ -222,7 +238,7 @@ class BaseModel(metaclass=MetaModel):
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
-        values, fields_set, _ = parse_model(self, data)
+        values, fields_set, _ = validate_model(self, data)
         object.__setattr__(self, '__values__', values)
         object.__setattr__(self, '__fields_set__', fields_set)
 
@@ -501,7 +517,7 @@ class BaseModel(metaclass=MetaModel):
         return ret
 
 
-def create_model(  # noqa: C901 (ignore complexity)
+def create_model(
     model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
@@ -555,3 +571,77 @@ def create_model(  # noqa: C901 (ignore complexity)
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
     return type(model_name, (__base__,), namespace)
+
+
+_missing = object()
+
+
+def validate_model(  # noqa: C901 (ignore complexity)
+    model: Union['BaseModel', Type['BaseModel']],
+    input_data: 'DictStrAny',
+    raise_exc: bool = True,
+    cls: 'ModelOrDc' = None,
+) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
+    """
+    validate data against a model.
+    """
+    values = {}
+    errors = []
+    # input_data names, possibly alias
+    names_used = set()
+    # field names, never aliases
+    fields_set = set()
+    config = model.__config__
+    check_extra = config.extra is not Extra.ignore
+
+    for name, field in model.__fields__.items():
+        if type(field.type_) == ForwardRef:
+            raise ConfigError(
+                f'field "{field.name}" not yet prepared so type is still a ForwardRef, '
+                f'you might need to call {model.__class__.__name__}.update_forward_refs().'
+            )
+
+        value = input_data.get(field.alias, _missing)
+        using_name = False
+        if value is _missing and config.allow_population_by_alias and field.alt_alias:
+            value = input_data.get(field.name, _missing)
+            using_name = True
+
+        if value is _missing:
+            if field.required:
+                errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
+                continue
+            value = deepcopy(field.default)
+            if not model.__config__.validate_all and not field.validate_always:
+                values[name] = value
+                continue
+        else:
+            fields_set.add(name)
+            if check_extra:
+                names_used.add(field.name if using_name else field.alias)
+
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls or model.__class__)  # type: ignore
+        if isinstance(errors_, ErrorWrapper):
+            errors.append(errors_)
+        elif isinstance(errors_, list):
+            errors.extend(errors_)
+        else:
+            values[name] = v_
+
+    if check_extra:
+        extra = input_data.keys() - names_used
+        if extra:
+            fields_set |= extra
+            if config.extra is Extra.allow:
+                for f in extra:
+                    values[f] = input_data[f]
+            else:
+                for f in sorted(extra):
+                    errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
+
+    if not raise_exc:
+        return values, fields_set, ValidationError(errors) if errors else None
+
+    if errors:
+        raise ValidationError(errors)
+    return values, fields_set, None

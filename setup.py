@@ -53,7 +53,7 @@ if 'clean' not in sys.argv:
                 'pydantic/error_wrappers.py',
                 'pydantic/errors.py',
                 'pydantic/fields.py',
-                'pydantic/parse.py',
+                'pydantic/main.py',
                 'pydantic/validators.py',
             ],
             nthreads=4,

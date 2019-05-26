@@ -1,105 +1,61 @@
-from copy import deepcopy
+import pickle
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Type, Union
+from pathlib import Path
+from typing import Any, Union
 
-from .error_wrappers import ErrorWrapper, ValidationError
-from .errors import ConfigError, ExtraError, MissingError
-from .utils import ForwardRef
-
-if TYPE_CHECKING:  # pragma: no cover
-    from .types import ModelOrDc
-    from .main import BaseModel  # noqa: F401
-
-    DictStrAny = Dict[str, Any]
-    SetStr = Set[str]
-
-
-__all__ = ['Extra', 'compiled', 'parse_model']
-
+from .types import StrBytes
 
 try:
-    import cython  # type: ignore
+    import ujson as json
 except ImportError:
-    compiled: bool = False
-else:
-    compiled = cython.compiled
+    import json  # type: ignore
 
 
-class Extra(str, Enum):
-    allow = 'allow'
-    ignore = 'ignore'
-    forbid = 'forbid'
+class Protocol(str, Enum):
+    json = 'json'
+    pickle = 'pickle'
 
 
-_missing = object()
-
-
-def parse_model(  # noqa: C901 (ignore complexity)
-    model: Union['BaseModel', Type['BaseModel']],
-    input_data: 'DictStrAny',
-    raise_exc: bool = True,
-    cls: 'ModelOrDc' = None,
-) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
-    """
-    validate data against a model.
-    """
-    values = {}
-    errors = []
-    # input_data names, possibly alias
-    names_used = set()
-    # field names, never aliases
-    fields_set = set()
-    config = model.__config__
-    check_extra = config.extra is not Extra.ignore
-
-    for name, field in model.__fields__.items():
-        if type(field.type_) == ForwardRef:
-            raise ConfigError(
-                f'field "{field.name}" not yet prepared so type is still a ForwardRef, '
-                f'you might need to call {model.__class__.__name__}.update_forward_refs().'
-            )
-
-        value = input_data.get(field.alias, _missing)
-        using_name = False
-        if value is _missing and config.allow_population_by_alias and field.alt_alias:
-            value = input_data.get(field.name, _missing)
-            using_name = True
-
-        if value is _missing:
-            if field.required:
-                errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
-                continue
-            value = deepcopy(field.default)
-            if not model.__config__.validate_all and not field.validate_always:
-                values[name] = value
-                continue
+def load_str_bytes(
+    b: StrBytes, *, content_type: str = None, encoding: str = 'utf8', proto: Protocol = None, allow_pickle: bool = False
+) -> Any:
+    if proto is None and content_type:
+        if content_type.endswith(('json', 'javascript')):
+            pass
+        elif allow_pickle and content_type.endswith('pickle'):
+            proto = Protocol.pickle
         else:
-            fields_set.add(name)
-            if check_extra:
-                names_used.add(field.name if using_name else field.alias)
+            raise TypeError(f'Unknown content-type: {content_type}')
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls or model.__class__)  # type: ignore
-        if isinstance(errors_, ErrorWrapper):
-            errors.append(errors_)
-        elif isinstance(errors_, list):
-            errors.extend(errors_)
-        else:
-            values[name] = v_
+    proto = proto or Protocol.json
 
-    if check_extra:
-        extra = input_data.keys() - names_used
-        if extra:
-            fields_set |= extra
-            if config.extra is Extra.allow:
-                for f in extra:
-                    values[f] = input_data[f]
-            else:
-                for f in sorted(extra):
-                    errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
+    if proto == Protocol.json:
+        if isinstance(b, bytes):
+            b = b.decode(encoding)
+        return json.loads(b)
+    elif proto == Protocol.pickle:
+        if not allow_pickle:
+            raise RuntimeError('Trying to decode with pickle with allow_pickle=False')
+        bb = b if isinstance(b, bytes) else b.encode()
+        return pickle.loads(bb)
+    else:
+        raise TypeError(f'Unknown protocol: {proto}')
 
-    if not raise_exc:
-        return values, fields_set, ValidationError(errors) if errors else None
 
-    if errors:
-        raise ValidationError(errors)
-    return values, fields_set, None
+def load_file(
+    path: Union[str, Path],
+    *,
+    content_type: str = None,
+    encoding: str = 'utf8',
+    proto: Protocol = None,
+    allow_pickle: bool = False,
+) -> Any:
+    path = Path(path)
+    b = path.read_bytes()
+    if content_type is None:
+        if path.suffix in ('.js', '.json'):
+            proto = Protocol.json
+        elif path.suffix == '.pkl':
+            proto = Protocol.pickle
+
+    return load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)

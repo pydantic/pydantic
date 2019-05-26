@@ -302,7 +302,7 @@ class Field:
         except (ValueError, TypeError) as exc:
             return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
-    def _validate_sequence_like(  # noqa: C901 (ignore complexity)
+    def _validate_sequence_like(
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
