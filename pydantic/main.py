@@ -64,7 +64,7 @@ try:
     import cython  # type: ignore
 except ImportError:
     compiled: bool = False
-else:
+else:  # pragma: no cover
     compiled = cython.compiled
 
 
@@ -577,10 +577,7 @@ _missing = object()
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Union['BaseModel', Type['BaseModel']],
-    input_data: 'DictStrAny',
-    raise_exc: bool = True,
-    cls: 'ModelOrDc' = None,
+    model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True, cls: 'ModelOrDc' = None
 ) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
     """
     validate data against a model.
