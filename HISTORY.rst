@@ -8,6 +8,7 @@ v0.xx (xxxx-xx-xx)
 * fix JSON Schema for ``list``, ``tuple``, and ``set``, #540 by @tiangolo
 * Change `_pydantic_post_init` to execute dataclass' original `__post_init__` before
   validation, #560 by @HeavenVolkoff
+* fix handling of generic types without specified parameters, #550 by @dmontagu
 
 v0.26 (2019-05-22)
 ..................

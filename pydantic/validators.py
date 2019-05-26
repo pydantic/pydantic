@@ -383,16 +383,16 @@ def find_validators(type_: AnyType, arbitrary_types_allowed: bool = False) -> Li
 
     for val_type, validators in _VALIDATORS:
         try:
-            if lenient_issubclass(type_, val_type):
+            if issubclass(type_, val_type):
                 return validators
         except TypeError as e:
+            if type_.__class__ == TypeVar:  # mypy errors for isinstance(type_, TypeVar)
+                return []
             raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
 
     if arbitrary_types_allowed:
         return [make_arbitrary_type_validator(type_)]
     else:
-        if isinstance(type_, TypeVar):
-            return []
         raise RuntimeError(f'no validator found for {type_}')
 
 
