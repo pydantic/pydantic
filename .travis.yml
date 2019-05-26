@@ -58,19 +58,17 @@ jobs:
     python: 3.7
     services:
     - docker
+    install: skip
     script:
     - ./tests/check_tag.py
-    - pip install -U cibuildwheel wheel
-    # https://github.com/joerick/cibuildwheel/issues/139
-    - 'CIBW_BUILD="cp36-manylinux1_x86_64" cibuildwheel --output-dir dist'
-    - 'CIBW_BUILD="cp36-manylinux1_i686" cibuildwheel --output-dir dist'
-    - 'CIBW_BUILD="cp37-manylinux1_x86_64" cibuildwheel --output-dir dist'
-    - 'CIBW_BUILD="cp37-manylinux1_i686" cibuildwheel --output-dir dist'
+    - pip install -U cibuildwheel
+    - cibuildwheel --output-dir dist
     - ls -lha dist
     after_success: skip
     env:
-    - 'CIBW_BEFORE_BUILD="pip install -U cython"'
     - 'PIP=pip'
+    - 'CIBW_BUILD="cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686"'
+    - 'CIBW_BEFORE_BUILD="pip install -U cython"'
     deploy:
       provider: pypi
       skip_cleanup: true
