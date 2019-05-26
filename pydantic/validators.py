@@ -391,6 +391,8 @@ def find_validators(type_: AnyType, arbitrary_types_allowed: bool = False) -> Li
     if arbitrary_types_allowed:
         return [make_arbitrary_type_validator(type_)]
     else:
+        if isinstance(type_, TypeVar):
+            return []
         raise RuntimeError(f'no validator found for {type_}')
 
 
