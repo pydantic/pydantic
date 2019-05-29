@@ -6,8 +6,21 @@ from enum import Enum
 from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
-from typing import _eval_type  # type: ignore
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
+from typing import (  # type: ignore
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Pattern,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    _eval_type,
+)
 
 from . import errors
 
@@ -296,3 +309,29 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     Return True if two floats are almost equal
     """
     return abs(value_1 - value_2) <= delta
+
+
+class GetterDict:
+    """
+    Hacky McHack face.
+
+    Smells like a dict, get's things from an object via getattr.
+    """
+
+    def __init__(self, obj: Any):
+        self._obj = obj
+
+    def get(self, item: Any, default: Any) -> Any:
+        return getattr(self._obj, item, default)
+
+    def __getitem__(self, item: Any) -> Any:
+        try:
+            return getattr(self._obj, item)
+        except AttributeError as e:
+            raise KeyError(item) from e
+
+    def keys(self) -> Set[Any]:
+        """
+        We don't want to get any other attributes of obj if the model didn't explicitly ask for them
+        """
+        return set()

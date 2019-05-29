@@ -14,6 +14,7 @@ from typing import (
     Dict,
     Generator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -36,6 +37,7 @@ from .utils import (
     AnyCallable,
     AnyType,
     ForwardRef,
+    GetterDict,
     change_exception,
     is_classvar,
     resolve_annotations,
@@ -80,6 +82,7 @@ class BaseConfig:
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
     json_encoders: Dict[AnyType, AnyCallable] = {}
+    orm_mode: bool = False
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
@@ -312,16 +315,13 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+    def parse_obj(cls: Type['Model'], obj: Mapping[Any, Any]) -> 'Model':
         if not isinstance(obj, dict):
-            if hasattr(obj, '__iter__'):
-                try:
-                    obj = dict(obj)
-                except (TypeError, ValueError) as e:
-                    exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                    raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
-            else:
-                obj = cls._decompose_class(obj)
+            try:
+                obj = dict(obj)
+            except (TypeError, ValueError) as e:
+                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
         return cls(**obj)
 
     @classmethod
@@ -354,6 +354,16 @@ class BaseModel(metaclass=MetaModel):
     ) -> 'Model':
         obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
         return cls.parse_obj(obj)
+
+    @classmethod
+    def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
+        assert cls.__config__.orm_mode
+        obj = cls._decompose_class(obj)
+        m = cls.__new__(cls)
+        values, fields_set, _ = validate_model(m, obj)
+        object.__setattr__(m, '__values__', values)
+        object.__setattr__(m, '__fields_set__', fields_set)
+        return m
 
     @classmethod
     def construct(cls: Type['Model'], values: 'DictAny', fields_set: 'SetStr') -> 'Model':
@@ -428,16 +438,15 @@ class BaseModel(metaclass=MetaModel):
             return cls(**value)
         elif isinstance(value, cls):
             return value.copy()
-        elif hasattr(value, '__iter__'):
+        elif cls.__config__.orm_mode:
+            return cls.from_orm(value)
+        else:
             with change_exception(DictError, TypeError, ValueError):
                 return cls(**dict(value))
-        else:
-            with change_exception(DictError, TypeError, ValueError, AttributeError):
-                return cls(**cls._decompose_class(value))
 
     @classmethod
-    def _decompose_class(cls, obj: Any) -> 'DictStrAny':
-        return obj.__dict__
+    def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
+        return GetterDict(obj)
 
     @classmethod
     def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:

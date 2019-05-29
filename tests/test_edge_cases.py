@@ -892,16 +892,22 @@ def test_orm_mode():
         name: str
         species: str
 
+        class Config:
+            orm_mode = True
+
     class Person(BaseModel):
         name: str
         age: float = None
         pets: List[Pet]
 
+        class Config:
+            orm_mode = True
+
     bones = PetCls(name='Bones', species='dog')
     orion = PetCls(name='Orion', species='cat')
     alice = PersonCls(name='Alice', age=20, pets=[bones, orion])
 
-    alice_model = Person.parse_obj(alice)
+    alice_model = Person.from_orm(alice)
 
     assert alice_model.dict() == {
         'name': 'Alice',
