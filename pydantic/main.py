@@ -14,7 +14,6 @@ from typing import (
     Dict,
     Generator,
     List,
-    Mapping,
     Optional,
     Set,
     Tuple,
@@ -313,13 +312,16 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: Mapping[Any, Any]) -> 'Model':
+    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
         if not isinstance(obj, dict):
-            try:
-                obj = dict(obj)
-            except (TypeError, ValueError) as e:
-                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
+            if hasattr(obj, '__iter__'):
+                try:
+                    obj = dict(obj)
+                except (TypeError, ValueError) as e:
+                    exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                    raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
+            else:
+                obj = cls._decompose_class(obj)
         return cls(**obj)
 
     @classmethod
@@ -421,14 +423,21 @@ class BaseModel(metaclass=MetaModel):
         yield cls.validate
 
     @classmethod
-    def validate(cls: Type['Model'], value: Union['DictStrAny', 'Model']) -> 'Model':
+    def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, dict):
             return cls(**value)
         elif isinstance(value, cls):
             return value.copy()
-        else:
+        elif hasattr(value, '__iter__'):
             with change_exception(DictError, TypeError, ValueError):
-                return cls(**dict(value))  # type: ignore
+                return cls(**dict(value))
+        else:
+            with change_exception(DictError, TypeError, ValueError, AttributeError):
+                return cls(**cls._decompose_class(value))
+
+    @classmethod
+    def _decompose_class(cls, obj: Any) -> 'DictStrAny':
+        return obj.__dict__
 
     @classmethod
     def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:

@@ -874,3 +874,37 @@ def test_submodel_different_type():
     assert Spam(c=Foo(a='123')).dict() == {'c': {'a': 123}}
     with pytest.raises(ValidationError):
         Spam(c=Bar(b='123'))
+
+
+def test_orm_mode():
+    class PetCls:
+        def __init__(self, *, name: str, species: str):
+            self.name = name
+            self.species = species
+
+    class PersonCls:
+        def __init__(self, *, name: str, age: float = None, pets: List[PetCls]):
+            self.name = name
+            self.age = age
+            self.pets = pets
+
+    class Pet(BaseModel):
+        name: str
+        species: str
+
+    class Person(BaseModel):
+        name: str
+        age: float = None
+        pets: List[Pet]
+
+    bones = PetCls(name='Bones', species='dog')
+    orion = PetCls(name='Orion', species='cat')
+    alice = PersonCls(name='Alice', age=20, pets=[bones, orion])
+
+    alice_model = Person.parse_obj(alice)
+
+    assert alice_model.dict() == {
+        'name': 'Alice',
+        'pets': [{'name': 'Bones', 'species': 'dog'}, {'name': 'Orion', 'species': 'cat'}],
+        'age': 20.0,
+    }
