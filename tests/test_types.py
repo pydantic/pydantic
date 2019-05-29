@@ -1551,22 +1551,18 @@ def test_generic_without_params_error():
 
 
 # THIS TEST WILL BE REMOVED BEFORE FINAL PULL REQUEST SUBMISSION
-def test_is_this_okay():  # ???
+def test_empty_list_dict_error():  # ???
     class Model(BaseModel):
         generic_list: List
-        generic_dict: Dict[int, int]
+        generic_dict: Dict
 
     # This test passes -- should it fail, or is this the desired behavior? (It would make sense to me either way)
     # It also passes if I replace Dict with Dict[int, int], so no new problems have been introduced.
-    assert Model(generic_list=[], generic_dict=[])
+    # assert Model(generic_list=[], generic_dict=[])
 
     # The alternate form:
-    # with pytest.raises(ValidationError) as exc_info:
-    #     Model(generic_list=[], generic_dict=[])
-    # assert exc_info.value.errors() == [
-    #     {
-    #         'loc': ('generic_dict',),
-    #         'msg': 'value is not a valid dict',
-    #         'type': 'type_error.dict'
-    #     }
-    # ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(generic_list=[], generic_dict=[])
+    assert exc_info.value.errors() == [
+        {'loc': ('generic_dict',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}
+    ]

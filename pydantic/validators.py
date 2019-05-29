@@ -161,6 +161,22 @@ def dict_validator(v: Any) -> Dict[Any, Any]:
         return v
 
     with change_exception(errors.DictError, TypeError, ValueError):
+        #
+        # if not isinstance(v, dict):
+        #     # (More strict than the next approach, which also fails)
+        #     raise TypeError
+        # if isinstance(v, list):
+        #    # This approach doesn't work due to:
+        #    # https://github.com/samuelcolvin/pydantic/blob/master/tests/test_types.py#L471
+        #    # https://github.com/samuelcolvin/pydantic/blob/master/tests/test_edge_cases.py#L136
+        #    raise TypeError
+        if isinstance(v, list) and len(v) == 0:
+            # This currently works, but is probably bad since it will cause errors
+            # for empty "versions" of the above way of passing params
+            raise TypeError
+
+        # https://github.com/python/cpython/blob/3.7/Objects/dictobject.c#L3196
+        # means empty list is hard to check for
         return dict(v)
 
 
