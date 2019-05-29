@@ -515,7 +515,7 @@ class Json(metaclass=JsonMeta):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: str) -> Any:
+    def validate(cls, v: Union[str]) -> Any:
         try:
             return json.loads(v)
         except ValueError:
@@ -591,7 +591,7 @@ class SecretStr:
         return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
 
     def __str__(self) -> str:
-        return repr(self)
+        return self.__repr__()
 
     def display(self) -> str:
         return '**********' if self._secret_value else ''
@@ -617,7 +617,7 @@ class SecretBytes:
         return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
 
     def __str__(self) -> str:
-        return repr(self)
+        return self.__repr__()
 
     def display(self) -> str:
         return '**********' if self._secret_value else ''

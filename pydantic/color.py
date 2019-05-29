@@ -10,7 +10,7 @@ eg. Color((0, 255, 255)).as_named() == 'cyan' because "cyan" comes after "aqua".
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Tuple, Union, cast
 
 from pydantic.validators import not_none_validator
 
@@ -20,21 +20,28 @@ from .utils import almost_equal_floats
 if TYPE_CHECKING:  # pragma: no cover
     from .types import CallableGenerator
 
-
 ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]
 HslColorTuple = Union[Tuple[float, float, float], Tuple[float, float, float, float]]
 
 
-class RGBA(NamedTuple):
+class RGBA:
     """
     Internal use only as a representation of a color.
     """
 
-    r: float
-    g: float
-    b: float
-    alpha: Optional[float]
+    __slots__ = 'r', 'g', 'b', 'alpha', '_tuple'
+
+    def __init__(self, r: float, g: float, b: float, alpha: Optional[float]):
+        self.r = r
+        self.g = g
+        self.b = b
+        self.alpha = alpha
+
+        self._tuple: Tuple[float, float, float, Optional[float]] = (r, g, b, alpha)
+
+    def __getitem__(self, item: Any) -> Any:
+        return self._tuple[item]
 
 
 r_hex_short = re.compile(r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?\s*')

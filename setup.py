@@ -2,6 +2,7 @@ import re
 import sys
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
+
 from setuptools import setup
 
 
@@ -48,16 +49,14 @@ if 'clean' not in sys.argv:
     except ImportError:
         pass
     else:
+        # For cython test coverage:
+        # Uncomment the compiler_directives line below
+        # Run: python setup.py build_ext --force --inplace --define CYTHON_TRACE
         ext_modules = cythonize(
-            [
-                'pydantic/error_wrappers.py',
-                'pydantic/errors.py',
-                'pydantic/fields.py',
-                'pydantic/main.py',
-                'pydantic/validators.py',
-            ],
+            ['pydantic/*.py'],
             nthreads=4,
             language_level=3,
+            # compiler_directives={'linetrace': True}  # uncomment for cython coverage; must also define CYTHON_TRACE
         )
 
 setup(
