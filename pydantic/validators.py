@@ -370,7 +370,7 @@ _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
 
 
 def find_validators(type_: AnyType, arbitrary_types_allowed: bool = False) -> List[AnyCallable]:
-    if type_ is Any or type(type_) == ForwardRef:
+    if type_ is Any or type(type_) in (ForwardRef, TypeVar):
         return []
     if type_ is Pattern:
         return pattern_validators
