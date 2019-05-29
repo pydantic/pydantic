@@ -45,8 +45,10 @@ from .types import (
 from .utils import clean_docstring, is_callable_type, lenient_issubclass
 
 if TYPE_CHECKING:  # pragma: no cover
-    from . import main  # noqa: F401
     from . import dataclasses  # noqa: F401
+
+    BaseModel = pydantic.main.BaseModel
+
 
 __all__ = [
     'Schema',
@@ -157,7 +159,7 @@ class Schema:
 
 
 def schema(
-    models: Sequence[Type['main.BaseModel']],
+    models: Sequence[Type['BaseModel']],
     *,
     by_alias: bool = True,
     title: Optional[str] = None,
@@ -201,9 +203,7 @@ def schema(
     return output_schema
 
 
-def model_schema(
-    model: Type['main.BaseModel'], by_alias: bool = True, ref_prefix: Optional[str] = None
-) -> Dict[str, Any]:
+def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Optional[str] = None) -> Dict[str, Any]:
     """
     Generate a JSON Schema for one model. With all the sub-models defined in the ``definitions`` top-level
     JSON key.
@@ -232,7 +232,7 @@ def field_schema(
     field: Field,
     *,
     by_alias: bool = True,
-    model_name_map: Dict[Type['main.BaseModel'], str],
+    model_name_map: Dict[Type['BaseModel'], str],
     ref_prefix: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
@@ -323,7 +323,7 @@ def get_field_schema_validations(field: Field) -> Dict[str, Any]:
     return f_schema
 
 
-def get_model_name_map(unique_models: Set[Type['main.BaseModel']]) -> Dict[Type['main.BaseModel'], str]:
+def get_model_name_map(unique_models: Set[Type['BaseModel']]) -> Dict[Type['BaseModel'], str]:
     """
     Process a set of models and generate unique names for them to be used as keys in the JSON Schema
     definitions. By default the names are the same as the class name. But if two models in different Python
@@ -350,7 +350,7 @@ def get_model_name_map(unique_models: Set[Type['main.BaseModel']]) -> Dict[Type[
     return {v: k for k, v in name_model_map.items()}
 
 
-def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.BaseModel']]:
+def get_flat_models_from_model(model: Type['BaseModel']) -> Set[Type['BaseModel']]:
     """
     Take a single ``model`` and generate a set with itself and all the sub-models in the tree. I.e. if you pass
     model ``Foo`` (subclass of Pydantic ``BaseModel``) as ``model``, and it has a field of type ``Bar`` (also
@@ -360,14 +360,14 @@ def get_flat_models_from_model(model: Type['main.BaseModel']) -> Set[Type['main.
     :param model: a Pydantic ``BaseModel`` subclass
     :return: a set with the initial model and all its sub-models
     """
-    flat_models: Set[Type['main.BaseModel']] = set()
+    flat_models: Set[Type['BaseModel']] = set()
     flat_models.add(model)
     fields = cast(Sequence[Field], model.__fields__.values())
     flat_models |= get_flat_models_from_fields(fields)
     return flat_models
 
 
-def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
+def get_flat_models_from_field(field: Field) -> Set[Type['BaseModel']]:
     """
     Take a single Pydantic ``Field`` (from a model) that could have been declared as a sublcass of BaseModel
     (so, it could be a submodel), and generate a set with its model and all the sub-models in the tree.
@@ -378,18 +378,18 @@ def get_flat_models_from_field(field: Field) -> Set[Type['main.BaseModel']]:
     :param field: a Pydantic ``Field``
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
-    flat_models: Set[Type['main.BaseModel']] = set()
+    flat_models: Set[Type['BaseModel']] = set()
     if field.sub_fields:
         flat_models |= get_flat_models_from_fields(field.sub_fields)
-    elif lenient_issubclass(field.type_, pydantic.main.BaseModel):
+    elif lenient_issubclass(field.type_, pydantic.BaseModel):
         flat_models |= get_flat_models_from_model(field.type_)
-    elif lenient_issubclass(getattr(field.type_, '__pydantic_model__', None), pydantic.main.BaseModel):
+    elif lenient_issubclass(getattr(field.type_, '__pydantic_model__', None), pydantic.BaseModel):
         field.type_ = cast(Type['dataclasses.DataclassType'], field.type_)
         flat_models |= get_flat_models_from_model(field.type_.__pydantic_model__)
     return flat_models
 
 
-def get_flat_models_from_fields(fields: Sequence[Field]) -> Set[Type['pydantic.main.BaseModel']]:
+def get_flat_models_from_fields(fields: Sequence[Field]) -> Set[Type['BaseModel']]:
     """
     Take a list of Pydantic  ``Field``s (from a model) that could have been declared as sublcasses of ``BaseModel``
     (so, any of them could be a submodel), and generate a set with their models and all the sub-models in the tree.
@@ -400,27 +400,25 @@ def get_flat_models_from_fields(fields: Sequence[Field]) -> Set[Type['pydantic.m
     :param fields: a list of Pydantic ``Field``s
     :return: a set with any model declared in the fields, and all their sub-models
     """
-    flat_models: Set[Type['pydantic.main.BaseModel']] = set()
+    flat_models: Set[Type['BaseModel']] = set()
     for field in fields:
         flat_models |= get_flat_models_from_field(field)
     return flat_models
 
 
-def get_flat_models_from_models(
-    models: Sequence[Type['pydantic.main.BaseModel']]
-) -> Set[Type['pydantic.main.BaseModel']]:
+def get_flat_models_from_models(models: Sequence[Type['BaseModel']]) -> Set[Type['BaseModel']]:
     """
     Take a list of ``models`` and generate a set with them and all their sub-models in their trees. I.e. if you pass
     a list of two models, ``Foo`` and ``Bar``, both subclasses of Pydantic ``BaseModel`` as models, and ``Bar`` has
     a field of type ``Baz`` (also subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
     """
-    flat_models: Set[Type['pydantic.main.BaseModel']] = set()
+    flat_models: Set[Type['BaseModel']] = set()
     for model in models:
         flat_models |= get_flat_models_from_model(model)
     return flat_models
 
 
-def get_long_model_name(model: Type['pydantic.main.BaseModel']) -> str:
+def get_long_model_name(model: Type['BaseModel']) -> str:
     return f'{model.__module__}__{model.__name__}'.replace('.', '__')
 
 
@@ -428,7 +426,7 @@ def field_type_schema(
     field: Field,
     *,
     by_alias: bool,
-    model_name_map: Dict[Type['pydantic.main.BaseModel'], str],
+    model_name_map: Dict[Type['BaseModel'], str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -494,10 +492,10 @@ def field_type_schema(
 
 
 def model_process_schema(
-    model: Type['pydantic.main.BaseModel'],
+    model: Type['BaseModel'],
     *,
     by_alias: bool = True,
-    model_name_map: Dict[Type['pydantic.main.BaseModel'], str],
+    model_name_map: Dict[Type['BaseModel'], str],
     ref_prefix: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
@@ -519,10 +517,10 @@ def model_process_schema(
 
 
 def model_type_schema(
-    model: Type['pydantic.main.BaseModel'],
+    model: Type['BaseModel'],
     *,
     by_alias: bool,
-    model_name_map: Dict[Type['pydantic.main.BaseModel'], str],
+    model_name_map: Dict[Type['BaseModel'], str],
     ref_prefix: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
@@ -562,7 +560,7 @@ def field_singleton_sub_fields_schema(
     sub_fields: Sequence[Field],
     *,
     by_alias: bool,
-    model_name_map: Dict[Type['pydantic.main.BaseModel'], str],
+    model_name_map: Dict[Type['BaseModel'], str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -661,7 +659,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     field: Field,
     *,
     by_alias: bool,
-    model_name_map: Dict[Type['pydantic.main.BaseModel'], str],
+    model_name_map: Dict[Type['BaseModel'], str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -709,10 +707,10 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             return t_schema, definitions
     # Handle dataclass-based models
     field_type = field.type_
-    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), pydantic.main.BaseModel):
+    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), pydantic.BaseModel):
         field_type = cast(Type['dataclasses.DataclassType'], field_type)
         field_type = field_type.__pydantic_model__
-    if issubclass(field_type, pydantic.main.BaseModel):
+    if issubclass(field_type, pydantic.BaseModel):
         sub_schema, sub_definitions = model_process_schema(
             field_type, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )

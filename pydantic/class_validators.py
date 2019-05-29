@@ -1,5 +1,4 @@
 from collections import ChainMap
-from dataclasses import dataclass
 from functools import wraps
 from inspect import Signature, signature
 from itertools import chain
@@ -17,16 +16,9 @@ if TYPE_CHECKING:  # pragma: no cover
     ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
 
 
-@dataclass
 class Validator:
-    func: AnyCallable
-    pre: bool
-    whole: bool
-    always: bool
-    check_fields: bool
-
     def __init__(self, func: AnyCallable, pre: bool, whole: bool, always: bool, check_fields: bool):
-        self.func = func  # type: ignore
+        self.func = func
         self.pre = pre
         self.whole = whole
         self.always = always
