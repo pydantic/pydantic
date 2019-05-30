@@ -1,5 +1,5 @@
-pydantic,,12.6μs,0.246μs
-toasted-marshmallow,1.8x slower,23.3μs,0.124μs
-marshmallow,2.0x slower,25.7μs,0.254μs
-trafaret,2.1x slower,27.0μs,0.120μs
-django-restful-framework,19.2x slower,243.0μs,0.906μs
+pydantic,,12.0μs,0.263μs
+toasted-marshmallow,1.9x slower,22.7μs,0.186μs
+marshmallow,2.1x slower,25.2μs,0.173μs
+trafaret,2.2x slower,26.6μs,0.259μs
+django-restful-framework,20.0x slower,240.7μs,1.410μs
