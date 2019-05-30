@@ -14,18 +14,20 @@ install:
 - pip freeze
 
 script:
-# test with and without cython, ujson and email-validator then combine coverage
+# test without cython but with ujson and email-validator
+- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(pydantic.compiled)"
+- make test && mv .coverage .coverage.extra-no-cython
+
+# test with cython, ujson and email-validator
+- make install-trace
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(not pydantic.compiled)"
 - make test && mv .coverage .coverage.extra-cython
 
-- pip uninstall -y cython
+# test without cython, ujson and email-validator
+- pip uninstall -y ujson email-validator cython
 - make clean
 - pip install -e .
-- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(pydantic.compiled)"
-- make test && mv .coverage .coverage.no-cython
-
-- pip uninstall -y ujson email-validator
-- make test && mv .coverage .coverage.no-extra
+- make test && mv .coverage .coverage.no-extra-no-cython
 - coverage combine
 
 after_success:
@@ -49,11 +51,14 @@ jobs:
   - stage: test
     python: 3.7
     name: 'Benchmarks'
-    script: BENCHMARK_REPEATS=1 make benchmark-all
+    script:
+    # default install skips cython compilation, need to compile for benchmarks
+    - make install-compile
+    - BENCHMARK_REPEATS=1 make benchmark-all
     after_success: skip
 
-  - stage: deploy
-    name: 'PyPI Upload'
+  - stage: build
+    name: 'PyPI Build and Upload'
     # if: tag IS present
     python: 3.7
     services:
@@ -78,8 +83,8 @@ jobs:
         tags: true
         all_branches: true
 
-  - stage: deploy
-    name: 'Docs Upload'
+  - stage: build
+    name: 'Docs Build and Upload'
     python: 3.7
     script: make docs
     env:

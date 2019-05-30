@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 from importlib.machinery import SourceFileLoader
@@ -43,20 +44,21 @@ except FileNotFoundError:
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 
 ext_modules = None
-if 'clean' not in sys.argv:
+if 'clean' not in sys.argv and 'SKIP_CYTHON' not in os.environ:
     try:
         from Cython.Build import cythonize
     except ImportError:
         pass
     else:
-        # For cython test coverage:
-        # Uncomment the compiler_directives line below
-        # Run: python setup.py build_ext --force --inplace --define CYTHON_TRACE
+        # For cython test coverage install with `make install-trace`
+        compiler_directives = {}
+        if 'CYTHON_TRACE' in sys.argv:
+            compiler_directives['linetrace'] = True
         ext_modules = cythonize(
-            ['pydantic/*.py'],
+            'pydantic/*.py',
             nthreads=4,
             language_level=3,
-            # compiler_directives={'linetrace': True}  # uncomment for cython coverage; must also define CYTHON_TRACE
+            compiler_directives=compiler_directives,
         )
 
 setup(
