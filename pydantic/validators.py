@@ -410,7 +410,10 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
 
 
 def find_validators(type_: AnyType, config: Type['BaseConfig']) -> Generator[AnyCallable, None, None]:
-    if type_ is Any or type(type_) == ForwardRef:
+    if type_ is Any:
+        return
+    type_type = type(type_)
+    if type_type == ForwardRef or type_type == TypeVar:
         return
     if type_ is Pattern:
         yield from pattern_validators

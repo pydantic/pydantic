@@ -3,6 +3,12 @@
 History
 -------
 
+v0.27 (unreleased)
+..................
+* Change ``_pydantic_post_init`` to execute dataclass' original ``__post_init__`` before
+  validation, #560 by @HeavenVolkoff
+* fix handling of generic types without specified parameters, #550 by @dmontagu
+
 v0.27.0a1 (2019-05-26)
 ......................
 * fix JSON Schema for ``list``, ``tuple``, and ``set``, #540 by @tiangolo
