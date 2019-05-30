@@ -6,7 +6,15 @@ black = black -S -l 120 --target-version py36 pydantic tests
 install:
 	pip install -U setuptools pip
 	pip install -U -r requirements.txt
-	pip install -e .
+	SKIP_CYTHON=1 pip install -e .
+
+.PHONY: build-cython-trace
+build-cython-trace: clean
+	python setup.py build_ext --force --inplace --define CYTHON_TRACE
+
+.PHONY: build-cython
+build-cython: clean
+	python setup.py build_ext --inplace
 
 .PHONY: format
 format:
@@ -42,8 +50,12 @@ external-mypy:
 	  (echo "mypy_test_fails2: mypy passed when it should have failed!"; exit 1)
 
 .PHONY: testcov
-testcov:
-	pytest --cov=pydantic
+testcov: test
+	@echo "building coverage html"
+	@coverage html
+
+.PHONY: testcov-compile
+testcov-compile: build-cython-trace test
 	@echo "building coverage html"
 	@coverage html
 
@@ -72,6 +84,7 @@ clean:
 	rm -f .coverage
 	rm -f .coverage.*
 	rm -rf build
+	rm -f pydantic/*.c pydantic/*.so
 	python setup.py clean
 	make -C docs clean
 

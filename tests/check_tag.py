@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import os
 import sys
+from importlib.machinery import SourceFileLoader
 
-from pydantic.version import VERSION
+VERSION = SourceFileLoader('version', 'pydantic/version.py').load_module().VERSION
 
 git_tag = os.getenv('TRAVIS_TAG')
 if git_tag:

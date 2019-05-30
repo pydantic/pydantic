@@ -60,6 +60,14 @@ if TYPE_CHECKING:  # pragma: no cover
     Model = TypeVar('Model', bound='BaseModel')
 
 
+try:
+    import cython  # type: ignore
+except ImportError:
+    compiled: bool = False
+else:  # pragma: no cover
+    compiled = cython.compiled
+
+
 class Extra(str, Enum):
     allow = 'allow'
     ignore = 'ignore'
@@ -168,34 +176,35 @@ class MetaModel(ABCMeta):
             annotations = resolve_annotations(annotations, namespace.get('__module__', None))
 
         class_vars = set()
-        # annotation only fields need to come first in fields
-        for ann_name, ann_type in annotations.items():
-            if is_classvar(ann_type):
-                class_vars.add(ann_name)
-            elif not ann_name.startswith('_') and ann_name not in namespace:
-                validate_field_name(bases, ann_name)
-                fields[ann_name] = Field.infer(
-                    name=ann_name,
-                    value=...,
-                    annotation=ann_type,
-                    class_validators=vg.get_validators(ann_name),
-                    config=config,
-                )
+        if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
+            # annotation only fields need to come first in fields
+            for ann_name, ann_type in annotations.items():
+                if is_classvar(ann_type):
+                    class_vars.add(ann_name)
+                elif not ann_name.startswith('_') and ann_name not in namespace:
+                    validate_field_name(bases, ann_name)
+                    fields[ann_name] = Field.infer(
+                        name=ann_name,
+                        value=...,
+                        annotation=ann_type,
+                        class_validators=vg.get_validators(ann_name),
+                        config=config,
+                    )
 
-        for var_name, value in namespace.items():
-            if (
-                not var_name.startswith('_')
-                and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
-                and var_name not in class_vars
-            ):
-                validate_field_name(bases, var_name)
-                fields[var_name] = Field.infer(
-                    name=var_name,
-                    value=value,
-                    annotation=annotations.get(var_name),
-                    class_validators=vg.get_validators(var_name),
-                    config=config,
-                )
+            for var_name, value in namespace.items():
+                if (
+                    not var_name.startswith('_')
+                    and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
+                    and var_name not in class_vars
+                ):
+                    validate_field_name(bases, var_name)
+                    fields[var_name] = Field.infer(
+                        name=var_name,
+                        value=value,
+                        annotation=annotations.get(var_name),
+                        class_validators=vg.get_validators(var_name),
+                        config=config,
+                    )
 
         vg.check_for_unused()
         if config.json_encoders:
@@ -211,9 +220,6 @@ class MetaModel(ABCMeta):
             **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace)
-
-
-_missing = object()
 
 
 class BaseModel(metaclass=MetaModel):
@@ -511,7 +517,7 @@ class BaseModel(metaclass=MetaModel):
         return ret
 
 
-def create_model(  # noqa: C901 (ignore complexity)
+def create_model(
     model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
@@ -565,6 +571,9 @@ def create_model(  # noqa: C901 (ignore complexity)
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
     return type(model_name, (__base__,), namespace)
+
+
+_missing = object()
 
 
 def validate_model(  # noqa: C901 (ignore complexity)

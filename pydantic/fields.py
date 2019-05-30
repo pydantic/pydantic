@@ -249,11 +249,7 @@ class Field:
                     )
             v_funcs = (
                 *[v.func for v in class_validators_ if not v.whole and v.pre],
-                *(
-                    get_validators()
-                    if get_validators
-                    else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
-                ),
+                *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
                 self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
@@ -300,13 +296,13 @@ class Field:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
         return v, errors
 
-    def _validate_json(self, v: str, loc: Tuple[str, ...]) -> Tuple[Optional[Any], Optional[ErrorWrapper]]:
+    def _validate_json(self, v: Any, loc: Tuple[str, ...]) -> Tuple[Optional[Any], Optional[ErrorWrapper]]:
         try:
             return Json.validate(v), None
         except (ValueError, TypeError) as exc:
             return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
 
-    def _validate_sequence_like(  # noqa: C901 (ignore complexity)
+    def _validate_sequence_like(
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
