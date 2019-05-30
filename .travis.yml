@@ -15,12 +15,12 @@ install:
 
 script:
 # test without cython but with ujson and email-validator
-- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(pydantic.compiled)"
+- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(1 if pydantic.compiled else 0)"
 - make test && mv .coverage .coverage.extra-no-cython
 
 # test with cython, ujson and email-validator
-- make install-trace
-- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(not pydantic.compiled)"
+- make build-cython-trace
+- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
 - make test && mv .coverage .coverage.extra-cython
 
 # test without cython, ujson and email-validator
@@ -29,6 +29,8 @@ script:
 - pip install -e .
 - make test && mv .coverage .coverage.no-extra-no-cython
 - coverage combine
+
+- make external-mypy
 
 after_success:
 - ls -lha
@@ -45,7 +47,6 @@ jobs:
     script:
     - make lint
     - make mypy
-    - make external-mypy
     after_success: skip
 
   - stage: test
@@ -53,13 +54,13 @@ jobs:
     name: 'Benchmarks'
     script:
     # default install skips cython compilation, need to compile for benchmarks
-    - make install-compile
+    - make build-cython
     - BENCHMARK_REPEATS=1 make benchmark-all
     after_success: skip
 
   - stage: build
     name: 'PyPI Build and Upload'
-    # if: tag IS present
+    if: branch = master OR tag IS present
     python: 3.7
     services:
     - docker

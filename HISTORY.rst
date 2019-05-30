@@ -8,6 +8,8 @@ v0.27 (unreleased)
 * Change ``_pydantic_post_init`` to execute dataclass' original ``__post_init__`` before
   validation, #560 by @HeavenVolkoff
 * fix handling of generic types without specified parameters, #550 by @dmontagu
+* **breaking change** (maybe): this is the first release compiled with **cython**, see the docs and please
+  submit an issue if you run into problems
 
 v0.27.0a1 (2019-05-26)
 ......................

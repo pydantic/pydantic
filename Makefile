@@ -8,13 +8,13 @@ install:
 	pip install -U -r requirements.txt
 	SKIP_CYTHON=1 pip install -e .
 
-.PHONY: install-trace
-install-trace: clean
+.PHONY: build-cython-trace
+build-cython-trace: clean
 	python setup.py build_ext --force --inplace --define CYTHON_TRACE
 
-.PHONY: install-compile
-install-compile: clean
-	pip install -e .
+.PHONY: build-cython
+build-cython: clean
+	python setup.py build_ext --inplace
 
 .PHONY: format
 format:
@@ -49,13 +49,13 @@ external-mypy:
 	  test $$? -eq 1 || \
 	  (echo "mypy_test_fails2: mypy passed when it should have failed!"; exit 1)
 
-.PHONY: testcov test
-testcov:
+.PHONY: testcov
+testcov: test
 	@echo "building coverage html"
 	@coverage html
 
-.PHONY: testcov test
-testcov-compile: install-trace
+.PHONY: testcov-compile
+testcov-compile: build-cython-trace test
 	@echo "building coverage html"
 	@coverage html
 
