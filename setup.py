@@ -54,7 +54,6 @@ if 'clean' not in sys.argv and 'SKIP_CYTHON' not in os.environ:
         compiler_directives = {}
         if 'CYTHON_TRACE' in sys.argv:
             compiler_directives['linetrace'] = True
-        os.environ['CFLAGS'] = '-O3'
         ext_modules = cythonize(
             'pydantic/*.py',
             nthreads=4,

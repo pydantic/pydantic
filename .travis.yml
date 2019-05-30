@@ -16,20 +16,10 @@ install:
 script:
 # test without cython but with ujson and email-validator
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(1 if pydantic.compiled else 0)"
-- make test && mv .coverage .coverage.extra-no-cython
+- make test
 
-# test with cython, ujson and email-validator
-- make build-cython-trace
-- python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
-- make test && mv .coverage .coverage.extra-cython
-
-# test without cython, ujson and email-validator
-- pip uninstall -y ujson email-validator cython
-- make clean
-- pip install -e .
-- make test && mv .coverage .coverage.no-extra-no-cython
-- coverage combine
-
+- make lint
+- make mypy
 - make external-mypy
 
 after_success:
@@ -42,12 +32,36 @@ jobs:
 
   include:
   - stage: test
-    python: 3.7
-    name: 'Linting'
+    python: 3.6
+    name: 'Cython 3.6'
     script:
-    - make lint
-    - make mypy
-    after_success: skip
+      # test with cython, ujson and email-validator
+      - make build-cython-trace
+      - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+      - make test
+  - stage: test
+    python: 3.7
+    name: 'Cython 3.7'
+    script:
+      # test with cython, ujson and email-validator
+      - make build-cython-trace
+      - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+      - make test
+
+  - stage: test
+    python: 3.6
+    name: 'Without Deps 3.6'
+    script:
+      # test without cython, ujson and email-validator
+      - pip uninstall -y ujson email-validator
+      - make test
+  - stage: test
+    python: 3.7
+    name: 'Without Deps 3.7'
+    script:
+      # test without cython, ujson and email-validator
+      - pip uninstall -y ujson email-validator cython
+      - make test
 
   - stage: test
     python: 3.7
@@ -60,7 +74,7 @@ jobs:
 
   - stage: build
     name: 'PyPI Build and Upload'
-    if: branch = master OR tag IS present
+    if: type = push AND (branch = master OR tag IS present)
     python: 3.7
     services:
     - docker
@@ -86,6 +100,7 @@ jobs:
 
   - stage: build
     name: 'Docs Build and Upload'
+    if: type = push AND (branch = master OR tag IS present)
     python: 3.7
     script: make docs
     env:
