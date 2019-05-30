@@ -74,8 +74,7 @@ jobs:
 
   - stage: build
     name: 'PyPI Build and Upload'
-#    if: type = push AND (branch = master OR tag IS present)
-    if: type = push
+    if: type = push AND (branch = master OR tag IS present)
     python: 3.7
     services:
     - docker
