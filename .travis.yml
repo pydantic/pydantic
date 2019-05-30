@@ -81,8 +81,9 @@ jobs:
     install: skip
     script:
     - ./tests/check_tag.py
-    - pip install -U cibuildwheel
+    - pip install -U cibuildwheel wheel
     - cibuildwheel --output-dir dist
+    - SKIP_CYTHON=1 python setup.py sdist bdist_wheel
     - ls -lha dist
     env:
     - 'PIP=pip'

@@ -84,6 +84,7 @@ clean:
 	rm -f .coverage
 	rm -f .coverage.*
 	rm -rf build
+	rm -rf dist
 	rm -f pydantic/*.c pydantic/*.so
 	python setup.py clean
 	make -C docs clean
