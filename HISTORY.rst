@@ -3,7 +3,7 @@
 History
 -------
 
-v0.27 (unreleased)
+v0.27 (2019-05-30)
 ..................
 * Change ``_pydantic_post_init`` to execute dataclass' original ``__post_init__`` before
   validation, #560 by @HeavenVolkoff
