@@ -74,15 +74,17 @@ jobs:
 
   - stage: build
     name: 'PyPI Build and Upload'
-    if: type = push AND (branch = master OR tag IS present)
+#    if: type = push AND (branch = master OR tag IS present)
+    if: type = push
     python: 3.7
     services:
     - docker
     install: skip
     script:
     - ./tests/check_tag.py
-    - pip install -U cibuildwheel
+    - pip install -U cibuildwheel wheel
     - cibuildwheel --output-dir dist
+    - SKIP_CYTHON=1 python setup.py sdist bdist_wheel
     - ls -lha dist
     env:
     - 'PIP=pip'
