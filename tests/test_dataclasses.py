@@ -13,7 +13,7 @@ def test_simple():
         a: int
         b: float
 
-    d = MyDataclass("1", "2.5")
+    d = MyDataclass('1', '2.5')
     assert d.a == 1
     assert d.b == 2.5
     d = MyDataclass(b=10, a=20)
@@ -28,14 +28,10 @@ def test_value_error():
         b: int
 
     with pytest.raises(ValidationError) as exc_info:
-        MyDataclass(1, "wrong")
+        MyDataclass(1, 'wrong')
 
     assert exc_info.value.errors() == [
-        {
-            "loc": ("b",),
-            "msg": "value is not a valid integer",
-            "type": "type_error.integer",
-        }
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
@@ -62,7 +58,7 @@ def test_validate_assignment():
     d = MyDataclass(1)
     assert d.a == 1
 
-    d.a = "7"
+    d.a = '7'
     assert d.a == 7
 
 
@@ -77,13 +73,9 @@ def test_validate_assignment_error():
     d = MyDataclass(1)
 
     with pytest.raises(ValidationError) as exc_info:
-        d.a = "xxx"
+        d.a = 'xxx'
     assert exc_info.value.errors() == [
-        {
-            "loc": ("a",),
-            "msg": "value is not a valid integer",
-            "type": "type_error.integer",
-        }
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
@@ -95,8 +87,8 @@ def test_not_validate_assignment():
     d = MyDataclass(1)
     assert d.a == 1
 
-    d.a = "7"
-    assert d.a == "7"
+    d.a = '7'
+    assert d.a == '7'
 
 
 def test_post_init():
@@ -110,7 +102,7 @@ def test_post_init():
             nonlocal post_init_called
             post_init_called = True
 
-    d = MyDataclass("1")
+    d = MyDataclass('1')
     assert d.a == 1
     assert post_init_called
 
@@ -131,7 +123,7 @@ def test_post_init_post_parse():
             nonlocal post_init_post_parse_called
             post_init_post_parse_called = True
 
-    d = MyDataclass("1")
+    d = MyDataclass('1')
     assert d.a == 1
     assert post_init_called
     assert post_init_post_parse_called
@@ -152,7 +144,7 @@ def test_post_init_post_parse():
 #         def __post_init_post_parse__(self):
 #             assert type(self.a) == CustomType
 #
-#     d = MyDataclass("1")
+#     d = MyDataclass('1')
 #     assert d.a == 1
 
 
@@ -184,12 +176,12 @@ def test_inheritance():
     class B(A):
         b: int = None
 
-    b = B(a="a", b=12)
-    assert b.a == "a"
+    b = B(a='a', b=12)
+    assert b.a == 'a'
     assert b.b == 12
 
     with pytest.raises(ValidationError):
-        B(a="a", b="b")
+        B(a='a', b='b')
 
 
 def test_validate_long_string_error():
@@ -201,14 +193,14 @@ def test_validate_long_string_error():
         a: str
 
     with pytest.raises(ValidationError) as exc_info:
-        MyDataclass("xxxx")
+        MyDataclass('xxxx')
 
     assert exc_info.value.errors() == [
         {
-            "loc": ("a",),
-            "msg": "ensure this value has at most 3 characters",
-            "type": "value_error.any_str.max_length",
-            "ctx": {"limit_value": 3},
+            'loc': ('a',),
+            'msg': 'ensure this value has at most 3 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 3},
         }
     ]
 
@@ -222,17 +214,17 @@ def test_validate_assigment_long_string_error():
     class MyDataclass:
         a: str
 
-    d = MyDataclass("xxx")
+    d = MyDataclass('xxx')
     with pytest.raises(ValidationError) as exc_info:
-        d.a = "xxxx"
+        d.a = 'xxxx'
 
     assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseModel.Config)
     assert exc_info.value.errors() == [
         {
-            "loc": ("a",),
-            "msg": "ensure this value has at most 3 characters",
-            "type": "value_error.any_str.max_length",
-            "ctx": {"limit_value": 3},
+            'loc': ('a',),
+            'msg': 'ensure this value has at most 3 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 3},
         }
     ]
 
@@ -246,10 +238,10 @@ def test_no_validate_assigment_long_string_error():
     class MyDataclass:
         a: str
 
-    d = MyDataclass("xxx")
-    d.a = "xxxx"
+    d = MyDataclass('xxx')
+    d.a = 'xxxx'
 
-    assert d.a == "xxxx"
+    assert d.a == 'xxxx'
 
 
 def test_nested_dataclass():
@@ -261,37 +253,33 @@ def test_nested_dataclass():
     class Outer:
         n: Nested
 
-    navbar = Outer(n=Nested(number="1"))
+    navbar = Outer(n=Nested(number='1'))
     assert isinstance(navbar.n, Nested)
     assert navbar.n.number == 1
 
-    navbar = Outer(n=("2",))
+    navbar = Outer(n=('2',))
     assert isinstance(navbar.n, Nested)
     assert navbar.n.number == 2
 
-    navbar = Outer(n={"number": "3"})
+    navbar = Outer(n={'number': '3'})
     assert isinstance(navbar.n, Nested)
     assert navbar.n.number == 3
 
     with pytest.raises(ValidationError) as exc_info:
-        Outer(n="not nested")
+        Outer(n='not nested')
     assert exc_info.value.errors() == [
         {
-            "loc": ("n",),
-            "msg": "instance of Nested, tuple or dict expected",
-            "type": "type_error.dataclass",
-            "ctx": {"class_name": "Nested"},
+            'loc': ('n',),
+            'msg': 'instance of Nested, tuple or dict expected',
+            'type': 'type_error.dataclass',
+            'ctx': {'class_name': 'Nested'},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Outer(n=("x",))
+        Outer(n=('x',))
     assert exc_info.value.errors() == [
-        {
-            "loc": ("n", "number"),
-            "msg": "value is not a valid integer",
-            "type": "type_error.integer",
-        }
+        {'loc': ('n', 'number'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
@@ -307,18 +295,18 @@ def test_arbitrary_types_allowed():
     class Navbar:
         button: Button
 
-    btn = Button(href="a")
+    btn = Button(href='a')
     navbar = Navbar(button=btn)
-    assert navbar.button.href == "a"
+    assert navbar.button.href == 'a'
 
     with pytest.raises(ValidationError) as exc_info:
-        Navbar(button=("b",))
+        Navbar(button=('b',))
     assert exc_info.value.errors() == [
         {
-            "loc": ("button",),
-            "msg": "instance of Button expected",
-            "type": "type_error.arbitrary_type",
-            "ctx": {"expected_arbitrary_type": "Button"},
+            'loc': ('button',),
+            'msg': 'instance of Button expected',
+            'type': 'type_error.arbitrary_type',
+            'ctx': {'expected_arbitrary_type': 'Button'},
         }
     ]
 
@@ -331,7 +319,7 @@ def test_nested_dataclass_model():
     class Outer(BaseModel):
         n: Nested
 
-    navbar = Outer(n=Nested(number="1"))
+    navbar = Outer(n=Nested(number='1'))
     assert navbar.n.number == 1
 
 
@@ -339,43 +327,39 @@ def test_fields():
     @pydantic.dataclasses.dataclass
     class User:
         id: int
-        name: str = "John Doe"
+        name: str = 'John Doe'
         signup_ts: datetime = None
 
     user = User(id=123)
     fields = user.__pydantic_model__.__fields__
 
-    assert fields["id"].required is True
-    assert fields["id"].default is None
+    assert fields['id'].required is True
+    assert fields['id'].default is None
 
-    assert fields["name"].required is False
-    assert fields["name"].default == "John Doe"
+    assert fields['name'].required is False
+    assert fields['name'].default == 'John Doe'
 
-    assert fields["signup_ts"].required is False
-    assert fields["signup_ts"].default is None
+    assert fields['signup_ts'].required is False
+    assert fields['signup_ts'].default is None
 
 
 def test_schema():
     @pydantic.dataclasses.dataclass
     class User:
         id: int
-        name: str = "John Doe"
+        name: str = 'John Doe'
         signup_ts: datetime = None
 
     user = User(id=123)
     assert user.__pydantic_model__.schema() == {
-        "title": "User",
-        "type": "object",
-        "properties": {
-            "id": {"title": "Id", "type": "integer"},
-            "name": {"title": "Name", "default": "John Doe", "type": "string"},
-            "signup_ts": {
-                "title": "Signup_Ts",
-                "type": "string",
-                "format": "date-time",
-            },
+        'title': 'User',
+        'type': 'object',
+        'properties': {
+            'id': {'title': 'Id', 'type': 'integer'},
+            'name': {'title': 'Name', 'default': 'John Doe', 'type': 'string'},
+            'signup_ts': {'title': 'Signup_Ts', 'type': 'string', 'format': 'date-time'},
         },
-        "required": ["id"],
+        'required': ['id'],
     }
 
 
@@ -389,16 +373,16 @@ def test_nested_schema():
         n: Nested
 
     assert Outer.__pydantic_model__.schema() == {
-        "title": "Outer",
-        "type": "object",
-        "properties": {"n": {"$ref": "#/definitions/Nested"}},
-        "required": ["n"],
-        "definitions": {
-            "Nested": {
-                "title": "Nested",
-                "type": "object",
-                "properties": {"number": {"title": "Number", "type": "integer"}},
-                "required": ["number"],
+        'title': 'Outer',
+        'type': 'object',
+        'properties': {'n': {'$ref': '#/definitions/Nested'}},
+        'required': ['n'],
+        'definitions': {
+            'Nested': {
+                'title': 'Nested',
+                'type': 'object',
+                'properties': {'number': {'title': 'Number', 'type': 'integer'}},
+                'required': ['number'],
             }
         },
     }
