@@ -30,8 +30,8 @@ def _pydantic_post_init(self: 'DataclassType') -> None:
     d = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)[0]
     object.__setattr__(self, '__dict__', d)
     object.__setattr__(self, '__initialised__', True)
-    if self.__post_init_original__ and hasattr(self, '__post_init_post_parse__'):
-        self.__post_init_original__()
+    if self.__post_init_post_parse__:
+        self.__post_init_post_parse__()
 
 
 def _validate_dataclass(cls: Type['DataclassType'], v: Any) -> 'DataclassType':
@@ -71,8 +71,11 @@ def _process_class(
     config: Type['BaseConfig'],
 ) -> 'DataclassType':
     post_init_original = getattr(_cls, '__post_init__', None)
+    post_init_post_parse = getattr(_cls, '__post_init_post_parse__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
+    if post_init_post_parse and post_init_post_parse.__name__ == '_pydantic_post_init':
+        post_init_post_parse = None
     _cls.__post_init__ = _pydantic_post_init
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore
 
@@ -81,6 +84,7 @@ def _process_class(
         for name, field in cls.__dataclass_fields__.items()
     }
     cls.__post_init_original__ = post_init_original
+    cls.__post_init_post_parse__ = post_init_post_parse
 
     validators = gather_validators(cls)
     cls.__pydantic_model__ = create_model(
