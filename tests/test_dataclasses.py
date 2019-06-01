@@ -107,28 +107,6 @@ def test_post_init():
     assert post_init_called
 
 
-def test_post_init_post_parse_with_post_init():
-    post_init_called = False
-    post_init_post_parse_called = False
-
-    @pydantic.dataclasses.dataclass
-    class MyDataclass:
-        a: int
-
-        def __post_init__(self):
-            nonlocal post_init_called
-            post_init_called = True
-
-        def __post_init_post_parse__(self):
-            nonlocal post_init_post_parse_called
-            post_init_post_parse_called = True
-
-    d = MyDataclass('1')
-    assert d.a == 1
-    assert post_init_called
-    assert post_init_post_parse_called
-
-
 def test_post_init_post_parse():
     post_init_post_parse_called = False
 
