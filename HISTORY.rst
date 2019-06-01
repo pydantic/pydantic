@@ -3,7 +3,7 @@
 History
 -------
 
-v0.28 (2019-06-01)
+v0.28 (unreleased)
 ..................
 add ``_pydantic_post_init_post_parse`` to execute ``__post_init_post_parse__`` after validation, #567 by @sevaho
 
