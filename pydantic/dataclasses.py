@@ -14,6 +14,7 @@ if TYPE_CHECKING:  # pragma: no cover
     class DataclassType:
         __pydantic_model__: Type[BaseModel]
         __post_init_original__: Callable[..., None]
+        __post_init_post_parse__: Callable[..., None]
         __initialised__: bool
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
