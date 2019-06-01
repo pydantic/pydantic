@@ -5,7 +5,7 @@ History
 
 v0.28 (unreleased)
 ..................
-add ``_pydantic_post_init_post_parse`` to execute ``__post_init_post_parse__`` after validation, #567 by @sevaho
+* support ``__post_init_post_parse__`` support to dataclasses, #567 by @sevaho
 
 v0.27 (2019-05-30)
 ..................
