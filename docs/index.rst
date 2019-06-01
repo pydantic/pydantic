@@ -158,8 +158,8 @@ Since version ``v0.17`` nested dataclasses are supported both in dataclasses and
 
 Dataclasses attributes can be populated by tuples, dictionaries or instances of that dataclass.
 
-Initialze hooks
-~~~~~~~~~~~~~~~
+Initialize hooks
+~~~~~~~~~~~~~~~~
 
 Since version ``v0.28`` when you initialize a dataclass, it is possible to execute code after validation
 with the help of ``__post_init_post_parse__``. This is not the same as ``__post_init__`` which executes
