@@ -20,20 +20,21 @@ if TYPE_CHECKING:  # pragma: no cover
             pass
 
         @classmethod
-        def __validate__(cls, v: Any) -> 'DataclassType':
+        def __validate__(cls, v: Any) -> "DataclassType":
             pass
 
 
-def _pydantic_post_init(self: 'DataclassType') -> None:
+def _pydantic_post_init(self: "DataclassType") -> None:
     if self.__post_init_original__:
         self.__post_init_original__()
     d = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)[0]
-    object.__setattr__(self, '__dict__', d)
-    object.__setattr__(self, '__initialised__', True)
-    if hasattr(self, '__post_init_post_parse__'):
+    object.__setattr__(self, "__dict__", d)
+    object.__setattr__(self, "__initialised__", True)
+    if self.__post_init_original__ and hasattr(self, "__post_init_post_parse__"):
         self.__post_init_original__()
 
-def _validate_dataclass(cls: Type['DataclassType'], v: Any) -> 'DataclassType':
+
+def _validate_dataclass(cls: Type["DataclassType"], v: Any) -> "DataclassType":
     if isinstance(v, cls):
         return v
     elif isinstance(v, (list, tuple)):
@@ -44,15 +45,17 @@ def _validate_dataclass(cls: Type['DataclassType'], v: Any) -> 'DataclassType':
         raise DataclassTypeError(class_name=cls.__name__)
 
 
-def _get_validators(cls: Type['DataclassType']) -> Generator[Any, None, None]:
+def _get_validators(cls: Type["DataclassType"]) -> Generator[Any, None, None]:
     yield cls.__validate__
 
 
-def setattr_validate_assignment(self: 'DataclassType', name: str, value: Any) -> None:
+def setattr_validate_assignment(self: "DataclassType", name: str, value: Any) -> None:
     if self.__initialised__:
         d = dict(self.__dict__)
         d.pop(name)
-        value, error_ = self.__pydantic_model__.__fields__[name].validate(value, d, loc=name, cls=self.__class__)
+        value, error_ = self.__pydantic_model__.__fields__[name].validate(
+            value, d, loc=name, cls=self.__class__
+        )
         if error_:
             raise ValidationError([error_])
 
@@ -67,23 +70,32 @@ def _process_class(
     order: bool,
     unsafe_hash: bool,
     frozen: bool,
-    config: Type['BaseConfig'],
-) -> 'DataclassType':
-    post_init_original = getattr(_cls, '__post_init__', None)
-    if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
+    config: Type["BaseConfig"],
+) -> "DataclassType":
+    post_init_original = getattr(_cls, "__post_init__", None)
+    if post_init_original and post_init_original.__name__ == "_pydantic_post_init":
         post_init_original = None
     _cls.__post_init__ = _pydantic_post_init
-    cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore
+    cls = dataclasses._process_class(
+        _cls, init, repr, eq, order, unsafe_hash, frozen
+    )  # type: ignore
 
     fields: Dict[str, Any] = {
-        name: (field.type, field.default if field.default != dataclasses.MISSING else Required)
+        name: (
+            field.type,
+            field.default if field.default != dataclasses.MISSING else Required,
+        )
         for name, field in cls.__dataclass_fields__.items()
     }
     cls.__post_init_original__ = post_init_original
 
     validators = gather_validators(cls)
     cls.__pydantic_model__ = create_model(
-        cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **fields
+        cls.__name__,
+        __config__=config,
+        __module__=_cls.__module__,
+        __validators__=validators,
+        **fields,
     )
 
     cls.__initialised__ = False
@@ -110,8 +122,8 @@ else:
         order: bool = False,
         unsafe_hash: bool = False,
         frozen: bool = False,
-        config: Type['BaseConfig'] = None,
-    ) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
+        config: Type["BaseConfig"] = None,
+    ) -> Union[Callable[[AnyType], "DataclassType"], "DataclassType"]:
         """
         Like the python standard lib dataclasses but with type validation.
 
@@ -119,8 +131,10 @@ else:
         as Config.validate_assignment.
         """
 
-        def wrap(cls: AnyType) -> 'DataclassType':
-            return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
+        def wrap(cls: AnyType) -> "DataclassType":
+            return _process_class(
+                cls, init, repr, eq, order, unsafe_hash, frozen, config
+            )
 
         if _cls is None:
             return wrap
