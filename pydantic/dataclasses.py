@@ -113,12 +113,12 @@ else:
         frozen: bool = False,
         config: Type['BaseConfig'] = None,
     ) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
-        '''
+        """
         Like the python standard lib dataclasses but with type validation.
 
         Arguments are the same as for standard dataclasses, except for validate_assignment which has the same meaning
         as Config.validate_assignment.
-        '''
+        """
 
         def wrap(cls: AnyType) -> 'DataclassType':
             return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
