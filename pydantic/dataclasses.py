@@ -75,7 +75,7 @@ def _process_class(
     post_init_post_parse = getattr(_cls, '__post_init_post_parse__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
-    if post_init_post_parse and post_init_post_parse.__name__ == '_pydantic_post_init':
+    if post_init_post_parse:
         post_init_post_parse = None
     _cls.__post_init__ = _pydantic_post_init
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore
