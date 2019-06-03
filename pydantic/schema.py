@@ -753,7 +753,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             )
             definitions.update(sub_definitions)
             definitions[model_name] = sub_schema
-        elif model_name not in definitions:
+        else:
             definitions[model_name] = None
         schema_ref = {'$ref': f'{ref_prefix}{model_name}'}
         if not schema_overrides:
