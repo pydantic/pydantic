@@ -246,3 +246,89 @@ Node.update_forward_refs()
     node = Node(**data)
     assert isinstance(node.left, Leaf)
     assert isinstance(node.right[0], Node)
+
+
+@skip_not_37
+def test_self_reference_json_schema(create_module):
+    module = create_module(
+        """
+from __future__ import annotations
+from typing import List
+from pydantic import BaseModel, Schema
+
+class Account(BaseModel):
+  name: str
+  subaccounts: List[Account] = []
+
+Account.update_forward_refs()
+    """
+    )
+    Account = module.Account
+    assert Account.schema() == {
+        "$ref": "#/definitions/Account",
+        "definitions": {
+            "Account": {
+                "title": "Account",
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "subaccounts": {
+                        "title": "Subaccounts",
+                        "default": [],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/Account"},
+                    },
+                },
+                "required": ["name"],
+            }
+        },
+    }
+
+
+@skip_not_37
+def test_circular_reference_json_schema(create_module):
+    module = create_module(
+        """
+from __future__ import annotations
+from typing import List
+from pydantic import BaseModel, Schema
+
+class Owner(BaseModel):
+  account: Account
+
+class Account(BaseModel):
+  name: str
+  owner: Owner
+  subaccounts: List[Account] = []
+
+Account.update_forward_refs()
+Owner.update_forward_refs()
+    """
+    )
+    Account = module.Account
+    assert Account.schema() == {
+        "$ref": "#/definitions/Account",
+        "definitions": {
+            "Account": {
+                "title": "Account",
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "owner": {"$ref": "#/definitions/Owner"},
+                    "subaccounts": {
+                        "title": "Subaccounts",
+                        "default": [],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/Account"},
+                    },
+                },
+                "required": ["name", "owner"],
+            },
+            "Owner": {
+                "title": "Owner",
+                "type": "object",
+                "properties": {"account": {"$ref": "#/definitions/Account"}},
+                "required": ["account"],
+            },
+        },
+    }
