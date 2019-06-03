@@ -220,9 +220,14 @@ def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Op
     ref_prefix = ref_prefix or default_prefix
     flat_models = get_flat_models_from_model(model)
     model_name_map = get_model_name_map(flat_models)
+    model_name = model_name_map[model]
     m_schema, m_definitions = model_process_schema(
         model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
     )
+    if model_name in m_definitions:
+        # m_definitions[model_name] is None, it has circular references
+        m_definitions[model_name] = m_schema
+        m_schema = {'$ref': f'{ref_prefix}{model_name}'}
     if m_definitions:
         m_schema.update({'definitions': m_definitions})
     return m_schema
@@ -234,6 +239,7 @@ def field_schema(
     by_alias: bool = True,
     model_name_map: Dict[Type['BaseModel'], str],
     ref_prefix: Optional[str] = None,
+    known_models: Set[Type['BaseModel']] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Process a Pydantic field and return a tuple with a JSON Schema for it as the first item.
@@ -246,9 +252,11 @@ def field_schema(
     :param model_name_map: used to generate the JSON Schema references to other models included in the definitions
     :param ref_prefix: the JSON Pointer prefix to use for references to other schemas, if None, the default of
       #/definitions/ will be used
+    :param known_models: used to solve circular references
     :return: tuple of the schema for this field and additional definitions
     """
     ref_prefix = ref_prefix or default_prefix
+    known_models = known_models or set()
     schema_overrides = False
     schema = cast('Schema', field.schema)
     s = dict(title=schema.title or field.alias.title())
@@ -274,6 +282,7 @@ def field_schema(
         model_name_map=model_name_map,
         schema_overrides=schema_overrides,
         ref_prefix=ref_prefix,
+        known_models=known_models,
     )
     # $ref will only be returned when there are no schema_overrides
     if '$ref' in f_schema:
@@ -350,7 +359,9 @@ def get_model_name_map(unique_models: Set[Type['BaseModel']]) -> Dict[Type['Base
     return {v: k for k, v in name_model_map.items()}
 
 
-def get_flat_models_from_model(model: Type['BaseModel']) -> Set[Type['BaseModel']]:
+def get_flat_models_from_model(
+    model: Type['BaseModel'], known_models: Set[Type['BaseModel']] = None
+) -> Set[Type['BaseModel']]:
     """
     Take a single ``model`` and generate a set with itself and all the sub-models in the tree. I.e. if you pass
     model ``Foo`` (subclass of Pydantic ``BaseModel``) as ``model``, and it has a field of type ``Bar`` (also
@@ -358,16 +369,19 @@ def get_flat_models_from_model(model: Type['BaseModel']) -> Set[Type['BaseModel'
     the return value will be ``set([Foo, Bar, Baz])``.
 
     :param model: a Pydantic ``BaseModel`` subclass
+    :param known_models: used to solve circular references
     :return: a set with the initial model and all its sub-models
     """
+    known_models = known_models or set()
     flat_models: Set[Type['BaseModel']] = set()
     flat_models.add(model)
+    known_models |= flat_models
     fields = cast(Sequence[Field], model.__fields__.values())
-    flat_models |= get_flat_models_from_fields(fields)
+    flat_models |= get_flat_models_from_fields(fields, known_models=known_models)
     return flat_models
 
 
-def get_flat_models_from_field(field: Field) -> Set[Type['BaseModel']]:
+def get_flat_models_from_field(field: Field, known_models: Set[Type['BaseModel']]) -> Set[Type['BaseModel']]:
     """
     Take a single Pydantic ``Field`` (from a model) that could have been declared as a sublcass of BaseModel
     (so, it could be a submodel), and generate a set with its model and all the sub-models in the tree.
@@ -376,20 +390,25 @@ def get_flat_models_from_field(field: Field) -> Set[Type['BaseModel']]:
     type ``Baz`` (also subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
 
     :param field: a Pydantic ``Field``
+    :param known_models: used to solve circular references
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
     flat_models: Set[Type['BaseModel']] = set()
+    # Handle dataclass-based models
+    field_type = field.type_
+    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), pydantic.BaseModel):
+        field_type = cast(Type['dataclasses.DataclassType'], field_type)
+        field_type = field_type.__pydantic_model__
     if field.sub_fields:
-        flat_models |= get_flat_models_from_fields(field.sub_fields)
-    elif lenient_issubclass(field.type_, pydantic.BaseModel):
-        flat_models |= get_flat_models_from_model(field.type_)
-    elif lenient_issubclass(getattr(field.type_, '__pydantic_model__', None), pydantic.BaseModel):
-        field.type_ = cast(Type['dataclasses.DataclassType'], field.type_)
-        flat_models |= get_flat_models_from_model(field.type_.__pydantic_model__)
+        flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
+    elif lenient_issubclass(field_type, pydantic.BaseModel) and field_type not in known_models:
+        flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
     return flat_models
 
 
-def get_flat_models_from_fields(fields: Sequence[Field]) -> Set[Type['BaseModel']]:
+def get_flat_models_from_fields(
+    fields: Sequence[Field], known_models: Set[Type['BaseModel']]
+) -> Set[Type['BaseModel']]:
     """
     Take a list of Pydantic  ``Field``s (from a model) that could have been declared as sublcasses of ``BaseModel``
     (so, any of them could be a submodel), and generate a set with their models and all the sub-models in the tree.
@@ -398,11 +417,12 @@ def get_flat_models_from_fields(fields: Sequence[Field]) -> Set[Type['BaseModel'
     subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
 
     :param fields: a list of Pydantic ``Field``s
+    :param known_models: used to solve circular references
     :return: a set with any model declared in the fields, and all their sub-models
     """
     flat_models: Set[Type['BaseModel']] = set()
     for field in fields:
-        flat_models |= get_flat_models_from_field(field)
+        flat_models |= get_flat_models_from_field(field, known_models=known_models)
     return flat_models
 
 
@@ -429,6 +449,7 @@ def field_type_schema(
     model_name_map: Dict[Type['BaseModel'], str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
+    known_models: Set[Type['BaseModel']],
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Used by ``field_schema()``, you probably should be using that function.
@@ -440,13 +461,13 @@ def field_type_schema(
     ref_prefix = ref_prefix or default_prefix
     if field.shape is Shape.LIST:
         f_schema, f_definitions = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         return {'type': 'array', 'items': f_schema}, definitions
     elif field.shape is Shape.SET:
         f_schema, f_definitions = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions
@@ -455,7 +476,7 @@ def field_type_schema(
         key_field = cast(Field, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
         f_schema, f_definitions = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         if regex:
@@ -471,7 +492,7 @@ def field_type_schema(
         sub_fields = cast(List[Field], field.sub_fields)
         for sf in sub_fields:
             sf_schema, sf_definitions = field_type_schema(
-                sf, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+                sf, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
             )
             definitions.update(sf_definitions)
             sub_schema.append(sf_schema)
@@ -486,6 +507,7 @@ def field_type_schema(
             model_name_map=model_name_map,
             schema_overrides=schema_overrides,
             ref_prefix=ref_prefix,
+            known_models=known_models,
         )
         definitions.update(f_definitions)
         return f_schema, definitions
@@ -497,6 +519,7 @@ def model_process_schema(
     by_alias: bool = True,
     model_name_map: Dict[Type['BaseModel'], str],
     ref_prefix: Optional[str] = None,
+    known_models: Set[Type['BaseModel']] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Used by ``model_schema()``, you probably should be using that function.
@@ -506,11 +529,13 @@ def model_process_schema(
     the definitions are returned as the second value.
     """
     ref_prefix = ref_prefix or default_prefix
+    known_models = known_models or set()
     s = {'title': model.__config__.title or model.__name__}
     if model.__doc__:
         s['description'] = clean_docstring(model.__doc__)
+    known_models.add(model)
     m_schema, m_definitions = model_type_schema(
-        model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+        model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
     )
     s.update(m_schema)
     return s, m_definitions
@@ -522,6 +547,7 @@ def model_type_schema(
     by_alias: bool,
     model_name_map: Dict[Type['BaseModel'], str],
     ref_prefix: Optional[str] = None,
+    known_models: Set[Type['BaseModel']],
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     You probably should be using ``model_schema()``, this function is indirectly used by that function.
@@ -536,7 +562,7 @@ def model_type_schema(
     for k, f in model.__fields__.items():
         try:
             f_schema, f_definitions = field_schema(
-                f, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+                f, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
             )
         except SkipField as skip:
             warnings.warn(skip.message, UserWarning)
@@ -563,6 +589,7 @@ def field_singleton_sub_fields_schema(
     model_name_map: Dict[Type['BaseModel'], str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
+    known_models: Set[Type['BaseModel']],
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     This function is indirectly used by ``field_schema()``, you probably should be using that function.
@@ -580,6 +607,7 @@ def field_singleton_sub_fields_schema(
             model_name_map=model_name_map,
             schema_overrides=schema_overrides,
             ref_prefix=ref_prefix,
+            known_models=known_models,
         )
     else:
         sub_field_schemas = []
@@ -590,6 +618,7 @@ def field_singleton_sub_fields_schema(
                 model_name_map=model_name_map,
                 schema_overrides=schema_overrides,
                 ref_prefix=ref_prefix,
+                known_models=known_models,
             )
             definitions.update(sub_definitions)
             sub_field_schemas.append(sub_schema)
@@ -662,6 +691,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     model_name_map: Dict[Type['BaseModel'], str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
+    known_models: Set[Type['BaseModel']],
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     This function is indirectly used by ``field_schema()``, you should probably be using that function.
@@ -678,6 +708,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             model_name_map=model_name_map,
             schema_overrides=schema_overrides,
             ref_prefix=ref_prefix,
+            known_models=known_models,
         )
     if field.type_ is Any:
         return {}, definitions  # no restrictions
@@ -711,16 +742,24 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         field_type = cast(Type['dataclasses.DataclassType'], field_type)
         field_type = field_type.__pydantic_model__
     if issubclass(field_type, pydantic.BaseModel):
-        sub_schema, sub_definitions = model_process_schema(
-            field_type, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
-        )
-        definitions.update(sub_definitions)
-        if not schema_overrides:
-            model_name = model_name_map[field_type]
+        model_name = model_name_map[field_type]
+        if field_type not in known_models:
+            sub_schema, sub_definitions = model_process_schema(
+                field_type,
+                by_alias=by_alias,
+                model_name_map=model_name_map,
+                ref_prefix=ref_prefix,
+                known_models=known_models,
+            )
+            definitions.update(sub_definitions)
             definitions[model_name] = sub_schema
-            return {'$ref': f'{ref_prefix}{model_name}'}, definitions
+        elif model_name not in definitions:
+            definitions[model_name] = None
+        schema_ref = {'$ref': f'{ref_prefix}{model_name}'}
+        if not schema_overrides:
+            return schema_ref, definitions
         else:
-            return sub_schema, definitions
+            return {'allOf': [schema_ref]}, definitions
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
 
