@@ -3,6 +3,10 @@
 History
 -------
 
+v0.xx (xxxx-xx-xx)
+..................
+* fix support for JSON Schema generation when using models with circular references in Python 3.7, #572 by @tiangolo
+
 v0.27 (2019-05-30)
 ..................
 * Change ``_pydantic_post_init`` to execute dataclass' original ``__post_init__`` before
