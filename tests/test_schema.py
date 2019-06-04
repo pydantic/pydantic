@@ -916,8 +916,6 @@ def test_schema_overrides():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'d': {'$ref': '#/definitions/Baz'}},
-        'required': ['d'],
         'definitions': {
             'Foo': {
                 'title': 'Foo',
@@ -932,6 +930,8 @@ def test_schema_overrides():
             },
             'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
         },
+        'properties': {'d': {'$ref': '#/definitions/Baz'}},
+        'required': ['d'],
     }
 
 

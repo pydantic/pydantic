@@ -203,7 +203,7 @@ Node.update_forward_refs()
     )
     Node = module.Node
     Leaf = module.Leaf
-    data = {"value": 3, "left": {"a": "foo"}, "right": {"value": 5, "left": {"a": "bar"}, "right": {"a": "buzz"}}}
+    data = {'value': 3, 'left': {'a': 'foo'}, 'right': {'value': 5, 'left': {'a': 'bar'}, 'right': {'a': 'buzz'}}}
 
     node = Node(**data)
     assert isinstance(node.left, Leaf)
@@ -238,9 +238,9 @@ Node.update_forward_refs()
     Node = module.Node
     Leaf = module.Leaf
     data = {
-        "value": 3,
-        "left": {"a": "foo"},
-        "right": [{"value": 5, "left": {"a": "bar"}, "right": {"a": "buzz"}}, "test"],
+        'value': 3,
+        'left': {'a': 'foo'},
+        'right': [{'value': 5, 'left': {'a': 'bar'}, 'right': {'a': 'buzz'}}, 'test'],
     }
 
     node = Node(**data)
@@ -265,21 +265,21 @@ Account.update_forward_refs()
     )
     Account = module.Account
     assert Account.schema() == {
-        "$ref": "#/definitions/Account",
-        "definitions": {
-            "Account": {
-                "title": "Account",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "subaccounts": {
-                        "title": "Subaccounts",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/definitions/Account"},
+        '$ref': '#/definitions/Account',
+        'definitions': {
+            'Account': {
+                'title': 'Account',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'subaccounts': {
+                        'title': 'Subaccounts',
+                        'default': [],
+                        'type': 'array',
+                        'items': {'$ref': '#/definitions/Account'},
                     },
                 },
-                "required": ["name"],
+                'required': ['name'],
             }
         },
     }
@@ -307,28 +307,28 @@ Owner.update_forward_refs()
     )
     Account = module.Account
     assert Account.schema() == {
-        "$ref": "#/definitions/Account",
-        "definitions": {
-            "Account": {
-                "title": "Account",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "owner": {"$ref": "#/definitions/Owner"},
-                    "subaccounts": {
-                        "title": "Subaccounts",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/definitions/Account"},
+        '$ref': '#/definitions/Account',
+        'definitions': {
+            'Account': {
+                'title': 'Account',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'owner': {'$ref': '#/definitions/Owner'},
+                    'subaccounts': {
+                        'title': 'Subaccounts',
+                        'default': [],
+                        'type': 'array',
+                        'items': {'$ref': '#/definitions/Account'},
                     },
                 },
-                "required": ["name", "owner"],
+                'required': ['name', 'owner'],
             },
-            "Owner": {
-                "title": "Owner",
-                "type": "object",
-                "properties": {"account": {"$ref": "#/definitions/Account"}},
-                "required": ["account"],
+            'Owner': {
+                'title': 'Owner',
+                'type': 'object',
+                'properties': {'account': {'$ref': '#/definitions/Account'}},
+                'required': ['account'],
             },
         },
     }
