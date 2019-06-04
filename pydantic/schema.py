@@ -256,7 +256,6 @@ def field_schema(
     :return: tuple of the schema for this field and additional definitions
     """
     ref_prefix = ref_prefix or default_prefix
-    known_models = known_models or set()
     schema_overrides = False
     schema = cast('Schema', field.schema)
     s = dict(title=schema.title or field.alias.title())
@@ -282,7 +281,7 @@ def field_schema(
         model_name_map=model_name_map,
         schema_overrides=schema_overrides,
         ref_prefix=ref_prefix,
-        known_models=known_models,
+        known_models=known_models or set(),
     )
     # $ref will only be returned when there are no schema_overrides
     if '$ref' in f_schema:
