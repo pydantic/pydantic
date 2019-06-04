@@ -80,8 +80,19 @@ Just::
 *pydantic* has no required dependencies except python 3.6 or 3.7 (and the dataclasses package in python 3.6).
 If you've got python 3.6 and ``pip`` installed - you're good to go.
 
+*pydantic* can optionally be compiled with `cython <https://cython.org/>`_ which should give a 30-50% performance
+improvement. ``manylinux`` binaries exist for python 3.6 and 3.7, so if you're installing from PyPI on linux, you
+should get *pydantic* compiled with no extra work. If you're installing manually, install ``cython`` before installing
+*pydantic* and you should get *pydandic* compiled. Compilation with cython is not tested on windows or mac.
+`[issue] <https://github.com/samuelcolvin/pydantic/issues/555>`_
+
+To test if *pydantic* is compiled run::
+
+    import pydantic
+    print('compiled:', pydantic.compiled)
+
 If you want *pydantic* to parse json faster you can add `ujson <https://pypi.python.org/pypi/ujson>`_
-as an optional dependency. Similarly if *pydantic's* email validation relies on
+as an optional dependency. Similarly *pydantic's* email validation relies on
 `email-validator <https://github.com/JoshData/python-email-validator>`_ ::
 
     pip install pydantic[ujson]
@@ -146,6 +157,17 @@ Since version ``v0.17`` nested dataclasses are supported both in dataclasses and
 (This script is complete, it should run "as is")
 
 Dataclasses attributes can be populated by tuples, dictionaries or instances of that dataclass.
+
+Initialize hooks
+~~~~~~~~~~~~~~~~
+
+Since version ``v0.28`` when you initialize a dataclass, it is possible to execute code after validation
+with the help of ``__post_init_post_parse__``. This is not the same as ``__post_init__`` which executes
+code before validation.
+
+.. literalinclude:: examples/ex_post_init_post_parse.py
+
+(This script is complete, it should run “as is”)
 
 Choices
 .......
@@ -875,8 +897,20 @@ Below are the results of crude benchmarks comparing *pydantic* to other validati
    :align: center
    :file: benchmarks.csv
 
-(See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
-for more details on the test case. Feel free to submit more benchmarks or improve an existing one.)
+See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
+for more details on the test case. Feel free to submit more benchmarks or improve an existing one.
+
+Benchmarks were run with python 3.7.2 and the following package versions:
+
+* **pydantic** pre ``v0.27``
+  `d473f4a <https://github.com/samuelcolvin/pydantic/commit/d473f4abc9d040c8c90e102017aacfc078f0f37d>`_ compiled with
+  cython
+* **toasted-marshmallow** ``v0.2.6``
+* **marshmallow** the version installed by ``toasted-marshmallow``, see
+  `this <https://github.com/lyft/toasted-marshmallow/issues/9>`_ issue.
+* **trafaret** ``v1.2.0``
+* **django-restful-framework** ``v3.9.4``
+
 
 Contributing to Pydantic
 ------------------------

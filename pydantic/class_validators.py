@@ -1,5 +1,4 @@
 from collections import ChainMap
-from dataclasses import dataclass
 from functools import wraps
 from inspect import Signature, signature
 from itertools import chain
@@ -17,13 +16,13 @@ if TYPE_CHECKING:  # pragma: no cover
     ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
 
 
-@dataclass
 class Validator:
-    func: AnyCallable
-    pre: bool
-    whole: bool
-    always: bool
-    check_fields: bool
+    def __init__(self, func: AnyCallable, pre: bool, whole: bool, always: bool, check_fields: bool):
+        self.func = func
+        self.pre = pre
+        self.whole = whole
+        self.always = always
+        self.check_fields = check_fields
 
 
 _FUNCS: Set[str] = set()
@@ -57,7 +56,10 @@ def validator(
                 raise ConfigError(f'duplicate validator function "{ref}"')
             _FUNCS.add(ref)
         f_cls = classmethod(f)
-        f_cls.__validator_config = fields, Validator(f, pre, whole, always, check_fields)  # type: ignore
+        f_cls.__validator_config = (  # type: ignore
+            fields,
+            Validator(func=f, pre=pre, whole=whole, always=always, check_fields=check_fields),
+        )
         return f_cls
 
     return dec

@@ -473,6 +473,11 @@ def test_invalid_type():
     assert "error checking inheritance of 43 (type: int)" in str(exc_info)
 
 
+class CustomStr(str):
+    def foobar(self):
+        return 7
+
+
 @pytest.mark.parametrize(
     'value,expected',
     [
@@ -485,6 +490,7 @@ def test_invalid_type():
         (True, 'True'),
         (False, 'False'),
         (StrEnum.a, 'a10'),
+        (CustomStr('whatever'), 'whatever'),
     ],
 )
 def test_valid_string_types(value, expected):

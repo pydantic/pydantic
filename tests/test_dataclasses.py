@@ -107,6 +107,60 @@ def test_post_init():
     assert post_init_called
 
 
+def test_post_init_post_parse():
+    post_init_post_parse_called = False
+
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: int
+
+        def __post_init_post_parse__(self):
+            nonlocal post_init_post_parse_called
+            post_init_post_parse_called = True
+
+    d = MyDataclass('1')
+    assert d.a == 1
+    assert post_init_post_parse_called
+
+
+def test_post_init_post_parse_types():
+    @pydantic.dataclasses.dataclass
+    class CustomType(object):
+        b: int
+
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: CustomType
+
+        def __post_init__(self):
+            assert type(self.a) == dict
+
+        def __post_init_post_parse__(self):
+            assert type(self.a) == CustomType
+
+    d = MyDataclass(**{'a': {'b': 1}})
+    assert d.a.b == 1
+
+
+def test_post_init_assignment():
+    from dataclasses import field
+
+    # Based on: https://docs.python.org/3/library/dataclasses.html#post-init-processing
+    @pydantic.dataclasses.dataclass
+    class C:
+        a: float
+        b: float
+        c: float = field(init=False)
+
+        def __post_init__(self):
+            self.c = self.a + self.b
+
+    c = C(0.1, 0.2)
+    assert c.a == 0.1
+    assert c.b == 0.2
+    assert c.c == 0.30000000000000004
+
+
 def test_inheritance():
     @pydantic.dataclasses.dataclass
     class A:

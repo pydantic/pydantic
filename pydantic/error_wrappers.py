@@ -1,6 +1,6 @@
 import json
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 
 if TYPE_CHECKING:  # pragma: no cover
     from pydantic import BaseConfig  # noqa: F401
@@ -9,13 +9,14 @@ __all__ = ('ErrorWrapper', 'ValidationError')
 
 
 class ErrorWrapper:
-    __slots__ = 'exc', 'loc', 'msg_template'
+    __slots__ = 'exc', 'type_', 'loc', 'msg_template'
 
     def __init__(
         self, exc: Exception, *, loc: Union[Tuple[str, ...], str], config: Optional[Type['BaseConfig']] = None
     ) -> None:
         self.exc = exc
-        self.loc: Tuple[str, ...] = cast(Tuple[str, ...], loc if isinstance(loc, tuple) else (loc,))
+        self.type_ = get_exc_type(type(exc))
+        self.loc: Tuple[str, ...] = loc if isinstance(loc, tuple) else (loc,)  # type: ignore
         self.msg_template = config.error_msg_templates.get(self.type_) if config else None
 
     @property
@@ -30,10 +31,6 @@ class ErrorWrapper:
             return msg_template.format(**self.ctx or {})
 
         return str(self.exc)
-
-    @property
-    def type_(self) -> str:
-        return get_exc_type(self.exc)
 
     def dict(self, *, loc_prefix: Optional[Tuple[str, ...]] = None) -> Dict[str, Any]:
         loc = self.loc if loc_prefix is None else loc_prefix + self.loc
@@ -107,8 +104,7 @@ def flatten_errors(
 
 
 @lru_cache()
-def get_exc_type(exc: Exception) -> str:
-    cls = type(exc)
+def get_exc_type(cls: Type[Exception]) -> str:
 
     base_name = 'type_error' if issubclass(cls, TypeError) else 'value_error'
     if cls in (TypeError, ValueError):

@@ -18,8 +18,6 @@ from uuid import UUID
 from . import errors
 from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
-    anystr_length_validator,
-    anystr_strip_whitespace,
     bytes_validator,
     decimal_validator,
     float_validator,
@@ -87,10 +85,10 @@ OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, int]]]
 
-
 if TYPE_CHECKING:  # pragma: no cover
+    from .fields import Field
     from .dataclasses import DataclassType  # noqa: F401
-    from .main import BaseModel  # noqa: F401
+    from .main import BaseModel, BaseConfig  # noqa: F401
     from .utils import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
@@ -118,8 +116,8 @@ class ConstrainedBytes(bytes):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield bytes_validator
-        yield anystr_strip_whitespace
-        yield anystr_length_validator
+        yield constr_strip_whitespace
+        yield constr_length_validator
 
 
 def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_length: int = None) -> Type[bytes]:
@@ -139,8 +137,8 @@ class ConstrainedStr(str):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield str_validator
-        yield anystr_strip_whitespace
-        yield anystr_length_validator
+        yield constr_strip_whitespace
+        yield constr_length_validator
         yield cls.validate
 
     @classmethod
@@ -201,8 +199,8 @@ class UrlStr(str):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield str_validator
-        yield anystr_strip_whitespace
-        yield anystr_length_validator
+        yield constr_strip_whitespace
+        yield constr_length_validator
         yield cls.validate
 
     @classmethod
@@ -517,7 +515,7 @@ class Json(metaclass=JsonMeta):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: str) -> Any:
+    def validate(cls, v: Any) -> Any:
         try:
             return json.loads(v)
         except ValueError:
@@ -593,7 +591,7 @@ class SecretStr:
         return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
 
     def __str__(self) -> str:
-        return repr(self)
+        return self.__repr__()
 
     def display(self) -> str:
         return '**********' if self._secret_value else ''
@@ -619,10 +617,32 @@ class SecretBytes:
         return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
 
     def __str__(self) -> str:
-        return repr(self)
+        return self.__repr__()
 
     def display(self) -> str:
         return '**********' if self._secret_value else ''
 
     def get_secret_value(self) -> bytes:
         return self._secret_value
+
+
+def constr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+    v_len = len(v)
+
+    min_length = field.type_.min_length or config.min_anystr_length  # type: ignore
+    if min_length is not None and v_len < min_length:
+        raise errors.AnyStrMinLengthError(limit_value=min_length)
+
+    max_length = field.type_.max_length or config.max_anystr_length  # type: ignore
+    if max_length is not None and v_len > max_length:
+        raise errors.AnyStrMaxLengthError(limit_value=max_length)
+
+    return v
+
+
+def constr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+    strip_whitespace = field.type_.strip_whitespace or config.anystr_strip_whitespace  # type: ignore
+    if strip_whitespace:
+        v = v.strip()
+
+    return v

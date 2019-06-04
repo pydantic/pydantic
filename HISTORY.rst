@@ -3,9 +3,22 @@
 History
 -------
 
-v0.xx (xxxx-xx-xx)
+v0.28 (unreleased)
 ..................
+* support ``__post_init_post_parse__`` on dataclasses, #567 by @sevaho
+
+v0.27 (2019-05-30)
+..................
+* **breaking change**  ``_pydantic_post_init`` to execute dataclass' original ``__post_init__`` before
+  validation, #560 by @HeavenVolkoff
+* fix handling of generic types without specified parameters, #550 by @dmontagu
+* **breaking change** (maybe): this is the first release compiled with **cython**, see the docs and please
+  submit an issue if you run into problems
+
+v0.27.0a1 (2019-05-26)
+......................
 * fix JSON Schema for ``list``, ``tuple``, and ``set``, #540 by @tiangolo
+* compiling with cython, ``manylinux`` binaries, some other performance improvements, #548 by @samuelcolvin
 
 v0.26 (2019-05-22)
 ..................

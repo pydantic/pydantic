@@ -5,7 +5,21 @@ from decimal import Decimal, DecimalException
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Pattern,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 from uuid import UUID
 
 from . import errors
@@ -36,14 +50,19 @@ def is_none_validator(v: Any) -> None:
         raise errors.NoneIsAllowedError()
 
 
-def str_validator(v: Any) -> str:
-    if isinstance(v, (str, NoneType)):  # type: ignore
-        return v
-    elif isinstance(v, (bytes, bytearray)):
-        return v.decode()
+def str_validator(v: Any) -> Optional[str]:
+    if isinstance(v, str):
+        if isinstance(v, Enum):
+            return v.value
+        else:
+            return v
+    elif v is None:
+        return None
     elif isinstance(v, (float, int, Decimal)):
         # is there anything else we want to add here? If you think so, create an issue.
         return str(v)
+    elif isinstance(v, (bytes, bytearray)):
+        return v.decode()
     else:
         raise errors.StrError()
 
@@ -75,7 +94,7 @@ def bool_validator(v: Any) -> bool:
 
 
 def int_validator(v: Any) -> int:
-    if not isinstance(v, bool) and isinstance(v, int):
+    if isinstance(v, int) and not isinstance(v, bool):
         return v
 
     with change_exception(errors.IntegerError, TypeError, ValueError):
@@ -91,7 +110,7 @@ def float_validator(v: Any) -> float:
 
 
 def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
-    field_type = cast('ConstrainedNumber', field.type_)
+    field_type: ConstrainedNumber = field.type_  # type: ignore
     if field_type.multiple_of is not None and v % field_type.multiple_of != 0:  # type: ignore
         raise errors.NumberNotMultipleError(multiple_of=field_type.multiple_of)
 
@@ -99,7 +118,7 @@ def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
 
 
 def number_size_validator(v: 'Number', field: 'Field') -> 'Number':
-    field_type = cast('ConstrainedNumber', field.type_)
+    field_type: ConstrainedNumber = field.type_  # type: ignore
     if field_type.gt is not None and not v > field_type.gt:
         raise errors.NumberNotGtError(limit_value=field_type.gt)
     elif field_type.ge is not None and not v >= field_type.ge:
@@ -129,11 +148,11 @@ def constant_validator(v: 'Any', field: 'Field') -> 'Any':
 def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 
-    min_length = getattr(field.type_, 'min_length', config.min_anystr_length)
+    min_length = config.min_anystr_length
     if min_length is not None and v_len < min_length:
         raise errors.AnyStrMinLengthError(limit_value=min_length)
 
-    max_length = getattr(field.type_, 'max_length', config.max_anystr_length)
+    max_length = config.max_anystr_length
     if max_length is not None and v_len > max_length:
         raise errors.AnyStrMaxLengthError(limit_value=max_length)
 
@@ -141,11 +160,7 @@ def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig')
 
 
 def anystr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
-    strip_whitespace = getattr(field.type_, 'strip_whitespace', config.anystr_strip_whitespace)
-    if strip_whitespace:
-        v = v.strip()
-
-    return v
+    return v.strip()
 
 
 def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
@@ -336,14 +351,39 @@ def pattern_validator(v: Any) -> Pattern[str]:
         return re.compile(v)
 
 
+class IfConfig:
+    def __init__(self, validator: AnyCallable, *config_attr_names: str) -> None:
+        self.validator = validator
+        self.config_attr_names = config_attr_names
+
+    def check(self, config: Type['BaseConfig']) -> bool:
+        return any(getattr(config, name) not in {None, False} for name in self.config_attr_names)
+
+
 pattern_validators = [not_none_validator, str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
-_VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
+_VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (IntEnum, [int_validator, enum_validator]),
     (Enum, [enum_validator]),
-    (str, [not_none_validator, str_validator, anystr_strip_whitespace, anystr_length_validator]),
-    (bytes, [not_none_validator, bytes_validator, anystr_strip_whitespace, anystr_length_validator]),
+    (
+        str,
+        [
+            not_none_validator,
+            str_validator,
+            IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
+        ],
+    ),
+    (
+        bytes,
+        [
+            not_none_validator,
+            bytes_validator,
+            IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
+        ],
+    ),
     (bool, [bool_validator]),
     (int, [int_validator]),
     (float, [float_validator]),
@@ -369,13 +409,18 @@ _VALIDATORS: List[Tuple[AnyType, List[AnyCallable]]] = [
 ]
 
 
-def find_validators(type_: AnyType, arbitrary_types_allowed: bool = False) -> List[AnyCallable]:
-    if type_ is Any or type(type_) == ForwardRef:
-        return []
+def find_validators(type_: AnyType, config: Type['BaseConfig']) -> Generator[AnyCallable, None, None]:
+    if type_ is Any:
+        return
+    type_type = type(type_)
+    if type_type == ForwardRef or type_type == TypeVar:
+        return
     if type_ is Pattern:
-        return pattern_validators
+        yield from pattern_validators
+        return
     if is_callable_type(type_):
-        return [callable_validator]
+        yield callable_validator
+        return
 
     supertype = _find_supertype(type_)
     if supertype is not None:
@@ -384,12 +429,18 @@ def find_validators(type_: AnyType, arbitrary_types_allowed: bool = False) -> Li
     for val_type, validators in _VALIDATORS:
         try:
             if issubclass(type_, val_type):
-                return validators
+                for v in validators:
+                    if isinstance(v, IfConfig):
+                        if v.check(config):
+                            yield v.validator
+                    else:
+                        yield v
+                return
         except TypeError as e:
             raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
 
-    if arbitrary_types_allowed:
-        return [make_arbitrary_type_validator(type_)]
+    if config.arbitrary_types_allowed:
+        yield make_arbitrary_type_validator(type_)
     else:
         raise RuntimeError(f'no validator found for {type_}')
 
