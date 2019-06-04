@@ -6,6 +6,7 @@ History
 v0.28 (unreleased)
 ..................
 * support ``__post_init_post_parse__`` on dataclasses, #567 by @sevaho
+* allow dumping dataclasses to JSON, #575 by @samuelcolvin and @DanielOberg
 
 v0.27 (2019-05-30)
 ..................
