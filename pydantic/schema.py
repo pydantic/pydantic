@@ -227,7 +227,7 @@ def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Op
     if model_name in m_definitions:
         # m_definitions[model_name] is None, it has circular references
         m_definitions[model_name] = m_schema
-        m_schema = {'$ref': f'{ref_prefix}{model_name}'}
+        m_schema = {'$ref': ref_prefix + model_name}
     if m_definitions:
         m_schema.update({'definitions': m_definitions})
     return m_schema
