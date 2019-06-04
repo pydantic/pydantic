@@ -11,8 +11,8 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, create_model
-from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.color import Color
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
 
@@ -159,4 +159,3 @@ def test_encode_pydantic_dataclass():
 
     f = Foo(bar=123, spam='apple pie')
     assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
-
