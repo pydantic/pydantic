@@ -1,4 +1,4 @@
 docutils==0.14
-Pygments==2.3.1
+Pygments==2.4.2
 Sphinx==2.0.1
-sphinxcontrib-websupport==1.1.0
+sphinxcontrib-websupport==1.1.2
