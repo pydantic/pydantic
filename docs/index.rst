@@ -295,6 +295,31 @@ and pydantic versions).
 
 (This script is complete, it should run "as is")
 
+.. _orm_mode:
+
+ORM Mode (aka Arbitrary Class Instances)
+........................................
+
+Pydantic models can be created from arbitrary class instances to support models that map to ORM objects.
+
+To do this:
+1. The :ref:`Config <config>` property ``orm_mode`` must be set to ``True``.
+2. The special constructor ``from_orm`` must be used to create the model instance.
+
+The example here uses SQLAlchemy but the same approach should work for any ORM.
+
+.. literalinclude:: examples/orm_mode.py
+
+(This script is complete, it should run "as is")
+
+ORM instances will be parsed with ``from_orm`` recursively as well as at the top level.
+
+Here a vanilla class is used to demonstrate the principle, but any ORM could be used instead.
+
+.. literalinclude:: examples/orm_mode_recursive.py
+
+(This script is complete, it should run "as is")
+
 .. _schema:
 
 Schema Creation
@@ -642,6 +667,7 @@ Options:
     value is instance of that type). If False - RuntimeError will be raised on model declaration (default: ``False``)
 :json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
     details.
+:orm_mode: allows usage of :ref:`ORM mode <orm_mode>`
 
 .. warning::
 
