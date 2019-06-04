@@ -3,9 +3,15 @@
 History
 -------
 
+v0.28 (unreleased)
+..................
+* fix support for JSON Schema generation when using models with circular references in Python 3.7, #572 by @tiangolo
+* support ``__post_init_post_parse__`` on dataclasses, #567 by @sevaho
+* allow dumping dataclasses to JSON, #575 by @samuelcolvin and @DanielOberg
+
 v0.27 (2019-05-30)
 ..................
-* Change ``_pydantic_post_init`` to execute dataclass' original ``__post_init__`` before
+* **breaking change**  ``_pydantic_post_init`` to execute dataclass' original ``__post_init__`` before
   validation, #560 by @HeavenVolkoff
 * fix handling of generic types without specified parameters, #550 by @dmontagu
 * **breaking change** (maybe): this is the first release compiled with **cython**, see the docs and please

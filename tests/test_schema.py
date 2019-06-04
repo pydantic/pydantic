@@ -917,18 +917,16 @@ def test_schema_overrides():
         'title': 'Model',
         'type': 'object',
         'definitions': {
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            },
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
-                'properties': {
-                    'b': {
-                        'title': 'Foo',
-                        'type': 'object',
-                        'properties': {'a': {'title': 'A', 'type': 'string'}},
-                        'required': ['a'],
-                        'default': {'a': 'foo'},
-                    }
-                },
+                'properties': {'b': {'title': 'B', 'default': {'a': 'foo'}, 'allOf': [{'$ref': '#/definitions/Foo'}]}},
             },
             'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
         },
