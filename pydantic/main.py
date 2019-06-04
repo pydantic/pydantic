@@ -65,7 +65,10 @@ try:
 except ImportError:
     compiled: bool = False
 else:  # pragma: no cover
-    compiled = cython.compiled
+    try:
+        compiled = cython.compiled
+    except AttributeError:
+        compiled = False
 
 
 class Extra(str, Enum):
