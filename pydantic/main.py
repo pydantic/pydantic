@@ -65,7 +65,10 @@ try:
 except ImportError:
     compiled: bool = False
 else:  # pragma: no cover
-    compiled = getattr(cython, "compiled", False)
+    try:
+        compiled = cython.compiled
+    except AttributeError:
+        compiled = False
 
 
 class Extra(str, Enum):
