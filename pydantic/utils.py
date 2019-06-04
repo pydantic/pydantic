@@ -314,22 +314,16 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
 
 class GetterDict:
     """
-    Hacky McHack face.
-
-    Smells like a dict, get's things from an object via getattr.
+    Hack to make object's smell just enough like like dicts for validate_model.
     """
+
+    __slots__ = ('_obj',)
 
     def __init__(self, obj: Any):
         self._obj = obj
 
     def get(self, item: Any, default: Any) -> Any:
         return getattr(self._obj, item, default)
-
-    def __getitem__(self, item: Any) -> Any:
-        try:
-            return getattr(self._obj, item)
-        except AttributeError as e:
-            raise KeyError(item) from e
 
     def keys(self) -> Set[Any]:
         """

@@ -8,6 +8,7 @@ import pytest
 from pydantic import (
     BaseConfig,
     BaseModel,
+    ConfigError,
     Extra,
     NoneStrBytes,
     StrBytes,
@@ -911,12 +912,21 @@ def test_orm_mode():
 
     bones = PetCls(name='Bones', species='dog')
     orion = PetCls(name='Orion', species='cat')
-    alice = PersonCls(name='Alice', age=20, pets=[bones, orion])
+    anna = PersonCls(name='Anna', age=20, pets=[bones, orion])
 
-    alice_model = Person.from_orm(alice)
+    anna_model = Person.from_orm(anna)
 
-    assert alice_model.dict() == {
-        'name': 'Alice',
+    assert anna_model.dict() == {
+        'name': 'Anna',
         'pets': [{'name': 'Bones', 'species': 'dog'}, {'name': 'Orion', 'species': 'cat'}],
         'age': 20.0,
     }
+
+
+def test_not_orm_mode():
+    class Pet(BaseModel):
+        name: str
+        species: str
+
+    with pytest.raises(ConfigError):
+        Pet.from_orm(None)

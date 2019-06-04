@@ -363,7 +363,8 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
-        assert cls.__config__.orm_mode
+        if not cls.__config__.orm_mode:
+            raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
         obj = cls._decompose_class(obj)
         m = cls.__new__(cls)
         values, fields_set, _ = validate_model(m, obj)
