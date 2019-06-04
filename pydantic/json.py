@@ -1,4 +1,5 @@
 import datetime
+from dataclasses import asdict, is_dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -49,6 +50,8 @@ def pydantic_encoder(obj: Any) -> Any:
         return obj.value
     elif isinstance(obj, Path):
         return str(obj)
+    elif is_dataclass(obj):
+        return asdict(obj)
 
     try:
         encoder = ENCODERS_BY_TYPE[type(obj)]

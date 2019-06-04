@@ -1,6 +1,7 @@
 import datetime
 import json
 import sys
+from dataclasses import dataclass as vanilla_dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -10,6 +11,7 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, create_model
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.color import Color
 from pydantic.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
@@ -137,3 +139,24 @@ def test_custom_encoder_arg():
     m = Model(x=123)
     assert m.json() == '{"x": 123.0}'
     assert m.json(encoder=lambda v: '__default__') == '{"x": "__default__"}'
+
+
+def test_encode_dataclass():
+    @vanilla_dataclass
+    class Foo:
+        bar: int
+        spam: str
+
+    f = Foo(bar=123, spam='apple pie')
+    assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
+
+
+def test_encode_pydantic_dataclass():
+    @pydantic_dataclass
+    class Foo:
+        bar: int
+        spam: str
+
+    f = Foo(bar=123, spam='apple pie')
+    assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
+
