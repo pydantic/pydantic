@@ -755,7 +755,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             definitions[model_name] = sub_schema
         else:
             definitions[model_name] = None
-        schema_ref = {'$ref': f'{ref_prefix}{model_name}'}
+        schema_ref = {'$ref': ref_prefix + model_name}
         if not schema_overrides:
             return schema_ref, definitions
         else:
