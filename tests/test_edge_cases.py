@@ -8,7 +8,6 @@ import pytest
 from pydantic import (
     BaseConfig,
     BaseModel,
-    ConfigError,
     Extra,
     NoneStrBytes,
     StrBytes,
@@ -881,52 +880,3 @@ def test_submodel_different_type():
     assert Spam(c=Foo(a='123')).dict() == {'c': {'a': 123}}
     with pytest.raises(ValidationError):
         Spam(c=Bar(b='123'))
-
-
-def test_orm_mode():
-    class PetCls:
-        def __init__(self, *, name: str, species: str):
-            self.name = name
-            self.species = species
-
-    class PersonCls:
-        def __init__(self, *, name: str, age: float = None, pets: List[PetCls]):
-            self.name = name
-            self.age = age
-            self.pets = pets
-
-    class Pet(BaseModel):
-        name: str
-        species: str
-
-        class Config:
-            orm_mode = True
-
-    class Person(BaseModel):
-        name: str
-        age: float = None
-        pets: List[Pet]
-
-        class Config:
-            orm_mode = True
-
-    bones = PetCls(name='Bones', species='dog')
-    orion = PetCls(name='Orion', species='cat')
-    anna = PersonCls(name='Anna', age=20, pets=[bones, orion])
-
-    anna_model = Person.from_orm(anna)
-
-    assert anna_model.dict() == {
-        'name': 'Anna',
-        'pets': [{'name': 'Bones', 'species': 'dog'}, {'name': 'Orion', 'species': 'cat'}],
-        'age': 20.0,
-    }
-
-
-def test_not_orm_mode():
-    class Pet(BaseModel):
-        name: str
-        species: str
-
-    with pytest.raises(ConfigError):
-        Pet.from_orm(None)

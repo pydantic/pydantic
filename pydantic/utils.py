@@ -314,7 +314,7 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
 
 class GetterDict:
     """
-    Hack to make object's smell just enough like like dicts for validate_model.
+    Hack to make object's smell just enough like dicts for validate_model.
     """
 
     __slots__ = ('_obj',)

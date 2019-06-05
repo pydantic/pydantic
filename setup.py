@@ -44,7 +44,7 @@ except FileNotFoundError:
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 
 ext_modules = None
-if 'clean' not in sys.argv and 'SKIP_CYTHON' not in os.environ:
+if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not in os.environ:
     try:
         from Cython.Build import cythonize
     except ImportError:
