@@ -48,6 +48,7 @@ from pydantic.types import (
     SecretBytes,
     SecretStr,
     StrBytes,
+    StrictBool,
     StrictStr,
     UrlStr,
     conbytes,
@@ -342,6 +343,18 @@ def test_tuple(field_type, expected_schema):
 def test_bool():
     class Model(BaseModel):
         a: bool
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+        'required': ['a'],
+    }
+
+
+def test_strict_bool():
+    class Model(BaseModel):
+        a: StrictBool
 
     assert Model.schema() == {
         'title': 'Model',

@@ -31,6 +31,7 @@ from pydantic import (
     PyObject,
     SecretBytes,
     SecretStr,
+    StrictBool,
     StrictStr,
     ValidationError,
     conbytes,
@@ -827,7 +828,24 @@ def test_strict_str():
         Model(v=123)
 
     with pytest.raises(ValidationError):
-        Model(v=b'foobar')
+        Model(v=b"foobar")
+
+
+def test_strict_bool():
+    class Model(BaseModel):
+        v: StrictBool
+
+    assert Model(v=True).v is True
+    assert Model(v=False).v is False
+
+    with pytest.raises(ValidationError):
+        Model(v=1)
+
+    with pytest.raises(ValidationError):
+        Model(v="1")
+
+    with pytest.raises(ValidationError):
+        Model(v=b"1")
 
 
 def test_uuid_error():

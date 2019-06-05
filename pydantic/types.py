@@ -74,6 +74,7 @@ __all__ = [
     'IPvAnyNetwork',
     'SecretStr',
     'SecretBytes',
+    'StrictBool',
 ]
 
 NoneStr = Optional[str]
@@ -185,6 +186,26 @@ class EmailStr(str):
     @classmethod
     def validate(cls, value: str) -> str:
         return validate_email(value)[1]
+
+
+class StrictBool(int):
+    """
+    StrictBool to allow for bools which are not type-coerced.
+    """
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: str) -> bool:
+        """
+        Ensure that we only allow bools.
+        """
+        if isinstance(value, bool):
+            return value
+
+        raise errors.StrictBoolError()
 
 
 class UrlStr(str):
