@@ -340,4 +340,4 @@ class ColorError(PydanticValueError):
 
 
 class StrictBoolError(PydanticValueError):
-    msg_template = 'value is not a strict bool'
+    msg_template = 'value is not a valid boolean'
