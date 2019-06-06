@@ -5,7 +5,7 @@ from pathlib import Path
 from uuid import UUID
 
 from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
-                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, UrlStr, conbytes, condecimal,
+                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictBool, UrlStr, conbytes, condecimal,
                       confloat, conint, constr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, SecretStr, SecretBytes)
 
 
@@ -36,6 +36,8 @@ class Model(BaseModel):
 
     email_address: EmailStr = None
     email_and_name: NameEmail = None
+
+    is_really_a_bool: StrictBool = None
 
     url: UrlStr = None
 
