@@ -198,7 +198,7 @@ class StrictBool(int):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> bool:
+    def validate(cls, value: Any) -> bool:
         """
         Ensure that we only allow bools.
         """
