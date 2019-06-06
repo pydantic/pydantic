@@ -502,7 +502,8 @@ Exotic Types
 StrictBool
 ~~~~~~~~~~
 
-Unlike normal bool fields, StrictBool can be used to required specifically True or False, nothing else is permitted.
+Unlike normal ``bool`` fields, ``StrictBool`` can be used to required specifically ``True`` or ``False``,
+nothing else is permitted.
 
 
 Callable
