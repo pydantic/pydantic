@@ -37,6 +37,7 @@ from .utils import (
     AnyCallable,
     AnyType,
     ForwardRef,
+    GetterDict,
     change_exception,
     is_classvar,
     resolve_annotations,
@@ -92,6 +93,7 @@ class BaseConfig:
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
     json_encoders: Dict[AnyType, AnyCallable] = {}
+    orm_mode: bool = False
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
@@ -363,6 +365,17 @@ class BaseModel(metaclass=MetaModel):
         return cls.parse_obj(obj)
 
     @classmethod
+    def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
+        if not cls.__config__.orm_mode:
+            raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
+        obj = cls._decompose_class(obj)
+        m = cls.__new__(cls)
+        values, fields_set, _ = validate_model(m, obj)
+        object.__setattr__(m, '__values__', values)
+        object.__setattr__(m, '__fields_set__', fields_set)
+        return m
+
+    @classmethod
     def construct(cls: Type['Model'], values: 'DictAny', fields_set: 'SetStr') -> 'Model':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
@@ -430,14 +443,20 @@ class BaseModel(metaclass=MetaModel):
         yield cls.validate
 
     @classmethod
-    def validate(cls: Type['Model'], value: Union['DictStrAny', 'Model']) -> 'Model':
+    def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, dict):
             return cls(**value)
         elif isinstance(value, cls):
             return value.copy()
+        elif cls.__config__.orm_mode:
+            return cls.from_orm(value)
         else:
             with change_exception(DictError, TypeError, ValueError):
-                return cls(**dict(value))  # type: ignore
+                return cls(**dict(value))
+
+    @classmethod
+    def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
+        return GetterDict(obj)
 
     @classmethod
     def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:

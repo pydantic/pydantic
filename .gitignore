@@ -21,3 +21,4 @@ _build/
 pydantic/*.c
 pydantic/*.so
 .auto-format
+/sandbox/

@@ -8,6 +8,7 @@ v0.28 (unreleased)
 * fix support for JSON Schema generation when using models with circular references in Python 3.7, #572 by @tiangolo
 * support ``__post_init_post_parse__`` on dataclasses, #567 by @sevaho
 * allow dumping dataclasses to JSON, #575 by @samuelcolvin and @DanielOberg
+* ORM mode, #562 by @samuelcolvin
 * fix ``pydantic.compiled`` on ipython, #573 by @dmontagu and @samuelcolvin
 
 v0.27 (2019-05-30)
