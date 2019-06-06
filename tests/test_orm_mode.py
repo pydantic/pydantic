@@ -3,6 +3,37 @@ from typing import List
 import pytest
 
 from pydantic import BaseModel, ConfigError, ValidationError
+from pydantic.utils import GetterDict
+
+
+def test_getdict():
+    class TestCls:
+        a = 1
+        b: int
+
+        def __init__(self):
+            self.c = 3
+
+        @property
+        def d(self):
+            return 4
+
+        def __getattr__(self, key):
+            if key == 'e':
+                return 5
+            else:
+                raise AttributeError()
+
+    t = TestCls()
+    gd = GetterDict(t)
+    assert gd.keys() == set()
+    assert gd.get('a', None) == 1
+    assert gd.get('b', None) is None
+    assert gd.get('b', 1234) == 1234
+    assert gd.get('c', None) == 3
+    assert gd.get('d', None) == 4
+    assert gd.get('e', None) == 5
+    assert gd.get('f', 'missing') == 'missing'
 
 
 def test_orm_mode():
@@ -103,3 +134,35 @@ def test_properties():
     model = Model.from_orm(XyProperty())
     assert model.x == 4
     assert model.y == 5
+
+
+def test_extra_allow():
+    class TestCls:
+        x = 1
+        y = 2
+
+    class Model(BaseModel):
+        x: int
+
+        class Config:
+            orm_mode = True
+            extra = 'allow'
+
+    model = Model.from_orm(TestCls())
+    assert model.dict() == {'x': 1}
+
+
+def test_extra_forbid():
+    class TestCls:
+        x = 1
+        y = 2
+
+    class Model(BaseModel):
+        x: int
+
+        class Config:
+            orm_mode = True
+            extra = 'forbid'
+
+    model = Model.from_orm(TestCls())
+    assert model.dict() == {'x': 1}
