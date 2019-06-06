@@ -23,8 +23,9 @@ script:
 - make external-mypy
 
 env:
-- 'CYTHON=no'
-- 'DEPS=yes'
+  global:
+  - 'CYTHON=no'
+  - 'DEPS=yes'
 
 after_success:
 - ls -lha
