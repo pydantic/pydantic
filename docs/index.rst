@@ -498,6 +498,16 @@ Exotic Types
 
 (This script is complete, it should run "as is")
 
+
+StrictBool
+~~~~~~~~~~
+
+Unlike normal bool fields, StrictBool can be used to required specifically True or False, nothing else is permitted.
+
+
+Callable
+~~~~~~~~
+
 Fields can also be of type ``Callable``:
 
 .. literalinclude:: examples/callable.py
