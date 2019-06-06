@@ -337,3 +337,7 @@ class IPv6InterfaceError(PydanticValueError):
 
 class ColorError(PydanticValueError):
     msg_template = 'value is not a valid color: {reason}'
+
+
+class StrictBoolError(PydanticValueError):
+    msg_template = 'value is not a valid boolean'

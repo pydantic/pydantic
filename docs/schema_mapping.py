@@ -318,6 +318,13 @@ table = [
         'IPv4 or IPv6 network as used in ``ipaddress`` module',
     ],
     [
+        'StrictBool',
+        'boolean',
+        '',
+        'JSON Schema Core',
+        ''
+    ],
+    [
         'StrictStr',
         'string',
         '',
