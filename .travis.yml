@@ -33,35 +33,43 @@ jobs:
   include:
   - stage: test
     python: 3.6
-    name: 'Cython 3.6'
+    name: 'Cython: 3.6'
     script:
-      # test with cython, ujson and email-validator
-      - make build-cython-trace
-      - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
-      - make test
+    # test with cython, ujson and email-validator
+    - make build-cython-trace
+    - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+    - make test
+    env:
+    - 'CYTHON=3.6'
   - stage: test
     python: 3.7
-    name: 'Cython 3.7'
+    name: 'Cython: 3.7'
     script:
-      # test with cython, ujson and email-validator
-      - make build-cython-trace
-      - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
-      - make test
+    # test with cython, ujson and email-validator
+    - make build-cython-trace
+    - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+    - make test
+    env:
+    - 'CYTHON=3.7'
 
   - stage: test
     python: 3.6
     name: 'Without Deps 3.6'
     script:
-      # test without cython, ujson and email-validator
-      - pip uninstall -y ujson email-validator
-      - make test
+    # test without cython, ujson and email-validator
+    - pip uninstall -y ujson email-validator
+    - make test
+    env:
+    - 'DEPS=without'
   - stage: test
     python: 3.7
     name: 'Without Deps 3.7'
     script:
-      # test without cython, ujson and email-validator
-      - pip uninstall -y ujson email-validator cython
-      - make test
+    # test without cython, ujson and email-validator
+    - pip uninstall -y ujson email-validator cython
+    - make test
+    env:
+    - 'DEPS=without'
 
   - stage: test
     python: 3.7
@@ -85,6 +93,7 @@ jobs:
     - cibuildwheel --output-dir dist
     - SKIP_CYTHON=1 python setup.py sdist bdist_wheel
     - ls -lha dist
+    after_success: skip
     env:
     - 'PIP=pip'
     - 'CIBW_BUILD="cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686"'
@@ -104,6 +113,7 @@ jobs:
     if: type = push AND (branch = master OR tag IS present)
     python: 3.7
     script: make docs
+    after_success: skip
     env:
     - secure: "vpTd8bkwPBP0CV3EJBAwSMNMnNK3m/71dvTvBd1T4YGuefyJvYhtA7wauA5xRL9jpK2mu5QR5eo0owTUJhKi4DjpafMMd1bc4PnXlrdZFzkn3VsGmlKt74D/aJgiuiNyhd/Qvq4OxMHrMhf4f6lKWoMM1vh6yT0yp3+51SexSh2Me0Q+npxbjXwoxX5XUHRcoSLtFk4GbYI88a2I+08XWI6v+Awo/giQ5QurUJhjAklbosrrQVr1FCOkU0em5jeyZvEbZSLmaMtbX1JlRdKoJm6WMU+y9I7zj35w6ue/vgfcLz7b/HDZrBx7/L9g1LxRo80briueX/IbHvN7DOVFKvaXVmnEa6lIDdCeOLOyESpIbmjqmDKi8JeexdPNxKq4Tvo2VEA9dL2w2aw+aALNtU2OF5iEMfPTUQyosu/CNu2PKtiuZkSOdvpYbSy1WUNHJRvomdR4Olzg8ZIScNsxU3IIPdrlG/LUA8auXcE9juFeZfD6D2hQZATqWeEe/C2J7amNSD+mLLaTf6nMQw8oNtKYOvYK17M7xyvi7HXDy711Bi18U3x6Ye0xGx8CDbFwl0ICNzIk9rrSAh9hEHTvfdUUkk35pxifvO0Hrh4SArCA20ozcH/hHWBhyqGdxoIQ6KoDgNbIFIGQ6/vugxL/pt8z1sJwPfJnq8tRDAyWZvE="
     deploy:
