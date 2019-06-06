@@ -22,9 +22,13 @@ script:
 - make mypy
 - make external-mypy
 
+env:
+- 'CYTHON=no'
+- 'DEPS=yes'
+
 after_success:
 - ls -lha
-- bash <(curl -s https://codecov.io/bash)
+- bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS
 
 jobs:
   allow_failures:
@@ -40,7 +44,7 @@ jobs:
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
     - make test
     env:
-    - 'CYTHON=3.6'
+    - 'CYTHON=yes'
   - stage: test
     python: 3.7
     name: 'Cython: 3.7'
@@ -50,7 +54,7 @@ jobs:
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
     - make test
     env:
-    - 'CYTHON=3.7'
+    - 'CYTHON=yes'
 
   - stage: test
     python: 3.6
@@ -60,7 +64,7 @@ jobs:
     - pip uninstall -y ujson email-validator
     - make test
     env:
-    - 'DEPS=without'
+    - 'DEPS=no'
   - stage: test
     python: 3.7
     name: 'Without Deps 3.7'
@@ -69,7 +73,7 @@ jobs:
     - pip uninstall -y ujson email-validator cython
     - make test
     env:
-    - 'DEPS=without'
+    - 'DEPS=no'
 
   - stage: test
     python: 3.7
