@@ -644,7 +644,7 @@ field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (str, {'type': 'string'}),
     (SecretBytes, {'type': 'string', 'writeOnly': True}),
     (bytes, {'type': 'string', 'format': 'binary'}),
-    (StrictBool, {"type": "boolean"}),
+    (StrictBool, {'type': 'boolean'}),
     (bool, {'type': 'boolean'}),
     (int, {'type': 'integer'}),
     (float, {'type': 'number'}),
