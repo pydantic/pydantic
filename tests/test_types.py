@@ -38,6 +38,7 @@ from pydantic import (
     condecimal,
     confloat,
     conint,
+    conlist,
     constr,
     create_model,
 )
@@ -76,6 +77,100 @@ def test_constrained_bytes_too_long():
             'type': 'value_error.any_str.max_length',
             'ctx': {'limit_value': 10},
         }
+    ]
+
+
+def test_constrained_list_good():
+    class ConListModelMax(BaseModel):
+        v: conlist(int) = []
+
+    m = ConListModelMax(v=[1, 2, 3])
+    assert m.v == [1, 2, 3]
+
+
+def test_constrained_list_default():
+    class ConListModelMax(BaseModel):
+        v: conlist(int) = []
+
+    m = ConListModelMax()
+    assert m.v == []
+
+
+def test_constrained_list_too_long():
+    class ConListModelMax(BaseModel):
+        v: conlist(int, max_items=10) = []
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelMax(v=list(str(i) for i in range(11)))
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'ensure this value has at most 10 items',
+            'type': 'value_error.list.max_items',
+            'ctx': {'limit_value': 10},
+        }
+    ]
+
+
+def test_constrained_list_too_short():
+    class ConListModelMin(BaseModel):
+        v: conlist(int, min_items=1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelMin(v=[])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
+        }
+    ]
+
+
+def test_constrained_list_constraints():
+    class ConListModelBoth(BaseModel):
+        v: conlist(int, min_items=7, max_items=11)
+
+    m = ConListModelBoth(v=list(range(7)))
+    assert m.v == list(range(7))
+
+    m = ConListModelBoth(v=list(range(11)))
+    assert m.v == list(range(11))
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelBoth(v=list(range(6)))
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'ensure this value has at least 7 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 7},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelBoth(v=list(range(12)))
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'ensure this value has at most 11 items',
+            'type': 'value_error.list.max_items',
+            'ctx': {'limit_value': 11},
+        }
+    ]
+
+
+def test_constrained_list_item_type_fails():
+    class ConListModel(BaseModel):
+        v: conlist(int) = []
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModel(v=['a', 'b', 'c'])
+    assert exc_info.value.errors() == [
+        {'loc': ('v', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
     ]
 
 
