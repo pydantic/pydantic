@@ -148,12 +148,15 @@ def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_leng
 T = TypeVar('T')
 
 
-class ConstrainedList(List[T]):
-    __origin__ = list  # Needed for pydantic to detect that this is a list
+# This types superclass should be List[T], but cython chokes on that...
+class ConstrainedList(list):  # type: ignore
+    # Needed for pydantic to detect that this is a list
+    __origin__ = list
+    __args__: List[Type[T]]  # type: ignore
 
     min_items: Optional[int] = None
     max_items: Optional[int] = None
-    item_type: Type[T]
+    item_type: Type[T]  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -176,7 +179,7 @@ def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None)
     # __args__ is needed for to confirm to typing generics api
     namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
     # We use new_class to be able to deal with Generic types
-    return new_class('ConstrainedListValue', (ConstrainedList[T],), {}, lambda ns: ns.update(namespace))
+    return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
 
 
 class ConstrainedStr(str):
