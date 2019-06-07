@@ -22,6 +22,8 @@ from typing import (
 )
 from uuid import UUID
 
+from typing_extensions import Literal
+
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .utils import AnyCallable, AnyType, ForwardRef, change_exception, display_as_type, is_callable_type, sequence_like
@@ -334,6 +336,15 @@ def callable_validator(v: Any) -> AnyCallable:
     raise errors.CallableError(value=v)
 
 
+def make_literal_validator(allowed_choices: Tuple[Any, ...]) -> Callable[[Any], Any]:
+    def literal_validator(v: Any) -> Any:
+        if v not in allowed_choices:
+            raise errors.LiteralError(allowed_choices=allowed_choices)
+        return v
+
+    return literal_validator
+
+
 T = TypeVar('T')
 
 
@@ -409,8 +420,13 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
 ]
 
 
-def find_validators(type_: AnyType, config: Type['BaseConfig']) -> Generator[AnyCallable, None, None]:
+def find_validators(  # noqa: C901 (ignore complexity)
+    type_: AnyType, config: Type['BaseConfig']
+) -> Generator[AnyCallable, None, None]:
     if type_ is Any:
+        return
+    if getattr(type_, '__origin__', None) is Literal:
+        yield make_literal_validator(type_.__args__)
         return
     type_type = type(type_)
     if type_type == ForwardRef or type_type == TypeVar:

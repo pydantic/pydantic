@@ -19,6 +19,8 @@ from typing import (
     cast,
 )
 
+from typing_extensions import Literal
+
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
@@ -186,6 +188,8 @@ class Field:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
         if origin is Callable:
+            return
+        if origin is Literal:
             return
         if origin is Union:
             types_ = []

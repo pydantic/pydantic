@@ -10,6 +10,7 @@ from typing import Dict, Iterator, List, NewType, Pattern, Sequence, Set, Tuple
 from uuid import UUID
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import (
     DSN,
@@ -1660,4 +1661,39 @@ def test_generic_without_params_error():
     assert exc_info.value.errors() == [
         {'loc': ('generic_list',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
         {'loc': ('generic_dict',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'},
+    ]
+
+
+def test_literal_single():
+    class Model(BaseModel):
+        a: Literal['a']
+
+    Model(a='a')
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='b')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'value was not in allowed choices: (\'a\',)',
+            'type': 'value_error.literal',
+            'ctx': {'allowed_choices': ('a',)},
+        }
+    ]
+
+
+def test_literal_multiple():
+    class Model(BaseModel):
+        a_or_b: Literal['a', 'b']
+
+    Model(a_or_b='a')
+    Model(a_or_b='b')
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a_or_b='c')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a_or_b',),
+            'msg': 'value was not in allowed choices: (\'a\', \'b\')',
+            'type': 'value_error.literal',
+            'ctx': {'allowed_choices': ('a', 'b')},
+        }
     ]
