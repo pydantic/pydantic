@@ -25,6 +25,11 @@ from typing import (  # type: ignore
 import pydantic
 
 try:
+    from typing_extensions import Literal
+except ImportError:
+    Literal = object()  # type: ignore
+
+try:
     import email_validator
 except ImportError:
     email_validator = None
@@ -283,6 +288,10 @@ def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Option
 
 def is_callable_type(type_: AnyType) -> bool:
     return type_ is Callable or getattr(type_, '__origin__', None) is Callable
+
+
+def is_literal_type(type_: AnyType) -> bool:
+    return getattr(type_, '__origin__', None) is Literal
 
 
 def _check_classvar(v: AnyType) -> bool:

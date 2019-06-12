@@ -101,6 +101,7 @@ setup(
     extras_require={
         'ujson': ['ujson>=1.35'],
         'email': ['email-validator>=1.0.3'],
+        'typing_extensions': ['typing_extensions']
     },
     ext_modules=ext_modules,
 )

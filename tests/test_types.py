@@ -1674,9 +1674,9 @@ def test_literal_single():
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
-            'msg': 'value was not in allowed choices: (\'a\',)',
-            'type': 'value_error.literal',
-            'ctx': {'allowed_choices': ('a',)},
+            'msg': 'unexpected constant value; permitted values: [\'a\']',
+            'type': 'value_error.const',
+            'ctx': {'allowed': ['a']},
         }
     ]
 
@@ -1692,8 +1692,8 @@ def test_literal_multiple():
     assert exc_info.value.errors() == [
         {
             'loc': ('a_or_b',),
-            'msg': 'value was not in allowed choices: (\'a\', \'b\')',
-            'type': 'value_error.literal',
-            'ctx': {'allowed_choices': ('a', 'b')},
+            'msg': 'unexpected constant value; permitted values: [\'a\', \'b\']',
+            'type': 'value_error.const',
+            'ctx': {'allowed': ['a', 'b']},
         }
     ]

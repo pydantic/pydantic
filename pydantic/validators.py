@@ -22,11 +22,18 @@ from typing import (
 )
 from uuid import UUID
 
-from typing_extensions import Literal
-
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import AnyCallable, AnyType, ForwardRef, change_exception, display_as_type, is_callable_type, sequence_like
+from .utils import (
+    AnyCallable,
+    AnyType,
+    ForwardRef,
+    change_exception,
+    display_as_type,
+    is_callable_type,
+    is_literal_type,
+    sequence_like,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -142,7 +149,7 @@ def constant_validator(v: 'Any', field: 'Field') -> 'Any':
     Schema.
     """
     if v != field.default:
-        raise errors.WrongConstantError(given=v, const=field.default)
+        raise errors.WrongConstantError(given=v, allowed=[field.default])
 
     return v
 
@@ -339,7 +346,7 @@ def callable_validator(v: Any) -> AnyCallable:
 def make_literal_validator(allowed_choices: Tuple[Any, ...]) -> Callable[[Any], Any]:
     def literal_validator(v: Any) -> Any:
         if v not in allowed_choices:
-            raise errors.LiteralError(allowed_choices=allowed_choices)
+            raise errors.WrongConstantError(allowed=list(allowed_choices))
         return v
 
     return literal_validator
@@ -425,9 +432,6 @@ def find_validators(  # noqa: C901 (ignore complexity)
 ) -> Generator[AnyCallable, None, None]:
     if type_ is Any:
         return
-    if getattr(type_, '__origin__', None) is Literal:
-        yield make_literal_validator(type_.__args__)
-        return
     type_type = type(type_)
     if type_type == ForwardRef or type_type == TypeVar:
         return
@@ -436,6 +440,9 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if is_callable_type(type_):
         yield callable_validator
+        return
+    if is_literal_type(type_):
+        yield make_literal_validator(type_.__args__)
         return
 
     supertype = _find_supertype(type_)

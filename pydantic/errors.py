@@ -49,7 +49,7 @@ class NoneIsAllowedError(PydanticTypeError):
 
 class WrongConstantError(PydanticValueError):
     code = 'const'
-    msg_template = 'expected constant value {const!r}'
+    msg_template = 'unexpected constant value; permitted values: {allowed!r}'
 
 
 class BytesError(PydanticTypeError):
@@ -357,7 +357,3 @@ class ColorError(PydanticValueError):
 
 class StrictBoolError(PydanticValueError):
     msg_template = 'value is not a valid boolean'
-
-
-class LiteralError(PydanticValueError):
-    msg_template = 'value was not in allowed choices: {allowed_choices!r}'
