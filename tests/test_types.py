@@ -10,7 +10,6 @@ from typing import Dict, Iterator, List, NewType, Pattern, Sequence, Set, Tuple
 from uuid import UUID
 
 import pytest
-from typing_extensions import Literal
 
 from pydantic import (
     DSN,
