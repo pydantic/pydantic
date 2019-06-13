@@ -79,9 +79,8 @@ def _process_class(
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore
 
     fields: Dict[str, Any] = {
-        name: (field.type, field.default if field.default != dataclasses.MISSING else Required)
-        for name, field in cls.__dataclass_fields__.items()
-        if field.type is not dataclasses.InitVar
+        field.name: (field.type, field.default if field.default != dataclasses.MISSING else Required)
+        for field in dataclasses.fields(cls)
     }
     cls.__post_init_original__ = post_init_original
     cls.__post_init_post_parse__ = post_init_post_parse

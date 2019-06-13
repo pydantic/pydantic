@@ -1,5 +1,6 @@
 import dataclasses
 from datetime import datetime
+from typing import ClassVar
 
 import pytest
 
@@ -411,3 +412,13 @@ def test_derived_field_from_initvar():
     assert derived.plusone == 2
     with pytest.raises(TypeError):
         DerivedWithInitVar("Not A Number")
+
+
+def test_classvar():
+    @pydantic.dataclasses.dataclass
+    class TestClassVar:
+        klassvar: ClassVar = "I'm a Class variable"
+        x: int
+
+    tcv = TestClassVar(2)
+    assert tcv.klassvar == "I'm a Class variable"

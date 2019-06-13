@@ -3,7 +3,7 @@
 History
 -------
 v0.29 (unreleased)
-.................
+..................
 * support dataclasses.InitVar, #592 by @pfrederiks
 
 v0.28 (2019-06-06)
