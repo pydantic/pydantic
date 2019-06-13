@@ -380,3 +380,28 @@ def test_nested_schema():
             }
         },
     }
+
+
+def test_initvar():
+    from math import pi
+
+    InitVar = dataclasses.InitVar
+
+    @pydantic.dataclasses.dataclass
+    class RadiansWithInitVar:
+        rad: float = dataclasses.field(init=False)
+        deg: InitVar
+
+        def __post_init__(self, deg):
+            if deg:
+                self.rad = float(deg) / 180 * pi
+
+        @pydantic.validator("rad")
+        def validate_radians(cls, rad):
+            if rad > 2 * pi:
+                raise ValueError("radian too large")
+            return rad
+
+    assert RadiansWithInitVar(90).rad == 0.5 * pi
+    with pytest.raises(ValueError):
+        RadiansWithInitVar(9000)
