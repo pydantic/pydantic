@@ -1,5 +1,6 @@
 import dataclasses
 from datetime import datetime
+from typing import ClassVar
 
 import pytest
 
@@ -380,3 +381,44 @@ def test_nested_schema():
             }
         },
     }
+
+
+def test_initvar():
+    InitVar = dataclasses.InitVar
+
+    @pydantic.dataclasses.dataclass
+    class TestInitVar:
+        x: int
+        y: InitVar
+
+    tiv = TestInitVar(1, 2)
+    assert tiv.x == 1
+    with pytest.raises(AttributeError):
+        tiv.y
+
+
+def test_derived_field_from_initvar():
+    InitVar = dataclasses.InitVar
+
+    @pydantic.dataclasses.dataclass
+    class DerivedWithInitVar:
+        plusone: int = dataclasses.field(init=False)
+        number: InitVar[int]
+
+        def __post_init__(self, number):
+            self.plusone = number + 1
+
+    derived = DerivedWithInitVar(1)
+    assert derived.plusone == 2
+    with pytest.raises(TypeError):
+        DerivedWithInitVar("Not A Number")
+
+
+def test_classvar():
+    @pydantic.dataclasses.dataclass
+    class TestClassVar:
+        klassvar: ClassVar = "I'm a Class variable"
+        x: int
+
+    tcv = TestClassVar(2)
+    assert tcv.klassvar == "I'm a Class variable"
