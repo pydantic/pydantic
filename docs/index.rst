@@ -949,6 +949,24 @@ Benchmarks were run with python 3.7.2 and the following package versions:
 * **django-restful-framework** ``v3.9.4``
 
 
+Usage of ``Union`` in Annotations and Type Order
+---------------------------------
+
+The ``Union`` type allows a model attribute to accept different models (classes), e.g.:
+
+.. literalinclude:: examples/union_type_incorrect.py
+
+(This script is complete, it should run "as is")
+
+However, as can be seen above, *pydantic* will attempt to 'match' any of the models (classes) defined under ``Union`` and will use the first one that matches. In the above example the ``id`` of ``user_03`` was defined as a ``uuid.UUID`` class (which is defined under the attribute's ``Union`` annotation) but as the ``uuid.UUID`` can be marshalled into an ``int`` it chose to match against the ``int`` type and disregarded the other types.
+
+As such, it is recommended that when defining ``Union`` annotations that the most specific model (class) is defined first and followed by less specific models (classes). In the above example, the ``UUID`` class should precede the ``int`` and ``str`` classes to preclude the unexpected representation as such:
+
+.. literalinclude:: examples/union_type_correct.py
+
+(This script is complete, it should run "as is")
+
+
 Contributing to Pydantic
 ------------------------
 
