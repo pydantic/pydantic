@@ -11,7 +11,7 @@ class BaseGenericModel:
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        raise TypeError(f"Type {type(self).__name__} cannot be instantiated without providing generic parameters")
+        raise TypeError(f'Type {type(self).__name__} cannot be instantiated without providing generic parameters')
 
     @no_type_check
     def __class_getitem__(cls, params: Union[Any, Tuple[Any, ...]]) -> Type[BaseModel]:
@@ -20,11 +20,11 @@ class BaseGenericModel:
         generic_alias = super().__class_getitem__(params)
         __parameters__ = generic_alias.__origin__.__parameters__
         typevars_map = dict(zip(__parameters__, params))
-        model_name = f"{cls.__name__}[{generic_name(params)}]"
+        model_name = f'{cls.__name__}[{generic_name(params)}]'
         __module__ = cls.__module__
         __config__ = None
 
-        if hasattr(cls, "Config"):
+        if hasattr(cls, 'Config'):
             __config__ = cls.Config
         validators = gather_validators(cls)
         type_hints = get_type_hints(cls)
@@ -41,13 +41,13 @@ class BaseGenericModel:
 def generic_name(params: Tuple[Type[Any], ...]) -> str:
     param_names = []
     for param in params:
-        if hasattr(param, "__name__"):
+        if hasattr(param, '__name__'):
             param_names.append(param.__name__)
-        elif hasattr(param, "__origin__"):
+        elif hasattr(param, '__origin__'):
             param_names.append(str(param))
         else:
-            raise ValueError(f"Couldn't get name for {param}")
-    return ", ".join(param_names)
+            raise ValueError(f'Couldn\'t get name for {param}')
+    return ', '.join(param_names)
 
 
 def resolve_generic_type_hints(generic_type_hints: Dict[str, Any], typevars_map: Dict[Any, Any]) -> Dict[str, Any]:
@@ -58,7 +58,7 @@ def resolve_generic_type_hints(generic_type_hints: Dict[str, Any], typevars_map:
 
 
 def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
-    if hasattr(type_, "__origin__"):
+    if hasattr(type_, '__origin__'):
         new_args = tuple(resolve_type_hint(x, typevars_map) for x in type_.__args__)
         if type_.__origin__ is Union:
             return type_.__origin__[new_args]
