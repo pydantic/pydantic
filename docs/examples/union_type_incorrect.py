@@ -14,7 +14,7 @@ print(user_01)
 print(user_01.id)
 # > 123
 
-user_02 = User(**{'id': '1234', 'name': 'John Doe'})
+user_02 = User(id='1234', name='John Doe')
 print(user_02)
 # > User id=1234 name='John Doe'
 print(user_02.id)
