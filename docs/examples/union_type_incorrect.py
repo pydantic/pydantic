@@ -8,7 +8,7 @@ class User(BaseModel):
     name: str
 
 
-user_01 = User(**{'id': 123, 'name': 'John Doe'})
+user_01 = User(id=123, name='John Doe')
 print(user_01)
 # > User id=123 name='John Doe'
 print(user_01.id)
