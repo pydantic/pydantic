@@ -3,6 +3,10 @@
 History
 -------
 
+v0.29 (unreleased)
+..................
+* support dataclasses.InitVar, #592 by @pfrederiks
+
 v0.28 (2019-06-06)
 ..................
 * fix support for JSON Schema generation when using models with circular references in Python 3.7, #572 by @tiangolo
