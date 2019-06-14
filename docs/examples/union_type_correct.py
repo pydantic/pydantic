@@ -9,7 +9,7 @@ class User(BaseModel):
 
 
 user_03_uuid = UUID('cf57432e-809e-4353-adbd-9d5c0d733868')
-user_03 = User(**{'id': user_03_uuid, 'name': 'John Doe'})
+user_03 = User(id=user_03_uuid, name='John Doe')
 print(user_03)
 # > User id=UUID('cf57432e-809e-4353-adbd-9d5c0d733868') name='John Doe'
 print(user_03.id)

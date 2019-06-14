@@ -8,20 +8,20 @@ class User(BaseModel):
     name: str
 
 
-user_01 = User(**{'id': 123, 'name': 'John Doe'})
+user_01 = User(id=123, name='John Doe')
 print(user_01)
 # > User id=123 name='John Doe'
 print(user_01.id)
 # > 123
 
-user_02 = User(**{'id': '1234', 'name': 'John Doe'})
+user_02 = User(id='1234', name='John Doe')
 print(user_02)
 # > User id=1234 name='John Doe'
 print(user_02.id)
 # > 1234
 
 user_03_uuid = UUID('cf57432e-809e-4353-adbd-9d5c0d733868')
-user_03 = User(**{'id': user_03_uuid, 'name': 'John Doe'})
+user_03 = User(id=user_03_uuid, name='John Doe')
 print(user_03)
 # > User id=275603287559914445491632874575877060712 name='John Doe'
 print(user_03.id)
