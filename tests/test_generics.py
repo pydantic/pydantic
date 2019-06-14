@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional, TypeVar, Union
 import pytest
 
 from pydantic import BaseModel, ValidationError, validator
-from pydantic.generics import GenericModel, concrete_name
+from pydantic.generics import GenericModel, _generic_types_cache, concrete_name
 
-skip_36 = pytest.mark.skipif(not sys.version_info >= (3, 7), reason='generics only supported for python 3.7 and above')
+skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 
 
 @skip_36
@@ -52,6 +52,22 @@ def test_parameter_count():
     with pytest.raises(TypeError) as exc_info:
         Model[int]
     assert str(exc_info.value) == 'Too few parameters for Model; actual 1, expected 2'
+
+
+@skip_36
+def test_cover_cache():
+    cache_size = len(_generic_types_cache)
+    T = TypeVar('T')
+    GenericModel[T]
+    assert len(_generic_types_cache) == cache_size + 1
+
+    class Model(GenericModel[T]):  # uses the cache
+        x: T
+
+    Model[int]
+    assert len(_generic_types_cache) == cache_size + 2
+    Model[int]  # uses the cache
+    assert len(_generic_types_cache) == cache_size + 2
 
 
 @skip_36
