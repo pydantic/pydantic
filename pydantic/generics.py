@@ -10,7 +10,7 @@ class GenericModel:
 
     def __new__(cls, *args, **kwds):
         if cls is GenericModel:
-            raise TypeError(f"Type {cls.__name__} cannot be instantiated; " "it can be used only as a base class")
+            raise TypeError(f'Type {cls.__name__} cannot be instantiated; it can be used only as a base class')
         else:
             raise TypeError(f'Type {cls.__name__} cannot be instantiated without providing generic parameters')
 
@@ -24,8 +24,8 @@ class GenericModel:
             params = (params,)
         if cls is GenericModel:
             if not all(isinstance(x, TypeVar) for x in params):
-                raise TypeError(f"Each parameter to {cls.__name__} must be a TypeVar")
-            return type('ParameterizedGenericModel', (GenericModel,), {"__parameters__": params})
+                raise TypeError(f'Each parameter to {cls.__name__} must be a TypeVar')
+            return type('ParameterizedGenericModel', (GenericModel,), {'__parameters__': params})
         else:
             check_parameters_count(cls, params)
             typevars_map = dict(zip(cls.__parameters__, params))
@@ -70,7 +70,7 @@ def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...])
     actual = len(parameters)
     expected = len(cls.__parameters__)
     if actual != expected:
+        description = 'many' if actual > expected else 'few'
         raise TypeError(
-            f"Too {'many' if actual > expected else 'few'} parameters for {cls.__name__};"
-            f" actual {actual}, expected {expected}"
+            f'Too {description} parameters for {cls.__name__}; actual {actual}, expected {expected}'
         )

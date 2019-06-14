@@ -38,8 +38,8 @@ def test_generic_name_edge_case_error():
 
 @skip_36
 def test_parameter_count():
-    T = TypeVar("T")
-    S = TypeVar("S")
+    T = TypeVar('T')
+    S = TypeVar('S')
 
     class Model(GenericModel[T, S]):
         x: T
@@ -47,11 +47,11 @@ def test_parameter_count():
 
     with pytest.raises(TypeError) as exc_info:
         Model[int, int, int]
-    assert str(exc_info.value) == "Too many parameters for Model; actual 3, expected 2"
+    assert str(exc_info.value) == 'Too many parameters for Model; actual 3, expected 2'
 
     with pytest.raises(TypeError) as exc_info:
         Model[int]
-    assert str(exc_info.value) == "Too few parameters for Model; actual 1, expected 2"
+    assert str(exc_info.value) == 'Too few parameters for Model; actual 1, expected 2'
 
 
 @skip_36
@@ -91,9 +91,9 @@ def test_parameterized_generic_instantiation_error():
 
 @skip_36
 def test_deep_generic():
-    T = TypeVar("T")
-    S = TypeVar("S")
-    R = TypeVar("R")
+    T = TypeVar('T')
+    S = TypeVar('S')
+    R = TypeVar('R')
 
     class OuterModel(GenericModel[T, S, R]):
         a: Dict[R, Optional[List[T]]]
@@ -112,15 +112,15 @@ def test_deep_generic():
     inner_model = InnerModel[int, str]
     generic_model = OuterModel[inner_model, NormalModel, int]
 
-    inner_models = [inner_model(c=1, d="a")]
+    inner_models = [inner_model(c=1, d='a')]
     generic_model(a={1: inner_models, 2: None}, b=None, c=1, d=1.5)
-    generic_model(a={}, b=NormalModel(e=1, f="a"), c=1, d=1.5)
+    generic_model(a={}, b=NormalModel(e=1, f='a'), c=1, d=1.5)
     generic_model(a={}, b=1, c=1, d=1.5)
 
 
 @skip_36
 def test_enum_generic():
-    T = TypeVar("T")
+    T = TypeVar('T')
 
     class MyEnum(Enum):
         x = 1
