@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 import pytest
@@ -6,6 +7,10 @@ from pydantic import BaseModel, ValidationError, validator
 from pydantic.generics import BaseGenericModel, generic_name
 
 
+skip_not_37 = pytest.mark.skipif(not sys.version_info >= (3, 7), reason='generics only supported for python 3.7')
+
+
+@skip_not_37
 def test_generic_name():
     data_type = TypeVar("data_type")
 
@@ -15,11 +20,13 @@ def test_generic_name():
     assert Result[List[int]].__name__ == "Result[typing.List[int]]"
 
 
+@skip_not_37
 def test_generic_name_edge_case_error():
     with pytest.raises(ValueError):
         generic_name((1,))
 
 
+@skip_not_37
 def test_generic_config():
     data_type = TypeVar("data_type")
 
@@ -34,6 +41,7 @@ def test_generic_config():
         result.data = 2
 
 
+@skip_not_37
 def test_generic_instantiation_error():
     data_type = TypeVar("data_type")
 
@@ -48,6 +56,7 @@ def test_generic_instantiation_error():
     assert str(exc_info.value) == "Type Result cannot be instantiated without providing generic parameters"
 
 
+@skip_not_37
 def test_generic():
     data_type = TypeVar("data_type")
     error_type = TypeVar("error_type")
