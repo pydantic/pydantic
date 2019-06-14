@@ -950,7 +950,7 @@ Benchmarks were run with python 3.7.2 and the following package versions:
 
 
 Usage of ``Union`` in Annotations and Type Order
----------------------------------
+------------------------------------------------
 
 The ``Union`` type allows a model attribute to accept different models (classes), e.g.:
 
