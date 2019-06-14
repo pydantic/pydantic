@@ -3,6 +3,9 @@
 History
 -------
 
+* Updated documentation to elucidate the usage of ``Union`` when defining multiple types under an attribute's
+  annotation and showcase how the type-order can affect marshalling of provided values.
+
 v0.28 (2019-06-06)
 ..................
 * fix support for JSON Schema generation when using models with circular references in Python 3.7, #572 by @tiangolo
