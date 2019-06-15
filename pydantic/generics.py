@@ -3,7 +3,6 @@ from typing import Any, ClassVar, Dict, Generic, Tuple, Type, TypeVar, Union, ge
 from pydantic import BaseModel, create_model
 from pydantic.class_validators import gather_validators
 
-
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 
@@ -12,7 +11,7 @@ class GenericModel(BaseModel):
     __slots__ = ()
     __concrete: ClassVar[bool] = False
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> GenericModelT:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
         if cls.__concrete:
             return super().__new__(cls)
         if Generic in cls.__bases__:

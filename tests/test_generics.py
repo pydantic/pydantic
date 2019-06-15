@@ -7,7 +7,6 @@ import pytest
 from pydantic import BaseModel, ValidationError, validator
 from pydantic.generics import GenericModel, _generic_types_cache
 
-
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 
 
@@ -73,6 +72,7 @@ def test_config_is_inherited():
 def test_parameters_must_be_typevar():
     T = TypeVar('T')
     with pytest.raises(TypeError) as exc_info:
+
         class Result(GenericModel[T]):
             pass
 
