@@ -21,6 +21,22 @@ def test_generic_name():
 
 
 @skip_36
+def test_methods_are_inherited():
+    class CustomGenericModel(GenericModel):
+        def method(self):
+            return self.data
+
+    T = TypeVar('T')
+
+    class Model(CustomGenericModel, Generic[T]):
+        data: T
+
+    instance = Model[int](data=1)
+
+    assert instance.method() == 1
+
+
+@skip_36
 def test_config_is_inherited():
     class CustomGenericModel(GenericModel):
         class Config:

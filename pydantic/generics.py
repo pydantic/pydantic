@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, NoReturn, Tuple, Type, TypeVar, Union, get_type_hints
+from typing import Any, ClassVar, Dict, Generic, Tuple, Type, TypeVar, Union, get_type_hints
 
 from pydantic import BaseModel, create_model
 from pydantic.class_validators import gather_validators
@@ -9,8 +9,11 @@ GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 
 class GenericModel(BaseModel):
     __slots__ = ()
+    __concrete: ClassVar[bool] = False
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> NoReturn:
+    def __new__(cls, *args: Any, **kwargs: Any) -> GenericModelT:
+        if cls.__concrete:
+            return super().__new__(cls)
         if Generic in cls.__bases__:
             raise TypeError(f'Type {cls.__name__} cannot be instantiated without providing generic parameters')
         else:
@@ -30,12 +33,13 @@ class GenericModel(BaseModel):
 
         check_parameters_count(cls, params)
         typevars_map: Dict[Any, Any] = dict(zip(cls.__parameters__, params))  # type: ignore
+        type_hints = get_type_hints(cls).items()
+        instance_type_hints = {k: v for k, v in type_hints if getattr(v, "__origin__", None) is not ClassVar}
         concrete_type_hints: Dict[str, Type[Any]] = {
-            k: resolve_type_hint(v, typevars_map) for k, v in get_type_hints(cls).items()
+            k: resolve_type_hint(v, typevars_map) for k, v in instance_type_hints.items()
         }
 
         model_name = concrete_name(cls, params)
-        config = cls.Config if hasattr(cls, 'Config') else None
         validators = gather_validators(cls)
         fields: Dict[str, Tuple[Type[Any], Any]] = {
             k: (v, getattr(cls, k, ...)) for k, v in concrete_type_hints.items()
@@ -43,11 +47,13 @@ class GenericModel(BaseModel):
         created_model = create_model(
             model_name=model_name,
             __module__=cls.__module__,
-            __base__=None,
-            __config__=config,
+            __base__=cls,
+            __config__=None,
             __validators__=validators,
             **fields,
         )
+        created_model.Config = cls.Config
+        created_model.__concrete = True  # type: ignore
         _generic_types_cache[(cls, params)] = created_model
         return created_model
 
