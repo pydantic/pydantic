@@ -1,4 +1,5 @@
 import re
+import sys
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
@@ -343,7 +344,11 @@ def callable_validator(v: Any) -> AnyCallable:
     raise errors.CallableError(value=v)
 
 
-def make_literal_validator(allowed_choices: Tuple[Any, ...]) -> Callable[[Any], Any]:
+def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
+    if sys.version_info >= (3, 7):
+        allowed_choices = type_.__args__
+    else:
+        allowed_choices = type_.__values__
     allowed_choices_set = set(allowed_choices)
 
     def literal_validator(v: Any) -> Any:
@@ -444,7 +449,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield callable_validator
         return
     if is_literal_type(type_):
-        yield make_literal_validator(getattr(type_, '__args__', getattr(type_, '__values__')))
+        yield make_literal_validator(type_)
         return
 
     supertype = _find_supertype(type_)
