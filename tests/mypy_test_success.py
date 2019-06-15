@@ -4,6 +4,7 @@ Test pydantic's compliance with mypy.
 Do a little skipping about with types to demonstrate its usage.
 """
 import json
+import sys
 from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
 
@@ -84,21 +85,21 @@ class AddProject:
 
 p = AddProject(name='x', slug='y', description='z')
 
-T = TypeVar('T')
 
+if sys.version_info >= (3, 7):
+    T = TypeVar('T')
 
-class WrapperModel(GenericModel, Generic[T]):
-    payload: T
+    class WrapperModel(GenericModel, Generic[T]):
+        payload: T
 
+    int_instance = WrapperModel[int](payload=1)
+    int_instance.payload += 1
+    assert int_instance.payload == 2
 
-int_instance = WrapperModel[int](payload=1)
-int_instance.payload += 1
-assert int_instance.payload == 2
+    str_instance = WrapperModel[str](payload='a')
+    str_instance.payload += 'a'
+    assert str_instance.payload == 'aa'
 
-str_instance = WrapperModel[str](payload='a')
-str_instance.payload += 'a'
-assert str_instance.payload == 'aa'
-
-model_instance = WrapperModel[Model](payload=m)
-model_instance.payload.list_of_ints.append(4)
-assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
+    model_instance = WrapperModel[Model](payload=m)
+    model_instance.payload.list_of_ints.append(4)
+    assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
