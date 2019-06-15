@@ -7,6 +7,7 @@ import pytest
 from pydantic import BaseModel, ValidationError, validator
 from pydantic.generics import GenericModel, _generic_types_cache
 
+
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 
 
@@ -18,6 +19,19 @@ def test_generic_name():
         data: data_type
 
     assert Result[List[int]].__name__ == 'Result[typing.List[int]]'
+
+
+@skip_36
+def test_double_parameterize_error():
+    data_type = TypeVar('data_type')
+
+    class Result(GenericModel, Generic[data_type]):
+        data: data_type
+
+    with pytest.raises(TypeError) as exc_info:
+        Result[int][int]
+
+    assert str(exc_info.value) == 'Cannot parameterize a concrete instantiation of a generic model'
 
 
 @skip_36
@@ -59,7 +73,6 @@ def test_config_is_inherited():
 def test_parameters_must_be_typevar():
     T = TypeVar('T')
     with pytest.raises(TypeError) as exc_info:
-
         class Result(GenericModel[T]):
             pass
 

@@ -3,6 +3,7 @@ from typing import Any, ClassVar, Dict, Generic, Tuple, Type, TypeVar, Union, ge
 from pydantic import BaseModel, create_model
 from pydantic.class_validators import gather_validators
 
+
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 
@@ -25,7 +26,8 @@ class GenericModel(BaseModel):
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
             return cached
-
+        if cls.__concrete:
+            raise TypeError("Cannot parameterize a concrete instantiation of a generic model")
         if not isinstance(params, tuple):
             params = (params,)
         if any(isinstance(param, TypeVar) for param in params):  # type: ignore
