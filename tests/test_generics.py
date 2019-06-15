@@ -21,13 +21,22 @@ def test_generic_name():
 
 
 @skip_36
-def test_direct_subclassing_fails():
+def test_config_is_inherited():
+    class CustomGenericModel(GenericModel):
+        class Config:
+            allow_mutation = False
+
+    T = TypeVar('T')
+
+    class Model(CustomGenericModel, Generic[T]):
+        data: T
+
+    instance = Model[int](data=1)
+
     with pytest.raises(TypeError) as exc_info:
+        instance.data = 2
 
-        class Model(GenericModel):
-            pass
-
-    assert str(exc_info.value) == 'Cannot inherit from GenericModel without inheriting from typing.Generic'
+    assert str(exc_info.value) == '"Model[int]" is immutable and does not support item assignment'
 
 
 @skip_36

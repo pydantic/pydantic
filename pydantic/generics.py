@@ -11,15 +11,10 @@ class GenericModel(BaseModel):
     __slots__ = ()
 
     def __new__(cls, *args: Any, **kwargs: Any) -> NoReturn:
-        if cls is GenericModel:
-            raise TypeError(f'Type {cls.__name__} cannot be instantiated; it can be used only as a base class')
-        else:
+        if Generic in cls.__bases__:
             raise TypeError(f'Type {cls.__name__} cannot be instantiated without providing generic parameters')
-
-    def __init_subclass__(cls) -> None:
-        if Generic not in cls.__bases__:
-            raise TypeError('Cannot inherit from GenericModel without inheriting from typing.Generic')
-        super().__init_subclass__()
+        else:
+            raise TypeError(f'Type {cls.__name__} cannot be instantiated; it can be used only as a base class')
 
     def __class_getitem__(  # type: ignore
         cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]
@@ -28,11 +23,11 @@ class GenericModel(BaseModel):
         if cached is not None:
             return cached
 
-        if cls is GenericModel:
-            raise TypeError(f'Type parameters should be placed on typing.Generic, not GenericModel')
-
         if not isinstance(params, tuple):
             params = (params,)
+        if any(isinstance(param, TypeVar) for param in params):  # type: ignore
+            raise TypeError(f'Type parameters should be placed on typing.Generic, not GenericModel')
+
         check_parameters_count(cls, params)
         typevars_map: Dict[Any, Any] = dict(zip(cls.__parameters__, params))  # type: ignore
         concrete_type_hints: Dict[str, Type[Any]] = {
