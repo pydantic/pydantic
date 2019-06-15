@@ -323,7 +323,8 @@ Here is an example using ``GenericModel`` to create an easily-reused HTTP respon
 (This script is complete, it should run "as is")
 
 If you set ``Config`` or make use of ``validator`` in your generic model definition, it is applied
-to concrete subclasses in the same way as when inheriting from ``BaseModel``.
+to concrete subclasses in the same way as when inheriting from ``BaseModel``. Any methods defined on
+your generic class will also be inherited.
 
 Pydantic's generics also integrate properly with mypy, so you get all the type checking
 you would expect mypy to provide if you were to declare the type without using ``GenericModel``.
