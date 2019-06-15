@@ -27,7 +27,7 @@ import pydantic
 try:
     from typing_extensions import Literal
 except ImportError:
-    Literal = object()  # type: ignore
+    Literal = None  # type: ignore
 
 try:
     import email_validator
@@ -291,7 +291,7 @@ def is_callable_type(type_: AnyType) -> bool:
 
 
 def is_literal_type(type_: AnyType) -> bool:
-    return getattr(type_, '__origin__', None) is Literal
+    return Literal is not None and getattr(type_, '__origin__', None)
 
 
 def _check_classvar(v: AnyType) -> bool:

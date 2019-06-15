@@ -14,7 +14,7 @@ install:
 - pip freeze
 
 script:
-# test without cython but with ujson and email-validator
+# test without cython but with ujson, email-validator, and typing-extensions
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(1 if pydantic.compiled else 0)"
 - make test
 
@@ -40,7 +40,7 @@ jobs:
     python: 3.6
     name: 'Cython: 3.6'
     script:
-    # test with cython, ujson and email-validator
+    # test with cython, ujson, email-validator, and typing-extensions
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
     - make test
@@ -50,7 +50,7 @@ jobs:
     python: 3.7
     name: 'Cython: 3.7'
     script:
-    # test with cython, ujson and email-validator
+    # test with cython, ujson, email-validator, and typing-extensions
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
     - make test
@@ -61,8 +61,8 @@ jobs:
     python: 3.6
     name: 'Without Deps 3.6'
     script:
-    # test without cython, ujson and email-validator
-    - pip uninstall -y ujson email-validator
+    # test without cython, ujson, email-validator, and typing-extensions
+    - pip uninstall -y ujson email-validator typing-extensions
     - make test
     env:
     - 'DEPS=no'
@@ -70,8 +70,8 @@ jobs:
     python: 3.7
     name: 'Without Deps 3.7'
     script:
-    # test without cython, ujson and email-validator
-    - pip uninstall -y ujson email-validator cython
+    # test without cython, ujson, email-validator, and typing-extensions
+    - pip uninstall -y ujson email-validator cython typing-extensions
     - make test
     env:
     - 'DEPS=no'

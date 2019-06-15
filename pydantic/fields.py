@@ -23,13 +23,17 @@ from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .utils import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, lenient_issubclass, sequence_like
+from .utils import (
+    AnyCallable,
+    AnyType,
+    Callable,
+    ForwardRef,
+    Literal,
+    display_as_type,
+    lenient_issubclass,
+    sequence_like,
+)
 from .validators import NoneType, constant_validator, dict_validator, find_validators
-
-try:
-    from typing_extensions import Literal
-except ImportError:
-    Literal = object()  # type: ignore
 
 Required: Any = Ellipsis
 
@@ -192,7 +196,7 @@ class Field:
             return
         if origin is Callable:
             return
-        if origin is Literal:
+        if Literal is not None and origin is Literal:
             return
         if origin is Union:
             types_ = []

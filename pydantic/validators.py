@@ -149,7 +149,7 @@ def constant_validator(v: 'Any', field: 'Field') -> 'Any':
     Schema.
     """
     if v != field.default:
-        raise errors.WrongConstantError(given=v, allowed=[field.default])
+        raise errors.WrongConstantError(given=v, permitted=[field.default])
 
     return v
 
@@ -344,9 +344,11 @@ def callable_validator(v: Any) -> AnyCallable:
 
 
 def make_literal_validator(allowed_choices: Tuple[Any, ...]) -> Callable[[Any], Any]:
+    allowed_choices_set = set(allowed_choices)
+
     def literal_validator(v: Any) -> Any:
-        if v not in allowed_choices:
-            raise errors.WrongConstantError(allowed=list(allowed_choices))
+        if v not in allowed_choices_set:
+            raise errors.WrongConstantError(given=v, permitted=list(allowed_choices))
         return v
 
     return literal_validator

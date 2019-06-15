@@ -53,6 +53,7 @@ try:
 except ImportError:
     typing_extensions = None
 
+
 class ConBytesModel(BaseModel):
     v: conbytes(max_length=10) = b'foobar'
 
@@ -1670,7 +1671,7 @@ def test_generic_without_params_error():
 @pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
 def test_literal_single():
     class Model(BaseModel):
-        a: Literal['a']
+        a: typing_extensions.Literal['a']
 
     Model(a='a')
     with pytest.raises(ValidationError) as exc_info:
@@ -1678,9 +1679,9 @@ def test_literal_single():
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
-            'msg': 'unexpected constant value; permitted values: [\'a\']',
+            'msg': 'unexpected value; given: \'b\'; permitted: \'a\'',
             'type': 'value_error.const',
-            'ctx': {'allowed': ['a']},
+            'ctx': {'given': 'b', 'permitted': ['a']},
         }
     ]
 
@@ -1688,7 +1689,7 @@ def test_literal_single():
 @pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
 def test_literal_multiple():
     class Model(BaseModel):
-        a_or_b: Literal['a', 'b']
+        a_or_b: typing_extensions.Literal['a', 'b']
 
     Model(a_or_b='a')
     Model(a_or_b='b')
@@ -1697,8 +1698,8 @@ def test_literal_multiple():
     assert exc_info.value.errors() == [
         {
             'loc': ('a_or_b',),
-            'msg': 'unexpected constant value; permitted values: [\'a\', \'b\']',
+            'msg': 'unexpected value; given: \'c\'; permitted: \'a\', \'b\'',
             'type': 'value_error.const',
-            'ctx': {'allowed': ['a', 'b']},
+            'ctx': {'given': 'c', 'permitted': ['a', 'b']},
         }
     ]
