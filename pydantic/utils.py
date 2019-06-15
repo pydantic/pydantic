@@ -290,8 +290,16 @@ def is_callable_type(type_: AnyType) -> bool:
     return type_ is Callable or getattr(type_, '__origin__', None) is Callable
 
 
-def is_literal_type(type_: AnyType) -> bool:
-    return Literal is not None and getattr(type_, '__origin__', None)
+if sys.version_info >= (3, 7):
+
+    def is_literal_type(type_: AnyType) -> bool:
+        return Literal is not None and getattr(type_, '__origin__', None) is Literal
+
+
+else:
+
+    def is_literal_type(type_: AnyType) -> bool:
+        return Literal is not None and hasattr(type_, '__values__') and type_ == Literal[type_.__values__]
 
 
 def _check_classvar(v: AnyType) -> bool:

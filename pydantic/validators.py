@@ -444,7 +444,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield callable_validator
         return
     if is_literal_type(type_):
-        yield make_literal_validator(type_.__args__)
+        yield make_literal_validator(getattr(type_, '__args__', getattr(type_, '__values__')))
         return
 
     supertype = _find_supertype(type_)
