@@ -4,7 +4,7 @@ from pydantic import BaseModel, create_model
 from pydantic.class_validators import gather_validators
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
-GenericModelT = TypeVar("GenericModelT", bound="GenericModel")
+GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 
 
 class GenericModel(BaseModel):

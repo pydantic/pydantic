@@ -22,7 +22,7 @@ def test_generic_name():
 
 @skip_36
 def test_parameters_must_be_typevar():
-    T = TypeVar("T")
+    T = TypeVar('T')
     with pytest.raises(TypeError) as exc_info:
 
         class Result(GenericModel[T]):
