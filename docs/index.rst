@@ -927,6 +927,8 @@ Usage of ``Union`` in Annotations and Type Order
 
 The ``Union`` type allows a model attribute to accept different types, e.g.:
 
+**(This script is complete, it should run but may be is wrong, see below)**
+
 .. literalinclude:: examples/union_type_incorrect.py
 
 (This script is complete, it should run "as is")
