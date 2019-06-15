@@ -922,6 +922,28 @@ to properly set types before the model can be used.
 
    Resolving this is beyond the call for *pydantic*: either remove the future import or declare the types globally.
 
+Usage of ``Union`` in Annotations and Type Order
+------------------------------------------------
+
+The ``Union`` type allows a model attribute to accept different types, e.g.:
+
+**(This script is complete, it should run but may be is wrong, see below)**
+
+.. literalinclude:: examples/union_type_incorrect.py
+
+However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under ``Union`` and will use
+the first one that matches. In the above example the ``id`` of ``user_03`` was defined as a ``uuid.UUID`` class (which
+is defined under the attribute's ``Union`` annotation) but as the ``uuid.UUID`` can be marshalled into an ``int`` it
+chose to match against the ``int`` type and disregarded the other types.
+
+As such, it is recommended that when defining ``Union`` annotations that the most specific type is defined first and
+followed by less specific types. In the above example, the ``UUID`` class should precede the ``int`` and ``str``
+classes to preclude the unexpected representation as such:
+
+.. literalinclude:: examples/union_type_correct.py
+
+(This script is complete, it should run "as is")
+
 .. _benchmarks_tag:
 
 Benchmarks
@@ -947,7 +969,6 @@ Benchmarks were run with python 3.7.2 and the following package versions:
   `this <https://github.com/lyft/toasted-marshmallow/issues/9>`_ issue.
 * **trafaret** ``v1.2.0``
 * **django-restful-framework** ``v3.9.4``
-
 
 Contributing to Pydantic
 ------------------------

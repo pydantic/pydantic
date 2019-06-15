@@ -6,6 +6,8 @@ History
 v0.29 (unreleased)
 ..................
 * support dataclasses.InitVar, #592 by @pfrederiks
+* Updated documentation to elucidate the usage of ``Union`` when defining multiple types under an attribute's
+  annotation and showcase how the type-order can affect marshalling of provided values, #594 by @somada141
 
 v0.28 (2019-06-06)
 ..................
