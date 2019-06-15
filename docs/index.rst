@@ -931,7 +931,6 @@ The ``Union`` type allows a model attribute to accept different types, e.g.:
 
 .. literalinclude:: examples/union_type_incorrect.py
 
-(This script is complete, it should run "as is")
 However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under ``Union`` and will use
 the first one that matches. In the above example the ``id`` of ``user_03`` was defined as a ``uuid.UUID`` class (which
 is defined under the attribute's ``Union`` annotation) but as the ``uuid.UUID`` can be marshalled into an ``int`` it
