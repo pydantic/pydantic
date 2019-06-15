@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
 import pytest
 
@@ -14,7 +14,7 @@ skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only su
 def test_generic_name():
     data_type = TypeVar('data_type')
 
-    class Result(GenericModel[data_type]):
+    class Result(GenericModel, Generic[data_type]):
         data: data_type
 
     assert Result[List[int]].__name__ == 'Result[typing.List[int]]'
@@ -22,12 +22,13 @@ def test_generic_name():
 
 @skip_36
 def test_parameters_must_be_typevar():
+    T = TypeVar("T")
     with pytest.raises(TypeError) as exc_info:
 
-        class Result(GenericModel[int]):
+        class Result(GenericModel[T]):
             pass
 
-    assert str(exc_info.value) == 'Each parameter to GenericModel must be a TypeVar'
+    assert str(exc_info.value) == 'Type parameters should be placed on typing.Generic instead of GenericModel'
 
 
 @skip_36
@@ -41,7 +42,7 @@ def test_parameter_count():
     T = TypeVar('T')
     S = TypeVar('S')
 
-    class Model(GenericModel[T, S]):
+    class Model(GenericModel, Generic[T, S]):
         x: T
         y: S
 
@@ -58,23 +59,21 @@ def test_parameter_count():
 def test_cover_cache():
     cache_size = len(_generic_types_cache)
     T = TypeVar('T')
-    GenericModel[T]
-    assert len(_generic_types_cache) == cache_size + 1
 
-    class Model(GenericModel[T]):  # uses the cache
+    class Model(GenericModel, Generic[T]):
         x: T
 
     Model[int]
-    assert len(_generic_types_cache) == cache_size + 2
+    assert len(_generic_types_cache) == cache_size + 1
     Model[int]  # uses the cache
-    assert len(_generic_types_cache) == cache_size + 2
+    assert len(_generic_types_cache) == cache_size + 1
 
 
 @skip_36
 def test_generic_config():
     data_type = TypeVar('data_type')
 
-    class Result(GenericModel[data_type]):
+    class Result(GenericModel, Generic[data_type]):
         data: data_type
 
         class Config:
@@ -97,7 +96,7 @@ def test_generic_instantiation_error():
 def test_parameterized_generic_instantiation_error():
     data_type = TypeVar('data_type')
 
-    class Result(GenericModel[data_type]):
+    class Result(GenericModel, Generic[data_type]):
         data: data_type
 
     with pytest.raises(TypeError) as exc_info:
@@ -111,13 +110,13 @@ def test_deep_generic():
     S = TypeVar('S')
     R = TypeVar('R')
 
-    class OuterModel(GenericModel[T, S, R]):
+    class OuterModel(GenericModel, Generic[T, S, R]):
         a: Dict[R, Optional[List[T]]]
         b: Optional[Union[S, R]]
         c: R
         d: float
 
-    class InnerModel(GenericModel[T, R]):
+    class InnerModel(GenericModel, Generic[T, R]):
         c: T
         d: R
 
@@ -142,7 +141,7 @@ def test_enum_generic():
         x = 1
         y = 2
 
-    class Model(GenericModel[T]):
+    class Model(GenericModel, Generic[T]):
         enum: T
 
     Model[MyEnum](enum=MyEnum.x)
@@ -154,7 +153,7 @@ def test_generic():
     data_type = TypeVar('data_type')
     error_type = TypeVar('error_type')
 
-    class Result(GenericModel[data_type, error_type]):
+    class Result(GenericModel, Generic[data_type, error_type]):
         data: Optional[List[data_type]]
         error: Optional[error_type]
         positive_number: int

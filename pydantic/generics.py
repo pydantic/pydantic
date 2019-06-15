@@ -1,12 +1,13 @@
-from typing import TYPE_CHECKING, Any, Dict, NoReturn, Tuple, Type, TypeVar, Union, get_type_hints, no_type_check
+from typing import Any, Dict, NoReturn, Tuple, Type, TypeVar, Union, get_type_hints
 
 from pydantic import BaseModel, create_model
 from pydantic.class_validators import gather_validators
 
-_generic_types_cache: Dict[Tuple[Type[Any], Tuple[Any, ...]], Type[Any]] = {}
+_generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
+GenericModelT = TypeVar("GenericModelT", bound="GenericModel")
 
 
-class GenericModel:
+class GenericModel(BaseModel):
     __slots__ = ()
     __parameters__ = ()
 
@@ -16,41 +17,41 @@ class GenericModel:
         else:
             raise TypeError(f'Type {cls.__name__} cannot be instantiated without providing generic parameters')
 
-    if TYPE_CHECKING:  # pragma: no cover
-
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            ...
-
-    @no_type_check
-    def __class_getitem__(cls, params: Union[Any, Tuple[Any, ...]]) -> Type[BaseModel]:
-        # Annotated as Type[BaseModel] rather than a Union for better integration with editors that ignore no_type_check
+    def __class_getitem__(  # type: ignore
+        cls: Type[GenericModelT], params: Union[Any, Tuple[Any, ...]]
+    ) -> Type[BaseModel]:
         if not isinstance(params, tuple):
             params = (params,)
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
             return cached
-        if cls is GenericModel:
-            # Generate a TypeVar-parameterized subclass
-            if not all(isinstance(x, TypeVar) for x in params):
-                raise TypeError(f'Each parameter to {cls.__name__} must be a TypeVar')
-            created_type = type('ParameterizedGenericModel', (GenericModel,), {'__parameters__': params})
-            _generic_types_cache[(cls, params)] = created_type
-            return created_type
-        else:
-            # Generate a parameterized BaseModel
-            check_parameters_count(cls, params)
-            typevars_map = dict(zip(cls.__parameters__, params))
-            concrete_type_hints = {k: resolve_type_hint(v, typevars_map) for k, v in get_type_hints(cls).items()}
 
-            model_name = concrete_name(cls, params)
-            config = cls.Config if hasattr(cls, 'Config') else None
-            validators = gather_validators(cls)
-            fields = {k: (v, getattr(cls, k, ...)) for k, v in concrete_type_hints.items()}
-            created_model = create_model(
-                model_name=model_name, __module__=cls.__module__, __config__=config, __validators__=validators, **fields
-            )
-            _generic_types_cache[(cls, params)] = created_model
-            return created_model
+        if cls is GenericModel:
+            raise TypeError(f'Type parameters should be placed on typing.Generic instead of GenericModel')
+
+        # Generate a parameterized BaseModel
+        check_parameters_count(cls, params)
+        typevars_map: Dict[Any, Any] = dict(zip(cls.__parameters__, params))
+        concrete_type_hints: Dict[str, Type[Any]] = {
+            k: resolve_type_hint(v, typevars_map) for k, v in get_type_hints(cls).items()
+        }
+
+        model_name = concrete_name(cls, params)
+        config = cls.Config if hasattr(cls, 'Config') else None
+        validators = gather_validators(cls)
+        fields: Dict[str, Tuple[Type[Any], Any]] = {
+            k: (v, getattr(cls, k, ...)) for k, v in concrete_type_hints.items()
+        }
+        created_model = create_model(
+            model_name=model_name,
+            __module__=cls.__module__,
+            __base__=None,
+            __config__=config,
+            __validators__=validators,
+            **fields,
+        )
+        _generic_types_cache[(cls, params)] = created_model
+        return created_model
 
 
 def concrete_name(cls: Type[Any], params: Tuple[Type[Any], ...]) -> str:
