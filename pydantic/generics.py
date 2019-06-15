@@ -1,4 +1,4 @@
-from typing import Any, Dict, NoReturn, Tuple, Type, TypeVar, Union, get_type_hints
+from typing import Any, Dict, Generic, NoReturn, Tuple, Type, TypeVar, Union, get_type_hints
 
 from pydantic import BaseModel, create_model
 from pydantic.class_validators import gather_validators
@@ -16,21 +16,25 @@ class GenericModel(BaseModel):
         else:
             raise TypeError(f'Type {cls.__name__} cannot be instantiated without providing generic parameters')
 
+    def __init_subclass__(cls) -> None:
+        if Generic not in cls.__bases__:
+            raise TypeError('Cannot inherit from GenericModel without inheriting from typing.Generic')
+        super().__init_subclass__()
+
     def __class_getitem__(  # type: ignore
-        cls: Type[GenericModelT], params: Union[Any, Tuple[Any, ...]]
+        cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]
     ) -> Type[BaseModel]:
-        if not isinstance(params, tuple):
-            params = (params,)
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
             return cached
 
         if cls is GenericModel:
-            raise TypeError(f'Type parameters should be placed on typing.Generic instead of GenericModel')
+            raise TypeError(f'Type parameters should be placed on typing.Generic, not GenericModel')
 
-        # Generate a parameterized BaseModel
+        if not isinstance(params, tuple):
+            params = (params,)
         check_parameters_count(cls, params)
-        typevars_map: Dict[Any, Any] = dict(zip(cls.__parameters__, params))
+        typevars_map: Dict[Any, Any] = dict(zip(cls.__parameters__, params))  # type: ignore
         concrete_type_hints: Dict[str, Type[Any]] = {
             k: resolve_type_hint(v, typevars_map) for k, v in get_type_hints(cls).items()
         }
@@ -54,14 +58,7 @@ class GenericModel(BaseModel):
 
 
 def concrete_name(cls: Type[Any], params: Tuple[Type[Any], ...]) -> str:
-    param_names = []
-    for param in params:
-        if hasattr(param, '__name__'):
-            param_names.append(param.__name__)
-        elif hasattr(param, '__origin__'):
-            param_names.append(str(param))
-        else:
-            raise ValueError(f'Couldn\'t get name for {param}')
+    param_names = [param.__name__ if hasattr(param, '__name__') else str(param) for param in params]
     params_component = ', '.join(param_names)
     return f'{cls.__name__}[{params_component}]'
 
@@ -71,16 +68,14 @@ def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
         new_args = tuple(resolve_type_hint(x, typevars_map) for x in type_.__args__)
         if type_.__origin__ is Union:
             return type_.__origin__[new_args]
-        else:
-            new_args = tuple([typevars_map[x] for x in type_.__parameters__])
-            return type_[new_args]
+        new_args = tuple([typevars_map[x] for x in type_.__parameters__])
+        return type_[new_args]
     return typevars_map.get(type_, type_)
 
 
 def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...]) -> None:
-    # based on typing._check_generic
     actual = len(parameters)
-    expected = len(cls.__parameters__)
+    expected = len(cls.__parameters__)  # type: ignore
     if actual != expected:
         description = 'many' if actual > expected else 'few'
         raise TypeError(f'Too {description} parameters for {cls.__name__}; actual {actual}, expected {expected}')

@@ -5,7 +5,7 @@ from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 import pytest
 
 from pydantic import BaseModel, ValidationError, validator
-from pydantic.generics import GenericModel, _generic_types_cache, concrete_name
+from pydantic.generics import GenericModel, _generic_types_cache
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 
@@ -21,6 +21,16 @@ def test_generic_name():
 
 
 @skip_36
+def test_direct_subclassing_fails():
+    with pytest.raises(TypeError) as exc_info:
+
+        class Model(GenericModel):
+            pass
+
+    assert str(exc_info.value) == 'Cannot inherit from GenericModel without inheriting from typing.Generic'
+
+
+@skip_36
 def test_parameters_must_be_typevar():
     T = TypeVar('T')
     with pytest.raises(TypeError) as exc_info:
@@ -28,13 +38,7 @@ def test_parameters_must_be_typevar():
         class Result(GenericModel[T]):
             pass
 
-    assert str(exc_info.value) == 'Type parameters should be placed on typing.Generic instead of GenericModel'
-
-
-@skip_36
-def test_generic_name_edge_case_error():
-    with pytest.raises(ValueError):
-        concrete_name(int, (1,))
+    assert str(exc_info.value) == 'Type parameters should be placed on typing.Generic, not GenericModel'
 
 
 @skip_36
