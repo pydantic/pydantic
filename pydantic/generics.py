@@ -9,7 +9,6 @@ GenericModelT = TypeVar("GenericModelT", bound="GenericModel")
 
 class GenericModel(BaseModel):
     __slots__ = ()
-    __parameters__ = ()
 
     def __new__(cls, *args: Any, **kwargs: Any) -> NoReturn:
         if cls is GenericModel:
