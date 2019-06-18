@@ -9,15 +9,13 @@ GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 
 class GenericModel(BaseModel):
     __slots__ = ()
-    __concrete: ClassVar[bool] = False
+    __concrete__: ClassVar[bool] = False
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Any:
-        if cls.__concrete:
+        if cls.__concrete__:
             return super().__new__(cls)
-        if Generic in cls.__bases__:
-            raise TypeError(f'Type {cls.__name__} cannot be instantiated without providing generic parameters')
         else:
-            raise TypeError(f'Type {cls.__name__} cannot be instantiated; it can be used only as a base class')
+            raise TypeError(f'Type {cls.__name__} cannot be used without generic parameters, e.g. {cls.__name__}[T]')
 
     def __class_getitem__(  # type: ignore
         cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]
@@ -25,12 +23,14 @@ class GenericModel(BaseModel):
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
             return cached
-        if cls.__concrete:
+        if cls.__concrete__:
             raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
             params = (params,)
         if any(isinstance(param, TypeVar) for param in params):  # type: ignore
             raise TypeError(f'Type parameters should be placed on typing.Generic, not GenericModel')
+        if Generic not in cls.__bases__:
+            raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
 
         check_parameters_count(cls, params)
         typevars_map: Dict[Any, Any] = dict(zip(cls.__parameters__, params))  # type: ignore
@@ -54,7 +54,7 @@ class GenericModel(BaseModel):
             **fields,
         )
         created_model.Config = cls.Config
-        created_model.__concrete = True  # type: ignore
+        created_model.__concrete__ = True  # type: ignore
         _generic_types_cache[(cls, params)] = created_model
         if len(params) == 1:
             _generic_types_cache[(cls, params[0])] = created_model

@@ -69,6 +69,18 @@ def test_config_is_inherited():
 
 
 @skip_36
+def test_must_inherit_from_generic():
+    with pytest.raises(TypeError) as exc_info:
+
+        class Result(GenericModel):
+            pass
+
+        Result[int]
+
+    assert str(exc_info.value) == f'Type Result must inherit from typing.Generic before being parameterized'
+
+
+@skip_36
 def test_parameters_must_be_typevar():
     T = TypeVar('T')
     with pytest.raises(TypeError) as exc_info:
@@ -76,7 +88,7 @@ def test_parameters_must_be_typevar():
         class Result(GenericModel[T]):
             pass
 
-    assert str(exc_info.value) == 'Type parameters should be placed on typing.Generic, not GenericModel'
+    assert str(exc_info.value) == f'Type parameters should be placed on typing.Generic, not GenericModel'
 
 
 @skip_36
@@ -131,7 +143,7 @@ def test_generic_config():
 def test_generic_instantiation_error():
     with pytest.raises(TypeError) as exc_info:
         GenericModel()
-    assert str(exc_info.value) == 'Type GenericModel cannot be instantiated; it can be used only as a base class'
+    assert str(exc_info.value) == 'Type GenericModel cannot be used without generic parameters, e.g. GenericModel[T]'
 
 
 @skip_36
@@ -143,7 +155,7 @@ def test_parameterized_generic_instantiation_error():
 
     with pytest.raises(TypeError) as exc_info:
         Result(data=1)
-    assert str(exc_info.value) == 'Type Result cannot be instantiated without providing generic parameters'
+    assert str(exc_info.value) == 'Type Result cannot be used without generic parameters, e.g. Result[T]'
 
 
 @skip_36
