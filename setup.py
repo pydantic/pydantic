@@ -1,6 +1,9 @@
+import os
 import re
+import sys
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
+
 from setuptools import setup
 
 
@@ -40,6 +43,25 @@ except FileNotFoundError:
 # avoid loading the package before requirements are installed:
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 
+ext_modules = None
+if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not in os.environ:
+    try:
+        from Cython.Build import cythonize
+    except ImportError:
+        pass
+    else:
+        # For cython test coverage install with `make install-trace`
+        compiler_directives = {}
+        if 'CYTHON_TRACE' in sys.argv:
+            compiler_directives['linetrace'] = True
+        os.environ['CFLAGS'] = '-O3'
+        ext_modules = cythonize(
+            'pydantic/*.py',
+            nthreads=4,
+            language_level=3,
+            compiler_directives=compiler_directives,
+        )
+
 setup(
     name='pydantic',
     version=str(version.VERSION),
@@ -78,5 +100,6 @@ setup(
     extras_require={
         'ujson': ['ujson>=1.35'],
         'email': ['email-validator>=1.0.3'],
-    }
+    },
+    ext_modules=ext_modules,
 )

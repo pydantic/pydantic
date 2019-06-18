@@ -6,10 +6,23 @@ from enum import Enum
 from functools import lru_cache
 from importlib import import_module
 from textwrap import dedent
-from typing import _eval_type  # type: ignore
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
+from typing import (  # type: ignore
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Pattern,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    _eval_type,
+)
 
-from . import errors
+import pydantic
 
 try:
     import email_validator
@@ -30,6 +43,7 @@ except ImportError:
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
     from .main import Field  # noqa: F401
+    from . import errors  # noqa: F401
 
 if sys.version_info < (3, 7):
     from typing import Callable
@@ -70,7 +84,7 @@ def validate_email(value: str) -> Tuple[str, str]:
     try:
         email_validator.validate_email(email, check_deliverability=False)
     except email_validator.EmailNotValidError as e:
-        raise errors.EmailError() from e
+        raise pydantic.errors.EmailError() from e
 
     return name or email[: email.index('@')], email.lower()
 
@@ -134,14 +148,14 @@ def import_string(dotted_path: str) -> Any:
         raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
 
 
-def truncate(v: str, *, max_len: int = 80) -> str:
+def truncate(v: Union[str], *, max_len: int = 80) -> str:
     """
     Truncate a value and add a unicode ellipsis (three dots) to the end if it was too long
     """
     if isinstance(v, str) and len(v) > (max_len - 2):
         # -3 so quote + string + … + quote has correct length
-        return repr(v[: (max_len - 3)] + '…')
-    v = repr(v)
+        return (v[: (max_len - 3)] + '…').__repr__()
+    v = v.__repr__()
     if len(v) > max_len:
         v = v[: max_len - 1] + '…'
     return v
@@ -237,7 +251,7 @@ def in_ipython() -> bool:
     Check whether we're in an ipython environment, including jupyter notebooks.
     """
     try:
-        __IPYTHON__  # type: ignore
+        eval('__IPYTHON__')
     except NameError:
         return False
     else:  # pragma: no cover
@@ -289,3 +303,30 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
     if field.sub_fields:
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
+
+
+def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
+    """
+    Return True if two floats are almost equal
+    """
+    return abs(value_1 - value_2) <= delta
+
+
+class GetterDict:
+    """
+    Hack to make object's smell just enough like dicts for validate_model.
+    """
+
+    __slots__ = ('_obj',)
+
+    def __init__(self, obj: Any):
+        self._obj = obj
+
+    def get(self, item: Any, default: Any) -> Any:
+        return getattr(self._obj, item, default)
+
+    def keys(self) -> Set[Any]:
+        """
+        We don't want to get any other attributes of obj if the model didn't explicitly ask for them
+        """
+        return set()

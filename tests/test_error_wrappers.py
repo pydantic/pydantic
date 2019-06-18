@@ -212,10 +212,10 @@ def test_errors_unknown_error_object():
 )
 def test_get_exc_type(exc, type_):
     if isinstance(type_, str):
-        assert get_exc_type(exc) == type_
+        assert get_exc_type(type(exc)) == type_
     else:
         with pytest.raises(type_) as exc_info:
-            get_exc_type(exc)
+            get_exc_type(type(exc))
         assert isinstance(exc_info.value, type_)
 
 

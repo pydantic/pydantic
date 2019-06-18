@@ -26,6 +26,12 @@ from pydantic.types import (
     DirectoryPath,
     EmailStr,
     FilePath,
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
     IPvAnyAddress,
     IPvAnyInterface,
     IPvAnyNetwork,
@@ -42,6 +48,7 @@ from pydantic.types import (
     SecretBytes,
     SecretStr,
     StrBytes,
+    StrictBool,
     StrictStr,
     UrlStr,
     conbytes,
@@ -271,7 +278,7 @@ def test_set():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}},
-            'b': {'title': 'B', 'type': 'array', 'uniqueItems': True},
+            'b': {'title': 'B', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
         'required': ['a', 'b'],
     }
@@ -302,7 +309,7 @@ def test_const_false():
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (tuple, None),
+        (tuple, {}),
         (
             Tuple[str, int, Union[str, int, float], float],
             [
@@ -345,6 +352,18 @@ def test_bool():
     }
 
 
+def test_strict_bool():
+    class Model(BaseModel):
+        a: StrictBool
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+        'required': ['a'],
+    }
+
+
 def test_dict():
     class Model(BaseModel):
         a: dict
@@ -364,7 +383,7 @@ def test_list():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'array'}},
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {}}},
         'required': ['a'],
     }
 
@@ -665,6 +684,32 @@ def test_json_type():
     }
 
 
+def test_ipv4address_type():
+    class Model(BaseModel):
+        ip_address: IPv4Address
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv4'}},
+        'required': ['ip_address'],
+    }
+
+
+def test_ipv6address_type():
+    class Model(BaseModel):
+        ip_address: IPv6Address
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv6'}},
+        'required': ['ip_address'],
+    }
+
+
 def test_ipvanyaddress_type():
     class Model(BaseModel):
         ip_address: IPvAnyAddress
@@ -678,6 +723,32 @@ def test_ipvanyaddress_type():
     }
 
 
+def test_ipv4interface_type():
+    class Model(BaseModel):
+        ip_interface: IPv4Interface
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipv4interface'}},
+        'required': ['ip_interface'],
+    }
+
+
+def test_ipv6interface_type():
+    class Model(BaseModel):
+        ip_interface: IPv6Interface
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipv6interface'}},
+        'required': ['ip_interface'],
+    }
+
+
 def test_ipvanyinterface_type():
     class Model(BaseModel):
         ip_interface: IPvAnyInterface
@@ -688,6 +759,32 @@ def test_ipvanyinterface_type():
         'type': 'object',
         'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipvanyinterface'}},
         'required': ['ip_interface'],
+    }
+
+
+def test_ipv4network_type():
+    class Model(BaseModel):
+        ip_network: IPv4Network
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipv4network'}},
+        'required': ['ip_network'],
+    }
+
+
+def test_ipv6network_type():
+    class Model(BaseModel):
+        ip_network: IPv6Network
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipv6network'}},
+        'required': ['ip_network'],
     }
 
 
@@ -833,18 +930,16 @@ def test_schema_overrides():
         'title': 'Model',
         'type': 'object',
         'definitions': {
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            },
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
-                'properties': {
-                    'b': {
-                        'title': 'Foo',
-                        'type': 'object',
-                        'properties': {'a': {'title': 'A', 'type': 'string'}},
-                        'required': ['a'],
-                        'default': {'a': 'foo'},
-                    }
-                },
+                'properties': {'b': {'title': 'B', 'default': {'a': 'foo'}, 'allOf': [{'$ref': '#/definitions/Foo'}]}},
             },
             'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
         },

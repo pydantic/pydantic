@@ -46,7 +46,8 @@ class Shape(IntEnum):
     SET = 3
     MAPPING = 4
     TUPLE = 5
-    SEQUENCE = 6
+    TUPLE_ELLIPS = 6
+    SEQUENCE = 7
 
 
 class Field:
@@ -198,9 +199,13 @@ class Field:
 
         if issubclass(origin, Tuple):  # type: ignore
             self.shape = Shape.TUPLE
-            self.sub_fields = [
-                self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)  # type: ignore
-            ]
+            self.sub_fields = []
+            for i, t in enumerate(self.type_.__args__):  # type: ignore
+                if t is Ellipsis:
+                    self.type_ = self.type_.__args__[0]  # type: ignore
+                    self.shape = Shape.TUPLE_ELLIPS
+                    return
+                self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
 
         if issubclass(origin, List):
@@ -244,11 +249,7 @@ class Field:
                     )
             v_funcs = (
                 *[v.func for v in class_validators_ if not v.whole and v.pre],
-                *(
-                    get_validators()
-                    if get_validators
-                    else find_validators(self.type_, self.model_config.arbitrary_types_allowed)
-                ),
+                *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
                 self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
@@ -295,7 +296,7 @@ class Field:
             v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
         return v, errors
 
-    def _validate_json(self, v: str, loc: Tuple[str, ...]) -> Tuple[Optional[Any], Optional[ErrorWrapper]]:
+    def _validate_json(self, v: Any, loc: Tuple[str, ...]) -> Tuple[Optional[Any], Optional[ErrorWrapper]]:
         try:
             return Json.validate(v), None
         except (ValueError, TypeError) as exc:
@@ -307,7 +308,6 @@ class Field:
         """
         Validate sequence-like containers: lists, tuples, sets and generators
         """
-
         if not sequence_like(v):
             e: errors_.PydanticTypeError
             if self.shape is Shape.LIST:
@@ -335,6 +335,8 @@ class Field:
 
         if self.shape is Shape.SET:
             converted = set(result)
+        elif self.shape is Shape.TUPLE_ELLIPS:
+            converted = tuple(result)
         elif self.shape is Shape.SEQUENCE:
             if isinstance(v, tuple):
                 converted = tuple(result)

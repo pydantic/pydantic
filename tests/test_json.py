@@ -1,5 +1,7 @@
 import datetime
 import json
+import sys
+from dataclasses import dataclass as vanilla_dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -9,6 +11,8 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, create_model
+from pydantic.color import Color
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
 
@@ -23,6 +27,8 @@ class MyEnum(Enum):
     [
         (UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
         (IPv4Address('192.168.0.1'), '"192.168.0.1"'),
+        (Color('#000'), '"black"'),
+        (Color((1, 12, 123)), '"#010c7b"'),
         (SecretStr('abcd'), '"**********"'),
         (SecretStr(''), '""'),
         (SecretBytes(b'xyz'), '"**********"'),
@@ -50,6 +56,7 @@ def test_encoding(input, output):
     assert output == json.dumps(input, default=pydantic_encoder)
 
 
+@pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
 def test_path_encoding(tmpdir):
     class PathModel(BaseModel):
         path: Path
@@ -132,3 +139,23 @@ def test_custom_encoder_arg():
     m = Model(x=123)
     assert m.json() == '{"x": 123.0}'
     assert m.json(encoder=lambda v: '__default__') == '{"x": "__default__"}'
+
+
+def test_encode_dataclass():
+    @vanilla_dataclass
+    class Foo:
+        bar: int
+        spam: str
+
+    f = Foo(bar=123, spam='apple pie')
+    assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
+
+
+def test_encode_pydantic_dataclass():
+    @pydantic_dataclass
+    class Foo:
+        bar: int
+        spam: str
+
+    f = Foo(bar=123, spam='apple pie')
+    assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)

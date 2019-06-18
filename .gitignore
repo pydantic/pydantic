@@ -18,3 +18,7 @@ docs/.tmp_schema_mappings.rst
 .pytest_cache/
 .vscode/
 _build/
+pydantic/*.c
+pydantic/*.so
+.auto-format
+/sandbox/

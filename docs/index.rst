@@ -80,8 +80,19 @@ Just::
 *pydantic* has no required dependencies except python 3.6 or 3.7 (and the dataclasses package in python 3.6).
 If you've got python 3.6 and ``pip`` installed - you're good to go.
 
+*pydantic* can optionally be compiled with `cython <https://cython.org/>`_ which should give a 30-50% performance
+improvement. ``manylinux`` binaries exist for python 3.6 and 3.7, so if you're installing from PyPI on linux, you
+should get *pydantic* compiled with no extra work. If you're installing manually, install ``cython`` before installing
+*pydantic* and you should get *pydandic* compiled. Compilation with cython is not tested on windows or mac.
+`[issue] <https://github.com/samuelcolvin/pydantic/issues/555>`_
+
+To test if *pydantic* is compiled run::
+
+    import pydantic
+    print('compiled:', pydantic.compiled)
+
 If you want *pydantic* to parse json faster you can add `ujson <https://pypi.python.org/pypi/ujson>`_
-as an optional dependency. Similarly if *pydantic's* email validation relies on
+as an optional dependency. Similarly *pydantic's* email validation relies on
 `email-validator <https://github.com/JoshData/python-email-validator>`_ ::
 
     pip install pydantic[ujson]
@@ -146,6 +157,17 @@ Since version ``v0.17`` nested dataclasses are supported both in dataclasses and
 (This script is complete, it should run "as is")
 
 Dataclasses attributes can be populated by tuples, dictionaries or instances of that dataclass.
+
+Initialize hooks
+~~~~~~~~~~~~~~~~
+
+Since version ``v0.28`` when you initialize a dataclass, it is possible to execute code after validation
+with the help of ``__post_init_post_parse__``. This is not the same as ``__post_init__`` which executes
+code before validation.
+
+.. literalinclude:: examples/ex_post_init_post_parse.py
+
+(This script is complete, it should run “as is”)
 
 Choices
 .......
@@ -270,6 +292,31 @@ You can also refer it by its type, provided you import ``annotations`` (see
 and pydantic versions).
 
 .. literalinclude:: examples/self_referencing_annotations.py
+
+(This script is complete, it should run "as is")
+
+.. _orm_mode:
+
+ORM Mode (aka Arbitrary Class Instances)
+........................................
+
+Pydantic models can be created from arbitrary class instances to support models that map to ORM objects.
+
+To do this:
+1. The :ref:`Config <config>` property ``orm_mode`` must be set to ``True``.
+2. The special constructor ``from_orm`` must be used to create the model instance.
+
+The example here uses SQLAlchemy but the same approach should work for any ORM.
+
+.. literalinclude:: examples/orm_mode.py
+
+(This script is complete, it should run "as is")
+
+ORM instances will be parsed with ``from_orm`` recursively as well as at the top level.
+
+Here a vanilla class is used to demonstrate the principle, but any ORM could be used instead.
+
+.. literalinclude:: examples/orm_mode_recursive.py
 
 (This script is complete, it should run "as is")
 
@@ -476,6 +523,17 @@ Exotic Types
 
 (This script is complete, it should run "as is")
 
+
+StrictBool
+~~~~~~~~~~
+
+Unlike normal ``bool`` fields, ``StrictBool`` can be used to required specifically ``True`` or ``False``,
+nothing else is permitted.
+
+
+Callable
+~~~~~~~~
+
 Fields can also be of type ``Callable``:
 
 .. literalinclude:: examples/callable.py
@@ -487,6 +545,50 @@ Fields can also be of type ``Callable``:
     Callable fields only perform a simple check that the argument is
     callable, no validation of arguments, their types or the return
     type is performed.
+
+Color Type
+..........
+
+You can use the ``Color`` data type for storing colors as per
+`CSS3 specification <http://www.w3.org/TR/css3-color/#svg-color>`_. Color can be defined via:
+
+- `name <http://www.w3.org/TR/SVG11/types.html#ColorKeywords>`_ (e.g. ``"Black"``, ``"azure"``)
+- `hexadecimal value <https://en.wikipedia.org/wiki/Web_colors#Hex_triplet>`_
+  (e.g. ``"0x000"``, ``"#FFFFFF"``, ``"7fffd4"``)
+- RGB/RGBA tuples (e.g. ``(255, 255, 255)``, ``(255, 255, 255, 0.5)``
+- `RGB/RGBA strings <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#RGB_colors>`_
+  (e.g. ``"rgb(255, 255, 255)"`` or ``"rgba(255, 255, 255, 0.5)"``)
+- `HSL strings <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#HSL_colors>`_
+  (e.g. ``"hsl(270, 60%, 70%)"`` or ``"hsl(270, 60%, 70%, .5)"``)
+
+.. literalinclude:: examples/ex_color_type.py
+
+(This script is complete, it should run "as is")
+
+``Color`` has the following methods:
+
+:original: the original string or tuple passed to ``Color``
+:as_named: returns a named CSS3 color, fails if the alpha channel is set or no such color exists unless
+  ``fallback=True`` is supplied when it falls back to ``as_hex``
+:as_hex: string in the format ``#ffffff`` or ``#fff``, can also be a 4 or 8 hex values if the alpha channel is set,
+  e.g. ``#7f33cc26``
+:as_rgb: string in the format ``rgb(<red>, <green>, <blue>)`` or ``rgba(<red>, <green>, <blue>, <alpha>)``
+  if the alpha channel is set
+:as_rgb_tuple: returns a 3- or 4-tuple in RGB(a) format, the ``alpha`` keyword argument can be used to define whether
+  the alpha channel should be included,
+  options: ``True`` - always include, ``False`` - never include, ``None`` (the default) - include if set
+:as_hsl: string in the format ``hsl(<hue deg>, <saturation %>, <lightness %>)``
+  or ``hsl(<hue deg>, <saturation %>, <lightness %>, <alpha>)`` if the alpha channel is set
+:as_hsl_tuple: returns a 3- or 4-tuple in HSL(a) format, the ``alpha`` keyword argument can be used to define whether
+  the alpha channel should be included,
+  options: ``True`` - always include, ``False`` - never include, ``None`` (the default)  - include if set
+
+The ``__str__`` method for ``Color`` returns ``self.as_named(fallback=True)``.
+
+.. note::
+
+   the ``as_hsl*`` refer to hue, saturation, lightness "HSL" as used in html and most of the world, **not**
+   "HLS" as used in python's ``colorsys``.
 
 Secret Types
 ............
@@ -576,6 +678,7 @@ Options:
     value is instance of that type). If False - RuntimeError will be raised on model declaration (default: ``False``)
 :json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
     details.
+:orm_mode: allows usage of :ref:`ORM mode <orm_mode>`
 
 .. warning::
 
@@ -819,6 +922,28 @@ to properly set types before the model can be used.
 
    Resolving this is beyond the call for *pydantic*: either remove the future import or declare the types globally.
 
+Usage of ``Union`` in Annotations and Type Order
+------------------------------------------------
+
+The ``Union`` type allows a model attribute to accept different types, e.g.:
+
+**(This script is complete, it should run but may be is wrong, see below)**
+
+.. literalinclude:: examples/union_type_incorrect.py
+
+However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under ``Union`` and will use
+the first one that matches. In the above example the ``id`` of ``user_03`` was defined as a ``uuid.UUID`` class (which
+is defined under the attribute's ``Union`` annotation) but as the ``uuid.UUID`` can be marshalled into an ``int`` it
+chose to match against the ``int`` type and disregarded the other types.
+
+As such, it is recommended that when defining ``Union`` annotations that the most specific type is defined first and
+followed by less specific types. In the above example, the ``UUID`` class should precede the ``int`` and ``str``
+classes to preclude the unexpected representation as such:
+
+.. literalinclude:: examples/union_type_correct.py
+
+(This script is complete, it should run "as is")
+
 .. _benchmarks_tag:
 
 Benchmarks
@@ -831,15 +956,19 @@ Below are the results of crude benchmarks comparing *pydantic* to other validati
    :align: center
    :file: benchmarks.csv
 
-And here are some more results of similarly crude benchmarks comparing *pydantic* to other similar libraries.
+See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
+for more details on the test case. Feel free to submit more benchmarks or improve an existing one.
 
-.. csv-table::
-   :header: "Package", "Relative Performance", "Mean validation time", "std. dev."
-   :align: center
-   :file: benchmarks_attrs.csv
+Benchmarks were run with python 3.7.2 and the following package versions:
 
-(See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
-for more details on the test case. Feel free to submit more benchmarks or improve an existing one.)
+* **pydantic** pre ``v0.27``
+  `d473f4a <https://github.com/samuelcolvin/pydantic/commit/d473f4abc9d040c8c90e102017aacfc078f0f37d>`_ compiled with
+  cython
+* **toasted-marshmallow** ``v0.2.6``
+* **marshmallow** the version installed by ``toasted-marshmallow``, see
+  `this <https://github.com/lyft/toasted-marshmallow/issues/9>`_ issue.
+* **trafaret** ``v1.2.0``
+* **django-restful-framework** ``v3.9.4``
 
 Contributing to Pydantic
 ------------------------

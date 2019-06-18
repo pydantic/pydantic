@@ -3,9 +3,44 @@
 History
 -------
 
-v0.26 (unreleased)
+v0.29 (unreleased)
+..................
+* support dataclasses.InitVar, #592 by @pfrederiks
+* Updated documentation to elucidate the usage of ``Union`` when defining multiple types under an attribute's
+  annotation and showcase how the type-order can affect marshalling of provided values, #594 by @somada141
+
+v0.28 (2019-06-06)
+..................
+* fix support for JSON Schema generation when using models with circular references in Python 3.7, #572 by @tiangolo
+* support ``__post_init_post_parse__`` on dataclasses, #567 by @sevaho
+* allow dumping dataclasses to JSON, #575 by @samuelcolvin and @DanielOberg
+* ORM mode, #562 by @samuelcolvin
+* fix ``pydantic.compiled`` on ipython, #573 by @dmontagu and @samuelcolvin
+* add ``StrictBool`` type, #579 by @cazgp
+
+v0.27 (2019-05-30)
+..................
+* **breaking change**  ``_pydantic_post_init`` to execute dataclass' original ``__post_init__`` before
+  validation, #560 by @HeavenVolkoff
+* fix handling of generic types without specified parameters, #550 by @dmontagu
+* **breaking change** (maybe): this is the first release compiled with **cython**, see the docs and please
+  submit an issue if you run into problems
+
+v0.27.0a1 (2019-05-26)
+......................
+* fix JSON Schema for ``list``, ``tuple``, and ``set``, #540 by @tiangolo
+* compiling with cython, ``manylinux`` binaries, some other performance improvements, #548 by @samuelcolvin
+
+v0.26 (2019-05-22)
+..................
 * fix to schema generation for ``IPvAnyAddress``, ``IPvAnyInterface``, ``IPvAnyNetwork`` #498 by @pilosus
-* added benchmark against attr @sebastianmika
+* fix variable length tuples support, #495 by @pilosus
+* fix return type hint for ``create_model``, #526 by @dmontagu
+* **Breaking Change:** fix ``.dict(skip_keys=True)`` skipping values set via alias (this involves changing
+  ``validate_model()`` to always returns ``Tuple[Dict[str, Any], Set[str], Optional[ValidationError]]``), #517 by @sommd
+* fix to schema generation for ``IPv4Address``, ``IPv6Address``, ``IPv4Interface``,
+  ``IPv6Interface``, ``IPv4Network``, ``IPv6Network`` #532 by @euri10
+* add ``Color`` type, #504 by @pilosus and @samuelcolvin
 
 v0.25 (2019-05-05)
 ..................

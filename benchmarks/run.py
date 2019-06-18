@@ -162,7 +162,6 @@ def main():
     tests = [TestPydantic]
     if 'pydantic-only' not in sys.argv:
         tests += other_tests
-
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     results = []
     csv_results = []

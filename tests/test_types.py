@@ -1,11 +1,12 @@
 import os
+import sys
 import uuid
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Iterator, List, NewType, Pattern, Sequence, Set, Tuple
+from typing import Dict, Iterator, List, NewType, Pattern, Sequence, Set, Tuple
 from uuid import UUID
 
 import pytest
@@ -30,6 +31,7 @@ from pydantic import (
     PyObject,
     SecretBytes,
     SecretStr,
+    StrictBool,
     StrictStr,
     ValidationError,
     conbytes,
@@ -540,6 +542,45 @@ def test_tuple_fails(value):
 
 
 @pytest.mark.parametrize(
+    'value,cls,result',
+    (
+        ([1, 2, '3'], int, (1, 2, 3)),
+        ((1, 2, '3'), int, (1, 2, 3)),
+        ((i ** 2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        (('a', 'b', 'c'), str, ('a', 'b', 'c')),
+    ),
+)
+def test_tuple_variable_len_success(value, cls, result):
+    class Model(BaseModel):
+        v: Tuple[cls, ...]
+
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize(
+    'value, cls, exc',
+    [
+        (('a', 'b', [1, 2], 'c'), str, [{'loc': ('v', 2), 'msg': 'str type expected', 'type': 'type_error.str'}]),
+        (
+            ('a', 'b', [1, 2], 'c', [3, 4]),
+            str,
+            [
+                {'loc': ('v', 2), 'msg': 'str type expected', 'type': 'type_error.str'},
+                {'loc': ('v', 4), 'msg': 'str type expected', 'type': 'type_error.str'},
+            ],
+        ),
+    ],
+)
+def test_tuple_variable_len_fails(value, cls, exc):
+    class Model(BaseModel):
+        v: Tuple[cls, ...]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=value)
+    assert exc_info.value.errors() == exc
+
+
+@pytest.mark.parametrize(
     'value,result',
     (
         ({1, 2, 2, '3'}, {1, 2, '3'}),
@@ -787,7 +828,24 @@ def test_strict_str():
         Model(v=123)
 
     with pytest.raises(ValidationError):
-        Model(v=b'foobar')
+        Model(v=b"foobar")
+
+
+def test_strict_bool():
+    class Model(BaseModel):
+        v: StrictBool
+
+    assert Model(v=True).v is True
+    assert Model(v=False).v is False
+
+    with pytest.raises(ValidationError):
+        Model(v=1)
+
+    with pytest.raises(ValidationError):
+        Model(v="1")
+
+    with pytest.raises(ValidationError):
+        Model(v=b"1")
 
 
 def test_uuid_error():
@@ -1158,6 +1216,7 @@ def test_directory_path_validation_success(value, result):
     assert Model(foo=value).foo == result
 
 
+@pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
 @pytest.mark.parametrize(
     'value,errors',
     (
@@ -1485,3 +1544,25 @@ def test_secretbytes_error():
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=[6, 23, 'abc'])
     assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'byte type expected', 'type': 'type_error.bytes'}]
+
+
+def test_generic_without_params():
+    class Model(BaseModel):
+        generic_list: List
+        generic_dict: Dict
+
+    m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0})
+    assert m.dict() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}}
+
+
+def test_generic_without_params_error():
+    class Model(BaseModel):
+        generic_list: List
+        generic_dict: Dict
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(generic_list=0, generic_dict=0)
+    assert exc_info.value.errors() == [
+        {'loc': ('generic_list',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+        {'loc': ('generic_dict',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'},
+    ]

@@ -1,4 +1,5 @@
 import datetime
+from dataclasses import asdict, is_dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -7,6 +8,7 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
 
+from pydantic.color import Color
 from pydantic.types import SecretBytes, SecretStr
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
@@ -17,6 +19,7 @@ def isoformat(o: Union[datetime.date, datetime.time]) -> str:
 
 
 ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
+    Color: str,
     IPv4Address: str,
     IPv6Address: str,
     IPv4Interface: str,
@@ -47,6 +50,8 @@ def pydantic_encoder(obj: Any) -> Any:
         return obj.value
     elif isinstance(obj, Path):
         return str(obj)
+    elif is_dataclass(obj):
+        return asdict(obj)
 
     try:
         encoder = ENCODERS_BY_TYPE[type(obj)]

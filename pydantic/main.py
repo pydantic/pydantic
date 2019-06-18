@@ -37,6 +37,7 @@ from .utils import (
     AnyCallable,
     AnyType,
     ForwardRef,
+    GetterDict,
     change_exception,
     is_classvar,
     resolve_annotations,
@@ -60,6 +61,17 @@ if TYPE_CHECKING:  # pragma: no cover
     Model = TypeVar('Model', bound='BaseModel')
 
 
+try:
+    import cython  # type: ignore
+except ImportError:
+    compiled: bool = False
+else:  # pragma: no cover
+    try:
+        compiled = cython.compiled
+    except AttributeError:
+        compiled = False
+
+
 class Extra(str, Enum):
     allow = 'allow'
     ignore = 'ignore'
@@ -81,6 +93,7 @@ class BaseConfig:
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
     json_encoders: Dict[AnyType, AnyCallable] = {}
+    orm_mode: bool = False
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
@@ -168,34 +181,35 @@ class MetaModel(ABCMeta):
             annotations = resolve_annotations(annotations, namespace.get('__module__', None))
 
         class_vars = set()
-        # annotation only fields need to come first in fields
-        for ann_name, ann_type in annotations.items():
-            if is_classvar(ann_type):
-                class_vars.add(ann_name)
-            elif not ann_name.startswith('_') and ann_name not in namespace:
-                validate_field_name(bases, ann_name)
-                fields[ann_name] = Field.infer(
-                    name=ann_name,
-                    value=...,
-                    annotation=ann_type,
-                    class_validators=vg.get_validators(ann_name),
-                    config=config,
-                )
+        if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
+            # annotation only fields need to come first in fields
+            for ann_name, ann_type in annotations.items():
+                if is_classvar(ann_type):
+                    class_vars.add(ann_name)
+                elif not ann_name.startswith('_') and ann_name not in namespace:
+                    validate_field_name(bases, ann_name)
+                    fields[ann_name] = Field.infer(
+                        name=ann_name,
+                        value=...,
+                        annotation=ann_type,
+                        class_validators=vg.get_validators(ann_name),
+                        config=config,
+                    )
 
-        for var_name, value in namespace.items():
-            if (
-                not var_name.startswith('_')
-                and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
-                and var_name not in class_vars
-            ):
-                validate_field_name(bases, var_name)
-                fields[var_name] = Field.infer(
-                    name=var_name,
-                    value=value,
-                    annotation=annotations.get(var_name),
-                    class_validators=vg.get_validators(var_name),
-                    config=config,
-                )
+            for var_name, value in namespace.items():
+                if (
+                    not var_name.startswith('_')
+                    and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
+                    and var_name not in class_vars
+                ):
+                    validate_field_name(bases, var_name)
+                    fields[var_name] = Field.infer(
+                        name=var_name,
+                        value=value,
+                        annotation=annotations.get(var_name),
+                        class_validators=vg.get_validators(var_name),
+                        config=config,
+                    )
 
         vg.check_for_unused()
         if config.json_encoders:
@@ -211,9 +225,6 @@ class MetaModel(ABCMeta):
             **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace)
-
-
-_missing = object()
 
 
 class BaseModel(metaclass=MetaModel):
@@ -232,11 +243,8 @@ class BaseModel(metaclass=MetaModel):
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
-        object.__setattr__(self, '__values__', self._process_values(data))
-        if self.__config__.extra is Extra.allow:
-            fields_set = set(data.keys())
-        else:
-            fields_set = data.keys() & self.__values__.keys()  # type: ignore
+        values, fields_set, _ = validate_model(self, data)
+        object.__setattr__(self, '__values__', values)
         object.__setattr__(self, '__fields_set__', fields_set)
 
     @no_type_check
@@ -357,6 +365,17 @@ class BaseModel(metaclass=MetaModel):
         return cls.parse_obj(obj)
 
     @classmethod
+    def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
+        if not cls.__config__.orm_mode:
+            raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
+        obj = cls._decompose_class(obj)
+        m = cls.__new__(cls)
+        values, fields_set, _ = validate_model(m, obj)
+        object.__setattr__(m, '__values__', values)
+        object.__setattr__(m, '__fields_set__', fields_set)
+        return m
+
+    @classmethod
     def construct(cls: Type['Model'], values: 'DictAny', fields_set: 'SetStr') -> 'Model':
         """
         Creates a new model and set __values__ without any validation, thus values should already be trusted.
@@ -424,18 +443,20 @@ class BaseModel(metaclass=MetaModel):
         yield cls.validate
 
     @classmethod
-    def validate(cls: Type['Model'], value: Union['DictStrAny', 'Model']) -> 'Model':
+    def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, dict):
             return cls(**value)
         elif isinstance(value, cls):
             return value.copy()
+        elif cls.__config__.orm_mode:
+            return cls.from_orm(value)
         else:
             with change_exception(DictError, TypeError, ValueError):
-                return cls(**dict(value))  # type: ignore
+                return cls(**dict(value))
 
-    def _process_values(self, input_data: Any) -> 'DictStrAny':
-        # (casting here is slow so use ignore)
-        return validate_model(self, input_data)  # type: ignore
+    @classmethod
+    def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
+        return GetterDict(obj)
 
     @classmethod
     def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:
@@ -518,7 +539,7 @@ class BaseModel(metaclass=MetaModel):
         return ret
 
 
-def create_model(  # noqa: C901 (ignore complexity)
+def create_model(
     model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
@@ -526,7 +547,7 @@ def create_model(  # noqa: C901 (ignore complexity)
     __module__: Optional[str] = None,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
-) -> BaseModel:
+) -> Type[BaseModel]:
     """
     Dynamically create a model.
     :param model_name: name of the created model
@@ -571,18 +592,24 @@ def create_model(  # noqa: C901 (ignore complexity)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(model_name, (__base__,), namespace)  # type: ignore
+    return type(model_name, (__base__,), namespace)
+
+
+_missing = object()
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
     model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True, cls: 'ModelOrDc' = None
-) -> Union['DictStrAny', Tuple['DictStrAny', Optional[ValidationError]]]:
+) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
     """
     validate data against a model.
     """
     values = {}
     errors = []
+    # input_data names, possibly alias
     names_used = set()
+    # field names, never aliases
+    fields_set = set()
     config = model.__config__
     check_extra = config.extra is not Extra.ignore
 
@@ -607,8 +634,10 @@ def validate_model(  # noqa: C901 (ignore complexity)
             if not model.__config__.validate_all and not field.validate_always:
                 values[name] = value
                 continue
-        elif check_extra:
-            names_used.add(field.name if using_name else field.alias)
+        else:
+            fields_set.add(name)
+            if check_extra:
+                names_used.add(field.name if using_name else field.alias)
 
         v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls or model.__class__)  # type: ignore
         if isinstance(errors_, ErrorWrapper):
@@ -621,6 +650,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
     if check_extra:
         extra = input_data.keys() - names_used
         if extra:
+            fields_set |= extra
             if config.extra is Extra.allow:
                 for f in extra:
                     values[f] = input_data[f]
@@ -629,8 +659,8 @@ def validate_model(  # noqa: C901 (ignore complexity)
                     errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
 
     if not raise_exc:
-        return values, ValidationError(errors) if errors else None
+        return values, fields_set, ValidationError(errors) if errors else None
 
     if errors:
         raise ValidationError(errors)
-    return values
+    return values, fields_set, None

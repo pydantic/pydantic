@@ -1,5 +1,6 @@
 import dataclasses
 from datetime import datetime
+from typing import ClassVar
 
 import pytest
 
@@ -105,6 +106,60 @@ def test_post_init():
     d = MyDataclass('1')
     assert d.a == 1
     assert post_init_called
+
+
+def test_post_init_post_parse():
+    post_init_post_parse_called = False
+
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: int
+
+        def __post_init_post_parse__(self):
+            nonlocal post_init_post_parse_called
+            post_init_post_parse_called = True
+
+    d = MyDataclass('1')
+    assert d.a == 1
+    assert post_init_post_parse_called
+
+
+def test_post_init_post_parse_types():
+    @pydantic.dataclasses.dataclass
+    class CustomType(object):
+        b: int
+
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: CustomType
+
+        def __post_init__(self):
+            assert type(self.a) == dict
+
+        def __post_init_post_parse__(self):
+            assert type(self.a) == CustomType
+
+    d = MyDataclass(**{'a': {'b': 1}})
+    assert d.a.b == 1
+
+
+def test_post_init_assignment():
+    from dataclasses import field
+
+    # Based on: https://docs.python.org/3/library/dataclasses.html#post-init-processing
+    @pydantic.dataclasses.dataclass
+    class C:
+        a: float
+        b: float
+        c: float = field(init=False)
+
+        def __post_init__(self):
+            self.c = self.a + self.b
+
+    c = C(0.1, 0.2)
+    assert c.a == 0.1
+    assert c.b == 0.2
+    assert c.c == 0.30000000000000004
 
 
 def test_inheritance():
@@ -326,3 +381,44 @@ def test_nested_schema():
             }
         },
     }
+
+
+def test_initvar():
+    InitVar = dataclasses.InitVar
+
+    @pydantic.dataclasses.dataclass
+    class TestInitVar:
+        x: int
+        y: InitVar
+
+    tiv = TestInitVar(1, 2)
+    assert tiv.x == 1
+    with pytest.raises(AttributeError):
+        tiv.y
+
+
+def test_derived_field_from_initvar():
+    InitVar = dataclasses.InitVar
+
+    @pydantic.dataclasses.dataclass
+    class DerivedWithInitVar:
+        plusone: int = dataclasses.field(init=False)
+        number: InitVar[int]
+
+        def __post_init__(self, number):
+            self.plusone = number + 1
+
+    derived = DerivedWithInitVar(1)
+    assert derived.plusone == 2
+    with pytest.raises(TypeError):
+        DerivedWithInitVar("Not A Number")
+
+
+def test_classvar():
+    @pydantic.dataclasses.dataclass
+    class TestClassVar:
+        klassvar: ClassVar = "I'm a Class variable"
+        x: int
+
+    tcv = TestClassVar(2)
+    assert tcv.klassvar == "I'm a Class variable"
