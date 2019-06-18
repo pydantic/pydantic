@@ -176,7 +176,7 @@ class ConstrainedList(list):  # type: ignore
 
 
 def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[List[T]]:
-    # __args__ is needed for to confirm to typing generics api
+    # __args__ is needed to conform to typing generics api
     namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
     # We use new_class to be able to deal with Generic types
     return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
