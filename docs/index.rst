@@ -964,13 +964,13 @@ Benchmarks were run with python 3.7.2 and the following package versions:
 * **pydantic** pre ``v0.27``
   `d473f4a <https://github.com/samuelcolvin/pydantic/commit/d473f4abc9d040c8c90e102017aacfc078f0f37d>`_ compiled with
   cython
+* **attrs** ``v19.1.0``
+* **cattrs** ``1.0.0rc``
 * **toasted-marshmallow** ``v0.2.6``
 * **marshmallow** the version installed by ``toasted-marshmallow``, see
   `this <https://github.com/lyft/toasted-marshmallow/issues/9>`_ issue.
 * **trafaret** ``v1.2.0``
 * **django-restful-framework** ``v3.9.4``
-* **attrs** ``v19.1.0``
-* **cattrs** ``1.0.0rc``
 
 Contributing to Pydantic
 ------------------------

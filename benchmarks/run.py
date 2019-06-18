@@ -193,13 +193,16 @@ def main():
     if 'SAVE' in os.environ:
         csv_file = StringIO()
         csv_writer = csv.writer(csv_file)
-        first_avg = None
-        for p, avg, sd in sorted(csv_results, key=itemgetter(1)):
-            if first_avg:
+        results = {r[0]: r for r in sorted(csv_results, key=itemgetter(1))}
+        pydantic_res = results.pop('pydantic')
+        first_avg = pydantic_res[1]
+        sd = pydantic_res[2]
+        csv_writer.writerow(['pydantic', '', f'{first_avg:0.1f}μs', f'{sd:0.3f}μs'])
+        for p, avg, sd in results.values():
+            if avg >= first_avg:
                 relative = f'{avg / first_avg:0.1f}x slower'
             else:
-                relative = ''
-                first_avg = avg
+                relative = f'{first_avg / avg:0.1f}x faster'
             csv_writer.writerow([p, relative, f'{avg:0.1f}μs', f'{sd:0.3f}μs'])
         p = Path(THIS_DIR / '../docs/benchmarks.csv')
         print(f'saving results to {p}')
