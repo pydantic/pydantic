@@ -56,6 +56,8 @@ class GenericModel(BaseModel):
         created_model.Config = cls.Config
         created_model.__concrete = True  # type: ignore
         _generic_types_cache[(cls, params)] = created_model
+        if len(params) == 1:
+            _generic_types_cache[(cls, params[0])] = created_model
         return created_model
 
 

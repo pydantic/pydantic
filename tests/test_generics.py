@@ -105,10 +105,10 @@ def test_cover_cache():
     class Model(GenericModel, Generic[T]):
         x: T
 
-    Model[int]
-    assert len(_generic_types_cache) == cache_size + 1
+    Model[int]  # adds both with-tuple and without-tuple version to cache
+    assert len(_generic_types_cache) == cache_size + 2
     Model[int]  # uses the cache
-    assert len(_generic_types_cache) == cache_size + 1
+    assert len(_generic_types_cache) == cache_size + 2
 
 
 @skip_36
