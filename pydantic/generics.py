@@ -26,7 +26,7 @@ class GenericModel(BaseModel):
         if cached is not None:
             return cached
         if cls.__concrete:
-            raise TypeError("Cannot parameterize a concrete instantiation of a generic model")
+            raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
             params = (params,)
         if any(isinstance(param, TypeVar) for param in params):  # type: ignore
@@ -35,7 +35,7 @@ class GenericModel(BaseModel):
         check_parameters_count(cls, params)
         typevars_map: Dict[Any, Any] = dict(zip(cls.__parameters__, params))  # type: ignore
         type_hints = get_type_hints(cls).items()
-        instance_type_hints = {k: v for k, v in type_hints if getattr(v, "__origin__", None) is not ClassVar}
+        instance_type_hints = {k: v for k, v in type_hints if getattr(v, '__origin__', None) is not ClassVar}
         concrete_type_hints: Dict[str, Type[Any]] = {
             k: resolve_type_hint(v, typevars_map) for k, v in instance_type_hints.items()
         }
