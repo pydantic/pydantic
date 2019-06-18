@@ -969,6 +969,8 @@ Benchmarks were run with python 3.7.2 and the following package versions:
   `this <https://github.com/lyft/toasted-marshmallow/issues/9>`_ issue.
 * **trafaret** ``v1.2.0``
 * **django-restful-framework** ``v3.9.4``
+* **attrs** ``v19.1.0``
+* **cattrs** ``1.0.0rc``
 
 Contributing to Pydantic
 ------------------------

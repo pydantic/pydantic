@@ -49,15 +49,12 @@ UNICODE = '\xa0\xad¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸¹º»¼½¾¿
 ALL = PUNCTUATION * 5 + LETTERS * 20 + UNICODE
 random = random.SystemRandom()
 
-if 'ATTRS' in os.environ:
-    other_tests = [TestAttr, TestCAttr]
-else:
-    # in order of performance for csv
-    other_tests = [
-        t for t in
-        [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
-        if t is not None
-    ]
+# in order of performance for csv
+other_tests = [
+    t for t in
+    [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF, TestAttr, TestCAttr]
+    if t is not None
+]
 
 
 class GenerateData:
@@ -204,10 +201,7 @@ def main():
                 relative = ''
                 first_avg = avg
             csv_writer.writerow([p, relative, f'{avg:0.1f}μs', f'{sd:0.3f}μs'])
-        if 'ATTRS' in os.environ:
-            p = Path(THIS_DIR / '../docs/benchmarks_attrs.csv')
-        else:
-            p = Path(THIS_DIR / '../docs/benchmarks.csv')
+        p = Path(THIS_DIR / '../docs/benchmarks.csv')
         print(f'saving results to {p}')
         p.write_text(csv_file.getvalue())
 

@@ -1,3 +1,0 @@
-attr,,4.5μs,0.182μs
-cattr,4.6x slower,20.7μs,0.484μs
-pydantic,8.7x slower,38.8μs,0.781μs
