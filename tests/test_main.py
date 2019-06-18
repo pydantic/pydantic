@@ -391,7 +391,7 @@ def test_const_with_wrong_value():
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
-            'msg': 'unexpected value; given: 4; permitted: 3',
+            'msg': 'unexpected value; permitted: 3',
             'type': 'value_error.const',
             'ctx': {'given': 4, 'permitted': [3]},
         }

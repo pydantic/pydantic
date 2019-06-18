@@ -353,7 +353,7 @@ def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
 
     def literal_validator(v: Any) -> Any:
         if v not in allowed_choices_set:
-            raise errors.WrongConstantError(given=v, permitted=list(allowed_choices))
+            raise errors.WrongConstantError(given=v, permitted=allowed_choices)
         return v
 
     return literal_validator

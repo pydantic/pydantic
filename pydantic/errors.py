@@ -51,10 +51,8 @@ class WrongConstantError(PydanticValueError):
     code = 'const'
 
     def __str__(self) -> str:
-        assert self.ctx is not None
-        given = self.ctx['given']
-        permitted = ', '.join(repr(v) for v in self.ctx['permitted'])
-        return f'unexpected value; given: {given!r}; permitted: {permitted}'
+        permitted = ', '.join(repr(v) for v in self.ctx['permitted'])  # type: ignore
+        return f'unexpected value; permitted: {permitted}'
 
 
 class BytesError(PydanticTypeError):
