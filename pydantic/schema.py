@@ -1,3 +1,4 @@
+import re
 import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -346,6 +347,7 @@ def get_model_name_map(unique_models: Set[Type['BaseModel']]) -> Dict[Type['Base
     conflicting_names: Set[str] = set()
     for model in unique_models:
         model_name = model.__name__
+        model_name = re.sub(r"[^a-zA-Z0-9.\-_]", "_", model_name)
         if model_name in conflicting_names:
             model_name = get_long_model_name(model)
             name_model_map[model_name] = model
