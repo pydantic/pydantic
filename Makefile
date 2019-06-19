@@ -48,6 +48,9 @@ external-mypy:
 	@mypy tests/mypy_test_fails2.py 1>/dev/null; \
 	  test $$? -eq 1 || \
 	  (echo "mypy_test_fails2: mypy passed when it should have failed!"; exit 1)
+	@mypy tests/mypy_test_fails3.py 1>/dev/null; \
+	  test $$? -eq 1 || \
+	  (echo "mypy_test_fails3: mypy passed when it should have failed!"; exit 1)
 
 .PHONY: testcov
 testcov: test

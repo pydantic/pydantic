@@ -57,6 +57,7 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not 
         os.environ['CFLAGS'] = '-O3'
         ext_modules = cythonize(
             'pydantic/*.py',
+            exclude=['pydantic/generics.py'],
             nthreads=4,
             language_level=3,
             compiler_directives=compiler_directives,

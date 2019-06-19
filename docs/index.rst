@@ -295,6 +295,45 @@ and pydantic versions).
 
 (This script is complete, it should run "as is")
 
+.. _generic_models:
+
+Generic Models
+..............
+
+.. note::
+
+   New in version v0.29.
+
+   This feature requires Python 3.7+.
+
+Pydantic supports the creation of generic models to make it easier to reuse a common model structure.
+
+In order to declare a generic model, you perform the following steps:
+
+* Declare one or more ``typing.TypeVar`` instances to use to parameterize your model.
+* Declare a pydantic model that inherits from ``pydantic.generics.GenericModel`` and ``typing.Generic``,
+  where you pass the ``TypeVar`` instances as parameters to ``typing.Generic``.
+* Use the ``TypeVar`` instances as annotations where you will want to replace them with other types or
+  pydantic models.
+
+Here is an example using ``GenericModel`` to create an easily-reused HTTP response payload wrapper:
+
+.. literalinclude:: examples/generics.py
+
+(This script is complete, it should run "as is")
+
+If you set ``Config`` or make use of ``validator`` in your generic model definition, it is applied
+to concrete subclasses in the same way as when inheriting from ``BaseModel``. Any methods defined on
+your generic class will also be inherited.
+
+Pydantic's generics also integrate properly with mypy, so you get all the type checking
+you would expect mypy to provide if you were to declare the type without using ``GenericModel``.
+
+.. note::
+
+   Internally, pydantic uses ``create_model`` to generate a (cached) concrete ``BaseModel`` at runtime,
+   so there is essentially zero overhead introduced by making use of ``GenericModel``.
+
 .. _orm_mode:
 
 ORM Mode (aka Arbitrary Class Instances)

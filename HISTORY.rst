@@ -9,6 +9,7 @@ v0.29 (unreleased)
 * Updated documentation to elucidate the usage of ``Union`` when defining multiple types under an attribute's
   annotation and showcase how the type-order can affect marshalling of provided values, #594 by @somada141
 * add ``conlist`` type, #583 by @hmvp
+* add support for generics, #595 by @dmontagu
 
 v0.28 (2019-06-06)
 ..................
