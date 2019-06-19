@@ -3,7 +3,7 @@
 History
 -------
 
-v0.29 (unreleased)
+v0.29 (2019-06-19)
 ..................
 * support dataclasses.InitVar, #592 by @pfrederiks
 * Updated documentation to elucidate the usage of ``Union`` when defining multiple types under an attribute's
