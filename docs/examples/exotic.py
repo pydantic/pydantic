@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
                       NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, StrictBool, UrlStr, conbytes, condecimal,
-                      confloat, conint, constr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, SecretStr, SecretBytes)
+                      confloat, conint, conlist, constr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, SecretStr, SecretBytes)
 
 
 class Model(BaseModel):
@@ -33,6 +33,8 @@ class Model(BaseModel):
     mod_float: confloat(multiple_of=0.5) = None
     pos_float: PositiveFloat = None
     neg_float: NegativeFloat = None
+
+    short_list: conlist(int, min_items=1, max_items=4)
 
     email_address: EmailStr = None
     email_and_name: NameEmail = None
@@ -91,6 +93,7 @@ m = Model(
     pos_float=2.2,
     neg_float=-2.3,
     unit_interval=0.5,
+    short_list=[1, 2],
     email_address='Samuel Colvin <s@muelcolvin.com >',
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
     is_really_a_bool=True,
@@ -138,6 +141,7 @@ print(m.dict())
     'pos_float': 2.2,
     'neg_float': -2.3,
     'unit_interval': 0.5,
+    'short_list': [1, 2],
     'email_address': 's@muelcolvin.com',
     'email_and_name': <NameEmail("Samuel Colvin <s@muelcolvin.com>")>,
     'is_really_a_bool': True,
