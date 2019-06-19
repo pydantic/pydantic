@@ -411,6 +411,10 @@ Optionally the ``Schema`` class can be used to provide extra information about t
   JSON Schema
 * ``multiple_of`` for numeric values, adds a validation of "a multiple of" and an annotation of ``multipleOf`` to the
   JSON Schema
+* ``min_items`` for list values, adds a corresponding validation and an annotation of ``minItems`` to the
+  JSON Schema
+* ``max_items`` for list values, adds a corresponding validation and an annotation of ``maxItems`` to the
+  JSON Schema
 * ``min_length`` for string values, adds a corresponding validation and an annotation of ``minLength`` to the
   JSON Schema
 * ``max_length`` for string values, adds a corresponding validation and an annotation of ``maxLength`` to the

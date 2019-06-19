@@ -209,6 +209,16 @@ class Field:
             return
 
         if issubclass(origin, List):
+            # Create self validators
+            get_validators = getattr(self.type_, '__get_validators__', None)
+            if get_validators:
+                self.class_validators.update(
+                    {
+                        f'list_{i}': Validator(validator, whole=True, pre=True, always=True, check_fields=False)
+                        for i, validator in enumerate(get_validators())
+                    }
+                )
+
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = Shape.LIST
         elif issubclass(origin, Set):

@@ -20,6 +20,7 @@ from .types import (
     ConstrainedDecimal,
     ConstrainedFloat,
     ConstrainedInt,
+    ConstrainedList,
     ConstrainedStr,
     DirectoryPath,
     EmailStr,
@@ -42,6 +43,7 @@ from .types import (
     condecimal,
     confloat,
     conint,
+    conlist,
     constr,
 )
 from .utils import clean_docstring, is_callable_type, lenient_issubclass
@@ -116,6 +118,8 @@ class Schema:
         'lt',
         'le',
         'multiple_of',
+        'min_items',
+        'max_items',
         'min_length',
         'max_length',
         'regex',
@@ -135,6 +139,8 @@ class Schema:
         lt: float = None,
         le: float = None,
         multiple_of: float = None,
+        min_items: int = None,
+        max_items: int = None,
         min_length: int = None,
         max_length: int = None,
         regex: str = None,
@@ -151,6 +157,8 @@ class Schema:
         self.lt = lt
         self.le = le
         self.multiple_of = multiple_of
+        self.min_items = min_items
+        self.max_items = max_items
         self.min_length = min_length
         self.max_length = max_length
         self.regex = regex
@@ -794,13 +802,15 @@ def get_annotation_from_schema(annotation: Any, schema: Schema) -> Type[Any]:
             attrs = ('max_length', 'min_length', 'regex')
             constraint_func = constr
         elif lenient_issubclass(annotation, numeric_types) and not issubclass(
-            annotation, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, bool)
+            annotation, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
         ):
             # Is numeric type
             attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
             numeric_type = next(t for t in numeric_types if issubclass(annotation, t))  # pragma: no branch
             constraint_func = _map_types_constraint[numeric_type]
-
+        elif issubclass(annotation, ConstrainedList):
+            attrs = ('min_items', 'max_items')
+            constraint_func = conlist
         if attrs:
             kwargs = {
                 attr_name: attr

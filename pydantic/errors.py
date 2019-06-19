@@ -146,6 +146,22 @@ class TupleLengthError(PydanticValueError):
         super().__init__(actual_length=actual_length, expected_length=expected_length)
 
 
+class ListMinLengthError(PydanticValueError):
+    code = 'list.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class ListMaxLengthError(PydanticValueError):
+    code = 'list.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
 class AnyStrMinLengthError(PydanticValueError):
     code = 'any_str.min_length'
     msg_template = 'ensure this value has at least {limit_value} characters'

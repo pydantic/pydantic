@@ -12,7 +12,23 @@ from ipaddress import (
     _BaseNetwork,
 )
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Pattern, Set, Tuple, Type, Union, cast
+from types import new_class
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Pattern,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from . import errors
@@ -43,6 +59,8 @@ __all__ = [
     'StrictStr',
     'ConstrainedBytes',
     'conbytes',
+    'ConstrainedList',
+    'conlist',
     'ConstrainedStr',
     'constr',
     'EmailStr',
@@ -125,6 +143,43 @@ def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_leng
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(strip_whitespace=strip_whitespace, min_length=min_length, max_length=max_length)
     return type('ConstrainedBytesValue', (ConstrainedBytes,), namespace)
+
+
+T = TypeVar('T')
+
+
+# This types superclass should be List[T], but cython chokes on that...
+class ConstrainedList(list):  # type: ignore
+    # Needed for pydantic to detect that this is a list
+    __origin__ = list
+    __args__: List[Type[T]]  # type: ignore
+
+    min_items: Optional[int] = None
+    max_items: Optional[int] = None
+    item_type: Type[T]  # type: ignore
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.list_length_validator
+
+    @classmethod
+    def list_length_validator(cls, v: 'List[T]', field: 'Field', config: 'BaseConfig') -> 'List[T]':
+        v_len = len(v)
+
+        if cls.min_items is not None and v_len < cls.min_items:
+            raise errors.ListMinLengthError(limit_value=cls.min_items)
+
+        if cls.max_items is not None and v_len > cls.max_items:
+            raise errors.ListMaxLengthError(limit_value=cls.max_items)
+
+        return v
+
+
+def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[List[T]]:
+    # __args__ is needed to conform to typing generics api
+    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
+    # We use new_class to be able to deal with Generic types
+    return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
 
 
 class ConstrainedStr(str):
