@@ -5,7 +5,7 @@ History
 
 v0.30 (unreleased)
 ..................
-* fix __post_init__ cause infinite recursion in inheritance, #606 by @Hanaasagi
+* fix ``__post_init__`` cause infinite recursion in inheritance, #606 by @Hanaasagi
 
 v0.29 (2019-06-19)
 ..................
