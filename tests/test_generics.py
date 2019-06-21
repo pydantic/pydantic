@@ -120,6 +120,21 @@ def test_classvar():
 
 
 @skip_36
+def test_non_annotated_field():
+    T = TypeVar('T')
+
+    class Result(GenericModel, Generic[T]):
+        data: T
+        other = True
+
+    assert "other" in Result.__fields__
+    assert "other" in Result[int].__fields__
+
+    result = Result[int](data=1)
+    assert result.other is True
+
+
+@skip_36
 def test_must_inherit_from_generic():
     with pytest.raises(TypeError) as exc_info:
 
