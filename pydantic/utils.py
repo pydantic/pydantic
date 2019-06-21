@@ -155,7 +155,10 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     if isinstance(v, str) and len(v) > (max_len - 2):
         # -3 so quote + string + … + quote has correct length
         return (v[: (max_len - 3)] + '…').__repr__()
-    v = type(v).__repr__(v)
+    try:
+        v = v.__repr__()
+    except TypeError:
+        v = type(v).__repr__(v)  # in case v is a type
     if len(v) > max_len:
         v = v[: max_len - 1] + '…'
     return v
