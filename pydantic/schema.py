@@ -234,12 +234,13 @@ def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Op
     m_schema, m_definitions = model_process_schema(
         model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
     )
-    if model_name in m_definitions:
-        # m_definitions[model_name] is None, it has circular references
+    nested = m_definitions.pop('_nested', ())
+    if model_name in nested:
+        # m_definitions[model_name] is in _nested metadata, it has circular references
         m_definitions[model_name] = m_schema
         m_schema = {'$ref': ref_prefix + model_name}
     if m_definitions:
-        m_schema.update({'definitions': m_definitions})
+        m_schema['definitions'] = m_definitions
     return m_schema
 
 
@@ -763,7 +764,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             definitions.update(sub_definitions)
             definitions[model_name] = sub_schema
         else:
-            definitions[model_name] = None
+            definitions.setdefault('_nested', set()).add(model_name)
         schema_ref = {'$ref': ref_prefix + model_name}
         if not schema_overrides:
             return schema_ref, definitions
