@@ -64,14 +64,14 @@ def _process_class(
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
 
-    def _pydantic_post_init(instance: 'DataclassType', *initvars: Any) -> None:
+    def _pydantic_post_init(self: 'DataclassType', *initvars: Any) -> None:
         if post_init_original is not None:
-            post_init_original(instance, *initvars)
-        d = validate_model(instance.__pydantic_model__, instance.__dict__, cls=instance.__class__)[0]
-        object.__setattr__(instance, '__dict__', d)
-        object.__setattr__(instance, '__initialised__', True)
+            post_init_original(self, *initvars)
+        d = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)[0]
+        object.__setattr__(self, '__dict__', d)
+        object.__setattr__(self, '__initialised__', True)
         if post_init_post_parse is not None:
-            post_init_post_parse(instance)
+            post_init_post_parse(self)
 
     _cls.__post_init__ = _pydantic_post_init
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore
