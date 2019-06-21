@@ -45,7 +45,7 @@ def test_value_validation():
             if isinstance(v, dict):
                 return v  # ensure v is actually a value of the dict, not the dict itself
             if v == 0:
-                raise ValueError("value is zero")
+                raise ValueError('value is zero')
 
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: "a"})
