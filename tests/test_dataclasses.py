@@ -108,6 +108,34 @@ def test_post_init():
     assert post_init_called
 
 
+def test_post_init_inheritance_chain():
+    parent_post_init_called = False
+    post_init_called = False
+
+    @pydantic.dataclasses.dataclass
+    class ParentDataclass:
+        a: int
+
+        def __post_init__(self):
+            nonlocal parent_post_init_called
+            parent_post_init_called = True
+
+    @pydantic.dataclasses.dataclass
+    class MyDataclass(ParentDataclass):
+        b: int
+
+        def __post_init__(self):
+            super().__post_init__()
+            nonlocal post_init_called
+            post_init_called = True
+
+    d = MyDataclass(a=1, b=2)
+    assert d.a == 1
+    assert d.b == 2
+    assert parent_post_init_called
+    assert post_init_called
+
+
 def test_post_init_post_parse():
     post_init_post_parse_called = False
 
