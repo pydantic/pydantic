@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Dict, Generic, List, Optional, TypeVar, Union
 
 import pytest
 
@@ -66,6 +66,31 @@ def test_config_is_inherited():
         instance.data = 2
 
     assert str(exc_info.value) == '"Model[int]" is immutable and does not support item assignment'
+
+
+@skip_36
+def test_default_arguments():
+    T = TypeVar('T')
+
+    class Result(GenericModel, Generic[T]):
+        data: T
+        other: bool = True
+    result = Result[int](data=1)
+    assert result.other is True
+
+
+@skip_36
+def test_classvar():
+    T = TypeVar('T')
+
+    class Result(GenericModel, Generic[T]):
+        data: T
+        other: ClassVar[int] = 1
+
+    assert Result.other == 1
+    assert Result[int].other == 1
+    assert Result[int](data=1).other == 1
+    assert "other" not in Result.__fields__
 
 
 @skip_36
