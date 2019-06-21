@@ -48,7 +48,7 @@ def test_value_validation():
                 raise ValueError('value is zero')
 
     with pytest.raises(ValidationError) as exc_info:
-        Response[Dict[int, int]](data={1: "a"})
+        Response[Dict[int, int]](data={1: 'a'})
     assert exc_info.value.errors() == [
         {'loc': ('data', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
@@ -94,7 +94,7 @@ def test_config_is_inherited():
 
 
 @skip_36
-def test_default_arguments():
+def test_default_argument():
     T = TypeVar('T')
 
     class Result(GenericModel, Generic[T]):
@@ -103,6 +103,23 @@ def test_default_arguments():
 
     result = Result[int](data=1)
     assert result.other is True
+
+
+@skip_36
+def test_default_argument_for_typevar():
+    T = TypeVar('T')
+
+    class Result(GenericModel, Generic[T]):
+        data: T = 4
+
+    result = Result[int]()
+    assert result.data == 4
+
+    result = Result[float]()
+    assert result.data == 4
+
+    result = Result[int](data=1)
+    assert result.data == 1
 
 
 @skip_36
@@ -116,7 +133,7 @@ def test_classvar():
     assert Result.other == 1
     assert Result[int].other == 1
     assert Result[int](data=1).other == 1
-    assert "other" not in Result.__fields__
+    assert 'other' not in Result.__fields__
 
 
 @skip_36
@@ -127,8 +144,8 @@ def test_non_annotated_field():
         data: T
         other = True
 
-    assert "other" in Result.__fields__
-    assert "other" in Result[int].__fields__
+    assert 'other' in Result.__fields__
+    assert 'other' in Result[int].__fields__
 
     result = Result[int](data=1)
     assert result.other is True
