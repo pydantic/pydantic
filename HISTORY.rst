@@ -7,6 +7,7 @@ v0.30 (unreleased)
 ..................
 * enforce single quotes in code, #612 by @samuelcolvin
 * fix infinite recursion with dataclass inheritance and ``__post_init__``, #606 by @Hanaasagi
+* fix schema generation regression, #613 by @wongpat
 
 v0.29 (2019-06-19)
 ..................
