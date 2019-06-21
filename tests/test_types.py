@@ -473,7 +473,7 @@ def test_enum_fails():
 
 
 def test_int_enum_successful_for_str_int():
-    m = CookingModel(tool="2")
+    m = CookingModel(tool='2')
     assert m.tool == ToolEnum.wrench
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
@@ -923,7 +923,7 @@ def test_strict_str():
         Model(v=123)
 
     with pytest.raises(ValidationError):
-        Model(v=b"foobar")
+        Model(v=b'foobar')
 
 
 def test_strict_bool():
@@ -937,10 +937,10 @@ def test_strict_bool():
         Model(v=1)
 
     with pytest.raises(ValidationError):
-        Model(v="1")
+        Model(v='1')
 
     with pytest.raises(ValidationError):
-        Model(v=b"1")
+        Model(v=b'1')
 
 
 def test_uuid_error():
@@ -1471,7 +1471,7 @@ def test_valid_simple_json():
         json_obj: Json
 
     obj = '{"a": 1, "b": [2, 3]}'
-    assert JsonModel(json_obj=obj).dict() == {'json_obj': {"a": 1, "b": [2, 3]}}
+    assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
 def test_invalid_simple_json():
@@ -1489,7 +1489,7 @@ def test_valid_simple_json_bytes():
         json_obj: Json
 
     obj = b'{"a": 1, "b": [2, 3]}'
-    assert JsonModel(json_obj=obj).dict() == {'json_obj': {"a": 1, "b": [2, 3]}}
+    assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
 def test_valid_detailed_json():

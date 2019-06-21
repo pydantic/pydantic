@@ -43,7 +43,7 @@ def validator(
         raise ConfigError('validator with no fields specified')
     elif isinstance(fields[0], FunctionType):
         raise ConfigError(
-            "validators should be used with fields and keyword arguments, not bare. "
+            "validators should be used with fields and keyword arguments, not bare. "  # noqa: Q000
             "E.g. usage should be `@validator('<field_name>', ...)`"
         )
 
@@ -94,7 +94,7 @@ class ValidatorGroup:
         if unused_validators:
             fn = ', '.join(unused_validators)
             raise ConfigError(
-                f"Validators defined with incorrect fields: {fn} "
+                f"Validators defined with incorrect fields: {fn} "  # noqa: Q000
                 f"(use check_fields=False if you're inheriting from the model and intended this)"
             )
 
