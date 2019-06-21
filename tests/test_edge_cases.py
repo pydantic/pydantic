@@ -470,7 +470,7 @@ def test_invalid_type():
         class Model(BaseModel):
             x: 43 = 123
 
-    assert "error checking inheritance of 43 (type: int)" in str(exc_info)
+    assert 'error checking inheritance of 43 (type: int)' in str(exc_info)
 
 
 class CustomStr(str):

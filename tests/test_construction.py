@@ -30,8 +30,8 @@ def test_large_any_str():
         a: bytes
         b: str
 
-    content_bytes = b"x" * (2 ** 16 + 1)
-    content_str = "x" * (2 ** 16 + 1)
+    content_bytes = b'x' * (2 ** 16 + 1)
+    content_str = 'x' * (2 ** 16 + 1)
     m = Model(a=content_bytes, b=content_str)
     assert m.a == content_bytes
     assert m.b == content_str

@@ -439,7 +439,7 @@ def test_derived_field_from_initvar():
     derived = DerivedWithInitVar(1)
     assert derived.plusone == 2
     with pytest.raises(TypeError):
-        DerivedWithInitVar("Not A Number")
+        DerivedWithInitVar('Not A Number')
 
 
 def test_classvar():

@@ -312,7 +312,7 @@ def test_invalid_field():
                 return v
 
     assert str(exc_info.value) == (
-        "Validators defined with incorrect fields: check_b "
+        "Validators defined with incorrect fields: check_b "  # noqa: Q000
         "(use check_fields=False if you're inheriting from the model and intended this)"
     )
 
