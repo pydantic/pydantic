@@ -34,6 +34,31 @@ def test_double_parameterize_error():
 
 
 @skip_36
+def test_value_validation():
+    T = TypeVar('T')
+
+    class Response(GenericModel, Generic[T]):
+        data: T
+
+        @validator("data")
+        def validate_value_nonzero(cls, v):
+            if isinstance(v, dict):
+                return v  # ensure v is actually a value of the dict, not the dict itself
+            if v == 0:
+                raise ValueError("value is zero")
+
+    with pytest.raises(ValidationError) as exc_info:
+        Response[Dict[int, int]](data={1: "a"})
+    assert exc_info.value.errors() == [
+        {'loc': ('data', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Response[Dict[int, int]](data={1: 0})
+    assert exc_info.value.errors() == [{'loc': ('data', 1), 'msg': 'value is zero', 'type': 'value_error'}]
+
+
+@skip_36
 def test_methods_are_inherited():
     class CustomGenericModel(GenericModel):
         def method(self):
@@ -75,6 +100,7 @@ def test_default_arguments():
     class Result(GenericModel, Generic[T]):
         data: T
         other: bool = True
+
     result = Result[int](data=1)
     assert result.other is True
 
