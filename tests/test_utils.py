@@ -149,4 +149,4 @@ def test_lenient_issubclass_is_lenient():
 
 
 def test_truncate_type():
-    assert truncate(object) == '<class \'object\'>'
+    assert truncate(object) == "<class 'object'>"
