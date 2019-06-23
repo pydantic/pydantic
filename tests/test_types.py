@@ -1679,7 +1679,7 @@ def test_literal_single():
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
-            'msg': 'unexpected value; permitted: \'a\'',
+            'msg': "unexpected value; permitted: 'a'",
             'type': 'value_error.const',
             'ctx': {'given': 'b', 'permitted': ('a',)},
         }
@@ -1698,7 +1698,7 @@ def test_literal_multiple():
     assert exc_info.value.errors() == [
         {
             'loc': ('a_or_b',),
-            'msg': 'unexpected value; permitted: \'a\', \'b\'',
+            'msg': "unexpected value; permitted: 'a', 'b'",
             'type': 'value_error.const',
             'ctx': {'given': 'c', 'permitted': ('a', 'b')},
         }

@@ -346,14 +346,14 @@ def callable_validator(v: Any) -> AnyCallable:
 
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     if sys.version_info >= (3, 7):
-        allowed_choices = type_.__args__
+        permitted_choices = type_.__args__
     else:
-        allowed_choices = type_.__values__
-    allowed_choices_set = set(allowed_choices)
+        permitted_choices = type_.__values__
+    allowed_choices_set = set(permitted_choices)
 
     def literal_validator(v: Any) -> Any:
         if v not in allowed_choices_set:
-            raise errors.WrongConstantError(given=v, permitted=allowed_choices)
+            raise errors.WrongConstantError(given=v, permitted=permitted_choices)
         return v
 
     return literal_validator
