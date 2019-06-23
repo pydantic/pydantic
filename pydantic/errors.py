@@ -55,6 +55,10 @@ class WrongConstantError(PydanticValueError):
         return f'unexpected value; permitted: {permitted}'
 
 
+class BoolError(PydanticValueError):
+    msg_template = 'value could not be cast to a valid boolean'
+
+
 class BytesError(PydanticTypeError):
     msg_template = 'byte type expected'
 

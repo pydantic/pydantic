@@ -91,7 +91,8 @@ def bytes_validator(v: Any) -> bytes:
         raise errors.BytesError()
 
 
-BOOL_STRINGS = {'1', 'TRUE', 'ON', 'YES'}
+BOOL_TRUE = {True, 1, 'y', 'Y', 'yes', 'Yes', 'YES', 'true', 'True', 'TRUE', 'on', 'On', 'ON', '1', 't', 'T'}
+BOOL_FALSE = {False, 0, 'n', 'N', 'no', 'No', 'NO', 'false', 'False', 'FALSE', 'off', 'Off', 'OFF', '0', 'f', 'F'}
 
 
 def bool_validator(v: Any) -> bool:
@@ -99,9 +100,11 @@ def bool_validator(v: Any) -> bool:
         return v
     if isinstance(v, bytes):
         v = v.decode()
-    if isinstance(v, str):
-        return v.upper() in BOOL_STRINGS
-    return bool(v)
+    if v in BOOL_TRUE:
+        return True
+    elif v in BOOL_FALSE:
+        return False
+    raise errors.BoolError()
 
 
 def int_validator(v: Any) -> int:
