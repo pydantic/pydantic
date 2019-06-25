@@ -1,4 +1,5 @@
 import re
+import sys
 from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
@@ -24,7 +25,16 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import AnyCallable, AnyType, ForwardRef, change_exception, display_as_type, is_callable_type, sequence_like
+from .utils import (
+    AnyCallable,
+    AnyType,
+    ForwardRef,
+    change_exception,
+    display_as_type,
+    is_callable_type,
+    is_literal_type,
+    sequence_like,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -140,7 +150,7 @@ def constant_validator(v: 'Any', field: 'Field') -> 'Any':
     Schema.
     """
     if v != field.default:
-        raise errors.WrongConstantError(given=v, const=field.default)
+        raise errors.WrongConstantError(given=v, permitted=[field.default])
 
     return v
 
@@ -334,6 +344,21 @@ def callable_validator(v: Any) -> AnyCallable:
     raise errors.CallableError(value=v)
 
 
+def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
+    if sys.version_info >= (3, 7):
+        permitted_choices = type_.__args__
+    else:
+        permitted_choices = type_.__values__
+    allowed_choices_set = set(permitted_choices)
+
+    def literal_validator(v: Any) -> Any:
+        if v not in allowed_choices_set:
+            raise errors.WrongConstantError(given=v, permitted=permitted_choices)
+        return v
+
+    return literal_validator
+
+
 T = TypeVar('T')
 
 
@@ -409,7 +434,9 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
 ]
 
 
-def find_validators(type_: AnyType, config: Type['BaseConfig']) -> Generator[AnyCallable, None, None]:
+def find_validators(  # noqa: C901 (ignore complexity)
+    type_: AnyType, config: Type['BaseConfig']
+) -> Generator[AnyCallable, None, None]:
     if type_ is Any:
         return
     type_type = type(type_)
@@ -420,6 +447,9 @@ def find_validators(type_: AnyType, config: Type['BaseConfig']) -> Generator[Any
         return
     if is_callable_type(type_):
         yield callable_validator
+        return
+    if is_literal_type(type_):
+        yield make_literal_validator(type_)
         return
 
     supertype = _find_supertype(type_)
