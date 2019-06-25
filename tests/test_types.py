@@ -48,6 +48,11 @@ try:
 except ImportError:
     email_validator = None
 
+try:
+    import typing_extensions
+except ImportError:
+    typing_extensions = None
+
 
 class ConBytesModel(BaseModel):
     v: conbytes(max_length=10) = b'foobar'
@@ -1660,4 +1665,41 @@ def test_generic_without_params_error():
     assert exc_info.value.errors() == [
         {'loc': ('generic_list',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
         {'loc': ('generic_dict',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'},
+    ]
+
+
+@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+def test_literal_single():
+    class Model(BaseModel):
+        a: typing_extensions.Literal['a']
+
+    Model(a='a')
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='b')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': "unexpected value; permitted: 'a'",
+            'type': 'value_error.const',
+            'ctx': {'given': 'b', 'permitted': ('a',)},
+        }
+    ]
+
+
+@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+def test_literal_multiple():
+    class Model(BaseModel):
+        a_or_b: typing_extensions.Literal['a', 'b']
+
+    Model(a_or_b='a')
+    Model(a_or_b='b')
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a_or_b='c')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a_or_b',),
+            'msg': "unexpected value; permitted: 'a', 'b'",
+            'type': 'value_error.const',
+            'ctx': {'given': 'c', 'permitted': ('a', 'b')},
+        }
     ]

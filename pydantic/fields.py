@@ -26,6 +26,11 @@ from .types import Json, JsonWrapper
 from .utils import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, lenient_issubclass, sequence_like
 from .validators import NoneType, constant_validator, dict_validator, find_validators
 
+try:
+    from typing_extensions import Literal
+except ImportError:
+    Literal = None  # type: ignore
+
 Required: Any = Ellipsis
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -186,6 +191,8 @@ class Field:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
         if origin is Callable:
+            return
+        if Literal is not None and origin is Literal:
             return
         if origin is Union:
             types_ = []

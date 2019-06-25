@@ -49,7 +49,10 @@ class NoneIsAllowedError(PydanticTypeError):
 
 class WrongConstantError(PydanticValueError):
     code = 'const'
-    msg_template = 'expected constant value {const!r}'
+
+    def __str__(self) -> str:
+        permitted = ', '.join(repr(v) for v in self.ctx['permitted'])  # type: ignore
+        return f'unexpected value; permitted: {permitted}'
 
 
 class BytesError(PydanticTypeError):
