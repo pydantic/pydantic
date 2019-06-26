@@ -466,6 +466,16 @@ Outputs:
 .. literalinclude:: examples/schema3.json
 
 
+Alias Provider
+..............
+If data source field names not match your code style (e. g. CamelCase fields),
+you can automatically generate aliases for them using ``alias_provider``:
+
+.. literalinclude:: examples/alias_provider_config.py
+
+(This script is complete, it should run "as is")
+
+
 Error Handling
 ..............
 
@@ -722,6 +732,7 @@ Options:
 :json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
     details.
 :orm_mode: allows usage of :ref:`ORM mode <orm_mode>`
+:alias_provider: callable that takes field name and returns alias for it
 
 .. warning::
 

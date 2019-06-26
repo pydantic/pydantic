@@ -649,3 +649,31 @@ def test_dict_with_extra_keys():
     m = MyModel(extra_key='extra')
     assert m.dict() == {'a': None, 'extra_key': 'extra'}
     assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
+
+
+def test_alias_provider():
+    def to_camel(string: str):
+        return ''.join(x.capitalize() for x in string.split('_'))
+
+    class MyModel(BaseModel):
+        a: List[str] = None
+        foo_bar: str
+
+        class Config:
+            alias_provider = to_camel
+
+    data = {'A': ['foo', 'bar'], 'FooBar': 'foobar'}
+    v = MyModel(**data)
+    assert v.a == ['foo', 'bar']
+    assert v.foo_bar == 'foobar'
+    assert v.dict(by_alias=True) == data
+
+    with pytest.raises(TypeError) as e:
+
+        class MyModel(BaseModel):
+            bar: Any
+
+            class Config:
+                alias_provider = str.encode
+
+    assert str(e.value) == "Config.alias_provider must return str, not <class 'bytes'>"
