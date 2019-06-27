@@ -474,14 +474,14 @@ def field_type_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
-        nested_models |= f_nested_models
+        nested_models.update(f_nested_models)
         return {'type': 'array', 'items': f_schema}, definitions, nested_models
     elif field.shape is Shape.SET:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
-        nested_models |= f_nested_models
+        nested_models.update(f_nested_models)
         return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions, nested_models
     elif field.shape is Shape.MAPPING:
         dict_schema: Dict[str, Any] = {'type': 'object'}
@@ -491,7 +491,7 @@ def field_type_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
-        nested_models |= f_nested_models
+        nested_models.update(f_nested_models)
         if regex:
             # Dict keys have a regex pattern
             # f_schema might be a schema or empty dict, add it either way
@@ -508,7 +508,7 @@ def field_type_schema(
                 sf, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
             )
             definitions.update(sf_definitions)
-            nested_models |= sf_nested_models
+            nested_models.update(sf_nested_models)
             sub_schema.append(sf_schema)
         if len(sub_schema) == 1:
             sub_schema = sub_schema[0]  # type: ignore
@@ -524,7 +524,7 @@ def field_type_schema(
             known_models=known_models,
         )
         definitions.update(f_definitions)
-        nested_models |= f_nested_models
+        nested_models.update(f_nested_models)
         return f_schema, definitions, nested_models
 
 
@@ -773,7 +773,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             )
             definitions.update(sub_definitions)
             definitions[model_name] = sub_schema
-            nested_models |= sub_nested_models
+            nested_models.update(sub_nested_models)
         else:
             nested_models.add(model_name)
         schema_ref = {'$ref': ref_prefix + model_name}
