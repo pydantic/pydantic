@@ -651,7 +651,7 @@ def test_dict_with_extra_keys():
     assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
 
 
-def test_alias_provider():
+def test_alias_generator():
     def to_camel(string: str):
         return ''.join(x.capitalize() for x in string.split('_'))
 
@@ -660,7 +660,7 @@ def test_alias_provider():
         foo_bar: str
 
         class Config:
-            alias_provider = to_camel
+            alias_generator = to_camel
 
     data = {'A': ['foo', 'bar'], 'FooBar': 'foobar'}
     v = MyModel(**data)
@@ -668,12 +668,17 @@ def test_alias_provider():
     assert v.foo_bar == 'foobar'
     assert v.dict(by_alias=True) == data
 
+
+def test_alias_generator_wrong_type_error():
+    def return_bytes(string):
+        return b'not a string'
+
     with pytest.raises(TypeError) as e:
 
         class MyModel(BaseModel):
             bar: Any
 
             class Config:
-                alias_provider = str.encode
+                alias_generator = return_bytes
 
-    assert str(e.value) == "Config.alias_provider must return str, not <class 'bytes'>"
+    assert str(e.value) == "Config.alias_generator must return str, not <class 'bytes'>"
