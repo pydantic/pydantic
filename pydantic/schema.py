@@ -640,7 +640,7 @@ def field_singleton_sub_fields_schema(
             )
             definitions.update(sub_definitions)
             sub_field_schemas.append(sub_schema)
-            nested_models |= sub_nested_models
+            nested_models.update(sub_nested_models)
         return {'anyOf': sub_field_schemas}, definitions, nested_models
 
 
