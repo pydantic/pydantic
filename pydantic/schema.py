@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 from uuid import UUID
 
 import pydantic
@@ -720,7 +720,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_prefix=ref_prefix,
             known_models=known_models,
         )
-    if field.type_ is Any:
+    if field.type_ is Any or type(field.type_) == TypeVar:
         return {}, definitions  # no restrictions
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')

@@ -11,7 +11,13 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, Schema, ValidationError, validator
-from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_map, schema
+from pydantic.schema import (
+    get_flat_models_from_model,
+    get_flat_models_from_models,
+    get_model_name_map,
+    model_schema,
+    schema,
+)
 from pydantic.types import (
     DSN,
     UUID1,
@@ -1300,4 +1306,16 @@ def test_field_with_validator():
         'title': 'Model',
         'type': 'object',
         'properties': {'something': {'type': 'integer', 'title': 'Something'}},
+    }
+
+
+def test_unparameterized_schema_generation():
+    class Foo(BaseModel):
+        d: Dict
+
+    assert model_schema(Foo) == {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {'d': {'title': 'D', 'type': 'object'}},
+        'required': ['d'],
     }
