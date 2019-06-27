@@ -1310,11 +1310,22 @@ def test_field_with_validator():
 
 
 def test_unparameterized_schema_generation():
-    class Foo(BaseModel):
+    class FooList(BaseModel):
+        d: List
+
+    assert model_schema(FooList) == {
+        'title': 'FooList',
+        'type': 'object',
+        'properties': {'d': {'items': {}, 'title': 'D', 'type': 'array'}},
+        'required': ['d'],
+    }
+
+    class FooDict(BaseModel):
         d: Dict
 
-    assert model_schema(Foo) == {
-        'title': 'Foo',
+    model_schema(Foo)
+    assert model_schema(FooDict) == {
+        'title': 'FooDict',
         'type': 'object',
         'properties': {'d': {'title': 'D', 'type': 'object'}},
         'required': ['d'],
