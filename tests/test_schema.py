@@ -1313,6 +1313,9 @@ def test_unparameterized_schema_generation():
     class FooList(BaseModel):
         d: List
 
+    class BarList(BaseModel):
+        d: list
+
     assert model_schema(FooList) == {
         'title': 'FooList',
         'type': 'object',
@@ -1320,8 +1323,16 @@ def test_unparameterized_schema_generation():
         'required': ['d'],
     }
 
+    foo_list_schema = model_schema(FooList)
+    bar_list_schema = model_schema(BarList)
+    bar_list_schema['title'] = 'FooList'  # to check for equality
+    assert foo_list_schema == bar_list_schema
+
     class FooDict(BaseModel):
         d: Dict
+
+    class BarDict(BaseModel):
+        d: dict
 
     model_schema(Foo)
     assert model_schema(FooDict) == {
@@ -1330,3 +1341,8 @@ def test_unparameterized_schema_generation():
         'properties': {'d': {'title': 'D', 'type': 'object'}},
         'required': ['d'],
     }
+
+    foo_dict_schema = model_schema(FooDict)
+    bar_dict_schema = model_schema(BarDict)
+    bar_dict_schema['title'] = 'FooDict'  # to check for equality
+    assert foo_dict_schema == bar_dict_schema
