@@ -316,6 +316,24 @@ class CheckModel(BaseModel):
         max_anystr_length = 10
 
 
+# class BoolCastable:
+#     def __init__(self, x: int) -> None:
+#         self.x = x
+#
+#     def __bool__(self) -> bool:
+#         return self.x > 0
+#
+#
+# class BoolCastableModel(BaseModel):
+#     x: int
+#
+#     def __bool__(self) -> bool:
+#         return self.x > 0
+#
+# class NonBoolCastableModel(BaseModel):
+#     x: int
+
+
 @pytest.mark.parametrize(
     'field,value,result',
     [
@@ -336,6 +354,8 @@ class CheckModel(BaseModel):
         ('bool_check', 't', True),
         ('bool_check', 'T', True),
         ('bool_check', b'TRUE', True),
+        # ('bool_check', BoolCastableModel(x=1), True),
+        # ('bool_check', BoolCastable(x=1), True),
         ('bool_check', False, False),
         ('bool_check', 0, False),
         ('bool_check', 'n', False),
@@ -353,14 +373,18 @@ class CheckModel(BaseModel):
         ('bool_check', 'f', False),
         ('bool_check', 'F', False),
         ('bool_check', b'FALSE', False),
+        # ('bool_check', BoolCastableModel(x=0), False),
+        # ('bool_check', BoolCastable(x=0), False),
         ('bool_check', None, ValidationError),
         ('bool_check', '', ValidationError),
         ('bool_check', [], ValidationError),
         ('bool_check', {}, ValidationError),
-        ('bool_check', [True], ValidationError),
+        ('bool_check', [1, 2, 3, 4], ValidationError),
+        ('bool_check', {1: 2, 3: 4}, ValidationError),
         ('bool_check', b'2', ValidationError),
         ('bool_check', '2', ValidationError),
         ('bool_check', 2, ValidationError),
+        # ('bool_check', NonBoolCastableModel(x=0), ValidationError),
         ('str_check', 's', 's'),
         ('str_check', '  s  ', 's'),
         ('str_check', b's', 's'),
