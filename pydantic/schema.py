@@ -584,7 +584,7 @@ def model_type_schema(
             warnings.warn(skip.message, UserWarning)
             continue
         definitions.update(f_definitions)
-        nested_models |= f_nested_models
+        nested_models.update(f_nested_models)
         if by_alias:
             properties[f.alias] = f_schema
             if f.required:
