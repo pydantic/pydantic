@@ -11,6 +11,7 @@ v0.30 (unreleased)
 * clarify, that self-referencing models require python 3.7+, #616 by @vlcinsky
 * fix truncate for types, #611 by @dmontagu
 * add ``alias_generator`` support, #622 by @MrMrRobat
+* fix schema generation with multiple/circular references to the same model, #621 by @tiangolo and @wongpat
 
 v0.29 (2019-06-19)
 ..................

@@ -1301,3 +1301,32 @@ def test_field_with_validator():
         'type': 'object',
         'properties': {'something': {'type': 'integer', 'title': 'Something'}},
     }
+
+
+def test_known_model_optimization():
+    class Dep(BaseModel):
+        number: int
+
+    class Model(BaseModel):
+        dep: Dep
+        dep_l: List[Dep]
+
+    expected = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'dep': {'$ref': '#/definitions/Dep'},
+            'dep_l': {'title': 'Dep_L', 'type': 'array', 'items': {'$ref': '#/definitions/Dep'}},
+        },
+        'required': ['dep', 'dep_l'],
+        'definitions': {
+            'Dep': {
+                'title': 'Dep',
+                'type': 'object',
+                'properties': {'number': {'title': 'Number', 'type': 'integer'}},
+                'required': ['number'],
+            }
+        },
+    }
+
+    assert Model.schema() == expected
