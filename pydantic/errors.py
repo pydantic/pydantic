@@ -56,7 +56,7 @@ class WrongConstantError(PydanticValueError):
 
 
 class BoolError(PydanticValueError):
-    msg_template = 'value could not be cast to a valid boolean'
+    msg_template = 'value is not a valid boolean'
 
 
 class BytesError(PydanticTypeError):
@@ -362,6 +362,10 @@ class IPv6InterfaceError(PydanticValueError):
 
 class ColorError(PydanticValueError):
     msg_template = 'value is not a valid color: {reason}'
+
+
+class RelaxedBoolError(PydanticValueError):
+    msg_template = 'value could not be coerced to a boolean'
 
 
 class StrictBoolError(PydanticValueError):

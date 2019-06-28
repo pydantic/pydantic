@@ -92,6 +92,7 @@ __all__ = [
     'IPvAnyNetwork',
     'SecretStr',
     'SecretBytes',
+    'RelaxedBool',
     'StrictBool',
 ]
 
@@ -241,6 +242,21 @@ class EmailStr(str):
     @classmethod
     def validate(cls, value: str) -> str:
         return validate_email(value)[1]
+
+
+class RelaxedBool(int):
+    """
+    RelaxedBool coerces values to bool following standard python logic.
+    """
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: Any) -> bool:
+        with change_exception(errors.RelaxedBoolError, TypeError, ValueError):
+            return bool(value)
 
 
 class StrictBool(int):

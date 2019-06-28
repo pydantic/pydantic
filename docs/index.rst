@@ -580,11 +580,23 @@ Exotic Types
 (This script is complete, it should run "as is")
 
 
-StrictBool
-~~~~~~~~~~
+RelaxedBool and StrictBool
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Unlike normal ``bool`` fields, ``StrictBool`` can be used to required specifically ``True`` or ``False``,
+A standard ``bool`` field will raise a ``ValidationError`` if the value is not one of the following:
+
+* A valid boolean (i.e., ``True`` or ``False``),
+* The integers ``0`` or ``1``,
+* a ``str`` which when lowercased is in ``{'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'}``
+* a ``bytes`` which is valid (per the previous rule) when decoded to ``str``
+
+If you want more permissive behavior, ``RelaxedBool`` can be used to cast values to bool using standard python logic.
+For example, ``None`` would be cast to False. Note that this behaves differently than the standard ``bool`` field
+for some values: for example, a ``RelaxedBool`` field would cast the string "false" to True.
+
+For stricter behavior, ``StrictBool`` can be used to require specifically ``True`` or ``False``;
 nothing else is permitted.
+
 
 
 Callable

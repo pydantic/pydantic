@@ -102,12 +102,11 @@ def bool_validator(v: Any) -> bool:
         v = v.decode()
     if isinstance(v, str):
         v = v.lower()
-    if v in BOOL_TRUE:
-        return True
-    if v in BOOL_FALSE:
-        return False
-    # if hasattr(v, '__bool__'):
-    #     return bool(v)
+    with change_exception(errors.BoolError, TypeError):
+        if v in BOOL_TRUE:
+            return True
+        if v in BOOL_FALSE:
+            return False
     raise errors.BoolError()
 
 
