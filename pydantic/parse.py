@@ -6,9 +6,9 @@ from typing import Any, Union
 from .types import StrBytes
 
 try:
-    import ujson as json
+    from orjson import loads as json_loads
 except ImportError:
-    import json  # type: ignore
+    from json import loads as json_loads  # type: ignore
 
 
 class Protocol(str, Enum):
@@ -32,7 +32,7 @@ def load_str_bytes(
     if proto == Protocol.json:
         if isinstance(b, bytes):
             b = b.decode(encoding)
-        return json.loads(b)
+        return json_loads(b)
     elif proto == Protocol.pickle:
         if not allow_pickle:
             raise RuntimeError('Trying to decode with pickle with allow_pickle=False')

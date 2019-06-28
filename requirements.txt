@@ -2,7 +2,7 @@
 -r docs/requirements.txt
 -r tests/requirements.txt
 
-ujson==1.35
+orjson>=2.0.6,<3;platform_python_implementation=="CPython" and platform_machine=="x86_64" and python_version<"3.8"
 email-validator==1.0.4
-dataclasses==0.6; python_version < '3.7'
+dataclasses==0.6;python_version < '3.7'
 typing-extensions==3.7.2

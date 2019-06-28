@@ -91,15 +91,15 @@ To test if *pydantic* is compiled run::
     import pydantic
     print('compiled:', pydantic.compiled)
 
-If you want *pydantic* to parse json faster you can add `ujson <https://pypi.python.org/pypi/ujson>`_
+If you want *pydantic* to parse JSON faster you can add `orjson <https://pypi.org/project/orjson/>`_
 as an optional dependency. Similarly *pydantic's* email validation relies on
 `email-validator <https://github.com/JoshData/python-email-validator>`_ ::
 
-    pip install pydantic[ujson]
+    pip install pydantic[fast-json]
     # or
     pip install pydantic[email]
     # or just
-    pip install pydantic[ujson,email]
+    pip install pydantic[fast-json,email]
 
 Of course you can also install these requirements manually with ``pip install ...``.
 

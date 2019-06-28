@@ -11,6 +11,8 @@ v0.30 (unreleased)
 * clarify, that self-referencing models require python 3.7+, #616 by @vlcinsky
 * fix truncate for types, #611 by @dmontagu
 * fix schema generation with multiple/circular references to the same model, #621 by @tiangolo and @wongpat
+* **breaking change** `pip install pydantic[ujson]` is changed to `pip install pydantic[fast-json]`, uses `orjson`
+  instead of `ujson` for JSON parsing, #599 by @ijl
 
 v0.29 (2019-06-19)
 ..................

@@ -99,8 +99,8 @@ setup(
         'dataclasses>=0.6;python_version<"3.7"'
     ],
     extras_require={
-        'ujson': ['ujson>=1.35'],
         'email': ['email-validator>=1.0.3'],
+        'fast-json': ['orjson>=2.0.6,<3;platform_python_implementation=="CPython" and platform_machine=="x86_64" and python_version<"3.8"'],
         'typing_extensions': ['typing-extensions>=3.7.2']
     },
     ext_modules=ext_modules,
