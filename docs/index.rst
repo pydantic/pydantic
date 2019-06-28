@@ -749,7 +749,7 @@ Version for models based on ``@dataclass`` decorator:
 
 Alias Generator
 ~~~~~~~~~~~~~~~
-If data source field names not match your code style (e. g. CamelCase fields),
+If data source field names do not match your code style (e. g. CamelCase fields),
 you can automatically generate aliases using ``alias_generator``:
 
 .. literalinclude:: examples/alias_generator_config.py
