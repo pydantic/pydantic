@@ -56,7 +56,7 @@ class WrongConstantError(PydanticValueError):
 
 
 class BoolError(PydanticValueError):
-    msg_template = 'value is not a valid boolean'
+    msg_template = 'value could not be parsed to a boolean'
 
 
 class BytesError(PydanticTypeError):
