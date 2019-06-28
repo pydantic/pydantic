@@ -1346,3 +1346,32 @@ def test_unparameterized_schema_generation():
     bar_dict_schema = model_schema(BarDict)
     bar_dict_schema['title'] = 'FooDict'  # to check for equality
     assert foo_dict_schema == bar_dict_schema
+
+
+def test_known_model_optimization():
+    class Dep(BaseModel):
+        number: int
+
+    class Model(BaseModel):
+        dep: Dep
+        dep_l: List[Dep]
+
+    expected = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'dep': {'$ref': '#/definitions/Dep'},
+            'dep_l': {'title': 'Dep_L', 'type': 'array', 'items': {'$ref': '#/definitions/Dep'}},
+        },
+        'required': ['dep', 'dep_l'],
+        'definitions': {
+            'Dep': {
+                'title': 'Dep',
+                'type': 'object',
+                'properties': {'number': {'title': 'Number', 'type': 'integer'}},
+                'required': ['number'],
+            }
+        },
+    }
+
+    assert Model.schema() == expected

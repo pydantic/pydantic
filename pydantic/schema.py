@@ -202,7 +202,7 @@ def schema(
     if description:
         output_schema['description'] = description
     for model in models:
-        m_schema, m_definitions = model_process_schema(
+        m_schema, m_definitions, m_nested_models = model_process_schema(
             model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
         definitions.update(m_definitions)
@@ -231,11 +231,11 @@ def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Op
     flat_models = get_flat_models_from_model(model)
     model_name_map = get_model_name_map(flat_models)
     model_name = model_name_map[model]
-    m_schema, m_definitions = model_process_schema(
+    m_schema, m_definitions, nested_models = model_process_schema(
         model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
     )
-    if model_name in m_definitions:
-        # m_definitions[model_name] is None, it has circular references
+    if model_name in nested_models:
+        # model_name is in Nested models, it has circular references
         m_definitions[model_name] = m_schema
         m_schema = {'$ref': ref_prefix + model_name}
     if m_definitions:
@@ -250,7 +250,7 @@ def field_schema(
     model_name_map: Dict[Type['BaseModel'], str],
     ref_prefix: Optional[str] = None,
     known_models: Set[Type['BaseModel']] = None,
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     Process a Pydantic field and return a tuple with a JSON Schema for it as the first item.
     Also return a dictionary of definitions with models as keys and their schemas as values. If the passed field
@@ -285,7 +285,7 @@ def field_schema(
         s.update(validation_schema)
         schema_overrides = True
 
-    f_schema, f_definitions = field_type_schema(
+    f_schema, f_definitions, f_nested_models = field_type_schema(
         field,
         by_alias=by_alias,
         model_name_map=model_name_map,
@@ -295,10 +295,10 @@ def field_schema(
     )
     # $ref will only be returned when there are no schema_overrides
     if '$ref' in f_schema:
-        return f_schema, f_definitions
+        return f_schema, f_definitions, f_nested_models
     else:
         s.update(f_schema)
-        return s, f_definitions
+        return s, f_definitions, f_nested_models
 
 
 numeric_types = (int, float, Decimal)
@@ -459,7 +459,7 @@ def field_type_schema(
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
     known_models: Set[Type['BaseModel']],
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     Used by ``field_schema()``, you probably should be using that function.
 
@@ -467,27 +467,31 @@ def field_type_schema(
     information as title, etc. Also return additional schema definitions, from sub-models.
     """
     definitions = {}
+    nested_models: Set[str] = set()
     ref_prefix = ref_prefix or default_prefix
     if field.shape is Shape.LIST:
-        f_schema, f_definitions = field_singleton_schema(
+        f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
-        return {'type': 'array', 'items': f_schema}, definitions
+        nested_models.update(f_nested_models)
+        return {'type': 'array', 'items': f_schema}, definitions, nested_models
     elif field.shape is Shape.SET:
-        f_schema, f_definitions = field_singleton_schema(
+        f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
-        return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions
+        nested_models.update(f_nested_models)
+        return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions, nested_models
     elif field.shape is Shape.MAPPING:
         dict_schema: Dict[str, Any] = {'type': 'object'}
         key_field = cast(Field, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
-        f_schema, f_definitions = field_singleton_schema(
+        f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
+        nested_models.update(f_nested_models)
         if regex:
             # Dict keys have a regex pattern
             # f_schema might be a schema or empty dict, add it either way
@@ -495,22 +499,23 @@ def field_type_schema(
         elif f_schema:
             # The dict values are not simply Any, so they need a schema
             dict_schema['additionalProperties'] = f_schema
-        return dict_schema, definitions
+        return dict_schema, definitions, nested_models
     elif field.shape is Shape.TUPLE:
         sub_schema = []
         sub_fields = cast(List[Field], field.sub_fields)
         for sf in sub_fields:
-            sf_schema, sf_definitions = field_type_schema(
+            sf_schema, sf_definitions, sf_nested_models = field_type_schema(
                 sf, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
             )
             definitions.update(sf_definitions)
+            nested_models.update(sf_nested_models)
             sub_schema.append(sf_schema)
         if len(sub_schema) == 1:
             sub_schema = sub_schema[0]  # type: ignore
-        return {'type': 'array', 'items': sub_schema}, definitions
+        return {'type': 'array', 'items': sub_schema}, definitions, nested_models
     else:
         assert field.shape is Shape.SINGLETON, field.shape
-        f_schema, f_definitions = field_singleton_schema(
+        f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
             model_name_map=model_name_map,
@@ -519,7 +524,8 @@ def field_type_schema(
             known_models=known_models,
         )
         definitions.update(f_definitions)
-        return f_schema, definitions
+        nested_models.update(f_nested_models)
+        return f_schema, definitions, nested_models
 
 
 def model_process_schema(
@@ -529,7 +535,7 @@ def model_process_schema(
     model_name_map: Dict[Type['BaseModel'], str],
     ref_prefix: Optional[str] = None,
     known_models: Set[Type['BaseModel']] = None,
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     Used by ``model_schema()``, you probably should be using that function.
 
@@ -543,11 +549,11 @@ def model_process_schema(
     if model.__doc__:
         s['description'] = clean_docstring(model.__doc__)
     known_models.add(model)
-    m_schema, m_definitions = model_type_schema(
+    m_schema, m_definitions, nested_models = model_type_schema(
         model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
     )
     s.update(m_schema)
-    return s, m_definitions
+    return s, m_definitions, nested_models
 
 
 def model_type_schema(
@@ -557,7 +563,7 @@ def model_type_schema(
     model_name_map: Dict[Type['BaseModel'], str],
     ref_prefix: Optional[str] = None,
     known_models: Set[Type['BaseModel']],
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     You probably should be using ``model_schema()``, this function is indirectly used by that function.
 
@@ -568,15 +574,17 @@ def model_type_schema(
     properties = {}
     required = []
     definitions: Dict[str, Any] = {}
+    nested_models: Set[str] = set()
     for k, f in model.__fields__.items():
         try:
-            f_schema, f_definitions = field_schema(
+            f_schema, f_definitions, f_nested_models = field_schema(
                 f, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
             )
         except SkipField as skip:
             warnings.warn(skip.message, UserWarning)
             continue
         definitions.update(f_definitions)
+        nested_models.update(f_nested_models)
         if by_alias:
             properties[f.alias] = f_schema
             if f.required:
@@ -588,7 +596,7 @@ def model_type_schema(
     out_schema = {'type': 'object', 'properties': properties}
     if required:
         out_schema['required'] = required
-    return out_schema, definitions
+    return out_schema, definitions, nested_models
 
 
 def field_singleton_sub_fields_schema(
@@ -599,7 +607,7 @@ def field_singleton_sub_fields_schema(
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
     known_models: Set[Type['BaseModel']],
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     This function is indirectly used by ``field_schema()``, you probably should be using that function.
 
@@ -608,6 +616,7 @@ def field_singleton_sub_fields_schema(
     """
     ref_prefix = ref_prefix or default_prefix
     definitions = {}
+    nested_models: Set[str] = set()
     sub_fields = [sf for sf in sub_fields if sf.include_in_schema()]
     if len(sub_fields) == 1:
         return field_type_schema(
@@ -621,7 +630,7 @@ def field_singleton_sub_fields_schema(
     else:
         sub_field_schemas = []
         for sf in sub_fields:
-            sub_schema, sub_definitions = field_type_schema(
+            sub_schema, sub_definitions, sub_nested_models = field_type_schema(
                 sf,
                 by_alias=by_alias,
                 model_name_map=model_name_map,
@@ -631,7 +640,8 @@ def field_singleton_sub_fields_schema(
             )
             definitions.update(sub_definitions)
             sub_field_schemas.append(sub_schema)
-        return {'anyOf': sub_field_schemas}, definitions
+            nested_models.update(sub_nested_models)
+        return {'anyOf': sub_field_schemas}, definitions, nested_models
 
 
 validation_attribute_to_schema_keyword = {
@@ -702,7 +712,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
     known_models: Set[Type['BaseModel']],
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     This function is indirectly used by ``field_schema()``, you should probably be using that function.
 
@@ -711,6 +721,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     ref_prefix = ref_prefix or default_prefix
     definitions: Dict[str, Any] = {}
+    nested_models: Set[str] = set()
     if field.sub_fields:
         return field_singleton_sub_fields_schema(
             field.sub_fields,
@@ -721,7 +732,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             known_models=known_models,
         )
     if field.type_ is Any or type(field.type_) == TypeVar:
-        return {}, definitions  # no restrictions
+        return {}, definitions, nested_models  # no restrictions
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}
@@ -742,10 +753,10 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             break
     # Return schema, with or without enum definitions
     if f_schema:
-        return f_schema, definitions
+        return f_schema, definitions, nested_models
     for type_, t_schema in field_class_to_schema_enum_disabled:
         if issubclass(field.type_, type_):
-            return t_schema, definitions
+            return t_schema, definitions, nested_models
     # Handle dataclass-based models
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), pydantic.BaseModel):
@@ -753,7 +764,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if issubclass(field_type, pydantic.BaseModel):
         model_name = model_name_map[field_type]
         if field_type not in known_models:
-            sub_schema, sub_definitions = model_process_schema(
+            sub_schema, sub_definitions, sub_nested_models = model_process_schema(
                 field_type,
                 by_alias=by_alias,
                 model_name_map=model_name_map,
@@ -762,13 +773,14 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             )
             definitions.update(sub_definitions)
             definitions[model_name] = sub_schema
+            nested_models.update(sub_nested_models)
         else:
-            definitions[model_name] = None
+            nested_models.add(model_name)
         schema_ref = {'$ref': ref_prefix + model_name}
         if not schema_overrides:
-            return schema_ref, definitions
+            return schema_ref, definitions, nested_models
         else:
-            return {'allOf': [schema_ref]}, definitions
+            return {'allOf': [schema_ref]}, definitions, nested_models
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
 
