@@ -186,7 +186,7 @@ class MetaModel(ABCMeta):
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
                     class_vars.add(ann_name)
-                elif not ann_name.startswith('_') and ann_name not in namespace:
+                elif (not ann_name.startswith('_') or '__root__' == ann_name) and ann_name not in namespace:
                     validate_field_name(bases, ann_name)
                     fields[ann_name] = Field.infer(
                         name=ann_name,
@@ -198,7 +198,7 @@ class MetaModel(ABCMeta):
 
             for var_name, value in namespace.items():
                 if (
-                    not var_name.startswith('_')
+                    (not var_name.startswith('_') or '__root__' == var_name)
                     and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
                     and var_name not in class_vars
                 ):
@@ -211,6 +211,8 @@ class MetaModel(ABCMeta):
                         config=config,
                     )
 
+        if '__root__' in fields and len(fields) > 1:
+            raise ValueError('__root__ cannot be mixed with other fields')
         vg.check_for_unused()
         if config.json_encoders:
             json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
@@ -233,16 +235,24 @@ class BaseModel(metaclass=MetaModel):
         __fields__: Dict[str, Field] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __config__: Type[BaseConfig] = BaseConfig
+        __root__: List[Any] = []
         _json_encoder: Callable[[Any], Any] = lambda x: x
         _schema_cache: 'DictAny' = {}
 
     Config = BaseConfig
     __slots__ = ('__values__', '__fields_set__')
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, *__root__: Any, **data: Any) -> None:
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
+
+        if '__root__' in self.fields:
+            if '__root__' not in data:
+                data['__root__'] = __root__
+        else:
+            if __root__:
+                raise TypeError(f'{self.__class__.__name__}: positional argument is not supported')
         values, fields_set, _ = validate_model(self, data)
         object.__setattr__(self, '__values__', values)
         object.__setattr__(self, '__fields_set__', fields_set)
@@ -567,7 +577,7 @@ def create_model(
     annotations = {}
 
     for f_name, f_def in field_definitions.items():
-        if f_name.startswith('_'):
+        if f_name.startswith('_') and f_name != '__root__':
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
             try:

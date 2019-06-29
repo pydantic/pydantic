@@ -1,0 +1,11 @@
+{
+  "definitions": {
+    "Pets": {
+      "title": "Pets",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

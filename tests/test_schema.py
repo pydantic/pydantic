@@ -1330,3 +1330,39 @@ def test_known_model_optimization():
     }
 
     assert Model.schema() == expected
+
+
+def test_root():
+    class Model(BaseModel):
+        __root__: str
+
+    assert Model.schema() == {'title': 'Model', 'type': 'string'}
+
+
+def test_root_list():
+    class Model(BaseModel):
+        __root__: List[str]
+
+    assert Model.schema() == {'title': 'Model', 'type': 'array', 'items': {'type': 'string'}}
+
+
+def test_root_nested_model():
+    class NestedModel(BaseModel):
+        a: str
+
+    class Model(BaseModel):
+        __root__: List[NestedModel]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'array',
+        'items': {'$ref': '#/definitions/NestedModel'},
+        'definitions': {
+            'NestedModel': {
+                'title': 'NestedModel',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            }
+        },
+    }

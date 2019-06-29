@@ -466,6 +466,18 @@ Outputs:
 .. literalinclude:: examples/schema3.json
 
 
+Pydantic models can be set custom root types to support a model that does not have any field exclude ``__root__``.
+
+You can define custom root types as a type hint of  ``__root__``'s field.
+Also, You can give custom root values to the ``__init__`` method as a positional argument or keyword argument.
+
+.. literalinclude::  examples/schema4.py
+
+Outputs:
+
+.. literalinclude:: examples/schema4.json
+
+
 Error Handling
 ..............
 

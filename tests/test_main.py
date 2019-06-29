@@ -649,3 +649,33 @@ def test_dict_with_extra_keys():
     m = MyModel(extra_key='extra')
     assert m.dict() == {'a': None, 'extra_key': 'extra'}
     assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
+
+
+def test_root():
+    class MyModel(BaseModel):
+        __root__: str
+
+    m = MyModel(__root__='a')
+    assert m.dict() == {'__root__': 'a'}
+    assert m.__root__ == 'a'
+
+
+def test_root_list():
+    class MyModel(BaseModel):
+        __root__: List[str]
+
+    m = MyModel(__root__=['a'])
+    assert m.dict() == {'__root__': ['a']}
+    assert m.__root__ == ['a']
+
+    m = MyModel(*['a'])
+    assert m.dict() == {'__root__': ['a']}
+    assert m.__root__ == ['a']
+
+
+def test_root_failed():
+    with pytest.raises(ValueError, match='__root__ cannot be mixed with other fields'):
+
+        class MyModel(BaseModel):
+            __root__: str
+            a: str
