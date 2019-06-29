@@ -679,3 +679,14 @@ def test_root_failed():
         class MyModel(BaseModel):
             __root__: str
             a: str
+
+
+def test_root_undefined_failed():
+    class MyModel(BaseModel):
+        a: List[str]
+
+    with pytest.raises(TypeError, match='MyModel: positional argument is not supported'):
+        MyModel(['a'])
+
+    with pytest.raises(ValueError, match='__root__ is not defined in fields'):
+        MyModel(__root__=['a'])

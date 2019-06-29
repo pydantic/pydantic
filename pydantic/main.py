@@ -253,6 +253,9 @@ class BaseModel(metaclass=MetaModel):
         else:
             if __root__:
                 raise TypeError(f'{self.__class__.__name__}: positional argument is not supported')
+            else:
+                if '__root__' in data:
+                    raise ValueError('__root__ is not defined in fields')
         values, fields_set, _ = validate_model(self, data)
         object.__setattr__(self, '__values__', values)
         object.__setattr__(self, '__fields_set__', fields_set)
