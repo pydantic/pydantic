@@ -11,6 +11,7 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, Schema, ValidationError, validator
+from pydantic.color import Color
 from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_map, schema
 from pydantic.types import (
     DSN,
@@ -1330,3 +1331,16 @@ def test_known_model_optimization():
     }
 
     assert Model.schema() == expected
+
+
+def test_color_type():
+    class Model(BaseModel):
+        color: Color
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'color': {'title': 'Color', 'type': 'string'}},
+        'required': ['color'],
+    }
