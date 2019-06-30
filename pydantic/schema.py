@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence,
 from uuid import UUID
 
 import pydantic
+from pydantic.color import Color
 
 from .fields import Field, Shape
 from .json import pydantic_encoder
@@ -691,6 +692,7 @@ field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (list, {'type': 'array', 'items': {}}),
     (tuple, {'type': 'array', 'items': {}}),
     (set, {'type': 'array', 'items': {}, 'uniqueItems': True}),
+    (Color, {'type': 'string'}),
 )
 
 
