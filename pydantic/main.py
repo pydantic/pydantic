@@ -148,6 +148,12 @@ def set_extra(config: Type[BaseConfig], cls_name: str) -> None:
             raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
 
 
+def is_valid_field(name: str) -> bool:
+    if not name.startswith('_'):
+        return True
+    return '__root__' == name
+
+
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
@@ -186,7 +192,7 @@ class MetaModel(ABCMeta):
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
                     class_vars.add(ann_name)
-                elif (not ann_name.startswith('_') or '__root__' == ann_name) and ann_name not in namespace:
+                elif is_valid_field(ann_name) and ann_name not in namespace:
                     validate_field_name(bases, ann_name)
                     fields[ann_name] = Field.infer(
                         name=ann_name,
@@ -198,7 +204,7 @@ class MetaModel(ABCMeta):
 
             for var_name, value in namespace.items():
                 if (
-                    (not var_name.startswith('_') or '__root__' == var_name)
+                    is_valid_field(var_name)
                     and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
                     and var_name not in class_vars
                 ):
@@ -242,20 +248,11 @@ class BaseModel(metaclass=MetaModel):
     Config = BaseConfig
     __slots__ = ('__values__', '__fields_set__')
 
-    def __init__(self, *__root__: Any, **data: Any) -> None:
+    def __init__(self, **data: Any) -> None:
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
 
-        if '__root__' in self.fields:
-            if '__root__' not in data:
-                data['__root__'] = __root__
-        else:
-            if __root__:
-                raise TypeError(f'{self.__class__.__name__}: positional argument is not supported')
-            else:
-                if '__root__' in data:
-                    raise ValueError('__root__ is not defined in fields')
         values, fields_set, _ = validate_model(self, data)
         object.__setattr__(self, '__values__', values)
         object.__setattr__(self, '__fields_set__', fields_set)
@@ -337,9 +334,17 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: Mapping[Any, Any]) -> 'Model':
+    def parse_obj(
+        cls: Type['Model'], obj: Optional[Mapping[Any, Any]] = None, __root__: Optional[Any] = None
+    ) -> 'Model':
+
+        if __root__:
+            return cls(__root__=__root__)
+
         if not isinstance(obj, dict):
             try:
+                if obj is None:
+                    raise TypeError("'NoneType' object is not iterable")
                 obj = dict(obj)
             except (TypeError, ValueError) as e:
                 exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
@@ -580,7 +585,7 @@ def create_model(
     annotations = {}
 
     for f_name, f_def in field_definitions.items():
-        if f_name.startswith('_') and f_name != '__root__':
+        if not is_valid_field(f_name):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
             try:

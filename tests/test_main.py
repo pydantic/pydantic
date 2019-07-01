@@ -668,10 +668,6 @@ def test_root_list():
     assert m.dict() == {'__root__': ['a']}
     assert m.__root__ == ['a']
 
-    m = MyModel(*['a'])
-    assert m.dict() == {'__root__': ['a']}
-    assert m.__root__ == ['a']
-
 
 def test_root_failed():
     with pytest.raises(ValueError, match='__root__ cannot be mixed with other fields'):
@@ -685,8 +681,6 @@ def test_root_undefined_failed():
     class MyModel(BaseModel):
         a: List[str]
 
-    with pytest.raises(TypeError, match='MyModel: positional argument is not supported'):
-        MyModel(['a'])
-
-    with pytest.raises(ValueError, match='__root__ is not defined in fields'):
+    with pytest.raises(ValidationError) as exc_info:
         MyModel(__root__=['a'])
+        assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]

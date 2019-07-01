@@ -9,10 +9,10 @@ class Pets(BaseModel):
 print(Pets(__root__=['dog', 'cat']))
 # > Pets __root__=['dog', 'cat']
 
-print(Pets(*['dog', 'cat']))
+print(Pets.parse_obj(__root__=['dog', 'cat']))
 # > Pets __root__=['dog', 'cat']
 
-print(Pets(*['dog', 'cat']).schema())
+print(Pets.schema())
 # > {'title': 'Pets', 'type': 'array', 'items': {'type': 'string'}}
 
 pets_schema = schema([Pets])
