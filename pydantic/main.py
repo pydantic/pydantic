@@ -450,14 +450,14 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, dict):
-            return cls(**value)
+            return cls.parse_obj(value)
         elif isinstance(value, cls):
             return value.copy()
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
         else:
             with change_exception(DictError, TypeError, ValueError):
-                return cls(**dict(value))
+                return cls.parse_obj(value)
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:

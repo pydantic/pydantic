@@ -895,3 +895,14 @@ def test_self():
         'properties': {'self': {'title': 'Self', 'type': 'string'}},
         'required': ['self'],
     }
+
+
+def test_self_recursive():
+    class SubModel(BaseModel):
+        self: int
+
+    class Model(BaseModel):
+        sm: SubModel
+
+    m = Model.parse_obj({'sm': {'self': '123'}})
+    assert m.dict() == {'sm': {'self': 123}}
