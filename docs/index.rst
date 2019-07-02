@@ -675,8 +675,9 @@ Custom Root Types
 Pydantic models which do not represent an "object" in JSON parlance (``dict`` in python) can have a custom
 root type defined via the ``__root__`` field. The root type can of any time: list, float, int etc.
 
-You can define custom root types as a type hint of  ``__root__``'s field.
-Also, You can give custom root values to the ``__init__`` method or ``parse_obj`` as a keyword argument.
+The root type can be defined via the type hint on the ``__root__`` field.
+The root value can be passed to model ``__init__`` via the ``__root__`` argument as the first and only argument
+to ``parse_obj``.
 
 .. literalinclude::  examples/custom_root_field.py
 
