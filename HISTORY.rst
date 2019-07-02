@@ -12,6 +12,7 @@ v0.30 (unreleased)
 * fix truncate for types, #611 by @dmontagu
 * fix unparameterized generic type schema generation, #625 by @dmontagu
 * fix schema generation with multiple/circular references to the same model, #621 by @tiangolo and @wongpat
+* support keyword argument unpacking on BaseModel, PR #634 by @duxiaoyao
 
 v0.29 (2019-06-19)
 ..................

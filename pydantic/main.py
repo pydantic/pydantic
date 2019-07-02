@@ -13,6 +13,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    KeysView,
     List,
     Mapping,
     Optional,
@@ -512,6 +513,12 @@ class BaseModel(metaclass=MetaModel):
             keys -= exclude
 
         return keys
+
+    def keys(self) -> KeysView[str]:
+        return self.__fields__.keys()
+
+    def __getitem__(self, name: str) -> Any:
+        return getattr(self, name)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseModel):

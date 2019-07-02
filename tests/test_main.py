@@ -649,3 +649,8 @@ def test_dict_with_extra_keys():
     m = MyModel(extra_key='extra')
     assert m.dict() == {'a': None, 'extra_key': 'extra'}
     assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
+
+
+def test_keyword_argument_unpacking():
+    m = UltraSimpleModel(a=10.2)
+    assert {**m} == {'a': 10.2, 'b': 10}
