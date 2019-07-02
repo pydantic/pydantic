@@ -649,3 +649,55 @@ def test_dict_with_extra_keys():
     m = MyModel(extra_key='extra')
     assert m.dict() == {'a': None, 'extra_key': 'extra'}
     assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
+
+
+def test_alias_generator():
+    def to_camel(string: str):
+        return ''.join(x.capitalize() for x in string.split('_'))
+
+    class MyModel(BaseModel):
+        a: List[str] = None
+        foo_bar: str
+
+        class Config:
+            alias_generator = to_camel
+
+    data = {'A': ['foo', 'bar'], 'FooBar': 'foobar'}
+    v = MyModel(**data)
+    assert v.a == ['foo', 'bar']
+    assert v.foo_bar == 'foobar'
+    assert v.dict(by_alias=True) == data
+
+
+def test_alias_generator_with_field_schema():
+    def to_upper_case(string: str):
+        return string.upper()
+
+    class MyModel(BaseModel):
+        my_shiny_field: Any  # Alias from Config.fields will be used
+        foo_bar: str  # Alias from Config.fields will be used
+        baz_bar: str  # Alias will be generated
+        another_field: str  # Alias will be generated
+
+        class Config:
+            alias_generator = to_upper_case
+            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}}
+
+    data = {'MY_FIELD': ['a'], 'FOO': 'bar', 'BAZ_BAR': 'ok', 'ANOTHER_FIELD': '...'}
+    m = MyModel(**data)
+    assert m.dict(by_alias=True) == data
+
+
+def test_alias_generator_wrong_type_error():
+    def return_bytes(string):
+        return b'not a string'
+
+    with pytest.raises(TypeError) as e:
+
+        class MyModel(BaseModel):
+            bar: Any
+
+            class Config:
+                alias_generator = return_bytes
+
+    assert str(e.value) == "Config.alias_generator must return str, not <class 'bytes'>"
