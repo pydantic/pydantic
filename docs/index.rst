@@ -873,8 +873,9 @@ converted to dicts, ``copy`` allows models to be duplicated, this is particularl
 
 
 ``dict``, ``copy``, and ``json`` (described :ref:`below <json_dump>`) all take the optional
-``include`` and ``exclude`` keyword arguments to control which attributes are returned or copied,
-respectively. ``copy`` accepts extra keyword arguments, ``update``, which accepts a ``dict`` mapping attributes
+``include``, ``exclude`` and ``nested_exclude`` keyword arguments to control which attributes are returned or copied,
+respectively. Unlike ``exclude``, keys in ``nested_exclude`` will be excluded from any nested model or even dict.
+``copy`` accepts extra keyword arguments, ``update``, which accepts a ``dict`` mapping attributes
 to new values that will be applied as the model is duplicated and ``deep`` to make a deep copy of the model.
 
 ``dict`` and ``json`` take the optional ``skip_defaults`` keyword argument which will skip attributes that were

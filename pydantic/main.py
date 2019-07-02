@@ -285,20 +285,36 @@ class BaseModel(metaclass=MetaModel):
         object.__setattr__(self, '__fields_set__', state['__fields_set__'])
 
     def dict(
-        self, *, include: 'SetStr' = None, exclude: 'SetStr' = None, by_alias: bool = False, skip_defaults: bool = False
+        self,
+        *,
+        include: 'SetStr' = None,
+        exclude: 'SetStr' = None,
+        nested_exclude: 'SetStr' = None,
+        by_alias: bool = False,
+        skip_defaults: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
+        if exclude and nested_exclude:
+            raise ValueError('Params exclude and nested_exclude can not be used together')
+
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.fields)
 
-        return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
+        return_keys = self._calculate_keys(
+            include=include, exclude=exclude or nested_exclude, skip_defaults=skip_defaults
+        )
         if return_keys is None:
-            return {get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults)}
+            return {
+                get_key(k): v
+                for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults, nested_exclude=nested_exclude)
+            }
         else:
             return {
-                get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys
+                get_key(k): v
+                for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults, nested_exclude=nested_exclude)
+                if k in return_keys
             }
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
@@ -312,6 +328,7 @@ class BaseModel(metaclass=MetaModel):
         *,
         include: 'SetStr' = None,
         exclude: 'SetStr' = None,
+        nested_exclude: 'SetStr' = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
@@ -324,7 +341,13 @@ class BaseModel(metaclass=MetaModel):
         """
         encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
         return json.dumps(
-            self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults),
+            self.dict(
+                include=include,
+                exclude=exclude,
+                nested_exclude=nested_exclude,
+                by_alias=by_alias,
+                skip_defaults=skip_defaults,
+            ),
             default=encoder,
             **dumps_kwargs,
         )
@@ -397,6 +420,7 @@ class BaseModel(metaclass=MetaModel):
         *,
         include: 'SetStr' = None,
         exclude: 'SetStr' = None,
+        nested_exclude: 'SetStr' = None,
         update: 'DictStrAny' = None,
         deep: bool = False,
     ) -> 'Model':
@@ -405,18 +429,26 @@ class BaseModel(metaclass=MetaModel):
 
         :param include: fields to include in new model
         :param exclude: fields to exclude from new model, as with values this takes precedence over include
+        :param nested_exclude:  fields to exclude from new model and nested models or dicts
         :param update: values to change/add in the new model. Note: the data is not validated before creating
             the new model: you should trust this data
         :param deep: set to `True` to make a deep copy of the model
         :return: new model instance
         """
-        if include is None and exclude is None and update is None:
+        if include is None and exclude is None and nested_exclude is None and update is None:
             # skip constructing values if no arguments are passed
             v = self.__values__
         else:
-            return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False)
+            return_keys = self._calculate_keys(include=include, exclude=exclude or nested_exclude, skip_defaults=False)
             if return_keys:
-                v = {**{k: v for k, v in self.__values__.items() if k in return_keys}, **(update or {})}
+                v = {
+                    **{
+                        k: self._filter_exclude(v, nested_exclude=nested_exclude)
+                        for k, v in self.__values__.items()
+                        if k in return_keys
+                    },
+                    **(update or {}),
+                }
             else:
                 v = {**self.__values__, **(update or {})}
 
@@ -465,17 +497,51 @@ class BaseModel(metaclass=MetaModel):
         return GetterDict(obj)
 
     @classmethod
-    def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:
+    def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool, nested_exclude: Optional['SetStr']) -> Any:
+        nested_exclude = nested_exclude or set()
         if isinstance(v, BaseModel):
-            return v.dict(by_alias=by_alias, skip_defaults=skip_defaults)
-        elif isinstance(v, list):
-            return [cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v]
+            return v.dict(by_alias=by_alias, skip_defaults=skip_defaults, nested_exclude=nested_exclude)
         elif isinstance(v, dict):
-            return {k_: cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for k_, v_ in v.items()}
+            return {
+                k_: cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults, nested_exclude=nested_exclude)
+                for k_, v_ in v.items()
+                if k_ not in nested_exclude
+            }
+        elif isinstance(v, list):
+            return [
+                cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults, nested_exclude=nested_exclude)
+                for v_ in v
+            ]
         elif isinstance(v, set):
-            return {cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v}
+            return {
+                cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults, nested_exclude=nested_exclude)
+                for v_ in v
+            }
         elif isinstance(v, tuple):
-            return tuple(cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v)
+            return tuple(
+                cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults, nested_exclude=nested_exclude)
+                for v_ in v
+            )
+        else:
+            return v
+
+    @classmethod
+    def _filter_exclude(cls, v: Any, nested_exclude: Optional['SetStr']) -> Any:
+        nested_exclude = nested_exclude or set()
+        if isinstance(v, BaseModel):
+            return v.copy(nested_exclude=nested_exclude)
+        elif isinstance(v, dict):
+            return {
+                k_: cls._filter_exclude(v_, nested_exclude=nested_exclude)
+                for k_, v_ in v.items()
+                if k_ not in nested_exclude
+            }
+        elif isinstance(v, list):
+            return [cls._filter_exclude(v_, nested_exclude=nested_exclude) for v_ in v]
+        elif isinstance(v, set):
+            return {cls._filter_exclude(v_, nested_exclude=nested_exclude) for v_ in v}
+        elif isinstance(v, tuple):
+            return tuple(cls._filter_exclude(v_, nested_exclude=nested_exclude) for v_ in v)
         else:
             return v
 
@@ -495,12 +561,14 @@ class BaseModel(metaclass=MetaModel):
         """
         yield from self._iter()
 
-    def _iter(self, by_alias: bool = False, skip_defaults: bool = False) -> 'TupleGenerator':
+    def _iter(
+        self, by_alias: bool = False, skip_defaults: bool = False, nested_exclude: Optional['SetStr'] = None
+    ) -> 'TupleGenerator':
         for k, v in self.__values__.items():
-            yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults)
+            yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults, nested_exclude=nested_exclude)
 
     def _calculate_keys(
-        self, include: 'SetStr' = None, exclude: Optional['SetStr'] = None, skip_defaults: bool = False
+        self, include: Optional['SetStr'] = None, exclude: Optional['SetStr'] = None, skip_defaults: bool = False
     ) -> Optional['SetStr']:
 
         if include is None and exclude is None and skip_defaults is False:

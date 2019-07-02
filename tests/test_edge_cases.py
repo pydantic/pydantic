@@ -392,6 +392,38 @@ def test_include_exclude_default():
     assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, skip_defaults=True) == {'b': 2}
 
 
+def test_nested_exclude():
+    class SubSubModel(BaseModel):
+        secret: str
+
+    class SubModel(BaseModel):
+        foo: int
+        secret: str
+        s: SubSubModel
+
+    class Model(BaseModel):
+        a: SubModel
+        b: int
+        secret: str = '123'
+
+    m = Model(a=SubModel(foo=1, secret='my_secret_str', s=SubSubModel(secret='token')), b=2, secret='321')
+    assert m.dict(exclude={'secret'}) == {'a': {'foo': 1, 'secret': 'my_secret_str', 's': {'secret': 'token'}}, 'b': 2}
+
+    assert m.dict(nested_exclude={'secret'}) == {'a': {'foo': 1, 's': {}}, 'b': 2}
+
+
+def test_nested_exclude_and_exclude_fail():
+    class Model(BaseModel):
+        a: str
+        secret: int
+
+    m = Model(a='str', secret=321)
+    with pytest.raises(ValueError) as e:
+        m.dict(exclude={'a'}, nested_exclude={'secret'})
+
+        assert str(e.value) == 'Params exclude and nested_exclude can not be used together'
+
+
 def test_field_set_ignore_extra():
     class Model(BaseModel):
         a: int
