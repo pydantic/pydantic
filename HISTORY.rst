@@ -10,6 +10,8 @@ v0.30 (unreleased)
 * fix default values for ``GenericModel``, #610 by @dmontagu
 * clarify, that self-referencing models require python 3.7+, #616 by @vlcinsky
 * fix truncate for types, #611 by @dmontagu
+* add ``alias_generator`` support, #622 by @MrMrRobat
+* fix unparameterized generic type schema generation, #625 by @dmontagu
 * fix schema generation with multiple/circular references to the same model, #621 by @tiangolo and @wongpat
 * support custom root types, #628 by @koxudaxi
 

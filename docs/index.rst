@@ -736,6 +736,7 @@ Options:
 :json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
     details.
 :orm_mode: allows usage of :ref:`ORM mode <orm_mode>`
+:alias_generator: callable that takes field name and returns alias for it
 
 .. warning::
 
@@ -758,6 +759,17 @@ Version for models based on ``@dataclass`` decorator:
 (This script is complete, it should run "as is")
 
 .. _settings:
+
+
+Alias Generator
+~~~~~~~~~~~~~~~
+If data source field names do not match your code style (e. g. CamelCase fields),
+you can automatically generate aliases using ``alias_generator``:
+
+.. literalinclude:: examples/alias_generator_config.py
+
+(This script is complete, it should run "as is")
+
 
 Settings
 ........

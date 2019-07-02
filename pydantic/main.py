@@ -93,12 +93,18 @@ class BaseConfig:
     arbitrary_types_allowed = False
     json_encoders: Dict[AnyType, AnyCallable] = {}
     orm_mode: bool = False
+    alias_generator: Optional[Callable[[str], str]] = None
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
         field_config = cls.fields.get(name) or {}
         if isinstance(field_config, str):
             field_config = {'alias': field_config}
+        elif not field_config and cls.alias_generator:
+            alias = cls.alias_generator(name)
+            if not isinstance(alias, str):
+                raise TypeError(f'Config.alias_generator must return str, not {type(alias)}')
+            field_config = {'alias': alias}
         return field_config
 
 
