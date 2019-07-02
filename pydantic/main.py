@@ -101,7 +101,7 @@ class BaseConfig:
         field_config = cls.fields.get(name) or {}
         if isinstance(field_config, str):
             field_config = {'alias': field_config}
-        elif cls.alias_generator:
+        elif not field_config and cls.alias_generator:
             alias = cls.alias_generator(name)
             if not isinstance(alias, str):
                 raise TypeError(f'Config.alias_generator must return str, not {type(alias)}')
