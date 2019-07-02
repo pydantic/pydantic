@@ -14,7 +14,6 @@ from typing import (
     Dict,
     Generator,
     List,
-    Mapping,
     Optional,
     Set,
     Tuple,
@@ -217,7 +216,8 @@ class MetaModel(ABCMeta):
                         config=config,
                     )
 
-        if '__root__' in fields and len(fields) > 1:
+        _custom_root_type = '__root__' in fields
+        if _custom_root_type and len(fields) > 1:
             raise ValueError('__root__ cannot be mixed with other fields')
         vg.check_for_unused()
         if config.json_encoders:
@@ -230,6 +230,7 @@ class MetaModel(ABCMeta):
             '__validators__': vg.validators,
             '_schema_cache': {},
             '_json_encoder': staticmethod(json_encoder),
+            '_custom_root_type': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace)
@@ -241,9 +242,10 @@ class BaseModel(metaclass=MetaModel):
         __fields__: Dict[str, Field] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __config__: Type[BaseConfig] = BaseConfig
-        __root__: List[Any] = []
+        __root__: Any = None
         _json_encoder: Callable[[Any], Any] = lambda x: x
         _schema_cache: 'DictAny' = {}
+        _custom_root_type: bool = False
 
     Config = BaseConfig
     __slots__ = ('__values__', '__fields_set__')
@@ -252,7 +254,6 @@ class BaseModel(metaclass=MetaModel):
         if TYPE_CHECKING:  # pragma: no cover
             self.__values__: Dict[str, Any] = {}
             self.__fields_set__: 'SetStr' = set()
-
         values, fields_set, _ = validate_model(self, data)
         object.__setattr__(self, '__values__', values)
         object.__setattr__(self, '__fields_set__', fields_set)
@@ -334,21 +335,19 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(
-        cls: Type['Model'], obj: Optional[Mapping[Any, Any]] = None, __root__: Optional[Any] = None
-    ) -> 'Model':
-
-        if __root__:
-            return cls(__root__=__root__)
-
-        if not isinstance(obj, dict):
-            try:
-                if obj is None:
-                    raise TypeError("'NoneType' object is not iterable")
-                obj = dict(obj)
-            except (TypeError, ValueError) as e:
-                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
+    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+        if isinstance(obj, dict):
+            if cls._custom_root_type:
+                raise TypeError('custom root type cannot allow dict')
+        else:
+            if cls._custom_root_type:
+                obj = {'__root__': obj}
+            else:
+                try:
+                    obj = dict(obj)
+                except (TypeError, ValueError) as e:
+                    exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                    raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
         return cls(**obj)
 
     @classmethod

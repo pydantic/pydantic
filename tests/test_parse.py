@@ -42,7 +42,7 @@ def test_parse_obj_root():
     class MyModel(BaseModel):
         __root__: str
 
-    m = MyModel.parse_obj(__root__='a')
+    m = MyModel.parse_obj('a')
     assert m.dict() == {'__root__': 'a'}
     assert m.__root__ == 'a'
 
@@ -51,18 +51,17 @@ def test_parse_root_list():
     class MyModel(BaseModel):
         __root__: List[str]
 
-    m = MyModel.parse_obj(__root__=['a'])
+    m = MyModel.parse_obj(['a'])
     assert m.dict() == {'__root__': ['a']}
     assert m.__root__ == ['a']
 
 
-def test_parse_root_with_obj():
+def test_parse_root_as_dict():
     class MyModel(BaseModel):
         __root__: List[str]
 
-    m = MyModel.parse_obj({'a': 1}, __root__=['a'])
-    assert m.dict() == {'__root__': ['a']}
-    assert m.__root__ == ['a']
+    with pytest.raises(TypeError, match='custom root type cannot allow dict'):
+        MyModel.parse_obj({'__root__': ['a']})
 
 
 def test_json():
