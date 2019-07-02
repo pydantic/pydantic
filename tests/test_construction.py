@@ -93,6 +93,33 @@ def test_copy_include():
     assert m != m2
 
 
+def test_copy_nested_exclude():
+    class ModelThree(BaseModel):
+        a: dict
+        b: int
+        c: ModelTwo
+
+    m = ModelThree(a={'a': 1, 'b': 2}, b=1, c=ModelTwo(a=24, d=Model(a='12')))
+    m2 = m.copy(nested_exclude={'b'})
+
+    assert m.c.a == m2.c.a == 24
+    assert isinstance(m2.c.d, Model)
+    assert m2.c.d.a == 12
+
+    assert hasattr(m2.c, 'c')
+    assert not hasattr(m2.c, 'b')
+    assert not hasattr(m2.c.d, 'b')
+
+    assert set(m.a.keys()) == {'a', 'b'}
+    assert set(m2.a.keys()) == {'a'}
+
+    assert set(m.c.dict().keys()) == {'a', 'b', 'c', 'd'}  # ModelTwo keys
+    assert set(m.c.d.dict().keys()) == {'a', 'b'}  # Model keys
+
+    assert set(m2.c.dict().keys()) == {'a', 'c', 'd'}  # ModelTwo copy keys
+    assert set(m2.c.d.dict().keys()) == {'a'}  # Model copy keys
+
+
 def test_copy_include_exclude():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(include={'a', 'b', 'c'}, exclude={'c'})
