@@ -669,6 +669,25 @@ def test_alias_generator():
     assert v.dict(by_alias=True) == data
 
 
+def test_alias_generator_with_field_schema():
+    def to_upper_case(string: str):
+        return string.upper()
+
+    class MyModel(BaseModel):
+        my_shiny_field: Any  # Alias from Config.fields will be used
+        foo_bar: str  # Alias from Config.fields will be used
+        baz_bar: str  # Alias will be generated
+        another_field: str  # Alias will be generated
+
+        class Config:
+            alias_generator = to_upper_case
+            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}}
+
+    data = {'MY_FIELD': ['a'], 'FOO': 'bar', 'BAZ_BAR': 'ok', 'ANOTHER_FIELD': '...'}
+    m = MyModel(**data)
+    assert m.dict(by_alias=True) == data
+
+
 def test_alias_generator_wrong_type_error():
     def return_bytes(string):
         return b'not a string'
