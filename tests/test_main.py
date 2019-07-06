@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, ClassVar, List
+from typing import Any, ClassVar, List, Mapping
 
 import pytest
 
@@ -255,7 +255,7 @@ def test_set_attr_invalid():
 
     with pytest.raises(ValueError) as exc_info:
         m.c = 20
-    assert '"UltraSimpleModel" object has no field "c"' in str(exc_info)
+    assert '"UltraSimpleModel" object has no field "c"' in exc_info.value.args[0]
 
 
 def test_any():
@@ -344,7 +344,7 @@ def test_not_immutability():
     assert m.a == 11
     with pytest.raises(ValueError) as exc_info:
         m.b = 11
-    assert '"TestModel" object has no field "b"' in str(exc_info)
+    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
 def test_immutability():
@@ -359,10 +359,10 @@ def test_immutability():
     assert m.a == 10
     with pytest.raises(TypeError) as exc_info:
         m.a = 11
-    assert '"TestModel" is immutable and does not support item assignment' in str(exc_info)
+    assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
     with pytest.raises(ValueError) as exc_info:
         m.b = 11
-    assert '"TestModel" object has no field "b"' in str(exc_info)
+    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
 def test_const_validates():
@@ -649,3 +649,97 @@ def test_dict_with_extra_keys():
     m = MyModel(extra_key='extra')
     assert m.dict() == {'a': None, 'extra_key': 'extra'}
     assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
+
+
+def test_alias_generator():
+    def to_camel(string: str):
+        return ''.join(x.capitalize() for x in string.split('_'))
+
+    class MyModel(BaseModel):
+        a: List[str] = None
+        foo_bar: str
+
+        class Config:
+            alias_generator = to_camel
+
+    data = {'A': ['foo', 'bar'], 'FooBar': 'foobar'}
+    v = MyModel(**data)
+    assert v.a == ['foo', 'bar']
+    assert v.foo_bar == 'foobar'
+    assert v.dict(by_alias=True) == data
+
+
+def test_alias_generator_with_field_schema():
+    def to_upper_case(string: str):
+        return string.upper()
+
+    class MyModel(BaseModel):
+        my_shiny_field: Any  # Alias from Config.fields will be used
+        foo_bar: str  # Alias from Config.fields will be used
+        baz_bar: str  # Alias will be generated
+        another_field: str  # Alias will be generated
+
+        class Config:
+            alias_generator = to_upper_case
+            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}}
+
+    data = {'MY_FIELD': ['a'], 'FOO': 'bar', 'BAZ_BAR': 'ok', 'ANOTHER_FIELD': '...'}
+    m = MyModel(**data)
+    assert m.dict(by_alias=True) == data
+
+
+def test_alias_generator_wrong_type_error():
+    def return_bytes(string):
+        return b'not a string'
+
+    with pytest.raises(TypeError) as e:
+
+        class MyModel(BaseModel):
+            bar: Any
+
+            class Config:
+                alias_generator = return_bytes
+
+    assert str(e.value) == "Config.alias_generator must return str, not <class 'bytes'>"
+
+
+def test_root():
+    class MyModel(BaseModel):
+        __root__: str
+
+    m = MyModel(__root__='a')
+    assert m.dict() == {'__root__': 'a'}
+    assert m.__root__ == 'a'
+
+
+def test_root_list():
+    class MyModel(BaseModel):
+        __root__: List[str]
+
+    m = MyModel(__root__=['a'])
+    assert m.dict() == {'__root__': ['a']}
+    assert m.__root__ == ['a']
+
+
+def test_root_failed():
+    with pytest.raises(ValueError, match='__root__ cannot be mixed with other fields'):
+
+        class MyModel(BaseModel):
+            __root__: str
+            a: str
+
+
+def test_root_undefined_failed():
+    class MyModel(BaseModel):
+        a: List[str]
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyModel(__root__=['a'])
+        assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+def test_parse_root_as_mapping():
+    with pytest.raises(TypeError, match='custom root type cannot allow mapping'):
+
+        class MyModel(BaseModel):
+            __root__: Mapping[str, str]

@@ -669,6 +669,22 @@ to get validators to parse and validate the input data.
 
 (This script is complete, it should run "as is")
 
+Custom Root Types
+.................
+
+Pydantic models which do not represent a ``dict`` ("object" in JSON parlance) can have a custom
+root type defined via the ``__root__`` field. The root type can of any type: list, float, int etc.
+
+The root type can be defined via the type hint on the ``__root__`` field.
+The root value can be passed to model ``__init__`` via the ``__root__`` keyword argument or as the first and only argument
+to ``parse_obj``.
+
+.. literalinclude::  examples/custom_root_field.py
+
+Outputs:
+
+.. literalinclude:: examples/custom_root_field.json
+
 Helper Functions
 ................
 
@@ -722,6 +738,7 @@ Options:
 :json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
     details.
 :orm_mode: allows usage of :ref:`ORM mode <orm_mode>`
+:alias_generator: callable that takes field name and returns alias for it
 
 .. warning::
 
@@ -744,6 +761,17 @@ Version for models based on ``@dataclass`` decorator:
 (This script is complete, it should run "as is")
 
 .. _settings:
+
+
+Alias Generator
+~~~~~~~~~~~~~~~
+If data source field names do not match your code style (e. g. CamelCase fields),
+you can automatically generate aliases using ``alias_generator``:
+
+.. literalinclude:: examples/alias_generator_config.py
+
+(This script is complete, it should run "as is")
+
 
 Settings
 ........

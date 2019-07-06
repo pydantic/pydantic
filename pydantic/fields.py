@@ -167,8 +167,8 @@ class Field:
             # user will need to call model.update_forward_refs()
             return
 
-        self.validate_always: bool = (
-            getattr(self.type_, 'validate_always', False) or any(v.always for v in self.class_validators.values())
+        self.validate_always = getattr(self.type_, 'validate_always', False) or any(
+            v.always for v in self.class_validators.values()
         )
 
         if not self.required and self.default is None:

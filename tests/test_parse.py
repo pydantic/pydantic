@@ -1,5 +1,5 @@
 import pickle
-from typing import Union
+from typing import List, Union
 
 import pytest
 
@@ -36,6 +36,24 @@ def test_parse_obj_wrong_model():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj(Foo())
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+def test_parse_obj_root():
+    class MyModel(BaseModel):
+        __root__: str
+
+    m = MyModel.parse_obj('a')
+    assert m.dict() == {'__root__': 'a'}
+    assert m.__root__ == 'a'
+
+
+def test_parse_root_list():
+    class MyModel(BaseModel):
+        __root__: List[str]
+
+    m = MyModel.parse_obj(['a'])
+    assert m.dict() == {'__root__': ['a']}
+    assert m.__root__ == ['a']
 
 
 def test_json():

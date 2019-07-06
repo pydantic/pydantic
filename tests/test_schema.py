@@ -11,7 +11,13 @@ from uuid import UUID
 import pytest
 
 from pydantic import BaseModel, Schema, ValidationError, validator
-from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_map, schema
+from pydantic.schema import (
+    get_flat_models_from_model,
+    get_flat_models_from_models,
+    get_model_name_map,
+    model_schema,
+    schema,
+)
 from pydantic.types import (
     DSN,
     UUID1,
@@ -1303,6 +1309,45 @@ def test_field_with_validator():
     }
 
 
+def test_unparameterized_schema_generation():
+    class FooList(BaseModel):
+        d: List
+
+    class BarList(BaseModel):
+        d: list
+
+    assert model_schema(FooList) == {
+        'title': 'FooList',
+        'type': 'object',
+        'properties': {'d': {'items': {}, 'title': 'D', 'type': 'array'}},
+        'required': ['d'],
+    }
+
+    foo_list_schema = model_schema(FooList)
+    bar_list_schema = model_schema(BarList)
+    bar_list_schema['title'] = 'FooList'  # to check for equality
+    assert foo_list_schema == bar_list_schema
+
+    class FooDict(BaseModel):
+        d: Dict
+
+    class BarDict(BaseModel):
+        d: dict
+
+    model_schema(Foo)
+    assert model_schema(FooDict) == {
+        'title': 'FooDict',
+        'type': 'object',
+        'properties': {'d': {'title': 'D', 'type': 'object'}},
+        'required': ['d'],
+    }
+
+    foo_dict_schema = model_schema(FooDict)
+    bar_dict_schema = model_schema(BarDict)
+    bar_dict_schema['title'] = 'FooDict'  # to check for equality
+    assert foo_dict_schema == bar_dict_schema
+
+
 def test_known_model_optimization():
     class Dep(BaseModel):
         number: int
@@ -1330,3 +1375,39 @@ def test_known_model_optimization():
     }
 
     assert Model.schema() == expected
+
+
+def test_root():
+    class Model(BaseModel):
+        __root__: str
+
+    assert Model.schema() == {'title': 'Model', 'type': 'string'}
+
+
+def test_root_list():
+    class Model(BaseModel):
+        __root__: List[str]
+
+    assert Model.schema() == {'title': 'Model', 'type': 'array', 'items': {'type': 'string'}}
+
+
+def test_root_nested_model():
+    class NestedModel(BaseModel):
+        a: str
+
+    class Model(BaseModel):
+        __root__: List[NestedModel]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'array',
+        'items': {'$ref': '#/definitions/NestedModel'},
+        'definitions': {
+            'NestedModel': {
+                'title': 'NestedModel',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            }
+        },
+    }

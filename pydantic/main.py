@@ -14,7 +14,6 @@ from typing import (
     Dict,
     Generator,
     List,
-    Mapping,
     Optional,
     Set,
     Tuple,
@@ -28,7 +27,7 @@ from typing import (
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import Field
+from .fields import Field, Shape
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
@@ -94,12 +93,18 @@ class BaseConfig:
     arbitrary_types_allowed = False
     json_encoders: Dict[AnyType, AnyCallable] = {}
     orm_mode: bool = False
+    alias_generator: Optional[Callable[[str], str]] = None
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
         field_config = cls.fields.get(name) or {}
         if isinstance(field_config, str):
             field_config = {'alias': field_config}
+        elif not field_config and cls.alias_generator:
+            alias = cls.alias_generator(name)
+            if not isinstance(alias, str):
+                raise TypeError(f'Config.alias_generator must return str, not {type(alias)}')
+            field_config = {'alias': alias}
         return field_config
 
 
@@ -148,6 +153,19 @@ def set_extra(config: Type[BaseConfig], cls_name: str) -> None:
             raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
 
 
+def is_valid_field(name: str) -> bool:
+    if not name.startswith('_'):
+        return True
+    return '__root__' == name
+
+
+def validate_custom_root_type(fields: Dict[str, Field]) -> None:
+    if len(fields) > 1:
+        raise ValueError('__root__ cannot be mixed with other fields')
+    if fields['__root__'].shape is Shape.MAPPING:
+        raise TypeError('custom root type cannot allow mapping')
+
+
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
@@ -186,7 +204,7 @@ class MetaModel(ABCMeta):
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
                     class_vars.add(ann_name)
-                elif not ann_name.startswith('_') and ann_name not in namespace:
+                elif is_valid_field(ann_name) and ann_name not in namespace:
                     validate_field_name(bases, ann_name)
                     fields[ann_name] = Field.infer(
                         name=ann_name,
@@ -198,7 +216,7 @@ class MetaModel(ABCMeta):
 
             for var_name, value in namespace.items():
                 if (
-                    not var_name.startswith('_')
+                    is_valid_field(var_name)
                     and (annotations.get(var_name) == PyObject or not isinstance(value, TYPE_BLACKLIST))
                     and var_name not in class_vars
                 ):
@@ -211,6 +229,9 @@ class MetaModel(ABCMeta):
                         config=config,
                     )
 
+        _custom_root_type = '__root__' in fields
+        if _custom_root_type:
+            validate_custom_root_type(fields)
         vg.check_for_unused()
         if config.json_encoders:
             json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
@@ -222,6 +243,7 @@ class MetaModel(ABCMeta):
             '__validators__': vg.validators,
             '_schema_cache': {},
             '_json_encoder': staticmethod(json_encoder),
+            '_custom_root_type': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace)
@@ -233,8 +255,10 @@ class BaseModel(metaclass=MetaModel):
         __fields__: Dict[str, Field] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __config__: Type[BaseConfig] = BaseConfig
+        __root__: Any = None
         _json_encoder: Callable[[Any], Any] = lambda x: x
         _schema_cache: 'DictAny' = {}
+        _custom_root_type: bool = False
 
     Config = BaseConfig
     __slots__ = ('__values__', '__fields_set__')
@@ -324,13 +348,16 @@ class BaseModel(metaclass=MetaModel):
         )
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: Mapping[Any, Any]) -> 'Model':
+    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
         if not isinstance(obj, dict):
-            try:
-                obj = dict(obj)
-            except (TypeError, ValueError) as e:
-                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
+            if cls._custom_root_type:
+                obj = {'__root__': obj}
+            else:
+                try:
+                    obj = dict(obj)
+                except (TypeError, ValueError) as e:
+                    exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                    raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
 
         m = cls.__new__(cls)
         values, fields_set, _ = validate_model(m, obj)
@@ -572,7 +599,7 @@ def create_model(
     annotations = {}
 
     for f_name, f_def in field_definitions.items():
-        if f_name.startswith('_'):
+        if not is_valid_field(f_name):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
             try:

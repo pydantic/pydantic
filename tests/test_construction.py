@@ -22,7 +22,7 @@ def test_construct_missing():
     with pytest.raises(AttributeError) as exc_info:
         print(m.b)
 
-    assert "'Model' object has no attribute 'b'" in str(exc_info)
+    assert "'Model' object has no attribute 'b'" in exc_info.value.args[0]
 
 
 def test_large_any_str():
