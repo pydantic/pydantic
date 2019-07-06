@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, ClassVar, List
+from typing import Any, ClassVar, List, Mapping
 
 import pytest
 
@@ -701,3 +701,45 @@ def test_alias_generator_wrong_type_error():
                 alias_generator = return_bytes
 
     assert str(e.value) == "Config.alias_generator must return str, not <class 'bytes'>"
+
+
+def test_root():
+    class MyModel(BaseModel):
+        __root__: str
+
+    m = MyModel(__root__='a')
+    assert m.dict() == {'__root__': 'a'}
+    assert m.__root__ == 'a'
+
+
+def test_root_list():
+    class MyModel(BaseModel):
+        __root__: List[str]
+
+    m = MyModel(__root__=['a'])
+    assert m.dict() == {'__root__': ['a']}
+    assert m.__root__ == ['a']
+
+
+def test_root_failed():
+    with pytest.raises(ValueError, match='__root__ cannot be mixed with other fields'):
+
+        class MyModel(BaseModel):
+            __root__: str
+            a: str
+
+
+def test_root_undefined_failed():
+    class MyModel(BaseModel):
+        a: List[str]
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyModel(__root__=['a'])
+        assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+def test_parse_root_as_mapping():
+    with pytest.raises(TypeError, match='custom root type cannot allow mapping'):
+
+        class MyModel(BaseModel):
+            __root__: Mapping[str, str]

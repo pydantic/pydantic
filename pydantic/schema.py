@@ -593,9 +593,13 @@ def model_type_schema(
             properties[k] = f_schema
             if f.required:
                 required.append(k)
-    out_schema = {'type': 'object', 'properties': properties}
-    if required:
-        out_schema['required'] = required
+    if '__root__' in properties:
+        out_schema = properties['__root__']
+        out_schema['title'] = model.__config__.title or model.__name__
+    else:
+        out_schema = {'type': 'object', 'properties': properties}
+        if required:
+            out_schema['required'] = required
     return out_schema, definitions, nested_models
 
 

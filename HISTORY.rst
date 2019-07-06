@@ -13,6 +13,7 @@ v0.30 (unreleased)
 * add ``alias_generator`` support, #622 by @MrMrRobat
 * fix unparameterized generic type schema generation, #625 by @dmontagu
 * fix schema generation with multiple/circular references to the same model, #621 by @tiangolo and @wongpat
+* support custom root types, #628 by @koxudaxi
 
 v0.29 (2019-06-19)
 ..................
