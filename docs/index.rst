@@ -672,8 +672,8 @@ to get validators to parse and validate the input data.
 Custom Root Types
 .................
 
-Pydantic models which do not represent an "object" in JSON parlance (``dict`` in python) can have a custom
-root type defined via the ``__root__`` field. The root type can of any time: list, float, int etc.
+Pydantic models which do not represent a ``dict`` ("object" in JSON parlance) can have a custom
+root type defined via the ``__root__`` field. The root type can of any type: list, float, int etc.
 
 The root type can be defined via the type hint on the ``__root__`` field.
 The root value can be passed to model ``__init__`` via the ``__root__`` keyword argument or as the first and only argument
