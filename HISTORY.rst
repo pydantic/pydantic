@@ -3,12 +3,12 @@
 History
 -------
 
-v0.30 (unreleased)
+v0.30 (2019-07-07)
 ..................
 * enforce single quotes in code, #612 by @samuelcolvin
 * fix infinite recursion with dataclass inheritance and ``__post_init__``, #606 by @Hanaasagi
 * fix default values for ``GenericModel``, #610 by @dmontagu
-* clarify, that self-referencing models require python 3.7+, #616 by @vlcinsky
+* clarify that self-referencing models require python 3.7+, #616 by @vlcinsky
 * fix truncate for types, #611 by @dmontagu
 * add ``alias_generator`` support, #622 by @MrMrRobat
 * fix unparameterized generic type schema generation, #625 by @dmontagu
