@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, ClassVar, List
+from typing import Any, ClassVar, List, Mapping
 
 import pytest
 
@@ -736,3 +736,10 @@ def test_root_undefined_failed():
     with pytest.raises(ValidationError) as exc_info:
         MyModel(__root__=['a'])
         assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+def test_parse_root_as_mapping():
+    with pytest.raises(TypeError, match='custom root type cannot allow mapping'):
+
+        class MyModel(BaseModel):
+            __root__: Mapping[str, str]

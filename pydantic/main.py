@@ -27,7 +27,7 @@ from typing import (
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import Field
+from .fields import Field, Shape
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
@@ -159,6 +159,13 @@ def is_valid_field(name: str) -> bool:
     return '__root__' == name
 
 
+def validate_custom_root_type(fields: Dict[str, Field]) -> None:
+    if len(fields) > 1:
+        raise ValueError('__root__ cannot be mixed with other fields')
+    if fields['__root__'].shape is Shape.MAPPING:
+        raise TypeError('custom root type cannot allow mapping')
+
+
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
 
 
@@ -223,8 +230,8 @@ class MetaModel(ABCMeta):
                     )
 
         _custom_root_type = '__root__' in fields
-        if _custom_root_type and len(fields) > 1:
-            raise ValueError('__root__ cannot be mixed with other fields')
+        if _custom_root_type:
+            validate_custom_root_type(fields)
         vg.check_for_unused()
         if config.json_encoders:
             json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
@@ -342,10 +349,7 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
-        if isinstance(obj, dict):
-            if cls._custom_root_type:
-                raise TypeError('custom root type cannot allow dict')
-        else:
+        if not isinstance(obj, dict):
             if cls._custom_root_type:
                 obj = {'__root__': obj}
             else:

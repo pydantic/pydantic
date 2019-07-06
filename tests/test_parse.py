@@ -56,14 +56,6 @@ def test_parse_root_list():
     assert m.__root__ == ['a']
 
 
-def test_parse_root_as_dict():
-    class MyModel(BaseModel):
-        __root__: List[str]
-
-    with pytest.raises(TypeError, match='custom root type cannot allow dict'):
-        MyModel.parse_obj({'__root__': ['a']})
-
-
 def test_json():
     assert Model.parse_raw('{"a": 12, "b": 8}') == Model(a=12, b=8)
 
