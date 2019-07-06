@@ -255,7 +255,7 @@ def test_set_attr_invalid():
 
     with pytest.raises(ValueError) as exc_info:
         m.c = 20
-    assert '"UltraSimpleModel" object has no field "c"' in str(exc_info)
+    assert '"UltraSimpleModel" object has no field "c"' in exc_info.value.args[0]
 
 
 def test_any():
@@ -344,7 +344,7 @@ def test_not_immutability():
     assert m.a == 11
     with pytest.raises(ValueError) as exc_info:
         m.b = 11
-    assert '"TestModel" object has no field "b"' in str(exc_info)
+    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
 def test_immutability():
@@ -359,10 +359,10 @@ def test_immutability():
     assert m.a == 10
     with pytest.raises(TypeError) as exc_info:
         m.a = 11
-    assert '"TestModel" is immutable and does not support item assignment' in str(exc_info)
+    assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
     with pytest.raises(ValueError) as exc_info:
         m.b = 11
-    assert '"TestModel" object has no field "b"' in str(exc_info)
+    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
 def test_const_validates():
