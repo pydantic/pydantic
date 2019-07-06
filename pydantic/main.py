@@ -358,7 +358,12 @@ class BaseModel(metaclass=MetaModel):
                 except (TypeError, ValueError) as e:
                     exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
                     raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
-        return cls(**obj)
+
+        m = cls.__new__(cls)
+        values, fields_set, _ = validate_model(m, obj)
+        object.__setattr__(m, '__values__', values)
+        object.__setattr__(m, '__fields_set__', fields_set)
+        return m
 
     @classmethod
     def parse_raw(
@@ -472,14 +477,14 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, dict):
-            return cls(**value)
+            return cls.parse_obj(value)
         elif isinstance(value, cls):
             return value.copy()
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
         else:
             with change_exception(DictError, TypeError, ValueError):
-                return cls(**dict(value))
+                return cls.parse_obj(value)
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:

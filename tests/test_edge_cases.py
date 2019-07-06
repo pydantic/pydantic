@@ -880,3 +880,29 @@ def test_submodel_different_type():
     assert Spam(c=Foo(a='123')).dict() == {'c': {'a': 123}}
     with pytest.raises(ValidationError):
         Spam(c=Bar(b='123'))
+
+
+def test_self():
+    class Model(BaseModel):
+        self: str
+
+    m = Model.parse_obj(dict(self='some value'))
+    assert m.dict() == {'self': 'some value'}
+    assert m.self == 'some value'
+    assert m.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'self': {'title': 'Self', 'type': 'string'}},
+        'required': ['self'],
+    }
+
+
+def test_self_recursive():
+    class SubModel(BaseModel):
+        self: int
+
+    class Model(BaseModel):
+        sm: SubModel
+
+    m = Model.parse_obj({'sm': {'self': '123'}})
+    assert m.dict() == {'sm': {'self': 123}}

@@ -14,6 +14,7 @@ v0.30 (unreleased)
 * fix unparameterized generic type schema generation, #625 by @dmontagu
 * fix schema generation with multiple/circular references to the same model, #621 by @tiangolo and @wongpat
 * support custom root types, #628 by @koxudaxi
+* support ``self`` as a field name in ``parse_obj``, #632 by @samuelcolvin
 
 v0.29 (2019-06-19)
 ..................
