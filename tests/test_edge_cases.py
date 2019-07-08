@@ -924,9 +924,7 @@ def test_nested_init(model):
         self: str
         nest: NestedModel
 
-    m = TopModel.parse_obj(dict(self='Top Model',
-                                nest=dict(self='Nested Model',
-                                          modified_number=0)))
+    m = TopModel.parse_obj(dict(self='Top Model', nest=dict(self='Nested Model', modified_number=0)))
     assert m.self == 'Top Model'
     assert m.nest.self == 'Nested Model'
     assert m.nest.modified_number == 1
