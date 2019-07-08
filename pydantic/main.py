@@ -263,13 +263,14 @@ class BaseModel(metaclass=MetaModel):
     Config = BaseConfig
     __slots__ = ('__values__', '__fields_set__')
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(pydantic_base_model_init, **data: Any) -> None:
+        # Uses something other than `self` the first arg to allow "self" as a settable attribute
         if TYPE_CHECKING:  # pragma: no cover
-            self.__values__: Dict[str, Any] = {}
-            self.__fields_set__: 'SetStr' = set()
-        values, fields_set, _ = validate_model(self, data)
-        object.__setattr__(self, '__values__', values)
-        object.__setattr__(self, '__fields_set__', fields_set)
+            pydantic_base_model_init.__values__: Dict[str, Any] = {}
+            pydantic_base_model_init.__fields_set__: 'SetStr' = set()
+        values, fields_set, _ = validate_model(pydantic_base_model_init, data)
+        object.__setattr__(pydantic_base_model_init, '__values__', values)
+        object.__setattr__(pydantic_base_model_init, '__fields_set__', fields_set)
 
     @no_type_check
     def __getattr__(self, name):
@@ -358,12 +359,7 @@ class BaseModel(metaclass=MetaModel):
                 except (TypeError, ValueError) as e:
                     exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
                     raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
-
-        m = cls.__new__(cls)
-        values, fields_set, _ = validate_model(m, obj)
-        object.__setattr__(m, '__values__', values)
-        object.__setattr__(m, '__fields_set__', fields_set)
-        return m
+        return cls(**obj)
 
     @classmethod
     def parse_raw(
@@ -477,14 +473,14 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, dict):
-            return cls.parse_obj(value)
+            return cls(**value)
         elif isinstance(value, cls):
             return value.copy()
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
         else:
             with change_exception(DictError, TypeError, ValueError):
-                return cls.parse_obj(value)
+                return cls(**dict(value))
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
