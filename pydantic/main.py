@@ -263,14 +263,14 @@ class BaseModel(metaclass=MetaModel):
     Config = BaseConfig
     __slots__ = ('__values__', '__fields_set__')
 
-    def __init__(pydantic_base_model_init, **data: Any) -> None:
+    def __init__(__pydantic_self__, **data: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
         if TYPE_CHECKING:  # pragma: no cover
-            pydantic_base_model_init.__values__: Dict[str, Any] = {}
-            pydantic_base_model_init.__fields_set__: 'SetStr' = set()
-        values, fields_set, _ = validate_model(pydantic_base_model_init, data)
-        object.__setattr__(pydantic_base_model_init, '__values__', values)
-        object.__setattr__(pydantic_base_model_init, '__fields_set__', fields_set)
+            __pydantic_self__.__values__: Dict[str, Any] = {}
+            __pydantic_self__.__fields_set__: 'SetStr' = set()
+        values, fields_set, _ = validate_model(__pydantic_self__, data)
+        object.__setattr__(__pydantic_self__, '__values__', values)
+        object.__setattr__(__pydantic_self__, '__fields_set__', fields_set)
 
     @no_type_check
     def __getattr__(self, name):

@@ -3,9 +3,9 @@
 History
 -------
 
-v0.31 (2019-??-??)
+v0.31 (unreleased)
 ..................
-* nested classes which inherit and change `__init__` are now correctly processed while still allowing `self` as a
+* nested classes which inherit and change ``__init__`` are now correctly processed while still allowing ``self`` as a
   parameter, #644 by @lnaden and @dgasmith
 
 v0.30 (2019-07-07)

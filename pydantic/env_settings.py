@@ -20,9 +20,9 @@ class BaseSettings(BaseModel):
     Heroku and any 12 factor app design.
     """
 
-    def __init__(pydantic_base_settings_init, **values: Any) -> None:
+    def __init__(__pydantic_self__, **values: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
-        super().__init__(**pydantic_base_settings_init._build_values(values))
+        super().__init__(**__pydantic_self__._build_values(values))
 
     def _build_values(self, init_kwargs: Dict[str, Any]) -> Dict[str, Any]:
         return {**self._build_environ(), **init_kwargs}
