@@ -392,6 +392,28 @@ def test_include_exclude_default():
     assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, skip_defaults=True) == {'b': 2}
 
 
+def test_advanced_exclude():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
+
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
+
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+
+    assert m.dict(exclude={'f': {'c': ..., 'd': {-1: {'a'}}}}) == {
+        'e': 'e',
+        'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]},
+    }
+    assert m.dict(exclude={'e': ..., 'f': {'d'}}) == {'f': {'c': 'foo'}}
+
+
 def test_field_set_ignore_extra():
     class Model(BaseModel):
         a: int

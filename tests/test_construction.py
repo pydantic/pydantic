@@ -1,4 +1,5 @@
 import pickle
+from typing import List
 
 import pytest
 
@@ -80,6 +81,29 @@ def test_copy_exclude():
     assert set(m2.dict().keys()) == {'a', 'c', 'd'}
 
     assert m != m2
+
+
+def test_copy_advanced_exclude():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
+
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
+
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+    m2 = m.copy(exclude={'f': {'c': ..., 'd': {-1: {'a'}}}})
+    assert hasattr(m.f, 'c')
+    assert not hasattr(m2.f, 'c')
+
+    assert m2.dict() == {'e': 'e', 'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}}
+    m2 = m.copy(exclude={'e': ..., 'f': {'d'}})
+    assert m2.dict() == {'f': {'c': 'foo'}}
 
 
 def test_copy_include():
