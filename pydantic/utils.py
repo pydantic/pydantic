@@ -298,18 +298,24 @@ if sys.version_info >= (3, 7):
     def is_literal_type(type_: AnyType) -> bool:
         return Literal is not None and getattr(type_, '__origin__', None) is Literal
 
+    def literal_values(type_: AnyType) -> Tuple[Any, ...]:
+        return type_.__args__
+
 
 else:
 
     def is_literal_type(type_: AnyType) -> bool:
         return Literal is not None and hasattr(type_, '__values__') and type_ == Literal[type_.__values__]
 
+    def literal_values(type_: AnyType) -> Tuple[Any, ...]:
+        return type_.__values__
 
-def is_new_type(type_: Any) -> bool:
+
+def is_new_type(type_: AnyType) -> bool:
     return isinstance(type_, type(lambda: None)) and hasattr(type_, '__supertype__')
 
 
-def new_type_supertype(type_: Any) -> AnyType:
+def new_type_supertype(type_: AnyType) -> AnyType:
     while hasattr(type_, '__supertype__'):
         type_ = type_.__supertype__
     return type_
