@@ -580,8 +580,14 @@ Exotic Types
 (This script is complete, it should run "as is")
 
 
-RelaxedBool and StrictBool
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Booleans
+~~~~~~~~
+
+.. warning::
+
+    The logic for parsing ``bool`` fields has changed as of version v0.31.
+    Prior to v0.31, ``bool`` fields would be parsed by simply mapping ``value`` to ``bool(value)``.
+    The new logic is described below.
 
 A standard ``bool`` field will raise a ``ValidationError`` if the value is not one of the following:
 
@@ -591,12 +597,17 @@ A standard ``bool`` field will raise a ``ValidationError`` if the value is not o
 * a ``bytes`` which is valid (per the previous rule) when decoded to ``str``
 
 If you want more permissive behavior, ``RelaxedBool`` can be used to cast values to bool using standard python logic.
-For example, ``None`` would be cast to False. Note that this behaves differently than the standard ``bool`` field
-for some values: for example, a ``RelaxedBool`` field would cast the string "false" to True.
+For example, a ``RelaxedBool`` field will cast ``None`` to ``False``, and will cast ``'False'`` to ``True``.
+Note that this behaves differently than the standard ``bool`` field, which would cast ``'False'`` to ``False``.
 
 For stricter behavior, ``StrictBool`` can be used to require specifically ``True`` or ``False``;
 nothing else is permitted.
 
+Here is a script demonstrating some of these behaviors:
+
+.. literalinclude:: examples/booleans.py
+
+(This script is complete, it should run "as is")
 
 
 Callable

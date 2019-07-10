@@ -55,7 +55,7 @@ class WrongConstantError(PydanticValueError):
         return f'unexpected value; permitted: {permitted}'
 
 
-class BoolError(PydanticValueError):
+class BoolError(PydanticTypeError):
     msg_template = 'value could not be parsed to a boolean'
 
 

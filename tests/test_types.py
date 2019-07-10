@@ -996,11 +996,17 @@ def test_relaxed_bool():
     assert Model(v=[]).v is False
     assert Model(v=None).v is False
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc_info:
         Model(v=NonBoolCastable1())
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value could not be coerced to a boolean', 'type': 'value_error.relaxedbool'}
+    ]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc_info:
         Model(v=NonBoolCastable2())
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value could not be coerced to a boolean', 'type': 'value_error.relaxedbool'}
+    ]
 
 
 def test_strict_bool():
@@ -1018,6 +1024,17 @@ def test_strict_bool():
 
     with pytest.raises(ValidationError):
         Model(v=b'1')
+
+
+def test_bool_unhashable_fails():
+    class Model(BaseModel):
+        v: bool
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v={})
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
+    ]
 
 
 def test_uuid_error():
