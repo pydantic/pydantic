@@ -52,6 +52,7 @@ from .utils import (
     is_literal_type,
     is_new_type,
     lenient_issubclass,
+    literal_values,
     new_type_supertype,
 )
 
@@ -753,7 +754,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if is_new_type(field_type):
         field_type = new_type_supertype(field_type)
     if is_literal_type(field_type):
-        field_type = Union[tuple(type(arg) for arg in field_type.__args__)]  # type: ignore
+        # If there were distinct literal value types, field.sub_fields would not be falsy
+        field_type = type(literal_values(field_type)[0])
     if issubclass(field_type, Enum):
         f_schema.update({'enum': [item.value for item in field_type]})
         # Don't return immediately, to allow adding specific types

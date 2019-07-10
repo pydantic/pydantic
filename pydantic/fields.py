@@ -29,6 +29,7 @@ from .utils import (
     Callable,
     ForwardRef,
     display_as_type,
+    is_literal_type,
     lenient_issubclass,
     literal_values,
     sequence_like,
@@ -195,16 +196,16 @@ class Field:
         if self.type_ is Pattern:
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
+        if is_literal_type(self.type_):
+            types_ = sorted(set(type(value) for value in literal_values(self.type_)), key=str)
+            if len(types_) > 1:
+                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
+            return
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
         if origin is Callable:
-            return
-        if Literal is not None and origin is Literal:
-            types_ = list(set(type(arg) for arg in literal_values(self.type_)))
-            if len(types_) > 1:
-                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
         if origin is Union:
             types_ = []
