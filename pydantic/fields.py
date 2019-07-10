@@ -193,6 +193,9 @@ class Field:
         if origin is Callable:
             return
         if Literal is not None and origin is Literal:
+            types_ = list(set(type(arg) for arg in self.type_.__args__))  # type: ignore
+            if len(types_) > 1:
+                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
         if origin is Union:
             types_ = []

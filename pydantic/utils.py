@@ -305,6 +305,16 @@ else:
         return Literal is not None and hasattr(type_, '__values__') and type_ == Literal[type_.__values__]
 
 
+def is_new_type(type_: Any) -> bool:
+    return isinstance(type_, type(lambda: None)) and hasattr(type_, '__supertype__')
+
+
+def new_type_supertype(type_: Any) -> AnyType:
+    while hasattr(type_, '__supertype__'):
+        type_ = type_.__supertype__
+    return type_
+
+
 def _check_classvar(v: AnyType) -> bool:
     return type(v) == type(ClassVar) and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
 
