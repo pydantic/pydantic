@@ -13,6 +13,7 @@ from typing import (  # type: ignore
     Dict,
     Generator,
     List,
+    NewType,
     Optional,
     Pattern,
     Set,
@@ -311,8 +312,11 @@ else:
         return type_.__values__
 
 
+test_type = NewType('test_type', str)
+
+
 def is_new_type(type_: AnyType) -> bool:
-    return isinstance(type_, type(lambda: None)) and hasattr(type_, '__supertype__')
+    return isinstance(type_, type(test_type)) and hasattr(type_, '__supertype__')
 
 
 def new_type_supertype(type_: AnyType) -> AnyType:
