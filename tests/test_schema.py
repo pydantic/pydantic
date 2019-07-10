@@ -71,6 +71,11 @@ try:
 except ImportError:
     email_validator = None
 
+try:
+    import typing_extensions
+except ImportError:
+    typing_extensions = None
+
 
 def test_key():
     class ApplePie(BaseModel):
@@ -1436,6 +1441,7 @@ def test_new_type_schema():
     }
 
 
+@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
 def test_literal_schema():
     class Model(BaseModel):
         a: Literal[1]
