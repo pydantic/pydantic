@@ -448,7 +448,7 @@ class Field:
         for validator in validators:
             try:
                 v = validator(cls, v, values, self, self.model_config)
-            except (ValueError, TypeError) as exc:
+            except (ValueError, TypeError, AssertionError) as exc:
                 return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
         return v, None
 

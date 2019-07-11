@@ -194,7 +194,7 @@ A few things to note on validators:
 * their signature can be ``(cls, value)`` or ``(cls, value, values, config, field)``. As of **v0.20**, any subset of
   ``values``, ``config`` and ``field`` is also permitted, eg. ``(cls, value, field)``, however due to the way
   validators are inspected, the variadic key word argument ("``**kwargs``") **must** be called ``kwargs``.
-* validator should either return the new value or raise a ``ValueError`` or ``TypeError``
+* validator should either return the new value or raise a ``ValueError``, ``TypeError``, or ``AssertionError`` (``assert`` statement can be used too)
 * where validators rely on other values, you should be aware that:
 
   - Validation is done in the order fields are defined, eg. here ``password2`` has access to ``password1``
