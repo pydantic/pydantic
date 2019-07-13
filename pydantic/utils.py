@@ -20,6 +20,7 @@ from typing import (  # type: ignore
     Type,
     Union,
     _eval_type,
+    no_type_check,
 )
 
 import pydantic
@@ -48,6 +49,7 @@ except ImportError:
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
     from .main import Field  # noqa: F401
+    from .main import SetIntStr, DictIntStrAny, IntStr  # noqa: F401
     from . import errors  # noqa: F401
 
 if sys.version_info < (3, 7):
@@ -350,3 +352,82 @@ class GetterDict:
         We don't want to get any other attributes of obj if the model didn't explicitly ask for them
         """
         return set()
+
+
+class ValueItems:
+    """
+    Class for more convenient calculation of excluded or included fields on values.
+    """
+
+    __slots__ = ('_items', '_type')
+
+    def __init__(self, value: Any, items: Union['SetIntStr', 'DictIntStrAny']) -> None:
+        if TYPE_CHECKING:
+            self._items: Union['SetIntStr', 'DictIntStrAny']
+            self._type: Type[Union[set, dict]]  # type: ignore
+
+        # For further type checks speed-up
+        if isinstance(items, dict):
+            self._type = dict
+        elif isinstance(items, set):
+            self._type = set
+        else:
+            raise ValueError(f'Unexpected type of exclude value {type(items)}')
+
+        if isinstance(value, (list, tuple)):
+            items = self._normalize_indexes(items, len(value))
+
+        self._items = items
+
+    @no_type_check
+    def is_excluded(self, item: Any) -> bool:
+        """
+        Check if item is fully excluded
+        (value considered excluded if self._type is set and item contained in self._items
+         or self._type is dict and self._items.get(item) is ...
+
+        :param item: key or index of a value
+        """
+        if self._type is set:
+            return item in self._items
+        return self._items.get(item) is ...
+
+    @no_type_check
+    def is_included(self, item: Any) -> bool:
+        """
+        Check if value is contained in self._items
+
+        :param item: key or index of value
+        """
+        return item in self._items
+
+    @no_type_check
+    def for_element(self, e: 'IntStr') -> Optional[Union['SetIntStr', 'DictIntStrAny']]:
+        """
+        :param e: key or index of element on value
+        :return: raw values for elemet if self._items is dict and contain needed element
+        """
+
+        if self._type is dict:
+            item = self._items.get(e)
+            return item if item is not ... else None
+        return None
+
+    @no_type_check
+    def _normalize_indexes(
+        self, items: Union['SetIntStr', 'DictIntStrAny'], v_length: int
+    ) -> Union['SetIntStr', 'DictIntStrAny']:
+        """
+        :param items: dict or set of indexes which will be normalized
+        :param v_length: length of sequence indexes of which will be
+
+        >>> self._normalize_indexes({0, -2, -1}, 4)
+        {0, 2, 3}
+        """
+        if self._type is set:
+            return {v_length + i if i < 0 else i for i in items}
+        else:
+            return {v_length + i if i < 0 else i: v for i, v in items.items()}
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}: {self._type.__name__}({self._items})'

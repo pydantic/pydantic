@@ -37,6 +37,7 @@ from .utils import (
     AnyType,
     ForwardRef,
     GetterDict,
+    ValueItems,
     change_exception,
     is_classvar,
     resolve_annotations,
@@ -169,60 +170,6 @@ def validate_custom_root_type(fields: Dict[str, Field]) -> None:
 
 
 TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
-
-
-class ValueExclude:
-    __slots__ = ('__exclude__', '__type__')
-
-    def __init__(self, value: Any, exclude: Union['SetIntStr', 'DictIntStrAny']) -> None:
-        if TYPE_CHECKING:
-            self.__exclude__: Union['SetIntStr', 'DictIntStrAny']
-            self.__type__: Type[Union[set, dict]]  # type: ignore
-
-        self.__exclude__ = exclude
-
-        # For further type check speed-up
-        if isinstance(exclude, dict):
-            self.__type__ = dict
-        elif isinstance(exclude, set):
-            self.__type__ = set
-        else:
-            raise ValueError(f'Unexpected type of exclude value {type(exclude)}')
-
-        if isinstance(value, (list, tuple)):
-            self._normalize_indexes(value)
-
-    def __contains__(self, item: Any) -> bool:
-        return self.is_fully_excluded(item)
-
-    def is_fully_excluded(self, v: Any) -> bool:
-        if self.__type__ is set:
-            return v in self.__exclude__
-        return self.__exclude__.get(v, None) is ...  # type: ignore
-
-    def for_element(self, e: 'IntStr') -> Optional[Union['SetIntStr', 'DictIntStrAny']]:
-        if self.__type__ is dict:
-            return self.__exclude__.get(e, None)  # type: ignore
-        return None
-
-    @no_type_check
-    def _normalize_indexes(self, v: Union[List[Any], Tuple[Any, ...]]) -> None:
-        v_length = len(v)
-        if self.__type__ is set:
-            for i in tuple(self.__exclude__):
-                if not isinstance(i, int):
-                    raise ValueError(f'{type(v)} indexes can not be {type(i)}')
-                if i < 0:
-                    self.__exclude__.remove(i)
-                    self.__exclude__.add(v_length + i)
-
-        elif self.__type__ is dict:
-            for i, v in tuple(self.__exclude__.items()):
-                if not isinstance(i, int):
-                    raise ValueError(f'{type(v)} indexes can not be {type(i)}')
-                if i < 0:
-                    del self.__exclude__[i]
-                    self.__exclude__[v_length + i] = v
 
 
 class MetaModel(ABCMeta):
@@ -361,7 +308,7 @@ class BaseModel(metaclass=MetaModel):
     def dict(
         self,
         *,
-        include: 'SetStr' = None,
+        include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
@@ -372,8 +319,17 @@ class BaseModel(metaclass=MetaModel):
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.fields)
 
-        exclude = self._update_exclude(include=include, exclude=exclude, skip_defaults=skip_defaults)
-        return {get_key(k): v for k, v in self._iter(by_alias=by_alias, exclude=exclude, skip_defaults=skip_defaults)}
+        allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
+        return {
+            get_key(k): v
+            for k, v in self._iter(
+                by_alias=by_alias,
+                allowed_keys=allowed_keys,
+                include=include,
+                exclude=exclude,
+                skip_defaults=skip_defaults,
+            )
+        }
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
@@ -384,7 +340,7 @@ class BaseModel(metaclass=MetaModel):
     def json(
         self,
         *,
-        include: 'SetStr' = None,
+        include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
@@ -477,7 +433,7 @@ class BaseModel(metaclass=MetaModel):
     def copy(
         self: 'Model',
         *,
-        include: 'SetStr' = None,
+        include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         update: 'DictStrAny' = None,
         deep: bool = False,
@@ -496,14 +452,23 @@ class BaseModel(metaclass=MetaModel):
             # skip constructing values if no arguments are passed
             v = self.__values__
         else:
-            exclude = self._update_exclude(include=include, exclude=exclude, skip_defaults=False, update=update)
-            if exclude:
+            allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False, update=update)
+            if allowed_keys is None:
+                v = {**self.__values__, **(update or {})}
+            else:
                 v = {
-                    **dict(self._iter(to_dict=False, by_alias=False, exclude=exclude, skip_defaults=False)),
+                    **dict(
+                        self._iter(
+                            to_dict=False,
+                            by_alias=False,
+                            include=include,
+                            exclude=exclude,
+                            skip_defaults=False,
+                            allowed_keys=allowed_keys,
+                        )
+                    ),
                     **(update or {}),
                 }
-            else:
-                v = {**self.__values__, **(update or {})}
 
         if deep:
             v = deepcopy(v)
@@ -550,25 +515,25 @@ class BaseModel(metaclass=MetaModel):
         return GetterDict(obj)
 
     @classmethod
+    @no_type_check
     def _get_value(
         cls,
         v: Any,
         to_dict: bool,
         by_alias: bool,
+        include: Optional[Union['SetIntStr', 'DictIntStrAny']],
         exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
         skip_defaults: bool,
     ) -> Any:
 
         if isinstance(v, BaseModel):
             if to_dict:
-                return v.dict(by_alias=by_alias, skip_defaults=skip_defaults, exclude=exclude)
+                return v.dict(by_alias=by_alias, skip_defaults=skip_defaults, include=include, exclude=exclude)
             else:
-                return v.copy(exclude=exclude)
+                return v.copy(include=include, exclude=exclude)
 
-        if exclude is not None:
-            value_exclude = ValueExclude(v, exclude)
-        else:
-            value_exclude = None  # type: ignore
+        value_exclude = ValueItems(v, exclude) if exclude else None
+        value_include = ValueItems(v, include) if include else None
 
         if isinstance(v, dict):
             return {
@@ -577,10 +542,12 @@ class BaseModel(metaclass=MetaModel):
                     to_dict=to_dict,
                     by_alias=by_alias,
                     skip_defaults=skip_defaults,
-                    exclude=exclude and value_exclude.for_element(k_),
+                    include=value_include and value_include.for_element(k_),
+                    exclude=value_exclude and value_exclude.for_element(k_),
                 )
                 for k_, v_ in v.items()
-                if not value_exclude or k_ not in value_exclude
+                if (not value_exclude or not value_exclude.is_excluded(k_))
+                and (not value_include or value_include.is_included(k_))
             }
 
         elif isinstance(v, (list, set, tuple)):
@@ -590,10 +557,12 @@ class BaseModel(metaclass=MetaModel):
                     to_dict=to_dict,
                     by_alias=by_alias,
                     skip_defaults=skip_defaults,
-                    exclude=exclude and value_exclude.for_element(i),
+                    include=value_include and value_include.for_element(i),
+                    exclude=value_exclude and value_exclude.for_element(i),
                 )
                 for i, v_ in enumerate(v)
-                if not value_exclude or i not in value_exclude
+                if (not value_exclude or not value_exclude.is_excluded(i))
+                and (not value_include or value_include.is_included(i))
             )
 
         else:
@@ -619,55 +588,55 @@ class BaseModel(metaclass=MetaModel):
         self,
         to_dict: bool = True,
         by_alias: bool = False,
+        allowed_keys: Optional['SetStr'] = None,
+        include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         skip_defaults: bool = False,
     ) -> 'TupleGenerator':
 
-        for k, v in self.__values__.items():
-            v_exclude = None
-            if exclude and isinstance(exclude, dict):
-                v_exclude = exclude.get(k, None)
-                if v_exclude is ...:
-                    continue
-            elif exclude and k in exclude:
-                continue
-            yield k, self._get_value(
-                v, to_dict=to_dict, by_alias=by_alias, exclude=v_exclude, skip_defaults=skip_defaults
-            )
+        value_exclude = ValueItems(self, exclude) if exclude else None
+        value_include = ValueItems(self, include) if include else None
 
-    def _update_exclude(
+        for k, v in self.__values__.items():
+            if allowed_keys is None or k in allowed_keys:
+                yield k, self._get_value(
+                    v,
+                    to_dict=to_dict,
+                    by_alias=by_alias,
+                    include=value_include and value_include.for_element(k),
+                    exclude=value_exclude and value_exclude.for_element(k),
+                    skip_defaults=skip_defaults,
+                )
+
+    def _calculate_keys(
         self,
-        include: 'SetStr' = None,
+        include: Optional[Union['SetIntStr', 'DictIntStrAny']] = None,
         exclude: Optional[Union['SetIntStr', 'DictIntStrAny']] = None,
         skip_defaults: bool = False,
         update: Optional['DictStrAny'] = None,
-    ) -> Optional[Union['SetIntStr', 'DictIntStrAny']]:
-        if include is None and exclude is None and skip_defaults is False:
+    ) -> Optional['SetStr']:
+        if include is None and exclude is None and update is None and skip_defaults is False:
             return None
 
-        all_keys = keys = set(self.__values__.keys())
-
         if skip_defaults:
-            keys = keys & self.__fields_set__
+            keys = self.__fields_set__.copy()
+        else:
+            keys = set(self.__values__.keys())
 
-        if include:
-            keys = keys & include
+        if include and isinstance(include, dict):
+            keys &= set(include.keys())
+        elif include:
+            keys &= include  # type: ignore
 
         if update:
-            keys = keys - set(update.keys())
+            keys -= set(update.keys())
 
-        if all_keys == keys:
-            return exclude
+        if exclude and isinstance(exclude, dict):
+            keys -= {k for k, v in exclude.items() if v is ...}
+        elif exclude:
+            keys -= exclude  # type: ignore
 
-        to_exclude = all_keys - keys
-
-        if exclude:
-            if isinstance(exclude, dict):
-                exclude.update(**{k: ... for k in to_exclude})
-            elif isinstance(exclude, set):
-                return exclude | to_exclude
-
-        return to_exclude  # type: ignore
+        return keys
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseModel):

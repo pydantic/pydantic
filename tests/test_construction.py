@@ -83,6 +83,25 @@ def test_copy_exclude():
     assert m != m2
 
 
+def test_copy_include():
+    m = ModelTwo(a=24, d=Model(a='12'))
+    m2 = m.copy(include={'a'})
+
+    assert m.a == m2.a == 24
+    assert set(m.dict().keys()) == {'a', 'b', 'c', 'd'}
+    assert set(m2.dict().keys()) == {'a'}
+
+    assert m != m2
+
+
+def test_copy_include_exclude():
+    m = ModelTwo(a=24, d=Model(a='12'))
+    m2 = m.copy(include={'a', 'b', 'c'}, exclude={'c'})
+
+    assert set(m.dict().keys()) == {'a', 'b', 'c', 'd'}
+    assert set(m2.dict().keys()) == {'a', 'b'}
+
+
 def test_copy_advanced_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -106,23 +125,45 @@ def test_copy_advanced_exclude():
     assert m2.dict() == {'f': {'c': 'foo'}}
 
 
-def test_copy_include():
-    m = ModelTwo(a=24, d=Model(a='12'))
-    m2 = m.copy(include={'a'})
+def test_copy_advanced_include():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
 
-    assert m.a == m2.a == 24
-    assert set(m.dict().keys()) == {'a', 'b', 'c', 'd'}
-    assert set(m2.dict().keys()) == {'a'}
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
 
-    assert m != m2
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+    m2 = m.copy(include={'f': {'c'}})
+    assert hasattr(m.f, 'c')
+    assert hasattr(m2.f, 'c')
+    assert m2.dict() == {'f': {'c': 'foo'}}
+
+    m2 = m.copy(include={'e': ..., 'f': {'d': {-1}}})
+    assert m2.dict() == {'e': 'e', 'f': {'d': [{'a': 'c', 'b': 'e'}]}}
 
 
-def test_copy_include_exclude():
-    m = ModelTwo(a=24, d=Model(a='12'))
-    m2 = m.copy(include={'a', 'b', 'c'}, exclude={'c'})
+def test_copy_advanced_include_exclude():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
 
-    assert set(m.dict().keys()) == {'a', 'b', 'c', 'd'}
-    assert set(m2.dict().keys()) == {'a', 'b'}
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
+
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+    m2 = m.copy(include={'e': ..., 'f': {'d'}}, exclude={'e': ..., 'f': {'d': {0}}})
+    assert m2.dict() == {'f': {'d': [{'a': 'c', 'b': 'e'}]}}
 
 
 def test_copy_update():
