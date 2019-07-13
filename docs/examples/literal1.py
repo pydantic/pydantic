@@ -2,10 +2,8 @@ from typing_extensions import Literal
 
 from pydantic import BaseModel, ValidationError
 
-
 class Pie(BaseModel):
     flavor: Literal['apple', 'pumpkin']
-
 
 Pie(flavor='apple')
 Pie(flavor='pumpkin')
