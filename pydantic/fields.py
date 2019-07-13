@@ -197,8 +197,9 @@ class Field:
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
         if is_literal_type(self.type_):
-            if len(literal_values(self.type_)) > 1:
-                self.type_ = Union[tuple(Literal[value] for value in literal_values(self.type_))]
+            values = literal_values(self.type_)
+            if len(values) > 1:
+                self.type_ = Union[tuple(Literal[value] for value in values)]
             else:
                 return
         origin = getattr(self.type_, '__origin__', None)
