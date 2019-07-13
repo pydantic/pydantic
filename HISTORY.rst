@@ -3,6 +3,10 @@
 History
 -------
 
+v0.31 (unreleased)
+..................
+* add advanced exclude support for ``dict``, ``json`` and ``copy``, #648 by @MrMrRobat
+
 v0.30 (2019-07-07)
 ..................
 * enforce single quotes in code, #612 by @samuelcolvin
