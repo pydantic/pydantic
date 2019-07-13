@@ -754,8 +754,10 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if is_new_type(field_type):
         field_type = new_type_supertype(field_type)
     if is_literal_type(field_type):
-        # If there were distinct literal value types, field.sub_fields would not be falsy
-        field_type = type(literal_values(field_type)[0])
+        # If there were multiple literal values, field.sub_fields would not be falsy
+        literal_value = literal_values(field_type)[0]
+        field_type = type(literal_value)
+        f_schema['const'] = literal_value
     if issubclass(field_type, Enum):
         f_schema.update({'enum': [item.value for item in field_type]})
         # Don't return immediately, to allow adding specific types

@@ -197,10 +197,10 @@ class Field:
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
         if is_literal_type(self.type_):
-            types_ = sorted(set(type(value) for value in literal_values(self.type_)), key=str)
-            if len(types_) > 1:
-                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
-            return
+            if len(literal_values(self.type_)) > 1:
+                self.type_ = Union[tuple(Literal[value] for value in literal_values(self.type_))]
+            else:
+                return
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
