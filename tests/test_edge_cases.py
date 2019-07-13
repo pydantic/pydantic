@@ -8,6 +8,7 @@ import pytest
 from pydantic import (
     BaseConfig,
     BaseModel,
+    BaseSettings,
     Extra,
     NoneStrBytes,
     StrBytes,
@@ -964,12 +965,33 @@ def test_self():
     }
 
 
-def test_self_recursive():
-    class SubModel(BaseModel):
+@pytest.mark.parametrize('model', [BaseModel, BaseSettings])
+def test_self_recursive(model):
+    class SubModel(model):
         self: int
 
-    class Model(BaseModel):
+    class Model(model):
         sm: SubModel
 
     m = Model.parse_obj({'sm': {'self': '123'}})
     assert m.dict() == {'sm': {'self': 123}}
+
+
+@pytest.mark.parametrize('model', [BaseModel, BaseSettings])
+def test_nested_init(model):
+    class NestedModel(model):
+        self: str
+        modified_number: int = 1
+
+        def __init__(someinit, **kwargs):
+            super().__init__(**kwargs)
+            someinit.modified_number += 1
+
+    class TopModel(model):
+        self: str
+        nest: NestedModel
+
+    m = TopModel.parse_obj(dict(self='Top Model', nest=dict(self='Nested Model', modified_number=0)))
+    assert m.self == 'Top Model'
+    assert m.nest.self == 'Nested Model'
+    assert m.nest.modified_number == 1
