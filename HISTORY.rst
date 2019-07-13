@@ -5,6 +5,7 @@ History
 
 v0.31 (unreleased)
 ..................
+* use ``inspect.cleandoc`` internally to get model description, #657 by @tiangolo
 * nested classes which inherit and change ``__init__`` are now correctly processed while still allowing ``self`` as a
   parameter, #644 by @lnaden and @dgasmith
 
