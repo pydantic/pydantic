@@ -7,6 +7,7 @@ v0.31 (unreleased)
 ..................
 * nested classes which inherit and change ``__init__`` are now correctly processed while still allowing ``self`` as a
   parameter, #644 by @lnaden and @dgasmith
+* fix ``alias_generator`` and field config conflict, #645 by @gmetzker and #658 by @MrMrRobat
 
 v0.30 (2019-07-07)
 ..................
