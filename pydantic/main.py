@@ -611,7 +611,7 @@ class BaseModel(metaclass=MetaModel):
         skip_defaults: bool = False,
         update: Optional['DictStrAny'] = None,
     ) -> Optional['SetStr']:
-        if include is None and exclude is None and update is None and skip_defaults is False:
+        if include is None and exclude is None and skip_defaults is False:
             return None
 
         if skip_defaults:
