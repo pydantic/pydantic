@@ -178,6 +178,8 @@ def test_value_items():
     assert not vi.is_excluded('c')
     assert not vi.is_included('c')
 
+    assert str(vi) == "ValueItems: dict({'a': {0, -1}, 'b': {'a': Ellipsis, 'b': -1}})"
+
     excluded = {k_: v_ for k_, v_ in v2.items() if not vi.is_excluded(k_)}
     assert excluded == {'a': v, 'b': {'a': 1, 'b': (1, 2)}, 'c': 1}
 
@@ -186,8 +188,17 @@ def test_value_items():
 
     sub_v = included['a']
     sub_vi = ValueItems(sub_v, vi.for_element('a'))
+    assert str(sub_vi) == 'ValueItems: set({0, 2})'
+
     assert sub_vi.is_excluded(2)
     assert [v_ for i, v_ in enumerate(sub_v) if not sub_vi.is_excluded(i)] == ['b']
 
     assert sub_vi.is_included(2)
     assert [v_ for i, v_ in enumerate(sub_v) if sub_vi.is_included(i)] == ['a', 'c']
+
+
+def test_value_items_error():
+    with pytest.raises(ValueError) as e:
+        ValueItems(1, (1, 2, 3))
+
+    assert str(e.value) == "Unexpected type of exclude value <class 'tuple'>"
