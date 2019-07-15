@@ -465,6 +465,19 @@ Outputs:
 
 .. literalinclude:: examples/schema3.json
 
+It's also possible to extend/override the generated JSON schema in a model.
+
+To do it, use the ``Config`` sub-class attribute ``schema_extra``.
+
+For example, you could add ``examples`` to the JSON Schema:
+
+.. literalinclude:: examples/schema4.py
+
+(This script is complete, it should run "as is")
+
+Outputs:
+
+.. literalinclude:: examples/schema4.json
 
 Error Handling
 ..............
