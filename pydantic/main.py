@@ -98,6 +98,7 @@ class BaseConfig:
     orm_mode: bool = False
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
+    schema_extra: Dict[str, Any] = {}
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
