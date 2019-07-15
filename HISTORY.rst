@@ -6,12 +6,12 @@ History
 v0.31 (unreleased)
 ..................
 * fix schema generation for ``NewType`` and ``Literal``, #649 by @dmontagu
+* add Color to schema generation, by @euri10
 
 v0.30.1 (2019-07-15)
 ....................
 * fix so nested classes which inherit and change ``__init__`` are correctly processed while still allowing ``self`` as a
   parameter, #644 by @lnaden and @dgasmith
-* add Color to schema generation, by @euri10
 
 v0.30 (2019-07-07)
 ..................
