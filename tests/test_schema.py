@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, NewType, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
@@ -64,11 +64,17 @@ from pydantic.types import (
     constr,
     urlstr,
 )
+from pydantic.utils import Literal
 
 try:
     import email_validator
 except ImportError:
     email_validator = None
+
+try:
+    import typing_extensions
+except ImportError:
+    typing_extensions = None
 
 
 def test_key():
@@ -1410,4 +1416,45 @@ def test_root_nested_model():
                 'required': ['a'],
             }
         },
+    }
+
+
+def test_new_type_schema():
+    a_type = NewType('a_type', int)
+    b_type = NewType('b_type', a_type)
+    c_type = NewType('c_type', str)
+
+    class Model(BaseModel):
+        a: a_type
+        b: b_type
+        c: c_type
+
+    assert Model.schema() == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'title': 'B', 'type': 'integer'},
+            'c': {'title': 'C', 'type': 'string'},
+        },
+        'required': ['a', 'b', 'c'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+def test_literal_schema():
+    class Model(BaseModel):
+        a: Literal[1]
+        b: Literal['a']
+        c: Literal['a', 1]
+
+    assert Model.schema() == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer', 'const': 1},
+            'b': {'title': 'B', 'type': 'string', 'const': 'a'},
+            'c': {'anyOf': [{'type': 'string', 'const': 'a'}, {'type': 'integer', 'const': 1}], 'title': 'C'},
+        },
+        'required': ['a', 'b', 'c'],
+        'title': 'Model',
+        'type': 'object',
     }

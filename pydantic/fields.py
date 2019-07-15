@@ -23,7 +23,17 @@ from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .utils import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, lenient_issubclass, sequence_like
+from .utils import (
+    AnyCallable,
+    AnyType,
+    Callable,
+    ForwardRef,
+    display_as_type,
+    is_literal_type,
+    lenient_issubclass,
+    literal_values,
+    sequence_like,
+)
 from .validators import NoneType, constant_validator, dict_validator, find_validators
 
 try:
@@ -186,13 +196,17 @@ class Field:
         if self.type_ is Pattern:
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
+        if is_literal_type(self.type_):
+            values = literal_values(self.type_)
+            if len(values) > 1:
+                self.type_ = Union[tuple(Literal[value] for value in values)]
+            else:
+                return
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             return
         if origin is Callable:
-            return
-        if Literal is not None and origin is Literal:
             return
         if origin is Union:
             types_ = []
