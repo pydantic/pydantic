@@ -437,7 +437,7 @@ table = [
     [
         'Color',
         'string',
-        '',
+        '{"format": "color"}',
         'Pydantic standard "format" extension',
         '',
     ],
