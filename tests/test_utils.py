@@ -1,10 +1,19 @@
 import os
 from enum import Enum
-from typing import Union
+from typing import NewType, Union
 
 import pytest
 
-from pydantic.utils import display_as_type, import_string, lenient_issubclass, make_dsn, truncate, validate_email
+from pydantic.utils import (
+    display_as_type,
+    import_string,
+    is_new_type,
+    lenient_issubclass,
+    make_dsn,
+    new_type_supertype,
+    truncate,
+    validate_email,
+)
 
 try:
     import email_validator
@@ -150,3 +159,18 @@ def test_lenient_issubclass_is_lenient():
 
 def test_truncate_type():
     assert truncate(object) == "<class 'object'>"
+
+
+def test_is_new_type():
+    new_type = NewType('new_type', str)
+    new_new_type = NewType('new_new_type', new_type)
+    assert is_new_type(new_type)
+    assert is_new_type(new_new_type)
+    assert not is_new_type(str)
+
+
+def test_new_type_supertype():
+    new_type = NewType('new_type', str)
+    new_new_type = NewType('new_new_type', new_type)
+    assert new_type_supertype(new_type) == str
+    assert new_type_supertype(new_new_type) == str
