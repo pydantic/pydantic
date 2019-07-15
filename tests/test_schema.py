@@ -1341,6 +1341,6 @@ def test_color_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'color': {'title': 'Color', 'type': 'string'}},
+        'properties': {'color': {'title': 'Color', 'type': 'string', 'format': 'color'}},
         'required': ['color'],
     }
