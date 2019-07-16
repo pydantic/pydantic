@@ -8,10 +8,6 @@ from pydantic.utils import (
     ValueItems,
     display_as_type,
     import_string,
-    lenient_issubclass,
-    make_dsn,
-    display_as_type,
-    import_string,
     is_new_type,
     lenient_issubclass,
     make_dsn,
@@ -209,6 +205,7 @@ def test_value_items_error():
 
     assert str(e.value) == "Unexpected type of exclude value <class 'tuple'>"
 
+
 def test_is_new_type():
     new_type = NewType('new_type', str)
     new_new_type = NewType('new_new_type', new_type)
@@ -222,4 +219,3 @@ def test_new_type_supertype():
     new_new_type = NewType('new_new_type', new_type)
     assert new_type_supertype(new_type) == str
     assert new_type_supertype(new_new_type) == str
-
