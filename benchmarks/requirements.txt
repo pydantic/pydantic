@@ -5,3 +5,4 @@ django               # pyup: ignore
 djangorestframework  # pyup: ignore
 #marshmallow          # pyup: ignore
 toastedmarshmallow   # pyup: ignore
+valideer             # pyup: ignore
