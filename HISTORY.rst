@@ -8,6 +8,7 @@ v0.31 (unreleased)
 * better support for floating point `multiple_of` values, #652 by @justindujardin
 * fix schema generation for ``NewType`` and ``Literal``, #649 by @dmontagu
 * add documentation for Literal type, #651 by @dmontagu
+* fix bug in ``GenericModel`` for models with concrete parameterized fields, #672 by @dmontagu
 
 v0.30.1 (2019-07-15)
 ....................
