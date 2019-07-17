@@ -342,6 +342,7 @@ def test_generic():
     ]
 
 
+@skip_36
 def test_alongside_concrete_generics():
     from pydantic.generics import GenericModel
 
@@ -356,6 +357,7 @@ def test_alongside_concrete_generics():
     assert model.metadata == {}
 
 
+@skip_36
 def test_complex_nesting():
     from pydantic.generics import GenericModel
 
