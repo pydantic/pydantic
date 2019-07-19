@@ -739,6 +739,7 @@ Options:
     details.
 :orm_mode: allows usage of :ref:`ORM mode <orm_mode>`
 :alias_generator: callable that takes field name and returns alias for it
+:keep_untouched: custom types of model attributes (e. g. descriptors) that won't change during model creation
 
 .. warning::
 

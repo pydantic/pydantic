@@ -743,3 +743,51 @@ def test_parse_root_as_mapping():
 
         class MyModel(BaseModel):
             __root__: Mapping[str, str]
+
+
+def test_untouched_types():
+    from pydantic import BaseModel
+
+    class _ClassPropertyDescriptor:
+        def __init__(self, getter):
+            self.getter = getter
+
+        def __get__(self, instance, owner):
+            return self.getter(owner)
+
+    classproperty = _ClassPropertyDescriptor
+
+    class Model(BaseModel):
+        class Config:
+            keep_untouched = (classproperty,)
+
+        @classproperty
+        def class_name(cls) -> str:
+            return cls.__name__
+
+    assert Model.class_name == 'Model'
+    assert Model().class_name == 'Model'
+
+    with pytest.raises(RuntimeError) as e:
+
+        class Model(BaseModel):
+            @classproperty
+            def class_name(cls) -> str:
+                return cls.__name__
+
+    assert str(e.value) == (
+        "no validator found for <class 'tests.test_main.test_untouched_types.<locals>._ClassPropertyDescriptor'>\n "
+        'see keep_untouched or arbitrary_types_allowed in Config'
+    )
+
+    class Model(BaseModel):
+        class Config:
+            arbitrary_types_allowed = True
+
+        @classproperty
+        def class_name(cls) -> str:
+            return cls.__name__
+
+    with pytest.raises(AttributeError) as e:
+        Model.class_name
+    assert str(e.value) == "type object 'Model' has no attribute 'class_name'"
