@@ -135,7 +135,7 @@ from pydantic.error_wrappers import ValidationError, flatten_errors, get_exc_typ
         (
             '__str__',
             """\
-11 validation errors
+11 validation errors for Model
 a
   value is not a valid integer (type=type_error.integer)
 b -> x
@@ -227,7 +227,7 @@ def test_single_error():
         Model(x='x')
 
     expected = """\
-1 validation error
+1 validation error for Model
 x
   value is not a valid integer (type=type_error.integer)"""
     assert str(exc_info.value) == expected
@@ -239,7 +239,7 @@ x
     assert (
         str(exc_info.value)
         == """\
-1 validation error
+1 validation error for Model
 x
   field required (type=value_error.missing)"""
     )
