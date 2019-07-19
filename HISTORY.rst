@@ -5,9 +5,13 @@ History
 
 v0.31 (unreleased)
 ..................
-* nested classes which inherit and change ``__init__`` are now correctly processed while still allowing ``self`` as a
-  parameter, #644 by @lnaden and @dgasmith
+* fix schema generation for ``NewType`` and ``Literal``, #649 by @dmontagu
 * fix ``alias_generator`` and field config conflict, #645 by @gmetzker and #658 by @MrMrRobat
+
+v0.30.1 (2019-07-15)
+....................
+* fix so nested classes which inherit and change ``__init__`` are correctly processed while still allowing ``self`` as a
+  parameter, #644 by @lnaden and @dgasmith
 
 v0.30 (2019-07-07)
 ..................
