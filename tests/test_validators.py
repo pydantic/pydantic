@@ -649,4 +649,5 @@ def test_assert_raises_validation_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert 'invalid a' in str(exc_info.value)
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'invalid a\nassert False', 'type': 'assertion_error'}]
+
