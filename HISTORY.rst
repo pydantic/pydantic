@@ -3,6 +3,10 @@
 History
 -------
 
+v0.32 (unreleased)
+..................
+* add model name to ``ValidationError`` error message, #676 by @dmontagu
+
 v0.31 (2019-07-24)
 ..................
 * better support for floating point `multiple_of` values, #652 by @justindujardin
@@ -15,6 +19,7 @@ v0.31 (2019-07-24)
 * add ``Config.keep_untouched`` for custom descriptors support, #679 by @MrMrRobat
 * use ``inspect.cleandoc`` internally to get model description, #657 by @tiangolo
 * add ``Color`` to schema generation, by @euri10
+* add documentation for Literal type, #651 by @dmontagu
 
 v0.30.1 (2019-07-15)
 ....................
