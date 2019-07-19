@@ -3,7 +3,7 @@ from pydantic import BaseModel, ValidationError, validator
 
 class UserModel(BaseModel):
     name: str
-    username: int
+    username: str
     password1: str
     password2: str
 
