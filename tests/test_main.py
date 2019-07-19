@@ -768,6 +768,19 @@ def test_untouched_types():
     assert Model.class_name == 'Model'
     assert Model().class_name == 'Model'
 
+
+def test_custom_types_fail_without_keep_untouched():
+    from pydantic import BaseModel
+
+    class _ClassPropertyDescriptor:
+        def __init__(self, getter):
+            self.getter = getter
+
+        def __get__(self, instance, owner):
+            return self.getter(owner)
+
+    classproperty = _ClassPropertyDescriptor
+
     with pytest.raises(RuntimeError) as e:
 
         class Model(BaseModel):
