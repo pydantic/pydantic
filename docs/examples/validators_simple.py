@@ -22,6 +22,7 @@ class UserModel(BaseModel):
     @validator('username')
     def username_alphanumeric(cls, v):
         assert v.isalpha(), 'must be alphanumeric'
+        return v
 
 
 print(UserModel(name='samuel colvin', password1='zxcvbn', password2='zxcvbn'))
