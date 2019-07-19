@@ -784,8 +784,10 @@ def validate_model(  # noqa: C901 (ignore complexity)
                     errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
 
     if not raise_exc:
-        return values, fields_set, ValidationError(errors, model) if errors else None
+        model_type = model if isinstance(model, type) else type(model)
+        return values, fields_set, ValidationError(errors, model_type) if errors else None
 
     if errors:
-        raise ValidationError(errors, model)
+        model_type = model if isinstance(model, type) else type(model)
+        raise ValidationError(errors, model_type)
     return values, fields_set, None
