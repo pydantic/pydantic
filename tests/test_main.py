@@ -788,9 +788,11 @@ def test_custom_types_fail_without_keep_untouched():
             def class_name(cls) -> str:
                 return cls.__name__
 
+        Model.class_name
+
     assert str(e.value) == (
-        "no validator found for <class 'tests.test_main.test_untouched_types.<locals>._ClassPropertyDescriptor'>\n "
-        'see keep_untouched or arbitrary_types_allowed in Config'
+        "no validator found for <class 'tests.test_main.test_custom_types_fail_without_keep_untouched.<locals>."
+        "_ClassPropertyDescriptor'>\n see keep_untouched or arbitrary_types_allowed in Config"
     )
 
     class Model(BaseModel):
