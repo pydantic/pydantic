@@ -109,21 +109,15 @@ def flatten_errors(
 
 @lru_cache()
 def get_exc_type(cls: Type[Exception]) -> str:
-    type_names = {
-        TypeError: 'type_error',
-        ValueError: 'value_error',
-        AssertionError: 'assertion_error'
-    }
+    if issubclass(cls, AssertionError):
+        return 'assertion_error'
 
-    try:
-        # use bare name
-        return type_names[cls]
-    except KeyError:
-        pass
+    base_name = 'type_error' if issubclass(cls, TypeError) else 'value_error'
+    if cls in (TypeError, ValueError):
+        # just TypeError or ValueError, no extra code
+        return base_name
 
-    # if it's not one of the errors above, we just take the lowercase of the exception name
+    # if it's not a TypeError or ValueError, we just take the lowercase of the exception name
     # no chaining or snake case logic, use "code" for more complex error types.
-    for base_class, base_name in type_names.items():
-        if issubclass(cls, base_class):
-            code = getattr(cls, 'code', None) or cls.__name__.replace('Error', '').lower()
-            return base_name + '.' + code
+    code = getattr(cls, 'code', None) or cls.__name__.replace('Error', '').lower()
+    return base_name + '.' + code
