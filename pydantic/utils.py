@@ -382,7 +382,7 @@ class ValueItems:
     __slots__ = ('_items', '_type')
 
     def __init__(self, value: Any, items: Union['SetIntStr', 'DictIntStrAny']) -> None:
-        if TYPE_CHECKING:
+        if TYPE_CHECKING:  # pragma: no cover
             self._items: Union['SetIntStr', 'DictIntStrAny']
             self._type: Type[Union[set, dict]]  # type: ignore
 
