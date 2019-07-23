@@ -654,6 +654,29 @@ against defined Json structure if it's provided.
 
 (This script is complete, it should run "as is")
 
+Literal Type
+............
+
+Pydantic supports the use of ``typing_extensions.Literal`` as a lightweight way to specify that a field
+may accept only specific literal values:
+
+.. literalinclude:: examples/literal1.py
+
+(This script is complete, it should run "as is")
+
+One benefit of this field type is that it can be used to check for equality with one or more specific values
+without needing to declare custom validators:
+
+.. literalinclude:: examples/literal2.py
+
+(This script is complete, it should run "as is")
+
+With proper ordering in an annotated ``Union``, you can use this to parse types of decreasing specificity:
+
+.. literalinclude:: examples/literal3.py
+
+(This script is complete, it should run "as is")
+
 Custom Data Types
 .................
 
