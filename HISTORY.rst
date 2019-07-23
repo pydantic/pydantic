@@ -6,6 +6,7 @@ History
 v0.31 (unreleased)
 ..................
 * fix schema generation for ``NewType`` and ``Literal``, #649 by @dmontagu
+* add documentation for Literal type, #651 by @dmontagu
 
 v0.30.1 (2019-07-15)
 ....................
