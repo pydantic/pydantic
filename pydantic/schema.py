@@ -47,7 +47,14 @@ from .types import (
     conlist,
     constr,
 )
-from .utils import is_callable_type, lenient_issubclass
+from .utils import (
+    is_callable_type,
+    is_literal_type,
+    is_new_type,
+    lenient_issubclass,
+    literal_values,
+    new_type_supertype,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from . import dataclasses  # noqa: F401
@@ -744,27 +751,34 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     f_schema: Dict[str, Any] = {}
     if field.schema is not None and field.schema.const:
         f_schema['const'] = field.default
-    if issubclass(field.type_, Enum):
-        f_schema.update({'enum': [item.value for item in field.type_]})
+    field_type = field.type_
+    if is_new_type(field_type):
+        field_type = new_type_supertype(field_type)
+    if is_literal_type(field_type):
+        # If there were multiple literal values, field.sub_fields would not be falsy
+        literal_value = literal_values(field_type)[0]
+        field_type = type(literal_value)
+        f_schema['const'] = literal_value
+    if issubclass(field_type, Enum):
+        f_schema.update({'enum': [item.value for item in field_type]})
         # Don't return immediately, to allow adding specific types
     for field_name, schema_name in validation_attribute_to_schema_keyword.items():
-        field_value = getattr(field.type_, field_name, None)
+        field_value = getattr(field_type, field_name, None)
         if field_value is not None:
             if field_name == 'regex':
                 field_value = field_value.pattern
             f_schema[schema_name] = field_value
     for type_, t_schema in field_class_to_schema_enum_enabled:
-        if issubclass(field.type_, type_):
+        if issubclass(field_type, type_):
             f_schema.update(t_schema)
             break
     # Return schema, with or without enum definitions
     if f_schema:
         return f_schema, definitions, nested_models
     for type_, t_schema in field_class_to_schema_enum_disabled:
-        if issubclass(field.type_, type_):
+        if issubclass(field_type, type_):
             return t_schema, definitions, nested_models
     # Handle dataclass-based models
-    field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), pydantic.BaseModel):
         field_type = field_type.__pydantic_model__  # type: ignore
     if issubclass(field_type, pydantic.BaseModel):

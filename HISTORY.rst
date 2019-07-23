@@ -5,8 +5,14 @@ History
 
 v0.31 (unreleased)
 ..................
+* better support for floating point `multiple_of` values, #652 by @justindujardin
+* fix schema generation for ``NewType`` and ``Literal``, #649 by @dmontagu
+* add documentation for Literal type, #651 by @dmontagu
 * use ``inspect.cleandoc`` internally to get model description, #657 by @tiangolo
-* nested classes which inherit and change ``__init__`` are now correctly processed while still allowing ``self`` as a
+
+v0.30.1 (2019-07-15)
+....................
+* fix so nested classes which inherit and change ``__init__`` are correctly processed while still allowing ``self`` as a
   parameter, #644 by @lnaden and @dgasmith
 
 v0.30 (2019-07-07)
