@@ -29,6 +29,7 @@ from .utils import (
     AnyCallable,
     AnyType,
     ForwardRef,
+    almost_equal_floats,
     change_exception,
     display_as_type,
     is_callable_type,
@@ -121,9 +122,10 @@ def float_validator(v: Any) -> float:
 
 def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
     field_type: ConstrainedNumber = field.type_  # type: ignore
-    if field_type.multiple_of is not None and v % field_type.multiple_of != 0:  # type: ignore
-        raise errors.NumberNotMultipleError(multiple_of=field_type.multiple_of)
-
+    if field_type.multiple_of is not None:
+        mod = float(v) / float(field_type.multiple_of) % 1
+        if not almost_equal_floats(mod, 0.0) and not almost_equal_floats(mod, 1.0):
+            raise errors.NumberNotMultipleError(multiple_of=field_type.multiple_of)
     return v
 
 
