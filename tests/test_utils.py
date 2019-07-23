@@ -200,7 +200,7 @@ def test_value_items():
 
 
 def test_value_items_error():
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(TypeError) as e:
         ValueItems(1, (1, 2, 3))
 
     assert str(e.value) == "Unexpected type of exclude value <class 'tuple'>"

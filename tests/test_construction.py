@@ -230,3 +230,21 @@ def test_pickle_fields_set():
     assert m.dict(skip_defaults=True) == {'a': 24}
     m2 = pickle.loads(pickle.dumps(m))
     assert m2.dict(skip_defaults=True) == {'a': 24}
+
+
+def test_copy_update_exclude():
+    class SubModel(BaseModel):
+        a: str
+        b: str
+
+    class Model(BaseModel):
+        c: str
+        d: SubModel
+
+    m = Model(c='ex', d=dict(a='ax', b='bx'))
+    assert m.dict() == {'c': 'ex', 'd': {'a': 'ax', 'b': 'bx'}}
+    assert m.copy(exclude={'c'}).dict() == {'d': {'a': 'ax', 'b': 'bx'}}
+    assert m.copy(exclude={'c'}, update={'c': 42}).dict() == {'c': 42, 'd': {'a': 'ax', 'b': 'bx'}}
+
+    assert m._calculate_keys(exclude={'x'}, include=None, skip_defaults=False) == {'c', 'd'}
+    assert m._calculate_keys(exclude={'x'}, include=None, skip_defaults=False, update={'c': 42}) == {'d'}

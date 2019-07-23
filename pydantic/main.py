@@ -606,9 +606,9 @@ class BaseModel(metaclass=MetaModel):
 
     def _calculate_keys(
         self,
-        include: Optional[Union['SetIntStr', 'DictIntStrAny']] = None,
-        exclude: Optional[Union['SetIntStr', 'DictIntStrAny']] = None,
-        skip_defaults: bool = False,
+        include: Optional[Union['SetIntStr', 'DictIntStrAny']],
+        exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
+        skip_defaults: bool,
         update: Optional['DictStrAny'] = None,
     ) -> Optional['SetStr']:
         if include is None and exclude is None and skip_defaults is False:
@@ -619,18 +619,20 @@ class BaseModel(metaclass=MetaModel):
         else:
             keys = set(self.__values__.keys())
 
-        if include and isinstance(include, dict):
-            keys &= set(include.keys())
-        elif include:
-            keys &= include  # type: ignore
+        if include is not None:
+            if isinstance(include, dict):
+                keys &= include.keys()
+            else:
+                keys &= include
 
         if update:
-            keys -= set(update.keys())
+            keys -= update.keys()
 
-        if exclude and isinstance(exclude, dict):
-            keys -= {k for k, v in exclude.items() if v is ...}
-        elif exclude:
-            keys -= exclude  # type: ignore
+        if exclude:
+            if isinstance(exclude, dict):
+                keys -= {k for k, v in exclude.items() if v is ...}
+            else:
+                keys -= exclude
 
         return keys
 

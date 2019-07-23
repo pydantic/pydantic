@@ -392,7 +392,7 @@ class ValueItems:
         elif isinstance(items, set):
             self._type = set
         else:
-            raise ValueError(f'Unexpected type of exclude value {type(items)}')
+            raise TypeError(f'Unexpected type of exclude value {type(items)}')
 
         if isinstance(value, (list, tuple)):
             items = self._normalize_indexes(items, len(value))
