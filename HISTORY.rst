@@ -5,9 +5,8 @@ History
 
 v0.31 (unreleased)
 ..................
-* add advanced exclude support for ``dict``, ``json`` and ``copy``, #648 by @MrMrRobat
-* nested classes which inherit and change ``__init__`` are now correctly processed while still allowing ``self`` as a
 * fix schema generation for ``NewType`` and ``Literal``, #649 by @dmontagu
+* add advanced exclude support for ``dict``, ``json`` and ``copy``, #648 by @MrMrRobat
 
 v0.30.1 (2019-07-15)
 ....................
