@@ -1422,16 +1422,42 @@ def test_number_le():
         Model(a=6)
 
 
-def test_number_multiple_of():
+@pytest.mark.parametrize('value', ((10), (100), (20)))
+def test_number_multiple_of_int_valid(value):
     class Model(BaseModel):
         a: conint(multiple_of=5)
 
-    assert Model(a=10).dict() == {'a': 10}
+    assert Model(a=value).dict() == {'a': value}
+
+
+@pytest.mark.parametrize('value', ((1337), (23), (6), (14)))
+def test_number_multiple_of_int_invalid(value):
+    class Model(BaseModel):
+        a: conint(multiple_of=5)
 
     multiple_message = base_message.replace('limit_value', 'multiple_of')
     message = multiple_message.format(msg='a multiple of 5', ty='multiple', value=5)
     with pytest.raises(ValidationError, match=message):
-        Model(a=42)
+        Model(a=value)
+
+
+@pytest.mark.parametrize('value', ((0.2), (0.3), (0.4), (0.5), (1)))
+def test_number_multiple_of_float_valid(value):
+    class Model(BaseModel):
+        a: confloat(multiple_of=0.1)
+
+    assert Model(a=value).dict() == {'a': value}
+
+
+@pytest.mark.parametrize('value', ((0.07), (1.27), (1.003)))
+def test_number_multiple_of_float_invalid(value):
+    class Model(BaseModel):
+        a: confloat(multiple_of=0.1)
+
+    multiple_message = base_message.replace('limit_value', 'multiple_of')
+    message = multiple_message.format(msg='a multiple of 0.1', ty='multiple', value=0.1)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=value)
 
 
 @pytest.mark.parametrize('fn', [conint, confloat, condecimal])
