@@ -20,8 +20,13 @@ transaction = Transaction(
     value=9876543210
 )
 
+# using a set:
+print(transaction.dict(exclude={'user', 'value'}))
+#> {'id': '1234567890'}
+
+# using a dict:
 print(transaction.dict(exclude={'user': {'username', 'password'}, 'value': ...}))
-# {'id': '1234567890', 'user': {'id': 42}}
+#> {'id': '1234567890', 'user': {'id': 42}}
 
 print(transaction.dict(include={'id': ..., 'user': {'id'}}))
-# {'id': '1234567890', 'user': {'id': 42}}
+#> {'id': '1234567890', 'user': {'id': 42}}
