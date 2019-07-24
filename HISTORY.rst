@@ -7,8 +7,13 @@ v0.31 (unreleased)
 ..................
 * better support for floating point `multiple_of` values, #652 by @justindujardin
 * fix schema generation for ``NewType`` and ``Literal``, #649 by @dmontagu
+* fix ``alias_generator`` and field config conflict, #645 by @gmetzker and #658 by @MrMrRobat
+* add advanced exclude support for ``dict``, ``json`` and ``copy``, #648 by @MrMrRobat
+* fix bug in ``GenericModel`` for models with concrete parameterized fields, #672 by @dmontagu
 * add documentation for Literal type, #651 by @dmontagu
 * add ``Config.keep_untouched`` for custom descriptors support, #679 by @MrMrRobat
+* use ``inspect.cleandoc`` internally to get model description, #657 by @tiangolo
+* add Color to schema generation, by @euri10
 
 v0.30.1 (2019-07-15)
 ....................

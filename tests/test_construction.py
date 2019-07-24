@@ -1,4 +1,5 @@
 import pickle
+from typing import List
 
 import pytest
 
@@ -101,6 +102,70 @@ def test_copy_include_exclude():
     assert set(m2.dict().keys()) == {'a', 'b'}
 
 
+def test_copy_advanced_exclude():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
+
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
+
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+    m2 = m.copy(exclude={'f': {'c': ..., 'd': {-1: {'a'}}}})
+    assert hasattr(m.f, 'c')
+    assert not hasattr(m2.f, 'c')
+
+    assert m2.dict() == {'e': 'e', 'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}}
+    m2 = m.copy(exclude={'e': ..., 'f': {'d'}})
+    assert m2.dict() == {'f': {'c': 'foo'}}
+
+
+def test_copy_advanced_include():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
+
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
+
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+    m2 = m.copy(include={'f': {'c'}})
+    assert hasattr(m.f, 'c')
+    assert hasattr(m2.f, 'c')
+    assert m2.dict() == {'f': {'c': 'foo'}}
+
+    m2 = m.copy(include={'e': ..., 'f': {'d': {-1}}})
+    assert m2.dict() == {'e': 'e', 'f': {'d': [{'a': 'c', 'b': 'e'}]}}
+
+
+def test_copy_advanced_include_exclude():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
+
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
+
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+    m2 = m.copy(include={'e': ..., 'f': {'d'}}, exclude={'e': ..., 'f': {'d': {0}}})
+    assert m2.dict() == {'f': {'d': [{'a': 'c', 'b': 'e'}]}}
+
+
 def test_copy_update():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(update={'a': 'different'})
@@ -165,3 +230,21 @@ def test_pickle_fields_set():
     assert m.dict(skip_defaults=True) == {'a': 24}
     m2 = pickle.loads(pickle.dumps(m))
     assert m2.dict(skip_defaults=True) == {'a': 24}
+
+
+def test_copy_update_exclude():
+    class SubModel(BaseModel):
+        a: str
+        b: str
+
+    class Model(BaseModel):
+        c: str
+        d: SubModel
+
+    m = Model(c='ex', d=dict(a='ax', b='bx'))
+    assert m.dict() == {'c': 'ex', 'd': {'a': 'ax', 'b': 'bx'}}
+    assert m.copy(exclude={'c'}).dict() == {'d': {'a': 'ax', 'b': 'bx'}}
+    assert m.copy(exclude={'c'}, update={'c': 42}).dict() == {'c': 42, 'd': {'a': 'ax', 'b': 'bx'}}
+
+    assert m._calculate_keys(exclude={'x'}, include=None, skip_defaults=False) == {'c', 'd'}
+    assert m._calculate_keys(exclude={'x'}, include=None, skip_defaults=False, update={'c': 42}) == {'d'}

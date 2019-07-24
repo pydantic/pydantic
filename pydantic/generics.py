@@ -68,12 +68,9 @@ def concrete_name(cls: Type[Any], params: Tuple[Type[Any], ...]) -> str:
 
 
 def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
-    if hasattr(type_, '__origin__'):
-        new_args = tuple(resolve_type_hint(x, typevars_map) for x in type_.__args__)
-        if type_.__origin__ is Union:
-            return type_.__origin__[new_args]
-        new_args = tuple([typevars_map[x] for x in type_.__parameters__])
-        return type_[new_args]
+    if hasattr(type_, '__origin__') and getattr(type_, '__parameters__', None):
+        concrete_type_args = tuple([typevars_map[x] for x in type_.__parameters__])
+        return type_[concrete_type_args]
     return typevars_map.get(type_, type_)
 
 

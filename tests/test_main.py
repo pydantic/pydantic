@@ -681,7 +681,7 @@ def test_alias_generator_with_field_schema():
 
         class Config:
             alias_generator = to_upper_case
-            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}}
+            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}, 'another_field': {'not_alias': 'a'}}
 
     data = {'MY_FIELD': ['a'], 'FOO': 'bar', 'BAZ_BAR': 'ok', 'ANOTHER_FIELD': '...'}
     m = MyModel(**data)

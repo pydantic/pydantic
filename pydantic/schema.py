@@ -1,3 +1,4 @@
+import inspect
 import re
 import warnings
 from datetime import date, datetime, time, timedelta
@@ -8,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence,
 from uuid import UUID
 
 import pydantic
+from pydantic.color import Color
 
 from .fields import Field, Shape
 from .json import pydantic_encoder
@@ -47,7 +49,6 @@ from .types import (
     constr,
 )
 from .utils import (
-    clean_docstring,
     is_callable_type,
     is_literal_type,
     is_new_type,
@@ -554,8 +555,9 @@ def model_process_schema(
     ref_prefix = ref_prefix or default_prefix
     known_models = known_models or set()
     s = {'title': model.__config__.title or model.__name__}
-    if model.__doc__:
-        s['description'] = clean_docstring(model.__doc__)
+    doc = inspect.getdoc(model)
+    if doc:
+        s['description'] = doc
     known_models.add(model)
     m_schema, m_definitions, nested_models = model_type_schema(
         model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
@@ -691,6 +693,7 @@ field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (list, {'type': 'array', 'items': {}}),
     (tuple, {'type': 'array', 'items': {}}),
     (set, {'type': 'array', 'items': {}, 'uniqueItems': True}),
+    (Color, {'type': 'string', 'format': 'color'}),
 )
 
 
