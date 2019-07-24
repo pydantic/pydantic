@@ -9,6 +9,7 @@ v0.31 (unreleased)
 * fix schema generation for ``NewType`` and ``Literal``, #649 by @dmontagu
 * add advanced exclude support for ``dict``, ``json`` and ``copy``, #648 by @MrMrRobat
 * add documentation for Literal type, #651 by @dmontagu
+* use ``inspect.cleandoc`` internally to get model description, #657 by @tiangolo
 
 v0.30.1 (2019-07-15)
 ....................

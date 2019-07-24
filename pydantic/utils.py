@@ -5,7 +5,6 @@ from contextlib import contextmanager
 from enum import Enum
 from functools import lru_cache
 from importlib import import_module
-from textwrap import dedent
 from typing import (  # type: ignore
     TYPE_CHECKING,
     Any,
@@ -200,10 +199,6 @@ def change_exception(raise_exc: ExcType, *except_types: ExcType) -> Generator[No
         yield
     except except_types as e:
         raise raise_exc from e
-
-
-def clean_docstring(d: str) -> str:
-    return dedent(d).strip(' \r\n\t')
 
 
 def sequence_like(v: AnyType) -> bool:
