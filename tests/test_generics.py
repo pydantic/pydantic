@@ -340,3 +340,32 @@ def test_generic():
         {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'},
         {'loc': ('error',), 'msg': 'value is not none', 'type': 'type_error.none.allowed'},
     ]
+
+
+@skip_36
+def test_alongside_concrete_generics():
+    from pydantic.generics import GenericModel
+
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        item: T
+        metadata: Dict[str, Any]
+
+    model = MyModel[int](item=1, metadata={})
+    assert model.item == 1
+    assert model.metadata == {}
+
+
+@skip_36
+def test_complex_nesting():
+    from pydantic.generics import GenericModel
+
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        item: List[Dict[Union[int, T], str]]
+
+    item = [{1: 'a', 'a': 'a'}]
+    model = MyModel[str](item=item)
+    assert model.item == item
