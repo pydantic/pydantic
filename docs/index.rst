@@ -922,6 +922,22 @@ are not often changed.
 
 .. literalinclude:: examples/copy_dict.py
 
+Advanced include and exclude
+............................
+
+The ``dict``, ``json`` and ``copy`` methods support ``include`` and ``exclude`` arguments which can either be
+sets or dictionaries, allowing nested selection of which fields to export:
+
+.. literalinclude:: examples/advanced_exclude1.py
+
+The ``...`` value indicates that we want to exclude or include entire key, just as if we included it in a set.
+
+Of course same can be done on any depth level:
+
+.. literalinclude:: examples/advanced_exclude2.py
+
+Same goes for ``json`` and ``copy`` methods.
+
 Serialisation
 .............
 
