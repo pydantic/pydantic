@@ -11,6 +11,7 @@ v0.31 (unreleased)
 * add advanced exclude support for ``dict``, ``json`` and ``copy``, #648 by @MrMrRobat
 * add documentation for Literal type, #651 by @dmontagu
 * use ``inspect.cleandoc`` internally to get model description, #657 by @tiangolo
+* add Color to schema generation, by @euri10
 
 v0.30.1 (2019-07-15)
 ....................

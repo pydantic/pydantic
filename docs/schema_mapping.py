@@ -433,7 +433,14 @@ table = [
         '',
         'JSON Schema Core',
         'All the properties defined will be defined with standard JSON Schema, including submodels.'
-    ]
+    ],
+    [
+        'Color',
+        'string',
+        '{"format": "color"}',
+        'Pydantic standard "format" extension',
+        '',
+    ],
 ]
 
 headings = [
