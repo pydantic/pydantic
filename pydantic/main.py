@@ -170,7 +170,7 @@ def validate_custom_root_type(fields: Dict[str, Field]) -> None:
         raise TypeError('custom root type cannot allow mapping')
 
 
-TYPE_BLACKLIST = FunctionType, property, type, classmethod, staticmethod
+UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
 
 class MetaModel(ABCMeta):
@@ -218,11 +218,11 @@ class MetaModel(ABCMeta):
                         config=config,
                     )
 
-            type_blacklist = TYPE_BLACKLIST + config.keep_untouched
+            untouched_types = UNTOUCHED_TYPES + config.keep_untouched
             for var_name, value in namespace.items():
                 if (
                     is_valid_field(var_name)
-                    and (annotations.get(var_name) == PyObject or not isinstance(value, type_blacklist))
+                    and (annotations.get(var_name) == PyObject or not isinstance(value, untouched_types))
                     and var_name not in class_vars
                 ):
                     validate_field_name(bases, var_name)

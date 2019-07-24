@@ -474,7 +474,9 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if config.arbitrary_types_allowed:
         yield make_arbitrary_type_validator(type_)
     else:
-        raise RuntimeError(f'no validator found for {type_} see `keep_untouched` or `arbitrary_types_allowed` in Config')
+        raise RuntimeError(
+            f'no validator found for {type_} see `keep_untouched` or `arbitrary_types_allowed` in Config'
+        )
 
 
 def _find_supertype(type_: AnyType) -> Optional[AnyType]:
