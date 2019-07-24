@@ -37,6 +37,9 @@ def test_int_validation():
     assert Model(a=True).a == 1
     assert Model(a=False).a == 0
     assert Model(a=4.5).a == 4
+    assert Model(a='0b100').a == 4
+    assert Model(a='100').a == 100
+    assert Model(a='0x100').a == 256
 
 
 def test_validate_whole():

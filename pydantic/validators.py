@@ -109,6 +109,8 @@ def int_validator(v: Any) -> int:
         return v
 
     with change_exception(errors.IntegerError, TypeError, ValueError):
+        if isinstance(v, (str, bytes)):
+            return int(v, base=0)
         return int(v)
 
 
