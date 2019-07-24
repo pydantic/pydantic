@@ -473,7 +473,12 @@ def test_enum_fails():
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
     assert exc_info.value.errors() == [
-        {'loc': ('tool',), 'msg': 'value is not a valid enumeration member', 'type': 'type_error.enum'}
+        {
+            'loc': ('tool',),
+            'msg': 'value is not a valid enumeration member; permitted: 1, 2',
+            'type': 'type_error.enum',
+            'ctx': {'enum_type': ToolEnum},
+        }
     ]
 
 
