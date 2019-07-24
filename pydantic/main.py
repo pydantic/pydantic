@@ -37,6 +37,7 @@ from .utils import (
     AnyType,
     ForwardRef,
     GetterDict,
+    ValueItems,
     change_exception,
     is_classvar,
     resolve_annotations,
@@ -58,7 +59,9 @@ if TYPE_CHECKING:  # pragma: no cover
     SetStr = Set[str]
     ListStr = List[str]
     Model = TypeVar('Model', bound='BaseModel')
-
+    IntStr = Union[int, str]
+    SetIntStr = Set[IntStr]
+    DictIntStrAny = Dict[IntStr, Any]
 
 try:
     import cython  # type: ignore
@@ -100,11 +103,11 @@ class BaseConfig:
         field_config = cls.fields.get(name) or {}
         if isinstance(field_config, str):
             field_config = {'alias': field_config}
-        elif not field_config and cls.alias_generator:
+        elif cls.alias_generator and 'alias' not in field_config:
             alias = cls.alias_generator(name)
             if not isinstance(alias, str):
                 raise TypeError(f'Config.alias_generator must return str, not {type(alias)}')
-            field_config = {'alias': alias}
+            field_config['alias'] = alias
         return field_config
 
 
@@ -304,7 +307,12 @@ class BaseModel(metaclass=MetaModel):
         object.__setattr__(self, '__fields_set__', state['__fields_set__'])
 
     def dict(
-        self, *, include: 'SetStr' = None, exclude: 'SetStr' = None, by_alias: bool = False, skip_defaults: bool = False
+        self,
+        *,
+        include: Union['SetIntStr', 'DictIntStrAny'] = None,
+        exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
+        by_alias: bool = False,
+        skip_defaults: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -312,13 +320,17 @@ class BaseModel(metaclass=MetaModel):
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.fields)
 
-        return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
-        if return_keys is None:
-            return {get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults)}
-        else:
-            return {
-                get_key(k): v for k, v in self._iter(by_alias=by_alias, skip_defaults=skip_defaults) if k in return_keys
-            }
+        allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
+        return {
+            get_key(k): v
+            for k, v in self._iter(
+                by_alias=by_alias,
+                allowed_keys=allowed_keys,
+                include=include,
+                exclude=exclude,
+                skip_defaults=skip_defaults,
+            )
+        }
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
@@ -329,8 +341,8 @@ class BaseModel(metaclass=MetaModel):
     def json(
         self,
         *,
-        include: 'SetStr' = None,
-        exclude: 'SetStr' = None,
+        include: Union['SetIntStr', 'DictIntStrAny'] = None,
+        exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
@@ -417,8 +429,8 @@ class BaseModel(metaclass=MetaModel):
     def copy(
         self: 'Model',
         *,
-        include: 'SetStr' = None,
-        exclude: 'SetStr' = None,
+        include: Union['SetIntStr', 'DictIntStrAny'] = None,
+        exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         update: 'DictStrAny' = None,
         deep: bool = False,
     ) -> 'Model':
@@ -436,11 +448,23 @@ class BaseModel(metaclass=MetaModel):
             # skip constructing values if no arguments are passed
             v = self.__values__
         else:
-            return_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False)
-            if return_keys:
-                v = {**{k: v for k, v in self.__values__.items() if k in return_keys}, **(update or {})}
-            else:
+            allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False, update=update)
+            if allowed_keys is None:
                 v = {**self.__values__, **(update or {})}
+            else:
+                v = {
+                    **dict(
+                        self._iter(
+                            to_dict=False,
+                            by_alias=False,
+                            include=include,
+                            exclude=exclude,
+                            skip_defaults=False,
+                            allowed_keys=allowed_keys,
+                        )
+                    ),
+                    **(update or {}),
+                }
 
         if deep:
             v = deepcopy(v)
@@ -487,17 +511,56 @@ class BaseModel(metaclass=MetaModel):
         return GetterDict(obj)
 
     @classmethod
-    def _get_value(cls, v: Any, by_alias: bool, skip_defaults: bool) -> Any:
+    @no_type_check
+    def _get_value(
+        cls,
+        v: Any,
+        to_dict: bool,
+        by_alias: bool,
+        include: Optional[Union['SetIntStr', 'DictIntStrAny']],
+        exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
+        skip_defaults: bool,
+    ) -> Any:
+
         if isinstance(v, BaseModel):
-            return v.dict(by_alias=by_alias, skip_defaults=skip_defaults)
-        elif isinstance(v, list):
-            return [cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v]
-        elif isinstance(v, dict):
-            return {k_: cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for k_, v_ in v.items()}
-        elif isinstance(v, set):
-            return {cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v}
-        elif isinstance(v, tuple):
-            return tuple(cls._get_value(v_, by_alias=by_alias, skip_defaults=skip_defaults) for v_ in v)
+            if to_dict:
+                return v.dict(by_alias=by_alias, skip_defaults=skip_defaults, include=include, exclude=exclude)
+            else:
+                return v.copy(include=include, exclude=exclude)
+
+        value_exclude = ValueItems(v, exclude) if exclude else None
+        value_include = ValueItems(v, include) if include else None
+
+        if isinstance(v, dict):
+            return {
+                k_: cls._get_value(
+                    v_,
+                    to_dict=to_dict,
+                    by_alias=by_alias,
+                    skip_defaults=skip_defaults,
+                    include=value_include and value_include.for_element(k_),
+                    exclude=value_exclude and value_exclude.for_element(k_),
+                )
+                for k_, v_ in v.items()
+                if (not value_exclude or not value_exclude.is_excluded(k_))
+                and (not value_include or value_include.is_included(k_))
+            }
+
+        elif isinstance(v, (list, set, tuple)):
+            return type(v)(
+                cls._get_value(
+                    v_,
+                    to_dict=to_dict,
+                    by_alias=by_alias,
+                    skip_defaults=skip_defaults,
+                    include=value_include and value_include.for_element(i),
+                    exclude=value_exclude and value_exclude.for_element(i),
+                )
+                for i, v_ in enumerate(v)
+                if (not value_exclude or not value_exclude.is_excluded(i))
+                and (not value_include or value_include.is_included(i))
+            )
+
         else:
             return v
 
@@ -517,14 +580,37 @@ class BaseModel(metaclass=MetaModel):
         """
         yield from self._iter()
 
-    def _iter(self, by_alias: bool = False, skip_defaults: bool = False) -> 'TupleGenerator':
+    def _iter(
+        self,
+        to_dict: bool = True,
+        by_alias: bool = False,
+        allowed_keys: Optional['SetStr'] = None,
+        include: Union['SetIntStr', 'DictIntStrAny'] = None,
+        exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
+        skip_defaults: bool = False,
+    ) -> 'TupleGenerator':
+
+        value_exclude = ValueItems(self, exclude) if exclude else None
+        value_include = ValueItems(self, include) if include else None
+
         for k, v in self.__values__.items():
-            yield k, self._get_value(v, by_alias=by_alias, skip_defaults=skip_defaults)
+            if allowed_keys is None or k in allowed_keys:
+                yield k, self._get_value(
+                    v,
+                    to_dict=to_dict,
+                    by_alias=by_alias,
+                    include=value_include and value_include.for_element(k),
+                    exclude=value_exclude and value_exclude.for_element(k),
+                    skip_defaults=skip_defaults,
+                )
 
     def _calculate_keys(
-        self, include: 'SetStr' = None, exclude: Optional['SetStr'] = None, skip_defaults: bool = False
+        self,
+        include: Optional[Union['SetIntStr', 'DictIntStrAny']],
+        exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
+        skip_defaults: bool,
+        update: Optional['DictStrAny'] = None,
     ) -> Optional['SetStr']:
-
         if include is None and exclude is None and skip_defaults is False:
             return None
 
@@ -533,11 +619,20 @@ class BaseModel(metaclass=MetaModel):
         else:
             keys = set(self.__values__.keys())
 
-        if include:
-            keys &= include
+        if include is not None:
+            if isinstance(include, dict):
+                keys &= include.keys()
+            else:
+                keys &= include
+
+        if update:
+            keys -= update.keys()
 
         if exclude:
-            keys -= exclude
+            if isinstance(exclude, dict):
+                keys -= {k for k, v in exclude.items() if v is ...}
+            else:
+                keys -= exclude
 
         return keys
 
