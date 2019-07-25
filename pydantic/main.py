@@ -98,6 +98,7 @@ class BaseConfig:
     orm_mode: bool = False
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
+    roles: Dict[str, 'DictStrAny']
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
@@ -315,6 +316,7 @@ class BaseModel(metaclass=MetaModel):
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
+        role: str = None,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -322,7 +324,7 @@ class BaseModel(metaclass=MetaModel):
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.fields)
 
-        allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
+        allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults, role=role)
         return {
             get_key(k): v
             for k, v in self._iter(
@@ -347,6 +349,7 @@ class BaseModel(metaclass=MetaModel):
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
+        role: str = None,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -357,7 +360,7 @@ class BaseModel(metaclass=MetaModel):
         """
         encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
         return json.dumps(
-            self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults),
+            self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults, role=role),
             default=encoder,
             **dumps_kwargs,
         )
@@ -433,6 +436,7 @@ class BaseModel(metaclass=MetaModel):
         *,
         include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
+        role: str = None,
         update: 'DictStrAny' = None,
         deep: bool = False,
     ) -> 'Model':
@@ -443,14 +447,17 @@ class BaseModel(metaclass=MetaModel):
         :param exclude: fields to exclude from new model, as with values this takes precedence over include
         :param update: values to change/add in the new model. Note: the data is not validated before creating
             the new model: you should trust this data
+        :param role: name of role in config, params from which will be applied
         :param deep: set to `True` to make a deep copy of the model
         :return: new model instance
         """
-        if include is None and exclude is None and update is None:
+        if include is None and exclude is None and update is None and role is None:
             # skip constructing values if no arguments are passed
             v = self.__values__
         else:
-            allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False, update=update)
+            allowed_keys = self._calculate_keys(
+                include=include, exclude=exclude, skip_defaults=False, role=role, update=update
+            )
             if allowed_keys is None:
                 v = {**self.__values__, **(update or {})}
             else:
@@ -608,13 +615,17 @@ class BaseModel(metaclass=MetaModel):
 
     def _calculate_keys(
         self,
-        include: Optional[Union['SetIntStr', 'DictIntStrAny']],
-        exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
-        skip_defaults: bool,
+        include: Optional[Union['SetIntStr', 'DictIntStrAny']] = None,
+        exclude: Optional[Union['SetIntStr', 'DictIntStrAny']] = None,
+        skip_defaults: Optional[bool] = None,
         update: Optional['DictStrAny'] = None,
+        role: Optional[str] = None,
     ) -> Optional['SetStr']:
-        if include is None and exclude is None and skip_defaults is False:
+        if include is None and exclude is None and skip_defaults is None and role is None:
             return None
+        elif role:
+            kwargs = {k: v for k, v in locals().items() if v is not None and k not in ('self', 'role')}
+            return self._calculate_keys(**{**self.Config.roles[role], **kwargs})
 
         if skip_defaults:
             keys = self.__fields_set__.copy()
