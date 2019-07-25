@@ -2,7 +2,7 @@ attrs==19.1.0
 black==19.3b0
 coverage==4.5.3
 Cython==0.29.11;sys_platform!='win32'
-flake8==3.7.7
+flake8==3.7.8
 flake8-quotes==2.0.1
 isort==4.3.21
 mypy==0.711
