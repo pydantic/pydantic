@@ -293,7 +293,7 @@ class BaseModel(metaclass=MetaModel):
         elif self.__config__.validate_assignment:
             value_, error_ = self.fields[name].validate(value, self.dict(exclude={name}), loc=name)
             if error_:
-                raise ValidationError([error_], self)
+                raise ValidationError([error_], type(self))
             else:
                 self.__values__[name] = value_
                 self.__fields_set__.add(name)
@@ -783,11 +783,15 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 for f in sorted(extra):
                     errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
 
-    if not raise_exc:
-        model_type = model if isinstance(model, type) else type(model)
-        return values, fields_set, ValidationError(errors, model_type) if errors else None
-
+    err = None
     if errors:
         model_type = model if isinstance(model, type) else type(model)
-        raise ValidationError(errors, model_type)
+        err = ValidationError(errors, model_type)
+
+    if not raise_exc:
+        return values, fields_set, err
+
+    if err:
+        raise err
+
     return values, fields_set, None
