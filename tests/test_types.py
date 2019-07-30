@@ -1,3 +1,4 @@
+import base64
 import os
 import sys
 import uuid
@@ -42,6 +43,7 @@ from pydantic import (
     constr,
     create_model,
 )
+from pydantic.types import Base64Bytes
 
 try:
     import email_validator
@@ -56,6 +58,60 @@ except ImportError:
 
 class ConBytesModel(BaseModel):
     v: conbytes(max_length=10) = b'foobar'
+
+
+class NonBytesCastable:
+    def __init__(self, b: bytes):
+        self.b = b
+
+
+class BytesCastable(NonBytesCastable):
+    def __bytes__(self):
+        return self.b
+
+
+raw_data = b'hello world'
+raw_values = [raw_data, raw_data.decode('utf8'), bytearray(raw_data), memoryview(raw_data), BytesCastable(raw_data)]
+encoded_data = base64.b64encode(raw_data)
+encoded_values = [
+    encoded_data,
+    encoded_data.decode('utf8'),
+    bytearray(encoded_data),
+    memoryview(encoded_data),
+    BytesCastable(encoded_data),
+]
+non_encodable_values = [NonBytesCastable(encoded_data), 0, False]
+
+
+@pytest.mark.parametrize('value', encoded_values)
+def test_base64bytes(value):
+    class Model(BaseModel):
+        b: Base64Bytes
+
+    assert Model(b=value).b == encoded_data
+
+
+@pytest.mark.parametrize('value', raw_values + non_encodable_values)
+def test_base64bytes_fails(value):
+    class Model(BaseModel):
+        b: Base64Bytes
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(b=value)
+    assert exc_info.value.errors() == [{'loc': ('b',), 'msg': 'value is not valid base64', 'type': 'type_error.base64'}]
+
+
+@pytest.mark.parametrize('value', raw_values)
+def test_base64bytes_encode(value):
+    assert Base64Bytes.encode(value) == encoded_data
+
+
+@pytest.mark.parametrize('value', non_encodable_values)
+def test_base64bytes_encode_fails(value):
+    with pytest.raises(TypeError) as exc_info:
+        Base64Bytes.encode(value)
+    error_msg = str(exc_info.value)
+    assert error_msg.startswith('cannot convert') or error_msg.startswith('a bytes-like object is required')
 
 
 def foo():

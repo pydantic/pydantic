@@ -1,3 +1,5 @@
+import base64
+import binascii
 import json
 import re
 from decimal import Decimal
@@ -700,6 +702,35 @@ class SecretBytes:
 
     def get_secret_value(self) -> bytes:
         return self._secret_value
+
+
+class Base64Bytes(bytes):
+    @classmethod
+    def encode(cls, data: Any) -> 'Base64Bytes':
+        if isinstance(data, str):
+            data = data.encode()
+        elif not isinstance(data, int):
+            data = bytes(data)
+        return Base64Bytes(base64.b64encode(data))
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: Any) -> 'Base64Bytes':
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            pass
+        elif isinstance(value, str):
+            value = value.encode()
+        else:
+            if isinstance(value, int):
+                raise errors.Base64Error
+            with change_exception(errors.Base64Error, TypeError):
+                value = bytes(value)
+        with change_exception(errors.Base64Error, binascii.Error):
+            base64.b64decode(value, validate=True)
+        return Base64Bytes(value)
 
 
 def constr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':

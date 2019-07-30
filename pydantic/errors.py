@@ -362,3 +362,7 @@ class ColorError(PydanticValueError):
 
 class StrictBoolError(PydanticValueError):
     msg_template = 'value is not a valid boolean'
+
+
+class Base64Error(PydanticTypeError):
+    msg_template = 'value is not valid base64'
