@@ -3,6 +3,10 @@
 History
 -------
 
+v0.32 (unreleased)
+..................
+* fix json generation for EnumError, #697 by @dmontagu
+
 v0.31 (2019-07-24)
 ..................
 * better support for floating point `multiple_of` values, #652 by @justindujardin
