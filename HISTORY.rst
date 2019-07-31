@@ -2,6 +2,9 @@
 
 History
 -------
+v0.32 (unreleased)
+..................
+* fix ``self`` inspection for smart debuggers, #701 by @peter-boers, @pfrederiks
 
 v0.31.1 (2019-07-31)
 ....................

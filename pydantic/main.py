@@ -251,7 +251,11 @@ class MetaModel(ABCMeta):
             '_custom_root_type': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
-        return super().__new__(mcs, name, bases, new_namespace)
+
+        # Necessary to not break smart debuggers when inspecting `self` like: WebPDB, VSCode, PyCharm..
+        obj = super().__new__(mcs, name, bases, new_namespace)
+        obj.__values__ = {}
+        return obj
 
 
 class BaseModel(metaclass=MetaModel):
