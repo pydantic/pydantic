@@ -806,3 +806,15 @@ def test_custom_types_fail_without_keep_untouched():
     with pytest.raises(AttributeError) as e:
         Model.class_name
     assert str(e.value) == "type object 'Model' has no attribute 'class_name'"
+
+
+def test_init_inspection():
+    class Foobar(BaseModel):
+        x: int
+
+        def __init__(self, **data) -> None:
+            with pytest.raises(AttributeError):
+                assert self.x
+            super().__init__(**data)
+
+    Foobar(x=1)
