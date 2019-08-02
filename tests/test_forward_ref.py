@@ -1,6 +1,3 @@
-"""
-Tests for python 3.7 behaviour, eg postponed annotations and ForwardRef.
-"""
 import sys
 
 import pytest
@@ -41,11 +38,14 @@ class Model(BaseModel):
     assert module.Model().dict() == {'a': None}
 
 
-@skip_not_37
 def test_basic_forward_ref(create_module):
     module = create_module(
         """
-from typing import ForwardRef, Optional
+from typing import Optional
+try:
+    from typing import ForwardRef
+except ImportError:
+    from typing import _ForwardRef as ForwardRef
 from pydantic import BaseModel
 
 class Foo(BaseModel):
@@ -62,18 +62,20 @@ class Bar(BaseModel):
     assert module.Bar(b={'a': '123'}).dict() == {'b': {'a': 123}}
 
 
-@skip_not_37
 def test_self_forward_ref_module(create_module):
     module = create_module(
         """
-from typing import ForwardRef
+try:
+    from typing import ForwardRef
+except ImportError:
+    from typing import _ForwardRef as ForwardRef
 from pydantic import BaseModel
 
 Foo = ForwardRef('Foo')
 
 class Foo(BaseModel):
     a: int = 123
-    b: Foo = None
+    b: 'Foo' = None
 
 Foo.update_forward_refs()
     """
@@ -83,11 +85,14 @@ Foo.update_forward_refs()
     assert module.Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
-@skip_not_37
 def test_self_forward_ref_collection(create_module):
     module = create_module(
         """
-from typing import ForwardRef, List, Dict
+from typing import List, Dict
+try:
+    from typing import ForwardRef
+except ImportError:
+    from typing import _ForwardRef as ForwardRef
 from pydantic import BaseModel
 
 Foo = ForwardRef('Foo')
@@ -117,11 +122,13 @@ Foo.update_forward_refs()
     ]
 
 
-@skip_not_37
 def test_self_forward_ref_local(create_module):
     module = create_module(
         """
-from typing import ForwardRef
+try:
+    from typing import ForwardRef
+except ImportError:
+    from typing import _ForwardRef as ForwardRef
 from pydantic import BaseModel
 
 def main():
@@ -140,11 +147,13 @@ def main():
     assert Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
-@skip_not_37
 def test_missing_update_forward_refs(create_module):
     module = create_module(
         """
-from typing import ForwardRef
+try:
+    from typing import ForwardRef
+except ImportError:
+    from typing import _ForwardRef as ForwardRef
 from pydantic import BaseModel
 
 Foo = ForwardRef('Foo')
@@ -176,12 +185,14 @@ class Dataclass:
     assert m.url == 'http://example.com'
 
 
-@skip_not_37
 def test_forward_ref_sub_types(create_module):
     module = create_module(
         """
-from typing import ForwardRef, Union
-
+from typing import Union
+try:
+    from typing import ForwardRef
+except ImportError:
+    from typing import _ForwardRef as ForwardRef
 from pydantic import BaseModel
 
 
@@ -210,12 +221,14 @@ Node.update_forward_refs()
     assert isinstance(node.right, Node)
 
 
-@skip_not_37
 def test_forward_ref_nested_sub_types(create_module):
     module = create_module(
         """
-from typing import ForwardRef, Tuple, Union
-
+from typing import Tuple, Union
+try:
+    from typing import ForwardRef
+except ImportError:
+    from typing import _ForwardRef as ForwardRef
 from pydantic import BaseModel
 
 
