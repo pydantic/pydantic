@@ -42,9 +42,18 @@ except ImportError:
 
 try:
     from typing import ForwardRef  # type: ignore
+
+    def evaluate_forwardref(type_, globalns, localns):  # type: ignore
+        return type_._evaluate(globalns, localns)
+
+
 except ImportError:
     # python 3.6
     from typing import _ForwardRef as ForwardRef  # type: ignore
+
+    def evaluate_forwardref(type_, globalns, localns):  # type: ignore
+        return type_._eval_type(globalns, localns)
+
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
@@ -338,10 +347,7 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
     Try to update ForwardRefs on fields based on this Field, globalns and localns.
     """
     if type(field.type_) == ForwardRef:
-        if sys.version_info >= (3, 7):
-            field.type_ = field.type_._evaluate(globalns, localns or None)  # type: ignore
-        else:
-            field.type_ = field.type_._eval_type(globalns, localns or None)
+        field.type_ = evaluate_forwardref(field.type_, globalns, localns or None)
         field.prepare()
     if field.sub_fields:
         for sub_f in field.sub_fields:
