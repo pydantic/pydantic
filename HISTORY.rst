@@ -2,6 +2,9 @@
 
 History
 -------
+v0.32 (unreleased)
+..................
+* support ``ForwardRef`` (without self-referencing annotations) in Python3.6, #706 by @koxudaxi
 
 v0.31.1 (2019-07-31)
 ....................
