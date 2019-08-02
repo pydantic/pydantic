@@ -7,7 +7,7 @@ import pytest
 
 from pydantic import ConfigError, ValidationError
 
-skip_not_36 = pytest.mark.skipif(sys.version_info > (3, 6), reason='testing == 3.6.x behaviour only')
+skip_not_36 = pytest.mark.skipif(sys.version_info >= (3, 7), reason='testing == 3.6.x behaviour only')
 
 
 @skip_not_36
