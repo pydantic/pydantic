@@ -44,7 +44,7 @@ try:
     from typing import ForwardRef  # type: ignore
 except ImportError:
     # python 3.6
-    ForwardRef = None
+    from typing import _ForwardRef as ForwardRef  # type: ignore
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
@@ -277,7 +277,10 @@ def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Option
     annotations = {}
     for name, value in raw_annotations.items():
         if isinstance(value, str):
-            value = ForwardRef(value, is_argument=False)
+            if sys.version_info >= (3, 7):
+                value = ForwardRef(value, is_argument=False)
+            else:
+                value = ForwardRef(value)
         try:
             value = _eval_type(value, base_globals, None)
         except NameError:
@@ -335,7 +338,10 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
     Try to update ForwardRefs on fields based on this Field, globalns and localns.
     """
     if type(field.type_) == ForwardRef:
-        field.type_ = field.type_._evaluate(globalns, localns or None)  # type: ignore
+        if sys.version_info >= (3, 7):
+            field.type_ = field.type_._evaluate(globalns, localns or None)  # type: ignore
+        else:
+            field.type_ = field.type_._eval_type(globalns, localns or None)
         field.prepare()
     if field.sub_fields:
         for sub_f in field.sub_fields:
