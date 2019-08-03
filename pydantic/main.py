@@ -651,11 +651,6 @@ class BaseModel(metaclass=MetaModel):
     def __str__(self) -> str:
         return self.to_string()
 
-    def __dir__(self) -> 'ListStr':
-        ret = list(object.__dir__(self))
-        ret.extend(self.__dict__.keys())
-        return ret
-
     @property
     def __values__(self) -> 'DictStrAny':
         warnings.warn('`__values__` attribute is deprecated, use `__dict__` instead', DeprecationWarning)
