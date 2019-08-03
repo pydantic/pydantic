@@ -3,6 +3,13 @@
 History
 -------
 
+v0.32 (unreleased)
+..................
+* **breaking change**: remove ``__getattr__`` on ``BaseModel``, #712 by @MrMrRobat
+* rename ``__values__`` to ``__dict__`` on ``BaseModel``, deprecation warning on use of old name,
+  attributes access speed increased up to 14 times, #712 by @MrMrRobat
+
+
 v0.31.1 (2019-07-31)
 ....................
 * fix json generation for ``EnumError``, #697 by @dmontagu
@@ -137,7 +144,7 @@ v0.20.0a1 (2019-02-13)
 * **breaking change** (maybe): more sophisticated argument parsing for validators, any subset of
   ``values``, ``config`` and ``field`` is now permitted, eg. ``(cls, value, field)``,
   however the variadic key word argument ("``**kwargs``") **must** be called ``kwargs``, #388 by @samuelcolvin
-* **breaking change**: Adds ``skip_defaults`` argument to ``BaseModel.dict()`` to allow skipping of fields that
+* **breaking change**: Adds ``skip_defaults`` argument to ``l.dict()`` to allow skipping of fields that
   were not explicitly set, signature of ``Model.construct()`` changed, #389 by @dgasmith
 * add ``py.typed`` marker file for PEP-561 support, #391 by @je-l
 * Fix ``extra`` behaviour for multiple inheritance/mix-ins, #394 by @YaraslauZhylko
