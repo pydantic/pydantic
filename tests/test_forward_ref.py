@@ -168,11 +168,9 @@ class Foo(BaseModel):
     assert str(exc_info.value).startswith('field "b" not yet prepared so type is still a ForwardRef')
 
 
-@skip_not_37
 def test_forward_ref_dataclass(create_module):
     module = create_module(
         """
-from __future__ import annotations
 from pydantic import UrlStr
 from pydantic.dataclasses import dataclass
 
@@ -261,17 +259,15 @@ Node.update_forward_refs()
     assert isinstance(node.right[0], Node)
 
 
-@skip_not_37
 def test_self_reference_json_schema(create_module):
     module = create_module(
         """
-from __future__ import annotations
 from typing import List
 from pydantic import BaseModel, Schema
 
 class Account(BaseModel):
   name: str
-  subaccounts: List[Account] = []
+  subaccounts: List['Account'] = []
 
 Account.update_forward_refs()
     """
@@ -298,21 +294,19 @@ Account.update_forward_refs()
     }
 
 
-@skip_not_37
 def test_circular_reference_json_schema(create_module):
     module = create_module(
         """
-from __future__ import annotations
 from typing import List
 from pydantic import BaseModel, Schema
 
 class Owner(BaseModel):
-  account: Account
+  account: 'Account'
 
 class Account(BaseModel):
   name: str
-  owner: Owner
-  subaccounts: List[Account] = []
+  owner: 'Owner'
+  subaccounts: List['Account'] = []
 
 Account.update_forward_refs()
 Owner.update_forward_refs()
