@@ -995,3 +995,13 @@ def test_nested_init(model):
     assert m.self == 'Top Model'
     assert m.nest.self == 'Nested Model'
     assert m.nest.modified_number == 1
+
+
+def test_values_attr_deprecation():
+    class Model(BaseModel):
+        foo: int
+        bar: str
+
+    m = Model(foo=4, bar='baz')
+    with pytest.warns(DeprecationWarning, match='`__values__` attribute is deprecated, use `__dict__` instead'):
+        assert m.__values__ == m.__dict__

@@ -656,6 +656,11 @@ class BaseModel(metaclass=MetaModel):
         ret.extend(self.__dict__.keys())
         return ret
 
+    @property
+    def __values__(self) -> 'DictStrAny':
+        warnings.warn('`__values__` attribute is deprecated, use `__dict__` instead', DeprecationWarning)
+        return self.__dict__
+
 
 def create_model(
     model_name: str,
