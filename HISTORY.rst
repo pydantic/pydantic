@@ -5,9 +5,8 @@ History
 
 v0.32 (unreleased)
 ..................
-* **breaking change**: remove ``__getattr__`` on ``BaseModel``, #712 by @MrMrRobat
-* rename ``__values__`` to ``__dict__`` on ``BaseModel``, deprecation warning on use of old name,
-  attributes access speed increased up to 14 times, #712 by @MrMrRobat
+* **breaking change**: remove ``__getattr__`` and rename ``__values__`` to ``__dict__`` on ``BaseModel``,
+  deprecation warning on use ``__values__`` attr, attributes access speed increased up to 14 times, #712 by @MrMrRobat
 
 
 v0.31.1 (2019-07-31)
