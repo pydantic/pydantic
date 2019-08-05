@@ -7,10 +7,10 @@ class Person(BaseModel):
 
     class Config:
         schema_extra = {
-            "examples": [
+            'examples': [
                 {
-                    "name": "John Doe",
-                    "age": 25,
+                    'name': 'John Doe',
+                    'age': 25,
                 }
             ]
         }
