@@ -3,9 +3,15 @@
 History
 -------
 
+
 v0.32 (unreleased)
 ..................
 * add model name to ``ValidationError`` error message, #676 by @dmontagu
+
+v0.31.1 (2019-07-31)
+....................
+* fix json generation for ``EnumError``, #697 by @dmontagu
+* update numerous dependencies
 
 v0.31 (2019-07-24)
 ..................
