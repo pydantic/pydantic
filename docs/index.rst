@@ -277,7 +277,7 @@ The ellipsis ``...`` just means "Required" same as annotation only declarations 
 Self-referencing Models
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Since ``python 3.7``, data structures with self-referencing models are also supported, provided the function
+Data structures with self-referencing models are also supported, provided the function
 ``update_forward_refs()`` is called once the model is created (you will be reminded
 with a friendly error message if you don't).
 
@@ -287,7 +287,7 @@ Within the model, you can refer to the not-yet-constructed model by a string :
 
 (This script is complete, it should run "as is")
 
-You can also refer it by its type, provided you import ``annotations`` (see
+Since ``python 3.7``, You can also refer it by its type, provided you import ``annotations`` (see
 :ref:`the relevant paragraph <postponed_annotations>` for support depending on Python
 and pydantic versions).
 

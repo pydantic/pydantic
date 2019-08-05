@@ -1,6 +1,3 @@
-"""
-Tests for python 3.7 behaviour, eg postponed annotations and ForwardRef.
-"""
 import sys
 
 import pytest
@@ -41,12 +38,12 @@ class Model(BaseModel):
     assert module.Model().dict() == {'a': None}
 
 
-@skip_not_37
 def test_basic_forward_ref(create_module):
     module = create_module(
         """
-from typing import ForwardRef, Optional
+from typing import Optional
 from pydantic import BaseModel
+from pydantic.utils import ForwardRef
 
 class Foo(BaseModel):
     a: int
@@ -62,18 +59,17 @@ class Bar(BaseModel):
     assert module.Bar(b={'a': '123'}).dict() == {'b': {'a': 123}}
 
 
-@skip_not_37
 def test_self_forward_ref_module(create_module):
     module = create_module(
         """
-from typing import ForwardRef
 from pydantic import BaseModel
+from pydantic.utils import ForwardRef
 
 Foo = ForwardRef('Foo')
 
 class Foo(BaseModel):
     a: int = 123
-    b: Foo = None
+    b: 'Foo' = None
 
 Foo.update_forward_refs()
     """
@@ -83,12 +79,12 @@ Foo.update_forward_refs()
     assert module.Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
-@skip_not_37
 def test_self_forward_ref_collection(create_module):
     module = create_module(
         """
-from typing import ForwardRef, List, Dict
+from typing import List, Dict
 from pydantic import BaseModel
+from pydantic.utils import ForwardRef
 
 Foo = ForwardRef('Foo')
 
@@ -117,12 +113,11 @@ Foo.update_forward_refs()
     ]
 
 
-@skip_not_37
 def test_self_forward_ref_local(create_module):
     module = create_module(
         """
-from typing import ForwardRef
 from pydantic import BaseModel
+from pydantic.utils import ForwardRef
 
 def main():
     Foo = ForwardRef('Foo')
@@ -140,12 +135,11 @@ def main():
     assert Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
-@skip_not_37
 def test_missing_update_forward_refs(create_module):
     module = create_module(
         """
-from typing import ForwardRef
 from pydantic import BaseModel
+from pydantic.utils import ForwardRef
 
 Foo = ForwardRef('Foo')
 
@@ -159,8 +153,23 @@ class Foo(BaseModel):
     assert str(exc_info.value).startswith('field "b" not yet prepared so type is still a ForwardRef')
 
 
-@skip_not_37
 def test_forward_ref_dataclass(create_module):
+    module = create_module(
+        """
+from pydantic import UrlStr
+from pydantic.dataclasses import dataclass
+
+@dataclass
+class Dataclass:
+    url: UrlStr
+    """
+    )
+    m = module.Dataclass('http://example.com  ')
+    assert m.url == 'http://example.com'
+
+
+@skip_not_37
+def test_forward_ref_dataclass_with_future_annotations(create_module):
     module = create_module(
         """
 from __future__ import annotations
@@ -176,14 +185,12 @@ class Dataclass:
     assert m.url == 'http://example.com'
 
 
-@skip_not_37
 def test_forward_ref_sub_types(create_module):
     module = create_module(
         """
-from typing import ForwardRef, Union
-
+from typing import Union
 from pydantic import BaseModel
-
+from pydantic.utils import ForwardRef
 
 class Leaf(BaseModel):
     a: str
@@ -210,14 +217,12 @@ Node.update_forward_refs()
     assert isinstance(node.right, Node)
 
 
-@skip_not_37
 def test_forward_ref_nested_sub_types(create_module):
     module = create_module(
         """
-from typing import ForwardRef, Tuple, Union
-
+from typing import Tuple, Union
 from pydantic import BaseModel
-
+from pydantic.utils import ForwardRef
 
 class Leaf(BaseModel):
     a: str
@@ -248,8 +253,43 @@ Node.update_forward_refs()
     assert isinstance(node.right[0], Node)
 
 
-@skip_not_37
 def test_self_reference_json_schema(create_module):
+    module = create_module(
+        """
+from typing import List
+from pydantic import BaseModel, Schema
+
+class Account(BaseModel):
+  name: str
+  subaccounts: List['Account'] = []
+
+Account.update_forward_refs()
+    """
+    )
+    Account = module.Account
+    assert Account.schema() == {
+        '$ref': '#/definitions/Account',
+        'definitions': {
+            'Account': {
+                'title': 'Account',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'subaccounts': {
+                        'title': 'Subaccounts',
+                        'default': [],
+                        'type': 'array',
+                        'items': {'$ref': '#/definitions/Account'},
+                    },
+                },
+                'required': ['name'],
+            }
+        },
+    }
+
+
+@skip_not_37
+def test_self_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         """
 from __future__ import annotations
@@ -285,8 +325,55 @@ Account.update_forward_refs()
     }
 
 
-@skip_not_37
 def test_circular_reference_json_schema(create_module):
+    module = create_module(
+        """
+from typing import List
+from pydantic import BaseModel, Schema
+
+class Owner(BaseModel):
+  account: 'Account'
+
+class Account(BaseModel):
+  name: str
+  owner: 'Owner'
+  subaccounts: List['Account'] = []
+
+Account.update_forward_refs()
+Owner.update_forward_refs()
+    """
+    )
+    Account = module.Account
+    assert Account.schema() == {
+        '$ref': '#/definitions/Account',
+        'definitions': {
+            'Account': {
+                'title': 'Account',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'owner': {'$ref': '#/definitions/Owner'},
+                    'subaccounts': {
+                        'title': 'Subaccounts',
+                        'default': [],
+                        'type': 'array',
+                        'items': {'$ref': '#/definitions/Account'},
+                    },
+                },
+                'required': ['name', 'owner'],
+            },
+            'Owner': {
+                'title': 'Owner',
+                'type': 'object',
+                'properties': {'account': {'$ref': '#/definitions/Account'}},
+                'required': ['account'],
+            },
+        },
+    }
+
+
+@skip_not_37
+def test_circular_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         """
 from __future__ import annotations

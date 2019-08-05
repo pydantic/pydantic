@@ -198,9 +198,7 @@ class MetaModel(ABCMeta):
                 f.prepare()
 
         set_extra(config, name)
-        annotations = namespace.get('__annotations__', {})
-        if sys.version_info >= (3, 7):
-            annotations = resolve_annotations(annotations, namespace.get('__module__', None))
+        annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
 
         class_vars = set()
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
