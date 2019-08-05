@@ -49,10 +49,11 @@ ErrorList = Union[Sequence[Any], ErrorWrapper]
 
 
 class ValidationError(ValueError):
-    __slots__ = ('raw_errors',)
+    __slots__ = ('raw_errors', 'model')
 
-    def __init__(self, errors: Sequence[ErrorList]) -> None:
+    def __init__(self, errors: Sequence[ErrorList], model: Type[Any]) -> None:
         self.raw_errors = errors
+        self.model = model
 
     @lru_cache()
     def errors(self) -> List[Dict[str, Any]]:
@@ -64,7 +65,10 @@ class ValidationError(ValueError):
     def __str__(self) -> str:
         errors = self.errors()
         no_errors = len(errors)
-        return f'{no_errors} validation error{"" if no_errors == 1 else "s"}\n{display_errors(errors)}'
+        return (
+            f'{no_errors} validation error{"" if no_errors == 1 else "s"} for {self.model.__name__}\n'
+            f'{display_errors(errors)}'
+        )
 
 
 def display_errors(errors: List[Dict[str, Any]]) -> str:
