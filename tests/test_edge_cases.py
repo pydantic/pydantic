@@ -1005,3 +1005,15 @@ def test_values_attr_deprecation():
     m = Model(foo=4, bar='baz')
     with pytest.warns(DeprecationWarning, match='`__values__` attribute is deprecated, use `__dict__` instead'):
         assert m.__values__ == m.__dict__
+
+
+def test_init_inspection():
+    class Foobar(BaseModel):
+        x: int
+
+        def __init__(self, **data) -> None:
+            with pytest.raises(AttributeError):
+                assert self.x
+            super().__init__(**data)
+
+    Foobar(x=1)
