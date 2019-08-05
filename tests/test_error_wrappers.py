@@ -135,7 +135,7 @@ from pydantic.error_wrappers import ValidationError, flatten_errors, get_exc_typ
         (
             '__str__',
             """\
-11 validation errors
+11 validation errors for Model
 a
   value is not a valid integer (type=type_error.integer)
 b -> x
@@ -227,7 +227,7 @@ def test_single_error():
         Model(x='x')
 
     expected = """\
-1 validation error
+1 validation error for Model
 x
   value is not a valid integer (type=type_error.integer)"""
     assert str(exc_info.value) == expected
@@ -239,7 +239,7 @@ x
     assert (
         str(exc_info.value)
         == """\
-1 validation error
+1 validation error for Model
 x
   field required (type=value_error.missing)"""
     )
@@ -261,3 +261,19 @@ def test_nested_error():
     expected = [{'loc': ('data1', 0, 'data2', 0, 'x'), 'msg': 'field required', 'type': 'value_error.missing'}]
 
     assert exc_info.value.errors() == expected
+
+
+def test_validate_assignment_error():
+    class Model(BaseModel):
+        x: int
+
+        class Config:
+            validate_assignment = True
+
+    model = Model(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        model.x = 'a'
+    assert (
+        str(exc_info.value)
+        == '1 validation error for Model\nx\n  value is not a valid integer (type=type_error.integer)'
+    )

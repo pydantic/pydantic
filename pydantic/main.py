@@ -264,23 +264,16 @@ class BaseModel(metaclass=MetaModel):
         _custom_root_type: bool = False
 
     Config = BaseConfig
-    __slots__ = ('__values__', '__fields_set__')
+    __slots__ = ('__dict__', '__fields_set__')
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
         if TYPE_CHECKING:  # pragma: no cover
-            __pydantic_self__.__values__: Dict[str, Any] = {}
+            __pydantic_self__.__dict__: Dict[str, Any] = {}
             __pydantic_self__.__fields_set__: 'SetStr' = set()
         values, fields_set, _ = validate_model(__pydantic_self__, data)
-        object.__setattr__(__pydantic_self__, '__values__', values)
+        object.__setattr__(__pydantic_self__, '__dict__', values)
         object.__setattr__(__pydantic_self__, '__fields_set__', fields_set)
-
-    @no_type_check
-    def __getattr__(self, name):
-        try:
-            return self.__values__[name]
-        except KeyError:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     @no_type_check
     def __setattr__(self, name, value):
@@ -291,19 +284,19 @@ class BaseModel(metaclass=MetaModel):
         elif self.__config__.validate_assignment:
             value_, error_ = self.fields[name].validate(value, self.dict(exclude={name}), loc=name)
             if error_:
-                raise ValidationError([error_])
+                raise ValidationError([error_], type(self))
             else:
-                self.__values__[name] = value_
+                self.__dict__[name] = value_
                 self.__fields_set__.add(name)
         else:
-            self.__values__[name] = value
+            self.__dict__[name] = value
             self.__fields_set__.add(name)
 
     def __getstate__(self) -> 'DictAny':
-        return {'__values__': self.__values__, '__fields_set__': self.__fields_set__}
+        return {'__dict__': self.__dict__, '__fields_set__': self.__fields_set__}
 
     def __setstate__(self, state: 'DictAny') -> None:
-        object.__setattr__(self, '__values__', state['__values__'])
+        object.__setattr__(self, '__dict__', state['__dict__'])
         object.__setattr__(self, '__fields_set__', state['__fields_set__'])
 
     def dict(
@@ -370,7 +363,7 @@ class BaseModel(metaclass=MetaModel):
                     obj = dict(obj)
                 except (TypeError, ValueError) as e:
                     exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                    raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
+                    raise ValidationError([ErrorWrapper(exc, loc='__obj__')], cls) from e
         return cls(**obj)
 
     @classmethod
@@ -388,7 +381,7 @@ class BaseModel(metaclass=MetaModel):
                 b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle
             )
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([ErrorWrapper(e, loc='__obj__')])
+            raise ValidationError([ErrorWrapper(e, loc='__obj__')], cls)
         return cls.parse_obj(obj)
 
     @classmethod
@@ -411,18 +404,18 @@ class BaseModel(metaclass=MetaModel):
         obj = cls._decompose_class(obj)
         m = cls.__new__(cls)
         values, fields_set, _ = validate_model(m, obj)
-        object.__setattr__(m, '__values__', values)
+        object.__setattr__(m, '__dict__', values)
         object.__setattr__(m, '__fields_set__', fields_set)
         return m
 
     @classmethod
     def construct(cls: Type['Model'], values: 'DictAny', fields_set: 'SetStr') -> 'Model':
         """
-        Creates a new model and set __values__ without any validation, thus values should already be trusted.
+        Creates a new model and set __dict__ without any validation, thus values should already be trusted.
         Chances are you don't want to use this method directly.
         """
         m = cls.__new__(cls)
-        object.__setattr__(m, '__values__', values)
+        object.__setattr__(m, '__dict__', values)
         object.__setattr__(m, '__fields_set__', fields_set)
         return m
 
@@ -446,11 +439,11 @@ class BaseModel(metaclass=MetaModel):
         """
         if include is None and exclude is None and update is None:
             # skip constructing values if no arguments are passed
-            v = self.__values__
+            v = self.__dict__
         else:
             allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False, update=update)
             if allowed_keys is None:
-                v = {**self.__values__, **(update or {})}
+                v = {**self.__dict__, **(update or {})}
             else:
                 v = {
                     **dict(
@@ -593,7 +586,7 @@ class BaseModel(metaclass=MetaModel):
         value_exclude = ValueItems(self, exclude) if exclude else None
         value_include = ValueItems(self, include) if include else None
 
-        for k, v in self.__values__.items():
+        for k, v in self.__dict__.items():
             if allowed_keys is None or k in allowed_keys:
                 yield k, self._get_value(
                     v,
@@ -617,7 +610,7 @@ class BaseModel(metaclass=MetaModel):
         if skip_defaults:
             keys = self.__fields_set__.copy()
         else:
-            keys = set(self.__values__.keys())
+            keys = set(self.__dict__.keys())
 
         if include is not None:
             if isinstance(include, dict):
@@ -650,16 +643,16 @@ class BaseModel(metaclass=MetaModel):
         return '{}{}{}'.format(
             self.__class__.__name__,
             divider,
-            divider.join('{}={}'.format(k, truncate(v)) for k, v in self.__values__.items()),
+            divider.join('{}={}'.format(k, truncate(v)) for k, v in self.__dict__.items()),
         )
 
     def __str__(self) -> str:
         return self.to_string()
 
-    def __dir__(self) -> 'ListStr':
-        ret = list(object.__dir__(self))
-        ret.extend(self.__values__.keys())
-        return ret
+    @property
+    def __values__(self) -> 'DictStrAny':
+        warnings.warn('`__values__` attribute is deprecated, use `__dict__` instead', DeprecationWarning)
+        return self.__dict__
 
 
 def create_model(
@@ -781,9 +774,15 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 for f in sorted(extra):
                     errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
 
-    if not raise_exc:
-        return values, fields_set, ValidationError(errors) if errors else None
-
+    err = None
     if errors:
-        raise ValidationError(errors)
+        model_type = model if isinstance(model, type) else type(model)
+        err = ValidationError(errors, model_type)
+
+    if not raise_exc:
+        return values, fields_set, err
+
+    if err:
+        raise err
+
     return values, fields_set, None
