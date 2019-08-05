@@ -178,6 +178,7 @@ class MetaModel(ABCMeta):
         annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
 
         class_vars = set()
+        new_fields: Dict[str, Field] = {}
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
@@ -185,7 +186,7 @@ class MetaModel(ABCMeta):
                     class_vars.add(ann_name)
                 elif is_valid_field(ann_name) and ann_name not in namespace:
                     validate_field_name(bases, ann_name)
-                    fields[ann_name] = Field.infer(
+                    new_fields[ann_name] = Field.infer(
                         name=ann_name,
                         value=...,
                         annotation=ann_type,
@@ -201,13 +202,18 @@ class MetaModel(ABCMeta):
                     and var_name not in class_vars
                 ):
                     validate_field_name(bases, var_name)
-                    fields[var_name] = Field.infer(
+                    new_fields[var_name] = Field.infer(
                         name=var_name,
                         value=value,
                         annotation=annotations.get(var_name),
                         class_validators=vg.get_validators(var_name),
                         config=config,
                     )
+        new_fields_ordering = [k for k in annotations if k in new_fields] + [
+            k for k in new_fields if k not in annotations
+        ]
+        for k in new_fields_ordering:
+            fields[k] = new_fields[k]
 
         _custom_root_type = '__root__' in fields
         if _custom_root_type:
