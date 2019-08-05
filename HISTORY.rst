@@ -4,13 +4,10 @@ History
 -------
 v0.32 (unreleased)
 ..................
-* support ``ForwardRef`` (without self-referencing annotations) in Python3.6, #706 by @koxudaxi
-
-v0.32 (unreleased)
-..................
 * add model name to ``ValidationError`` error message, #676 by @dmontagu
 * **breaking change**: remove ``__getattr__`` and rename ``__values__`` to ``__dict__`` on ``BaseModel``,
   deprecation warning on use ``__values__`` attr, attributes access speed increased up to 14 times, #712 by @MrMrRobat
+* support ``ForwardRef`` (without self-referencing annotations) in Python3.6, #706 by @koxudaxi
 
 v0.31.1 (2019-07-31)
 ....................
