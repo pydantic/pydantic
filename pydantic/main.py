@@ -293,7 +293,7 @@ class BaseModel(metaclass=MetaModel):
         elif self.__config__.validate_assignment:
             value_, error_ = self.fields[name].validate(value, self.dict(exclude={name}), loc=name)
             if error_:
-                raise ValidationError([error_])
+                raise ValidationError([error_], type(self))
             else:
                 self.__values__[name] = value_
                 self.__fields_set__.add(name)
@@ -372,7 +372,7 @@ class BaseModel(metaclass=MetaModel):
                     obj = dict(obj)
                 except (TypeError, ValueError) as e:
                     exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                    raise ValidationError([ErrorWrapper(exc, loc='__obj__')]) from e
+                    raise ValidationError([ErrorWrapper(exc, loc='__obj__')], cls) from e
         return cls(**obj)
 
     @classmethod
@@ -390,7 +390,7 @@ class BaseModel(metaclass=MetaModel):
                 b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle
             )
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([ErrorWrapper(e, loc='__obj__')])
+            raise ValidationError([ErrorWrapper(e, loc='__obj__')], cls)
         return cls.parse_obj(obj)
 
     @classmethod
@@ -783,9 +783,15 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 for f in sorted(extra):
                     errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
 
-    if not raise_exc:
-        return values, fields_set, ValidationError(errors) if errors else None
-
+    err = None
     if errors:
-        raise ValidationError(errors)
+        model_type = model if isinstance(model, type) else type(model)
+        err = ValidationError(errors, model_type)
+
+    if not raise_exc:
+        return values, fields_set, err
+
+    if err:
+        raise err
+
     return values, fields_set, None
