@@ -2,12 +2,14 @@
 
 History
 -------
+
 v0.32 (unreleased)
 ..................
 * add model name to ``ValidationError`` error message, #676 by @dmontagu
 * **breaking change**: remove ``__getattr__`` and rename ``__values__`` to ``__dict__`` on ``BaseModel``,
   deprecation warning on use ``__values__`` attr, attributes access speed increased up to 14 times, #712 by @MrMrRobat
 * support ``ForwardRef`` (without self-referencing annotations) in Python3.6, #706 by @koxudaxi
+* implement ``schema_extra`` in ``Config`` sub-class, #663 by @tiangolo
 
 v0.31.1 (2019-07-31)
 ....................
@@ -16,7 +18,6 @@ v0.31.1 (2019-07-31)
 
 v0.31 (2019-07-24)
 ..................
-* implement ``schema_extra`` in ``Config`` sub-class, #663 by @tiangolo
 * better support for floating point `multiple_of` values, #652 by @justindujardin
 * fix schema generation for ``NewType`` and ``Literal``, #649 by @dmontagu
 * fix ``alias_generator`` and field config conflict, #645 by @gmetzker and #658 by @MrMrRobat
