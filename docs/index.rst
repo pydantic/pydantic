@@ -465,6 +465,19 @@ Outputs:
 
 .. literalinclude:: examples/schema3.json
 
+It's also possible to extend/override the generated JSON schema in a model.
+
+To do it, use the ``Config`` sub-class attribute ``schema_extra``.
+
+For example, you could add ``examples`` to the JSON Schema:
+
+.. literalinclude:: examples/schema4.py
+
+(This script is complete, it should run "as is")
+
+Outputs:
+
+.. literalinclude:: examples/schema4.json
 
 Error Handling
 ..............
@@ -739,6 +752,7 @@ Behaviour of pydantic can be controlled via the ``Config`` class on a model.
 
 Options:
 
+:title: title for the generated JSON Schema
 :anystr_strip_whitespace: strip or not trailing and leading whitespace for str & byte types (default: ``False``)
 :min_anystr_length: min length for str & byte types (default: ``0``)
 :max_anystr_length: max length for str & byte types (default: ``2 ** 16``)
@@ -764,6 +778,7 @@ Options:
 :alias_generator: callable that takes field name and returns alias for it
 :keep_untouched: tuple of types (e. g. descriptors) that won't change during model creation and won't be
   included in the model schemas.
+:schema_extra: takes a ``dict`` to extend/update the generated JSON Schema
 
 .. warning::
 

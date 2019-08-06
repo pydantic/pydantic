@@ -563,6 +563,7 @@ def model_process_schema(
         model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
     )
     s.update(m_schema)
+    s.update(model.__config__.schema_extra)
     return s, m_definitions, nested_models
 
 

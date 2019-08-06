@@ -1472,3 +1472,19 @@ def test_color_type():
         'properties': {'color': {'title': 'Color', 'type': 'string', 'format': 'color'}},
         'required': ['color'],
     }
+
+
+def test_model_with_schema_extra():
+    class Model(BaseModel):
+        a: str
+
+        class Config:
+            schema_extra = {'examples': [{'a': 'Foo'}]}
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'examples': [{'a': 'Foo'}],
+    }
