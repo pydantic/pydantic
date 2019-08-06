@@ -738,24 +738,6 @@ def test_unable_to_infer():
     assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
 
 
-def test_get_validator():
-    class CustomClass:
-        @classmethod
-        def get_validators(cls):
-            yield cls.validate
-
-        @classmethod
-        def validate(cls, v):
-            return v * 2
-
-    with pytest.warns(DeprecationWarning):
-
-        class Model(BaseModel):
-            x: CustomClass
-
-    assert Model(x=42).x == 84
-
-
 def test_multiple_errors():
     class Model(BaseModel):
         a: Union[None, int, float, Decimal]
@@ -805,55 +787,6 @@ def test_validate_all():
         {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
         {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
-
-
-def test_ignore_extra_true():
-    with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
-
-        class Model(BaseModel):
-            foo: int
-
-            class Config:
-                ignore_extra = True
-
-    assert Model.__config__.extra is Extra.ignore
-
-
-def test_ignore_extra_false():
-    with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" is deprecated and replaced by "extra"'):
-
-        class Model(BaseModel):
-            foo: int
-
-            class Config:
-                ignore_extra = False
-
-    assert Model.__config__.extra is Extra.forbid
-
-
-def test_allow_extra():
-    with pytest.warns(DeprecationWarning, match='Model: "allow_extra" is deprecated and replaced by "extra"'):
-
-        class Model(BaseModel):
-            foo: int
-
-            class Config:
-                allow_extra = True
-
-    assert Model.__config__.extra is Extra.allow
-
-
-def test_ignore_extra_allow_extra():
-    with pytest.warns(DeprecationWarning, match='Model: "ignore_extra" and "allow_extra" are deprecated and'):
-
-        class Model(BaseModel):
-            foo: int
-
-            class Config:
-                ignore_extra = False
-                allow_extra = False
-
-    assert Model.__config__.extra is Extra.forbid
 
 
 def test_force_extra():
@@ -909,26 +842,6 @@ def test_multiple_inheritance_config():
     assert Child.__config__.allow_population_by_alias is True
     assert Child.__config__.extra is Extra.forbid
     assert Child.__config__.use_enum_values is True
-
-
-def test_multiple_inheritance_config_legacy_extra():
-    with pytest.warns(DeprecationWarning, match='Parent: "ignore_extra" and "allow_extra" are deprecated and'):
-
-        class Parent(BaseModel):
-            class Config:
-                allow_extra = False
-                ignore_extra = False
-
-        class Mixin(BaseModel):
-            pass
-
-        class Child(Mixin, Parent):
-            pass
-
-    assert BaseModel.__config__.extra is Extra.ignore
-    assert Parent.__config__.extra is Extra.forbid
-    assert Mixin.__config__.extra is Extra.ignore
-    assert Child.__config__.extra is Extra.forbid
 
 
 def test_submodel_different_type():
