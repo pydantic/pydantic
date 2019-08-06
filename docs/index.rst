@@ -1100,6 +1100,10 @@ Benchmarks were run with python 3.7.2 and the following package versions:
 Contributing to Pydantic
 ------------------------
 
+**NOTICE**: pydantic is currently pushing towards V1 release,
+see `issue 576 <https://github.com/samuelcolvin/pydantic/issues/576>`_. Changes not required to release version 1
+may be be delayed, until after version 1 is released.
+
 We'd love you to contribute to *pydantic*, it should be extremely simple to get started and create a Pull Request.
 *pydantic* is released regularly so you should see your improvements release in a matter of days or weeks.
 
