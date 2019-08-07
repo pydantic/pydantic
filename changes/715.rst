@@ -1,0 +1,1 @@
+make all annotated fields occur in the order declared, #715 by @dmontagu
