@@ -1,0 +1,1 @@
+modify parsing behavior for ``bool`` and add ``RelaxedBool``, #617 by @dmontagu
