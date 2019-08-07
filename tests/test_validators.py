@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError, errors, validator
+from pydantic import BaseModel, ConfigError, Extra, ValidationError, errors, validator
 from pydantic.class_validators import make_generic_validator
 
 
@@ -117,6 +117,7 @@ class ValidateAssignmentModel(BaseModel):
 
     class Config:
         validate_assignment = True
+        extra = Extra.allow
 
 
 def test_validating_assignment_ok():
@@ -131,6 +132,17 @@ def test_validating_assignment_fail():
     p = ValidateAssignmentModel(b='hello')
     with pytest.raises(ValidationError):
         p.b = 'x'
+
+
+def test_validating_assignment_extra():
+    p = ValidateAssignmentModel(b='hello', extra_field=1.23)
+    assert p.extra_field == 1.23
+
+    p = ValidateAssignmentModel(b='hello')
+    p.extra_field = 1.23
+    assert p.extra_field == 1.23
+    p.extra_field = 'bye'
+    assert p.extra_field == 'bye'
 
 
 def test_validating_assignment_dict():

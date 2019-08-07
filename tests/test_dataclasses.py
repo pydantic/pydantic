@@ -92,6 +92,23 @@ def test_not_validate_assignment():
     assert d.a == '7'
 
 
+def test_validate_assignment_extra():
+    class Config:
+        validate_assignment = True
+
+    @pydantic.dataclasses.dataclass(config=Config, frozen=False)
+    class MyDataclass:
+        a: int
+
+    d = MyDataclass(1)
+    assert d.a == 1
+
+    d.extra_field = 1.23
+    assert d.extra_field == 1.23
+    d.extra_field = 'bye'
+    assert d.extra_field == 'bye'
+
+
 def test_post_init():
     post_init_called = False
 
