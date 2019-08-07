@@ -3,6 +3,10 @@
 History
 -------
 
+v0.32.1 (unreleased)
+....................
+* do not validate extra fields when `vaidate_assignment` is on, #724 by @YaraslauZhylko
+
 v0.32 (2019-08-08)
 ..................
 * add model name to ``ValidationError`` error message, #676 by @dmontagu
