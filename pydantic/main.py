@@ -283,15 +283,13 @@ class BaseModel(metaclass=MetaModel):
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.__config__.validate_assignment:
-            value_, error_ = self.fields[name].validate(value, self.dict(exclude={name}), loc=name)
-            if error_:
-                raise ValidationError([error_], type(self))
-            else:
-                self.__dict__[name] = value_
-                self.__fields_set__.add(name)
-        else:
-            self.__dict__[name] = value
-            self.__fields_set__.add(name)
+            known_field = self.fields.get(name, None)
+            if known_field:
+                value, error_ = known_field.validate(value, self.dict(exclude={name}), loc=name)
+                if error_:
+                    raise ValidationError([error_], type(self))
+        self.__dict__[name] = value
+        self.__fields_set__.add(name)
 
     def __getstate__(self) -> 'DictAny':
         return {'__dict__': self.__dict__, '__fields_set__': self.__fields_set__}
