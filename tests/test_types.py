@@ -368,6 +368,7 @@ class BoolCastable:
         ('bool_check', b'2', ValidationError),
         ('bool_check', '2', ValidationError),
         ('bool_check', 2, ValidationError),
+        ('bool_check', b'\x81', ValidationError),
         ('bool_check', BoolCastable(), ValidationError),
         ('str_check', 's', 's'),
         ('str_check', '  s  ', 's'),
