@@ -7,10 +7,10 @@ class BooleansModel(BaseModel):
 
 
 print(BooleansModel(standard=False, strict=False))
-# BooleansModel relaxed=False standard=False strict=False
+# BooleansModel standard=False strict=False
 
 print(BooleansModel(standard='False', strict=False))
-# BooleansModel relaxed=True standard=False strict=False
+# BooleansModel standard=False strict=False
 
 try:
     BooleansModel(standard='False', strict='False')
@@ -23,7 +23,7 @@ strict
 """
 
 print(BooleansModel(standard='False', strict=False))
-# BooleansModel relaxed=False standard=False strict=False
+# BooleansModel standard=False strict=False
 try:
     BooleansModel(standard=[], strict=False)
 except ValidationError as e:
