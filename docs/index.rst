@@ -586,7 +586,7 @@ Booleans
 .. warning::
 
     The logic for parsing ``bool`` fields has changed as of version v1.
-    Prior to v0.31, ``bool`` fields would be parsed by simply mapping ``value`` to ``bool(value)``.
+    Prior to v1, ``bool`` fields would be parsed by simply mapping ``value`` to ``bool(value)``.
     The new logic is described below.
 
 A standard ``bool`` field will raise a ``ValidationError`` if the value is not one of the following:
