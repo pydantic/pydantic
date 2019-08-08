@@ -1000,13 +1000,13 @@ def test_relaxed_bool():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=NonBoolCastable1())
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'value could not be coerced to a boolean', 'type': 'value_error.relaxedbool'}
+        {'loc': ('v',), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=NonBoolCastable2())
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'value could not be coerced to a boolean', 'type': 'value_error.relaxedbool'}
+        {'loc': ('v',), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
     ]
 
 

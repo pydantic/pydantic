@@ -39,9 +39,6 @@ class Model(BaseModel):
     email_address: EmailStr = None
     email_and_name: NameEmail = None
 
-    can_cast_to_bool: RelaxedBool = None
-    is_really_a_bool: StrictBool = None
-
     url: UrlStr = None
 
     password: SecretStr = None
@@ -97,8 +94,6 @@ m = Model(
     short_list=[1, 2],
     email_address='Samuel Colvin <s@muelcolvin.com >',
     email_and_name='Samuel Colvin <s@muelcolvin.com >',
-    can_cast_to_bool=7
-    is_really_a_bool=True,
     url='http://example.com',
     password='password',
     password_bytes=b'password2',

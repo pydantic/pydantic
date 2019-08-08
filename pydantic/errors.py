@@ -364,9 +364,5 @@ class ColorError(PydanticValueError):
     msg_template = 'value is not a valid color: {reason}'
 
 
-class RelaxedBoolError(PydanticValueError):
-    msg_template = 'value could not be coerced to a boolean'
-
-
 class StrictBoolError(PydanticValueError):
     msg_template = 'value is not a valid boolean'

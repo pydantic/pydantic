@@ -255,7 +255,7 @@ class RelaxedBool(int):
 
     @classmethod
     def validate(cls, value: Any) -> bool:
-        with change_exception(errors.RelaxedBoolError, TypeError, ValueError):
+        with change_exception(errors.BoolError, TypeError, ValueError):
             return bool(value)
 
 
