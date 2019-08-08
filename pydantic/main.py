@@ -285,7 +285,7 @@ class BaseModel(metaclass=MetaModel):
         elif self.__config__.validate_assignment:
             known_field = self.fields.get(name, None)
             if known_field:
-                value_, error_ = known_field.validate(value, self.dict(exclude={name}), loc=name)
+                value, error_ = known_field.validate(value, self.dict(exclude={name}), loc=name)
                 if error_:
                     raise ValidationError([error_], type(self))
         self.__dict__[name] = value
