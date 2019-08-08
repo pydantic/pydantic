@@ -3,11 +3,11 @@
 History
 -------
 
-v0.32.1 (unreleased)
+v0.32.1 (2019-08-08)
 ....................
-* do not validate extra fields when `vaidate_assignment` is on, #724 by @YaraslauZhylko
+* do not validate extra fields when ``validate_assignment`` is on, #724 by @YaraslauZhylko
 
-v0.32 (2019-08-08)
+v0.32 (2019-08-06)
 ..................
 * add model name to ``ValidationError`` error message, #676 by @dmontagu
 * **breaking change**: remove ``__getattr__`` and rename ``__values__`` to ``__dict__`` on ``BaseModel``,
