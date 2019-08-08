@@ -5,7 +5,7 @@ from pathlib import Path
 from uuid import UUID
 
 from pydantic import (DSN, UUID1, UUID3, UUID4, UUID5, BaseModel, DirectoryPath, EmailStr, FilePath, NameEmail,
-                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, RelaxedBool, StrictBool, UrlStr, conbytes, condecimal,
+                      NegativeFloat, NegativeInt, PositiveFloat, PositiveInt, PyObject, UrlStr, conbytes, condecimal,
                       confloat, conint, conlist, constr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, SecretStr, SecretBytes)
 
 

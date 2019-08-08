@@ -596,10 +596,6 @@ A standard ``bool`` field will raise a ``ValidationError`` if the value is not o
 * a ``str`` which when lowercased is in ``{'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'}``
 * a ``bytes`` which is valid (per the previous rule) when decoded to ``str``
 
-If you want more permissive behavior, ``RelaxedBool`` can be used to cast values to bool using standard python logic.
-For example, a ``RelaxedBool`` field will cast ``None`` to ``False``, and will cast ``'False'`` to ``True``.
-Note that this behaves differently than the standard ``bool`` field, which would cast ``'False'`` to ``False``.
-
 For stricter behavior, ``StrictBool`` can be used to require specifically ``True`` or ``False``;
 nothing else is permitted.
 

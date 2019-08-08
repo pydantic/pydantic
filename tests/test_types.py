@@ -29,7 +29,6 @@ from pydantic import (
     PositiveFloat,
     PositiveInt,
     PyObject,
-    RelaxedBool,
     SecretBytes,
     SecretStr,
     StrictBool,
@@ -973,41 +972,6 @@ def test_strict_str():
 
     with pytest.raises(ValidationError):
         Model(v=b'foobar')
-
-
-def test_relaxed_bool():
-    class NonBoolCastable1:
-        def __bool__(self):
-            return 'bad'
-
-    class NonBoolCastable2:
-        def __bool__(self):
-            raise ValueError
-
-    class Model(BaseModel):
-        v: RelaxedBool
-
-    assert Model(v=True).v is True
-    assert Model(v='a').v is True
-    assert Model(v=2).v is True
-    assert Model(v=[1]).v is True
-    assert Model(v=False).v is False
-    assert Model(v='').v is False
-    assert Model(v={}).v is False
-    assert Model(v=[]).v is False
-    assert Model(v=None).v is False
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v=NonBoolCastable1())
-    assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v=NonBoolCastable2())
-    assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
-    ]
 
 
 def test_strict_bool():

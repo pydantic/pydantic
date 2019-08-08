@@ -1,20 +1,19 @@
-from pydantic import BaseModel, RelaxedBool, StrictBool, ValidationError
+from pydantic import BaseModel, StrictBool, ValidationError
 
 
 class BooleansModel(BaseModel):
-    relaxed: RelaxedBool
     standard: bool
     strict: StrictBool
 
 
-print(BooleansModel(relaxed=False, standard=False, strict=False))
+print(BooleansModel(standard=False, strict=False))
 # BooleansModel relaxed=False standard=False strict=False
 
-print(BooleansModel(relaxed='False', standard='False', strict=False))
+print(BooleansModel(standard='False', strict=False))
 # BooleansModel relaxed=True standard=False strict=False
 
 try:
-    BooleansModel(relaxed='False', standard='False', strict='False')
+    BooleansModel(standard='False', strict='False')
 except ValidationError as e:
     print(str(e))
 """
@@ -23,10 +22,10 @@ strict
   value is not a valid boolean (type=value_error.strictbool)
 """
 
-print(BooleansModel(relaxed=[], standard='False', strict=False))
+print(BooleansModel(standard='False', strict=False))
 # BooleansModel relaxed=False standard=False strict=False
 try:
-    BooleansModel(relaxed=[], standard=[], strict=False)
+    BooleansModel(standard=[], strict=False)
 except ValidationError as e:
     print(str(e))
 """
