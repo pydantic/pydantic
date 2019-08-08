@@ -127,31 +127,7 @@ EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/#model-config'
 
 
 def set_extra(config: Type[BaseConfig], cls_name: str) -> None:
-    has_ignore_extra, has_allow_extra = hasattr(config, 'ignore_extra'), hasattr(config, 'allow_extra')
-    if has_ignore_extra or has_allow_extra:
-        if getattr(config, 'allow_extra', False):
-            config.extra = Extra.allow
-        elif getattr(config, 'ignore_extra', True):
-            config.extra = Extra.ignore
-        else:
-            config.extra = Extra.forbid
-
-        if has_ignore_extra and has_allow_extra:
-            warnings.warn(
-                f'{cls_name}: "ignore_extra" and "allow_extra" are deprecated and replaced by "extra", '
-                f'see {EXTRA_LINK}',
-                DeprecationWarning,
-            )
-        elif has_ignore_extra:
-            warnings.warn(
-                f'{cls_name}: "ignore_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}',
-                DeprecationWarning,
-            )
-        else:
-            warnings.warn(
-                f'{cls_name}: "allow_extra" is deprecated and replaced by "extra", see {EXTRA_LINK}', DeprecationWarning
-            )
-    elif not isinstance(config.extra, Extra):
+    if not isinstance(config.extra, Extra):
         try:
             config.extra = Extra(config.extra)
         except ValueError:

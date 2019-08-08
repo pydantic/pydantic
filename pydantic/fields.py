@@ -1,4 +1,3 @@
-import warnings
 from enum import IntEnum
 from typing import (
     TYPE_CHECKING,
@@ -272,12 +271,6 @@ class Field:
         class_validators_ = self.class_validators.values()
         if not self.sub_fields:
             get_validators = getattr(self.type_, '__get_validators__', None)
-            if not get_validators:
-                get_validators = getattr(self.type_, 'get_validators', None)
-                if get_validators:
-                    warnings.warn(
-                        f'get_validators has been replaced by __get_validators__ (on {self.name})', DeprecationWarning
-                    )
             v_funcs = (
                 *[v.func for v in class_validators_ if not v.whole and v.pre],
                 *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
