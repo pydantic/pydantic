@@ -470,11 +470,11 @@ class BaseModel(metaclass=MetaModel):
         return self.__fields__
 
     @classmethod
-    def schema(cls, by_alias: bool = True) -> 'DictStrAny':
+    def schema(cls, by_alias: bool = True, ref_prefix: Optional[str] = None) -> 'DictStrAny':
         cached = cls._schema_cache.get(by_alias)
         if cached is not None:
             return cached
-        s = model_schema(cls, by_alias=by_alias)
+        s = model_schema(cls, by_alias=by_alias, ref_prefix=ref_prefix)
         cls._schema_cache[by_alias] = s
         return s
 
