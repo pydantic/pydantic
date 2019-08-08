@@ -585,7 +585,7 @@ Booleans
 
 .. warning::
 
-    The logic for parsing ``bool`` fields has changed as of version v0.31.
+    The logic for parsing ``bool`` fields has changed as of version v1.
     Prior to v0.31, ``bool`` fields would be parsed by simply mapping ``value`` to ``bool(value)``.
     The new logic is described below.
 
