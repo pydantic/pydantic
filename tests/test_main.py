@@ -806,3 +806,18 @@ def test_custom_types_fail_without_keep_untouched():
     with pytest.raises(AttributeError) as e:
         Model.class_name
     assert str(e.value) == "type object 'Model' has no attribute 'class_name'"
+
+
+def test_model_iteration():
+    class Foo(BaseModel):
+        a: int = 1
+        b: int = 2
+
+    class Bar(BaseModel):
+        c: int
+        d: Foo
+
+    m = Bar(c=3, d={})
+    assert m.dict() == {'c': 3, 'd': {'a': 1, 'b': 2}}
+    assert list(m) == [('c', 3), ('d', Foo())]
+    assert dict(m) == {'c': 3, 'd': Foo()}
