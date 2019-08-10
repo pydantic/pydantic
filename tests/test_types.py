@@ -316,22 +316,59 @@ class CheckModel(BaseModel):
         max_anystr_length = 10
 
 
+class BoolCastable:
+    def __bool__(self) -> bool:
+        return True
+
+
 @pytest.mark.parametrize(
     'field,value,result',
     [
         ('bool_check', True, True),
-        ('bool_check', False, False),
-        ('bool_check', None, False),
-        ('bool_check', '', False),
         ('bool_check', 1, True),
-        ('bool_check', 'TRUE', True),
-        ('bool_check', b'TRUE', True),
-        ('bool_check', 'true', True),
-        ('bool_check', '1', True),
-        ('bool_check', '2', False),
-        ('bool_check', 2, True),
-        ('bool_check', 'on', True),
+        ('bool_check', 'y', True),
+        ('bool_check', 'Y', True),
         ('bool_check', 'yes', True),
+        ('bool_check', 'Yes', True),
+        ('bool_check', 'YES', True),
+        ('bool_check', 'true', True),
+        ('bool_check', 'True', True),
+        ('bool_check', 'TRUE', True),
+        ('bool_check', 'on', True),
+        ('bool_check', 'On', True),
+        ('bool_check', 'ON', True),
+        ('bool_check', '1', True),
+        ('bool_check', 't', True),
+        ('bool_check', 'T', True),
+        ('bool_check', b'TRUE', True),
+        ('bool_check', False, False),
+        ('bool_check', 0, False),
+        ('bool_check', 'n', False),
+        ('bool_check', 'N', False),
+        ('bool_check', 'no', False),
+        ('bool_check', 'No', False),
+        ('bool_check', 'NO', False),
+        ('bool_check', 'false', False),
+        ('bool_check', 'False', False),
+        ('bool_check', 'FALSE', False),
+        ('bool_check', 'off', False),
+        ('bool_check', 'Off', False),
+        ('bool_check', 'OFF', False),
+        ('bool_check', '0', False),
+        ('bool_check', 'f', False),
+        ('bool_check', 'F', False),
+        ('bool_check', b'FALSE', False),
+        ('bool_check', None, ValidationError),
+        ('bool_check', '', ValidationError),
+        ('bool_check', [], ValidationError),
+        ('bool_check', {}, ValidationError),
+        ('bool_check', [1, 2, 3, 4], ValidationError),
+        ('bool_check', {1: 2, 3: 4}, ValidationError),
+        ('bool_check', b'2', ValidationError),
+        ('bool_check', '2', ValidationError),
+        ('bool_check', 2, ValidationError),
+        ('bool_check', b'\x81', ValidationError),
+        ('bool_check', BoolCastable(), ValidationError),
         ('str_check', 's', 's'),
         ('str_check', '  s  ', 's'),
         ('str_check', b's', 's'),
@@ -952,6 +989,17 @@ def test_strict_bool():
 
     with pytest.raises(ValidationError):
         Model(v=b'1')
+
+
+def test_bool_unhashable_fails():
+    class Model(BaseModel):
+        v: bool
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v={})
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
+    ]
 
 
 def test_uuid_error():
