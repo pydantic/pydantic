@@ -586,14 +586,15 @@ Booleans
 .. warning::
 
     The logic for parsing ``bool`` fields has changed as of version v1.
-    Prior to v1, ``bool`` fields would be parsed by simply mapping ``value`` to ``bool(value)``.
+    Prior to v1, ``bool`` parsing never failed, leading to some unexpected results.
     The new logic is described below.
 
 A standard ``bool`` field will raise a ``ValidationError`` if the value is not one of the following:
 
 * A valid boolean (i.e., ``True`` or ``False``),
 * The integers ``0`` or ``1``,
-* a ``str`` which when lowercased is in ``{'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'}``
+* a ``str`` which when converted to lower case is one of
+  ``'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'``
 * a ``bytes`` which is valid (per the previous rule) when decoded to ``str``
 
 For stricter behavior, ``StrictBool`` can be used to require specifically ``True`` or ``False``;

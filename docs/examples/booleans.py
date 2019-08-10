@@ -1,10 +1,8 @@
 from pydantic import BaseModel, StrictBool, ValidationError
 
-
 class BooleansModel(BaseModel):
     standard: bool
     strict: StrictBool
-
 
 print(BooleansModel(standard=False, strict=False))
 # BooleansModel standard=False strict=False
