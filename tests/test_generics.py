@@ -369,3 +369,26 @@ def test_complex_nesting():
     item = [{1: 'a', 'a': 'a'}]
     model = MyModel[str](item=item)
     assert model.item == item
+
+
+@skip_36
+def test_required_value():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        a: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyModel[int]()
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+@skip_36
+def test_optional_value():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        a: Optional[int] = 1
+
+    model = MyModel[int]()
+    assert model.dict() == {'a': 1}
