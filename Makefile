@@ -38,8 +38,7 @@ test:
 
 .PHONY: external-mypy
 external-mypy:
-	@echo "testing simple example with mypy (and python to check it's sane)..."
-	python tests/mypy/success.py
+	@echo "testing simple example with mypy..."
 	mypy tests/mypy/success.py
 	@echo "checking code with incorrect types fails..."
 	@mypy tests/mypy/fail1.py 1>/dev/null; \

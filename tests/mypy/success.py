@@ -41,12 +41,14 @@ assert m.list_of_ints == [1, 2, 3], m.list_of_ints
 dog_age = dog_years(m.age)
 assert dog_age == 294, dog_age
 
+
 m = Model(age=2, first_name=b'Woof', last_name=b'Woof', signup_ts='2017-06-07 00:00', list_of_ints=[1, '2', b'3'])
 
 assert m.first_name == 'Woof', m.first_name
 assert m.last_name == 'Woof', m.last_name
 assert m.signup_ts == datetime(2017, 6, 7), m.signup_ts
 assert day_of_week(m.signup_ts) == 3
+
 
 data = {'age': 10, 'first_name': 'Alena', 'last_name': 'Sousova', 'list_of_ints': [410]}
 m_from_obj = Model.parse_obj(data)
@@ -82,6 +84,7 @@ class AddProject:
 
 
 p = AddProject(name='x', slug='y', description='z')
+
 
 if sys.version_info >= (3, 7):
     T = TypeVar('T')
