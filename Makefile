@@ -34,6 +34,7 @@ mypy:
 
 .PHONY: test
 test:
+	@python tests/try_assert.py
 	pytest --cov=pydantic
 
 .PHONY: external-mypy

@@ -645,11 +645,14 @@ def test_assert_raises_validation_error():
 
         @validator('a')
         def check_a(cls, v):
-            assert False, 'invalid a'
+            assert v == 'a', 'invalid a'
+            return v
+
+    Model(a='a')
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    injected_by_pytest = '\nassert False'
+    injected_by_pytest = "\nassert 'snap' == 'a'\n  - snap\n  + a"
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
     ]
