@@ -486,3 +486,22 @@ def test_classvar():
 
     tcv = TestClassVar(2)
     assert tcv.klassvar == "I'm a Class variable"
+
+
+def test_inheritance_post_init():
+    post_init_called = False
+
+    @pydantic.dataclasses.dataclass
+    class Base:
+        a: int
+
+        def __post_init__(self):
+            nonlocal post_init_called
+            post_init_called = True
+
+    @pydantic.dataclasses.dataclass
+    class Child(Base):
+        b: int
+
+    Child(a=1, b=2)
+    assert post_init_called

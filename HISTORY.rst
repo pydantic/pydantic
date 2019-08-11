@@ -3,6 +3,10 @@
 History
 -------
 
+v0.32.2 (unreleased)
+....................
+* fix ``__post_init__`` usage with dataclass inheritance, fix #739 by @samuelcolvin
+
 v0.32.1 (2019-08-08)
 ....................
 * do not validate extra fields when ``validate_assignment`` is on, #724 by @YaraslauZhylko
