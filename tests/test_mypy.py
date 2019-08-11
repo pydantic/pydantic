@@ -38,7 +38,19 @@ expected_successes = [('tests/mypy/success.py', ('', '', 0))]
 @pytest.mark.parametrize('filename,expected_result', expected_successes + expected_fails)
 def test_mypy_results(filename, expected_result):
     actual_result = api.run([filename, '--config-file', 'tests/mypy/mypy-default.ini'])
-    assert actual_result == expected_result
+
+    expected_out, expected_err, expected_returncode = expected_result
+    actual_out, actual_err, actual_returncode = actual_result
+    assert (expected_err, expected_returncode) == (actual_err, actual_returncode)
+
+    # Need to remove filenames, as they render differently on mac/linux and windows:
+    actual_out_lines = actual_out.split('\n')
+    expected_out_lines = expected_out.split('\n')
+    assert len(actual_out_lines) == len(expected_out_lines)
+    for actual_line, expected_line in zip(actual_out_lines, expected_out_lines):
+        actual_line_without_filename = '.py'.join(actual_line.split('.py')[1:])
+        expected_line_without_filename = '.py'.join(expected_line.split('.py')[1:])
+        assert actual_line_without_filename == expected_line_without_filename
 
 
 success_imports = [re.sub('/', '.', filename)[:-3] for filename, _ in expected_successes]
