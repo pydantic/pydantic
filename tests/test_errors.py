@@ -1,9 +1,13 @@
-from typing import Union
+from typing import Optional, Union
 
 import pytest
-from typing_extensions import Literal
 
 from pydantic import BaseModel, PydanticTypeError, ValidationError, validator
+
+try:
+    from typing_extensions import Literal
+except ImportError:
+    Literal = None
 
 
 def test_pydantic_error():
@@ -19,6 +23,7 @@ def test_pydantic_error():
     assert str(exc_info.value) == 'test message template "test_value"'
 
 
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_interval_validation_error():
     class Foo(BaseModel):
         model_type: Literal['foo']
@@ -54,3 +59,23 @@ def test_interval_validation_error():
     assert exc_info.value.errors() == [
         {'loc': ('foobar', 'f'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
+
+
+def test_error_on_optional():
+    class Foobar(BaseModel):
+        foo: Optional[str] = None
+
+        @validator('foo', always=True, whole=True)
+        def check_foo(cls, v):
+            raise ValueError('custom error')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(foo='x')
+    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'custom error', 'type': 'value_error'}]
+    assert repr(exc_info.value.raw_errors[0]) == (
+        "<ErrorWrapper {'loc': ('foo',), 'msg': 'custom error', 'type': 'value_error'}>"
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(foo=None)
+    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'custom error', 'type': 'value_error'}]

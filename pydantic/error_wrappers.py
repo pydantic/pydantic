@@ -42,6 +42,9 @@ class ErrorWrapper:
 
         return d
 
+    def __repr__(self) -> str:
+        return f'<ErrorWrapper {self.dict()}>'
+
 
 # ErrorList is something like Union[List[Union[List[ErrorWrapper], ErrorWrapper]], ErrorWrapper]
 # but recursive, therefore just use:
