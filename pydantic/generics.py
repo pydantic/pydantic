@@ -2,6 +2,7 @@ from typing import Any, ClassVar, Dict, Generic, Tuple, Type, TypeVar, Union, ge
 
 from pydantic import BaseModel, create_model
 from pydantic.class_validators import gather_validators
+from pydantic.fields import Required
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
@@ -43,7 +44,9 @@ class GenericModel(BaseModel):
         model_name = concrete_name(cls, params)
         validators = gather_validators(cls)
         fields: Dict[str, Tuple[Type[Any], Any]] = {
-            k: (v, cls.__fields__[k].default) for k, v in concrete_type_hints.items() if k in cls.__fields__
+            k: (v, cls.__fields__[k].default if not cls.__fields__[k].required else Required)
+            for k, v in concrete_type_hints.items()
+            if k in cls.__fields__
         }
         created_model = create_model(
             model_name=model_name,
