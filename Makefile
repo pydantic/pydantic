@@ -44,7 +44,13 @@ external-mypy:
 	@echo "checking code with incorrect types fails..."
 	@mypy tests/mypy/fail1.py 1>/dev/null; \
 	  test $$? -eq 1 || \
-	  (echo "mypy_test_fails1: mypy passed when it should have failed!"; exit 1)
+	  (echo "mypy/fail1: mypy passed when it should have failed!"; exit 1)
+	@mypy tests/mypy/fail2.py 1>/dev/null; \
+	  test $$? -eq 1 || \
+	  (echo "mypy/fail2: mypy passed when it should have failed!"; exit 1)
+	@mypy tests/mypy/fail3.py 1>/dev/null; \
+	  test $$? -eq 1 || \
+	  (echo "mypy/fail3: mypy passed when it should have failed!"; exit 1)
 
 .PHONY: testcov
 testcov: test

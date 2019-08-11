@@ -6,6 +6,11 @@ from pathlib import Path
 import pytest
 from mypy import api
 
+try:
+    import typing_extensions
+except ImportError:
+    typing_extensions = None
+
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent)
 
@@ -29,6 +34,7 @@ expected_fails = [
 expected_successes = [('tests/mypy/success.py', ('', '', 0))]
 
 
+@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
 @pytest.mark.parametrize('filename,expected_result', expected_successes + expected_fails)
 def test_mypy_results(filename, expected_result):
     actual_result = api.run([filename, '--config-file', 'tests/mypy/mypy-default.ini'])
