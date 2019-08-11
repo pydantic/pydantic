@@ -391,4 +391,4 @@ def test_optional_value():
         a: Optional[int] = 1
 
     model = MyModel[int]()
-    assert model.dict() == {"a": 1}
+    assert model.dict() == {'a': 1}
