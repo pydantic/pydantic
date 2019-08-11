@@ -39,18 +39,12 @@ test:
 .PHONY: external-mypy
 external-mypy:
 	@echo "testing simple example with mypy (and python to check it's sane)..."
-	python tests/mypy_test_success.py
-	mypy tests/mypy_test_success.py
+	python tests/mypy/success.py
+	mypy tests/mypy/success.py
 	@echo "checking code with incorrect types fails..."
-	@mypy tests/mypy_test_fails1.py 1>/dev/null; \
+	@mypy tests/mypy/fail1.py 1>/dev/null; \
 	  test $$? -eq 1 || \
 	  (echo "mypy_test_fails1: mypy passed when it should have failed!"; exit 1)
-	@mypy tests/mypy_test_fails2.py 1>/dev/null; \
-	  test $$? -eq 1 || \
-	  (echo "mypy_test_fails2: mypy passed when it should have failed!"; exit 1)
-	@mypy tests/mypy_test_fails3.py 1>/dev/null; \
-	  test $$? -eq 1 || \
-	  (echo "mypy_test_fails3: mypy passed when it should have failed!"; exit 1)
 
 .PHONY: testcov
 testcov: test
