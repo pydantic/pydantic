@@ -62,9 +62,12 @@ def _process_class(
     config: Type['BaseConfig'],
 ) -> 'DataclassType':
     post_init_original = getattr(_cls, '__post_init__', None)
-    post_init_post_parse = getattr(_cls, '__post_init_post_parse__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
+    if not post_init_original:
+        post_init_original = getattr(_cls, '__post_init_original__', None)
+
+    post_init_post_parse = getattr(_cls, '__post_init_post_parse__', None)
 
     def _pydantic_post_init(self: 'DataclassType', *initvars: Any) -> None:
         if post_init_original is not None:
@@ -91,6 +94,8 @@ def _process_class(
     cls.__initialised__ = False
     cls.__validate__ = classmethod(_validate_dataclass)
     cls.__get_validators__ = classmethod(_get_validators)
+    if post_init_original:
+        cls.__post_init_original__ = post_init_original
 
     if cls.__pydantic_model__.__config__.validate_assignment and not frozen:
         cls.__setattr__ = setattr_validate_assignment
