@@ -1,9 +1,6 @@
 """
 This test is executed separately due to pytest's assertion-rewriting
 """
-import sys
-from typing import List
-
 from pydantic import BaseModel, ValidationError, validator
 
 
@@ -26,16 +23,9 @@ def test_assert_raises_validation_error():
     except ValidationError as exc:
         actual_errors = exc.errors()
         if actual_errors != expected_errors:
-            description = [f'Actual errors: {actual_errors}', f'Expected errors: {expected_errors}']
-            fail_test(test_name, description)
+            raise RuntimeError(f"{test_name}:\nActual errors: {actual_errors}\nExpected errors: {expected_errors}")
     else:
-        fail_test(test_name, ['ValidationError was not raised'])
-
-
-def fail_test(test_name: str, description: List[str]):
-    print(f'{__file__}: failure in {test_name}')
-    print('\n'.join(['    ' + line for line in description]))
-    sys.exit(1)
+        raise RuntimeError(f"{test_name}: ValidationError was not raised")
 
 
 if __name__ == '__main__':

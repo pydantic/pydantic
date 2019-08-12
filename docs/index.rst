@@ -197,7 +197,9 @@ A few things to note on validators:
 * validators should either return the new value or raise a ``ValueError``, ``TypeError``, or ``AssertionError``
   (``assert`` statements may be used).
 
-  * If you make use of ``assert`` statements, keep in mind that running
+.. warning::
+
+    If you make use of ``assert`` statements, keep in mind that running
     Python with the ``-O`` `optimization flag <https://docs.python.org/3/using/cmdline.html#cmdoption-o>`_
     disables ``assert`` statements, and **validators will stop working**.
 
