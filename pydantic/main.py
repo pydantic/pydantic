@@ -175,29 +175,33 @@ class MetaModel(ABCMeta):
                 f.prepare()
 
         set_extra(config, name)
-        annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
 
         class_vars = set()
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
+            annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
+            untouched_types = UNTOUCHED_TYPES + config.keep_untouched
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
                     class_vars.add(ann_name)
-                elif is_valid_field(ann_name) and ann_name not in namespace:
+                elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
+                    value = namespace.get(ann_name, ...)
+                    if isinstance(value, untouched_types) and ann_type != PyObject:
+                        continue
                     fields[ann_name] = Field.infer(
                         name=ann_name,
-                        value=...,
+                        value=value,
                         annotation=ann_type,
                         class_validators=vg.get_validators(ann_name),
                         config=config,
                     )
 
-            untouched_types = UNTOUCHED_TYPES + config.keep_untouched
             for var_name, value in namespace.items():
                 if (
-                    is_valid_field(var_name)
-                    and (annotations.get(var_name) == PyObject or not isinstance(value, untouched_types))
+                    var_name not in annotations
+                    and is_valid_field(var_name)
+                    and not isinstance(value, untouched_types)
                     and var_name not in class_vars
                 ):
                     validate_field_name(bases, var_name)

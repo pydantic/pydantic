@@ -6,7 +6,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Dict, Iterator, List, NewType, Pattern, Sequence, Set, Tuple
+from typing import Dict, Iterator, List, NewType, Optional, Pattern, Sequence, Set, Tuple
 from uuid import UUID
 
 import pytest
@@ -207,12 +207,12 @@ def test_constrained_str_too_long():
 
 
 class DsnModel(BaseModel):
-    db_name = 'foobar'
-    db_user = 'postgres'
+    db_name: Optional[str] = 'foobar'
+    db_user: Optional[str] = 'postgres'
     db_password: str = None
-    db_host = 'localhost'
-    db_port = '5432'
-    db_driver = 'postgres'
+    db_host: Optional[str] = 'localhost'
+    db_port: Optional[str] = '5432'
+    db_driver: str = 'postgres'
     db_query: dict = None
     dsn: DSN = None
 

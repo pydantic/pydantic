@@ -204,6 +204,12 @@ A few things to note on validators:
   - If validation fails on another field (or that field is missing) it will not be included in ``values``, hence
     ``if 'password1' in values and ...`` in this example.
 
+.. warning::
+
+   Be aware that mixing annotated and non-annotated fields may alter the order of your fields in metadata and errors,
+   and for validation: annotated fields will always come before non-annotated fields.
+   (Within each group fields remain in the order they were defined.)
+
 
 .. note::
 
@@ -916,11 +922,6 @@ Required Fields and mypy
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ellipsis notation ``...`` will not work with mypy, you need to use annotation only fields as in the example above.
-
-.. warning::
-
-   Be aware that using annotation only fields will alter the order of your fields in metadata and errors:
-   annotation only fields will always come first, but still in the order they were defined.
 
 To get round this you can use the ``Required`` (via ``from pydantic import Required``) field as an alias for
 ellipses or annotation only.
