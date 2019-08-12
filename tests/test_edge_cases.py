@@ -930,3 +930,14 @@ def test_init_inspection():
             super().__init__(**data)
 
     Foobar(x=1)
+
+
+def test_ignored_type():
+    def foobar():
+        pass
+
+    class Model(BaseModel):
+        a: int = foobar
+        b: int
+
+    assert Model.__fields__.keys() == {'b'}
