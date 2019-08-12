@@ -19,4 +19,3 @@ for name, value in m:
 #> banana: 3.14
 #> foo: hello
 #> bar: BarModel whatever=123
-
