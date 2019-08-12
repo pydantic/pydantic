@@ -941,23 +941,102 @@ a model.
 Trying to change ``a`` caused an error and it remains unchanged, however the dict ``b`` is mutable and the
 immutability of ``foobar`` doesn't stop being changed.
 
-Copying
-.......
+Exporting Models
+................
 
-The ``dict`` function returns a dictionary containing the attributes of a model. Sub-models are recursively
-converted to dicts, ``copy`` allows models to be duplicated, this is particularly useful for immutable models.
+As well as accessing model attributes directly via their names (eg. ``model.foobar``), models can be converted
+and exported in a number of ways:
 
+``model.dict(...)``
+~~~~~~~~~~~~~~~~~~~
 
-``dict``, ``copy``, and ``json`` (described :ref:`below <json_dump>`) all take the optional
-``include`` and ``exclude`` keyword arguments to control which attributes are returned or copied,
-respectively. ``copy`` accepts extra keyword arguments, ``update``, which accepts a ``dict`` mapping attributes
-to new values that will be applied as the model is duplicated and ``deep`` to make a deep copy of the model.
+The primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
-``dict`` and ``json`` take the optional ``skip_defaults`` keyword argument which will skip attributes that were
-not explicitly set. This is useful to reduce the serialized size of models thats have many default fields that
-are not often changed.
+Arguments:
 
-.. literalinclude:: examples/copy_dict.py
+* ``include``: fields to include in the returned dictionary, see :ref:`below <include_exclude>`
+* ``exclude``: fields to exclude from the returned dictionary, see :ref:`below <include_exclude>`
+* ``by_alias``: whether field aliases should be used as keys in the returned dictionary, default ``False``
+* ``skip_defaults``: whether fields which were not set when creating the model and have their default values should
+  be excluded from the returned dictionary, default ``False``
+
+Example:
+
+.. literalinclude:: examples/export_dict.py
+
+(This script is complete, it should run "as is")
+
+``dict(model)`` and iteration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*pydantic* models can also be converted to dictionaries using ``dict(model)``, you can also
+iterate over a model's field using ``for field_name, value in model:``. Here the raw field values are returned, eg.
+sub-models will not be converted to dictionaries.
+
+Example:
+
+.. literalinclude:: examples/export_iterate.py
+
+(This script is complete, it should run "as is")
+
+``model.copy(...)``
+~~~~~~~~~~~~~~~~~~~
+
+``copy()`` allows models to be duplicated, this is particularly useful for immutable models.
+
+Arguments:
+
+* ``include``: fields to include in the returned dictionary, see :ref:`below <include_exclude>`
+* ``exclude``: fields to exclude from the returned dictionary, see :ref:`below <include_exclude>`
+* ``update``: dictionaries of values to change when creating the new model
+* ``deep``: whether to make a deep copy of the new model, default ``False``
+
+Example:
+
+.. literalinclude:: examples/export_copy.py
+
+(This script is complete, it should run "as is")
+
+.. _json_dump:
+
+``model.json(...)``
+~~~~~~~~~~~~~~~~~~~
+
+The ``json()`` method will serialise a model to JSON, ``json()`` in turn calls ``dict()`` and serialises its result.
+
+Serialisation can be customised on a model using the ``json_encoders`` config property, the keys should be types and
+the values should be functions which serialise that type, see the example below.
+
+Arguments:
+
+* ``include``: fields to include in the returned dictionary, see :ref:`below <include_exclude>`
+* ``exclude``: fields to exclude from the returned dictionary, see :ref:`below <include_exclude>`
+* ``by_alias``: whether field aliases should be used as keys in the returned dictionary, default ``False``
+* ``skip_defaults``: whether fields which were not set when creating the model and have their default values should
+  be excluded from the returned dictionary, default ``False``
+* ``encoder``: a custom encoder function passed to the ``default`` argument of ``json.dumps()``, defaults to a custom
+  encoder designed to take care of all common types
+* ``**dumps_kwargs``: any other keyword argument are passed to ``json.dumps()``, eg. ``indent``.
+
+Example:
+
+.. literalinclude:: examples/export_json.py
+
+(This script is complete, it should run "as is")
+
+By default timedelta's are encoded as a simple float of total seconds. The ``timedelta_isoformat`` is provided
+as an optional alternative which implements ISO 8601 time diff encoding.
+
+``pickle.dumps(model)``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Using the same plumbing as ``copy()`` *pydantic* models support efficient pickling and unpicking.
+
+.. literalinclude:: examples/export_pickle.py
+
+(This script is complete, it should run "as is")
+
+.. _include_exclude:
 
 Advanced include and exclude
 ............................
@@ -974,41 +1053,6 @@ Of course same can be done on any depth level:
 .. literalinclude:: examples/advanced_exclude2.py
 
 Same goes for ``json`` and ``copy`` methods.
-
-Serialisation
-.............
-
-*pydantic* has native support for serialisation to **JSON** and **Pickle**, you can of course serialise to any
-other format you like by processing the result of ``dict()``.
-
-.. _json_dump:
-
-JSON Serialisation
-~~~~~~~~~~~~~~~~~~
-
-The ``json()`` method will serialise a model to JSON, ``json()`` in turn calls ``dict()`` and serialises its result.
-
-Serialisation can be customised on a model using the ``json_encoders`` config property, the keys should be types and
-the values should be functions which serialise that type, see the example below.
-
-If this is not sufficient, ``json()`` takes an optional ``encoder`` argument which allows complete control
-over how non-standard types are encoded to JSON.
-
-.. literalinclude:: examples/ex_json.py
-
-(This script is complete, it should run "as is")
-
-By default timedelta's are encoded as a simple float of total seconds. The ``timedelta_isoformat`` is provided
-as an optional alternative which implements ISO 8601 time diff encoding.
-
-Pickle Serialisation
-~~~~~~~~~~~~~~~~~~~~
-
-Using the same plumbing as ``copy()`` *pydantic* models support efficient pickling and unpicking.
-
-.. literalinclude:: examples/ex_pickle.py
-
-(This script is complete, it should run "as is")
 
 Abstract Base Classes
 .....................

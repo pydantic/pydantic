@@ -294,6 +294,7 @@ class BaseModel(metaclass=MetaModel):
         return {
             get_key(k): v
             for k, v in self._iter(
+                to_dict=True,
                 by_alias=by_alias,
                 allowed_keys=allowed_keys,
                 include=include,
@@ -544,7 +545,7 @@ class BaseModel(metaclass=MetaModel):
         for f in cls.__fields__.values():
             update_field_forward_refs(f, globalns=globalns, localns=localns)
 
-    def __iter__(self) -> 'AnyGenerator':
+    def __iter__(self) -> 'TupleGenerator':
         """
         so `dict(model)` works
         """
@@ -552,7 +553,7 @@ class BaseModel(metaclass=MetaModel):
 
     def _iter(
         self,
-        to_dict: bool = True,
+        to_dict: bool = False,
         by_alias: bool = False,
         allowed_keys: Optional['SetStr'] = None,
         include: Union['SetIntStr', 'DictIntStrAny'] = None,
