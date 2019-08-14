@@ -57,10 +57,10 @@ class BaseSettings(BaseModel):
         return d
 
     class Config:
-        env_prefix = 'APP_'
+        env_prefix = ''
         validate_all = True
         extra = Extra.forbid
         arbitrary_types_allowed = True
-        case_insensitive = False
+        case_insensitive = True
 
     __config__: Config  # type: ignore

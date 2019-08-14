@@ -9,6 +9,10 @@ from pydantic.env_settings import SettingsError
 class SimpleSettings(BaseSettings):
     apple: str
 
+    class Config:
+        env_prefix = 'APP_'
+        case_insensitive = False
+
 
 def test_sub_env(env):
     env.set('APP_APPLE', 'hello')
@@ -54,6 +58,10 @@ class ComplexSettings(BaseSettings):
     carrots: dict = {}
     date: DateModel = DateModel()
 
+    class Config:
+        env_prefix = 'APP_'
+        case_insensitive = False
+
 
 def test_list(env):
     env.set('APP_APPLES', '["russet", "granny smith"]')
@@ -84,7 +92,7 @@ def test_required_sub_model(env):
 
     with pytest.raises(ValidationError):
         Settings()
-    env.set('APP_FOOBAR', '{"pips": "TRUE"}')
+    env.set('FOOBAR', '{"pips": "TRUE"}')
     s = Settings()
     assert s.foobar.pips is True
 
@@ -93,7 +101,7 @@ def test_non_class(env):
     class Settings(BaseSettings):
         foobar: NoneStr
 
-    env.set('APP_FOOBAR', 'xxx')
+    env.set('FOOBAR', 'xxx')
     s = Settings()
     assert s.foobar == 'xxx'
 
@@ -116,6 +124,7 @@ def test_case_insensitive(env):
         bAR: str
 
         class Config:
+            env_prefix="APP_"
             case_insensitive = True
 
     env.set('apP_foO', 'foo')
@@ -123,6 +132,18 @@ def test_case_insensitive(env):
     s = Settings()
     assert s.foo == 'foo'
     assert s.bAR == 'bar'
+
+def test_case_sensitive(env):
+    class Settings(BaseSettings):
+        foo: str
+
+        class Config:
+            case_insensitive = False
+
+    env.set('Foo', 'foo')
+    with pytest.raises(ValidationError) as exc_info:
+        Settings()
+    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 def test_nested_dataclass(env):
@@ -134,7 +155,7 @@ def test_nested_dataclass(env):
     class Settings(BaseSettings):
         n: MyDataclass
 
-    env.set('APP_N', '[123, "bar value"]')
+    env.set('N', '[123, "bar value"]')
     s = Settings()
     assert isinstance(s.n, MyDataclass)
     assert s.n.foo == 123
@@ -149,7 +170,7 @@ def test_config_file_settings(env):
         def _build_values(self, init_kwargs):
             return {**init_kwargs, **self._build_environ()}
 
-    env.set('APP_BAR', 'env setting')
+    env.set('BAR', 'env setting')
 
     s = Settings(foo='123', bar='argument')
     assert s.foo == 123
@@ -170,7 +191,7 @@ def test_config_file_settings_nornir(env):
             config_settings = init_kwargs.pop('__config_settings__')
             return {**config_settings, **init_kwargs, **self._build_environ()}
 
-    env.set('APP_C', 'env setting c')
+    env.set('C', 'env setting c')
 
     config = {'a': 'config a', 'b': 'config b', 'c': 'config c'}
     s = Settings(__config_settings__=config, b='argument b', c='argument c')
