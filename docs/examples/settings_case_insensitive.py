@@ -5,4 +5,4 @@ class Settings(BaseSettings):
     redis_host = 'localhost'
 
     class Config:
-        case_insensitive = True
+        case_insensitive = False

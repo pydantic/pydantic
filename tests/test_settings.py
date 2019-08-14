@@ -124,7 +124,7 @@ def test_case_insensitive(env):
         bAR: str
 
         class Config:
-            env_prefix="APP_"
+            env_prefix = 'APP_'
             case_insensitive = True
 
     env.set('apP_foO', 'foo')
@@ -132,6 +132,7 @@ def test_case_insensitive(env):
     s = Settings()
     assert s.foo == 'foo'
     assert s.bAR == 'bar'
+
 
 def test_case_sensitive(env):
     class Settings(BaseSettings):
