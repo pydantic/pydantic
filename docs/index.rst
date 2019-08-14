@@ -872,6 +872,13 @@ Case-sensitivity can be turned on through the ``Config``:
 When ``case_insensitive`` is ``False``, the environment variable must be in all-caps,
 so in this example ``redis_host`` could only be modified via ``export REDIS_HOST``.
 
+.. warning::
+
+   On Windows, environment variables are always case insensitive, and python reads them as uppercase.
+   Therefore, if a setting has an alias with any lowercase characters, it will **not** be possible to
+   set it from the environment if ``case_insensitive`` is False.
+
+
 Dynamic model creation
 ......................
 

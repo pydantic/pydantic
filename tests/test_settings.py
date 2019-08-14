@@ -2,7 +2,7 @@ from typing import List, Set
 
 import pytest
 
-from pydantic import BaseModel, BaseSettings, NoneStr, ValidationError, dataclasses
+from pydantic import BaseModel, BaseSettings, NoneStr, ValidationError, dataclasses, Schema
 from pydantic.env_settings import SettingsError
 
 
@@ -136,12 +136,12 @@ def test_case_insensitive(env):
 
 def test_case_sensitive(env):
     class Settings(BaseSettings):
-        foo: str
+        foo: str = Schema(..., alias="foo")
 
         class Config:
             case_insensitive = False
 
-    env.set('Foo', 'foo')
+    env.set('FOO', 'foo')
     with pytest.raises(ValidationError) as exc_info:
         Settings()
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
