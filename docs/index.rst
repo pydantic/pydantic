@@ -857,9 +857,9 @@ Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` o
 By default ``BaseSettings`` considers field values in the following priority (where 3. has the highest priority
 and overrides the other two):
 
-1. The default values set in your ``Settings`` class
-2. Environment variables eg. ``MY_PREFIX_REDIS_PORT`` as described above.
-3. Argument passed to the ``Settings`` class on initialisation.
+1. The default values set in your ``Settings`` class.
+2. Environment variables, e.g. ``MY_PREFIX_REDIS_PORT`` as described above.
+3. Arguments passed to the ``Settings`` class on initialisation.
 
 This behaviour can be changed by overriding the ``_build_values`` method on ``BaseSettings``.
 
@@ -867,7 +867,7 @@ Complex types like ``list``, ``set``, ``dict`` and submodels can be set by using
 
 Case-sensitivity can be turned on through the ``Config``:
 
-.. literalinclude:: examples/settings_case_insensitive.py
+.. literalinclude:: examples/settings_case_sensitive.py
 
 When ``case_insensitive`` is ``False``, the environment variable must be in all-caps,
 so in this example ``redis_host`` could only be modified via ``export REDIS_HOST``.
