@@ -23,9 +23,9 @@ def test_assert_raises_validation_error():
     except ValidationError as exc:
         actual_errors = exc.errors()
         if actual_errors != expected_errors:
-            raise RuntimeError(f"{test_name}:\nActual errors: {actual_errors}\nExpected errors: {expected_errors}")
+            raise RuntimeError(f'{test_name}:\nActual errors: {actual_errors}\nExpected errors: {expected_errors}')
     else:
-        raise RuntimeError(f"{test_name}: ValidationError was not raised")
+        raise RuntimeError(f'{test_name}: ValidationError was not raised')
 
 
 if __name__ == '__main__':
