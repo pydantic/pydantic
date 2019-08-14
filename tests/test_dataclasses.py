@@ -442,6 +442,22 @@ def test_derived_field_from_initvar():
         DerivedWithInitVar('Not A Number')
 
 
+def test_initvars_post_init_post_parse():
+    post_init_post_parse_vars = None
+
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: int
+        var: dataclasses.InitVar[str]
+
+        def __post_init_post_parse__(self, var):
+            nonlocal post_init_post_parse_vars
+            post_init_post_parse_vars = var
+
+    MyDataclass('1', var='initvars')
+    assert post_init_post_parse_vars == 'initvars'
+
+
 def test_classvar():
     @pydantic.dataclasses.dataclass
     class TestClassVar:
