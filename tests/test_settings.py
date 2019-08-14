@@ -2,7 +2,7 @@ from typing import List, Set
 
 import pytest
 
-from pydantic import BaseModel, BaseSettings, NoneStr, ValidationError, dataclasses, Schema
+from pydantic import BaseModel, BaseSettings, NoneStr, Schema, ValidationError, dataclasses
 from pydantic.env_settings import SettingsError
 
 
