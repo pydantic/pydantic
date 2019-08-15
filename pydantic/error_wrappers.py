@@ -112,6 +112,8 @@ def flatten_errors(
 
 @lru_cache()
 def get_exc_type(cls: Type[Exception]) -> str:
+    if issubclass(cls, AssertionError):
+        return 'assertion_error'
 
     base_name = 'type_error' if issubclass(cls, TypeError) else 'value_error'
     if cls in (TypeError, ValueError):

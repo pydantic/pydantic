@@ -207,6 +207,7 @@ def test_errors_unknown_error_object():
     (
         (TypeError(), 'type_error'),
         (ValueError(), 'value_error'),
+        (AssertionError(), 'assertion_error'),
         (errors.DecimalIsNotFiniteError(), 'value_error.decimal.not_finite'),
     ),
 )

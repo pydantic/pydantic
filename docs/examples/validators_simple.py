@@ -3,6 +3,7 @@ from pydantic import BaseModel, ValidationError, validator
 
 class UserModel(BaseModel):
     name: str
+    username: str
     password1: str
     password2: str
 
@@ -16,6 +17,11 @@ class UserModel(BaseModel):
     def passwords_match(cls, v, values, **kwargs):
         if 'password1' in values and v != values['password1']:
             raise ValueError('passwords do not match')
+        return v
+
+    @validator('username')
+    def username_alphanumeric(cls, v):
+        assert v.isalpha(), 'must be alphanumeric'
         return v
 
 

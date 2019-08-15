@@ -637,3 +637,22 @@ def test_make_generic_validator_self():
     with pytest.raises(ConfigError) as exc_info:
         make_generic_validator(test_validator)
     assert ': (self, v), "self" not permitted as first argument, should be: (cls, value' in str(exc_info.value)
+
+
+def test_assert_raises_validation_error():
+    class Model(BaseModel):
+        a: str
+
+        @validator('a')
+        def check_a(cls, v):
+            assert v == 'a', 'invalid a'
+            return v
+
+    Model(a='a')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='snap')
+    injected_by_pytest = "\nassert 'snap' == 'a'\n  - snap\n  + a"
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
+    ]
