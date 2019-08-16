@@ -51,7 +51,7 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
 
 **plays nicely with your IDE/linter/brain**
     because *pydantic* data structures are just instances of classes you define; auto-completion, linting,
-    :ref:`mypy <usage_mypy>` and your intuition should all work properly with your validated data.
+    :ref:`mypy <usage_mypy>`, :ref:`PyCharm Plugin <pycharm_plugin>` and your intuition should all work properly with your validated data.
 
 **dual use**
     *pydantic's* :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data"
@@ -1198,6 +1198,29 @@ You'll need to have **python 3.6** or **3.7**, **virtualenv**, **git**, and **ma
 
 **tl;dr**: use ``make format`` to fix formatting, ``make`` to run tests and linting & ``make docs``
 to build docs.
+
+.. _pycharm_plugin:
+
+PyCharm Plugin
+--------------
+
+A PyCharm Plugin for Pydantic is available on JetBrains Plugins Repository.
+You can install the plugin from Marketplace (PyCharm's Preferences -> Plugin -> Marketplace).
+
+The plugin has features to support your developing with pydantic in PyCharm.
+
+* For signature of ``pydantic.BaseModel.__init__``
+
+ * Inspection
+ * Autocompletion
+ * Type-Checking
+
+* For fields of ``pydantic.BaseModel``
+
+ * Refactoring renaming fields and keyword arguments of ``__init__`` include super-classes and inheritor-classes
+
+More information is in `the plugin page <https://plugins.jetbrains.com/plugin/12861-pydantic>`_ and `Github Project <https://github.com/koxudaxi/pydantic-pycharm-plugin>`_
+
 
 Using Pydantic
 --------------
