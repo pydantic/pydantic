@@ -4,7 +4,7 @@ from typing import Any, ClassVar, Dict, Generic, List, Optional, TypeVar, Union
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, Schema, ValidationError, validator
 from pydantic.generics import GenericModel, _generic_types_cache
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
@@ -392,3 +392,14 @@ def test_optional_value():
 
     model = MyModel[int]()
     assert model.dict() == {'a': 1}
+
+
+@skip_36
+def test_custom_schema():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        a: int = Schema(1, description='Custom')
+
+    schema = MyModel[int].schema()
+    assert schema['properties']['a'].get('description') == 'Custom'
