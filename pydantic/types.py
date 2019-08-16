@@ -28,6 +28,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    no_type_check,
 )
 from uuid import UUID
 
@@ -229,21 +230,6 @@ def constr(
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
 
 
-class EmailStr(str):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        # included here and below so the error happens straight away
-        if email_validator is None:
-            raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
-
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str) -> str:
-        return validate_email(value)[1]
-
-
 class StrictBool(int):
     """
     StrictBool to allow for bools which are not type-coerced.
@@ -264,7 +250,7 @@ class StrictBool(int):
         raise errors.StrictBoolError()
 
 
-class AnyUrl:
+class AnyUrl(str):
     strip_whitespace = True
     min_length = 1
     max_length = 2 ** 16
@@ -272,22 +258,26 @@ class AnyUrl:
     tld_required: bool = False
     user_required: bool = False
 
-    __slots__ = ('url', 'scheme', 'user', 'password', 'host', 'port', 'path', 'query', 'fragment')
+    __slots__ = ('scheme', 'user', 'password', 'host', 'port', 'path', 'query', 'fragment')
+
+    @no_type_check
+    def __new__(cls, url: str, **kwargs: Optional[str]) -> object:
+        return str.__new__(cls, url)
 
     def __init__(
         self,
         url: str,
         *,
         scheme: str,
-        user: Optional[str],
-        password: Optional[str],
+        user: Optional[str] = None,
+        password: Optional[str] = None,
         host: str,
-        port: Optional[str],
-        path: Optional[str],
-        query: Optional[str],
-        fragment: Optional[str],
+        port: Optional[str] = None,
+        path: Optional[str] = None,
+        query: Optional[str] = None,
+        fragment: Optional[str] = None,
     ) -> None:
-        self.url = url
+        str.__init__(url)
         self.scheme = scheme
         self.user = user
         self.password = password
@@ -311,7 +301,8 @@ class AnyUrl:
         if type(value) == cls:
             return value  # type: ignore
         m = url_regex.match(value)
-        if not m:
+        if not m:  # pragma: no cover
+            # FIXME can this actually ever happen?
             raise errors.UrlError()
 
         parts = m.groupdict()
@@ -336,18 +327,14 @@ class AnyUrl:
 
         return cls(value, **parts)
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, AnyUrl):
-            return other.url == self.url
-        else:
-            return other == self.url
-
-    def __str__(self) -> str:
-        return self.url
+    @no_type_check
+    def strip(self) -> str:
+        # required so constr_length_validator doesn't simplify AnyStr objects to strings
+        return self
 
     def __repr__(self) -> str:
-        extra = ' '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__[1:] if getattr(self, n) is not None)
-        return f'<{type(self).__name__}({self.url!r} {extra})>'
+        extra = ' '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
+        return f'<{type(self).__name__}({super().__repr__()} {extra})>'
 
 
 class AnyHttpUrl(AnyUrl):
@@ -361,10 +348,12 @@ class HttpUrl(AnyUrl):
 
 class PostgresDsn(AnyUrl):
     allowed_schemes = {'postgres', 'postgresql'}
+    user_required = True
 
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis'}
+    user_required = True
 
 
 def urlstr(
@@ -384,6 +373,21 @@ def urlstr(
         allowed_schemes=allowed_schemes,
     )
     return type('UrlStrValue', (AnyUrl,), namespace)
+
+
+class EmailStr(str):
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        # included here and below so the error happens straight away
+        if email_validator is None:
+            raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
+
+        yield str_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: str) -> str:
+        return validate_email(value)[1]
 
 
 class NameEmail:

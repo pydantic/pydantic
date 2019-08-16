@@ -34,6 +34,7 @@ from pydantic.types import PostgresDsn, RedisDsn
         'http://www.cwi.nl:80/%7Eguido/Python.html',
         'https://www.python.org/путь',
         'http://андрей@example.com',
+        AnyUrl('https://example.com', scheme='https', host='example.com'),
     ],
 )
 def test_any_url_success(value):
@@ -169,6 +170,7 @@ def test_coerse_url():
 
     assert Model(v='  https://www.example.com \n').v == 'https://www.example.com'
     assert Model(v=b'https://www.example.com').v == 'https://www.example.com'
+    assert Model(v=b'https://example.com').v == AnyUrl('https://example.com', scheme='https', host='example.com')
 
 
 def test_postgres_dsns():
@@ -192,6 +194,11 @@ def test_redis_dsns():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='redis://localhost:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
 
 
 def test_custom_schemes():
