@@ -1,6 +1,6 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional, Set, Union
 
 from .utils import AnyType, display_as_type
 
@@ -85,15 +85,16 @@ class UrlSchemeError(UrlError):
     code = 'url.scheme'
     msg_template = 'invalid or missing URL scheme'
 
-    def __str__(self) -> str:
-        allowed_schemes = self.ctx and self.ctx.get('allowed_schemes')
-        if allowed_schemes:
-            return f'URL scheme not permitted, expected: ' + ', '.join(repr(v) for v in allowed_schemes)
-        else:
-            return super().__str__()
+
+class UrlSchemePermittedError(UrlError):
+    code = 'url.scheme'
+    msg_template = 'URL scheme not permitted'
+
+    def __init__(self, allowed_schemes: Set[str]):
+        super().__init__(allowed_schemes=allowed_schemes)
 
 
-class UrlUserinfoError(UrlError):
+class UrlUserInfoError(UrlError):
     code = 'url.userinfo'
     msg_template = 'userinfo required in URL but missing'
 
@@ -101,6 +102,11 @@ class UrlUserinfoError(UrlError):
 class UrlHostError(UrlError):
     code = 'url.host'
     msg_template = 'URL host invalid'
+
+
+class UrlHostTldError(UrlError):
+    code = 'url.host'
+    msg_template = 'URL host invalid, top level domain required'
 
 
 class UrlExtraError(UrlError):

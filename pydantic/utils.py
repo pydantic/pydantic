@@ -225,9 +225,9 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-def _url_regex_generator(require_tld: bool = False) -> Pattern[str]:
+def _host_regex_str(require_tld: bool = False) -> str:
     """
-    Url regex generator.
+    Host regex generator.
 
     :param require_tld: whether the URL must include a top level domain, eg. reject non-FQDN hostnames
     """
@@ -241,22 +241,25 @@ def _url_regex_generator(require_tld: bool = False) -> Pattern[str]:
         r'(?:\d{1,3}\.){3}\d{1,3}',  # ipv4
         r'\[[A-F0-9]*:[A-F0-9:]+\]',  # ipv6
     )
-    host = r'(?P<host>' + '|'.join(host_options) + ')'
-    parts = (
-        r'(?P<scheme>[a-z0-9]+?)://',  # scheme
-        r'(?P<user>\S+)(?P<password>:\S*)?@',  # user info
-        host,
-        r':(?P<port>\d+)',  # port
-        r'(?P<path>/[^\s\?]*)',  # path
-        r'\?(?P<query>[^\s#]+)',  # query
-        r'#(?P<fragment>\S+)',  # fragment
-    )
-    regex = ''.join(f'(?:{r})?' for r in parts)
-    return re.compile(regex, re.IGNORECASE)
+    return r'(?P<host>' + '|'.join(host_options) + ')'
 
 
-url_regex_any = _url_regex_generator()
-url_regex_tld = _url_regex_generator(True)
+url_regex = re.compile(
+    ''.join(
+        f'(?:{r})?'
+        for r in (
+            r'(?P<scheme>[a-z0-9]+?)://',  # scheme
+            r'(?P<user>\S+)(?P<password>:\S*)?@',  # user info
+            _host_regex_str(False),  # host
+            r':(?P<port>\d+)',  # port
+            r'(?P<path>/[^\s\?]*)',  # path
+            r'\?(?P<query>[^\s#]+)',  # query
+            r'#(?P<fragment>\S+)',  # fragment
+        )
+    ),
+    re.IGNORECASE,
+)
+host_tld_regex = re.compile(_host_regex_str(True), re.IGNORECASE)
 
 
 def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:

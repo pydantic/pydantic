@@ -32,7 +32,7 @@ from typing import (
 from uuid import UUID
 
 from . import errors
-from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_any, url_regex_tld, validate_email
+from .utils import AnyType, change_exception, host_tld_regex, import_string, make_dsn, url_regex, validate_email
 from .validators import (
     bytes_validator,
     decimal_validator,
@@ -270,7 +270,7 @@ class AnyUrl:
     min_length = 1
     max_length = 2 ** 16
     allowed_schemes: Optional[Set[str]] = None
-    require_tld: bool = False
+    tld_required: bool = False
     user_required: bool = False
 
     __slots__ = ('url', 'scheme', 'user', 'password', 'host', 'port', 'path', 'query', 'fragment')
@@ -311,8 +311,7 @@ class AnyUrl:
     def validate(cls, value: str) -> 'AnyUrl':
         if type(value) == cls:
             return value  # type: ignore
-        regex = url_regex_tld if cls.require_tld else url_regex_any
-        m = regex.match(value)
+        m = url_regex.match(value)
         if not m:
             raise errors.UrlError()
 
@@ -322,13 +321,16 @@ class AnyUrl:
         if scheme is None:
             raise errors.UrlSchemeError()
         if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
-            raise errors.UrlSchemeError(allowed_schemes=cls.allowed_schemes)
+            raise errors.UrlSchemePermittedError(cls.allowed_schemes)
 
         if cls.user_required and parts['user'] is None:
-            raise errors.UrlUserinfoError()
+            raise errors.UrlUserInfoError()
 
-        if parts['host'] is None:
+        host = parts['host']
+        if host is None:
             raise errors.UrlHostError()
+        elif cls.tld_required and not host_tld_regex.fullmatch(host):
+            raise errors.UrlHostTldError()
 
         if m.end() != len(value):
             raise errors.UrlExtraError(extra=value[m.end() :])
@@ -355,7 +357,15 @@ class AnyHttpUrl(AnyUrl):
 
 class HttpUrl(AnyUrl):
     allowed_schemes = {'http', 'https'}
-    require_tld = True
+    tld_required = True
+
+
+class PostgresDsn(AnyUrl):
+    allowed_schemes = {'postgres', 'postgresql'}
+
+
+class RedisDsn(AnyUrl):
+    allowed_schemes = {'redis'}
 
 
 def urlstr(
@@ -363,8 +373,7 @@ def urlstr(
     strip_whitespace: bool = True,
     min_length: int = 1,
     max_length: int = 2 ** 16,
-    absolute: bool = True,
-    require_tld: bool = True,
+    tld_required: bool = True,
     schemes: Optional[Set[str]] = None,
 ) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
@@ -372,7 +381,7 @@ def urlstr(
         strip_whitespace=strip_whitespace,
         min_length=min_length,
         max_length=max_length,
-        require_tld=require_tld,
+        tld_required=tld_required,
         schemes=schemes,
     )
     return type('UrlStrValue', (AnyUrl,), namespace)

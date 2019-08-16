@@ -1,6 +1,7 @@
 import pytest
 
 from pydantic import AnyUrl, BaseModel, HttpUrl, ValidationError
+from pydantic.types import PostgresDsn, RedisDsn
 
 
 @pytest.mark.parametrize(
@@ -30,6 +31,9 @@ from pydantic import AnyUrl, BaseModel, HttpUrl, ValidationError
         'http://[2001::1]:8329',
         'http://[2001:db8::1]/',
         'http://www.example.com:8000/foo',
+        'http://www.cwi.nl:80/%7Eguido/Python.html',
+        'https://www.python.org/путь',
+        'http://андрей@example.com',
     ],
 )
 def test_any_url_success(value):
@@ -66,6 +70,14 @@ def test_any_url_success(value):
             {'extra': ':db8::ff00:42:8329'},
         ),
         ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
+        # https://www.xudongz.com/blog/2017/idn-phishing/ this should really be accepted but converted to punycode,
+        # but that is not yet implemented.
+        (
+            'https://www.аррӏе.com/',
+            'value_error.url.extra',
+            "URL invalid, extra characters found after valid URL: 'аррӏе.com/'",
+            {'extra': 'аррӏе.com/'},
+        ),
     ],
 )
 def test_any_url_invalid(value, err_type, err_msg, err_ctx):
@@ -124,3 +136,60 @@ def test_http_url_success(value):
         v: HttpUrl
 
     assert Model(v=value).v == value, value
+
+
+@pytest.mark.parametrize(
+    'value,err_type,err_msg,err_ctx',
+    [
+        (
+            'ftp://example.com/',
+            'value_error.url.scheme',
+            "URL scheme not permitted",
+            {'allowed_schemes': {'https', 'http'}},
+        ),
+        ('http://foobar/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
+    ],
+)
+def test_http_url_invalid(value, err_type, err_msg, err_ctx):
+    class Model(BaseModel):
+        v: HttpUrl
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=value)
+    assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
+    error = exc_info.value.errors()[0]
+    debug(error)
+    assert error['type'] == err_type, value
+    assert error['msg'] == err_msg, value
+    assert error.get('ctx') == err_ctx, value
+
+
+def test_coerse_url():
+    class Model(BaseModel):
+        v: HttpUrl
+
+    assert Model(v='  https://www.example.com \n').v == 'https://www.example.com'
+    assert Model(v=b'https://www.example.com').v == 'https://www.example.com'
+
+
+def test_postgres_dsns():
+    class Model(BaseModel):
+        a: PostgresDsn
+
+    assert Model(a='postgres://user:pass@localhost:5432/app').a == 'postgres://user:pass@localhost:5432/app'
+    assert Model(a='postgresql://user:pass@localhost:5432/app').a == 'postgresql://user:pass@localhost:5432/app'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+
+def test_redis_dsns():
+    class Model(BaseModel):
+        a: RedisDsn
+
+    assert Model(a='redis://user:pass@localhost:5432/app').a == 'redis://user:pass@localhost:5432/app'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
