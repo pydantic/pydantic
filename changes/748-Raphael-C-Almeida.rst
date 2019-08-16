@@ -1,0 +1,1 @@
+**Breaking change:** Added ``initvars`` support to ``post_init_post_parse``.

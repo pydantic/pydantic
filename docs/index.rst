@@ -169,6 +169,13 @@ code before validation.
 
 (This script is complete, it should run “as is”)
 
+Since version ``v1.0``, any fields annotated with ``dataclasses.InitVar`` are passed to both ``__post_init__`` *and*
+``__post_init_post_parse__``.
+
+.. literalinclude:: examples/ex_post_init_post_parse_initvars.py
+
+(This script is complete, it should run “as is”)
+
 Choices
 .......
 

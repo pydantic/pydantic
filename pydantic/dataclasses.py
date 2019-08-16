@@ -71,7 +71,7 @@ def _process_class(
         object.__setattr__(self, '__dict__', d)
         object.__setattr__(self, '__initialised__', True)
         if post_init_post_parse is not None:
-            post_init_post_parse(self)
+            post_init_post_parse(self, *initvars)
 
     _cls.__post_init__ = _pydantic_post_init
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore

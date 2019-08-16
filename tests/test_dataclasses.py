@@ -1,6 +1,7 @@
 import dataclasses
 from datetime import datetime
-from typing import ClassVar
+from pathlib import Path
+from typing import ClassVar, Optional
 
 import pytest
 
@@ -440,6 +441,44 @@ def test_derived_field_from_initvar():
     assert derived.plusone == 2
     with pytest.raises(TypeError):
         DerivedWithInitVar('Not A Number')
+
+
+def test_initvars_post_init():
+    @pydantic.dataclasses.dataclass
+    class PathDataPostInit:
+        path: Path
+        base_path: dataclasses.InitVar[Optional[Path]] = None
+
+        def __post_init__(self, base_path):
+            if base_path is not None:
+                self.path = base_path / self.path
+
+    path_data = PathDataPostInit('world')
+    assert 'path' in path_data.__dict__
+    assert 'base_path' not in path_data.__dict__
+    assert path_data.path == Path('world')
+
+    with pytest.raises(TypeError) as exc_info:
+        PathDataPostInit('world', base_path='/hello')
+    assert str(exc_info.value) == "unsupported operand type(s) for /: 'str' and 'str'"
+
+
+def test_initvars_post_init_post_parse():
+    @pydantic.dataclasses.dataclass
+    class PathDataPostInitPostParse:
+        path: Path
+        base_path: dataclasses.InitVar[Optional[Path]] = None
+
+        def __post_init_post_parse__(self, base_path):
+            if base_path is not None:
+                self.path = base_path / self.path
+
+    path_data = PathDataPostInitPostParse('world')
+    assert 'path' in path_data.__dict__
+    assert 'base_path' not in path_data.__dict__
+    assert path_data.path == Path('world')
+
+    assert PathDataPostInitPostParse('world', base_path='/hello').path == Path('/hello/world')
 
 
 def test_classvar():
