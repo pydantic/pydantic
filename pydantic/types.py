@@ -373,7 +373,7 @@ def urlstr(
     min_length: int = 1,
     max_length: int = 2 ** 16,
     tld_required: bool = True,
-    schemes: Optional[Set[str]] = None,
+    allowed_schemes: Optional[Set[str]] = None,
 ) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -381,7 +381,7 @@ def urlstr(
         min_length=min_length,
         max_length=max_length,
         tld_required=tld_required,
-        schemes=schemes,
+        allowed_schemes=allowed_schemes,
     )
     return type('UrlStrValue', (AnyUrl,), namespace)
 

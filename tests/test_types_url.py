@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, HttpUrl, ValidationError
+from pydantic import AnyUrl, BaseModel, HttpUrl, ValidationError, urlstr
 from pydantic.types import PostgresDsn, RedisDsn
 
 
@@ -193,3 +193,16 @@ def test_redis_dsns():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+
+def test_custom_schemes():
+    class Model(BaseModel):
+        v: urlstr(strip_whitespace=False, allowed_schemes={'ws', 'wss'})
+
+    assert Model(v='ws://example.org').v == 'ws://example.org'
+
+    with pytest.raises(ValidationError):
+        Model(v='http://example.org')
+
+    with pytest.raises(ValidationError):
+        Model(v='ws://example.org  ')
