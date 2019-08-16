@@ -51,7 +51,7 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
 
 **plays nicely with your IDE/linter/brain**
     because *pydantic* data structures are just instances of classes you define; auto-completion, linting,
-    :ref:`mypy <usage_mypy>`, :ref:`PyCharm Plugin <pycharm_plugin>` and your intuition should all work properly with your validated data.
+    :ref:`mypy <usage_mypy>`, IDEs (especially :ref:`PyCharm <pycharm_plugin>`) and your intuition should all work properly with your validated data.
 
 **dual use**
     *pydantic's* :ref:`BaseSettings <settings>` class allows it to be used in both a "validate this request data"
@@ -1205,9 +1205,9 @@ PyCharm Plugin
 --------------
 
 While pydantic will work well with any IDE out of the box, a PyCharm plugin
-offering improved pydantic integration is available on the JetBrains Plugins Repository.
+offering improved pydantic integration is available on the JetBrains Plugins Repository for PyCharm.
 You can install the plugin for free from the plugin marketplace
-(PyCharm's Preferences -> Plugin -> Marketplace).
+(PyCharm's Preferences -> Plugin -> Marketplace -> search "pydantic").
 
 The plugin currently supports the following features:
 
