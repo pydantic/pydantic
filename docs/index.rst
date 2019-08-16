@@ -755,14 +755,11 @@ Pydantic models which do not represent a ``dict`` ("object" in JSON parlance) ca
 root type defined via the ``__root__`` field. The root type can of any type: list, float, int etc.
 
 The root type can be defined via the type hint on the ``__root__`` field.
-The root value can be passed to model ``__init__`` via the ``__root__`` keyword argument or as the first and only argument
-to ``parse_obj``.
+The root value can be passed to model ``__init__`` via the ``__root__`` keyword argument or as
+the first and only argument to ``parse_obj``.
 
 .. literalinclude::  examples/custom_root_field.py
 
-Outputs:
-
-.. literalinclude:: examples/custom_root_field.json
 
 Helper Functions
 ................
