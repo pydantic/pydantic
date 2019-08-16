@@ -746,6 +746,8 @@ to get validators to parse and validate the input data.
 
 (This script is complete, it should run "as is")
 
+.. _custom_root:
+
 Custom Root Types
 .................
 
@@ -1018,7 +1020,9 @@ Example:
 ``model.json(...)``
 ~~~~~~~~~~~~~~~~~~~
 
-The ``json()`` method will serialise a model to JSON, ``json()`` in turn calls ``dict()`` and serialises its result.
+The ``json()`` method will serialise a model to JSON. For models without a :ref:`custom root <custom_root>`,
+``json()`` in turn calls ``dict()`` and serialises its result. Otherwise, after calling ``dict()``,
+only the *value* for the `__root__` key is serialized.
 
 Serialisation can be customised on a model using the ``json_encoders`` config property, the keys should be types and
 the values should be functions which serialise that type, see the example below.
