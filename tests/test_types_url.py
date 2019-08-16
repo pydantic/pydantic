@@ -158,7 +158,6 @@ def test_http_url_invalid(value, err_type, err_msg, err_ctx):
         Model(v=value)
     assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
     error = exc_info.value.errors()[0]
-    debug(error)
     assert error['type'] == err_type, value
     assert error['msg'] == err_msg, value
     assert error.get('ctx') == err_ctx, value
