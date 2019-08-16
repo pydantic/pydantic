@@ -1020,9 +1020,9 @@ Example:
 ``model.json(...)``
 ~~~~~~~~~~~~~~~~~~~
 
-The ``json()`` method will serialise a model to JSON. For models without a :ref:`custom root <custom_root>`,
-``json()`` in turn calls ``dict()`` and serialises its result. Otherwise, after calling ``dict()``,
-only the *value* for the `__root__` key is serialized.
+The ``json()`` method will serialise a model to JSON. Typically, ``json()`` in turn calls ``dict()`` and
+serialises its result. (For models with a :ref:`custom root <custom_root>`, after calling ``dict()``,
+only the value for the ``__root__`` key is serialised.)
 
 Serialisation can be customised on a model using the ``json_encoders`` config property, the keys should be types and
 the values should be functions which serialise that type, see the example below.
