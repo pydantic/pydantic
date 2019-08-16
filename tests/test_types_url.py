@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, ValidationError
+from pydantic import AnyUrl, BaseModel, HttpUrl, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -80,3 +80,47 @@ def test_any_url_invalid(value, err_type, err_msg, err_ctx):
     assert error['type'] == err_type, value
     assert error['msg'] == err_msg, value
     assert error.get('ctx') == err_ctx, value
+
+
+def test_any_str_obj():
+    class Model(BaseModel):
+        v: AnyUrl
+
+    url = Model(v='http://example.org').v
+    assert str(url) == 'http://example.org'
+    assert repr(url) == "<AnyUrl('http://example.org' scheme='http' host='example.org')>"
+    assert url.scheme == 'http'
+    assert url.host == 'example.org'
+    assert url.port is None
+
+    url2 = Model(v='http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit').v
+    assert str(url2) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
+    assert repr(url2) == (
+        "<AnyUrl('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit' "
+        "scheme='http' user='user:password' host='example.org' port='1234' path='/the/path/' query='query=here' "
+        "fragment='fragment=is;this=bit')>"
+    )
+    assert url2.scheme == 'http'
+    assert url2.user == 'user:password'
+    assert url2.host == 'example.org'
+    assert url2.port == '1234'
+    assert url2.path == '/the/path/'
+    assert url2.query == 'query=here'
+    assert url2.fragment == 'fragment=is;this=bit'
+
+
+@pytest.mark.parametrize(
+    'value',
+    [
+        'http://example.org',
+        'HTTP://EXAMPLE.ORG',
+        'https://example.org',
+        'https://example.org?a=1&b=2',
+        'https://example.org#a=3;b=3',
+    ],
+)
+def test_http_url_success(value):
+    class Model(BaseModel):
+        v: HttpUrl
+
+    assert Model(v=value).v == value, value

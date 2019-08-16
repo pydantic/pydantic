@@ -247,7 +247,7 @@ def _url_regex_generator(require_tld: bool = False) -> Pattern[str]:
         r'(?P<user>\S+)(?P<password>:\S*)?@',  # user info
         host,
         r':(?P<port>\d+)',  # port
-        r'/(?P<path>[^\s\?]*)',  # path
+        r'(?P<path>/[^\s\?]*)',  # path
         r'\?(?P<query>[^\s#]+)',  # query
         r'#(?P<fragment>\S+)',  # fragment
     )

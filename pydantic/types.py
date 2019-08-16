@@ -67,7 +67,6 @@ __all__ = [
     'AnyUrl',
     'AnyHttpUrl',
     'HttpUrl',
-    'HttpsUrl',
     'urlstr',
     'NameEmail',
     'PyObject',
@@ -266,13 +265,38 @@ class StrictBool(int):
         raise errors.StrictBoolError()
 
 
-class AnyUrl(str):
+class AnyUrl:
     strip_whitespace = True
     min_length = 1
     max_length = 2 ** 16
     allowed_schemes: Optional[Set[str]] = None
     require_tld: bool = False
     user_required: bool = False
+
+    __slots__ = ('url', 'scheme', 'user', 'password', 'host', 'port', 'path', 'query', 'fragment')
+
+    def __init__(
+        self,
+        url: str,
+        *,
+        scheme: str,
+        user: Optional[str],
+        password: Optional[str],
+        host: str,
+        port: Optional[str],
+        path: Optional[str],
+        query: Optional[str],
+        fragment: Optional[str],
+    ) -> None:
+        self.url = url
+        self.scheme = scheme
+        self.user = user
+        self.password = password
+        self.host = host
+        self.port = port
+        self.path = path
+        self.query = query
+        self.fragment = fragment
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -284,7 +308,9 @@ class AnyUrl(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> str:
+    def validate(cls, value: str) -> 'AnyUrl':
+        if type(value) == cls:
+            return value  # type: ignore
         regex = url_regex_tld if cls.require_tld else url_regex_any
         m = regex.match(value)
         if not m:
@@ -295,7 +321,7 @@ class AnyUrl(str):
         scheme = parts['scheme']
         if scheme is None:
             raise errors.UrlSchemeError()
-        if cls.allowed_schemes and scheme not in cls.allowed_schemes:
+        if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
             raise errors.UrlSchemeError(allowed_schemes=cls.allowed_schemes)
 
         if cls.user_required and parts['user'] is None:
@@ -307,7 +333,20 @@ class AnyUrl(str):
         if m.end() != len(value):
             raise errors.UrlExtraError(extra=value[m.end() :])
 
-        return value
+        return cls(value, **parts)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, AnyUrl):
+            return other.url == self.url
+        else:
+            return other == self.url
+
+    def __str__(self) -> str:
+        return self.url
+
+    def __repr__(self) -> str:
+        extra = ' '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__[1:] if getattr(self, n) is not None)
+        return f'<{type(self).__name__}({self.url!r} {extra})>'
 
 
 class AnyHttpUrl(AnyUrl):
@@ -317,10 +356,6 @@ class AnyHttpUrl(AnyUrl):
 class HttpUrl(AnyUrl):
     allowed_schemes = {'http', 'https'}
     require_tld = True
-
-
-class HttpsUrl(HttpUrl):
-    allowed_schemes = {'https'}
 
 
 def urlstr(
