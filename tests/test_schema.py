@@ -25,6 +25,7 @@ from pydantic.types import (
     UUID3,
     UUID4,
     UUID5,
+    AnyUrl,
     ConstrainedBytes,
     ConstrainedDecimal,
     ConstrainedFloat,
@@ -57,7 +58,6 @@ from pydantic.types import (
     StrBytes,
     StrictBool,
     StrictStr,
-    UrlStr,
     conbytes,
     condecimal,
     confloat,
@@ -541,7 +541,7 @@ def test_str_constrained_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (UrlStr, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
+        (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
         (
             urlstr(min_length=5, max_length=10),
             {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},

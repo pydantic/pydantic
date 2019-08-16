@@ -32,7 +32,7 @@ from typing import (
 from uuid import UUID
 
 from . import errors
-from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_generator, validate_email
+from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_any, url_regex_tld, validate_email
 from .validators import (
     bytes_validator,
     decimal_validator,
@@ -64,7 +64,10 @@ __all__ = [
     'ConstrainedStr',
     'constr',
     'EmailStr',
-    'UrlStr',
+    'AnyUrl',
+    'AnyHttpUrl',
+    'HttpUrl',
+    'HttpsUrl',
     'urlstr',
     'NameEmail',
     'PyObject',
@@ -263,36 +266,61 @@ class StrictBool(int):
         raise errors.StrictBoolError()
 
 
-class UrlStr(str):
+class AnyUrl(str):
     strip_whitespace = True
     min_length = 1
     max_length = 2 ** 16
-    schemes: Optional[Set[str]] = None
-    relative = False  # whether to allow relative URLs
-    require_tld = True  # whether to reject non-FQDN hostnames
+    allowed_schemes: Optional[Set[str]] = None
+    require_tld: bool = False
+    user_required: bool = False
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
         yield str_validator
-        yield constr_strip_whitespace
+        if cls.strip_whitespace:
+            yield constr_strip_whitespace
         yield constr_length_validator
         yield cls.validate
 
     @classmethod
     def validate(cls, value: str) -> str:
-        # Check first if the scheme is valid
-        schemes = cls.schemes or {'http', 'https', 'ftp', 'ftps'}
-        if '://' in value:
-            scheme = value.split('://')[0].lower()
-            if scheme not in schemes:
-                raise errors.UrlSchemeError(scheme=scheme)
+        regex = url_regex_tld if cls.require_tld else url_regex_any
+        m = regex.match(value)
+        if not m:
+            raise errors.UrlError()
 
-        regex = url_regex_generator(relative=cls.relative, require_tld=cls.require_tld)
-        if not regex.match(value):
-            raise errors.UrlRegexError()
+        parts = m.groupdict()
+        # debug(parts)
+        scheme = parts['scheme']
+        if scheme is None:
+            raise errors.UrlSchemeError()
+        if cls.allowed_schemes and scheme not in cls.allowed_schemes:
+            raise errors.UrlSchemeError(allowed_schemes=cls.allowed_schemes)
+
+        if cls.user_required and parts['user'] is None:
+            raise errors.UrlUserinfoError()
+
+        if parts['host'] is None:
+            raise errors.UrlHostError()
+
+        if m.end() != len(value):
+            raise errors.UrlExtraError(extra=value[m.end() :])
 
         return value
+
+
+class AnyHttpUrl(AnyUrl):
+    allowed_schemes = {'http', 'https'}
+
+
+class HttpUrl(AnyUrl):
+    allowed_schemes = {'http', 'https'}
+    require_tld = True
+
+
+class HttpsUrl(HttpUrl):
+    allowed_schemes = {'https'}
 
 
 def urlstr(
@@ -300,7 +328,7 @@ def urlstr(
     strip_whitespace: bool = True,
     min_length: int = 1,
     max_length: int = 2 ** 16,
-    relative: bool = False,
+    absolute: bool = True,
     require_tld: bool = True,
     schemes: Optional[Set[str]] = None,
 ) -> Type[str]:
@@ -309,11 +337,10 @@ def urlstr(
         strip_whitespace=strip_whitespace,
         min_length=min_length,
         max_length=max_length,
-        relative=relative,
         require_tld=require_tld,
         schemes=schemes,
     )
-    return type('UrlStrValue', (UrlStr,), namespace)
+    return type('UrlStrValue', (AnyUrl,), namespace)
 
 
 class NameEmail:

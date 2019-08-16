@@ -1,0 +1,82 @@
+import pytest
+
+from pydantic import AnyUrl, BaseModel, ValidationError
+
+
+@pytest.mark.parametrize(
+    'value',
+    [
+        'http://example.org',
+        'http://test',
+        'http://localhost',
+        'https://example.org/whatever/next/',
+        'postgres://user:pass@localhost:5432/app',
+        'postgres://just-user@localhost:5432/app',
+        'https://example.org',
+        'ftp://example.org',
+        'ftps://example.org',
+        'http://example.co.jp',
+        'http://www.example.com/a%C2%B1b',
+        'http://www.example.com/~username/',
+        'http://info.example.com?fred',
+        'http://info.example.com/?fred',
+        'http://xn--mgbh0fb.xn--kgbechtv/',
+        'http://example.com/blue/red%3Fand+green',
+        'http://www.example.com/?array%5Bkey%5D=value',
+        'http://xn--rsum-bpad.example.org/',
+        'http://123.45.67.8/',
+        'http://123.45.67.8:8329/',
+        'http://[2001:db8::ff00:42]:8329',
+        'http://[2001::1]:8329',
+        'http://[2001:db8::1]/',
+        'http://www.example.com:8000/foo',
+    ],
+)
+def test_any_url_success(value):
+    class Model(BaseModel):
+        v: AnyUrl
+
+    assert Model(v=value).v == value, value
+
+
+@pytest.mark.parametrize(
+    'value,err_type,err_msg,err_ctx',
+    [
+        ('http:///example.com/', 'value_error.url.host', 'URL host invalid', None),
+        ('https:///example.com/', 'value_error.url.host', 'URL host invalid', None),
+        ('http://.example.com:8000/foo', 'value_error.url.host', 'URL host invalid', None),
+        (
+            'https://example.org\\',
+            'value_error.url.extra',
+            "URL invalid, extra characters found after valid URL: '\\\\'",
+            {'extra': '\\'},
+        ),
+        ('$https://example.org', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
+        ('../icons/logo.gif', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
+        ('abc', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
+        ('..', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
+        ('/', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
+        (' ', 'value_error.any_str.min_length', 'ensure this value has at least 1 characters', {'limit_value': 1}),
+        ('', 'value_error.any_str.min_length', 'ensure this value has at least 1 characters', {'limit_value': 1}),
+        (None, 'type_error.none.not_allowed', 'none is not an allowed value', None),
+        (
+            'http://2001:db8::ff00:42:8329',
+            'value_error.url.extra',
+            "URL invalid, extra characters found after valid URL: ':db8::ff00:42:8329'",
+            {'extra': ':db8::ff00:42:8329'},
+        ),
+        ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
+    ],
+)
+def test_any_url_invalid(value, err_type, err_msg, err_ctx):
+    class Model(BaseModel):
+        v: AnyUrl
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=value)
+    assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
+    error = exc_info.value.errors()[0]
+    # debug(error)
+    assert error['type'] == err_type, value
+    assert error['msg'] == err_msg, value
+    assert error.get('ctx') == err_ctx, value

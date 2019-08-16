@@ -3,7 +3,6 @@ import re
 import sys
 from contextlib import contextmanager
 from enum import Enum
-from functools import lru_cache
 from importlib import import_module
 from typing import (  # type: ignore
     TYPE_CHECKING,
@@ -226,35 +225,38 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-@lru_cache(maxsize=None)
-def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
+def _url_regex_generator(require_tld: bool = False) -> Pattern[str]:
     """
-    Url regex generator taken from Marshmallow library,
-    for details please follow library source code:
-        https://github.com/marshmallow-code/marshmallow/blob/298870ef6c089fb4d91efae9ca4168453ffe00d2/marshmallow/validate.py#L37
+    Url regex generator.
+
+    :param require_tld: whether the URL must include a top level domain, eg. reject non-FQDN hostnames
     """
-    return re.compile(
-        r''.join(
-            (
-                r'^',
-                r'(' if relative else r'',
-                r'(?:[a-z0-9\.\-\+]*)://',  # scheme is validated separately
-                r'(?:[^:@]+?:[^:@]*?@|)',  # basic auth
-                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
-                r'(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
-                r'localhost|',  # localhost...
-                (
-                    r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|' if not require_tld else r''
-                ),  # allow dotless hostnames
-                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|',  # ...or ipv4
-                r'\[[A-F0-9]*:[A-F0-9:]+\])',  # ...or ipv6
-                r'(?::\d+)?',  # optional port
-                r')?' if relative else r'',  # host is optional, allow for relative URLs
-                r'(?:/?|[/?]\S+)$',
-            )
-        ),
-        re.IGNORECASE,
+    domain_chunk = r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?'
+    domain = fr'(?:{domain_chunk}\.)*{domain_chunk}'
+    if require_tld:
+        domain += r'\.[a-z]{2,63}'
+    host_options = (
+        domain + r'\.?',
+        r'localhost\.?',  # TODO is this required?
+        r'(?:\d{1,3}\.){3}\d{1,3}',  # ipv4
+        r'\[[A-F0-9]*:[A-F0-9:]+\]',  # ipv6
     )
+    host = r'(?P<host>' + '|'.join(host_options) + ')'
+    parts = (
+        r'(?P<scheme>[a-z0-9]+?)://',  # scheme
+        r'(?P<user>\S+)(?P<password>:\S*)?@',  # user info
+        host,
+        r':(?P<port>\d+)',  # port
+        r'/(?P<path>[^\s\?]*)',  # path
+        r'\?(?P<query>[^\s#]+)',  # query
+        r'#(?P<fragment>\S+)',  # fragment
+    )
+    regex = ''.join(f'(?:{r})?' for r in parts)
+    return re.compile(regex, re.IGNORECASE)
+
+
+url_regex_any = _url_regex_generator()
+url_regex_tld = _url_regex_generator(True)
 
 
 def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:

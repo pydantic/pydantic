@@ -76,17 +76,36 @@ class EmailError(PydanticValueError):
     msg_template = 'value is not a valid email address'
 
 
-class UrlSchemeError(PydanticValueError):
+class UrlError(PydanticValueError):
+    code = 'url'
+    msg_template = 'TODO ???'
+
+
+class UrlSchemeError(UrlError):
     code = 'url.scheme'
-    msg_template = 'url scheme "{scheme}" is not allowed'
+    msg_template = 'invalid or missing URL scheme'
 
-    def __init__(self, *, scheme: str) -> None:
-        super().__init__(scheme=scheme)
+    def __str__(self) -> str:
+        allowed_schemes = self.ctx and self.ctx.get('allowed_schemes')
+        if allowed_schemes:
+            return f'URL scheme not permitted, expected: ' + ', '.join(repr(v) for v in allowed_schemes)
+        else:
+            return super().__str__()
 
 
-class UrlRegexError(PydanticValueError):
-    code = 'url.regex'
-    msg_template = 'url string does not match regex'
+class UrlUserinfoError(UrlError):
+    code = 'url.userinfo'
+    msg_template = 'userinfo required in URL but missing'
+
+
+class UrlHostError(UrlError):
+    code = 'url.host'
+    msg_template = 'URL host invalid'
+
+
+class UrlExtraError(UrlError):
+    code = 'url.extra'
+    msg_template = 'URL invalid, extra characters found after valid URL: {extra!r}'
 
 
 class EnumError(PydanticTypeError):

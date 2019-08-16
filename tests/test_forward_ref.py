@@ -156,12 +156,12 @@ class Foo(BaseModel):
 def test_forward_ref_dataclass(create_module):
     module = create_module(
         """
-from pydantic import UrlStr
+from pydantic import AnyUrl
 from pydantic.dataclasses import dataclass
 
 @dataclass
 class Dataclass:
-    url: UrlStr
+    url: AnyUrl
     """
     )
     m = module.Dataclass('http://example.com  ')
@@ -173,12 +173,12 @@ def test_forward_ref_dataclass_with_future_annotations(create_module):
     module = create_module(
         """
 from __future__ import annotations
-from pydantic import UrlStr
+from pydantic import AnyUrl
 from pydantic.dataclasses import dataclass
 
 @dataclass
 class Dataclass:
-    url: UrlStr
+    url: AnyUrl
     """
     )
     m = module.Dataclass('http://example.com  ')
