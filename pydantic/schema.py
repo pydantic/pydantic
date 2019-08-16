@@ -14,7 +14,6 @@ from pydantic.color import Color
 from .fields import Field, Shape
 from .json import pydantic_encoder
 from .types import (
-    DSN,
     UUID1,
     UUID3,
     UUID4,
@@ -674,7 +673,6 @@ validation_attribute_to_schema_keyword = {
 field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (EmailStr, {'type': 'string', 'format': 'email'}),
     (AnyUrl, {'type': 'string', 'format': 'uri'}),
-    (DSN, {'type': 'string', 'format': 'dsn'}),
     (SecretStr, {'type': 'string', 'writeOnly': True}),
     (str, {'type': 'string'}),
     (SecretBytes, {'type': 'string', 'writeOnly': True}),
@@ -833,7 +831,7 @@ def get_annotation_from_schema(annotation: Any, schema: Schema) -> Type[Any]:
     if isinstance(annotation, type):
         attrs: Optional[Tuple[str, ...]] = None
         constraint_func: Optional[Callable[..., type]] = None
-        if issubclass(annotation, str) and not issubclass(annotation, (EmailStr, DSN, AnyUrl, ConstrainedStr)):
+        if issubclass(annotation, str) and not issubclass(annotation, (EmailStr, AnyUrl, ConstrainedStr)):
             attrs = ('max_length', 'min_length', 'regex')
             constraint_func = constr
         elif lenient_issubclass(annotation, numeric_types) and not issubclass(

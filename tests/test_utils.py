@@ -10,7 +10,6 @@ from pydantic.utils import (
     import_string,
     is_new_type,
     lenient_issubclass,
-    make_dsn,
     new_type_supertype,
     truncate,
     validate_email,
@@ -87,14 +86,6 @@ def test_address_invalid(value):
 def test_email_validator_not_installed():
     with pytest.raises(ImportError):
         validate_email('s@muelcolvin.com')
-
-
-def test_empty_dsn():
-    assert make_dsn(driver='foobar') == 'foobar://'
-
-
-def test_dsn_odd_user():
-    assert make_dsn(driver='foobar', user='foo@bar') == 'foobar://foo%40bar@'
 
 
 def test_import_module():

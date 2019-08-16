@@ -32,7 +32,7 @@ from typing import (
 from uuid import UUID
 
 from . import errors
-from .utils import AnyType, change_exception, host_tld_regex, import_string, make_dsn, url_regex, validate_email
+from .utils import AnyType, change_exception, host_tld_regex, import_string, url_regex, validate_email
 from .validators import (
     bytes_validator,
     decimal_validator,
@@ -70,7 +70,6 @@ __all__ = [
     'urlstr',
     'NameEmail',
     'PyObject',
-    'DSN',
     'ConstrainedInt',
     'conint',
     'PositiveInt',
@@ -435,28 +434,6 @@ class PyObject:
                 return import_string(value)
             except ImportError as e:
                 raise errors.PyObjectError(error_message=str(e))
-
-
-class DSN(str):
-    prefix = 'db_'
-    fields = 'driver', 'user', 'password', 'host', 'port', 'name', 'query'
-    validate_always = True
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str, values: Dict[str, Any]) -> str:
-        if value:
-            return value
-
-        kwargs = {f: values.get(cls.prefix + f) for f in cls.fields}
-        if kwargs['driver'] is None:
-            raise errors.DSNDriverIsEmptyError()
-
-        return make_dsn(**kwargs)  # type: ignore
 
 
 class ConstrainedNumberMeta(type):

@@ -1,6 +1,6 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Optional, Set, Union
+from typing import Any, Set, Union
 
 from .utils import AnyType, display_as_type
 
@@ -65,11 +65,6 @@ class BytesError(PydanticTypeError):
 
 class DictError(PydanticTypeError):
     msg_template = 'value is not a valid dict'
-
-
-class DSNDriverIsEmptyError(PydanticValueError):
-    code = 'dsn.driver_is_empty'
-    msg_template = '"driver" field may not be empty'
 
 
 class EmailError(PydanticValueError):

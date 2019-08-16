@@ -13,7 +13,6 @@ from typing import (  # type: ignore
     List,
     NewType,
     Optional,
-    Pattern,
     Set,
     Tuple,
     Type,
@@ -102,48 +101,6 @@ def validate_email(value: str) -> Tuple[str, str]:
         raise pydantic.errors.EmailError() from e
 
     return name or email[: email.index('@')], email.lower()
-
-
-def _rfc_1738_quote(text: str) -> str:
-    return re.sub(r'[:@/]', lambda m: '%{:X}'.format(ord(m.group(0))), text)
-
-
-def make_dsn(
-    *,
-    driver: str,
-    user: str = None,
-    password: str = None,
-    host: str = None,
-    port: str = None,
-    name: str = None,
-    query: Dict[str, Any] = None,
-) -> str:
-    """
-    Create a DSN from from connection settings.
-
-    Stolen approximately from sqlalchemy/engine/url.py:URL.
-    """
-    s = driver + '://'
-    if user is not None:
-        s += _rfc_1738_quote(user)
-        if password is not None:
-            s += ':' + _rfc_1738_quote(password)
-        s += '@'
-    if host is not None:
-        if ':' in host:
-            s += '[{}]'.format(host)
-        else:
-            s += host
-    if port is not None:
-        s += ':{}'.format(int(port))
-    if name is not None:
-        s += '/' + name
-    query = query or {}
-    if query:
-        keys = list(query)
-        keys.sort()
-        s += '?' + '&'.join('{}={}'.format(k, query[k]) for k in keys)
-    return s
 
 
 def import_string(dotted_path: str) -> Any:

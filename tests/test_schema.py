@@ -20,7 +20,6 @@ from pydantic.schema import (
     schema,
 )
 from pydantic.types import (
-    DSN,
     UUID1,
     UUID3,
     UUID4,
@@ -546,7 +545,6 @@ def test_str_constrained_types(field_type, expected_schema):
             urlstr(min_length=5, max_length=10),
             {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
         ),
-        (DSN, {'title': 'A', 'type': 'string', 'format': 'dsn'}),
     ],
 )
 def test_special_str_types(field_type, expected_schema):

@@ -144,7 +144,7 @@ def test_http_url_success(value):
         (
             'ftp://example.com/',
             'value_error.url.scheme',
-            "URL scheme not permitted",
+            'URL scheme not permitted',
             {'allowed_schemes': {'https', 'http'}},
         ),
         ('http://foobar/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
