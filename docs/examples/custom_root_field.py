@@ -9,7 +9,7 @@ class Pets(BaseModel):
 print(Pets(__root__=['dog', 'cat']))
 # > Pets __root__=['dog', 'cat']
 
-print(Pets.parse_obj(__root__=['dog', 'cat']))
+print(Pets.parse_obj(['dog', 'cat']))
 # > Pets __root__=['dog', 'cat']
 
 print(Pets.schema())

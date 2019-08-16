@@ -30,7 +30,7 @@ print(Model(simple_dict={'a': 1, b'b': 2}).simple_dict)  # > {'a': 1, b'b': 2}
 print(Model(dict_str_float={'a': 1, b'b': 2}).dict_str_float)  # > {'a': 1.0, 'b': 2.0}
 
 print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)  # > (1, 2, 3, 4)
-print(Model(tuple_of_different_types=[1, 2, 3, 4]).tuple_of_different_types)  # > (1, 2.0, '3', True)
+print(Model(tuple_of_different_types=[4, 3, 2, 1]).tuple_of_different_types)  # > (4, 3.0, '2', True)
 
 print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)  # > [1, 2, 3, 4]
 print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)  # > (1, 2, 3, 4)

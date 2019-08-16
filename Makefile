@@ -63,6 +63,11 @@ testcov-compile: build-cython-trace test
 	@echo "building coverage html"
 	@coverage html
 
+.PHONY: test-examples
+test-examples:
+	@echo "running examples"
+	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
+
 .PHONY: all
 all: testcov lint mypy external-mypy
 
