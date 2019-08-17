@@ -7,6 +7,7 @@ v0.32.2 (unreleased)
 ....................
 * fix ``__post_init__`` usage with dataclass inheritance, fix #739 by @samuelcolvin
 * fix required fields validation on GenericModels classes, #742 by @amitbl
+* fix defining custom ``Schema`` on ``GenericModel`` fields, #754 by @amitbl
 
 v0.32.1 (2019-08-08)
 ....................
