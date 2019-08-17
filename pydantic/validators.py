@@ -25,17 +25,8 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import (
-    AnyCallable,
-    AnyType,
-    ForwardRef,
-    almost_equal_floats,
-    change_exception,
-    display_as_type,
-    is_callable_type,
-    is_literal_type,
-    sequence_like,
-)
+from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, is_callable_type, is_literal_type
+from .utils import almost_equal_floats, change_exception, sequence_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field

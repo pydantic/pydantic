@@ -2,7 +2,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Union
 
-from .utils import AnyType, display_as_type
+from .typing import AnyType, display_as_type
 
 
 class PydanticErrorMixin:

@@ -7,22 +7,7 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    no_type_check,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, Union, cast, no_type_check
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -32,36 +17,24 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
-from .utils import (
-    AnyCallable,
-    AnyType,
-    ForwardRef,
-    GetterDict,
-    ValueItems,
-    change_exception,
-    is_classvar,
-    resolve_annotations,
-    truncate,
-    update_field_forward_refs,
-    validate_field_name,
-)
+from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
+from .utils import GetterDict, ValueItems, change_exception, truncate, validate_field_name
 
 if TYPE_CHECKING:  # pragma: no cover
     from .dataclasses import DataclassType  # noqa: F401
     from .types import CallableGenerator, ModelOrDc
     from .class_validators import ValidatorListDict
 
-    AnyGenerator = Generator[Any, None, None]
-    TupleGenerator = Generator[Tuple[str, Any], None, None]
-    DictStrAny = Dict[str, Any]
-    ConfigType = Type['BaseConfig']
-    DictAny = Dict[Any, Any]
-    SetStr = Set[str]
-    ListStr = List[str]
-    Model = TypeVar('Model', bound='BaseModel')
-    IntStr = Union[int, str]
-    SetIntStr = Set[IntStr]
-    DictIntStrAny = Dict[IntStr, Any]
+    from .typing import (  # noqa: F401
+        TupleGenerator,
+        DictStrAny,
+        ConfigType,
+        DictAny,
+        SetStr,
+        Model,
+        SetIntStr,
+        DictIntStrAny,
+    )
 
 try:
     import cython  # type: ignore

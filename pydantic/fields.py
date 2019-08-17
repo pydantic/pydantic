@@ -22,7 +22,7 @@ from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .utils import (
+from .typing import (
     AnyCallable,
     AnyType,
     Callable,
@@ -31,8 +31,8 @@ from .utils import (
     is_literal_type,
     lenient_issubclass,
     literal_values,
-    sequence_like,
 )
+from .utils import sequence_like
 from .validators import NoneType, constant_validator, dict_validator, find_validators
 
 try:
