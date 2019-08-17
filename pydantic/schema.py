@@ -13,20 +13,9 @@ from pydantic.color import Color
 
 from .fields import Field, Shape
 from .json import pydantic_encoder
-from .types import (
-    UUID1,
-    UUID3,
-    UUID4,
-    UUID5,
+from .networks import (
     AnyUrl,
-    ConstrainedDecimal,
-    ConstrainedFloat,
-    ConstrainedInt,
-    ConstrainedList,
-    ConstrainedStr,
-    DirectoryPath,
     EmailStr,
-    FilePath,
     IPv4Address,
     IPv4Interface,
     IPv4Network,
@@ -36,8 +25,21 @@ from .types import (
     IPvAnyAddress,
     IPvAnyInterface,
     IPvAnyNetwork,
-    Json,
     NameEmail,
+)
+from .types import (
+    UUID1,
+    UUID3,
+    UUID4,
+    UUID5,
+    ConstrainedDecimal,
+    ConstrainedFloat,
+    ConstrainedInt,
+    ConstrainedList,
+    ConstrainedStr,
+    DirectoryPath,
+    FilePath,
+    Json,
     SecretBytes,
     SecretStr,
     StrictBool,

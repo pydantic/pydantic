@@ -1,5 +1,4 @@
 import inspect
-import re
 import sys
 from contextlib import contextmanager
 from enum import Enum
@@ -21,17 +20,10 @@ from typing import (  # type: ignore
     no_type_check,
 )
 
-import pydantic
-
 try:
     from typing_extensions import Literal
 except ImportError:
     Literal = None  # type: ignore
-
-try:
-    import email_validator
-except ImportError:
-    email_validator = None
 
 try:
     from typing import _TypingBase as typing_base  # type: ignore
@@ -70,37 +62,7 @@ else:
     AnyCallable = TypingCallable[..., Any]
 
 
-PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
 AnyType = Type[Any]
-
-
-def validate_email(value: str) -> Tuple[str, str]:
-    """
-    Brutally simple email address validation. Note unlike most email address validation
-    * raw ip address (literal) domain parts are not allowed.
-    * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed
-    * the local part check is extremely basic. This raises the possibility of unicode spoofing, but no better
-        solution is really possible.
-    * spaces are striped from the beginning and end of addresses but no error is raised
-
-    See RFC 5322 but treat it with suspicion, there seems to exist no universally acknowledged test for a valid email!
-    """
-    if email_validator is None:
-        raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
-
-    m = PRETTY_REGEX.fullmatch(value)
-    name: Optional[str] = None
-    if m:
-        name, value = m.groups()
-
-    email = value.strip()
-
-    try:
-        email_validator.validate_email(email, check_deliverability=False)
-    except email_validator.EmailNotValidError as e:
-        raise pydantic.errors.EmailError() from e
-
-    return name or email[: email.index('@')], email.lower()
 
 
 def import_string(dotted_path: str) -> Any:
@@ -180,43 +142,6 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
                 f'Field name "{field_name}" shadows a BaseModel attribute; '
                 f'use a different field name with "alias=\'{field_name}\'".'
             )
-
-
-def _host_regex_str(require_tld: bool = False) -> str:
-    """
-    Host regex generator.
-
-    :param require_tld: whether the URL must include a top level domain, eg. reject non-FQDN hostnames
-    """
-    domain_chunk = r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?'
-    domain = fr'(?:{domain_chunk}\.)*{domain_chunk}'
-    if require_tld:
-        domain += r'\.[a-z]{2,63}'
-    host_options = (
-        domain + r'\.?',
-        r'localhost\.?',  # TODO is this required?
-        r'(?:\d{1,3}\.){3}\d{1,3}',  # ipv4
-        r'\[[A-F0-9]*:[A-F0-9:]+\]',  # ipv6
-    )
-    return r'(?P<host>' + '|'.join(host_options) + ')'
-
-
-url_regex = re.compile(
-    ''.join(
-        f'(?:{r})?'
-        for r in (
-            r'(?P<scheme>[a-z0-9]+?)://',  # scheme
-            r'(?P<user>\S+)(?P<password>:\S*)?@',  # user info
-            _host_regex_str(False),  # host
-            r':(?P<port>\d+)',  # port
-            r'(?P<path>/[^\s\?]*)',  # path
-            r'\?(?P<query>[^\s#]+)',  # query
-            r'#(?P<fragment>\S+)',  # fragment
-        )
-    ),
-    re.IGNORECASE,
-)
-host_tld_regex = re.compile(_host_regex_str(True), re.IGNORECASE)
 
 
 def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:

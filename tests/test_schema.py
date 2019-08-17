@@ -12,6 +12,21 @@ import pytest
 
 from pydantic import BaseModel, Schema, ValidationError, validator
 from pydantic.color import Color
+from pydantic.networks import (
+    AnyUrl,
+    EmailStr,
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+    IPvAnyAddress,
+    IPvAnyInterface,
+    IPvAnyNetwork,
+    NameEmail,
+    urlstr,
+)
 from pydantic.schema import (
     get_flat_models_from_model,
     get_flat_models_from_models,
@@ -24,26 +39,14 @@ from pydantic.types import (
     UUID3,
     UUID4,
     UUID5,
-    AnyUrl,
     ConstrainedBytes,
     ConstrainedDecimal,
     ConstrainedFloat,
     ConstrainedInt,
     ConstrainedStr,
     DirectoryPath,
-    EmailStr,
     FilePath,
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-    IPvAnyAddress,
-    IPvAnyInterface,
-    IPvAnyNetwork,
     Json,
-    NameEmail,
     NegativeFloat,
     NegativeInt,
     NoneBytes,
@@ -62,7 +65,6 @@ from pydantic.types import (
     confloat,
     conint,
     constr,
-    urlstr,
 )
 from pydantic.utils import Literal
 

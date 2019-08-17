@@ -1,7 +1,12 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, HttpUrl, ValidationError, urlstr
-from pydantic.types import PostgresDsn, RedisDsn
+from pydantic import AnyUrl, BaseModel, HttpUrl, PostgresDsn, RedisDsn, ValidationError, urlstr
+from pydantic.networks import validate_email
+
+try:
+    import email_validator
+except ImportError:
+    email_validator = None
 
 
 @pytest.mark.parametrize(
@@ -72,7 +77,7 @@ def test_any_url_success(value):
         ),
         ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
         # https://www.xudongz.com/blog/2017/idn-phishing/ this should really be accepted but converted to punycode,
-        # but that is not yet implemented.
+        # not yet implemented.
         (
             'https://www.аррӏе.com/',
             'value_error.url.extra',
@@ -212,3 +217,70 @@ def test_custom_schemes():
 
     with pytest.raises(ValidationError):
         Model(v='ws://example.org  ')
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+@pytest.mark.parametrize(
+    'value,name,email',
+    [
+        ('foobar@example.com', 'foobar', 'foobar@example.com'),
+        ('s@muelcolvin.com', 's', 's@muelcolvin.com'),
+        ('Samuel Colvin <s@muelcolvin.com>', 'Samuel Colvin', 's@muelcolvin.com'),
+        ('foobar <foobar@example.com>', 'foobar', 'foobar@example.com'),
+        (' foo.bar@example.com', 'foo.bar', 'foo.bar@example.com'),
+        ('foo.bar@example.com ', 'foo.bar', 'foo.bar@example.com'),
+        ('foo BAR <foobar@example.com >', 'foo BAR', 'foobar@example.com'),
+        ('FOO bar   <foobar@example.com> ', 'FOO bar', 'foobar@example.com'),
+        ('<FOOBAR@example.com> ', 'FOOBAR', 'foobar@example.com'),
+        ('ñoñó@example.com', 'ñoñó', 'ñoñó@example.com'),
+        ('我買@example.com', '我買', '我買@example.com'),
+        ('甲斐黒川日本@example.com', '甲斐黒川日本', '甲斐黒川日本@example.com'),
+        (
+            'чебурашкаящик-с-апельсинами.рф@example.com',
+            'чебурашкаящик-с-апельсинами.рф',
+            'чебурашкаящик-с-апельсинами.рф@example.com',
+        ),
+        ('उदाहरण.परीक्ष@domain.with.idn.tld', 'उदाहरण.परीक्ष', 'उदाहरण.परीक्ष@domain.with.idn.tld'),
+        ('foo.bar@example.com', 'foo.bar', 'foo.bar@example.com'),
+        ('foo.bar@exam-ple.com ', 'foo.bar', 'foo.bar@exam-ple.com'),
+        ('ιωάννης@εεττ.gr', 'ιωάννης', 'ιωάννης@εεττ.gr'),
+    ],
+)
+def test_address_valid(value, name, email):
+    assert validate_email(value) == (name, email)
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+@pytest.mark.parametrize(
+    'value',
+    [
+        'f oo.bar@example.com ',
+        'foo.bar@exam\nple.com ',
+        'foobar',
+        'foobar <foobar@example.com',
+        '@example.com',
+        'foobar@.example.com',
+        'foobar@.com',
+        'foo bar@example.com',
+        'foo@bar@example.com',
+        '\n@example.com',
+        '\r@example.com',
+        '\f@example.com',
+        ' @example.com',
+        '\u0020@example.com',
+        '\u001f@example.com',
+        '"@example.com',
+        '\"@example.com',
+        ',@example.com',
+        'foobar <foobar<@example.com>',
+    ],
+)
+def test_address_invalid(value):
+    with pytest.raises(ValueError):
+        validate_email(value)
+
+
+@pytest.mark.skipif(email_validator, reason='email_validator is installed')
+def test_email_validator_not_installed():
+    with pytest.raises(ImportError):
+        validate_email('s@muelcolvin.com')
