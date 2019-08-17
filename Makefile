@@ -9,7 +9,7 @@ install:
 	SKIP_CYTHON=1 pip install -e .
 
 .PHONY: build-cython-trace
-build-cython-trace: clean
+build-cython-trace:
 	python setup.py build_ext --force --inplace --define CYTHON_TRACE
 
 .PHONY: build-cython

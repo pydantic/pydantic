@@ -290,17 +290,18 @@ class AnyUrl(str):
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
-        yield str_validator
-        if cls.strip_whitespace:
-            yield constr_strip_whitespace
-        yield constr_length_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> 'AnyUrl':
+    def validate(cls, value: Any, field: 'Field', config: 'BaseConfig') -> 'AnyUrl':
         if type(value) == cls:
-            return value  # type: ignore
-        m = url_regex.match(value)
+            return value
+        value = str_validator(value)
+        if cls.strip_whitespace:
+            value = value.strip()
+        url: str = cast(str, constr_length_validator(value, field, config))
+
+        m = url_regex.match(url)
         if not m:  # pragma: no cover
             # FIXME can this actually ever happen?
             raise errors.UrlError()
@@ -322,10 +323,10 @@ class AnyUrl(str):
         elif cls.tld_required and not host_tld_regex.fullmatch(host):
             raise errors.UrlHostTldError()
 
-        if m.end() != len(value):
-            raise errors.UrlExtraError(extra=value[m.end() :])
+        if m.end() != len(url):
+            raise errors.UrlExtraError(extra=url[m.end() :])
 
-        return cls(value, **parts)
+        return cls(url, **parts)
 
     @no_type_check
     def strip(self) -> str:
