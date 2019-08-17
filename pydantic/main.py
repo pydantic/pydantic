@@ -204,11 +204,16 @@ class MetaModel(ABCMeta):
                     and not isinstance(value, untouched_types)
                     and var_name not in class_vars
                 ):
+                    # if field is existing already only update the default
+                    # value and keep the typehint otherwise pass None to infer
+                    # from the default value
+                    annotation = fields[var_name].type_ if var_name in fields else None
+
                     validate_field_name(bases, var_name)
                     fields[var_name] = Field.infer(
                         name=var_name,
                         value=value,
-                        annotation=annotations.get(var_name),
+                        annotation=annotation,
                         class_validators=vg.get_validators(var_name),
                         config=config,
                     )

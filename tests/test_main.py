@@ -159,6 +159,37 @@ def test_infer_type():
     assert Model().c == 0
 
 
+def test_default_value_inheritance():
+    class Base(BaseModel):
+        i: int = 1
+        s: str = 'string'
+        f: float = 1.1
+
+    class ChangedType(Base):
+        i: str = '1'
+
+    class ChangedDefault(Base):
+        i = '3'
+
+    annot_i = Base.__annotations__['i']
+    field_i = Base.__fields__['i']
+    assert annot_i is int
+    assert field_i.type_ is int
+    assert field_i.default == 1
+
+    annot_i = ChangedType.__annotations__['i']
+    field_i = ChangedType.__fields__['i']
+    assert annot_i is str
+    assert field_i.type_ is str
+    assert field_i.default == '1'
+
+    annot_i = ChangedDefault.__annotations__['i']
+    field_i = ChangedDefault.__fields__['i']
+    assert annot_i is int
+    assert field_i.type_ is int
+    assert field_i.default == '3'
+
+
 def test_allow_extra():
     class Model(BaseModel):
         a: float = ...
