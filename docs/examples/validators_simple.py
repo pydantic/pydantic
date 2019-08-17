@@ -25,11 +25,11 @@ class UserModel(BaseModel):
         return v
 
 
-print(UserModel(name='samuel colvin', password1='zxcvbn', password2='zxcvbn'))
+print(UserModel(name='samuel colvin', username='scolvin', password1='zxcvbn', password2='zxcvbn'))
 # > UserModel name='Samuel Colvin' password1='zxcvbn' password2='zxcvbn'
 
 try:
-    UserModel(name='samuel', password1='zxcvbn', password2='zxcvbn2')
+    UserModel(name='samuel', username='scolvin', password1='zxcvbn', password2='zxcvbn2')
 except ValidationError as e:
     print(e)
 """
