@@ -19,6 +19,10 @@ except ImportError:
         'postgres://user:pass@localhost:5432/app',
         'postgres://just-user@localhost:5432/app',
         'https://example.org',
+        'http://localhost',
+        'http://localhost/',
+        'http://localhost:8000',
+        'http://localhost:8000/',
         'ftp://example.org',
         'ftps://example.org',
         'http://example.co.jp',
@@ -55,11 +59,13 @@ def test_any_url_success(value):
         ('http:///example.com/', 'value_error.url.host', 'URL host invalid', None),
         ('https:///example.com/', 'value_error.url.host', 'URL host invalid', None),
         ('http://.example.com:8000/foo', 'value_error.url.host', 'URL host invalid', None),
+        ('https://example.org\\', 'value_error.url.host', 'URL host invalid', None),
+        ('https://exampl$e.org', 'value_error.url.host', 'URL host invalid', None),
         (
-            'https://example.org\\',
+            'https://example.org more',
             'value_error.url.extra',
-            "URL invalid, extra characters found after valid URL: '\\\\'",
-            {'extra': '\\'},
+            "URL invalid, extra characters found after valid URL: ' more'",
+            {'extra': ' more'},
         ),
         ('$https://example.org', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
         ('../icons/logo.gif', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
@@ -76,14 +82,6 @@ def test_any_url_success(value):
             {'extra': ':db8::ff00:42:8329'},
         ),
         ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
-        # https://www.xudongz.com/blog/2017/idn-phishing/ this should really be accepted but converted to punycode,
-        # not yet implemented.
-        (
-            'https://www.аррӏе.com/',
-            'value_error.url.extra',
-            "URL invalid, extra characters found after valid URL: 'аррӏе.com/'",
-            {'extra': 'аррӏе.com/'},
-        ),
     ],
 )
 def test_any_url_invalid(value, err_type, err_msg, err_ctx):
@@ -110,6 +108,7 @@ def test_any_str_obj():
     assert url.scheme == 'http'
     assert url.host == 'example.org'
     assert url.port is None
+    assert url == AnyUrl('http://example.org', scheme='https', host='example.org')
 
     url2 = Model(v='http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit').v
     assert str(url2) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
@@ -131,6 +130,9 @@ def test_any_str_obj():
     'value',
     [
         'http://example.org',
+        'http://example.org/foobar',
+        'http://example.org.',
+        'http://example.org./foobar',
         'HTTP://EXAMPLE.ORG',
         'https://example.org',
         'https://example.org?a=1&b=2',
@@ -154,6 +156,7 @@ def test_http_url_success(value):
             {'allowed_schemes': {'https', 'http'}},
         ),
         ('http://foobar/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
+        ('http://localhost/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
     ],
 )
 def test_http_url_invalid(value, err_type, err_msg, err_ctx):
@@ -169,13 +172,22 @@ def test_http_url_invalid(value, err_type, err_msg, err_ctx):
     assert error.get('ctx') == err_ctx, value
 
 
-def test_coerse_url():
+@pytest.mark.parametrize(
+    'input,output',
+    [
+        ('  https://www.example.com \n', 'https://www.example.com'),
+        (b'https://www.example.com', 'https://www.example.com'),
+        # https://www.xudongz.com/blog/2017/idn-phishing/ this should really be accepted but converted to punycode,
+        # not yet implemented.0
+        # TODO ('https://www.аррӏе.com/', 'https://www.xn--80ak6aa92e.com/'),
+        # TODO ('https://exampl£e.org', 'https://xn--example-gia.org'),
+    ],
+)
+def test_coerse_url(input, output):
     class Model(BaseModel):
         v: HttpUrl
 
-    assert Model(v='  https://www.example.com \n').v == 'https://www.example.com'
-    assert Model(v=b'https://www.example.com').v == 'https://www.example.com'
-    assert Model(v=b'https://example.com').v == AnyUrl('https://example.com', scheme='https', host='example.com')
+    assert Model(v=input).v == output
 
 
 def test_postgres_dsns():

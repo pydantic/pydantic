@@ -9,7 +9,7 @@ from ipaddress import (
     _BaseAddress,
     _BaseNetwork,
 )
-from typing import TYPE_CHECKING, Any, Generator, Optional, Set, Tuple, Type, Union, cast, no_type_check
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Set, Tuple, Type, Union, cast, no_type_check
 
 from . import errors
 from .utils import change_exception
@@ -43,6 +43,27 @@ __all__ = [
     'RedisDsn',
     'validate_email',
 ]
+
+host_part_names = ('domain', 'ipv4', 'ipv6')
+url_regex = re.compile(
+    r'(?:(?P<scheme>[a-z0-9]+?)://)?'  # scheme
+    r'(?:(?P<user>\S+)(?P<password>:\S*)?@)?'  # user info
+    r'(?:'
+    r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})|'  # ipv4
+    r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])|'  # ipv6
+    r'(?P<domain>[^\s/:?#]+)'  # domain, validation occurs later
+    r')?'
+    r'(?::(?P<port>\d+))?'  # port
+    r'(?P<path>/[^\s?]*)?'  # path
+    r'(?:\?(?P<query>[^\s#]+))?'  # query
+    r'(?:#(?P<fragment>\S+))?',  # fragment
+    re.IGNORECASE,
+)
+_ascii_chunk = r'[a-z-9](?:[a-z-9-]{0,61}[a-z-9])?'
+ascii_domain_regex = re.compile(fr'(?:{_ascii_chunk}\.)*?{_ascii_chunk}(?P<tld>\.[a-z]{{2,63}})\.?', re.IGNORECASE)
+
+_int_chunk = r'[a-\U000400000-9](?:[a-\U000400000-9-]{0,61}[a-\U000400000-9])?'
+int_domain_regex = re.compile(fr'(?:{_int_chunk}\.)*{_int_chunk}(?P<tld>\.[a-z]{{2,63}})?\.?', re.IGNORECASE)
 
 
 class AnyUrl(str):
@@ -97,31 +118,48 @@ class AnyUrl(str):
         url: str = cast(str, constr_length_validator(value, field, config))
 
         m = url_regex.match(url)
-        if not m:  # pragma: no cover
-            # FIXME can this actually ever happen?
-            raise errors.UrlError()
+        # the regex should always match, if it doesn't please report with details of the URL tried
+        assert m, 'URL regex failed unexpectedly'
 
         parts = m.groupdict()
-        # debug(parts)
         scheme = parts['scheme']
         if scheme is None:
             raise errors.UrlSchemeError()
         if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
             raise errors.UrlSchemePermittedError(cls.allowed_schemes)
 
-        if cls.user_required and parts['user'] is None:
+        user = parts['user']
+        if cls.user_required and user is None:
             raise errors.UrlUserInfoError()
 
-        host = parts['host']
-        if host is None:
-            raise errors.UrlHostError()
-        elif cls.tld_required and not host_tld_regex.fullmatch(host):
-            raise errors.UrlHostTldError()
+        host, host_type = cls.validate_host(parts)
 
         if m.end() != len(url):
             raise errors.UrlExtraError(extra=url[m.end() :])
 
-        return cls(url, **parts)
+        return cls(url, host=host, **{k: v for k, v in parts.items() if k not in host_part_names})
+
+    @classmethod
+    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, str]:
+        host, host_type = None, None
+        for f in host_part_names:
+            host = parts[f]
+            if host:
+                host_type = f
+                break
+
+        if host is None:
+            raise errors.UrlHostError()
+        elif host_type == 'domain':
+            d = ascii_domain_regex.fullmatch(host)
+            if not d:
+                d = int_domain_regex.fullmatch(host)
+                if not d:
+                    raise errors.UrlHostError()
+                # rebuild = True
+            if cls.tld_required and d.group('tld') is None:
+                raise errors.UrlHostTldError()
+        return host, host_type  # type: ignore
 
     @no_type_check
     def strip(self) -> str:
@@ -262,42 +300,7 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
             return IPv6Network(value)
 
 
-def _host_regex_str(require_tld: bool = False) -> str:
-    """
-    Host regex generator.
-
-    :param require_tld: whether the URL must include a top level domain, eg. reject non-FQDN hostnames
-    """
-    domain_chunk = r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?'
-    domain = fr'(?:{domain_chunk}\.)*{domain_chunk}'
-    if require_tld:
-        domain += r'\.[a-z]{2,63}'
-    host_options = (
-        domain + r'\.?',
-        r'localhost\.?',  # TODO is this required?
-        r'(?:\d{1,3}\.){3}\d{1,3}',  # ipv4
-        r'\[[A-F0-9]*:[A-F0-9:]+\]',  # ipv6
-    )
-    return r'(?P<host>' + '|'.join(host_options) + ')'
-
-
-url_regex = re.compile(
-    ''.join(
-        f'(?:{r})?'
-        for r in (
-            r'(?P<scheme>[a-z0-9]+?)://',  # scheme
-            r'(?P<user>\S+)(?P<password>:\S*)?@',  # user info
-            _host_regex_str(False),  # host
-            r':(?P<port>\d+)',  # port
-            r'(?P<path>/[^\s\?]*)',  # path
-            r'\?(?P<query>[^\s#]+)',  # query
-            r'#(?P<fragment>\S+)',  # fragment
-        )
-    ),
-    re.IGNORECASE,
-)
-host_tld_regex = re.compile(_host_regex_str(True), re.IGNORECASE)
-PRETTY_EMAIL_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
+pretty_email_regex = re.compile(r'([\w ]*?) *<(.*)> *')
 
 
 def validate_email(value: str) -> Tuple[str, str]:
@@ -314,7 +317,7 @@ def validate_email(value: str) -> Tuple[str, str]:
     if email_validator is None:
         raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
-    m = PRETTY_EMAIL_REGEX.fullmatch(value)
+    m = pretty_email_regex.fullmatch(value)
     name: Optional[str] = None
     if m:
         name, value = m.groups()

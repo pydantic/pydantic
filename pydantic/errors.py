@@ -73,7 +73,6 @@ class EmailError(PydanticValueError):
 
 class UrlError(PydanticValueError):
     code = 'url'
-    msg_template = 'TODO ???'
 
 
 class UrlSchemeError(UrlError):
