@@ -1,7 +1,7 @@
 import dataclasses
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, Optional
+from typing import ClassVar, FrozenSet, Optional
 
 import pytest
 
@@ -489,3 +489,10 @@ def test_classvar():
 
     tcv = TestClassVar(2)
     assert tcv.klassvar == "I'm a Class variable"
+
+
+def test_unsupported_field_type():
+    with pytest.raises(TypeError):
+        @pydantic.dataclasses.dataclass
+        class TestUnsupported:
+            unsupported: FrozenSet

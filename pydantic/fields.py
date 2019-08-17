@@ -246,13 +246,15 @@ class Field:
         elif issubclass(origin, Sequence):
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = SHAPE_SEQUENCE
-        else:
-            assert issubclass(origin, Mapping)
+        elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(
                 self.type_.__args__[0], 'key_' + self.name, for_keys=True  # type: ignore
             )
             self.type_ = self.type_.__args__[1]  # type: ignore
             self.shape = SHAPE_MAPPING
+        else:
+            raise TypeError("Type of field '{}' is not supported."
+                            .format(origin.__name__))
 
         if getattr(self.type_, '__origin__', None):
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
