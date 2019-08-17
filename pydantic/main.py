@@ -7,7 +7,7 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, Union, cast, no_type_check
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, no_type_check
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -25,16 +25,10 @@ if TYPE_CHECKING:  # pragma: no cover
     from .types import CallableGenerator, ModelOrDc
     from .class_validators import ValidatorListDict
 
-    from .typing import (  # noqa: F401
-        TupleGenerator,
-        DictStrAny,
-        ConfigType,
-        DictAny,
-        SetStr,
-        Model,
-        SetIntStr,
-        DictIntStrAny,
-    )
+    from .typing import TupleGenerator, DictStrAny, DictAny, SetStr, SetIntStr, DictIntStrAny  # noqa: F401
+
+    ConfigType = Type['BaseConfig']
+    Model = TypeVar('Model', bound='BaseModel')
 
 try:
     import cython  # type: ignore

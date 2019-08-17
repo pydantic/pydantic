@@ -12,7 +12,6 @@ from typing import (  # type: ignore
     Set,
     Tuple,
     Type,
-    TypeVar,
     Union,
     _eval_type,
 )
@@ -54,17 +53,13 @@ except ImportError:
 
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .main import BaseConfig, BaseModel  # noqa: F401
     from .fields import Field
 
-    AnyGenerator = Generator[Any, None, None]
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]
-    ConfigType = Type['BaseConfig']
     DictAny = Dict[Any, Any]
     SetStr = Set[str]
     ListStr = List[str]
-    Model = TypeVar('Model', bound='BaseModel')
     IntStr = Union[int, str]
     SetIntStr = Set[IntStr]
     DictIntStrAny = Dict[IntStr, Any]
@@ -86,14 +81,11 @@ __all__ = (
     'new_type_supertype',
     'is_classvar',
     'update_field_forward_refs',
-    'AnyGenerator',
     'TupleGenerator',
     'DictStrAny',
-    'ConfigType',
     'DictAny',
     'SetStr',
     'ListStr',
-    'Model',
     'IntStr',
     'SetIntStr',
     'DictIntStrAny',
