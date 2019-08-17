@@ -104,7 +104,7 @@ def test_any_str_obj():
 
     url = Model(v='http://example.org').v
     assert str(url) == 'http://example.org'
-    assert repr(url) == "<AnyUrl('http://example.org' scheme='http' host='example.org' host_type='domain' path='/')>"
+    assert repr(url) == ("<AnyUrl('http://example.org' scheme='http' host='example.org' tld='org' host_type='domain')>")
     assert url.scheme == 'http'
     assert url.host == 'example.org'
     assert url.host_type == 'domain'
@@ -115,8 +115,8 @@ def test_any_str_obj():
     assert str(url2) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
     assert repr(url2) == (
         "<AnyUrl('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit' "
-        "scheme='http' user='user:password' host='example.org' host_type='domain' port='1234' path='/the/path/' "
-        "query='query=here' fragment='fragment=is;this=bit')>"
+        "scheme='http' user='user:password' host='example.org' tld='org' host_type='domain' port='1234' "
+        "path='/the/path/' query='query=here' fragment='fragment=is;this=bit')>"
     )
     assert url2.scheme == 'http'
     assert url2.user == 'user:password'
@@ -138,6 +138,11 @@ def test_any_str_obj():
     assert url4.host == '[2001:db8::ff00:42]'
     assert url4.host_type == 'ipv6'
     assert url4.port == '8329'
+
+    url5 = Model(v='https://£££.org').v
+    assert url5.host == 'xn--9aaa.org'
+    assert url5.host_type == 'int_domain'
+    assert str(url5) == 'https://xn--9aaa.org'
 
 
 @pytest.mark.parametrize(
@@ -193,7 +198,7 @@ def test_http_url_invalid(value, err_type, err_msg, err_ctx):
         (b'https://www.example.com', 'https://www.example.com'),
         # https://www.xudongz.com/blog/2017/idn-phishing/ accepted but converted
         ('https://www.аррӏе.com/', 'https://www.xn--80ak6aa92e.com/'),
-        ('https://exampl£e.org', 'https://xn--example-gia.org/'),
+        ('https://exampl£e.org', 'https://xn--example-gia.org'),
     ],
 )
 def test_coerse_url(input, output):
@@ -242,6 +247,19 @@ def test_custom_schemes():
 
     with pytest.raises(ValidationError):
         Model(v='ws://example.org  ')
+
+
+@pytest.mark.parametrize(
+    'kwargs,expected',
+    [
+        (dict(scheme='ws', user='foo', host='example.net'), 'ws://foo@example.net'),
+        (dict(scheme='ws', user='foo', password='x', host='example.net'), 'ws://foo:x@example.net'),
+        (dict(scheme='ws', host='example.net', query='a=b', fragment='c=d'), 'ws://example.net?a=b#c=d'),
+        (dict(scheme='http', host='example.net', port='1234'), 'http://example.net:1234'),
+    ],
+)
+def test_build_url(kwargs, expected):
+    assert AnyUrl(None, **kwargs) == expected
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')

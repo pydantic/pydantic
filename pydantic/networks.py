@@ -60,10 +60,11 @@ url_regex = re.compile(
     re.IGNORECASE,
 )
 _ascii_chunk = r'[0-9a-z](?:[-0-9a-z]{0,61}[0-9a-z])?'
-ascii_domain_regex = re.compile(fr'(?:{_ascii_chunk}\.)*?{_ascii_chunk}(?P<tld>\.[a-z]{{2,63}})?\.?', re.IGNORECASE)
+_domain_ending = r'(?P<tld>\.[a-z]{2,63})?\.?'
+ascii_domain_regex = re.compile(fr'(?:{_ascii_chunk}\.)*?{_ascii_chunk}{_domain_ending}', re.IGNORECASE)
 
 _int_chunk = r'[0-9a-\U00040000](?:[-0-9a-\U00040000]{0,61}[0-9a-\U00040000])?'
-int_domain_regex = re.compile(fr'(?:{_int_chunk}\.)*?{_int_chunk}(?P<tld>\.[a-z]{{2,63}})?\.?', re.IGNORECASE)
+int_domain_regex = re.compile(fr'(?:{_int_chunk}\.)*?{_int_chunk}{_domain_ending}', re.IGNORECASE)
 
 
 class AnyUrl(str):
@@ -74,37 +75,11 @@ class AnyUrl(str):
     tld_required: bool = False
     user_required: bool = False
 
-    __slots__ = ('scheme', 'user', 'password', 'host', 'host_type', 'port', 'path', 'query', 'fragment')
+    __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
     @no_type_check
-    def __new__(
-        cls,
-        url: Optional[str],
-        *,
-        scheme: str,
-        user: Optional[str] = None,
-        password: Optional[str] = None,
-        host: str,
-        host_type: Optional[str] = None,
-        port: Optional[str] = None,
-        path: Optional[str] = None,
-        query: Optional[str] = None,
-        fragment: Optional[str] = None,
-    ) -> object:
-        if url is None:
-            url = scheme + '://'
-            if user:
-                url += user
-                if password:
-                    url += ':' + password
-                url += '@'
-            url += host
-            url += path or '/'
-            if query:
-                url += '?' + query
-            if fragment:
-                url += '#' + fragment
-        return str.__new__(cls, url)
+    def __new__(cls, url: Optional[str], **kwargs) -> object:
+        return str.__new__(cls, cls.build(**kwargs) if url is None else url)
 
     def __init__(
         self,
@@ -114,7 +89,8 @@ class AnyUrl(str):
         user: Optional[str] = None,
         password: Optional[str] = None,
         host: str,
-        host_type: Optional[str] = None,
+        tld: Optional[str] = None,
+        host_type: str = 'domain',
         port: Optional[str] = None,
         path: Optional[str] = None,
         query: Optional[str] = None,
@@ -125,11 +101,43 @@ class AnyUrl(str):
         self.user = user
         self.password = password
         self.host = host
+        self.tld = tld
         self.host_type = host_type
         self.port = port
-        self.path = path or '/'
+        self.path = path
         self.query = query
         self.fragment = fragment
+
+    @classmethod
+    def build(
+        cls,
+        *,
+        scheme: str,
+        user: Optional[str] = None,
+        password: Optional[str] = None,
+        host: str,
+        port: Optional[str] = None,
+        path: Optional[str] = None,
+        query: Optional[str] = None,
+        fragment: Optional[str] = None,
+        **kwargs: str,
+    ) -> str:
+        url = scheme + '://'
+        if user:
+            url += user
+            if password:
+                url += ':' + password
+            url += '@'
+        url += host
+        if port:
+            url += ':' + port
+        if path:
+            url += path
+        if query:
+            url += '?' + query
+        if fragment:
+            url += '#' + fragment
+        return url
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -160,22 +168,29 @@ class AnyUrl(str):
         if cls.user_required and user is None:
             raise errors.UrlUserInfoError()
 
-        host, host_type, rebuild = cls.validate_host(parts)
+        host, tld, host_type, rebuild = cls.validate_host(parts)
 
         if m.end() != len(url):
             raise errors.UrlExtraError(extra=url[m.end() :])
 
         return cls(
             None if rebuild else url,
+            scheme=scheme,
+            user=user,
+            password=parts['password'],
             host=host,
+            tld=tld,
             host_type=host_type,
-            **{k: v for k, v in parts.items() if k not in host_part_names},
+            port=parts['port'],
+            path=parts['path'],
+            query=parts['query'],
+            fragment=parts['fragment'],
         )
 
     @classmethod
-    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, str, bool]:
-        host, host_type, rebuild = None, None, False
-        for f in host_part_names:
+    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, Optional[str], str, bool]:
+        host, tld, host_type, rebuild = None, None, None, False
+        for f in ('domain', 'ipv4', 'ipv6'):
             host = parts[f]
             if host:
                 host_type = f
@@ -185,22 +200,20 @@ class AnyUrl(str):
             raise errors.UrlHostError()
         elif host_type == 'domain':
             d = ascii_domain_regex.fullmatch(host)
-            if not d:
+            if d is None:
                 d = int_domain_regex.fullmatch(host)
                 if not d:
                     raise errors.UrlHostError()
-                host_type = 'international_domain'
-                host = host.encode('idna').decode('ascii')
+                host_type = 'int_domain'
                 rebuild = True
+                host = host.encode('idna').decode('ascii')
 
-            if cls.tld_required and d.group('tld') is None:
+            tld = d.group('tld')
+            if tld is not None:
+                tld = tld[1:]
+            elif cls.tld_required:
                 raise errors.UrlHostTldError()
-        return host, host_type, rebuild  # type: ignore
-
-    @no_type_check
-    def strip(self) -> str:
-        # required so constr_length_validator doesn't simplify AnyStr objects to strings
-        return self
+        return host, tld, host_type, rebuild  # type: ignore
 
     def __repr__(self) -> str:
         extra = ' '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
