@@ -151,14 +151,12 @@ UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
 
 class MetaModel(ABCMeta):
-    @no_type_check
+    @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace):
         fields: Dict[str, Field] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
-        all_annotations: Dict[str, AnyType] = {}
         for base in reversed(bases):
-            all_annotations.update(getattr(base, '__annotations__', {}))
             if issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(deepcopy(base.__fields__))
                 config = inherit_config(base.__config__, config)
@@ -181,7 +179,6 @@ class MetaModel(ABCMeta):
         class_vars = set()
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
-            all_annotations.update(annotations)
             untouched_types = UNTOUCHED_TYPES + config.keep_untouched
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
@@ -208,13 +205,19 @@ class MetaModel(ABCMeta):
                     and var_name not in class_vars
                 ):
                     validate_field_name(bases, var_name)
-                    fields[var_name] = Field.infer(
+                    inferred = Field.infer(
                         name=var_name,
                         value=value,
-                        annotation=all_annotations.get(var_name),
+                        annotation=annotations.get(var_name),
                         class_validators=vg.get_validators(var_name),
                         config=config,
                     )
+                    if var_name in fields and inferred.type_ != fields[var_name].type_:
+                        raise TypeError(
+                            f'The type of {name}.{var_name} differs from the new default value; '
+                            f'if you wish to change the type of this field, please use a type annotation'
+                        )
+                    fields[var_name] = inferred
 
         _custom_root_type = '__root__' in fields
         if _custom_root_type:
