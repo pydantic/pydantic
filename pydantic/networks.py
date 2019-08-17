@@ -59,11 +59,11 @@ url_regex = re.compile(
     r'(?:#(?P<fragment>\S+))?',  # fragment
     re.IGNORECASE,
 )
-_ascii_chunk = r'[0-9a-z](?:[-0-9a-z]{0,61}[0-9a-z])?'
+_ascii_chunk = r'[_0-9a-z](?:[-_0-9a-z]{0,61}[_0-9a-z])?'
 _domain_ending = r'(?P<tld>\.[a-z]{2,63})?\.?'
 ascii_domain_regex = re.compile(fr'(?:{_ascii_chunk}\.)*?{_ascii_chunk}{_domain_ending}', re.IGNORECASE)
 
-_int_chunk = r'[0-9a-\U00040000](?:[-0-9a-\U00040000]{0,61}[0-9a-\U00040000])?'
+_int_chunk = r'[_0-9a-\U00040000](?:[-_0-9a-\U00040000]{0,61}[_0-9a-\U00040000])?'
 int_domain_regex = re.compile(fr'(?:{_int_chunk}\.)*?{_int_chunk}{_domain_ending}', re.IGNORECASE)
 
 

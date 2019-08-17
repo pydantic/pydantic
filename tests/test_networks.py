@@ -23,6 +23,7 @@ except ImportError:
         'http://localhost/',
         'http://localhost:8000',
         'http://localhost:8000/',
+        'https://foo_bar.example.com/',
         'ftp://example.org',
         'ftps://example.org',
         'http://example.co.jp',
@@ -44,13 +45,14 @@ except ImportError:
         'https://www.python.org/путь',
         'http://андрей@example.com',
         AnyUrl('https://example.com', scheme='https', host='example.com'),
+        'https://exam_ple.com/',
     ],
 )
 def test_any_url_success(value):
     class Model(BaseModel):
         v: AnyUrl
 
-    assert Model(v=value).v == value, value
+    assert Model(v=value).v, value
 
 
 @pytest.mark.parametrize(
@@ -61,6 +63,9 @@ def test_any_url_success(value):
         ('http://.example.com:8000/foo', 'value_error.url.host', 'URL host invalid', None),
         ('https://example.org\\', 'value_error.url.host', 'URL host invalid', None),
         ('https://exampl$e.org', 'value_error.url.host', 'URL host invalid', None),
+        ('http://??', 'value_error.url.host', 'URL host invalid', None),
+        ('http://.', 'value_error.url.host', 'URL host invalid', None),
+        ('http://..', 'value_error.url.host', 'URL host invalid', None),
         (
             'https://example.org more',
             'value_error.url.extra',
@@ -98,7 +103,7 @@ def test_any_url_invalid(value, err_type, err_msg, err_ctx):
     assert error.get('ctx') == err_ctx, value
 
 
-def test_any_str_obj():
+def test_any_url_obj():
     class Model(BaseModel):
         v: AnyUrl
 
@@ -156,6 +161,8 @@ def test_any_str_obj():
         'https://example.org',
         'https://example.org?a=1&b=2',
         'https://example.org#a=3;b=3',
+        'https://foo_bar.example.com/',
+        'https://exam_ple.com/',  # should perhaps fail? I think it's contrary to the RFC but chrome allows it
     ],
 )
 def test_http_url_success(value):
