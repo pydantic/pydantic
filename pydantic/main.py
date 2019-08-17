@@ -329,11 +329,10 @@ class BaseModel(metaclass=MetaModel):
         `encoder` is an optional function to supply as `default` to json.dumps(), other arguments as per `json.dumps()`.
         """
         encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
-        return json.dumps(
-            self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults),
-            default=encoder,
-            **dumps_kwargs,
-        )
+        data = self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults)
+        if self._custom_root_type:
+            data = data['__root__']
+        return json.dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
