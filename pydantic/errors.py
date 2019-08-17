@@ -143,6 +143,10 @@ class SetError(PydanticTypeError):
     msg_template = 'value is not a valid set'
 
 
+class FrozenSetError(PydanticTypeError):
+    msg_template = 'value is not a valid frozenset'
+
+
 class TupleError(PydanticTypeError):
     msg_template = 'value is not a valid tuple'
 

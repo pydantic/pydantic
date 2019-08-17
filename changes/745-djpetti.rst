@@ -1,0 +1,2 @@
+- Added support for `FrozenSet` members in dataclasses.
+- Added a better error when attempting to use types from the `typing` module that are not supported by Pydantic.

@@ -211,7 +211,7 @@ def change_exception(raise_exc: ExcType, *except_types: ExcType) -> Generator[No
 
 
 def sequence_like(v: AnyType) -> bool:
-    return isinstance(v, (list, tuple, set)) or inspect.isgenerator(v)
+    return isinstance(v, (list, tuple, set, frozenset)) or inspect.isgenerator(v)
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:

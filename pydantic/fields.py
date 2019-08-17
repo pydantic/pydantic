@@ -2,6 +2,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    FrozenSet,
     Generator,
     Iterable,
     Iterator,
@@ -61,6 +62,7 @@ SHAPE_MAPPING = 4
 SHAPE_TUPLE = 5
 SHAPE_TUPLE_ELLIPS = 6
 SHAPE_SEQUENCE = 7
+SHAPE_FROZENSET = 8
 
 
 class Field:
@@ -243,6 +245,9 @@ class Field:
         elif issubclass(origin, Set):
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = SHAPE_SET
+        elif issubclass(origin, FrozenSet):
+            self.type_ = self.type_.__args__[0]  # type: ignore
+            self.shape = SHAPE_FROZENSET
         elif issubclass(origin, Sequence):
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = SHAPE_SEQUENCE
@@ -253,8 +258,7 @@ class Field:
             self.type_ = self.type_.__args__[1]  # type: ignore
             self.shape = SHAPE_MAPPING
         else:
-            raise TypeError("Type of field '{}' is not supported."
-                            .format(origin.__name__))
+            raise TypeError("Type of field '{}' is not yet supported.".format(origin))
 
         if getattr(self.type_, '__origin__', None):
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
@@ -335,10 +339,14 @@ class Field:
         """
         if not sequence_like(v):
             e: errors_.PydanticTypeError
-            if self.shape == SHAPE_LIST:
-                e = errors_.ListError()
-            elif self.shape == SHAPE_SET:
-                e = errors_.SetError()
+            # Map shapes to error types.
+            shapes_to_errors = {
+                SHAPE_LIST: errors_.ListError,
+                SHAPE_SET: errors_.SetError,
+                SHAPE_FROZENSET: errors_.FrozenSetError,
+            }
+            if self.shape in shapes_to_errors:
+                e = shapes_to_errors[self.shape]()
             else:
                 e = errors_.SequenceError()
             return v, ErrorWrapper(e, loc=loc)
@@ -356,11 +364,13 @@ class Field:
         if errors:
             return v, errors
 
-        converted: Union[List[Any], Set[Any], Tuple[Any, ...], Iterator[Any]] = result
+        converted: Union[List[Any], Set[Any], FrozenSet[Any], Tuple[Any, ...], Iterator[Any]] = result
 
         if self.shape == SHAPE_SET:
             converted = set(result)
-        elif self.shape == SHAPE_TUPLE_ELLIPS:
+        elif self.shape is SHAPE_FROZENSET:
+            converted = frozenset(result)
+        elif self.shape is SHAPE_TUPLE_ELLIPS:
             converted = tuple(result)
         elif self.shape == SHAPE_SEQUENCE:
             if isinstance(v, tuple):
