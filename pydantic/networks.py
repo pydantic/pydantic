@@ -59,11 +59,11 @@ url_regex = re.compile(
     r'(?:#(?P<fragment>\S+))?',  # fragment
     re.IGNORECASE,
 )
-_ascii_chunk = r'[a-z-9](?:[a-z-9-]{0,61}[a-z-9])?'
-ascii_domain_regex = re.compile(fr'(?:{_ascii_chunk}\.)*?{_ascii_chunk}(?P<tld>\.[a-z]{{2,63}})\.?', re.IGNORECASE)
+_ascii_chunk = r'[0-9a-z](?:[-0-9a-z]{0,61}[0-9a-z])?'
+ascii_domain_regex = re.compile(fr'(?:{_ascii_chunk}\.)*?{_ascii_chunk}(?P<tld>\.[a-z]{{2,63}})?\.?', re.IGNORECASE)
 
-_int_chunk = r'[a-\U000400000-9](?:[a-\U000400000-9-]{0,61}[a-\U000400000-9])?'
-int_domain_regex = re.compile(fr'(?:{_int_chunk}\.)*{_int_chunk}(?P<tld>\.[a-z]{{2,63}})?\.?', re.IGNORECASE)
+_int_chunk = r'[0-9a-\U00040000](?:[-0-9a-\U00040000]{0,61}[0-9a-\U00040000])?'
+int_domain_regex = re.compile(fr'(?:{_int_chunk}\.)*?{_int_chunk}(?P<tld>\.[a-z]{{2,63}})?\.?', re.IGNORECASE)
 
 
 class AnyUrl(str):
@@ -74,10 +74,36 @@ class AnyUrl(str):
     tld_required: bool = False
     user_required: bool = False
 
-    __slots__ = ('scheme', 'user', 'password', 'host', 'port', 'path', 'query', 'fragment')
+    __slots__ = ('scheme', 'user', 'password', 'host', 'host_type', 'port', 'path', 'query', 'fragment')
 
     @no_type_check
-    def __new__(cls, url: str, **kwargs: Optional[str]) -> object:
+    def __new__(
+        cls,
+        url: Optional[str],
+        *,
+        scheme: str,
+        user: Optional[str] = None,
+        password: Optional[str] = None,
+        host: str,
+        host_type: Optional[str] = None,
+        port: Optional[str] = None,
+        path: Optional[str] = None,
+        query: Optional[str] = None,
+        fragment: Optional[str] = None,
+    ) -> object:
+        if url is None:
+            url = scheme + '://'
+            if user:
+                url += user
+                if password:
+                    url += ':' + password
+                url += '@'
+            url += host
+            url += path or '/'
+            if query:
+                url += '?' + query
+            if fragment:
+                url += '#' + fragment
         return str.__new__(cls, url)
 
     def __init__(
@@ -88,6 +114,7 @@ class AnyUrl(str):
         user: Optional[str] = None,
         password: Optional[str] = None,
         host: str,
+        host_type: Optional[str] = None,
         port: Optional[str] = None,
         path: Optional[str] = None,
         query: Optional[str] = None,
@@ -98,8 +125,9 @@ class AnyUrl(str):
         self.user = user
         self.password = password
         self.host = host
+        self.host_type = host_type
         self.port = port
-        self.path = path
+        self.path = path or '/'
         self.query = query
         self.fragment = fragment
 
@@ -132,16 +160,21 @@ class AnyUrl(str):
         if cls.user_required and user is None:
             raise errors.UrlUserInfoError()
 
-        host, host_type = cls.validate_host(parts)
+        host, host_type, rebuild = cls.validate_host(parts)
 
         if m.end() != len(url):
             raise errors.UrlExtraError(extra=url[m.end() :])
 
-        return cls(url, host=host, **{k: v for k, v in parts.items() if k not in host_part_names})
+        return cls(
+            None if rebuild else url,
+            host=host,
+            host_type=host_type,
+            **{k: v for k, v in parts.items() if k not in host_part_names},
+        )
 
     @classmethod
-    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, str]:
-        host, host_type = None, None
+    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, str, bool]:
+        host, host_type, rebuild = None, None, False
         for f in host_part_names:
             host = parts[f]
             if host:
@@ -156,10 +189,13 @@ class AnyUrl(str):
                 d = int_domain_regex.fullmatch(host)
                 if not d:
                     raise errors.UrlHostError()
-                # rebuild = True
+                host_type = 'international_domain'
+                host = host.encode('idna').decode('ascii')
+                rebuild = True
+
             if cls.tld_required and d.group('tld') is None:
                 raise errors.UrlHostTldError()
-        return host, host_type  # type: ignore
+        return host, host_type, rebuild  # type: ignore
 
     @no_type_check
     def strip(self) -> str:

@@ -104,9 +104,10 @@ def test_any_str_obj():
 
     url = Model(v='http://example.org').v
     assert str(url) == 'http://example.org'
-    assert repr(url) == "<AnyUrl('http://example.org' scheme='http' host='example.org')>"
+    assert repr(url) == "<AnyUrl('http://example.org' scheme='http' host='example.org' host_type='domain' path='/')>"
     assert url.scheme == 'http'
     assert url.host == 'example.org'
+    assert url.host_type == 'domain'
     assert url.port is None
     assert url == AnyUrl('http://example.org', scheme='https', host='example.org')
 
@@ -114,16 +115,29 @@ def test_any_str_obj():
     assert str(url2) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
     assert repr(url2) == (
         "<AnyUrl('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit' "
-        "scheme='http' user='user:password' host='example.org' port='1234' path='/the/path/' query='query=here' "
-        "fragment='fragment=is;this=bit')>"
+        "scheme='http' user='user:password' host='example.org' host_type='domain' port='1234' path='/the/path/' "
+        "query='query=here' fragment='fragment=is;this=bit')>"
     )
     assert url2.scheme == 'http'
     assert url2.user == 'user:password'
     assert url2.host == 'example.org'
+    assert url.host_type == 'domain'
     assert url2.port == '1234'
     assert url2.path == '/the/path/'
     assert url2.query == 'query=here'
     assert url2.fragment == 'fragment=is;this=bit'
+
+    url3 = Model(v='ftp://123.45.67.8:8329/').v
+    assert url3.scheme == 'ftp'
+    assert url3.host == '123.45.67.8'
+    assert url3.host_type == 'ipv4'
+    assert url3.port == '8329'
+
+    url4 = Model(v='wss://[2001:db8::ff00:42]:8329').v
+    assert url4.scheme == 'wss'
+    assert url4.host == '[2001:db8::ff00:42]'
+    assert url4.host_type == 'ipv6'
+    assert url4.port == '8329'
 
 
 @pytest.mark.parametrize(
@@ -177,10 +191,9 @@ def test_http_url_invalid(value, err_type, err_msg, err_ctx):
     [
         ('  https://www.example.com \n', 'https://www.example.com'),
         (b'https://www.example.com', 'https://www.example.com'),
-        # https://www.xudongz.com/blog/2017/idn-phishing/ this should really be accepted but converted to punycode,
-        # not yet implemented.0
-        # TODO ('https://www.аррӏе.com/', 'https://www.xn--80ak6aa92e.com/'),
-        # TODO ('https://exampl£e.org', 'https://xn--example-gia.org'),
+        # https://www.xudongz.com/blog/2017/idn-phishing/ accepted but converted
+        ('https://www.аррӏе.com/', 'https://www.xn--80ak6aa92e.com/'),
+        ('https://exampl£e.org', 'https://xn--example-gia.org/'),
     ],
 )
 def test_coerse_url(input, output):
