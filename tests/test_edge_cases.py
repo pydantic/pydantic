@@ -615,6 +615,20 @@ def test_partial_inheritance_config():
     assert str(m) == "Child a=1 b='s'"
 
 
+def test_annotation_inheritance():
+    class A(BaseModel):
+        value: int = 1
+
+    class B(A):
+        value = 'G'
+
+    with pytest.raises(ValidationError) as exc_info:
+        B(value='G')
+    assert exc_info.value.errors() == [
+        {'loc': ('value',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
 def test_string_none():
     class Model(BaseModel):
         a: constr(min_length=20, max_length=1000) = ...
