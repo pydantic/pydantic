@@ -183,6 +183,12 @@ def test_http_url_success(value):
         ),
         ('http://foobar/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
         ('http://localhost/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
+        (
+            'x' * 2084,
+            'value_error.any_str.max_length',
+            'ensure this value has at most 2083 characters',
+            {'limit_value': 2083},
+        ),
     ],
 )
 def test_http_url_invalid(value, err_type, err_msg, err_ctx):
@@ -267,6 +273,20 @@ def test_custom_schemes():
 )
 def test_build_url(kwargs, expected):
     assert AnyUrl(None, **kwargs) == expected
+
+
+def test_son():
+    class Model(BaseModel):
+        v: HttpUrl
+
+    m = Model(v='http://foo@example.net')
+    assert m.json() == '{"v": "http://foo@example.net"}'
+    assert m.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'minLength': 1, 'maxLength': 2083, 'type': 'string', 'format': 'uri'}},
+        'required': ['v'],
+    }
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
