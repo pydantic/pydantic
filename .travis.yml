@@ -19,7 +19,6 @@ script:
 
 - make lint
 - make mypy
-- make external-mypy
 
 env:
   global:
