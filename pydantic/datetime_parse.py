@@ -61,10 +61,10 @@ EPOCH = datetime(1970, 1, 1)
 # if greater than this, the number is in ms, if less than or equal it's in seconds
 # (in seconds this is 11th October 2603, in ms it's 20th August 1970)
 MS_WATERSHED = int(2e10)
-StrIntFloat = Union[str, int, float]
+StrBytesIntFloat = Union[str, bytes, int, float]
 
 
-def get_numeric(value: StrIntFloat) -> Union[None, int, float]:
+def get_numeric(value: StrBytesIntFloat) -> Union[None, int, float]:
     if isinstance(value, (int, float)):
         return value
     try:
@@ -80,34 +80,40 @@ def from_unix_seconds(seconds: Union[int, float]) -> datetime:
     return dt.replace(tzinfo=timezone.utc)
 
 
-def parse_date(value: Union[date, StrIntFloat]) -> date:
+def parse_date(value: Union[date, StrBytesIntFloat]) -> date:
     """
     Parse a date/int/float/string and return a datetime.date.
 
     Raise ValueError if the input is well formatted but not a valid date.
     Raise ValueError if the input isn't well formatted.
     """
-    if isinstance(value, date):
-        if isinstance(value, datetime):
-            return value.date()
-        else:
-            return value
+    try:
+        if isinstance(value, date):
+            if isinstance(value, datetime):
+                return value.date()
+            else:
+                return value
 
-    number = get_numeric(value)
-    if number is not None:
-        return from_unix_seconds(number).date()
+        number = get_numeric(value)
+        if number is not None:
+            return from_unix_seconds(number).date()
 
-    match = date_re.match(value)  # type: ignore
-    if match is None:
-        raise errors.DateError()
+        if isinstance(value, bytes):
+            value = value.decode()
 
-    kw = {k: int(v) for k, v in match.groupdict().items()}
+        match = date_re.match(value)  # type: ignore
+        if match is None:
+            raise errors.DateError()
 
-    with change_exception(errors.DateError, ValueError):
-        return date(**kw)
+        kw = {k: int(v) for k, v in match.groupdict().items()}
+
+        with change_exception(errors.DateError, ValueError):
+            return date(**kw)
+    except TypeError as e:
+        raise TypeError('invalid type; expected date, string, bytes, int or float') from e
 
 
-def parse_time(value: Union[time, StrIntFloat]) -> time:
+def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
     """
     Parse a time/string and return a datetime.time.
 
@@ -116,31 +122,37 @@ def parse_time(value: Union[time, StrIntFloat]) -> time:
     Raise ValueError if the input is well formatted but not a valid time.
     Raise ValueError if the input isn't well formatted, in particular if it contains an offset.
     """
-    if isinstance(value, time):
-        return value
+    try:
+        if isinstance(value, time):
+            return value
 
-    number = get_numeric(value)
-    if number is not None:
-        if number >= 86400:
-            # doesn't make sense since the time time loop back around to 0
+        number = get_numeric(value)
+        if number is not None:
+            if number >= 86400:
+                # doesn't make sense since the time time loop back around to 0
+                raise errors.TimeError()
+            return (datetime.min + timedelta(seconds=number)).time()
+
+        if isinstance(value, bytes):
+            value = value.decode()
+
+        match = time_re.match(value)  # type: ignore
+        if match is None:
             raise errors.TimeError()
-        return (datetime.min + timedelta(seconds=number)).time()
 
-    match = time_re.match(value)  # type: ignore
-    if match is None:
-        raise errors.TimeError()
+        kw = match.groupdict()
+        if kw['microsecond']:
+            kw['microsecond'] = kw['microsecond'].ljust(6, '0')
 
-    kw = match.groupdict()
-    if kw['microsecond']:
-        kw['microsecond'] = kw['microsecond'].ljust(6, '0')
+        kw_ = {k: int(v) for k, v in kw.items() if v is not None}
 
-    kw_ = {k: int(v) for k, v in kw.items() if v is not None}
-
-    with change_exception(errors.TimeError, ValueError):
-        return time(**kw_)  # type: ignore
+        with change_exception(errors.TimeError, ValueError):
+            return time(**kw_)  # type: ignore
+    except TypeError as e:
+        raise TypeError('invalid type; expected time, string, bytes, int or float') from e
 
 
-def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
+def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
     """
     Parse a datetime/int/float/string and return a datetime.datetime.
 
@@ -150,41 +162,47 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
     Raise ValueError if the input is well formatted but not a valid datetime.
     Raise ValueError if the input isn't well formatted.
     """
-    if isinstance(value, datetime):
-        return value
+    try:
+        if isinstance(value, datetime):
+            return value
 
-    number = get_numeric(value)
-    if number is not None:
-        return from_unix_seconds(number)
+        number = get_numeric(value)
+        if number is not None:
+            return from_unix_seconds(number)
 
-    match = datetime_re.match(value)  # type: ignore
-    if match is None:
-        raise errors.DateTimeError()
+        if isinstance(value, bytes):
+            value = value.decode()
 
-    kw = match.groupdict()
-    if kw['microsecond']:
-        kw['microsecond'] = kw['microsecond'].ljust(6, '0')
+        match = datetime_re.match(value)  # type: ignore
+        if match is None:
+            raise errors.DateTimeError()
 
-    tzinfo_str = kw.pop('tzinfo')
-    if tzinfo_str == 'Z':
-        tzinfo = timezone.utc
-    elif tzinfo_str is not None:
-        offset_mins = int(tzinfo_str[-2:]) if len(tzinfo_str) > 3 else 0
-        offset = 60 * int(tzinfo_str[1:3]) + offset_mins
-        if tzinfo_str[0] == '-':
-            offset = -offset
-        tzinfo = timezone(timedelta(minutes=offset))
-    else:
-        tzinfo = None
+        kw = match.groupdict()
+        if kw['microsecond']:
+            kw['microsecond'] = kw['microsecond'].ljust(6, '0')
 
-    kw_: Dict[str, Union[int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
-    kw_['tzinfo'] = tzinfo
+        tzinfo_str = kw.pop('tzinfo')
+        if tzinfo_str == 'Z':
+            tzinfo = timezone.utc
+        elif tzinfo_str is not None:
+            offset_mins = int(tzinfo_str[-2:]) if len(tzinfo_str) > 3 else 0
+            offset = 60 * int(tzinfo_str[1:3]) + offset_mins
+            if tzinfo_str[0] == '-':
+                offset = -offset
+            tzinfo = timezone(timedelta(minutes=offset))
+        else:
+            tzinfo = None
 
-    with change_exception(errors.DateTimeError, ValueError):
-        return datetime(**kw_)  # type: ignore
+        kw_: Dict[str, Union[int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
+        kw_['tzinfo'] = tzinfo
+
+        with change_exception(errors.DateTimeError, ValueError):
+            return datetime(**kw_)  # type: ignore
+    except TypeError as e:
+        raise TypeError('invalid type; expected datetime, string, bytes, int or float') from e
 
 
-def parse_duration(value: StrIntFloat) -> timedelta:
+def parse_duration(value: StrBytesIntFloat) -> timedelta:
     """
     Parse a duration int/float/string and return a datetime.timedelta.
 
@@ -192,25 +210,30 @@ def parse_duration(value: StrIntFloat) -> timedelta:
 
     Also supports ISO 8601 representation.
     """
-    if isinstance(value, timedelta):
-        return value
+    try:
+        if isinstance(value, timedelta):
+            return value
 
-    if isinstance(value, (int, float)):
-        # bellow code requires a string
-        value = str(value)
+        if isinstance(value, (int, float)):
+            # bellow code requires a string
+            value = str(value)
+        elif isinstance(value, bytes):
+            value = value.decode()
 
-    match = standard_duration_re.match(value) or iso8601_duration_re.match(value)
-    if not match:
-        raise errors.DurationError()
+        match = standard_duration_re.match(value) or iso8601_duration_re.match(value)
+        if not match:
+            raise errors.DurationError()
 
-    kw = match.groupdict()
-    sign = -1 if kw.pop('sign', '+') == '-' else 1
-    if kw.get('microseconds'):
-        kw['microseconds'] = kw['microseconds'].ljust(6, '0')
+        kw = match.groupdict()
+        sign = -1 if kw.pop('sign', '+') == '-' else 1
+        if kw.get('microseconds'):
+            kw['microseconds'] = kw['microseconds'].ljust(6, '0')
 
-    if kw.get('seconds') and kw.get('microseconds') and kw['seconds'].startswith('-'):
-        kw['microseconds'] = '-' + kw['microseconds']
+        if kw.get('seconds') and kw.get('microseconds') and kw['seconds'].startswith('-'):
+            kw['microseconds'] = '-' + kw['microseconds']
 
-    kw_ = {k: float(v) for k, v in kw.items() if v is not None}
+        kw_ = {k: float(v) for k, v in kw.items() if v is not None}
 
-    return sign * timedelta(**kw_)  # type: ignore
+        return sign * timedelta(**kw_)  # type: ignore
+    except TypeError as e:
+        raise TypeError('invalid type; expected timedelta, string, bytes, int or float') from e
