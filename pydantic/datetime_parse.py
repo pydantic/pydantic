@@ -68,15 +68,12 @@ def get_numeric(value: StrIntFloat) -> Union[None, int, float]:
     if isinstance(value, (int, float)):
         return value
     try:
-        return int(value)
+        return float(value)
     except ValueError:
-        try:
-            return float(value)
-        except ValueError:
-            return None
+        return None
 
 
-def from_unix_seconds(seconds: float) -> datetime:
+def from_unix_seconds(seconds: Union[int, float]) -> datetime:
     while seconds > MS_WATERSHED:
         seconds /= 1000
     dt = EPOCH + timedelta(seconds=seconds)
@@ -110,7 +107,7 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
         return date(**kw)
 
 
-def parse_time(value: Union[time, str]) -> time:
+def parse_time(value: Union[time, StrIntFloat]) -> time:
     """
     Parse a time/string and return a datetime.time.
 
@@ -122,7 +119,7 @@ def parse_time(value: Union[time, str]) -> time:
     if isinstance(value, time):
         return value
 
-    match = time_re.match(value)
+    match = time_re.match(value)  # type: ignore
     if not match:
         raise errors.TimeError()
 
@@ -153,8 +150,8 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
     if number is not None:
         return from_unix_seconds(number)
 
-    match = datetime_re.match(cast(str, value))
-    if not match:
+    match = datetime_re.match(value)  # type: ignore
+    if match is None:
         raise errors.DateTimeError()
 
     kw = match.groupdict()
