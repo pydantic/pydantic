@@ -172,7 +172,7 @@ def main():
             print(f'{p:>40} time={time:0.3f}s, success={success:0.2f}%')
             times.append(time)
         print(f'{p:>40} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
-        model_count = repeats * 3 * len(cases)
+        model_count = 3 * len(cases)
         avg = mean(times) / model_count * 1e6
         sd = stdev(times) / model_count * 1e6
         results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter '

@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import UUID1, BaseModel, conint, errors
+from pydantic import UUID1, BaseConfig, BaseModel, conint, errors
 from pydantic.error_wrappers import ValidationError, flatten_errors, get_exc_type
 
 
@@ -199,7 +199,7 @@ def test_validation_error(result, expected):
 
 def test_errors_unknown_error_object():
     with pytest.raises(RuntimeError):
-        list(flatten_errors([object]))
+        list(flatten_errors([object], BaseConfig))
 
 
 @pytest.mark.parametrize(

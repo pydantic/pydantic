@@ -725,7 +725,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
 
         if value is _missing:
             if field.required:
-                errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
+                errors.append(ErrorWrapper(MissingError(), loc=field.alias))
                 continue
             value = deepcopy(field.default)
             if not model.__config__.validate_all and not field.validate_always:
@@ -753,7 +753,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
                     values[f] = input_data[f]
             else:
                 for f in sorted(extra):
-                    errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
+                    errors.append(ErrorWrapper(ExtraError(), loc=f))
 
     err = None
     if errors:

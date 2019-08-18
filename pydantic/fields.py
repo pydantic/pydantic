@@ -323,7 +323,7 @@ class Field:
         try:
             return Json.validate(v), None
         except (ValueError, TypeError) as exc:
-            return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
+            return v, ErrorWrapper(exc, loc=loc)
 
     def _validate_sequence_like(
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
@@ -339,7 +339,7 @@ class Field:
                 e = errors_.SetError()
             else:
                 e = errors_.SequenceError()
-            return v, ErrorWrapper(e, loc=loc, config=self.model_config)
+            return v, ErrorWrapper(e, loc=loc)
 
         result = []
         errors: List[ErrorList] = []
@@ -381,7 +381,7 @@ class Field:
                 e = errors_.TupleLengthError(actual_length=actual_length, expected_length=expected_length)
 
         if e:
-            return v, ErrorWrapper(e, loc=loc, config=self.model_config)
+            return v, ErrorWrapper(e, loc=loc)
 
         result = []
         errors: List[ErrorList] = []
@@ -404,7 +404,7 @@ class Field:
         try:
             v_iter = dict_validator(v)
         except TypeError as exc:
-            return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
+            return v, ErrorWrapper(exc, loc=loc)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
@@ -448,7 +448,7 @@ class Field:
             try:
                 v = validator(cls, v, values, self, self.model_config)
             except (ValueError, TypeError, AssertionError) as exc:
-                return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
+                return v, ErrorWrapper(exc, loc=loc)
         return v, None
 
     def include_in_schema(self) -> bool:
