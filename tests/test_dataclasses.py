@@ -1,7 +1,7 @@
 import dataclasses
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, FrozenSet, MutableSet, Optional
+from typing import ClassVar, FrozenSet, Optional
 
 import pytest
 
@@ -491,14 +491,6 @@ def test_classvar():
     assert tcv.klassvar == "I'm a Class variable"
 
 
-def test_unsupported_field_type():
-    with pytest.raises(TypeError):
-
-        @pydantic.dataclasses.dataclass
-        class TestUnsupported:
-            unsupported: MutableSet[int]
-
-
 def test_frozenset_field():
     @pydantic.dataclasses.dataclass
     class TestFrozenSet:
@@ -508,24 +500,3 @@ def test_frozenset_field():
     object_under_test = TestFrozenSet(set=test_set)
 
     assert object_under_test.set == test_set
-
-
-def test_frozenset_field_conversion():
-    @pydantic.dataclasses.dataclass
-    class TestFrozenSet:
-        set: FrozenSet[int]
-
-    test_list = [1, 2, 3]
-    test_set = frozenset(test_list)
-    object_under_test = TestFrozenSet(set=test_list)
-
-    assert object_under_test.set == test_set
-
-
-def test_frozenset_field_not_convertible():
-    @pydantic.dataclasses.dataclass
-    class TestFrozenSet:
-        set: FrozenSet[int]
-
-    with pytest.raises(pydantic.ValidationError, match=r'frozenset'):
-        TestFrozenSet(set=42)

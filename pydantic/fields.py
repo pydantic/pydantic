@@ -258,7 +258,7 @@ class Field:
             self.type_ = self.type_.__args__[1]  # type: ignore
             self.shape = SHAPE_MAPPING
         else:
-            raise TypeError("Type of field '{}' is not yet supported.".format(origin))
+            raise TypeError(f'Fields of type "{origin}" are not supported.')
 
         if getattr(self.type_, '__origin__', None):
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
@@ -331,22 +331,22 @@ class Field:
         except (ValueError, TypeError) as exc:
             return v, ErrorWrapper(exc, loc=loc)
 
-    def _validate_sequence_like(
+    def _validate_sequence_like(  # noqa: C901 (ignore complexity)
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
+        Note that large if-else blocks are necessary to enable Cython
+        optimization, which is why we disable the complexity check above.
         """
         if not sequence_like(v):
             e: errors_.PydanticTypeError
-            # Map shapes to error types.
-            shapes_to_errors = {
-                SHAPE_LIST: errors_.ListError,
-                SHAPE_SET: errors_.SetError,
-                SHAPE_FROZENSET: errors_.FrozenSetError,
-            }
-            if self.shape in shapes_to_errors:
-                e = shapes_to_errors[self.shape]()
+            if self.shape == SHAPE_LIST:
+                e = errors_.ListError()
+            elif self.shape == SHAPE_SET:
+                e = errors_.SetError()
+            elif self.shape == SHAPE_FROZENSET:
+                e = errors_.FrozenSetError()
             else:
                 e = errors_.SequenceError()
             return v, ErrorWrapper(e, loc=loc)

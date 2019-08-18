@@ -6,7 +6,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Dict, Iterator, List, NewType, Optional, Pattern, Sequence, Set, Tuple
+from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Optional, Pattern, Sequence, Set, Tuple
 from uuid import UUID
 
 import pytest
@@ -1789,3 +1789,39 @@ def test_literal_multiple():
             'ctx': {'given': 'c', 'permitted': ('b',)},
         },
     ]
+
+
+def test_unsupported_field_type():
+    with pytest.raises(TypeError, match=r'MutableSet(.*)not supported'):
+
+        class UnsupportedModel(BaseModel):
+            unsupported: MutableSet[int]
+
+
+def test_frozenset_field():
+    class FrozenSetModel(BaseModel):
+        set: FrozenSet[int]
+
+    test_set = frozenset({1, 2, 3})
+    object_under_test = FrozenSetModel(set=test_set)
+
+    assert object_under_test.set == test_set
+
+
+def test_frozenset_field_conversion():
+    class FrozenSetModel(BaseModel):
+        set: FrozenSet[int]
+
+    test_list = [1, 2, 3]
+    test_set = frozenset(test_list)
+    object_under_test = FrozenSetModel(set=test_list)
+
+    assert object_under_test.set == test_set
+
+
+def test_frozenset_field_not_convertible():
+    class FrozenSetModel(BaseModel):
+        set: FrozenSet[int]
+
+    with pytest.raises(ValidationError, match=r'frozenset'):
+        FrozenSetModel(set=42)
