@@ -163,7 +163,7 @@ def constant_validator(v: 'Any', field: 'Field') -> 'Any':
     return v
 
 
-def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+def anystr_length_validator(v: 'StrBytes', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 
     min_length = config.min_anystr_length
@@ -177,7 +177,7 @@ def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig')
     return v
 
 
-def anystr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+def anystr_strip_whitespace(v: 'StrBytes') -> 'StrBytes':
     return v.strip()
 
 

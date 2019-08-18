@@ -1,4 +1,3 @@
-from enum import IntEnum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -54,14 +53,14 @@ if TYPE_CHECKING:  # pragma: no cover
     LocType = Union[Tuple[str, ...], str]
 
 
-class Shape(IntEnum):
-    SINGLETON = 1
-    LIST = 2
-    SET = 3
-    MAPPING = 4
-    TUPLE = 5
-    TUPLE_ELLIPS = 6
-    SEQUENCE = 7
+# used to be an enum but changed to int's for small performance improvement as less access overhead
+SHAPE_SINGLETON = 1
+SHAPE_LIST = 2
+SHAPE_SET = 3
+SHAPE_MAPPING = 4
+SHAPE_TUPLE = 5
+SHAPE_TUPLE_ELLIPS = 6
+SHAPE_SEQUENCE = 7
 
 
 class Field:
@@ -117,7 +116,7 @@ class Field:
         self.whole_pre_validators: Optional['ValidatorsList'] = None
         self.whole_post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
-        self.shape: Shape = Shape.SINGLETON
+        self.shape: int = SHAPE_SINGLETON
         self.prepare()
 
     @classmethod
@@ -218,12 +217,12 @@ class Field:
             return
 
         if issubclass(origin, Tuple):  # type: ignore
-            self.shape = Shape.TUPLE
+            self.shape = SHAPE_TUPLE
             self.sub_fields = []
             for i, t in enumerate(self.type_.__args__):  # type: ignore
                 if t is Ellipsis:
                     self.type_ = self.type_.__args__[0]  # type: ignore
-                    self.shape = Shape.TUPLE_ELLIPS
+                    self.shape = SHAPE_TUPLE_ELLIPS
                     return
                 self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
@@ -240,20 +239,20 @@ class Field:
                 )
 
             self.type_ = self.type_.__args__[0]  # type: ignore
-            self.shape = Shape.LIST
+            self.shape = SHAPE_LIST
         elif issubclass(origin, Set):
             self.type_ = self.type_.__args__[0]  # type: ignore
-            self.shape = Shape.SET
+            self.shape = SHAPE_SET
         elif issubclass(origin, Sequence):
             self.type_ = self.type_.__args__[0]  # type: ignore
-            self.shape = Shape.SEQUENCE
+            self.shape = SHAPE_SEQUENCE
         else:
             assert issubclass(origin, Mapping)
             self.key_field = self._create_sub_type(
                 self.type_.__args__[0], 'key_' + self.name, for_keys=True  # type: ignore
             )
             self.type_ = self.type_.__args__[1]  # type: ignore
-            self.shape = Shape.MAPPING
+            self.shape = SHAPE_MAPPING
 
         if getattr(self.type_, '__origin__', None):
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
@@ -306,11 +305,11 @@ class Field:
             if errors:
                 return v, errors
 
-        if self.shape is Shape.SINGLETON:
+        if self.shape == SHAPE_SINGLETON:
             v, errors = self._validate_singleton(v, values, loc, cls)
-        elif self.shape is Shape.MAPPING:
+        elif self.shape == SHAPE_MAPPING:
             v, errors = self._validate_mapping(v, values, loc, cls)
-        elif self.shape is Shape.TUPLE:
+        elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
         else:
             #  sequence, list, tuple, set, generator
@@ -334,9 +333,9 @@ class Field:
         """
         if not sequence_like(v):
             e: errors_.PydanticTypeError
-            if self.shape is Shape.LIST:
+            if self.shape == SHAPE_LIST:
                 e = errors_.ListError()
-            elif self.shape is Shape.SET:
+            elif self.shape == SHAPE_SET:
                 e = errors_.SetError()
             else:
                 e = errors_.SequenceError()
@@ -357,11 +356,11 @@ class Field:
 
         converted: Union[List[Any], Set[Any], Tuple[Any, ...], Iterator[Any]] = result
 
-        if self.shape is Shape.SET:
+        if self.shape == SHAPE_SET:
             converted = set(result)
-        elif self.shape is Shape.TUPLE_ELLIPS:
+        elif self.shape == SHAPE_TUPLE_ELLIPS:
             converted = tuple(result)
-        elif self.shape is Shape.SEQUENCE:
+        elif self.shape == SHAPE_SEQUENCE:
             if isinstance(v, tuple):
                 converted = tuple(result)
             elif isinstance(v, set):
@@ -465,7 +464,7 @@ class Field:
         from .main import BaseModel  # noqa: F811
 
         return (
-            self.shape != Shape.SINGLETON
+            self.shape != SHAPE_SINGLETON
             or lenient_issubclass(self.type_, (BaseModel, list, set, dict))
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )

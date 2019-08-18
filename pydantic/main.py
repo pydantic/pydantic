@@ -27,7 +27,7 @@ from typing import (
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import Field, Shape
+from .fields import SHAPE_MAPPING, Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
@@ -143,7 +143,7 @@ def is_valid_field(name: str) -> bool:
 def validate_custom_root_type(fields: Dict[str, Field]) -> None:
     if len(fields) > 1:
         raise ValueError('__root__ cannot be mixed with other fields')
-    if fields['__root__'].shape is Shape.MAPPING:
+    if fields['__root__'].shape == SHAPE_MAPPING:
         raise TypeError('custom root type cannot allow mapping')
 
 

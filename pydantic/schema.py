@@ -11,7 +11,7 @@ from uuid import UUID
 import pydantic
 from pydantic.color import Color
 
-from .fields import Field, Shape
+from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, Field
 from .json import pydantic_encoder
 from .types import (
     DSN,
@@ -478,21 +478,21 @@ def field_type_schema(
     definitions = {}
     nested_models: Set[str] = set()
     ref_prefix = ref_prefix or default_prefix
-    if field.shape is Shape.LIST:
+    if field.shape == SHAPE_LIST:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
         return {'type': 'array', 'items': f_schema}, definitions, nested_models
-    elif field.shape is Shape.SET:
+    elif field.shape == SHAPE_SET:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
         return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions, nested_models
-    elif field.shape is Shape.MAPPING:
+    elif field.shape == SHAPE_MAPPING:
         dict_schema: Dict[str, Any] = {'type': 'object'}
         key_field = cast(Field, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
@@ -509,7 +509,7 @@ def field_type_schema(
             # The dict values are not simply Any, so they need a schema
             dict_schema['additionalProperties'] = f_schema
         return dict_schema, definitions, nested_models
-    elif field.shape is Shape.TUPLE:
+    elif field.shape == SHAPE_TUPLE:
         sub_schema = []
         sub_fields = cast(List[Field], field.sub_fields)
         for sf in sub_fields:
@@ -523,7 +523,7 @@ def field_type_schema(
             sub_schema = sub_schema[0]  # type: ignore
         return {'type': 'array', 'items': sub_schema}, definitions, nested_models
     else:
-        assert field.shape is Shape.SINGLETON, field.shape
+        assert field.shape == SHAPE_SINGLETON, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
