@@ -477,10 +477,10 @@ def test_datetime_errors():
     with pytest.raises(ValueError) as exc_info:
         DatetimeModel(dt='2017-13-5T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001 broken')
     assert exc_info.value.errors() == [
-        {'loc': ('dt',), 'msg': 'invalid datetime format', 'type': 'type_error.datetime'},
-        {'loc': ('date_',), 'msg': 'invalid date format', 'type': 'type_error.date'},
-        {'loc': ('time_',), 'msg': 'invalid time format', 'type': 'type_error.time'},
-        {'loc': ('duration',), 'msg': 'invalid duration format', 'type': 'type_error.duration'},
+        {'loc': ('dt',), 'msg': 'invalid datetime format', 'type': 'value_error.datetime'},
+        {'loc': ('date_',), 'msg': 'invalid date format', 'type': 'value_error.date'},
+        {'loc': ('time_',), 'msg': 'invalid time format', 'type': 'value_error.time'},
+        {'loc': ('duration',), 'msg': 'invalid duration format', 'type': 'value_error.duration'},
     ]
 
 

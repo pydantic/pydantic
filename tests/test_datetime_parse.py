@@ -225,7 +225,7 @@ def test_model_type_errors(field, value, error_message):
 
 
 @pytest.mark.parametrize('field', ['dt', 'd', 't', 'dt'])
-def test_model_type_errors(field):
+def test_unicode_decode_error(field):
     class Model(BaseModel):
         dt: datetime = None
         d: date = None
