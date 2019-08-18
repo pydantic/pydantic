@@ -1,12 +1,11 @@
 import json
-from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 
 if TYPE_CHECKING:  # pragma: no cover
     from pydantic import BaseConfig  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
 
-__all__ = ('ErrorWrapper', 'ValidationError')
+__all__ = 'ErrorWrapper', 'ValidationError'
 
 
 class ErrorWrapper:
@@ -16,14 +15,11 @@ class ErrorWrapper:
         self.exc = exc
         self.loc: Tuple[str, ...] = loc if isinstance(loc, tuple) else (loc,)  # type: ignore
 
-    def dict(
-        self, *, config: Optional[Type['BaseConfig']] = None, loc_prefix: Optional[Tuple[str, ...]] = None
-    ) -> Dict[str, Any]:
+    def dict(self, config: Type['BaseConfig'], *, loc_prefix: Optional[Tuple[str, ...]] = None) -> Dict[str, Any]:
         loc = self.loc if loc_prefix is None else loc_prefix + self.loc
 
         type_ = get_exc_type(type(self.exc))
-        msg_template: Optional[str] = config and config.error_msg_templates.get(type_)  # type: ignore
-        msg_template = msg_template or getattr(self.exc, 'msg_template', None)
+        msg_template = config.error_msg_templates.get(type_) or getattr(self.exc, 'msg_template', None)
         ctx = getattr(self.exc, 'ctx', None)
         if msg_template:
             if ctx:
@@ -41,7 +37,7 @@ class ErrorWrapper:
         return d
 
     def __repr__(self) -> str:
-        return f'<ErrorWrapper {self.dict()}>'
+        return f'<ErrorWrapper exc={self.exc!r} loc={self.loc!r}>'
 
 
 # ErrorList is something like Union[List[Union[List[ErrorWrapper], ErrorWrapper]], ErrorWrapper]
@@ -50,19 +46,21 @@ ErrorList = Union[Sequence[Any], ErrorWrapper]
 
 
 class ValidationError(ValueError):
-    __slots__ = 'raw_errors', 'model'
+    __slots__ = 'raw_errors', 'model', '_error_cache'
 
     def __init__(self, errors: Sequence[ErrorList], model: 'ModelOrDc') -> None:
         self.raw_errors = errors
         self.model = model
+        self._error_cache: Optional[List[Dict[str, Any]]] = None
 
-    @lru_cache()
     def errors(self) -> List[Dict[str, Any]]:
-        try:
-            config = self.model.__config__  # type: ignore
-        except AttributeError:
-            config = self.model.__pydantic_model__.__config__  # type: ignore
-        return list(flatten_errors(self.raw_errors, config))
+        if self._error_cache is None:
+            try:
+                config = self.model.__config__  # type: ignore
+            except AttributeError:
+                config = self.model.__pydantic_model__.__config__  # type: ignore
+            self._error_cache = list(flatten_errors(self.raw_errors, config))
+        return self._error_cache
 
     def json(self, *, indent: Union[None, int, str] = 2) -> str:
         return json.dumps(self.errors(), indent=indent)
@@ -105,15 +103,27 @@ def flatten_errors(
                     error_loc = error.loc
                 yield from flatten_errors(error.exc.raw_errors, config, loc=error_loc)
             else:
-                yield error.dict(config=config, loc_prefix=loc)
+                yield error.dict(config, loc_prefix=loc)
         elif isinstance(error, list):
             yield from flatten_errors(error, config)
         else:
             raise RuntimeError(f'Unknown error object: {error}')
 
 
-@lru_cache()
+_EXC_TYPE_CACHE: Dict[Type[Exception], str] = {}
+
+
 def get_exc_type(cls: Type[Exception]) -> str:
+    # slightly more efficient than using lru_cache since we don't need to worry about the cache filling up
+    try:
+        return _EXC_TYPE_CACHE[cls]
+    except KeyError:
+        r = _get_exc_type(cls)
+        _EXC_TYPE_CACHE[cls] = r
+        return r
+
+
+def _get_exc_type(cls: Type[Exception]) -> str:
     if issubclass(cls, AssertionError):
         return 'assertion_error'
 
