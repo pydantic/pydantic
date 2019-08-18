@@ -74,7 +74,10 @@ def test_error_on_optional():
     with pytest.raises(ValidationError) as exc_info:
         Foobar(foo='x')
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'custom error', 'type': 'value_error'}]
-    assert repr(exc_info.value.raw_errors[0]) == "<ErrorWrapper exc=ValueError('custom error') loc=('foo',)>"
+    assert repr(exc_info.value.raw_errors[0]) in (
+        "<ErrorWrapper exc=ValueError('custom error') loc=('foo',)>",  # python 3.7
+        "<ErrorWrapper exc=ValueError('custom error',) loc=('foo',)>",  # python 3.6
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(foo=None)
