@@ -59,7 +59,12 @@ def test_date_parsing(value, result):
         ('10:20:30.400', time(10, 20, 30, 400_000)),
         ('4:8:16', time(4, 8, 16)),
         (time(4, 8, 16), time(4, 8, 16)),
+        (3610, time(1, 0, 10)),
+        (3600.5, time(1, 0, 0, 500000)),
+        (86400 - 1, time(23, 59, 59)),
         # Invalid inputs
+        (86400, errors.TimeError),
+        ('xxx', errors.TimeError),
         ('091500', errors.TimeError),
         ('09:15:90', errors.TimeError),
     ],

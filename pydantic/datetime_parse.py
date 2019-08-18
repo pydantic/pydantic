@@ -16,7 +16,7 @@ Changed to:
 """
 import re
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Dict, Union, cast
+from typing import Dict, Union
 
 from . import errors
 from .utils import change_exception
@@ -97,8 +97,8 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
     if number is not None:
         return from_unix_seconds(number).date()
 
-    match = date_re.match(cast(str, value))
-    if not match:
+    match = date_re.match(value)  # type: ignore
+    if match is None:
         raise errors.DateError()
 
     kw = {k: int(v) for k, v in match.groupdict().items()}
@@ -119,8 +119,15 @@ def parse_time(value: Union[time, StrIntFloat]) -> time:
     if isinstance(value, time):
         return value
 
+    number = get_numeric(value)
+    if number is not None:
+        if number >= 86400:
+            # doesn't make sense since the time time loop back around to 0
+            raise errors.TimeError()
+        return (datetime.min + timedelta(seconds=number)).time()
+
     match = time_re.match(value)  # type: ignore
-    if not match:
+    if match is None:
         raise errors.TimeError()
 
     kw = match.groupdict()
