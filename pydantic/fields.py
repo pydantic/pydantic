@@ -368,9 +368,9 @@ class Field:
 
         if self.shape == SHAPE_SET:
             converted = set(result)
-        elif self.shape is SHAPE_FROZENSET:
+        elif self.shape == SHAPE_FROZENSET:
             converted = frozenset(result)
-        elif self.shape is SHAPE_TUPLE_ELLIPS:
+        elif self.shape == SHAPE_TUPLE_ELLIPS:
             converted = tuple(result)
         elif self.shape == SHAPE_SEQUENCE:
             if isinstance(v, tuple):
