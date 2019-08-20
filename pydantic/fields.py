@@ -31,7 +31,6 @@ from .utils import (
     display_as_type,
     is_literal_type,
     lenient_issubclass,
-    literal_values,
     sequence_like,
 )
 from .validators import NoneType, constant_validator, dict_validator, find_validators
@@ -197,11 +196,7 @@ class Field:
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
         if is_literal_type(self.type_):
-            values = literal_values(self.type_)
-            if len(values) > 1:
-                self.type_ = Union[tuple(Literal[value] for value in values)]
-            else:
-                return
+            return
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
