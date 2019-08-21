@@ -3,6 +3,10 @@
 History
 -------
 
+v0.32.3 (unreleased)
+....................
+* fix error messages for ``Literal`` types with multiple allowed values, #770 by @dmontagu
+
 v0.32.2 (2019-08-17)
 ....................
 * fix ``__post_init__`` usage with dataclass inheritance, fix #739 by @samuelcolvin

@@ -49,6 +49,7 @@ from .types import (
     constr,
 )
 from .utils import (
+    Literal,
     is_callable_type,
     is_literal_type,
     is_new_type,
@@ -758,8 +759,16 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if is_new_type(field_type):
         field_type = new_type_supertype(field_type)
     if is_literal_type(field_type):
-        # If there were multiple literal values, field.sub_fields would not be falsy
-        literal_value = literal_values(field_type)[0]
+        values = literal_values(field_type)
+        if len(values) > 1:
+            return field_schema(
+                multivalue_literal_field_for_schema(values, field),
+                by_alias=by_alias,
+                model_name_map=model_name_map,
+                ref_prefix=ref_prefix,
+                known_models=known_models,
+            )
+        literal_value = values[0]
         field_type = type(literal_value)
         f_schema['const'] = literal_value
     if issubclass(field_type, Enum):
@@ -805,6 +814,19 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         else:
             return {'allOf': [schema_ref]}, definitions, nested_models
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
+
+
+def multivalue_literal_field_for_schema(values: Tuple[Any, ...], field: Field) -> Field:
+    return Field(
+        name=field.name,
+        type_=Union[tuple(Literal[value] for value in values)],
+        class_validators=field.class_validators,
+        model_config=field.model_config,
+        default=field.default,
+        required=field.required,
+        alias=field.alias,
+        schema=field.schema,
+    )
 
 
 def encode_default(dft: Any) -> Any:
