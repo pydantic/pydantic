@@ -277,7 +277,7 @@ def field_schema(
     ref_prefix = ref_prefix or default_prefix
     schema_overrides = False
     schema = cast('Schema', field.schema)
-    s = dict(title=schema.title or field.alias.title())
+    s = dict(title=schema.title or field.alias.title().replace('_', ' '))
     if schema.title:
         schema_overrides = True
 
