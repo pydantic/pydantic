@@ -864,24 +864,33 @@ environment variables or keyword arguments (e.g. in unit tests).
 (This script is complete, it should run "as is")
 
 Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` or ``auth_key`` by
-``export my_api_key=6380``.
+``export my_api_key=6380``. By default, environment variables are treated as case-insensitive, so
+``export my_prefix_redis_port=6380`` would work as well.
+(Aliases are always sensitive to case, so ``export MY_API_KEY=6380`` would not work.)
 
 By default ``BaseSettings`` considers field values in the following priority (where 3. has the highest priority
 and overrides the other two):
 
-1. The default values set in your ``Settings`` class
-2. Environment variables eg. ``MY_PREFIX_REDIS_PORT`` as described above.
-3. Argument passed to the ``Settings`` class on initialisation.
+1. The default values set in your ``Settings`` class.
+2. Environment variables, e.g. ``MY_PREFIX_REDIS_PORT`` as described above.
+3. Arguments passed to the ``Settings`` class on initialisation.
 
 This behaviour can be changed by overriding the ``_build_values`` method on ``BaseSettings``.
 
 Complex types like ``list``, ``set``, ``dict`` and submodels can be set by using JSON environment variables.
 
-Environment variables can be read in a case insensitive manner:
+Case-sensitivity can be turned on through the ``Config``:
 
-.. literalinclude:: examples/settings_case_insensitive.py
+.. literalinclude:: examples/settings_case_sensitive.py
 
-Here ``redis_port`` could be modified via ``export APP_REDIS_HOST``, ``export app_redis_host``, ``export app_REDIS_host``, etc.
+When ``case_sensitive`` is ``True``, the environment variable must be in all-caps,
+so in this example ``redis_host`` could only be modified via ``export REDIS_HOST``.
+
+.. note::
+
+   On Windows, python's `os` module always treats environment variables as case-insensitive, so the
+   ``case_sensitive`` config setting will have no effect -- settings will always be updated ignoring case.
+
 
 Dynamic model creation
 ......................
