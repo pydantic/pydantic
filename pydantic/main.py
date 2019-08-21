@@ -151,7 +151,7 @@ UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
 
 class MetaModel(ABCMeta):
-    @no_type_check
+    @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace):
         fields: Dict[str, Field] = {}
         config = BaseConfig
@@ -205,13 +205,19 @@ class MetaModel(ABCMeta):
                     and var_name not in class_vars
                 ):
                     validate_field_name(bases, var_name)
-                    fields[var_name] = Field.infer(
+                    inferred = Field.infer(
                         name=var_name,
                         value=value,
                         annotation=annotations.get(var_name),
                         class_validators=vg.get_validators(var_name),
                         config=config,
                     )
+                    if var_name in fields and inferred.type_ != fields[var_name].type_:
+                        raise TypeError(
+                            f'The type of {name}.{var_name} differs from the new default value; '
+                            f'if you wish to change the type of this field, please use a type annotation'
+                        )
+                    fields[var_name] = inferred
 
         _custom_root_type = '__root__' in fields
         if _custom_root_type:

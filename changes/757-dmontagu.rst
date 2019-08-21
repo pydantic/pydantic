@@ -1,0 +1,1 @@
+**Breaking Change:** preserve superclass annotations for field-determination when not provided in subclass
