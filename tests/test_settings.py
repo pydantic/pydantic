@@ -12,7 +12,7 @@ class SimpleSettings(BaseSettings):
 
     class Config:
         env_prefix = 'APP_'
-        case_insensitive = False
+        case_sensitive = True
 
 
 def test_sub_env(env):
@@ -61,7 +61,7 @@ class ComplexSettings(BaseSettings):
 
     class Config:
         env_prefix = 'APP_'
-        case_insensitive = False
+        case_sensitive = True
 
 
 def test_list(env):
@@ -126,7 +126,7 @@ def test_case_insensitive(env):
 
         class Config:
             env_prefix = 'APP_'
-            case_insensitive = True
+            case_sensitive = False
 
     env.set('apP_foO', 'foo')
     env.set('app_bar', 'bar')
@@ -140,7 +140,7 @@ def test_case_sensitive(monkeypatch):
         foo: str = Schema(..., alias='foo')
 
         class Config:
-            case_insensitive = False
+            case_sensitive = True
 
     # Need to patch os.environ to get build to work on Windows, where os.environ is case insensitive
     monkeypatch.setattr(os, 'environ', value={'Foo': 'foo'})
