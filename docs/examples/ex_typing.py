@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -15,6 +15,7 @@ class Model(BaseModel):
 
     simple_set: set = None
     set_bytes: Set[bytes] = None
+    frozen_set: FrozenSet[int] = None
 
     str_or_bytes: Union[str, bytes] = None
     none_or_str: Optional[str] = None

@@ -2,6 +2,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    FrozenSet,
     Generator,
     Iterable,
     Iterator,
@@ -61,6 +62,7 @@ SHAPE_MAPPING = 4
 SHAPE_TUPLE = 5
 SHAPE_TUPLE_ELLIPS = 6
 SHAPE_SEQUENCE = 7
+SHAPE_FROZENSET = 8
 
 
 class Field:
@@ -243,16 +245,20 @@ class Field:
         elif issubclass(origin, Set):
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = SHAPE_SET
+        elif issubclass(origin, FrozenSet):
+            self.type_ = self.type_.__args__[0]  # type: ignore
+            self.shape = SHAPE_FROZENSET
         elif issubclass(origin, Sequence):
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = SHAPE_SEQUENCE
-        else:
-            assert issubclass(origin, Mapping)
+        elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(
                 self.type_.__args__[0], 'key_' + self.name, for_keys=True  # type: ignore
             )
             self.type_ = self.type_.__args__[1]  # type: ignore
             self.shape = SHAPE_MAPPING
+        else:
+            raise TypeError(f'Fields of type "{origin}" are not supported.')
 
         if getattr(self.type_, '__origin__', None):
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
@@ -325,11 +331,13 @@ class Field:
         except (ValueError, TypeError) as exc:
             return v, ErrorWrapper(exc, loc=loc)
 
-    def _validate_sequence_like(
+    def _validate_sequence_like(  # noqa: C901 (ignore complexity)
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
+        Note that large if-else blocks are necessary to enable Cython
+        optimization, which is why we disable the complexity check above.
         """
         if not sequence_like(v):
             e: errors_.PydanticTypeError
@@ -337,6 +345,8 @@ class Field:
                 e = errors_.ListError()
             elif self.shape == SHAPE_SET:
                 e = errors_.SetError()
+            elif self.shape == SHAPE_FROZENSET:
+                e = errors_.FrozenSetError()
             else:
                 e = errors_.SequenceError()
             return v, ErrorWrapper(e, loc=loc)
@@ -354,10 +364,12 @@ class Field:
         if errors:
             return v, errors
 
-        converted: Union[List[Any], Set[Any], Tuple[Any, ...], Iterator[Any]] = result
+        converted: Union[List[Any], Set[Any], FrozenSet[Any], Tuple[Any, ...], Iterator[Any]] = result
 
         if self.shape == SHAPE_SET:
             converted = set(result)
+        elif self.shape == SHAPE_FROZENSET:
+            converted = frozenset(result)
         elif self.shape == SHAPE_TUPLE_ELLIPS:
             converted = tuple(result)
         elif self.shape == SHAPE_SEQUENCE:

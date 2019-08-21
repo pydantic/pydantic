@@ -1,7 +1,7 @@
 import dataclasses
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, Optional
+from typing import ClassVar, FrozenSet, Optional
 
 import pytest
 
@@ -489,3 +489,14 @@ def test_classvar():
 
     tcv = TestClassVar(2)
     assert tcv.klassvar == "I'm a Class variable"
+
+
+def test_frozenset_field():
+    @pydantic.dataclasses.dataclass
+    class TestFrozenSet:
+        set: FrozenSet[int]
+
+    test_set = frozenset({1, 2, 3})
+    object_under_test = TestFrozenSet(set=test_set)
+
+    assert object_under_test.set == test_set

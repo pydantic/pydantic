@@ -39,6 +39,21 @@ def test_int_validation():
     assert Model(a=4.5).a == 4
 
 
+def test_frozenset_validation():
+    class Model(BaseModel):
+        a: frozenset
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='snap')
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid frozenset', 'type': 'type_error.frozenset'}
+    ]
+    assert Model(a={1, 2, 3}).a == frozenset({1, 2, 3})
+    assert Model(a=frozenset({1, 2, 3})).a == frozenset({1, 2, 3})
+    assert Model(a=[4, 5]).a == frozenset({4, 5})
+    assert Model(a=(6,)).a == frozenset({6})
+
+
 def test_validate_whole():
     class Model(BaseModel):
         a: List[int]

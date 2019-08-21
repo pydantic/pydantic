@@ -11,6 +11,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    FrozenSet,
     Generator,
     List,
     Optional,
@@ -213,6 +214,15 @@ def set_validator(v: Any) -> Set[Any]:
         return set(v)
     else:
         raise errors.SetError()
+
+
+def frozenset_validator(v: Any) -> FrozenSet[Any]:
+    if isinstance(v, frozenset):
+        return v
+    elif sequence_like(v):
+        return frozenset(v)
+    else:
+        raise errors.FrozenSetError()
 
 
 def enum_validator(v: Any, field: 'Field', config: 'BaseConfig') -> Enum:
@@ -424,6 +434,7 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (list, [list_validator]),
     (tuple, [tuple_validator]),
     (set, [set_validator]),
+    (frozenset, [frozenset_validator]),
     (UUID, [not_none_validator, uuid_validator]),
     (Decimal, [not_none_validator, decimal_validator]),
     (IPv4Interface, [not_none_validator, ip_v4_interface_validator]),
