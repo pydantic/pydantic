@@ -48,7 +48,7 @@ from .types import (
     conlist,
     constr,
 )
-from .utils import (
+from .typing import (
     is_callable_type,
     is_literal_type,
     is_new_type,

@@ -13,26 +13,12 @@ from ipaddress import (
 )
 from pathlib import Path
 from types import new_class
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Pattern,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
 from uuid import UUID
 
 from . import errors
-from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_generator, validate_email
+from .typing import AnyType
+from .utils import change_exception, import_string, make_dsn, url_regex_generator, validate_email
 from .validators import (
     bytes_validator,
     decimal_validator,
@@ -108,9 +94,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
     from .dataclasses import DataclassType  # noqa: F401
     from .main import BaseModel, BaseConfig  # noqa: F401
-    from .utils import AnyCallable
+    from .typing import CallableGenerator
 
-    CallableGenerator = Generator[AnyCallable, None, None]
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
 
 

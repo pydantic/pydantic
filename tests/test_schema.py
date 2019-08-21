@@ -65,7 +65,7 @@ from pydantic.types import (
     constr,
     urlstr,
 )
-from pydantic.utils import Literal
+from pydantic.typing import Literal
 
 try:
     import email_validator

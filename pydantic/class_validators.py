@@ -6,7 +6,8 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Type
 
 from .errors import ConfigError
-from .utils import AnyCallable, in_ipython
+from .typing import AnyCallable
+from .utils import in_ipython
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseConfig
