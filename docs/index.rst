@@ -1254,6 +1254,10 @@ Third party libraries based on *pydantic*.
 * `aiohttp-toolbox <https://github.com/samuelcolvin/aiohttp-toolbox>`_ numerous utilities for aiohttp including
   data parsing using *pydantic*.
 * `harrier <https://github.com/samuelcolvin/harrier>`_ a better static site generator built with python.
+* `Cuenca <https://github.com/cuenca-mx>`_ is a Mexican neobank that uses *pydantic* for several internal
+  tools (including API validation) and for open source projects like
+  `stpmex <https://github.com/cuenca-mx/stpmex-python>`_, which is used to process real-time, 24/7, inter-bank
+  transfers in Mexico.
 
 More packages using pydantic can be found by visiting
 `pydantic's page on libraries.io <https://libraries.io/pypi/pydantic>`_.
