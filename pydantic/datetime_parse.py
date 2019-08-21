@@ -61,16 +61,18 @@ EPOCH = datetime(1970, 1, 1)
 # if greater than this, the number is in ms, if less than or equal it's in seconds
 # (in seconds this is 11th October 2603, in ms it's 20th August 1970)
 MS_WATERSHED = int(2e10)
-StrIntFloat = Union[str, int, float]
+StrBytesIntFloat = Union[str, bytes, int, float]
 
 
-def get_numeric(value: StrIntFloat) -> Union[None, int, float]:
+def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[None, int, float]:
     if isinstance(value, (int, float)):
         return value
     try:
         return float(value)
     except ValueError:
         return None
+    except TypeError as e:
+        raise TypeError(f'invalid type; expected {native_expected_type}, string, bytes, int or float') from e
 
 
 def from_unix_seconds(seconds: Union[int, float]) -> datetime:
@@ -80,7 +82,7 @@ def from_unix_seconds(seconds: Union[int, float]) -> datetime:
     return dt.replace(tzinfo=timezone.utc)
 
 
-def parse_date(value: Union[date, StrIntFloat]) -> date:
+def parse_date(value: Union[date, StrBytesIntFloat]) -> date:
     """
     Parse a date/int/float/string and return a datetime.date.
 
@@ -93,9 +95,12 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
         else:
             return value
 
-    number = get_numeric(value)
+    number = get_numeric(value, 'date')
     if number is not None:
         return from_unix_seconds(number).date()
+
+    if isinstance(value, bytes):
+        value = value.decode()
 
     match = date_re.match(value)  # type: ignore
     if match is None:
@@ -107,7 +112,7 @@ def parse_date(value: Union[date, StrIntFloat]) -> date:
         return date(**kw)
 
 
-def parse_time(value: Union[time, StrIntFloat]) -> time:
+def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
     """
     Parse a time/string and return a datetime.time.
 
@@ -119,12 +124,15 @@ def parse_time(value: Union[time, StrIntFloat]) -> time:
     if isinstance(value, time):
         return value
 
-    number = get_numeric(value)
+    number = get_numeric(value, 'time')
     if number is not None:
         if number >= 86400:
             # doesn't make sense since the time time loop back around to 0
             raise errors.TimeError()
         return (datetime.min + timedelta(seconds=number)).time()
+
+    if isinstance(value, bytes):
+        value = value.decode()
 
     match = time_re.match(value)  # type: ignore
     if match is None:
@@ -140,7 +148,7 @@ def parse_time(value: Union[time, StrIntFloat]) -> time:
         return time(**kw_)  # type: ignore
 
 
-def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
+def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
     """
     Parse a datetime/int/float/string and return a datetime.datetime.
 
@@ -153,9 +161,12 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
     if isinstance(value, datetime):
         return value
 
-    number = get_numeric(value)
+    number = get_numeric(value, 'datetime')
     if number is not None:
         return from_unix_seconds(number)
+
+    if isinstance(value, bytes):
+        value = value.decode()
 
     match = datetime_re.match(value)  # type: ignore
     if match is None:
@@ -184,7 +195,7 @@ def parse_datetime(value: Union[datetime, StrIntFloat]) -> datetime:
         return datetime(**kw_)  # type: ignore
 
 
-def parse_duration(value: StrIntFloat) -> timedelta:
+def parse_duration(value: StrBytesIntFloat) -> timedelta:
     """
     Parse a duration int/float/string and return a datetime.timedelta.
 
@@ -198,8 +209,14 @@ def parse_duration(value: StrIntFloat) -> timedelta:
     if isinstance(value, (int, float)):
         # bellow code requires a string
         value = str(value)
+    elif isinstance(value, bytes):
+        value = value.decode()
 
-    match = standard_duration_re.match(value) or iso8601_duration_re.match(value)
+    try:
+        match = standard_duration_re.match(value) or iso8601_duration_re.match(value)
+    except TypeError as e:
+        raise TypeError('invalid type; expected timedelta, string, bytes, int or float') from e
+
     if not match:
         raise errors.DurationError()
 

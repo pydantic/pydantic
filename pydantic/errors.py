@@ -269,19 +269,19 @@ class DecimalWholeDigitsError(PydanticValueError):
         super().__init__(whole_digits=whole_digits)
 
 
-class DateTimeError(PydanticTypeError):
+class DateTimeError(PydanticValueError):
     msg_template = 'invalid datetime format'
 
 
-class DateError(PydanticTypeError):
+class DateError(PydanticValueError):
     msg_template = 'invalid date format'
 
 
-class TimeError(PydanticTypeError):
+class TimeError(PydanticValueError):
     msg_template = 'invalid time format'
 
 
-class DurationError(PydanticTypeError):
+class DurationError(PydanticValueError):
     msg_template = 'invalid duration format'
 
 
