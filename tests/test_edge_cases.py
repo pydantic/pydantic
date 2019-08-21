@@ -527,9 +527,9 @@ def test_inheritance():
 
     class Bar(Foo):
         x: float = 12.3
-        a: int = 123
+        a = 123.0
 
-    assert Bar().dict() == {'x': 12.3, 'a': 123}
+    assert Bar().dict() == {'x': 12.3, 'a': 123.0}
 
 
 def test_invalid_type():
@@ -622,11 +622,13 @@ def test_annotation_inheritance():
     class B(A):
         integer = 2
 
+    assert B.__annotations__['integer'] == int
     assert B.__fields__['integer'].type_ == int
 
     class C(A):
         integer: str = 'G'
 
+    assert C.__annotations__['integer'] == str
     assert C.__fields__['integer'].type_ == str
 
     with pytest.raises(TypeError) as exc_info:
