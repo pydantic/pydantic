@@ -817,7 +817,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
 
 def multivalue_literal_field_for_schema(values: Tuple[Any, ...], field: Field) -> Field:
-    field = Field(
+    return Field(
         name=field.name,
         type_=Union[tuple(Literal[value] for value in values)],
         class_validators=field.class_validators,
@@ -827,7 +827,6 @@ def multivalue_literal_field_for_schema(values: Tuple[Any, ...], field: Field) -
         alias=field.alias,
         schema=field.schema,
     )
-    return field
 
 
 def encode_default(dft: Any) -> Any:
