@@ -381,7 +381,7 @@ def test_schema():
         'properties': {
             'id': {'title': 'Id', 'type': 'integer'},
             'name': {'title': 'Name', 'default': 'John Doe', 'type': 'string'},
-            'signup_ts': {'title': 'Signup_Ts', 'type': 'string', 'format': 'date-time'},
+            'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
         },
         'required': ['id'],
     }

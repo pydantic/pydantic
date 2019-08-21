@@ -705,7 +705,7 @@ def test_ipv4address_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv4'}},
+        'properties': {'ip_address': {'title': 'Ip Address', 'type': 'string', 'format': 'ipv4'}},
         'required': ['ip_address'],
     }
 
@@ -718,7 +718,7 @@ def test_ipv6address_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv6'}},
+        'properties': {'ip_address': {'title': 'Ip Address', 'type': 'string', 'format': 'ipv6'}},
         'required': ['ip_address'],
     }
 
@@ -731,7 +731,7 @@ def test_ipvanyaddress_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipvanyaddress'}},
+        'properties': {'ip_address': {'title': 'Ip Address', 'type': 'string', 'format': 'ipvanyaddress'}},
         'required': ['ip_address'],
     }
 
@@ -744,7 +744,7 @@ def test_ipv4interface_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipv4interface'}},
+        'properties': {'ip_interface': {'title': 'Ip Interface', 'type': 'string', 'format': 'ipv4interface'}},
         'required': ['ip_interface'],
     }
 
@@ -757,7 +757,7 @@ def test_ipv6interface_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipv6interface'}},
+        'properties': {'ip_interface': {'title': 'Ip Interface', 'type': 'string', 'format': 'ipv6interface'}},
         'required': ['ip_interface'],
     }
 
@@ -770,7 +770,7 @@ def test_ipvanyinterface_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipvanyinterface'}},
+        'properties': {'ip_interface': {'title': 'Ip Interface', 'type': 'string', 'format': 'ipvanyinterface'}},
         'required': ['ip_interface'],
     }
 
@@ -783,7 +783,7 @@ def test_ipv4network_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipv4network'}},
+        'properties': {'ip_network': {'title': 'Ip Network', 'type': 'string', 'format': 'ipv4network'}},
         'required': ['ip_network'],
     }
 
@@ -796,7 +796,7 @@ def test_ipv6network_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipv6network'}},
+        'properties': {'ip_network': {'title': 'Ip Network', 'type': 'string', 'format': 'ipv6network'}},
         'required': ['ip_network'],
     }
 
@@ -809,7 +809,7 @@ def test_ipvanynetwork_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipvanynetwork'}},
+        'properties': {'ip_network': {'title': 'Ip Network', 'type': 'string', 'format': 'ipvanynetwork'}},
         'required': ['ip_network'],
     }
 
@@ -1368,7 +1368,7 @@ def test_known_model_optimization():
         'type': 'object',
         'properties': {
             'dep': {'$ref': '#/definitions/Dep'},
-            'dep_l': {'title': 'Dep_L', 'type': 'array', 'items': {'$ref': '#/definitions/Dep'}},
+            'dep_l': {'title': 'Dep L', 'type': 'array', 'items': {'$ref': '#/definitions/Dep'}},
         },
         'required': ['dep', 'dep_l'],
         'definitions': {
