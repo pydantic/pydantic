@@ -2,7 +2,7 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 
 if TYPE_CHECKING:  # pragma: no cover
-    from pydantic import BaseConfig  # noqa: F401
+    from .main import BaseConfig  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
 
 __all__ = 'ErrorWrapper', 'ValidationError'
