@@ -21,8 +21,8 @@ from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annot
 from .utils import GetterDict, ValueItems, change_exception, truncate, validate_field_name
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .dataclasses import DataclassType  # noqa: F401
-    from .types import CallableGenerator, ModelOrDc
+    from .typing import CallableGenerator
+    from .types import ModelOrDc
     from .class_validators import ValidatorListDict
 
     from .typing import TupleGenerator, DictStrAny, DictAny, SetStr, SetIntStr, DictIntStrAny  # noqa: F401
@@ -39,6 +39,8 @@ else:  # pragma: no cover
         compiled = cython.compiled
     except AttributeError:
         compiled = False
+
+__all__ = 'BaseConfig', 'BaseModel', 'Extra', 'compiled', 'create_model', 'validate_model'
 
 
 class Extra(str, Enum):

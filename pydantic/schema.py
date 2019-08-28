@@ -4,11 +4,11 @@ import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 from uuid import UUID
 
-import pydantic
 from pydantic.color import Color
 
 from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, Field
@@ -27,12 +27,6 @@ from .types import (
     DirectoryPath,
     EmailStr,
     FilePath,
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
     IPvAnyAddress,
     IPvAnyInterface,
     IPvAnyNetwork,
@@ -58,9 +52,7 @@ from .typing import (
 )
 
 if TYPE_CHECKING:  # pragma: no cover
-    from . import dataclasses  # noqa: F401
-
-    BaseModel = pydantic.main.BaseModel
+    from .main import BaseModel  # noqa: F401
 
 
 __all__ = [
@@ -412,14 +404,16 @@ def get_flat_models_from_field(field: Field, known_models: Set[Type['BaseModel']
     :param known_models: used to solve circular references
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
-    flat_models: Set[Type['BaseModel']] = set()
+    from .main import BaseModel  # noqa: F811
+
+    flat_models: Set[Type[BaseModel]] = set()
     # Handle dataclass-based models
     field_type = field.type_
-    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), pydantic.BaseModel):
+    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__  # type: ignore
     if field.sub_fields:
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
-    elif lenient_issubclass(field_type, pydantic.BaseModel) and field_type not in known_models:
+    elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
         flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
     return flat_models
 
@@ -734,6 +728,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     Take a single Pydantic ``Field``, and return its schema and any additional definitions from sub-models.
     """
+    from .main import BaseModel  # noqa: F811
 
     ref_prefix = ref_prefix or default_prefix
     definitions: Dict[str, Any] = {}
@@ -782,9 +777,9 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         if issubclass(field_type, type_):
             return t_schema, definitions, nested_models
     # Handle dataclass-based models
-    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), pydantic.BaseModel):
+    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__  # type: ignore
-    if issubclass(field_type, pydantic.BaseModel):
+    if issubclass(field_type, BaseModel):
         model_name = model_name_map[field_type]
         if field_type not in known_models:
             sub_schema, sub_definitions, sub_nested_models = model_process_schema(

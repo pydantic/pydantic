@@ -98,7 +98,7 @@ def _process_class(
 
 if TYPE_CHECKING:  # pragma: no cover
     # see https://github.com/python/mypy/issues/6239 for explanation of why we do this
-    from dataclasses import dataclass
+    from dataclasses import dataclass as dataclass
 else:
 
     def dataclass(
