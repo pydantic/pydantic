@@ -687,6 +687,73 @@ class SecretBytes:
         return self._secret_value
 
 
+class PaymentCard(str):
+    """
+    Based on: https://en.wikipedia.org/wiki/Payment_card_number
+    """
+    strip_whitespace = True
+    min_length: int = 12
+    max_length: int = 19
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield not_none_validator
+        yield str_validator
+        yield constr_strip_whitespace
+        yield constr_length_validator
+        yield cls.validate_digits
+        yield cls.validate_length_based_on_bin
+        yield cls.validate_luhn_check_digit
+
+    @classmethod
+    def validate_digits(cls, value: str) -> str:
+        if not value.isdigit():
+            raise ValueError('payment card number must be digits')
+        return value
+
+    @classmethod
+    def validate_length_based_on_bin(cls, value: str) -> str:
+        """
+        Validate length based on BIN for major brands:
+        # https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
+        """
+        if value[0] == '4':  # Visa
+            length = 16
+            brand = 'Visa'
+        elif 51 <= int(value[:1]) <= 55:  # Most common Mastercard range
+            length = 16
+            brand = 'Mastercard'
+        elif value[:1] in {'34', '37'}:  # Amex
+            length = 15
+            brand = 'Amex'
+        else:
+            length = None
+            brand = None
+        if length and len(value) != length:
+            raise ValueError('Length for an %s much be %d' % (brand, length))
+        return value
+
+    @classmethod
+    def validate_luhn_check_digit(cls, value: str) -> str:
+        """
+        Based on: https://en.wikipedia.org/wiki/Luhn_algorithm
+        """
+        sum_ = int(value[-1])
+        length = len(value)
+        parity = length % 2
+        for i in range(length - 1):
+            digit = int(value[i])
+            if i % 2 == parity:
+                digit *= 2
+            if digit > 9:
+                digit -= 9
+            sum_ += digit
+        valid = sum_ % 10 == 0
+        if not valid:
+            raise ValueError('Card number is not luhn valid')
+        return value
+
+
 def constr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 
