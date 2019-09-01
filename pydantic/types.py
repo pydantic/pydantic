@@ -711,10 +711,10 @@ class PaymentCardNumber(str):
     last4: str
     brand: PaymentCardBrand
 
-    def __init__(self, card_number):
+    def __init__(self, card_number: str):
         self.bin = card_number[:6]
         self.last4 = card_number[-4:]
-        self.brand = PaymentCardNumber.get_brand(card_number)
+        self.brand = self.get_brand(card_number)
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
