@@ -687,7 +687,7 @@ class SecretBytes:
         return self._secret_value
 
 
-class PaymentCard(str):
+class PaymentCardNumber(str):
     """
     Based on: https://en.wikipedia.org/wiki/Payment_card_number
     """
@@ -715,7 +715,7 @@ class PaymentCard(str):
     def validate_length_based_on_bin(cls, value: str) -> str:
         """
         Validate length based on BIN for major brands:
-        # https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
+        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
         """
         if value[0] == '4':  # Visa
             length = 16
@@ -730,7 +730,7 @@ class PaymentCard(str):
             length = None
             brand = None
         if length and len(value) != length:
-            raise ValueError('Length for an %s much be %d' % (brand, length))
+            raise ValueError(f'Length for a {brand} card must be {length}')
         return value
 
     @classmethod
