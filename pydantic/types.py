@@ -712,11 +712,11 @@ class PaymentCardNumber(str):
     brand: PaymentCardBrand
 
     def __new__(cls, card_number: str) -> 'PaymentCardNumber':
-        obj = str.__new__(cls, card_number)  # type: ignore
-        obj.bin = card_number[:6]
-        obj.last4 = card_number[-4:]
-        obj.brand = cls.get_brand(card_number)
-        return obj
+        self = super().__new__(cls, card_number)  # type: ignore
+        self.bin = card_number[:6]
+        self.last4 = card_number[-4:]
+        self.brand = cls.get_brand(card_number)
+        return self
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
