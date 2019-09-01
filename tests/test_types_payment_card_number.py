@@ -57,6 +57,7 @@ def test_get_brand():
     assert PaymentCardNumber.get_brand(VALID_AMEX) == PaymentCardBrand.amex
     assert PaymentCardNumber.get_brand(VALID_MC) == PaymentCardBrand.mastercard
     assert PaymentCardNumber.get_brand(VALID_VISA) == PaymentCardBrand.visa
+    assert PaymentCardNumber.get_brand(VALID_OTHER) == PaymentCardBrand.other
 
 
 def test_valid():
