@@ -707,16 +707,6 @@ class PaymentCardNumber(str):
     strip_whitespace = True
     min_length: int = 12
     max_length: int = 19
-    bin: str
-    last4: str
-    brand: PaymentCardBrand
-
-    def __new__(cls, card_number: str) -> 'PaymentCardNumber':
-        self = super().__new__(cls, card_number)  # type: ignore
-        self.bin = card_number[:6]
-        self.last4 = card_number[-4:]
-        self.brand = cls.get_brand(card_number)
-        return self
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -732,6 +722,18 @@ class PaymentCardNumber(str):
     @classmethod
     def init(cls, card_number: str) -> 'PaymentCardNumber':
         return cls(card_number)
+
+    @property
+    def bin(self) -> str:
+        return self[:6]
+
+    @property
+    def last4(self) -> str:
+        return self[-4:]
+
+    @property
+    def brand(self) -> PaymentCardBrand:
+        return self.get_brand(self)
 
     @property
     def masked(self) -> str:
