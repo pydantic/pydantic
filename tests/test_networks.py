@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, HttpUrl, PostgresDsn, RedisDsn, ValidationError, urlstr
+from pydantic import AnyUrl, BaseModel, HttpUrl, PostgresDsn, RedisDsn, ValidationError, stricturl
 from pydantic.networks import validate_email
 
 try:
@@ -251,7 +251,7 @@ def test_redis_dsns():
 
 def test_custom_schemes():
     class Model(BaseModel):
-        v: urlstr(strip_whitespace=False, allowed_schemes={'ws', 'wss'})
+        v: stricturl(strip_whitespace=False, allowed_schemes={'ws', 'wss'})
 
     assert Model(v='ws://example.org').v == 'ws://example.org'
 

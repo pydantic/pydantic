@@ -33,7 +33,7 @@ __all__ = [
     'AnyUrl',
     'AnyHttpUrl',
     'HttpUrl',
-    'urlstr',
+    'stricturl',
     'EmailStr',
     'NameEmail',
     'IPvAnyAddress',
@@ -241,7 +241,7 @@ class RedisDsn(AnyUrl):
     user_required = True
 
 
-def urlstr(
+def stricturl(
     *,
     strip_whitespace: bool = True,
     min_length: int = 1,
