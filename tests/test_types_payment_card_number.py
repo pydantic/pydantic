@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 
