@@ -248,7 +248,7 @@ def stricturl(
     max_length: int = 2 ** 16,
     tld_required: bool = True,
     allowed_schemes: Optional[Set[str]] = None,
-) -> Type[str]:
+) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
@@ -257,7 +257,7 @@ def stricturl(
         tld_required=tld_required,
         allowed_schemes=allowed_schemes,
     )
-    return type('UrlStrValue', (AnyUrl,), namespace)
+    return type('UrlValue', (AnyUrl,), namespace)
 
 
 class EmailStr(str):

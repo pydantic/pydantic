@@ -112,6 +112,7 @@ def test_any_url_obj():
     assert repr(url) == ("<AnyUrl('http://example.org' scheme='http' host='example.org' tld='org' host_type='domain')>")
     assert url.scheme == 'http'
     assert url.host == 'example.org'
+    assert url.tld == 'org'
     assert url.host_type == 'domain'
     assert url.port is None
     assert url == AnyUrl('http://example.org', scheme='https', host='example.org')
@@ -148,6 +149,13 @@ def test_any_url_obj():
     assert url5.host == 'xn--9aaa.org'
     assert url5.host_type == 'int_domain'
     assert str(url5) == 'https://xn--9aaa.org'
+
+    url = Model(v='http://example.co.uk').v
+    assert str(url) == 'http://example.co.uk'
+    assert url.scheme == 'http'
+    assert url.host == 'example.co.uk'
+    assert url.tld == 'uk'  # wrong but no better solution
+    assert url.host_type == 'domain'
 
 
 @pytest.mark.parametrize(
