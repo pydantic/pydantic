@@ -646,8 +646,8 @@ URLs
 
 For URI/URL validation the following types are available:
 
-- ``AnyUrl``: any scheme allowed, TLD not required, max length 2^16
-- ``AnyHttpUrl``: schema ``http`` or ``https``, TLD not required, max length 2^16
+- ``AnyUrl``: any scheme allowed, TLD not required
+- ``AnyHttpUrl``: schema ``http`` or ``https``, TLD not required
 - ``HttpUrl``: schema ``http`` or ``https``, TLD required, max length 2083
 - ``PostgresDsn``: schema ``postgres`` or ``postgresql``, userinfo required, TLD not required
 - ``RedisDsn``: schema ``redis``, userinfo required, tld not required
@@ -659,7 +659,7 @@ For URI/URL validation the following types are available:
   - ``tld_required: bool = True``
   - ``allowed_schemes: Optional[Set[str]] = None``
 
-If you require custom types the can be combined in a similar way to the application specific types defined above.
+If you require custom types they can be created in a similar way to the application specific types defined above.
 
 The above types (which all inherit from ``AnyUrl``) will attempt to give descriptive errors when invalid URLs are
 provided:
@@ -671,25 +671,27 @@ provided:
 URL Properties
 ~~~~~~~~~~~~~~
 
-The above types (which all inherit from ``AnyUrl``) expose the following properties
-(assuming an input URL of ``http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit``):
+Assuming an input URL of ``http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit``,
+the above types export the following properties:
 
-- ``scheme``, always set - the url schema, e.g. ``http`` above
-- ``host``, always set - the url host, e.g. ``example.com`` above
-- ``host_type``, always set - describes the type of host:
-  ``domain`` (e.g. for ``example.com``),
-  ``int_domain`` (international domain, including non ascii characters, e.g. for ``exampl£e.org``),
-  ``ipv4`` (a v4 IP address, e.g. for ``127.0.0.1``) or
-  ``ipv6`` (a v6 IP address, e.g. for ``2001:db8::ff00:42``)
-- ``user``, optional - the username if included in the URL, e.g. ``samuel`` above
-- ``password``, optional - the password if included in the URL, e.g. ``pass`` above
-- ``tld``, optional - the top level domain, e.g. ``com`` above,
-  **Note: this will be wrong for any two level domain, e.g. "co.uk".** You'll need to implement your own list of TLDs
+- ``scheme``: always set - the url schema e.g. ``http`` above
+- ``host``: always set - the url host e.g. ``example.com`` above
+- ``host_type``: always set - describes the type of host, either:
+
+  - ``domain``: e.g. for ``example.com``,
+  - ``int_domain``: international domain, see :ref:`below <int_domains>`, e.g. for ``exampl£e.org``,
+  - ``ipv4``: an IP V4 address, e.g. for ``127.0.0.1``, or
+  - ``ipv6``: an IP V6 address, e.g. for ``2001:db8::ff00:42``
+
+- ``user``: optional - the username if included e.g. ``samuel`` above
+- ``password``: optional - the password if included e.g. ``pass`` above
+- ``tld``: optional - the top level domain e.g. ``com`` above,
+  **Note: this will be wrong for any two level domain e.g. "co.uk".** You'll need to implement your own list of TLDs
   if you require full TLD validation
-- ``port``, optional - the port, e.g. ``8000`` above
-- ``path``, optional - the path, e.g. ``/the/path/`` above
-- ``query``, optional - the URL query (aka GET arguments or "search string"), e.g. ``query=here`` above
-- ``fragment``, optional - e.g. ``fragment=is;this=bit`` above
+- ``port``: optional - the port e.g. ``8000`` above
+- ``path``: optional - the path e.g. ``/the/path/`` above
+- ``query``: optional - the URL query (aka GET arguments or "search string") e.g. ``query=here`` above
+- ``fragment``: optional - the fragment e.g. ``fragment=is;this=bit`` above
 
 If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
@@ -697,23 +699,28 @@ If further validation is required, these properties can be used by validators to
 
 (This script is complete, it should run "as is")
 
+.. _int_domains:
+
 International Domains
 ~~~~~~~~~~~~~~~~~~~~~
 
 "International domains" (e.g. a URL where the host includes non-ascii characters) will be encode via
 `punycode <https://en.wikipedia.org/wiki/Punycode>`_ (see
-`this article <https://www.xudongz.com/blog/2017/idn-phishing/>`_ for a good description of why this is important).
+`this article <https://www.xudongz.com/blog/2017/idn-phishing/>`_ for a good description of why this is important):
 
 .. literalinclude:: examples/url_punycode.py
 
 (This script is complete, it should run "as is")
 
+Underscores in Hostnames
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. note::
 
-   Underscores are allowed in all parts of a domain except the tld. Technically this might be slightly wrong - in theory
-   the hostname cannot have underscores but subdomains can.
+   In *pydantic* underscores are allowed in all parts of a domain except the tld.
+   Technically this might be wrong - in theory the hostname cannot have underscores but subdomains can.
 
-   However, consider the following two cases:
+   To explain this; consider the following two cases:
 
    - ``exam_ple.co.uk`` hostname is ``exam_ple``, should not be allowed as there's an underscore in there
    - ``foo_bar.example.com`` hostname is ``example`` should be allowed since the underscore is in the subdomain

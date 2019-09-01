@@ -11,10 +11,19 @@ try:
     MyModel(url='ftp://invalid.url')
 except ValidationError as e:
     print(e)
-
 """
 1 validation error for MyModel
 url
   URL scheme not permitted (type=value_error.url.scheme; 
       allowed_schemes={'http', 'https'})
+"""
+
+try:
+    MyModel(url='not a url')
+except ValidationError as e:
+    print(e)
+"""
+1 validation error for MyModel
+url
+  invalid or missing URL scheme (type=value_error.url.scheme)
 """
