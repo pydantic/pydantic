@@ -1,6 +1,7 @@
 import json
 import re
 from decimal import Decimal
+from enum import Enum
 from ipaddress import (
     IPv4Address,
     IPv4Interface,
@@ -79,6 +80,7 @@ __all__ = [
     'SecretStr',
     'SecretBytes',
     'StrictBool',
+    'PaymentCardNumber',
 ]
 
 NoneStr = Optional[str]
@@ -687,6 +689,16 @@ class SecretBytes:
         return self._secret_value
 
 
+class PaymentCardBrand(Enum):
+    amex = 'American Express'
+    mastercard = 'Mastercard'
+    visa = 'Visa'
+    other = 'other'
+
+    def __str__(self):
+        return self.value
+
+
 class PaymentCardNumber(str):
     """
     Based on: https://en.wikipedia.org/wiki/Payment_card_number
@@ -696,6 +708,13 @@ class PaymentCardNumber(str):
     min_length: int = 12
     max_length: int = 19
 
+    def __new__(cls, card_number: str):
+        obj = str.__new__(cls, card_number)
+        obj.bin = card_number[:6]
+        obj.last4 = card_number[-4:]
+        obj.brand = cls.get_brand(card_number)
+        return obj
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
@@ -703,47 +722,35 @@ class PaymentCardNumber(str):
         yield constr_strip_whitespace
         yield constr_length_validator
         yield cls.validate_digits
-        yield cls.validate_length_based_on_bin
         yield cls.validate_luhn_check_digit
+        yield cls.init
+        yield cls.validate_length_for_brand
 
     @classmethod
-    def validate_digits(cls, value: str) -> str:
-        if not value.isdigit():
-            raise ValueError('payment card number must be digits')
-        return value
+    def init(cls, card_number: str) -> 'PaymentCardNumber':
+        return cls(card_number)
+
+    @property
+    def masked(self):
+        num_masked = len(self) - 10  # len(bin) + len(last4) == 10
+        return f'{self.bin}{"*" * num_masked}{self.last4}'
 
     @classmethod
-    def validate_length_based_on_bin(cls, value: str) -> str:
-        """
-        Validate length based on BIN for major brands:
-        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
-        """
-        if value[0] == '4':  # Visa
-            length = 16
-            brand = 'Visa'
-        elif 51 <= int(value[:1]) <= 55:  # Most common Mastercard range
-            length = 16
-            brand = 'Mastercard'
-        elif value[:1] in {'34', '37'}:  # Amex
-            length = 15
-            brand = 'Amex'
-        else:
-            length = None
-            brand = None
-        if length and len(value) != length:
-            raise ValueError(f'Length for a {brand} card must be {length}')
-        return value
+    def validate_digits(cls, card_number: str) -> str:
+        if not card_number.isdigit():
+            raise errors.NotDigitError
+        return card_number
 
     @classmethod
-    def validate_luhn_check_digit(cls, value: str) -> str:
+    def validate_luhn_check_digit(cls, card_number: str) -> str:
         """
         Based on: https://en.wikipedia.org/wiki/Luhn_algorithm
         """
-        sum_ = int(value[-1])
-        length = len(value)
+        sum_ = int(card_number[-1])
+        length = len(card_number)
         parity = length % 2
         for i in range(length - 1):
-            digit = int(value[i])
+            digit = int(card_number[i])
             if i % 2 == parity:
                 digit *= 2
             if digit > 9:
@@ -751,8 +758,36 @@ class PaymentCardNumber(str):
             sum_ += digit
         valid = sum_ % 10 == 0
         if not valid:
-            raise ValueError('Card number is not luhn valid')
-        return value
+            raise errors.LuhnValidationError
+        return card_number
+
+    @classmethod
+    def validate_length_for_brand(cls, card_number: 'PaymentCardNumber') -> 'PaymentCardNumber':
+        """
+        Validate length based on BIN for major brands:
+        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
+        """
+        required_lengths = dict(visa=16, mastercard=16, amex=15)
+        try:
+            required_length = required_lengths[card_number.brand.name]
+        except KeyError:
+            pass
+        else:
+            if len(card_number) != required_length:
+                raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
+        return card_number
+
+    @staticmethod
+    def get_brand(card_number: str) -> PaymentCardBrand:
+        if card_number[0] == '4':
+            brand = PaymentCardBrand.visa
+        elif 51 <= int(card_number[:2]) <= 55:
+            brand = PaymentCardBrand.mastercard
+        elif card_number[:2] in {'34', '37'}:
+            brand = PaymentCardBrand.amex
+        else:
+            brand = PaymentCardBrand.other
+        return brand
 
 
 def constr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
