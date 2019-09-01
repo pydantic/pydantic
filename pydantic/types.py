@@ -691,6 +691,7 @@ class PaymentCardNumber(str):
     """
     Based on: https://en.wikipedia.org/wiki/Payment_card_number
     """
+
     strip_whitespace = True
     min_length: int = 12
     max_length: int = 19
