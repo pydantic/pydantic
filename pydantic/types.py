@@ -14,7 +14,22 @@ from ipaddress import (
 )
 from pathlib import Path
 from types import new_class
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Pattern,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from . import errors
@@ -704,9 +719,9 @@ class PaymentCardNumber(str):
     Based on: https://en.wikipedia.org/wiki/Payment_card_number
     """
 
-    strip_whitespace = True
-    min_length: int = 12
-    max_length: int = 19
+    strip_whitespace: ClassVar[bool] = True
+    min_length: ClassVar[int] = 12
+    max_length: ClassVar[int] = 19
     bin: str
     last4: str
     brand: PaymentCardBrand
