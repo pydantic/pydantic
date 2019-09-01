@@ -5,7 +5,7 @@ class MyModel(BaseModel):
 
 m = MyModel(url='http://www.example.com')
 print(m.url)
-#> http://www.example.com
+#>  http://www.example.com
 
 try:
     MyModel(url='ftp://invalid.url')

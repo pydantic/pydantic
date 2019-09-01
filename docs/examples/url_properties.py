@@ -11,13 +11,13 @@ print(repr(m.url))
 #>   tld='com' host_type='domain')>
 
 print(m.url.scheme)
-#> http
+#>  http
 print(m.url.host)
-#> www.example.com
+#>  www.example.com
 print(m.url.host_type)
-#> domain
+#>  domain
 print(m.url.port)
-#> None
+#>  None
 
 class MyDatabaseModel(BaseModel):
     db: PostgresDsn
@@ -29,7 +29,7 @@ class MyDatabaseModel(BaseModel):
 
 m = MyDatabaseModel(db='postgres://user:pass@localhost:5432/foobar')
 print(m.db)
-#> postgres://user:pass@localhost:5432/foobar
+#>  postgres://user:pass@localhost:5432/foobar
 
 try:
     MyDatabaseModel(db='postgres://user:pass@localhost:5432')
