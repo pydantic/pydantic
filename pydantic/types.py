@@ -712,7 +712,7 @@ class PaymentCardNumber(str):
     brand: PaymentCardBrand
 
     def __new__(cls, card_number: str) -> 'PaymentCardNumber':
-        obj = str.__new__(cls, card_number)  # noqa
+        obj = str.__new__(cls, card_number)  # type: ignore
         obj.bin = card_number[:6]
         obj.last4 = card_number[-4:]
         obj.brand = cls.get_brand(card_number)
