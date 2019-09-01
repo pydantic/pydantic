@@ -3,11 +3,12 @@ import re
 from decimal import Decimal
 from pathlib import Path
 from types import new_class
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional, Pattern, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Type, TypeVar, Union, cast
 from uuid import UUID
 
 from . import errors
-from .utils import AnyType, import_string
+from .typing import AnyType
+from .utils import import_string
 from .validators import (
     bytes_validator,
     constr_length_validator,
@@ -76,9 +77,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
     from .dataclasses import DataclassType  # noqa: F401
     from .main import BaseModel, BaseConfig  # noqa: F401
-    from .utils import AnyCallable
+    from .typing import CallableGenerator
 
-    CallableGenerator = Generator[AnyCallable, None, None]
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
 
 

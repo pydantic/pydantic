@@ -11,6 +11,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    FrozenSet,
     Generator,
     List,
     Optional,
@@ -25,17 +26,8 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .utils import (
-    AnyCallable,
-    AnyType,
-    ForwardRef,
-    almost_equal_floats,
-    change_exception,
-    display_as_type,
-    is_callable_type,
-    is_literal_type,
-    sequence_like,
-)
+from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, is_callable_type, is_literal_type
+from .utils import almost_equal_floats, change_exception, sequence_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -163,7 +155,7 @@ def constant_validator(v: 'Any', field: 'Field') -> 'Any':
     return v
 
 
-def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+def anystr_length_validator(v: 'StrBytes', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 
     min_length = config.min_anystr_length
@@ -177,7 +169,7 @@ def anystr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig')
     return v
 
 
-def anystr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+def anystr_strip_whitespace(v: 'StrBytes') -> 'StrBytes':
     return v.strip()
 
 
@@ -222,6 +214,15 @@ def set_validator(v: Any) -> Set[Any]:
         return set(v)
     else:
         raise errors.SetError()
+
+
+def frozenset_validator(v: Any) -> FrozenSet[Any]:
+    if isinstance(v, frozenset):
+        return v
+    elif sequence_like(v):
+        return frozenset(v)
+    else:
+        raise errors.FrozenSetError()
 
 
 def enum_validator(v: Any, field: 'Field', config: 'BaseConfig') -> Enum:
@@ -455,6 +456,7 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (list, [list_validator]),
     (tuple, [tuple_validator]),
     (set, [set_validator]),
+    (frozenset, [frozenset_validator]),
     (UUID, [not_none_validator, uuid_validator]),
     (Decimal, [not_none_validator, decimal_validator]),
     (IPv4Interface, [not_none_validator, ip_v4_interface_validator]),

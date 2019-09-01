@@ -43,7 +43,7 @@ def test_basic_forward_ref(create_module):
         """
 from typing import Optional
 from pydantic import BaseModel
-from pydantic.utils import ForwardRef
+from pydantic.typing import ForwardRef
 
 class Foo(BaseModel):
     a: int
@@ -63,7 +63,7 @@ def test_self_forward_ref_module(create_module):
     module = create_module(
         """
 from pydantic import BaseModel
-from pydantic.utils import ForwardRef
+from pydantic.typing import ForwardRef
 
 Foo = ForwardRef('Foo')
 
@@ -84,7 +84,7 @@ def test_self_forward_ref_collection(create_module):
         """
 from typing import List, Dict
 from pydantic import BaseModel
-from pydantic.utils import ForwardRef
+from pydantic.typing import ForwardRef
 
 Foo = ForwardRef('Foo')
 
@@ -117,7 +117,7 @@ def test_self_forward_ref_local(create_module):
     module = create_module(
         """
 from pydantic import BaseModel
-from pydantic.utils import ForwardRef
+from pydantic.typing import ForwardRef
 
 def main():
     Foo = ForwardRef('Foo')
@@ -139,7 +139,7 @@ def test_missing_update_forward_refs(create_module):
     module = create_module(
         """
 from pydantic import BaseModel
-from pydantic.utils import ForwardRef
+from pydantic.typing import ForwardRef
 
 Foo = ForwardRef('Foo')
 
@@ -190,7 +190,7 @@ def test_forward_ref_sub_types(create_module):
         """
 from typing import Union
 from pydantic import BaseModel
-from pydantic.utils import ForwardRef
+from pydantic.typing import ForwardRef
 
 class Leaf(BaseModel):
     a: str
@@ -222,7 +222,7 @@ def test_forward_ref_nested_sub_types(create_module):
         """
 from typing import Tuple, Union
 from pydantic import BaseModel
-from pydantic.utils import ForwardRef
+from pydantic.typing import ForwardRef
 
 class Leaf(BaseModel):
     a: str

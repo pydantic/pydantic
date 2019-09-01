@@ -18,7 +18,7 @@ from .validators import constr_length_validator, not_none_validator, str_validat
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
     from .main import BaseConfig  # noqa: F401
-    from .utils import AnyCallable
+    from .typing import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
 

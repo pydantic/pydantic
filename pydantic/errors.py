@@ -2,7 +2,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Set, Union
 
-from .utils import AnyType, display_as_type
+from .typing import AnyType, display_as_type
 
 
 class PydanticErrorMixin:
@@ -162,6 +162,10 @@ class SetError(PydanticTypeError):
     msg_template = 'value is not a valid set'
 
 
+class FrozenSetError(PydanticTypeError):
+    msg_template = 'value is not a valid frozenset'
+
+
 class TupleError(PydanticTypeError):
     msg_template = 'value is not a valid tuple'
 
@@ -284,19 +288,19 @@ class DecimalWholeDigitsError(PydanticValueError):
         super().__init__(whole_digits=whole_digits)
 
 
-class DateTimeError(PydanticTypeError):
+class DateTimeError(PydanticValueError):
     msg_template = 'invalid datetime format'
 
 
-class DateError(PydanticTypeError):
+class DateError(PydanticValueError):
     msg_template = 'invalid date format'
 
 
-class TimeError(PydanticTypeError):
+class TimeError(PydanticValueError):
     msg_template = 'invalid time format'
 
 
-class DurationError(PydanticTypeError):
+class DurationError(PydanticValueError):
     msg_template = 'invalid duration format'
 
 

@@ -746,6 +746,8 @@ to get validators to parse and validate the input data.
 
 (This script is complete, it should run "as is")
 
+.. _custom_root:
+
 Custom Root Types
 .................
 
@@ -753,14 +755,11 @@ Pydantic models which do not represent a ``dict`` ("object" in JSON parlance) ca
 root type defined via the ``__root__`` field. The root type can of any type: list, float, int etc.
 
 The root type can be defined via the type hint on the ``__root__`` field.
-The root value can be passed to model ``__init__`` via the ``__root__`` keyword argument or as the first and only argument
-to ``parse_obj``.
+The root value can be passed to model ``__init__`` via the ``__root__`` keyword argument or as
+the first and only argument to ``parse_obj``.
 
 .. literalinclude::  examples/custom_root_field.py
 
-Outputs:
-
-.. literalinclude:: examples/custom_root_field.json
 
 Helper Functions
 ................
@@ -865,24 +864,33 @@ environment variables or keyword arguments (e.g. in unit tests).
 (This script is complete, it should run "as is")
 
 Here ``redis_port`` could be modified via ``export MY_PREFIX_REDIS_PORT=6380`` or ``auth_key`` by
-``export my_api_key=6380``.
+``export my_api_key=6380``. By default, environment variables are treated as case-insensitive, so
+``export my_prefix_redis_port=6380`` would work as well.
+(Aliases are always sensitive to case, so ``export MY_API_KEY=6380`` would not work.)
 
 By default ``BaseSettings`` considers field values in the following priority (where 3. has the highest priority
 and overrides the other two):
 
-1. The default values set in your ``Settings`` class
-2. Environment variables eg. ``MY_PREFIX_REDIS_PORT`` as described above.
-3. Argument passed to the ``Settings`` class on initialisation.
+1. The default values set in your ``Settings`` class.
+2. Environment variables, e.g. ``MY_PREFIX_REDIS_PORT`` as described above.
+3. Arguments passed to the ``Settings`` class on initialisation.
 
 This behaviour can be changed by overriding the ``_build_values`` method on ``BaseSettings``.
 
 Complex types like ``list``, ``set``, ``dict`` and submodels can be set by using JSON environment variables.
 
-Environment variables can be read in a case insensitive manner:
+Case-sensitivity can be turned on through the ``Config``:
 
-.. literalinclude:: examples/settings_case_insensitive.py
+.. literalinclude:: examples/settings_case_sensitive.py
 
-Here ``redis_port`` could be modified via ``export APP_REDIS_HOST``, ``export app_redis_host``, ``export app_REDIS_host``, etc.
+When ``case_sensitive`` is ``True``, the environment variable must be in all-caps,
+so in this example ``redis_host`` could only be modified via ``export REDIS_HOST``.
+
+.. note::
+
+   On Windows, python's `os` module always treats environment variables as case-insensitive, so the
+   ``case_sensitive`` config setting will have no effect -- settings will always be updated ignoring case.
+
 
 Dynamic model creation
 ......................
@@ -1018,7 +1026,9 @@ Example:
 ``model.json(...)``
 ~~~~~~~~~~~~~~~~~~~
 
-The ``json()`` method will serialise a model to JSON, ``json()`` in turn calls ``dict()`` and serialises its result.
+The ``.json()`` method will serialise a model to JSON. Typically, ``.json()`` in turn calls ``.dict()`` and
+serialises its result. (For models with a :ref:`custom root type <custom_root>`, after calling ``.dict()``,
+only the value for the ``__root__`` key is serialised.)
 
 Serialisation can be customised on a model using the ``json_encoders`` config property, the keys should be types and
 the values should be functions which serialise that type, see the example below.
@@ -1244,6 +1254,10 @@ Third party libraries based on *pydantic*.
 * `aiohttp-toolbox <https://github.com/samuelcolvin/aiohttp-toolbox>`_ numerous utilities for aiohttp including
   data parsing using *pydantic*.
 * `harrier <https://github.com/samuelcolvin/harrier>`_ a better static site generator built with python.
+* `Cuenca <https://github.com/cuenca-mx>`_ is a Mexican neobank that uses *pydantic* for several internal
+  tools (including API validation) and for open source projects like
+  `stpmex <https://github.com/cuenca-mx/stpmex-python>`_, which is used to process real-time, 24/7, inter-bank
+  transfers in Mexico.
 
 More packages using pydantic can be found by visiting
 `pydantic's page on libraries.io <https://libraries.io/pypi/pydantic>`_.

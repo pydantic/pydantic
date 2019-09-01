@@ -4,15 +4,8 @@ from typing import NewType, Union
 
 import pytest
 
-from pydantic.utils import (
-    ValueItems,
-    display_as_type,
-    import_string,
-    is_new_type,
-    lenient_issubclass,
-    new_type_supertype,
-    truncate,
-)
+from pydantic.typing import display_as_type, is_new_type, new_type_supertype
+from pydantic.utils import ValueItems, import_string, lenient_issubclass, truncate
 
 
 def test_import_module():

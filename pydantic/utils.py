@@ -1,68 +1,19 @@
 import inspect
-import sys
 from contextlib import contextmanager
-from enum import Enum
 from importlib import import_module
-from typing import (  # type: ignore
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    Generator,
-    List,
-    NewType,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    Union,
-    _eval_type,
-    no_type_check,
-)
+from typing import TYPE_CHECKING, Any, Generator, List, Optional, Set, Tuple, Type, Union, no_type_check
+
+from .typing import AnyType
 
 try:
     from typing_extensions import Literal
 except ImportError:
     Literal = None  # type: ignore
 
-try:
-    from typing import _TypingBase as typing_base  # type: ignore
-except ImportError:
-    from typing import _Final as typing_base  # type: ignore
-
-try:
-    from typing import ForwardRef  # type: ignore
-
-    def evaluate_forwardref(type_, globalns, localns):  # type: ignore
-        return type_._evaluate(globalns, localns)
-
-
-except ImportError:
-    # python 3.6
-    from typing import _ForwardRef as ForwardRef  # type: ignore
-
-    def evaluate_forwardref(type_, globalns, localns):  # type: ignore
-        return type_._eval_type(globalns, localns)
-
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
-    from .main import Field  # noqa: F401
-    from .main import SetIntStr, DictIntStrAny, IntStr  # noqa: F401
-    from . import errors  # noqa: F401
-
-if sys.version_info < (3, 7):
-    from typing import Callable
-
-    AnyCallable = Callable[..., Any]
-else:
-    from collections.abc import Callable
-    from typing import Callable as TypingCallable
-
-    AnyCallable = TypingCallable[..., Any]
-
-
-AnyType = Type[Any]
+    from .typing import SetIntStr, DictIntStrAny, IntStr  # noqa: F401
 
 
 def import_string(dotted_path: str) -> Any:
@@ -98,25 +49,6 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     return v
 
 
-def display_as_type(v: AnyType) -> str:
-    if not isinstance(v, typing_base) and not isinstance(v, type):
-        v = type(v)
-
-    if lenient_issubclass(v, Enum):
-        if issubclass(v, int):
-            return 'int'
-        elif issubclass(v, str):
-            return 'str'
-        else:
-            return 'enum'
-
-    try:
-        return v.__name__
-    except AttributeError:
-        # happens with unions
-        return str(v)
-
-
 ExcType = Type[Exception]
 
 
@@ -129,7 +61,7 @@ def change_exception(raise_exc: ExcType, *except_types: ExcType) -> Generator[No
 
 
 def sequence_like(v: AnyType) -> bool:
-    return isinstance(v, (list, tuple, set)) or inspect.isgenerator(v)
+    return isinstance(v, (list, tuple, set, frozenset)) or inspect.isgenerator(v)
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
@@ -158,87 +90,6 @@ def in_ipython() -> bool:
         return False
     else:  # pragma: no cover
         return True
-
-
-def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Optional[str]) -> Dict[str, AnyType]:
-    """
-    Partially taken from typing.get_type_hints.
-
-    Resolve string or ForwardRef annotations into type objects if possible.
-    """
-    if module_name:
-        base_globals: Optional[Dict[str, Any]] = sys.modules[module_name].__dict__
-    else:
-        base_globals = None
-    annotations = {}
-    for name, value in raw_annotations.items():
-        if isinstance(value, str):
-            if sys.version_info >= (3, 7):
-                value = ForwardRef(value, is_argument=False)
-            else:
-                value = ForwardRef(value)
-        try:
-            value = _eval_type(value, base_globals, None)
-        except NameError:
-            # this is ok, it can be fixed with update_forward_refs
-            pass
-        annotations[name] = value
-    return annotations
-
-
-def is_callable_type(type_: AnyType) -> bool:
-    return type_ is Callable or getattr(type_, '__origin__', None) is Callable
-
-
-if sys.version_info >= (3, 7):
-
-    def is_literal_type(type_: AnyType) -> bool:
-        return Literal is not None and getattr(type_, '__origin__', None) is Literal
-
-    def literal_values(type_: AnyType) -> Tuple[Any, ...]:
-        return type_.__args__
-
-
-else:
-
-    def is_literal_type(type_: AnyType) -> bool:
-        return Literal is not None and hasattr(type_, '__values__') and type_ == Literal[type_.__values__]
-
-    def literal_values(type_: AnyType) -> Tuple[Any, ...]:
-        return type_.__values__
-
-
-test_type = NewType('test_type', str)
-
-
-def is_new_type(type_: AnyType) -> bool:
-    return isinstance(type_, type(test_type)) and hasattr(type_, '__supertype__')
-
-
-def new_type_supertype(type_: AnyType) -> AnyType:
-    while hasattr(type_, '__supertype__'):
-        type_ = type_.__supertype__
-    return type_
-
-
-def _check_classvar(v: AnyType) -> bool:
-    return type(v) == type(ClassVar) and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
-
-
-def is_classvar(ann_type: AnyType) -> bool:
-    return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
-
-
-def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> None:
-    """
-    Try to update ForwardRefs on fields based on this Field, globalns and localns.
-    """
-    if type(field.type_) == ForwardRef:
-        field.type_ = evaluate_forwardref(field.type_, globalns, localns or None)
-        field.prepare()
-    if field.sub_fields:
-        for sub_f in field.sub_fields:
-            update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
 
 
 def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:

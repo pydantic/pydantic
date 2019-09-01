@@ -4,29 +4,16 @@ import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 from uuid import UUID
 
-import pydantic
 from pydantic.color import Color
 
-from .fields import Field, Shape
+from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, Field
 from .json import pydantic_encoder
-from .networks import (
-    AnyUrl,
-    EmailStr,
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-    IPvAnyAddress,
-    IPvAnyInterface,
-    IPvAnyNetwork,
-    NameEmail,
-)
+from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from .types import (
     UUID1,
     UUID3,
@@ -49,19 +36,11 @@ from .types import (
     conlist,
     constr,
 )
-from .utils import (
-    is_callable_type,
-    is_literal_type,
-    is_new_type,
-    lenient_issubclass,
-    literal_values,
-    new_type_supertype,
-)
+from .typing import is_callable_type, is_literal_type, is_new_type, literal_values, new_type_supertype
+from .utils import lenient_issubclass
 
 if TYPE_CHECKING:  # pragma: no cover
-    from . import dataclasses  # noqa: F401
-
-    BaseModel = pydantic.main.BaseModel
+    from .main import BaseModel  # noqa: F401
 
 
 __all__ = [
@@ -278,7 +257,7 @@ def field_schema(
     ref_prefix = ref_prefix or default_prefix
     schema_overrides = False
     schema = cast('Schema', field.schema)
-    s = dict(title=schema.title or field.alias.title())
+    s = dict(title=schema.title or field.alias.title().replace('_', ' '))
     if schema.title:
         schema_overrides = True
 
@@ -413,14 +392,16 @@ def get_flat_models_from_field(field: Field, known_models: Set[Type['BaseModel']
     :param known_models: used to solve circular references
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
-    flat_models: Set[Type['BaseModel']] = set()
+    from .main import BaseModel  # noqa: F811
+
+    flat_models: Set[Type[BaseModel]] = set()
     # Handle dataclass-based models
     field_type = field.type_
-    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), pydantic.BaseModel):
+    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__  # type: ignore
     if field.sub_fields:
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
-    elif lenient_issubclass(field_type, pydantic.BaseModel) and field_type not in known_models:
+    elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
         flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
     return flat_models
 
@@ -479,21 +460,21 @@ def field_type_schema(
     definitions = {}
     nested_models: Set[str] = set()
     ref_prefix = ref_prefix or default_prefix
-    if field.shape is Shape.LIST:
+    if field.shape == SHAPE_LIST:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
         return {'type': 'array', 'items': f_schema}, definitions, nested_models
-    elif field.shape is Shape.SET:
+    elif field.shape == SHAPE_SET:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
         return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions, nested_models
-    elif field.shape is Shape.MAPPING:
+    elif field.shape == SHAPE_MAPPING:
         dict_schema: Dict[str, Any] = {'type': 'object'}
         key_field = cast(Field, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
@@ -510,7 +491,7 @@ def field_type_schema(
             # The dict values are not simply Any, so they need a schema
             dict_schema['additionalProperties'] = f_schema
         return dict_schema, definitions, nested_models
-    elif field.shape is Shape.TUPLE:
+    elif field.shape == SHAPE_TUPLE:
         sub_schema = []
         sub_fields = cast(List[Field], field.sub_fields)
         for sf in sub_fields:
@@ -524,7 +505,7 @@ def field_type_schema(
             sub_schema = sub_schema[0]  # type: ignore
         return {'type': 'array', 'items': sub_schema}, definitions, nested_models
     else:
-        assert field.shape is Shape.SINGLETON, field.shape
+        assert field.shape == SHAPE_SINGLETON, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
@@ -734,6 +715,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     Take a single Pydantic ``Field``, and return its schema and any additional definitions from sub-models.
     """
+    from .main import BaseModel  # noqa: F811
 
     ref_prefix = ref_prefix or default_prefix
     definitions: Dict[str, Any] = {}
@@ -782,9 +764,9 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         if issubclass(field_type, type_):
             return t_schema, definitions, nested_models
     # Handle dataclass-based models
-    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), pydantic.BaseModel):
+    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__  # type: ignore
-    if issubclass(field_type, pydantic.BaseModel):
+    if issubclass(field_type, BaseModel):
         model_name = model_name_map[field_type]
         if field_type not in known_models:
             sub_schema, sub_definitions, sub_nested_models = model_process_schema(

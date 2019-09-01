@@ -7,61 +7,28 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    no_type_check,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, no_type_check
 
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import Field, Shape
+from .fields import SHAPE_MAPPING, Field
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
-from .utils import (
-    AnyCallable,
-    AnyType,
-    ForwardRef,
-    GetterDict,
-    ValueItems,
-    change_exception,
-    is_classvar,
-    resolve_annotations,
-    truncate,
-    update_field_forward_refs,
-    validate_field_name,
-)
+from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
+from .utils import GetterDict, ValueItems, change_exception, truncate, validate_field_name
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .dataclasses import DataclassType  # noqa: F401
-    from .types import CallableGenerator, ModelOrDc
+    from .typing import CallableGenerator
+    from .types import ModelOrDc
     from .class_validators import ValidatorListDict
 
-    AnyGenerator = Generator[Any, None, None]
-    TupleGenerator = Generator[Tuple[str, Any], None, None]
-    DictStrAny = Dict[str, Any]
+    from .typing import TupleGenerator, DictStrAny, DictAny, SetStr, SetIntStr, DictIntStrAny  # noqa: F401
+
     ConfigType = Type['BaseConfig']
-    DictAny = Dict[Any, Any]
-    SetStr = Set[str]
-    ListStr = List[str]
     Model = TypeVar('Model', bound='BaseModel')
-    IntStr = Union[int, str]
-    SetIntStr = Set[IntStr]
-    DictIntStrAny = Dict[IntStr, Any]
 
 try:
     import cython  # type: ignore
@@ -72,6 +39,8 @@ else:  # pragma: no cover
         compiled = cython.compiled
     except AttributeError:
         compiled = False
+
+__all__ = 'BaseConfig', 'BaseModel', 'Extra', 'compiled', 'create_model', 'validate_model'
 
 
 class Extra(str, Enum):
@@ -143,7 +112,7 @@ def is_valid_field(name: str) -> bool:
 def validate_custom_root_type(fields: Dict[str, Field]) -> None:
     if len(fields) > 1:
         raise ValueError('__root__ cannot be mixed with other fields')
-    if fields['__root__'].shape is Shape.MAPPING:
+    if fields['__root__'].shape == SHAPE_MAPPING:
         raise TypeError('custom root type cannot allow mapping')
 
 
@@ -151,7 +120,7 @@ UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
 
 class MetaModel(ABCMeta):
-    @no_type_check
+    @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace):
         fields: Dict[str, Field] = {}
         config = BaseConfig
@@ -205,13 +174,19 @@ class MetaModel(ABCMeta):
                     and var_name not in class_vars
                 ):
                     validate_field_name(bases, var_name)
-                    fields[var_name] = Field.infer(
+                    inferred = Field.infer(
                         name=var_name,
                         value=value,
                         annotation=annotations.get(var_name),
                         class_validators=vg.get_validators(var_name),
                         config=config,
                     )
+                    if var_name in fields and inferred.type_ != fields[var_name].type_:
+                        raise TypeError(
+                            f'The type of {name}.{var_name} differs from the new default value; '
+                            f'if you wish to change the type of this field, please use a type annotation'
+                        )
+                    fields[var_name] = inferred
 
         _custom_root_type = '__root__' in fields
         if _custom_root_type:
@@ -329,11 +304,10 @@ class BaseModel(metaclass=MetaModel):
         `encoder` is an optional function to supply as `default` to json.dumps(), other arguments as per `json.dumps()`.
         """
         encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
-        return json.dumps(
-            self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults),
-            default=encoder,
-            **dumps_kwargs,
-        )
+        data = self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults)
+        if self._custom_root_type:
+            data = data['__root__']
+        return json.dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
@@ -726,7 +700,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
 
         if value is _missing:
             if field.required:
-                errors.append(ErrorWrapper(MissingError(), loc=field.alias, config=model.__config__))
+                errors.append(ErrorWrapper(MissingError(), loc=field.alias))
                 continue
             value = deepcopy(field.default)
             if not model.__config__.validate_all and not field.validate_always:
@@ -754,7 +728,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
                     values[f] = input_data[f]
             else:
                 for f in sorted(extra):
-                    errors.append(ErrorWrapper(ExtraError(), loc=f, config=config))
+                    errors.append(ErrorWrapper(ExtraError(), loc=f))
 
     err = None
     if errors:

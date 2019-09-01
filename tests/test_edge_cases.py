@@ -527,9 +527,9 @@ def test_inheritance():
 
     class Bar(Foo):
         x: float = 12.3
-        a = 123
+        a = 123.0
 
-    assert Bar().dict() == {'x': 12.3, 'a': 123}
+    assert Bar().dict() == {'x': 12.3, 'a': 123.0}
 
 
 def test_invalid_type():
@@ -613,6 +613,33 @@ def test_partial_inheritance_config():
 
     m = Child(aaa=1, bbb='s')
     assert str(m) == "Child a=1 b='s'"
+
+
+def test_annotation_inheritance():
+    class A(BaseModel):
+        integer: int = 1
+
+    class B(A):
+        integer = 2
+
+    assert B.__annotations__['integer'] == int
+    assert B.__fields__['integer'].type_ == int
+
+    class C(A):
+        integer: str = 'G'
+
+    assert C.__annotations__['integer'] == str
+    assert C.__fields__['integer'].type_ == str
+
+    with pytest.raises(TypeError) as exc_info:
+
+        class D(A):
+            integer = 'G'
+
+    assert str(exc_info.value) == (
+        'The type of D.integer differs from the new default value; '
+        'if you wish to change the type of this field, please use a type annotation'
+    )
 
 
 def test_string_none():

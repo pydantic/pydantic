@@ -6,7 +6,7 @@ from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
 from .main import create_model, validate_model
-from .utils import AnyType
+from .typing import AnyType
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseConfig, BaseModel  # noqa: F401
@@ -98,7 +98,7 @@ def _process_class(
 
 if TYPE_CHECKING:  # pragma: no cover
     # see https://github.com/python/mypy/issues/6239 for explanation of why we do this
-    from dataclasses import dataclass
+    from dataclasses import dataclass as dataclass
 else:
 
     def dataclass(

@@ -1,8 +1,8 @@
-from enum import IntEnum
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    FrozenSet,
     Generator,
     Iterable,
     Iterator,
@@ -22,17 +22,8 @@ from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .utils import (
-    AnyCallable,
-    AnyType,
-    Callable,
-    ForwardRef,
-    display_as_type,
-    is_literal_type,
-    lenient_issubclass,
-    literal_values,
-    sequence_like,
-)
+from .typing import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
+from .utils import lenient_issubclass, sequence_like
 from .validators import NoneType, constant_validator, dict_validator, find_validators
 
 try:
@@ -54,14 +45,15 @@ if TYPE_CHECKING:  # pragma: no cover
     LocType = Union[Tuple[str, ...], str]
 
 
-class Shape(IntEnum):
-    SINGLETON = 1
-    LIST = 2
-    SET = 3
-    MAPPING = 4
-    TUPLE = 5
-    TUPLE_ELLIPS = 6
-    SEQUENCE = 7
+# used to be an enum but changed to int's for small performance improvement as less access overhead
+SHAPE_SINGLETON = 1
+SHAPE_LIST = 2
+SHAPE_SET = 3
+SHAPE_MAPPING = 4
+SHAPE_TUPLE = 5
+SHAPE_TUPLE_ELLIPS = 6
+SHAPE_SEQUENCE = 7
+SHAPE_FROZENSET = 8
 
 
 class Field:
@@ -117,7 +109,7 @@ class Field:
         self.whole_pre_validators: Optional['ValidatorsList'] = None
         self.whole_post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
-        self.shape: Shape = Shape.SINGLETON
+        self.shape: int = SHAPE_SINGLETON
         self.prepare()
 
     @classmethod
@@ -218,12 +210,12 @@ class Field:
             return
 
         if issubclass(origin, Tuple):  # type: ignore
-            self.shape = Shape.TUPLE
+            self.shape = SHAPE_TUPLE
             self.sub_fields = []
             for i, t in enumerate(self.type_.__args__):  # type: ignore
                 if t is Ellipsis:
                     self.type_ = self.type_.__args__[0]  # type: ignore
-                    self.shape = Shape.TUPLE_ELLIPS
+                    self.shape = SHAPE_TUPLE_ELLIPS
                     return
                 self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
@@ -240,20 +232,24 @@ class Field:
                 )
 
             self.type_ = self.type_.__args__[0]  # type: ignore
-            self.shape = Shape.LIST
+            self.shape = SHAPE_LIST
         elif issubclass(origin, Set):
             self.type_ = self.type_.__args__[0]  # type: ignore
-            self.shape = Shape.SET
+            self.shape = SHAPE_SET
+        elif issubclass(origin, FrozenSet):
+            self.type_ = self.type_.__args__[0]  # type: ignore
+            self.shape = SHAPE_FROZENSET
         elif issubclass(origin, Sequence):
             self.type_ = self.type_.__args__[0]  # type: ignore
-            self.shape = Shape.SEQUENCE
-        else:
-            assert issubclass(origin, Mapping)
+            self.shape = SHAPE_SEQUENCE
+        elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(
                 self.type_.__args__[0], 'key_' + self.name, for_keys=True  # type: ignore
             )
             self.type_ = self.type_.__args__[1]  # type: ignore
-            self.shape = Shape.MAPPING
+            self.shape = SHAPE_MAPPING
+        else:
+            raise TypeError(f'Fields of type "{origin}" are not supported.')
 
         if getattr(self.type_, '__origin__', None):
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
@@ -306,11 +302,11 @@ class Field:
             if errors:
                 return v, errors
 
-        if self.shape is Shape.SINGLETON:
+        if self.shape == SHAPE_SINGLETON:
             v, errors = self._validate_singleton(v, values, loc, cls)
-        elif self.shape is Shape.MAPPING:
+        elif self.shape == SHAPE_MAPPING:
             v, errors = self._validate_mapping(v, values, loc, cls)
-        elif self.shape is Shape.TUPLE:
+        elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
         else:
             #  sequence, list, tuple, set, generator
@@ -324,23 +320,27 @@ class Field:
         try:
             return Json.validate(v), None
         except (ValueError, TypeError) as exc:
-            return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
+            return v, ErrorWrapper(exc, loc=loc)
 
-    def _validate_sequence_like(
+    def _validate_sequence_like(  # noqa: C901 (ignore complexity)
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
+        Note that large if-else blocks are necessary to enable Cython
+        optimization, which is why we disable the complexity check above.
         """
         if not sequence_like(v):
             e: errors_.PydanticTypeError
-            if self.shape is Shape.LIST:
+            if self.shape == SHAPE_LIST:
                 e = errors_.ListError()
-            elif self.shape is Shape.SET:
+            elif self.shape == SHAPE_SET:
                 e = errors_.SetError()
+            elif self.shape == SHAPE_FROZENSET:
+                e = errors_.FrozenSetError()
             else:
                 e = errors_.SequenceError()
-            return v, ErrorWrapper(e, loc=loc, config=self.model_config)
+            return v, ErrorWrapper(e, loc=loc)
 
         result = []
         errors: List[ErrorList] = []
@@ -355,13 +355,15 @@ class Field:
         if errors:
             return v, errors
 
-        converted: Union[List[Any], Set[Any], Tuple[Any, ...], Iterator[Any]] = result
+        converted: Union[List[Any], Set[Any], FrozenSet[Any], Tuple[Any, ...], Iterator[Any]] = result
 
-        if self.shape is Shape.SET:
+        if self.shape == SHAPE_SET:
             converted = set(result)
-        elif self.shape is Shape.TUPLE_ELLIPS:
+        elif self.shape == SHAPE_FROZENSET:
+            converted = frozenset(result)
+        elif self.shape == SHAPE_TUPLE_ELLIPS:
             converted = tuple(result)
-        elif self.shape is Shape.SEQUENCE:
+        elif self.shape == SHAPE_SEQUENCE:
             if isinstance(v, tuple):
                 converted = tuple(result)
             elif isinstance(v, set):
@@ -382,7 +384,7 @@ class Field:
                 e = errors_.TupleLengthError(actual_length=actual_length, expected_length=expected_length)
 
         if e:
-            return v, ErrorWrapper(e, loc=loc, config=self.model_config)
+            return v, ErrorWrapper(e, loc=loc)
 
         result = []
         errors: List[ErrorList] = []
@@ -405,7 +407,7 @@ class Field:
         try:
             v_iter = dict_validator(v)
         except TypeError as exc:
-            return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
+            return v, ErrorWrapper(exc, loc=loc)
 
         result, errors = {}, []
         for k, v_ in v_iter.items():
@@ -449,7 +451,7 @@ class Field:
             try:
                 v = validator(cls, v, values, self, self.model_config)
             except (ValueError, TypeError, AssertionError) as exc:
-                return v, ErrorWrapper(exc, loc=loc, config=self.model_config)
+                return v, ErrorWrapper(exc, loc=loc)
         return v, None
 
     def include_in_schema(self) -> bool:
@@ -465,7 +467,7 @@ class Field:
         from .main import BaseModel  # noqa: F811
 
         return (
-            self.shape != Shape.SINGLETON
+            self.shape != SHAPE_SINGLETON
             or lenient_issubclass(self.type_, (BaseModel, list, set, dict))
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
