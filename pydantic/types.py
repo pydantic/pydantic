@@ -695,7 +695,7 @@ class PaymentCardBrand(Enum):
     visa = 'Visa'
     other = 'other'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value
 
 
@@ -707,9 +707,12 @@ class PaymentCardNumber(str):
     strip_whitespace = True
     min_length: int = 12
     max_length: int = 19
+    bin: str
+    last4: str
+    brand: PaymentCardBrand
 
-    def __new__(cls, card_number: str):
-        obj = str.__new__(cls, card_number)
+    def __new__(cls, card_number: str) -> 'PaymentCardNumber':
+        obj = str.__new__(cls, card_number)  # noqa
         obj.bin = card_number[:6]
         obj.last4 = card_number[-4:]
         obj.brand = cls.get_brand(card_number)
@@ -731,7 +734,7 @@ class PaymentCardNumber(str):
         return cls(card_number)
 
     @property
-    def masked(self):
+    def masked(self) -> str:
         num_masked = len(self) - 10  # len(bin) + len(last4) == 10
         return f'{self.bin}{"*" * num_masked}{self.last4}'
 
