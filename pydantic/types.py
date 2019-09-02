@@ -1,26 +1,18 @@
 import json
 import re
 from decimal import Decimal
-from ipaddress import (
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-    _BaseAddress,
-    _BaseNetwork,
-)
 from pathlib import Path
 from types import new_class
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Type, TypeVar, Union, cast
 from uuid import UUID
 
 from . import errors
 from .typing import AnyType
-from .utils import change_exception, import_string, make_dsn, url_regex_generator, validate_email
+from .utils import import_string
 from .validators import (
     bytes_validator,
+    constr_length_validator,
+    constr_strip_whitespace,
     decimal_validator,
     float_validator,
     int_validator,
@@ -49,12 +41,7 @@ __all__ = [
     'conlist',
     'ConstrainedStr',
     'constr',
-    'EmailStr',
-    'UrlStr',
-    'urlstr',
-    'NameEmail',
     'PyObject',
-    'DSN',
     'ConstrainedInt',
     'conint',
     'PositiveInt',
@@ -73,9 +60,6 @@ __all__ = [
     'DirectoryPath',
     'Json',
     'JsonWrapper',
-    'IPvAnyAddress',
-    'IPvAnyInterface',
-    'IPvAnyNetwork',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
@@ -88,7 +72,6 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
-NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, int]]]
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -213,21 +196,6 @@ def constr(
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
 
 
-class EmailStr(str):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        # included here and below so the error happens straight away
-        if email_validator is None:
-            raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
-
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str) -> str:
-        return validate_email(value)[1]
-
-
 class StrictBool(int):
     """
     StrictBool to allow for bools which are not type-coerced.
@@ -246,85 +214,6 @@ class StrictBool(int):
             return value
 
         raise errors.StrictBoolError()
-
-
-class UrlStr(str):
-    strip_whitespace = True
-    min_length = 1
-    max_length = 2 ** 16
-    schemes: Optional[Set[str]] = None
-    relative = False  # whether to allow relative URLs
-    require_tld = True  # whether to reject non-FQDN hostnames
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
-        yield str_validator
-        yield constr_strip_whitespace
-        yield constr_length_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str) -> str:
-        # Check first if the scheme is valid
-        schemes = cls.schemes or {'http', 'https', 'ftp', 'ftps'}
-        if '://' in value:
-            scheme = value.split('://')[0].lower()
-            if scheme not in schemes:
-                raise errors.UrlSchemeError(scheme=scheme)
-
-        regex = url_regex_generator(relative=cls.relative, require_tld=cls.require_tld)
-        if not regex.match(value):
-            raise errors.UrlRegexError()
-
-        return value
-
-
-def urlstr(
-    *,
-    strip_whitespace: bool = True,
-    min_length: int = 1,
-    max_length: int = 2 ** 16,
-    relative: bool = False,
-    require_tld: bool = True,
-    schemes: Optional[Set[str]] = None,
-) -> Type[str]:
-    # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(
-        strip_whitespace=strip_whitespace,
-        min_length=min_length,
-        max_length=max_length,
-        relative=relative,
-        require_tld=require_tld,
-        schemes=schemes,
-    )
-    return type('UrlStrValue', (UrlStr,), namespace)
-
-
-class NameEmail:
-    __slots__ = 'name', 'email'
-
-    def __init__(self, name: str, email: str):
-        self.name = name
-        self.email = email
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        if email_validator is None:
-            raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
-
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str) -> 'NameEmail':
-        return cls(*validate_email(value))
-
-    def __str__(self) -> str:
-        return f'{self.name} <{self.email}>'
-
-    def __repr__(self) -> str:
-        return f'<NameEmail("{self}")>'
 
 
 class PyObject:
@@ -349,28 +238,6 @@ class PyObject:
                 return import_string(value)
             except ImportError as e:
                 raise errors.PyObjectError(error_message=str(e))
-
-
-class DSN(str):
-    prefix = 'db_'
-    fields = 'driver', 'user', 'password', 'host', 'port', 'name', 'query'
-    validate_always = True
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str, values: Dict[str, Any]) -> str:
-        if value:
-            return value
-
-        kwargs = {f: values.get(cls.prefix + f) for f in cls.fields}
-        if kwargs['driver'] is None:
-            raise errors.DSNDriverIsEmptyError()
-
-        return make_dsn(**kwargs)  # type: ignore
 
 
 class ConstrainedNumberMeta(type):
@@ -585,56 +452,6 @@ class Json(metaclass=JsonMeta):
             raise errors.JsonTypeError()
 
 
-class IPvAnyAddress(_BaseAddress):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Union[str, bytes, int]) -> Union[IPv4Address, IPv6Address]:
-        try:
-            return IPv4Address(value)
-        except ValueError:
-            pass
-
-        with change_exception(errors.IPvAnyAddressError, ValueError):
-            return IPv6Address(value)
-
-
-class IPvAnyInterface(_BaseAddress):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: NetworkType) -> Union[IPv4Interface, IPv6Interface]:
-        try:
-            return IPv4Interface(value)
-        except ValueError:
-            pass
-
-        with change_exception(errors.IPvAnyInterfaceError, ValueError):
-            return IPv6Interface(value)
-
-
-class IPvAnyNetwork(_BaseNetwork):  # type: ignore
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: NetworkType) -> Union[IPv4Network, IPv6Network]:
-        # Assume IP Network is defined with a default value for ``strict`` argument.
-        # Define your own class if you want to specify network address check strictness.
-        try:
-            return IPv4Network(value)
-        except ValueError:
-            pass
-
-        with change_exception(errors.IPvAnyNetworkError, ValueError):
-            return IPv6Network(value)
-
-
 class SecretStr:
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -685,25 +502,3 @@ class SecretBytes:
 
     def get_secret_value(self) -> bytes:
         return self._secret_value
-
-
-def constr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
-    v_len = len(v)
-
-    min_length = field.type_.min_length or config.min_anystr_length  # type: ignore
-    if min_length is not None and v_len < min_length:
-        raise errors.AnyStrMinLengthError(limit_value=min_length)
-
-    max_length = field.type_.max_length or config.max_anystr_length  # type: ignore
-    if max_length is not None and v_len > max_length:
-        raise errors.AnyStrMaxLengthError(limit_value=max_length)
-
-    return v
-
-
-def constr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
-    strip_whitespace = field.type_.strip_whitespace or config.anystr_strip_whitespace  # type: ignore
-    if strip_whitespace:
-        v = v.strip()
-
-    return v

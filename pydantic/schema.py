@@ -13,8 +13,8 @@ from pydantic.color import Color
 
 from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, Field
 from .json import pydantic_encoder
+from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from .types import (
-    DSN,
     UUID1,
     UUID3,
     UUID4,
@@ -25,31 +25,19 @@ from .types import (
     ConstrainedList,
     ConstrainedStr,
     DirectoryPath,
-    EmailStr,
     FilePath,
-    IPvAnyAddress,
-    IPvAnyInterface,
-    IPvAnyNetwork,
     Json,
-    NameEmail,
     SecretBytes,
     SecretStr,
     StrictBool,
-    UrlStr,
     condecimal,
     confloat,
     conint,
     conlist,
     constr,
 )
-from .typing import (
-    is_callable_type,
-    is_literal_type,
-    is_new_type,
-    lenient_issubclass,
-    literal_values,
-    new_type_supertype,
-)
+from .typing import is_callable_type, is_literal_type, is_new_type, literal_values, new_type_supertype
+from .utils import lenient_issubclass
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
@@ -667,8 +655,7 @@ validation_attribute_to_schema_keyword = {
 # Order is important, subclasses of str must go before str, etc
 field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (EmailStr, {'type': 'string', 'format': 'email'}),
-    (UrlStr, {'type': 'string', 'format': 'uri'}),
-    (DSN, {'type': 'string', 'format': 'dsn'}),
+    (AnyUrl, {'type': 'string', 'format': 'uri'}),
     (SecretStr, {'type': 'string', 'writeOnly': True}),
     (str, {'type': 'string'}),
     (SecretBytes, {'type': 'string', 'writeOnly': True}),
@@ -828,7 +815,7 @@ def get_annotation_from_schema(annotation: Any, schema: Schema) -> Type[Any]:
     if isinstance(annotation, type):
         attrs: Optional[Tuple[str, ...]] = None
         constraint_func: Optional[Callable[..., type]] = None
-        if issubclass(annotation, str) and not issubclass(annotation, (EmailStr, DSN, UrlStr, ConstrainedStr)):
+        if issubclass(annotation, str) and not issubclass(annotation, (EmailStr, AnyUrl, ConstrainedStr)):
             attrs = ('max_length', 'min_length', 'regex')
             constraint_func = constr
         elif lenient_issubclass(annotation, numeric_types) and not issubclass(

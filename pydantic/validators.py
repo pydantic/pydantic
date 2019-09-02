@@ -370,6 +370,28 @@ def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     return literal_validator
 
 
+def constr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+    v_len = len(v)
+
+    min_length = field.type_.min_length or config.min_anystr_length  # type: ignore
+    if min_length is not None and v_len < min_length:
+        raise errors.AnyStrMinLengthError(limit_value=min_length)
+
+    max_length = field.type_.max_length or config.max_anystr_length  # type: ignore
+    if max_length is not None and v_len > max_length:
+        raise errors.AnyStrMaxLengthError(limit_value=max_length)
+
+    return v
+
+
+def constr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+    strip_whitespace = field.type_.strip_whitespace or config.anystr_strip_whitespace  # type: ignore
+    if strip_whitespace:
+        v = v.strip()
+
+    return v
+
+
 T = TypeVar('T')
 
 

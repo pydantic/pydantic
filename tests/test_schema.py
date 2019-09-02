@@ -4,6 +4,7 @@ import tempfile
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import Any, Callable, Dict, List, NewType, Optional, Set, Tuple, Union
 from uuid import UUID
@@ -12,6 +13,7 @@ import pytest
 
 from pydantic import BaseModel, Schema, ValidationError, validator
 from pydantic.color import Color
+from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
     get_flat_models_from_model,
     get_flat_models_from_models,
@@ -20,7 +22,6 @@ from pydantic.schema import (
     schema,
 )
 from pydantic.types import (
-    DSN,
     UUID1,
     UUID3,
     UUID4,
@@ -31,19 +32,8 @@ from pydantic.types import (
     ConstrainedInt,
     ConstrainedStr,
     DirectoryPath,
-    EmailStr,
     FilePath,
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-    IPvAnyAddress,
-    IPvAnyInterface,
-    IPvAnyNetwork,
     Json,
-    NameEmail,
     NegativeFloat,
     NegativeInt,
     NoneBytes,
@@ -57,13 +47,11 @@ from pydantic.types import (
     StrBytes,
     StrictBool,
     StrictStr,
-    UrlStr,
     conbytes,
     condecimal,
     confloat,
     conint,
     constr,
-    urlstr,
 )
 from pydantic.typing import Literal
 
@@ -541,12 +529,11 @@ def test_str_constrained_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (UrlStr, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
+        (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
         (
-            urlstr(min_length=5, max_length=10),
+            stricturl(min_length=5, max_length=10),
             {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
         ),
-        (DSN, {'title': 'A', 'type': 'string', 'format': 'dsn'}),
     ],
 )
 def test_special_str_types(field_type, expected_schema):

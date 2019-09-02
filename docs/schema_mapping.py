@@ -136,7 +136,7 @@ table = [
         ''
     ],
     [
-        'UrlStr',
+        'AnyUrl',
         'string',
         '{"format": "uri"}',
         'JSON Schema Validation',

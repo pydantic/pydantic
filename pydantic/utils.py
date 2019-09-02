@@ -1,95 +1,19 @@
 import inspect
-import re
 from contextlib import contextmanager
-from functools import lru_cache
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Pattern, Set, Tuple, Type, Union, no_type_check
+from typing import TYPE_CHECKING, Any, Generator, List, Optional, Set, Tuple, Type, Union, no_type_check
 
-from . import errors
 from .typing import AnyType
 
 try:
-    import email_validator
+    from typing_extensions import Literal
 except ImportError:
-    email_validator = None
+    Literal = None  # type: ignore
+
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
     from .typing import SetIntStr, DictIntStrAny, IntStr  # noqa: F401
-
-
-PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
-
-
-def validate_email(value: str) -> Tuple[str, str]:
-    """
-    Brutally simple email address validation. Note unlike most email address validation
-    * raw ip address (literal) domain parts are not allowed.
-    * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed
-    * the local part check is extremely basic. This raises the possibility of unicode spoofing, but no better
-        solution is really possible.
-    * spaces are striped from the beginning and end of addresses but no error is raised
-
-    See RFC 5322 but treat it with suspicion, there seems to exist no universally acknowledged test for a valid email!
-    """
-    if email_validator is None:
-        raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
-
-    m = PRETTY_REGEX.fullmatch(value)
-    name: Optional[str] = None
-    if m:
-        name, value = m.groups()
-
-    email = value.strip()
-
-    try:
-        email_validator.validate_email(email, check_deliverability=False)
-    except email_validator.EmailNotValidError as e:
-        raise errors.EmailError() from e
-
-    return name or email[: email.index('@')], email.lower()
-
-
-def _rfc_1738_quote(text: str) -> str:
-    return re.sub(r'[:@/]', lambda m: '%{:X}'.format(ord(m.group(0))), text)
-
-
-def make_dsn(
-    *,
-    driver: str,
-    user: str = None,
-    password: str = None,
-    host: str = None,
-    port: str = None,
-    name: str = None,
-    query: Dict[str, Any] = None,
-) -> str:
-    """
-    Create a DSN from from connection settings.
-
-    Stolen approximately from sqlalchemy/engine/url.py:URL.
-    """
-    s = driver + '://'
-    if user is not None:
-        s += _rfc_1738_quote(user)
-        if password is not None:
-            s += ':' + _rfc_1738_quote(password)
-        s += '@'
-    if host is not None:
-        if ':' in host:
-            s += '[{}]'.format(host)
-        else:
-            s += host
-    if port is not None:
-        s += ':{}'.format(int(port))
-    if name is not None:
-        s += '/' + name
-    query = query or {}
-    if query:
-        keys = list(query)
-        keys.sort()
-        s += '?' + '&'.join('{}={}'.format(k, query[k]) for k in keys)
-    return s
 
 
 def import_string(dotted_path: str) -> Any:
@@ -152,35 +76,8 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-@lru_cache(maxsize=None)
-def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
-    """
-    Url regex generator taken from Marshmallow library,
-    for details please follow library source code:
-        https://github.com/marshmallow-code/marshmallow/blob/298870ef6c089fb4d91efae9ca4168453ffe00d2/marshmallow/validate.py#L37
-    """
-    return re.compile(
-        r''.join(
-            (
-                r'^',
-                r'(' if relative else r'',
-                r'(?:[a-z0-9\.\-\+]*)://',  # scheme is validated separately
-                r'(?:[^:@]+?:[^:@]*?@|)',  # basic auth
-                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
-                r'(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
-                r'localhost|',  # localhost...
-                (
-                    r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|' if not require_tld else r''
-                ),  # allow dotless hostnames
-                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|',  # ...or ipv4
-                r'\[[A-F0-9]*:[A-F0-9:]+\])',  # ...or ipv6
-                r'(?::\d+)?',  # optional port
-                r')?' if relative else r'',  # host is optional, allow for relative URLs
-                r'(?:/?|[/?]\S+)$',
-            )
-        ),
-        re.IGNORECASE,
-    )
+def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
+    return isinstance(cls, type) and issubclass(cls, class_or_tuple)
 
 
 def in_ipython() -> bool:

@@ -71,7 +71,6 @@ __all__ = (
     'AnyCallable',
     'AnyType',
     'display_as_type',
-    'lenient_issubclass',
     'resolve_annotations',
     'is_callable_type',
     'is_literal_type',
@@ -100,7 +99,7 @@ def display_as_type(v: AnyType) -> str:
     if not isinstance(v, typing_base) and not isinstance(v, type):
         v = type(v)
 
-    if lenient_issubclass(v, Enum):
+    if isinstance(v, type) and issubclass(v, Enum):
         if issubclass(v, int):
             return 'int'
         elif issubclass(v, str):
@@ -113,10 +112,6 @@ def display_as_type(v: AnyType) -> str:
     except AttributeError:
         # happens with unions
         return str(v)
-
-
-def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
-    return isinstance(cls, type) and issubclass(cls, class_or_tuple)
 
 
 def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Optional[str]) -> Dict[str, AnyType]:
