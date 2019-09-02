@@ -739,12 +739,8 @@ class PaymentCardNumber(str):
         yield constr_length_validator
         yield cls.validate_digits
         yield cls.validate_luhn_check_digit
-        yield cls.init
+        yield cls
         yield cls.validate_length_for_brand
-
-    @classmethod
-    def init(cls, card_number: str) -> 'PaymentCardNumber':
-        return cls(card_number)
 
     @property
     def masked(self) -> str:
