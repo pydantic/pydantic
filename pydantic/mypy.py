@@ -64,7 +64,7 @@ class PydanticModelField:
         self.line = line
         self.column = column
 
-    def to_argument(self, info: TypeInfo, strict: bool) -> Argument:
+    def to_argument(self, info: TypeInfo, strict: bool, for_settings: bool = False) -> Argument:
         if strict:
             type_annotation = info[self.name].type
         else:
@@ -73,7 +73,7 @@ class PydanticModelField:
             variable=self.to_var(info),
             type_annotation=type_annotation,
             initializer=None,
-            kind=ARG_NAMED_OPT if self.has_default else ARG_NAMED,
+            kind=ARG_NAMED_OPT if self.has_default or for_settings else ARG_NAMED,
         )
 
     def to_var(self, info: TypeInfo) -> Var:
@@ -83,7 +83,7 @@ class PydanticModelField:
         return {'name': self.name, 'has_default': self.has_default, 'line': self.line, 'column': self.column}
 
     @classmethod
-    def deserialize(cls, info: TypeInfo, data: JsonDict) -> 'PydanticModelField':
+    def deserialize(cls, info: TypeInfo, data: JsonDict) -> "PydanticModelField":
         return cls(**data)
 
 
@@ -93,9 +93,14 @@ class PydanticModelTransformer:
         self.config_fields = ('extra', 'allow_mutation', 'use_enum_values', 'arbitrary_types_allowed', 'orm_mode')
         self.strict = strict
 
-    def add_basemodel_init(self, attributes: List[PydanticModelField], config: Dict[str, Any]) -> None:
+    def add_basemodel_init(
+        self, attributes: List[PydanticModelField], config: Dict[str, Any], is_settings: bool
+    ) -> None:
         ctx = self._ctx
-        init_arguments = [attribute.to_argument(ctx.cls.info, strict=self.strict) for attribute in attributes]
+        init_arguments = [
+            attribute.to_argument(ctx.cls.info, strict=self.strict, for_settings=is_settings)
+            for attribute in attributes
+        ]
         if config.get('extra') is not False and not self.strict:
             var = Var('kwargs')
             init_arguments.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
@@ -106,8 +111,8 @@ class PydanticModelTransformer:
         info = self._ctx.cls.info
 
         attributes = self.collect_attributes()
-
         config = self.collect_config()
+        is_settings = self.is_settings()
 
         if ctx.api.options.new_semantic_analyzer:
             # Check if attribute types are ready.
@@ -118,17 +123,19 @@ class PydanticModelTransformer:
                         ctx.api.defer()
                     return
 
-        self.add_basemodel_init(attributes, config)
+        self.add_basemodel_init(attributes, config, is_settings)
         if config.get('allow_mutation') is False:
             self._freeze(attributes)
+
         info.metadata['pydanticmodel'] = {
             'attributes': OrderedDict((attr.name, attr.serialize()) for attr in attributes),
             'config': config,
+            'is_settings': is_settings,
         }
 
     def collect_config(self) -> Dict[str, Any]:
         ctx = self._ctx
-        cls = self._ctx.cls
+        cls = ctx.cls
         config = {}
         for stmt in cls.defs.body:
             if not isinstance(stmt, ClassDef):
@@ -149,6 +156,12 @@ class PydanticModelTransformer:
                 if name not in config:
                     config[name] = value
         return config
+
+    def is_settings(self) -> bool:
+        for info in self._ctx.cls.info.mro[:-1]:  # 0 is the current class, -1 is object
+            if info.fullname() == "pydantic.env_settings.BaseSettings":
+                return True
+        return False
 
     def get_config_update(self, substmt: AssignmentStmt) -> Dict[str, Any]:
         lhs = substmt.lvalues[0]
