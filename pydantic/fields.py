@@ -224,7 +224,9 @@ class Field:
                 self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
 
+        has_subfields = False
         if issubclass(origin, List):
+            has_subfields = True
             # Create self validators
             get_validators = getattr(self.type_, '__get_validators__', None)
             if get_validators:
@@ -238,12 +240,15 @@ class Field:
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = Shape.LIST
         elif issubclass(origin, Set):
+            has_subfields = True
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = Shape.SET
         elif issubclass(origin, Sequence):
+            has_subfields = True
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = Shape.SEQUENCE
         else:
+            has_subfields = True
             assert issubclass(origin, Mapping)
             self.key_field = self._create_sub_type(
                 self.type_.__args__[0], 'key_' + self.name, for_keys=True  # type: ignore
@@ -251,7 +256,7 @@ class Field:
             self.type_ = self.type_.__args__[1]  # type: ignore
             self.shape = Shape.MAPPING
 
-        if getattr(self.type_, '__origin__', None):
+        if has_subfields:
             # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
             self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
@@ -284,6 +289,12 @@ class Field:
         if class_validators_:
             self.whole_pre_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre)
             self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
+
+        if self.sub_fields and self.schema is not None and self.schema.const:
+            if not self.whole_pre_validators:
+                self.whole_pre_validators = []
+
+            self.whole_pre_validators.extend(self._prep_vals([constant_validator]))
 
     @staticmethod
     def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':

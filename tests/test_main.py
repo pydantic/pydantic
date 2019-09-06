@@ -398,6 +398,49 @@ def test_const_with_wrong_value():
     ]
 
 
+def test_const_list():
+    class SubModel(BaseModel):
+        b: int
+
+    class Model(BaseModel):
+        a: List[SubModel] = Schema([{'b': 1}, {'b': 2}, {'b': 3}], const=True)
+
+    m = Model()
+    assert m.a == [{'b': 1}, {'b': 2}, {'b': 3}]
+
+
+def test_const_list_with_wrong_value():
+    class SubModel(BaseModel):
+        b: int
+
+    class Model(BaseModel):
+        a: List[SubModel] = Schema([{'b': 1}, {'b': 2}, {'b': 3}], const=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=[{'b': 3}, {'b': 1}, {'b': 2}])
+
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'given': [{'b': 3}, {'b': 1}, {'b': 2}], 'permitted': [[{'b': 1}, {'b': 2}, {'b': 3}]]},
+            'loc': ('a',),
+            'msg': "unexpected value; permitted: [{'b': 1}, {'b': 2}, {'b': 3}]",
+            'type': 'value_error.const',
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=[SubModel(b=3), SubModel(b=1), SubModel(b=2)])
+
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'given': [{'b': 3}, {'b': 1}, {'b': 2}], 'permitted': [[{'b': 1}, {'b': 2}, {'b': 3}]]},
+            'loc': ('a',),
+            'msg': "unexpected value; permitted: [{'b': 1}, {'b': 2}, {'b': 3}]",
+            'type': 'value_error.const',
+        }
+    ]
+
+
 class ValidateAssignmentModel(BaseModel):
     a: int = 2
     b: constr(min_length=1)

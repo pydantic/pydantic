@@ -102,7 +102,7 @@ def flatten_errors(
             else:
                 yield error.dict(loc_prefix=loc)
         elif isinstance(error, list):
-            yield from flatten_errors(error)
+            yield from flatten_errors(error, loc=loc)
         else:
             raise RuntimeError(f'Unknown error object: {error}')
 
