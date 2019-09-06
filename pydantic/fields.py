@@ -106,8 +106,8 @@ class Field:
         self.sub_fields: Optional[List[Field]] = None
         self.key_field: Optional[Field] = None
         self.validators: 'ValidatorsList' = []
-        self.whole_pre_validators: Optional['ValidatorsList'] = None
-        self.whole_post_validators: Optional['ValidatorsList'] = None
+        self.whole_pre_validators: 'ValidatorsList' = []
+        self.whole_post_validators: 'ValidatorsList' = []
         self.parse_json: bool = False
         self.shape: int = SHAPE_SINGLETON
         self.prepare()
@@ -253,9 +253,8 @@ class Field:
         else:
             raise TypeError(f'Fields of type "{origin}" are not supported.')
 
-        if getattr(self.type_, '__origin__', None):
-            # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
-            self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
+        # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
+        self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
     def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'Field':
         return self.__class__(
@@ -272,13 +271,16 @@ class Field:
             v_funcs = (
                 *[v.func for v in class_validators_ if not v.whole and v.pre],
                 *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
-                self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
             self.validators = self._prep_vals(v_funcs)
 
+        # Add const validator
+        if self.schema is not None and self.schema.const:
+            self.whole_pre_validators = self._prep_vals([constant_validator])
+
         if class_validators_:
-            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre)
+            self.whole_pre_validators.extend(self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre))
             self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
 
     @staticmethod
