@@ -593,6 +593,8 @@ def model_type_schema(
         out_schema = {'type': 'object', 'properties': properties}
         if required:
             out_schema['required'] = required
+    if model.__config__.extra == 'forbid':
+        out_schema['additionalProperties'] = False
     return out_schema, definitions, nested_models
 
 
