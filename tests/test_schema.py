@@ -11,7 +11,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Schema, ValidationError, validator
+from pydantic import BaseModel, Extra, Schema, ValidationError, validator
 from pydantic.color import Color
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
@@ -1474,4 +1474,20 @@ def test_model_with_schema_extra():
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
         'examples': [{'a': 'Foo'}],
+    }
+
+
+def test_model_with_extra_forbidden():
+    class Model(BaseModel):
+        a: str
+
+        class Config:
+            extra = Extra.forbid
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': False,
     }
