@@ -16,6 +16,7 @@ from .validators import (
     decimal_validator,
     float_validator,
     int_validator,
+    make_arbitrary_type_validator,
     not_none_validator,
     number_multiple_validator,
     number_size_validator,
@@ -82,18 +83,6 @@ if TYPE_CHECKING:  # pragma: no cover
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
 
 
-class StrictStr(str):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v: Any) -> str:
-        if not isinstance(v, str):
-            raise errors.StrError()
-        return v
-
-
 class ConstrainedBytes(bytes):
     strip_whitespace = False
     min_length: OptionalInt = None
@@ -156,9 +145,12 @@ class ConstrainedStr(str):
     max_length: OptionalInt = None
     curtail_length: OptionalInt = None
     regex: Optional[Pattern[str]] = None
+    strict = False
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
+        if cls.strict:
+            yield make_arbitrary_type_validator(str)
         yield not_none_validator
         yield str_validator
         yield constr_strip_whitespace
@@ -177,9 +169,14 @@ class ConstrainedStr(str):
         return value
 
 
+class StrictStr(ConstrainedStr):
+    strict = True
+
+
 def constr(
     *,
     strip_whitespace: bool = False,
+    strict: bool = False,
     min_length: int = None,
     max_length: int = None,
     curtail_length: int = None,
@@ -188,6 +185,7 @@ def constr(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        strict=strict,
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
@@ -253,6 +251,7 @@ class ConstrainedNumberMeta(type):
 
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
+    strict: bool = False
     gt: OptionalInt = None
     ge: OptionalInt = None
     lt: OptionalInt = None
@@ -261,14 +260,18 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
+        if cls.strict:
+            yield make_arbitrary_type_validator(int)
         yield int_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
-def conint(*, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None) -> Type[int]:
+def conint(
+    *, strict: bool = False, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None
+) -> Type[int]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
 
 
@@ -281,6 +284,7 @@ class NegativeInt(ConstrainedInt):
 
 
 class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
+    strict: bool = False
     gt: OptionalIntFloat = None
     ge: OptionalIntFloat = None
     lt: OptionalIntFloat = None
@@ -289,16 +293,24 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
+        if cls.strict:
+            yield make_arbitrary_type_validator(float)
         yield float_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
 def confloat(
-    *, gt: float = None, ge: float = None, lt: float = None, le: float = None, multiple_of: float = None
+    *,
+    strict: bool = False,
+    gt: float = None,
+    ge: float = None,
+    lt: float = None,
+    le: float = None,
+    multiple_of: float = None,
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
 
 

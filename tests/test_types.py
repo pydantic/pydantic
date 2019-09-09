@@ -955,6 +955,32 @@ def test_strict_bool():
         Model(v=b'1')
 
 
+def test_strict_int():
+    class Model(BaseModel):
+        v: conint(strict=True)
+
+    assert Model(v=123456).v == 123456
+
+    with pytest.raises(ValidationError):
+        Model(v='123456')
+
+    with pytest.raises(ValidationError):
+        Model(v=3.14159)
+
+
+def test_strict_float():
+    class Model(BaseModel):
+        v: confloat(strict=True)
+
+    assert Model(v=3.14159).v == 3.14159
+
+    with pytest.raises(ValidationError):
+        Model(v='3.14159')
+
+    with pytest.raises(ValidationError):
+        Model(v=123456)
+
+
 def test_bool_unhashable_fails():
     class Model(BaseModel):
         v: bool
