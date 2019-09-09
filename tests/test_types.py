@@ -499,6 +499,8 @@ def test_string_success():
         str_min_length: constr(min_length=5) = ...
         str_curtailed: constr(curtail_length=5) = ...
         str_email: EmailStr = ...
+        str_email_local_case_sensitive: EmailStr = ...
+        str_email_global_case_insensitive: EmailStr = ...
         name_email: NameEmail = ...
 
     m = MoreStringsModel(
@@ -508,6 +510,8 @@ def test_string_success():
         str_min_length='12345',
         str_curtailed='123456',
         str_email='foobar@example.com  ',
+        str_email_local_case_sensitive='FoObAr@example.com',
+        str_email_global_case_insensitive='foobar@ExAmPle.com',
         name_email='foo bar  <foobaR@example.com>',
     )
     assert m.str_strip_enabled == 'xxx123'
@@ -515,6 +519,8 @@ def test_string_success():
     assert m.str_regex == 'xxx123'
     assert m.str_curtailed == '12345'
     assert m.str_email == 'foobar@example.com'
+    assert m.str_email_local_case_sensitive == 'FoObAr@example.com'
+    assert m.str_email_global_case_insensitive == 'foobar@example.com'
     assert repr(m.name_email) == '<NameEmail("foo bar <foobar@example.com>")>'
     assert m.name_email.name == 'foo bar'
     assert m.name_email.email == 'foobar@example.com'
