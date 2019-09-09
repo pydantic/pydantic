@@ -1,1 +1,1 @@
-EmailStr validation method now returns local part case-sensitive per RFC 5321.
+``EmailStr`` validation method now returns local part case-sensitive per RFC 5321.
