@@ -31,6 +31,8 @@ from pydantic import (
     SecretBytes,
     SecretStr,
     StrictBool,
+    StrictFloat,
+    StrictInt,
     StrictStr,
     ValidationError,
     conbytes,
@@ -957,7 +959,7 @@ def test_strict_bool():
 
 def test_strict_int():
     class Model(BaseModel):
-        v: conint(strict=True)
+        v: StrictInt
 
     assert Model(v=123456).v == 123456
 
@@ -970,7 +972,7 @@ def test_strict_int():
 
 def test_strict_float():
     class Model(BaseModel):
-        v: confloat(strict=True)
+        v: StrictFloat
 
     assert Model(v=3.14159).v == 3.14159
 

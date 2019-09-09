@@ -64,6 +64,8 @@ __all__ = [
     'SecretStr',
     'SecretBytes',
     'StrictBool',
+    'StrictInt',
+    'StrictFloat',
 ]
 
 NoneStr = Optional[str]
@@ -169,10 +171,6 @@ class ConstrainedStr(str):
         return value
 
 
-class StrictStr(ConstrainedStr):
-    strict = True
-
-
 def constr(
     *,
     strip_whitespace: bool = False,
@@ -192,6 +190,10 @@ def constr(
         regex=regex and re.compile(regex),
     )
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
+
+
+class StrictStr(ConstrainedStr):
+    strict = True
 
 
 class StrictBool(int):
@@ -283,6 +285,10 @@ class NegativeInt(ConstrainedInt):
     lt = 0
 
 
+class StrictInt(ConstrainedInt):
+    strict = True
+
+
 class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     strict: bool = False
     gt: OptionalIntFloat = None
@@ -320,6 +326,10 @@ class PositiveFloat(ConstrainedFloat):
 
 class NegativeFloat(ConstrainedFloat):
     lt = 0
+
+
+class StrictFloat(ConstrainedFloat):
+    strict = True
 
 
 class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
