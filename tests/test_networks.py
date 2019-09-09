@@ -309,7 +309,7 @@ def test_son():
         ('foo.bar@example.com ', 'foo.bar', 'foo.bar@example.com'),
         ('foo BAR <foobar@example.com >', 'foo BAR', 'foobar@example.com'),
         ('FOO bar   <foobar@example.com> ', 'FOO bar', 'foobar@example.com'),
-        ('<FOOBAR@example.com> ', 'FOOBAR', 'foobar@example.com'),
+        ('<FOOBAR@example.com> ', 'FOOBAR', 'FOOBAR@example.com'),
         ('ñoñó@example.com', 'ñoñó', 'ñoñó@example.com'),
         ('我買@example.com', '我買', '我買@example.com'),
         ('甲斐黒川日本@example.com', '甲斐黒川日本', '甲斐黒川日本@example.com'),

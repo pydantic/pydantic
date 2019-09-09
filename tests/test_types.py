@@ -521,9 +521,9 @@ def test_string_success():
     assert m.str_email == 'foobar@example.com'
     assert m.str_email_local_case_sensitive == 'FoObAr@example.com'
     assert m.str_email_global_case_insensitive == 'foobar@example.com'
-    assert repr(m.name_email) == '<NameEmail("foo bar <foobar@example.com>")>'
+    assert repr(m.name_email) == '<NameEmail("foo bar <foobaR@example.com>")>'
     assert m.name_email.name == 'foo bar'
-    assert m.name_email.email == 'foobar@example.com'
+    assert m.name_email.email == 'foobaR@example.com'
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
