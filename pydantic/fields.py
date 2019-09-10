@@ -72,7 +72,7 @@ class Field:
         'has_alias',
         'schema',
         'validate_always',
-        'allow_none',
+        'short_circuit_none',
         'shape',
         'class_validators',
         'parse_json',
@@ -101,7 +101,7 @@ class Field:
         self.model_config = model_config
         self.schema: Optional['Schema'] = schema
 
-        self.allow_none: bool = False
+        self.short_circuit_none: bool = False
         self.validate_always: bool = False
         self.sub_fields: Optional[List[Field]] = None
         self.key_field: Optional[Field] = None
@@ -173,10 +173,14 @@ class Field:
         )
 
         if not self.required and self.default is None:
-            self.allow_none = True
+            self.short_circuit_none = True
 
         self._populate_sub_fields()
         self._populate_validators()
+
+        # if validations is required
+        if self.validate_always:
+            self.short_circuit_none = False
 
     def _populate_sub_fields(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
@@ -203,7 +207,7 @@ class Field:
             types_ = []
             for type_ in self.type_.__args__:  # type: ignore
                 if type_ is NoneType:  # type: ignore
-                    self.allow_none = True
+                    self.short_circuit_none = True
                     self.required = False
                 types_.append(type_)
             self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
@@ -286,7 +290,7 @@ class Field:
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
-        if self.allow_none and not self.validate_always and v is None:
+        if self.short_circuit_none and v is None:
             return None, None
 
         loc = loc if isinstance(loc, tuple) else (loc,)
