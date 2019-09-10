@@ -58,12 +58,12 @@ def test_validate_whole():
     class Model(BaseModel):
         a: List[int]
 
-        @validator('a', whole=True, pre=True)
+        @validator('a', pre=True)
         def check_a1(cls, v):
             v.append('123')
             return v
 
-        @validator('a', whole=True)
+        @validator('a')
         def check_a2(cls, v):
             v.append(456)
             return v
@@ -76,7 +76,7 @@ def test_validate_kwargs():
         b: int
         a: List[int]
 
-        @validator('a')
+        @validator('a', each_item=True)
         def check_a1(cls, v, values, **kwargs):
             return v + values['b']
 
@@ -89,7 +89,7 @@ def test_validate_whole_error():
     class Model(BaseModel):
         a: List[int]
 
-        @validator('a', whole=True, pre=True)
+        @validator('a', pre=True)
         def check_a1(cls, v):
             calls.append(f'check_a1 {v}')
             if 1 in v:
@@ -97,7 +97,7 @@ def test_validate_whole_error():
             v[0] += 1
             return v
 
-        @validator('a', whole=True)
+        @validator('a')
         def check_a2(cls, v):
             calls.append(f'check_a2 {v}')
             if 10 in v:
@@ -244,7 +244,7 @@ def test_validate_always():
     class Model(BaseModel):
         a: str = None
 
-        @validator('a', pre=True, always=True, whole=True)
+        @validator('a', pre=True, always=True)
         def check_a(cls, v):
             nonlocal check_calls
             check_calls += 1
@@ -479,7 +479,7 @@ def test_no_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
 
-        @validator('foobar')
+        @validator('foobar', each_item=True)
         def check_foobar(cls, v):
             return v + 1
 
@@ -490,7 +490,7 @@ def test_key_validation_whole():
     class Model(BaseModel):
         foobar: Dict[int, int]
 
-        @validator('foobar', whole=True)
+        @validator('foobar')
         def check_foobar(cls, value):
             return {k + 1: v + 1 for k, v in value.items()}
 
@@ -503,7 +503,7 @@ def test_validator_always_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', pre=True, whole=True, always=True)
+        @validator('a', pre=True, always=True)
         def check_a(cls, v):
             nonlocal check_calls
             check_calls += 1
@@ -519,7 +519,7 @@ def test_validator_always_post():
     class Model(BaseModel):
         a: str = None
 
-        @validator('a', always=True, whole=True)
+        @validator('a', always=True)
         def check_a(cls, v):
             return v or 'default value'
 
@@ -531,7 +531,7 @@ def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', always=True, pre=True, whole=True)
+        @validator('a', always=True, pre=True)
         def check_a(cls, v):
             return v or 'default value'
 
@@ -545,7 +545,7 @@ def test_datetime_validator():
     class Model(BaseModel):
         d: datetime = None
 
-        @validator('d', pre=True, whole=True, always=True)
+        @validator('d', pre=True, always=True)
         def check_d(cls, v):
             nonlocal check_calls
             check_calls += 1
@@ -565,7 +565,7 @@ def test_whole_called_once():
     class Model(BaseModel):
         a: Tuple[int, int, int]
 
-        @validator('a', pre=True, whole=True)
+        @validator('a', pre=True)
         def check_a(cls, v):
             nonlocal check_calls
             check_calls += 1

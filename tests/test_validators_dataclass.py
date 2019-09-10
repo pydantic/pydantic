@@ -24,12 +24,12 @@ def test_validate_whole():
     class MyDataclass:
         a: List[int]
 
-        @validator('a', whole=True, pre=True)
+        @validator('a', pre=True)
         def check_a1(cls, v):
             v.append('123')
             return v
 
-        @validator('a', whole=True)
+        @validator('a')
         def check_a2(cls, v):
             v.append(456)
             return v

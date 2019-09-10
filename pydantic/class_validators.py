@@ -1,3 +1,4 @@
+import warnings
 from collections import ChainMap
 from functools import wraps
 from inspect import Signature, signature
@@ -18,10 +19,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class Validator:
-    def __init__(self, func: AnyCallable, pre: bool, whole: bool, always: bool, check_fields: bool):
+    __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields'
+
+    def __init__(self, func: AnyCallable, pre: bool, each_item: bool, always: bool, check_fields: bool):
         self.func = func
         self.pre = pre
-        self.whole = whole
+        self.each_item = each_item
         self.always = always
         self.check_fields = check_fields
 
@@ -30,13 +33,19 @@ _FUNCS: Set[str] = set()
 
 
 def validator(
-    *fields: str, pre: bool = False, whole: bool = False, always: bool = False, check_fields: bool = True
+    *fields: str,
+    pre: bool = False,
+    each_item: bool = False,
+    always: bool = False,
+    check_fields: bool = True,
+    whole: bool = None,
 ) -> Callable[[AnyCallable], classmethod]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
     :param pre: whether or not this validator should be called before the standard validators (else after)
-    :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
+    :param each_item: for complex objects (sets, lists etc.) whether to validate individual elements rather than the
+      whole object
     :param always: whether this method and other validators should be called even if the value is missing
     :param check_fields: whether to check that the fields actually exist on the model
     """
@@ -47,6 +56,13 @@ def validator(
             "validators should be used with fields and keyword arguments, not bare. "  # noqa: Q000
             "E.g. usage should be `@validator('<field_name>', ...)`"
         )
+
+    if whole is not None:
+        warnings.warn(
+            'The "whole" keyword argument is deprecated, use "each_item" (inverse meaning, default False) instead',
+            DeprecationWarning,
+        )
+        each_item = not whole
 
     def dec(f: AnyCallable) -> classmethod:
         # avoid validators with duplicated names since without this validators can be overwritten silently
@@ -59,7 +75,7 @@ def validator(
         f_cls = classmethod(f)
         f_cls.__validator_config = (  # type: ignore
             fields,
-            Validator(func=f, pre=pre, whole=whole, always=always, check_fields=check_fields),
+            Validator(func=f, pre=pre, each_item=each_item, always=always, check_fields=check_fields),
         )
         return f_cls
 

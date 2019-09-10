@@ -40,7 +40,7 @@ def test_value_validation():
     class Response(GenericModel, Generic[T]):
         data: T
 
-        @validator('data')
+        @validator('data', each_item=True)
         def validate_value_nonzero(cls, v):
             if isinstance(v, dict):
                 return v  # ensure v is actually a value of the dict, not the dict itself

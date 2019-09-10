@@ -63,8 +63,8 @@ class Field:
         'sub_fields',
         'key_field',
         'validators',
-        'whole_pre_validators',
-        'whole_post_validators',
+        'pre_validators',
+        'post_validators',
         'default',
         'required',
         'model_config',
@@ -107,8 +107,8 @@ class Field:
         self.sub_fields: Optional[List[Field]] = None
         self.key_field: Optional[Field] = None
         self.validators: 'ValidatorsList' = []
-        self.whole_pre_validators: Optional['ValidatorsList'] = None
-        self.whole_post_validators: Optional['ValidatorsList'] = None
+        self.pre_validators: Optional['ValidatorsList'] = None
+        self.post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
         self.shape: int = SHAPE_SINGLETON
         self.prepare()
@@ -234,7 +234,7 @@ class Field:
             if get_validators:
                 self.class_validators.update(
                     {
-                        f'list_{i}': Validator(validator, whole=True, pre=True, always=True, check_fields=False)
+                        f'list_{i}': Validator(validator, each_item=False, pre=True, always=True, check_fields=False)
                         for i, validator in enumerate(get_validators())
                     }
                 )
@@ -264,10 +264,10 @@ class Field:
             self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
     def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'Field':
-        return self.__class__(
+        return Field(
             type_=type_,
             name=name,
-            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if not v.whole},
+            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if v.each_item},
             model_config=self.model_config,
         )
 
@@ -276,16 +276,16 @@ class Field:
         if not self.sub_fields:
             get_validators = getattr(self.type_, '__get_validators__', None)
             v_funcs = (
-                *[v.func for v in class_validators_ if not v.whole and v.pre],
+                *[v.func for v in class_validators_ if v.each_item and v.pre],
                 *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
                 self.schema is not None and self.schema.const and constant_validator,
-                *[v.func for v in class_validators_ if not v.whole and not v.pre],
+                *[v.func for v in class_validators_ if v.each_item and not v.pre],
             )
             self.validators = self._prep_vals(v_funcs)
 
         if class_validators_:
-            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre)
-            self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
+            self.pre_validators = self._prep_vals(v.func for v in class_validators_ if not v.each_item and v.pre)
+            self.post_validators = self._prep_vals(v.func for v in class_validators_ if not v.each_item and not v.pre)
 
     @staticmethod
     def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
@@ -302,8 +302,8 @@ class Field:
                 return v, error
 
         errors: Optional['ErrorList'] = None
-        if self.whole_pre_validators:
-            v, errors = self._apply_validators(v, values, loc, cls, self.whole_pre_validators)
+        if self.pre_validators:
+            v, errors = self._apply_validators(v, values, loc, cls, self.pre_validators)
             if errors:
                 return v, errors
 
@@ -323,8 +323,8 @@ class Field:
             #  sequence, list, set, generator, ellipsis tuple, frozen set
             v, errors = self._validate_sequence_like(v, values, loc, cls)
 
-        if not errors and self.whole_post_validators:
-            v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
+        if not errors and self.post_validators:
+            v, errors = self._apply_validators(v, values, loc, cls, self.post_validators)
         return v, errors
 
     def _validate_json(self, v: Any, loc: Tuple[str, ...]) -> Tuple[Optional[Any], Optional[ErrorWrapper]]:

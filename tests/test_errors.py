@@ -38,7 +38,7 @@ def test_interval_validation_error():
     class MyModel(BaseModel):
         foobar: Union[Foo, Bar]
 
-        @validator('foobar', pre=True, whole=True)
+        @validator('foobar', pre=True)
         def check_action(cls, v):
             if isinstance(v, dict):
                 model_type = v.get('model_type')
@@ -67,7 +67,7 @@ def test_error_on_optional():
     class Foobar(BaseModel):
         foo: Optional[str] = None
 
-        @validator('foo', always=True, pre=True, whole=True)
+        @validator('foo', always=True, pre=True)
         def check_foo(cls, v):
             raise ValueError('custom error')
 
