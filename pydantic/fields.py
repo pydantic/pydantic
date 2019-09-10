@@ -21,6 +21,7 @@ from typing import (
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
+from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
 from .utils import lenient_issubclass, sequence_like
@@ -72,7 +73,7 @@ class Field:
         'has_alias',
         'schema',
         'validate_always',
-        'short_circuit_none',
+        'allow_none',
         'shape',
         'class_validators',
         'parse_json',
@@ -101,7 +102,7 @@ class Field:
         self.model_config = model_config
         self.schema: Optional['Schema'] = schema
 
-        self.short_circuit_none: bool = False
+        self.allow_none: bool = False
         self.validate_always: bool = False
         self.sub_fields: Optional[List[Field]] = None
         self.key_field: Optional[Field] = None
@@ -173,14 +174,10 @@ class Field:
         )
 
         if not self.required and self.default is None:
-            self.short_circuit_none = True
+            self.allow_none = True
 
         self._type_analysis()
         self._populate_validators()
-
-        # if validations is required
-        if self.validate_always:
-            self.short_circuit_none = False
 
     def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
@@ -207,15 +204,14 @@ class Field:
             types_ = []
             for type_ in self.type_.__args__:  # type: ignore
                 if type_ is NoneType:  # type: ignore
-                    self.short_circuit_none = True
                     self.required = False
-                    if not self.validate_always:
-                        continue
+                    self.allow_none = True
+                    continue
                 types_.append(type_)
 
             if len(types_) == 1:
                 self.type_ = types_[0]
-                # re-run
+                # re-run to correctly interpret the new self.type_
                 self._type_analysis()
             else:
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
@@ -298,9 +294,6 @@ class Field:
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
-        if self.short_circuit_none and v is None:
-            return None, None
-
         loc = loc if isinstance(loc, tuple) else (loc,)
 
         if v is not None and self.parse_json:
@@ -314,6 +307,12 @@ class Field:
             if errors:
                 return v, errors
 
+        if v is None:
+            if self.allow_none:
+                return None, None
+            else:
+                return v, ErrorWrapper(NoneIsNotAllowedError(), loc=loc)
+
         if self.shape == SHAPE_SINGLETON:
             v, errors = self._validate_singleton(v, values, loc, cls)
         elif self.shape == SHAPE_MAPPING:
@@ -321,7 +320,7 @@ class Field:
         elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
         else:
-            #  sequence, list, tuple, set, generator
+            #  sequence, list, set, generator, ellipsis tuple, frozen set
             v, errors = self._validate_sequence_like(v, values, loc, cls)
 
         if not errors and self.whole_post_validators:

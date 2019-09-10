@@ -12,8 +12,6 @@ import re
 from colorsys import hls_to_rgb, rgb_to_hls
 from typing import TYPE_CHECKING, Any, Optional, Tuple, Union, cast
 
-from pydantic.validators import not_none_validator
-
 from .errors import ColorError
 from .utils import almost_equal_floats
 
@@ -184,7 +182,6 @@ class Color:
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield cls
 
     def __str__(self) -> str:

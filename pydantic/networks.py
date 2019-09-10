@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Set, Tuple, Ty
 
 from . import errors
 from .utils import change_exception
-from .validators import constr_length_validator, not_none_validator, str_validator
+from .validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -141,7 +141,6 @@ class AnyUrl(str):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield cls.validate
 
     @classmethod

@@ -42,12 +42,6 @@ if TYPE_CHECKING:  # pragma: no cover
 NoneType = type(None)
 
 
-def not_none_validator(v: Any) -> Any:
-    if v is None:
-        raise errors.NoneIsNotAllowedError()
-    return v
-
-
 def is_none_validator(v: Any) -> None:
     if v is not None:
         raise errors.NoneIsAllowedError()
@@ -418,7 +412,7 @@ class IfConfig:
         return any(getattr(config, name) not in {None, False} for name in self.config_attr_names)
 
 
-pattern_validators = [not_none_validator, str_validator, pattern_validator]
+pattern_validators = [str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
@@ -427,7 +421,6 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (
         str,
         [
-            not_none_validator,
             str_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
@@ -436,7 +429,6 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (
         bytes,
         [
-            not_none_validator,
             bytes_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
@@ -457,14 +449,14 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (tuple, [tuple_validator]),
     (set, [set_validator]),
     (frozenset, [frozenset_validator]),
-    (UUID, [not_none_validator, uuid_validator]),
-    (Decimal, [not_none_validator, decimal_validator]),
-    (IPv4Interface, [not_none_validator, ip_v4_interface_validator]),
-    (IPv6Interface, [not_none_validator, ip_v6_interface_validator]),
-    (IPv4Address, [not_none_validator, ip_v4_address_validator]),
-    (IPv6Address, [not_none_validator, ip_v6_address_validator]),
-    (IPv4Network, [not_none_validator, ip_v4_network_validator]),
-    (IPv6Network, [not_none_validator, ip_v6_network_validator]),
+    (UUID, [uuid_validator]),
+    (Decimal, [decimal_validator]),
+    (IPv4Interface, [ip_v4_interface_validator]),
+    (IPv6Interface, [ip_v6_interface_validator]),
+    (IPv4Address, [ip_v4_address_validator]),
+    (IPv6Address, [ip_v6_address_validator]),
+    (IPv4Network, [ip_v4_network_validator]),
+    (IPv6Network, [ip_v6_network_validator]),
 ]
 
 

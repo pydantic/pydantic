@@ -244,7 +244,7 @@ def test_validate_always():
     class Model(BaseModel):
         a: str = None
 
-        @validator('a', pre=True, always=True)
+        @validator('a', pre=True, always=True, whole=True)
         def check_a(cls, v):
             nonlocal check_calls
             check_calls += 1
@@ -503,7 +503,7 @@ def test_validator_always_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', pre=True, always=True)
+        @validator('a', pre=True, whole=True, always=True)
         def check_a(cls, v):
             nonlocal check_calls
             check_calls += 1
@@ -519,20 +519,19 @@ def test_validator_always_post():
     class Model(BaseModel):
         a: str = None
 
-        @validator('a', always=True)
+        @validator('a', always=True, whole=True)
         def check_a(cls, v):
             return v or 'default value'
 
     assert Model(a='y').a == 'y'
-    with pytest.raises(ValidationError):
-        Model()
+    assert Model().a is None
 
 
 def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', always=True)
+        @validator('a', always=True, pre=True, whole=True)
         def check_a(cls, v):
             return v or 'default value'
 
@@ -546,7 +545,7 @@ def test_datetime_validator():
     class Model(BaseModel):
         d: datetime = None
 
-        @validator('d', pre=True, always=True)
+        @validator('d', pre=True, whole=True, always=True)
         def check_d(cls, v):
             nonlocal check_calls
             check_calls += 1

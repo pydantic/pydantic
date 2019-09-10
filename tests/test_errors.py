@@ -67,7 +67,7 @@ def test_error_on_optional():
     class Foobar(BaseModel):
         foo: Optional[str] = None
 
-        @validator('foo', always=True, whole=True)
+        @validator('foo', always=True, pre=True, whole=True)
         def check_foo(cls, v):
             raise ValueError('custom error')
 
@@ -97,7 +97,7 @@ def test_error_on_optional():
                 {'loc': ('d',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
                 {'loc': ('d',), 'msg': 'value is not a valid uuid', 'type': 'type_error.uuid'},
                 {'loc': ('e', '__key__'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-                {'loc': ('f', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+                # {'loc': ('f', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
                 {'loc': ('f', 0), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
                 {
                     'loc': ('g',),
@@ -176,14 +176,6 @@ def test_error_on_optional():
       "f",
       0
     ],
-    "msg": "value is not a valid integer",
-    "type": "type_error.integer"
-  },
-  {
-    "loc": [
-      "f",
-      0
-    ],
     "msg": "none is not an allowed value",
     "type": "type_error.none.not_allowed"
   },
@@ -212,7 +204,7 @@ def test_error_on_optional():
         (
             '__str__',
             """\
-11 validation errors for Model
+10 validation errors for Model
 a
   value is not a valid integer (type=type_error.integer)
 b -> x
@@ -226,8 +218,6 @@ d
 d
   value is not a valid uuid (type=type_error.uuid)
 e -> __key__
-  value is not a valid integer (type=type_error.integer)
-f -> 0
   value is not a valid integer (type=type_error.integer)
 f -> 0
   none is not an allowed value (type=type_error.none.not_allowed)
