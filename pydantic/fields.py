@@ -25,7 +25,7 @@ from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
 from .utils import lenient_issubclass, sequence_like
-from .validators import NoneType, constant_validator, dict_validator, find_validators
+from .validators import NoneType, constant_validator, dict_validator, find_validators, validate_json
 
 try:
     from typing_extensions import Literal
@@ -43,7 +43,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
     ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
-    LocType = Union[Tuple[str, ...], str]
+    LocType = Union[Tuple[Union[int, str], ...], str]
 
 
 # used to be an enum but changed to int's for small performance improvement as less access overhead
@@ -184,6 +184,9 @@ class Field:
         if lenient_issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type  # type: ignore
             self.parse_json = True
+        elif lenient_issubclass(self.type_, Json):
+            self.type_ = Any  # type: ignore
+            self.parse_json = True
 
         if self.type_ is Pattern:
             # python 3.7 only, Pattern is a typing object but without sub fields
@@ -287,6 +290,13 @@ class Field:
             self.pre_validators = self._prep_vals(v.func for v in class_validators_ if not v.each_item and v.pre)
             self.post_validators = self._prep_vals(v.func for v in class_validators_ if not v.each_item and not v.pre)
 
+        if self.parse_json:
+            v = make_generic_validator(validate_json)
+            if self.pre_validators:
+                self.pre_validators.insert(0, v)
+            else:
+                self.pre_validators = [v]
+
     @staticmethod
     def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
         return [make_generic_validator(f) for f in v_funcs if f]
@@ -294,12 +304,6 @@ class Field:
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
-        loc = loc if isinstance(loc, tuple) else (loc,)
-
-        if v is not None and self.parse_json:
-            v, error = self._validate_json(v, loc)
-            if error:
-                return v, error
 
         errors: Optional['ErrorList'] = None
         if self.pre_validators:
@@ -327,12 +331,6 @@ class Field:
             v, errors = self._apply_validators(v, values, loc, cls, self.post_validators)
         return v, errors
 
-    def _validate_json(self, v: Any, loc: Tuple[str, ...]) -> Tuple[Optional[Any], Optional[ErrorWrapper]]:
-        try:
-            return Json.validate(v), None
-        except (ValueError, TypeError) as exc:
-            return v, ErrorWrapper(exc, loc=loc)
-
     def _validate_sequence_like(  # noqa: C901 (ignore complexity)
         self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
@@ -353,6 +351,7 @@ class Field:
                 e = errors_.SequenceError()
             return v, ErrorWrapper(e, loc=loc)
 
+        loc = loc if isinstance(loc, tuple) else (loc,)
         result = []
         errors: List[ErrorList] = []
         for i, v_ in enumerate(v):
@@ -397,6 +396,7 @@ class Field:
         if e:
             return v, ErrorWrapper(e, loc=loc)
 
+        loc = loc if isinstance(loc, tuple) else (loc,)
         result = []
         errors: List[ErrorList] = []
         for i, (v_, field) in enumerate(zip(v, self.sub_fields)):  # type: ignore
@@ -420,6 +420,7 @@ class Field:
         except TypeError as exc:
             return v, ErrorWrapper(exc, loc=loc)
 
+        loc = loc if isinstance(loc, tuple) else (loc,)
         result, errors = {}, []
         for k, v_ in v_iter.items():
             v_loc = *loc, '__key__'

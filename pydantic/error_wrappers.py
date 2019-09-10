@@ -11,11 +11,13 @@ __all__ = 'ErrorWrapper', 'ValidationError'
 class ErrorWrapper:
     __slots__ = 'exc', 'loc'
 
-    def __init__(self, exc: Exception, *, loc: Union[Tuple[str, ...], str]) -> None:
+    def __init__(self, exc: Exception, *, loc: Union[Tuple[Union[int, str], ...], str]) -> None:
         self.exc = exc
         self.loc: Tuple[str, ...] = loc if isinstance(loc, tuple) else (loc,)  # type: ignore
 
-    def dict(self, config: Type['BaseConfig'], *, loc_prefix: Optional[Tuple[str, ...]] = None) -> Dict[str, Any]:
+    def dict(
+        self, config: Type['BaseConfig'], *, loc_prefix: Optional[Tuple[Union[int, str], ...]] = None
+    ) -> Dict[str, Any]:
         loc = self.loc if loc_prefix is None else loc_prefix + self.loc
 
         type_ = get_exc_type(type(self.exc))

@@ -1,4 +1,3 @@
-import json
 import re
 from decimal import Decimal
 from pathlib import Path
@@ -433,19 +432,7 @@ class JsonMeta(type):
 
 
 class Json(metaclass=JsonMeta):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v: Any) -> Any:
-        try:
-            return json.loads(v)
-        except ValueError:
-            raise errors.JsonError()
-        except TypeError:
-            raise errors.JsonTypeError()
+    pass
 
 
 class SecretStr:
