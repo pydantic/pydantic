@@ -175,14 +175,14 @@ class Field:
         if not self.required and self.default is None:
             self.short_circuit_none = True
 
-        self._populate_sub_fields()
+        self._type_analysis()
         self._populate_validators()
 
         # if validations is required
         if self.validate_always:
             self.short_circuit_none = False
 
-    def _populate_sub_fields(self) -> None:  # noqa: C901 (ignore complexity)
+    def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
         if lenient_issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type  # type: ignore
@@ -209,8 +209,16 @@ class Field:
                 if type_ is NoneType:  # type: ignore
                     self.short_circuit_none = True
                     self.required = False
+                    if not self.validate_always:
+                        continue
                 types_.append(type_)
-            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
+
+            if len(types_) == 1:
+                self.type_ = types_[0]
+                # re-run
+                self._type_analysis()
+            else:
+                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
 
         if issubclass(origin, Tuple):  # type: ignore
