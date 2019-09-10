@@ -62,6 +62,7 @@ def validator(
             'The "whole" keyword argument is deprecated, use "each_item" (inverse meaning, default False) instead',
             DeprecationWarning,
         )
+        assert each_item is False, '"each_item" and "whole" conflict, remove "whole"'
         each_item = not whole
 
     def dec(f: AnyCallable) -> classmethod:

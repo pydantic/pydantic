@@ -97,7 +97,6 @@ def test_error_on_optional():
                 {'loc': ('d',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
                 {'loc': ('d',), 'msg': 'value is not a valid uuid', 'type': 'type_error.uuid'},
                 {'loc': ('e', '__key__'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-                # {'loc': ('f', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
                 {'loc': ('f', 0), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
                 {
                     'loc': ('g',),

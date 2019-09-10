@@ -466,12 +466,6 @@ class Field:
                 return v, ErrorWrapper(exc, loc=loc)
         return v, None
 
-    def include_in_schema(self) -> bool:
-        """
-        False if this is a simple field just allowing None as used in Unions/Optional.
-        """
-        return self.type_ != NoneType  # type: ignore
-
     def is_complex(self) -> bool:
         """
         Whether the field is "complex" eg. env variables should be parsed as JSON.

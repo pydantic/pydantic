@@ -273,7 +273,6 @@ def test_list_unions():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
 
-    debug(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {'loc': ('v', 2), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}
     ]

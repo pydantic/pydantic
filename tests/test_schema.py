@@ -330,13 +330,10 @@ def test_tuple(field_type, expected_schema):
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'array', 'items': None}},
+        'properties': {'a': {'title': 'A', 'type': 'array'}},
         'required': ['a'],
     }
-    # noinspection PyTypeChecker
     base_schema['properties']['a']['items'] = expected_schema
-    if expected_schema is None:
-        base_schema['properties']['a'].pop('items', None)
 
     assert Model.schema() == base_schema
 
