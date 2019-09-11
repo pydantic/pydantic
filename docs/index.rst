@@ -791,7 +791,7 @@ Strict Types
 You can use the ``StrictStr``, ``StrictInt``, ``StrictFloat``, and ``StrictBool`` types to prevent coercion from compatible types.
 These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
 This behavior is also exposed via the ``strict`` field of the ``ConstrainedStr``, ``ConstrainedFloat`` and
-``ConstrainedInt`` classes and can be combined with a multitude of complex validation rules.
+``ConstrainedInt`` classes and can be combined with a multitude of complex validation rules (please note that there is no ``ConstrainedBool`` class).
 
 Json Type
 .........
