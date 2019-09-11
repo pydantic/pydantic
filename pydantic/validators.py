@@ -110,12 +110,24 @@ def int_validator(v: Any) -> int:
         return int(v)
 
 
+def strict_int_validator(v: Any) -> int:
+    if isinstance(v, int) and not isinstance(v, bool):
+        return v
+    raise errors.IntegerError()
+
+
 def float_validator(v: Any) -> float:
     if isinstance(v, float):
         return v
 
     with change_exception(errors.FloatError, TypeError, ValueError):
         return float(v)
+
+
+def strict_float_validator(v: Any) -> float:
+    if isinstance(v, float):
+        return v
+    raise errors.FloatError()
 
 
 def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':

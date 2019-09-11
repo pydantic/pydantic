@@ -23,6 +23,8 @@ from .validators import (
     path_exists_validator,
     path_validator,
     str_validator,
+    strict_float_validator,
+    strict_int_validator,
 )
 
 try:
@@ -262,9 +264,8 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        if cls.strict:
-            yield make_arbitrary_type_validator(int)
-        yield int_validator
+
+        yield strict_int_validator if cls.strict else int_validator
         yield number_size_validator
         yield number_multiple_validator
 
@@ -299,9 +300,7 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        if cls.strict:
-            yield make_arbitrary_type_validator(float)
-        yield float_validator
+        yield strict_float_validator if cls.strict else float_validator
         yield number_size_validator
         yield number_multiple_validator
 
