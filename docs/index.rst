@@ -788,7 +788,7 @@ The SecretStr and SecretBytes will be formatted as either `'**********'` or `''`
 Strict Types
 ............
 
-You can use the ``StrictStr``, ``StrictInt`` and ``StrictFloat`` types to prevent coercion from compatible types.
+You can use the ``StrictStr``, ``StrictInt``, ``StrictFloat``, and ``StrictBool`` types to prevent coercion from compatible types.
 These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
 This behavior is also exposed via the ``strict`` field of the ``ConstrainedStr``, ``ConstrainedFloat`` and
 ``ConstrainedInt`` classes and can be combined with a multitude of complex validation rules.
