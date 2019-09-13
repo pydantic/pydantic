@@ -22,7 +22,7 @@ class ReplaceLinks:
         return f'{m.group(1)}`@{name}`_'
 
     def extra(self):
-        return '\n\n' + '\n'.join(self.links) + '\n'
+        return '\n\n' + '\n'.join(sorted(self.links)) + '\n'
 
 
 description = 'Data validation and settings management using python 3.6 type hinting'
