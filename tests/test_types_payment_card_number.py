@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from pydantic import BaseModel, ValidationError
+from pydantic.errors import InvalidLengthForBrand, LuhnValidationError, NotDigitError
 from pydantic.types import PaymentCardBrand, PaymentCardNumber
 
 VALID_AMEX = '370000000000002'
@@ -21,13 +22,13 @@ class PaymentCard(BaseModel):
 def test_validate_digits():
     digits = '12345'
     assert PaymentCardNumber.validate_digits(digits) == digits
-    with pytest.raises(ValueError):
+    with pytest.raises(NotDigitError):
         PaymentCardNumber.validate_digits('hello')
 
 
 def test_validate_luhn_check_digit():
     assert PaymentCardNumber.validate_luhn_check_digit(VALID_VISA) == VALID_VISA
-    with pytest.raises(ValueError):
+    with pytest.raises(LuhnValidationError):
         PaymentCardNumber.validate_luhn_check_digit(LUHN_INVALID)
 
 
@@ -49,7 +50,7 @@ def test_length_for_brand():
     assert PaymentCardNumber.validate_length_for_brand(pcn) == pcn
 
     pcn = PCN(LEN_INVALID, PaymentCardBrand.visa)
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidLengthForBrand):
         PaymentCardNumber.validate_length_for_brand(pcn)
 
 
