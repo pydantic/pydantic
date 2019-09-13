@@ -22,17 +22,8 @@ from . import errors as errors_
 from .class_validators import Validator, make_generic_validator
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .typing import (
-    AnyCallable,
-    AnyType,
-    Callable,
-    ForwardRef,
-    display_as_type,
-    is_literal_type,
-    lenient_issubclass,
-    literal_values,
-)
-from .utils import sequence_like
+from .typing import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
+from .utils import lenient_issubclass, sequence_like
 from .validators import NoneType, constant_validator, dict_validator, find_validators
 
 try:

@@ -1,6 +1,6 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Set, Union
 
 from .typing import AnyType, display_as_type
 
@@ -67,26 +67,45 @@ class DictError(PydanticTypeError):
     msg_template = 'value is not a valid dict'
 
 
-class DSNDriverIsEmptyError(PydanticValueError):
-    code = 'dsn.driver_is_empty'
-    msg_template = '"driver" field may not be empty'
-
-
 class EmailError(PydanticValueError):
     msg_template = 'value is not a valid email address'
 
 
-class UrlSchemeError(PydanticValueError):
+class UrlError(PydanticValueError):
+    code = 'url'
+
+
+class UrlSchemeError(UrlError):
     code = 'url.scheme'
-    msg_template = 'url scheme "{scheme}" is not allowed'
-
-    def __init__(self, *, scheme: str) -> None:
-        super().__init__(scheme=scheme)
+    msg_template = 'invalid or missing URL scheme'
 
 
-class UrlRegexError(PydanticValueError):
-    code = 'url.regex'
-    msg_template = 'url string does not match regex'
+class UrlSchemePermittedError(UrlError):
+    code = 'url.scheme'
+    msg_template = 'URL scheme not permitted'
+
+    def __init__(self, allowed_schemes: Set[str]):
+        super().__init__(allowed_schemes=allowed_schemes)
+
+
+class UrlUserInfoError(UrlError):
+    code = 'url.userinfo'
+    msg_template = 'userinfo required in URL but missing'
+
+
+class UrlHostError(UrlError):
+    code = 'url.host'
+    msg_template = 'URL host invalid'
+
+
+class UrlHostTldError(UrlError):
+    code = 'url.host'
+    msg_template = 'URL host invalid, top level domain required'
+
+
+class UrlExtraError(UrlError):
+    code = 'url.extra'
+    msg_template = 'URL invalid, extra characters found after valid URL: {extra!r}'
 
 
 class EnumError(PydanticTypeError):

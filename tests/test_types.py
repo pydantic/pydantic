@@ -6,13 +6,12 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Optional, Pattern, Sequence, Set, Tuple
+from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Pattern, Sequence, Set, Tuple
 from uuid import UUID
 
 import pytest
 
 from pydantic import (
-    DSN,
     UUID1,
     UUID3,
     UUID4,
@@ -203,41 +202,6 @@ def test_constrained_str_too_long():
             'type': 'value_error.any_str.max_length',
             'ctx': {'limit_value': 10},
         }
-    ]
-
-
-class DsnModel(BaseModel):
-    db_name: Optional[str] = 'foobar'
-    db_user: Optional[str] = 'postgres'
-    db_password: str = None
-    db_host: Optional[str] = 'localhost'
-    db_port: Optional[str] = '5432'
-    db_driver: str = 'postgres'
-    db_query: dict = None
-    dsn: DSN = None
-
-
-def test_dsn_compute():
-    m = DsnModel()
-    assert m.dsn == 'postgres://postgres@localhost:5432/foobar'
-
-
-def test_dsn_define():
-    m = DsnModel(dsn='postgres://postgres@localhost:5432/different')
-    assert m.dsn == 'postgres://postgres@localhost:5432/different'
-
-
-def test_dsn_pw_host():
-    m = DsnModel(db_password='pword', db_host='before:after', db_query={'v': 1})
-    assert m.dsn == 'postgres://postgres:pword@[before:after]:5432/foobar?v=1'
-
-
-def test_dsn_no_driver():
-    with pytest.raises(ValidationError) as exc_info:
-        DsnModel(db_driver=None)
-    assert exc_info.value.errors() == [
-        {'loc': ('db_driver',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
-        {'loc': ('dsn',), 'msg': '"driver" field may not be empty', 'type': 'value_error.dsn.driver_is_empty'},
     ]
 
 
@@ -551,9 +515,9 @@ def test_string_success():
     assert m.str_regex == 'xxx123'
     assert m.str_curtailed == '12345'
     assert m.str_email == 'foobar@example.com'
-    assert repr(m.name_email) == '<NameEmail("foo bar <foobar@example.com>")>'
+    assert repr(m.name_email) == '<NameEmail("foo bar <foobaR@example.com>")>'
     assert m.name_email.name == 'foo bar'
-    assert m.name_email.email == 'foobar@example.com'
+    assert m.name_email.email == 'foobaR@example.com'
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')

@@ -1,9 +1,9 @@
-from pydantic import UrlStr
+from pydantic import AnyUrl
 from pydantic.dataclasses import dataclass
 
 @dataclass
 class NavbarButton:
-    href: UrlStr
+    href: AnyUrl
 
 @dataclass
 class Navbar:
