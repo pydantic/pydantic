@@ -579,14 +579,14 @@ class PaymentCardNumber(str):
         Validate length based on BIN for major brands:
         https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
         """
-        required_lengths = dict(visa=16, mastercard=16, amex=15)
-        try:
-            required_length = required_lengths[card_number.brand.name]
-        except KeyError:
-            pass
+        if card_number.brand is (PaymentCardBrand.visa or PaymentCardBrand.mastercard):
+            required_length = 16
+        elif card_number.brand is PaymentCardBrand.amex:
+            required_length = 15
         else:
-            if len(card_number) != required_length:
-                raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
+            required_length = None
+        if required_length and len(card_number) != required_length:
+            raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
         return card_number
 
     @staticmethod
