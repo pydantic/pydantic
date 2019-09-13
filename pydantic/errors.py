@@ -393,12 +393,12 @@ class StrictBoolError(PydanticValueError):
 
 class NotDigitError(PydanticValueError):
     code = 'payment_card_number.digits'
-    msg_template = 'card_number is not all digits'
+    msg_template = 'card number is not all digits'
 
 
 class LuhnValidationError(PydanticValueError):
     code = 'payment_card_number.luhn_check'
-    msg_template = 'card_number is not luhn valid'
+    msg_template = 'card number is not luhn valid'
 
 
 class InvalidLengthForBrand(PydanticValueError):
