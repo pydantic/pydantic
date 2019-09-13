@@ -4,20 +4,7 @@ from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from types import new_class
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    List,
-    Optional,
-    Pattern,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Pattern, Type, TypeVar, Union, cast
 from uuid import UUID
 
 from . import errors
@@ -544,7 +531,7 @@ class PaymentCardNumber(str):
     def __init__(self, card_number: str):
         self.bin = card_number[:6]
         self.last4 = card_number[-4:]
-        self.brand = self.get_brand(card_number)
+        self.brand = self._get_brand(card_number)
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -603,7 +590,7 @@ class PaymentCardNumber(str):
         return card_number
 
     @staticmethod
-    def get_brand(card_number: str) -> PaymentCardBrand:
+    def _get_brand(card_number: str) -> PaymentCardBrand:
         if card_number[0] == '4':
             brand = PaymentCardBrand.visa
         elif 51 <= int(card_number[:2]) <= 55:

@@ -54,10 +54,10 @@ def test_length_for_brand():
 
 
 def test_get_brand():
-    assert PaymentCardNumber.get_brand(VALID_AMEX) == PaymentCardBrand.amex
-    assert PaymentCardNumber.get_brand(VALID_MC) == PaymentCardBrand.mastercard
-    assert PaymentCardNumber.get_brand(VALID_VISA) == PaymentCardBrand.visa
-    assert PaymentCardNumber.get_brand(VALID_OTHER) == PaymentCardBrand.other
+    assert PaymentCardNumber._get_brand(VALID_AMEX) == PaymentCardBrand.amex
+    assert PaymentCardNumber._get_brand(VALID_MC) == PaymentCardBrand.mastercard
+    assert PaymentCardNumber._get_brand(VALID_VISA) == PaymentCardBrand.visa
+    assert PaymentCardNumber._get_brand(VALID_OTHER) == PaymentCardBrand.other
 
 
 def test_valid():
