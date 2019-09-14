@@ -83,7 +83,7 @@ def test_valid():
         ('h' * 16, 'value_error.payment_card_number.digits'),
         (LUHN_INVALID, 'value_error.payment_card_number.luhn_check'),
         (LEN_INVALID, 'value_error.payment_card_number.invalid_length_for_brand'),
-    ]
+    ],
 )
 def test_error_types(card_number: Any, error_message: str):
     with pytest.raises(ValidationError, match=error_message):
