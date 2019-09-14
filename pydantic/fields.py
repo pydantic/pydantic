@@ -249,7 +249,7 @@ class Field:
             )
             self.type_ = self.type_.__args__[1]  # type: ignore
             self.shape = SHAPE_MAPPING
-        elif issubclass(origin, Type):
+        elif issubclass(origin, Type):  # type: ignore
             self.type_ = self.type_.__args__[0]  # type: ignore
             self.shape = SHAPE_TYPE
         else:
