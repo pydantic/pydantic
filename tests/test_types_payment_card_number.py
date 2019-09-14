@@ -14,6 +14,10 @@ VALID_OTHER = '2000000000000000008'
 LUHN_INVALID = '4000000000000000'
 LEN_INVALID = '40000000000000006'
 
+# Mock PaymentCardNumber to let us test just this one method
+PCN = namedtuple('PaymentCardNumber', ['card_number', 'brand'])
+PCN.__len__ = lambda v: len(v.card_number)
+
 
 class PaymentCard(BaseModel):
     card_number: PaymentCardNumber
@@ -32,33 +36,36 @@ def test_validate_luhn_check_digit():
         PaymentCardNumber.validate_luhn_check_digit(LUHN_INVALID)
 
 
-def test_length_for_brand():
-    # Mock PaymentCardNumber to let us test just this one method
-    PCN = namedtuple('PaymentCardNumber', ['card_number', 'brand'])
-    PCN.__len__ = lambda v: len(v.card_number)
-
-    pcn = PCN(VALID_VISA, PaymentCardBrand.visa)
-    assert PaymentCardNumber.validate_length_for_brand(pcn) == pcn
-
-    pcn = PCN(VALID_MC, PaymentCardBrand.mastercard)
-    assert PaymentCardNumber.validate_length_for_brand(pcn) == pcn
-
-    pcn = PCN(VALID_AMEX, PaymentCardBrand.amex)
-    assert PaymentCardNumber.validate_length_for_brand(pcn) == pcn
-
-    pcn = PCN(VALID_OTHER, PaymentCardBrand.other)
-    assert PaymentCardNumber.validate_length_for_brand(pcn) == pcn
-
-    pcn = PCN(LEN_INVALID, PaymentCardBrand.visa)
-    with pytest.raises(InvalidLengthForBrand):
-        PaymentCardNumber.validate_length_for_brand(pcn)
+@pytest.mark.parametrize(
+    'card_number, brand, exception',
+    [
+        (VALID_VISA, PaymentCardBrand.visa, False),
+        (VALID_MC, PaymentCardBrand.mastercard, False),
+        (VALID_AMEX, PaymentCardBrand.amex, False),
+        (VALID_OTHER, PaymentCardBrand.other, False),
+        (LEN_INVALID, PaymentCardBrand.visa, True),
+    ],
+)
+def test_length_for_brand(card_number: str, brand: PaymentCardBrand, exception: bool):
+    pcn = PCN(card_number, brand)
+    if exception:
+        with pytest.raises(InvalidLengthForBrand):
+            PaymentCardNumber.validate_length_for_brand(pcn)
+    else:
+        assert PaymentCardNumber.validate_length_for_brand(pcn) == pcn
 
 
-def test_get_brand():
-    assert PaymentCardNumber._get_brand(VALID_AMEX) == PaymentCardBrand.amex
-    assert PaymentCardNumber._get_brand(VALID_MC) == PaymentCardBrand.mastercard
-    assert PaymentCardNumber._get_brand(VALID_VISA) == PaymentCardBrand.visa
-    assert PaymentCardNumber._get_brand(VALID_OTHER) == PaymentCardBrand.other
+@pytest.mark.parametrize(
+    'card_number, brand',
+    [
+        (VALID_AMEX, PaymentCardBrand.amex),
+        (VALID_MC, PaymentCardBrand.mastercard),
+        (VALID_VISA, PaymentCardBrand.visa),
+        (VALID_OTHER, PaymentCardBrand.other),
+    ],
+)
+def test_get_brand(card_number: str, brand: PaymentCardBrand):
+    assert PaymentCardNumber._get_brand(card_number) == brand
 
 
 def test_valid():
@@ -67,16 +74,18 @@ def test_valid():
     assert card.card_number.masked == '400000******0002'
 
 
-def get_error_type(card_number: Any):
-    with pytest.raises(ValidationError) as exc_info:
+@pytest.mark.parametrize(
+    'card_number, error_message',
+    [
+        (None, 'type_error.none.not_allowed'),
+        ('1' * 11, 'value_error.any_str.min_length'),
+        ('1' * 20, 'value_error.any_str.max_length'),
+        ('h' * 16, 'value_error.payment_card_number.digits'),
+        (LUHN_INVALID, 'value_error.payment_card_number.luhn_check'),
+        (LEN_INVALID, 'value_error.payment_card_number.invalid_length_for_brand'),
+    ]
+)
+def test_error_types(card_number: Any, error_message: str):
+    with pytest.raises(ValidationError, match=error_message):
         PaymentCard(card_number=card_number)
-    return exc_info.value.errors()[0]['type']
-
-
-def test_error_types():
-    assert get_error_type(None) == 'type_error.none.not_allowed'
-    assert get_error_type('1' * 11) == 'value_error.any_str.min_length'
-    assert get_error_type('1' * 20) == 'value_error.any_str.max_length'
-    assert get_error_type('h' * 16) == 'value_error.payment_card_number.digits'
-    assert get_error_type(LUHN_INVALID) == 'value_error.payment_card_number.luhn_check'
-    assert get_error_type(LEN_INVALID) == 'value_error.payment_card_number.invalid_length_for_brand'
+    # assert exc_info.value.errors()[0]['type'] == error_message
