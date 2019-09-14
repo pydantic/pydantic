@@ -529,6 +529,7 @@ def test_arbitrary_types_not_allowed():
 
     assert exc_info.value.args[0].startswith('no validator found for')
 
+
 def test_arbitrary_class_allowed_validation_success():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type[ArbitraryType]
@@ -539,6 +540,7 @@ def test_arbitrary_class_allowed_validation_success():
     arbitrary_type_class = ArbitraryType
     m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
+
 
 def test_arbitrary_subclass_allowed_validation_success():
     class ArbitraryClassAllowedModel(BaseModel):

@@ -273,7 +273,11 @@ class Field:
             get_validators = getattr(self.type_, '__get_validators__', None)
             v_funcs = (
                 *[v.func for v in class_validators_ if not v.whole and v.pre],
-                *(get_validators() if get_validators else list(find_validators(self.type_, self.shape, self.model_config))),
+                *(
+                    get_validators()
+                    if get_validators
+                    else list(find_validators(self.type_, self.shape, self.model_config))
+                ),
                 self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )

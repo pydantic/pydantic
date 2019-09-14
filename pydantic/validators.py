@@ -400,11 +400,14 @@ def make_arbitrary_validator(type_: Type[T], shape: int) -> Callable[[T], T]:
         if isinstance(v, type_):
             return v
         raise errors.ArbitraryTypeError(expected_arbitrary_type=type_)
+
     def arbitrary_class_validator(v: Any) -> T:
         if issubclass(v, type_):
             return v
         raise errors.ArbitraryClassError(expected_arbitrary_class=type_)
+
     from .fields import SHAPE_TYPE
+
     if shape == SHAPE_TYPE:
         return arbitrary_class_validator
     return arbitrary_type_validator

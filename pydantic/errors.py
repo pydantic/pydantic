@@ -323,6 +323,7 @@ class ArbitraryTypeError(PydanticTypeError):
     def __init__(self, *, expected_arbitrary_type: AnyType) -> None:
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
 
+
 class ArbitraryClassError(PydanticTypeError):
     code = 'arbitrary_class'
     msg_template = 'subclass of {expected_arbitrary_class} expected'
