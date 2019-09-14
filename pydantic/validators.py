@@ -395,12 +395,18 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig')
 T = TypeVar('T')
 
 
-def make_arbitrary_type_validator(type_: Type[T]) -> Callable[[T], T]:
+def make_arbitrary_validator(type_: Type[T], shape: int) -> Callable[[T], T]:
     def arbitrary_type_validator(v: Any) -> T:
         if isinstance(v, type_):
             return v
         raise errors.ArbitraryTypeError(expected_arbitrary_type=type_)
-
+    def arbitrary_class_validator(v: Any) -> T:
+        if issubclass(v, type_):
+            return v
+        raise errors.ArbitraryClassError(expected_arbitrary_class=type_)
+    from .fields import SHAPE_TYPE
+    if shape == SHAPE_TYPE:
+        return arbitrary_class_validator
     return arbitrary_type_validator
 
 
@@ -469,7 +475,7 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
 
 
 def find_validators(  # noqa: C901 (ignore complexity)
-    type_: AnyType, config: Type['BaseConfig']
+    type_: AnyType, shape: int, config: Type['BaseConfig']
 ) -> Generator[AnyCallable, None, None]:
     if type_ is Any:
         return
@@ -504,7 +510,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
             raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
 
     if config.arbitrary_types_allowed:
-        yield make_arbitrary_type_validator(type_)
+        yield make_arbitrary_validator(type_, shape)
     else:
         raise RuntimeError(
             f'no validator found for {type_} see `keep_untouched` or `arbitrary_types_allowed` in Config'
