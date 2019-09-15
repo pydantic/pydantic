@@ -24,6 +24,7 @@ from typing import (
 )
 from uuid import UUID
 
+from pydantic.typing import _get_class
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, is_callable_type, is_literal_type
@@ -404,13 +405,13 @@ def make_arbitrary_type_validator(type_: Type[T]) -> Callable[[T], T]:
     return arbitrary_type_validator
 
 
-def make_arbitrary_class_validator(type_: Type[T]) -> Callable[[T], T]:
-    def arbitrary_class_validator(v: Any) -> T:
+def make_class_validator(type_: Type[T]) -> Callable[[T], T]:
+    def class_validator(v: Any) -> T:
         if issubclass(v, type_):
             return v
-        raise errors.ArbitraryClassError(expected_arbitrary_class=type_)
+        raise errors.ClassError(expected_class=type_)
 
-    return arbitrary_class_validator
+    return class_validator
 
 
 def pattern_validator(v: Any) -> Pattern[str]:
@@ -495,9 +496,9 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield make_literal_validator(type_)
         return
 
-    arbitrary_class = _get_arbitrary_class(type_)
-    if arbitrary_class is not None:
-        yield make_arbitrary_class_validator(arbitrary_class)
+    class_ = _get_class(type_)
+    if class_ is not None:
+        yield make_class_validator(class_)
         return
 
     supertype = _find_supertype(type_)
@@ -523,13 +524,6 @@ def find_validators(  # noqa: C901 (ignore complexity)
         raise RuntimeError(
             f'no validator found for {type_} see `keep_untouched` or `arbitrary_types_allowed` in Config'
         )
-
-
-def _get_arbitrary_class(type_):
-    origin = getattr(type_, '__origin__', None)
-    if origin is not None and issubclass(origin, Type):  # type: ignore
-        return type_.__args__[0]  # type: ignore
-    return None
 
 
 def _find_supertype(type_: AnyType) -> Optional[AnyType]:

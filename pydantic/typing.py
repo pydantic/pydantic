@@ -193,3 +193,10 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
     if field.sub_fields:
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
+
+
+def _get_class(type_):
+    origin = getattr(type_, '__origin__', None)
+    if origin is not None and issubclass(origin, Type):  # type: ignore
+        return type_.__args__[0]  # type: ignore
+    return None

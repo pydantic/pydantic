@@ -564,8 +564,8 @@ def test_arbitrary_class_allowed_validation_fails():
         {
             'loc': ('t',),
             'msg': 'subclass of ArbitraryType expected',
-            'type': 'type_error.arbitrary_class',
-            'ctx': {'expected_arbitrary_class': 'ArbitraryType'},
+            'type': 'type_error.class',
+            'ctx': {'expected_class': 'ArbitraryType'},
         }
     ]
 

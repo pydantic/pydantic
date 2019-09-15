@@ -324,12 +324,12 @@ class ArbitraryTypeError(PydanticTypeError):
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
 
 
-class ArbitraryClassError(PydanticTypeError):
-    code = 'arbitrary_class'
-    msg_template = 'subclass of {expected_arbitrary_class} expected'
+class ClassError(PydanticTypeError):
+    code = 'class'
+    msg_template = 'subclass of {expected_class} expected'
 
-    def __init__(self, *, expected_arbitrary_class: AnyType) -> None:
-        super().__init__(expected_arbitrary_class=display_as_type(expected_arbitrary_class))
+    def __init__(self, *, expected_class: AnyType) -> None:
+        super().__init__(expected_class=display_as_type(expected_class))
 
 
 class JsonError(PydanticValueError):
