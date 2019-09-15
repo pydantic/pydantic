@@ -195,7 +195,7 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
 
 
-def get_class(type_: AnyType) -> Optional[Union[AnyType, bool]]:
+def get_class(type_: AnyType) -> Union[None, bool, AnyType]:
     """
     Tries to get the class of a Type[T] annotation. Returns True if Type is used
     without brackets. Otherwise returns None.
