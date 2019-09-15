@@ -1,4 +1,5 @@
 import sys
+import typing
 from enum import Enum
 from typing import (  # type: ignore
     TYPE_CHECKING,
@@ -15,8 +16,6 @@ from typing import (  # type: ignore
     Union,
     _eval_type,
 )
-
-import typing
 
 try:
     from typing import _TypingBase as typing_base  # type: ignore

@@ -550,16 +550,20 @@ def test_type_type_subclass_validation_success():
     m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
 
+
 def test_bare_type_type_validation_success():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type
+
     arbitrary_type_class = ArbitraryType
     m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
 
+
 def test_bare_type_type_validation_fails():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type
+
     arbitrary_type = ArbitraryType()
     with pytest.raises(ValidationError) as exc_info:
         ArbitraryClassAllowedModel(t=arbitrary_type)

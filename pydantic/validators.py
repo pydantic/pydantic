@@ -411,6 +411,7 @@ def make_class_validator(type_: Type[T]) -> Callable[[T], T]:
         if issubclass(v, type_):
             return v
         raise errors.ClassError(expected_class=type_)
+
     def any_class_validator(v: Any) -> T:
         if isinstance(v, type):
             return v
