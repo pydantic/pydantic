@@ -400,6 +400,7 @@ def make_arbitrary_type_validator(type_: Type[T]) -> Callable[[T], T]:
         if isinstance(v, type_):
             return v
         raise errors.ArbitraryTypeError(expected_arbitrary_type=type_)
+
     return arbitrary_type_validator
 
 
@@ -408,8 +409,8 @@ def make_arbitrary_class_validator(type_: Type[T]) -> Callable[[T], T]:
         if issubclass(v, type_):
             return v
         raise errors.ArbitraryClassError(expected_arbitrary_class=type_)
-    return arbitrary_class_validator
 
+    return arbitrary_class_validator
 
 
 def pattern_validator(v: Any) -> Pattern[str]:
@@ -529,7 +530,6 @@ def _get_arbitrary_class(type_):
     if origin is not None and issubclass(origin, Type):  # type: ignore
         return type_.__args__[0]  # type: ignore
     return None
-
 
 
 def _find_supertype(type_: AnyType) -> Optional[AnyType]:
