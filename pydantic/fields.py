@@ -54,7 +54,6 @@ SHAPE_TUPLE = 5
 SHAPE_TUPLE_ELLIPS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
-SHAPE_TYPE = 9
 
 
 class Field:
@@ -250,8 +249,7 @@ class Field:
             self.type_ = self.type_.__args__[1]  # type: ignore
             self.shape = SHAPE_MAPPING
         elif issubclass(origin, Type):  # type: ignore
-            self.type_ = self.type_.__args__[0]  # type: ignore
-            self.shape = SHAPE_TYPE
+            return
         else:
             raise TypeError(f'Fields of type "{origin}" are not supported.')
 
@@ -276,7 +274,7 @@ class Field:
                 *(
                     get_validators()
                     if get_validators
-                    else list(find_validators(self.type_, self.shape, self.model_config))
+                    else list(find_validators(self.type_, self.model_config))
                 ),
                 self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
@@ -310,7 +308,7 @@ class Field:
             if errors:
                 return v, errors
 
-        if self.shape == SHAPE_SINGLETON or self.shape == SHAPE_TYPE:
+        if self.shape == SHAPE_SINGLETON:
             v, errors = self._validate_singleton(v, values, loc, cls)
         elif self.shape == SHAPE_MAPPING:
             v, errors = self._validate_mapping(v, values, loc, cls)

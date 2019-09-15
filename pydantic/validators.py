@@ -395,22 +395,21 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig')
 T = TypeVar('T')
 
 
-def make_arbitrary_validator(type_: Type[T], shape: int) -> Callable[[T], T]:
+def make_arbitrary_type_validator(type_: Type[T]) -> Callable[[T], T]:
     def arbitrary_type_validator(v: Any) -> T:
         if isinstance(v, type_):
             return v
         raise errors.ArbitraryTypeError(expected_arbitrary_type=type_)
+    return arbitrary_type_validator
 
+
+def make_arbitrary_class_validator(type_: Type[T]) -> Callable[[T], T]:
     def arbitrary_class_validator(v: Any) -> T:
         if issubclass(v, type_):
             return v
         raise errors.ArbitraryClassError(expected_arbitrary_class=type_)
+    return arbitrary_class_validator
 
-    from .fields import SHAPE_TYPE
-
-    if shape == SHAPE_TYPE:
-        return arbitrary_class_validator
-    return arbitrary_type_validator
 
 
 def pattern_validator(v: Any) -> Pattern[str]:
@@ -478,7 +477,7 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
 
 
 def find_validators(  # noqa: C901 (ignore complexity)
-    type_: AnyType, shape: int, config: Type['BaseConfig']
+    type_: AnyType, config: Type['BaseConfig']
 ) -> Generator[AnyCallable, None, None]:
     if type_ is Any:
         return
@@ -493,6 +492,11 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if is_literal_type(type_):
         yield make_literal_validator(type_)
+        return
+
+    arbitrary_class = _get_arbitrary_class(type_)
+    if arbitrary_class is not None:
+        yield make_arbitrary_class_validator(arbitrary_class)
         return
 
     supertype = _find_supertype(type_)
@@ -513,11 +517,19 @@ def find_validators(  # noqa: C901 (ignore complexity)
             raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
 
     if config.arbitrary_types_allowed:
-        yield make_arbitrary_validator(type_, shape)
+        yield make_arbitrary_type_validator(type_)
     else:
         raise RuntimeError(
             f'no validator found for {type_} see `keep_untouched` or `arbitrary_types_allowed` in Config'
         )
+
+
+def _get_arbitrary_class(type_):
+    origin = getattr(type_, '__origin__', None)
+    if origin is not None and issubclass(origin, Type):  # type: ignore
+        return type_.__args__[0]  # type: ignore
+    return None
+
 
 
 def _find_supertype(type_: AnyType) -> Optional[AnyType]:

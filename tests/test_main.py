@@ -534,9 +534,6 @@ def test_arbitrary_class_allowed_validation_success():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type[ArbitraryType]
 
-        class Config:
-            arbitrary_types_allowed = True
-
     arbitrary_type_class = ArbitraryType
     m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
@@ -545,9 +542,6 @@ def test_arbitrary_class_allowed_validation_success():
 def test_arbitrary_subclass_allowed_validation_success():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type[ArbitraryType]
-
-        class Config:
-            arbitrary_types_allowed = True
 
     class ArbitrarySubType(ArbitraryType):
         pass
@@ -560,9 +554,6 @@ def test_arbitrary_subclass_allowed_validation_success():
 def test_arbitrary_class_allowed_validation_fails():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type[ArbitraryType]
-
-        class Config:
-            arbitrary_types_allowed = True
 
     class C:
         pass
@@ -577,15 +568,6 @@ def test_arbitrary_class_allowed_validation_fails():
             'ctx': {'expected_arbitrary_class': 'ArbitraryType'},
         }
     ]
-
-
-def test_arbitrary_class_not_allowed():
-    with pytest.raises(RuntimeError) as exc_info:
-
-        class ArbitraryClassNotAllowedModel(BaseModel):
-            t: Type[ArbitraryType]
-
-    assert exc_info.value.args[0].startswith('no validator found for')
 
 
 def test_annotation_field_name_shadows_attribute():
