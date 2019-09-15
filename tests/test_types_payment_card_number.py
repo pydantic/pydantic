@@ -88,4 +88,3 @@ def test_valid():
 def test_error_types(card_number: Any, error_message: str):
     with pytest.raises(ValidationError, match=error_message):
         PaymentCard(card_number=card_number)
-    # assert exc_info.value.errors()[0]['type'] == error_message
