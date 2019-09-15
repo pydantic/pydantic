@@ -14,7 +14,7 @@ VALID_OTHER = '2000000000000000008'
 LUHN_INVALID = '4000000000000000'
 LEN_INVALID = '40000000000000006'
 
-# Mock PaymentCardNumber to let us test just this one method
+# Mock PaymentCardNumber
 PCN = namedtuple('PaymentCardNumber', ['card_number', 'brand'])
 PCN.__len__ = lambda v: len(v.card_number)
 
