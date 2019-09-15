@@ -16,6 +16,7 @@ from .fields import SHAPE_MAPPING, ModelField
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
+from .tools import parse_as_type, requires_casting
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import GetterDict, ValueItems, lenient_issubclass, truncate, validate_field_name
@@ -298,6 +299,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
+        as_type: Optional[Type['BaseModel']] = None,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -306,6 +308,9 @@ class BaseModel(metaclass=ModelMetaclass):
         get_key = partial(get_key, self.__fields__)
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
+        if as_type is not None:
+            model_keys = set(as_type.__fields__)
+            allowed_keys = model_keys if allowed_keys is None else allowed_keys.intersection(model_keys)
         return {
             get_key(k): v
             for k, v in self._iter(
@@ -315,6 +320,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 include=include,
                 exclude=exclude,
                 skip_defaults=skip_defaults,
+                as_type=as_type,
             )
         }
 
@@ -516,11 +522,14 @@ class BaseModel(metaclass=ModelMetaclass):
         include: Optional[Union['SetIntStr', 'DictIntStrAny']],
         exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
         skip_defaults: bool,
+        as_type: Optional[Type[Any]] = None,
     ) -> Any:
 
         if isinstance(v, BaseModel):
             if to_dict:
-                return v.dict(by_alias=by_alias, skip_defaults=skip_defaults, include=include, exclude=exclude)
+                return v.dict(
+                    by_alias=by_alias, skip_defaults=skip_defaults, include=include, exclude=exclude, as_type=as_type
+                )
             else:
                 return v.copy(include=include, exclude=exclude)
 
@@ -536,6 +545,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     skip_defaults=skip_defaults,
                     include=value_include and value_include.for_element(k_),
                     exclude=value_exclude and value_exclude.for_element(k_),
+                    as_type=as_type,
                 )
                 for k_, v_ in v.items()
                 if (not value_exclude or not value_exclude.is_excluded(k_))
@@ -551,6 +561,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     skip_defaults=skip_defaults,
                     include=value_include and value_include.for_element(i),
                     exclude=value_exclude and value_exclude.for_element(i),
+                    as_type=as_type,
                 )
                 for i, v_ in enumerate(v)
                 if (not value_exclude or not value_exclude.is_excluded(i))
@@ -558,6 +569,8 @@ class BaseModel(metaclass=ModelMetaclass):
             )
 
         else:
+            if as_type is not None:
+                return parse_as_type(v, as_type)
             return v
 
     @classmethod
@@ -584,13 +597,20 @@ class BaseModel(metaclass=ModelMetaclass):
         include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         skip_defaults: bool = False,
+        as_type: Optional[Type['BaseModel']] = None,
     ) -> 'TupleGenerator':
 
         value_exclude = ValueItems(self, exclude) if exclude else None
         value_include = ValueItems(self, include) if include else None
 
+        self_type = type(self)
         for k, v in self.__dict__.items():
             if allowed_keys is None or k in allowed_keys:
+                casting_type = None
+                if as_type is not None:
+                    target_field = as_type.__fields__[k]
+                    if requires_casting(v, target_field, self_type.__fields__[k]):
+                        casting_type = target_field.type_
                 yield k, self._get_value(
                     v,
                     to_dict=to_dict,
@@ -598,6 +618,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     include=value_include and value_include.for_element(k),
                     exclude=value_exclude and value_exclude.for_element(k),
                     skip_defaults=skip_defaults,
+                    as_type=casting_type,
                 )
 
     def _calculate_keys(
