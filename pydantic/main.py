@@ -684,12 +684,13 @@ def validate_model(  # noqa: C901 (ignore complexity)
     fields_set = set()
     config = model.__config__
     check_extra = config.extra is not Extra.ignore
+    cls_ = cls or model.__class__
 
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:
             raise ConfigError(
                 f'field "{field.name}" not yet prepared so type is still a ForwardRef, '
-                f'you might need to call {model.__class__.__name__}.update_forward_refs().'
+                f'you might need to call {cls_.__name__}.update_forward_refs().'
             )
 
         value = input_data.get(field.alias, _missing)
@@ -702,7 +703,13 @@ def validate_model(  # noqa: C901 (ignore complexity)
             if field.required:
                 errors.append(ErrorWrapper(MissingError(), loc=field.alias))
                 continue
-            value = deepcopy(field.default)
+
+            if field.default is None:
+                # deepcopy is quite slow on None
+                value = None
+            else:
+                value = deepcopy(field.default)
+
             if not model.__config__.validate_all and not field.validate_always:
                 values[name] = value
                 continue
@@ -711,7 +718,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
             if check_extra:
                 names_used.add(field.name if using_name else field.alias)
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls or model.__class__)  # type: ignore
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls_)  # type: ignore
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):
