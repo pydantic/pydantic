@@ -24,7 +24,7 @@ from typing import (
 )
 from uuid import UUID
 
-from pydantic.typing import _get_class
+from pydantic.typing import get_class
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
@@ -497,7 +497,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield make_literal_validator(type_)
         return
 
-    class_ = _get_class(type_)
+    class_ = get_class(type_)
     if class_ is not None:
         yield make_class_validator(class_)
         return
