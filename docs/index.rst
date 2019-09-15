@@ -818,6 +818,17 @@ With proper ordering in an annotated ``Union``, you can use this to parse types 
 
 (This script is complete, it should run "as is")
 
+Type Type
+............
+Pydantic supports the use of ``Type[T]`` to specify that a field may only accept classes (not instances)
+that are subclasses of T.
+
+.. literalinclude:: examples/type_type.py
+
+You may also use ``Type`` to specify that any class is allowed.
+
+.. literalinclude:: examples/bare_type_type.py
+
 Custom Data Types
 .................
 
