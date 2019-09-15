@@ -581,11 +581,13 @@ class PaymentCardNumber(str):
         """
         if card_number.brand is (PaymentCardBrand.visa or PaymentCardBrand.mastercard):
             required_length = 16
+            valid = len(card_number) == required_length
         elif card_number.brand is PaymentCardBrand.amex:
             required_length = 15
+            valid = len(card_number) == required_length
         else:
-            required_length = None
-        if required_length and len(card_number) != required_length:
+            valid = True
+        if not valid:
             raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
         return card_number
 
