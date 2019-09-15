@@ -326,7 +326,7 @@ class ArbitraryTypeError(PydanticTypeError):
 
 class ClassError(PydanticTypeError):
     code = 'class'
-    msg_template = 'class expected'
+    msg_template = 'a class is expected'
 
 
 class SubclassError(PydanticTypeError):
