@@ -326,6 +326,11 @@ class ArbitraryTypeError(PydanticTypeError):
 
 class ClassError(PydanticTypeError):
     code = 'class'
+    msg_template = 'class expected'
+
+
+class SubclassError(PydanticTypeError):
+    code = 'subclass'
     msg_template = 'subclass of {expected_class} expected'
 
     def __init__(self, *, expected_class: AnyType) -> None:

@@ -567,14 +567,7 @@ def test_bare_type_type_validation_fails():
     arbitrary_type = ArbitraryType()
     with pytest.raises(ValidationError) as exc_info:
         ArbitraryClassAllowedModel(t=arbitrary_type)
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('t',),
-            'msg': 'subclass of type expected',
-            'type': 'type_error.class',
-            'ctx': {'expected_class': 'type'},
-        }
-    ]
+    assert exc_info.value.errors() == [{'loc': ('t',), 'msg': 'class expected', 'type': 'type_error.class'}]
 
 
 def test_type_type_validation_fails():
@@ -590,7 +583,7 @@ def test_type_type_validation_fails():
         {
             'loc': ('t',),
             'msg': 'subclass of ArbitraryType expected',
-            'type': 'type_error.class',
+            'type': 'type_error.subclass',
             'ctx': {'expected_class': 'ArbitraryType'},
         }
     ]
