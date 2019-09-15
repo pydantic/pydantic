@@ -34,6 +34,10 @@ try:
     from test_toasted_marshmallow import TestToastedMarshmallow
 except Exception:
     TestToastedMarshmallow = None
+try:
+    from test_dataclassesjson import TestDataClassesJson
+except Exception:
+    TestDataClassesJson = None
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
@@ -44,7 +48,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
+    [TestDataClassesJson, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
     if t is not None
 ]
 
