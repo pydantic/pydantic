@@ -27,7 +27,7 @@ from uuid import UUID
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, get_class, is_callable_type, is_literal_type
-from .utils import almost_equal_floats, change_exception, sequence_like
+from .utils import almost_equal_floats, change_exception, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -406,7 +406,7 @@ def make_arbitrary_type_validator(type_: Type[T]) -> Callable[[T], T]:
 
 def make_class_validator(type_: Type[T]) -> Callable[[Any], Type[T]]:
     def class_validator(v: Any) -> Type[T]:
-        if issubclass(v, type_):
+        if lenient_issubclass(v, type_):
             return v
         raise errors.SubclassError(expected_class=type_)
 

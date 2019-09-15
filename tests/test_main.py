@@ -551,6 +551,41 @@ def test_type_type_subclass_validation_success():
     assert m.t == arbitrary_type_class
 
 
+def test_type_type_validation_fails_for_instance():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    class C:
+        pass
+
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryClassAllowedModel(t=C)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('t',),
+            'msg': 'subclass of ArbitraryType expected',
+            'type': 'type_error.subclass',
+            'ctx': {'expected_class': 'ArbitraryType'},
+        }
+    ]
+
+
+def test_type_type_validation_fails_for_basic_type():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryClassAllowedModel(t=1)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('t',),
+            'msg': 'subclass of ArbitraryType expected',
+            'type': 'type_error.subclass',
+            'ctx': {'expected_class': 'ArbitraryType'},
+        }
+    ]
+
+
 def test_bare_type_type_validation_success():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type
@@ -568,25 +603,6 @@ def test_bare_type_type_validation_fails():
     with pytest.raises(ValidationError) as exc_info:
         ArbitraryClassAllowedModel(t=arbitrary_type)
     assert exc_info.value.errors() == [{'loc': ('t',), 'msg': 'a class is expected', 'type': 'type_error.class'}]
-
-
-def test_type_type_validation_fails():
-    class ArbitraryClassAllowedModel(BaseModel):
-        t: Type[ArbitraryType]
-
-    class C:
-        pass
-
-    with pytest.raises(ValidationError) as exc_info:
-        ArbitraryClassAllowedModel(t=C)
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('t',),
-            'msg': 'subclass of ArbitraryType expected',
-            'type': 'type_error.subclass',
-            'ctx': {'expected_class': 'ArbitraryType'},
-        }
-    ]
 
 
 def test_annotation_field_name_shadows_attribute():
