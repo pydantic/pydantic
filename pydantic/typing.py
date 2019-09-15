@@ -16,6 +16,8 @@ from typing import (  # type: ignore
     _eval_type,
 )
 
+import typing
+
 try:
     from typing import _TypingBase as typing_base  # type: ignore
 except ImportError:
@@ -198,4 +200,6 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
 def get_class(type_: AnyType) -> Optional[AnyType]:
     origin = getattr(type_, '__origin__', None)
     if origin is not None and issubclass(origin, Type):  # type: ignore
+        if type_.__args__ is None or type_.__args__[0] == typing.CT_co:
+            return typing.CT_co
         return type_.__args__[0]  # type: ignore

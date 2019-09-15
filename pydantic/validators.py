@@ -411,8 +411,14 @@ def make_class_validator(type_: Type[T]) -> Callable[[T], T]:
         if issubclass(v, type_):
             return v
         raise errors.ClassError(expected_class=type_)
+    def any_class_validator(v: Any) -> T:
+        if isinstance(v, type):
+            return v
+        raise errors.ClassError(expected_class=type)
 
-    return class_validator
+    if isinstance(type_, type):
+        return class_validator
+    return any_class_validator
 
 
 def pattern_validator(v: Any) -> Pattern[str]:

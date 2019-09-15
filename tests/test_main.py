@@ -530,7 +530,7 @@ def test_arbitrary_types_not_allowed():
     assert exc_info.value.args[0].startswith('no validator found for')
 
 
-def test_arbitrary_class_allowed_validation_success():
+def test_type_type_validation_success():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type[ArbitraryType]
 
@@ -539,7 +539,7 @@ def test_arbitrary_class_allowed_validation_success():
     assert m.t == arbitrary_type_class
 
 
-def test_arbitrary_subclass_allowed_validation_success():
+def test_type_type_subclass_validation_success():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type[ArbitraryType]
 
@@ -550,8 +550,30 @@ def test_arbitrary_subclass_allowed_validation_success():
     m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
 
+def test_bare_type_type_validation_success():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type
+    arbitrary_type_class = ArbitraryType
+    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    assert m.t == arbitrary_type_class
 
-def test_arbitrary_class_allowed_validation_fails():
+def test_bare_type_type_validation_fails():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type
+    arbitrary_type = ArbitraryType()
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryClassAllowedModel(t=arbitrary_type)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('t',),
+            'msg': 'subclass of type expected',
+            'type': 'type_error.class',
+            'ctx': {'expected_class': 'type'},
+        }
+    ]
+
+
+def test_type_type_validation_fails():
     class ArbitraryClassAllowedModel(BaseModel):
         t: Type[ArbitraryType]
 
