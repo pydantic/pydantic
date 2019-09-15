@@ -529,7 +529,6 @@ def _get_arbitrary_class(type_):
     origin = getattr(type_, '__origin__', None)
     if origin is not None and issubclass(origin, Type):  # type: ignore
         return type_.__args__[0]  # type: ignore
-    return None
 
 
 def _find_supertype(type_: AnyType) -> Optional[AnyType]:
