@@ -1,5 +1,4 @@
 import sys
-import typing
 from enum import Enum
 from typing import (  # type: ignore
     TYPE_CHECKING,
@@ -196,9 +195,10 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
 
 
-def get_class(type_: AnyType) -> Optional[AnyType]:
+def get_class(type_: AnyType) -> Optional[Union[AnyType, bool]]:
     origin = getattr(type_, '__origin__', None)
     if origin is not None and issubclass(origin, Type):  # type: ignore
-        if type_.__args__ is None or type_.__args__[0] == typing.CT_co:
-            return typing.CT_co
-        return type_.__args__[0]  # type: ignore
+        if type_.__args__ is None or not isinstance(type_.__args__[0], type):
+            return True
+        return type_.__args__[0]
+    return None
