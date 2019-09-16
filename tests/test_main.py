@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, ClassVar, List, Mapping
+from typing import Any, ClassVar, List, Mapping, Type
 
 import pytest
 
@@ -528,6 +528,81 @@ def test_arbitrary_types_not_allowed():
             t: ArbitraryType
 
     assert exc_info.value.args[0].startswith('no validator found for')
+
+
+def test_type_type_validation_success():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    arbitrary_type_class = ArbitraryType
+    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    assert m.t == arbitrary_type_class
+
+
+def test_type_type_subclass_validation_success():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    class ArbitrarySubType(ArbitraryType):
+        pass
+
+    arbitrary_type_class = ArbitrarySubType
+    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    assert m.t == arbitrary_type_class
+
+
+def test_type_type_validation_fails_for_instance():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    class C:
+        pass
+
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryClassAllowedModel(t=C)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('t',),
+            'msg': 'subclass of ArbitraryType expected',
+            'type': 'type_error.subclass',
+            'ctx': {'expected_class': 'ArbitraryType'},
+        }
+    ]
+
+
+def test_type_type_validation_fails_for_basic_type():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryClassAllowedModel(t=1)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('t',),
+            'msg': 'subclass of ArbitraryType expected',
+            'type': 'type_error.subclass',
+            'ctx': {'expected_class': 'ArbitraryType'},
+        }
+    ]
+
+
+def test_bare_type_type_validation_success():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type
+
+    arbitrary_type_class = ArbitraryType
+    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    assert m.t == arbitrary_type_class
+
+
+def test_bare_type_type_validation_fails():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type
+
+    arbitrary_type = ArbitraryType()
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryClassAllowedModel(t=arbitrary_type)
+    assert exc_info.value.errors() == [{'loc': ('t',), 'msg': 'a class is expected', 'type': 'type_error.class'}]
 
 
 def test_annotation_field_name_shadows_attribute():
