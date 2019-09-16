@@ -37,22 +37,22 @@ def test_validate_luhn_check_digit():
 
 
 @pytest.mark.parametrize(
-    'card_number, brand, exception',
+    'card_number, brand, valid',
     [
-        (VALID_VISA, PaymentCardBrand.visa, False),
-        (VALID_MC, PaymentCardBrand.mastercard, False),
-        (VALID_AMEX, PaymentCardBrand.amex, False),
-        (VALID_OTHER, PaymentCardBrand.other, False),
-        (LEN_INVALID, PaymentCardBrand.visa, True),
+        (VALID_VISA, PaymentCardBrand.visa, True),
+        (VALID_MC, PaymentCardBrand.mastercard, True),
+        (VALID_AMEX, PaymentCardBrand.amex, True),
+        (VALID_OTHER, PaymentCardBrand.other, True),
+        (LEN_INVALID, PaymentCardBrand.visa, False),
     ],
 )
-def test_length_for_brand(card_number: str, brand: PaymentCardBrand, exception: bool):
+def test_length_for_brand(card_number: str, brand: PaymentCardBrand, valid: bool):
     pcn = PCN(card_number, brand)
-    if exception:
+    if valid:
+        assert PaymentCardNumber.validate_length_for_brand(pcn) == pcn
+    else:
         with pytest.raises(InvalidLengthForBrand):
             PaymentCardNumber.validate_length_for_brand(pcn)
-    else:
-        assert PaymentCardNumber.validate_length_for_brand(pcn) == pcn
 
 
 @pytest.mark.parametrize(
