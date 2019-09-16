@@ -820,8 +820,9 @@ With proper ordering in an annotated ``Union``, you can use this to parse types 
 
 Type Type
 ............
+
 Pydantic supports the use of ``Type[T]`` to specify that a field may only accept classes (not instances)
-that are subclasses of T.
+that are subclasses of ``T``.
 
 .. literalinclude:: examples/type_type.py
 
