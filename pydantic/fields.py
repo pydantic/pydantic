@@ -248,6 +248,8 @@ class Field:
             )
             self.type_ = self.type_.__args__[1]  # type: ignore
             self.shape = SHAPE_MAPPING
+        elif issubclass(origin, Type):  # type: ignore
+            return
         else:
             raise TypeError(f'Fields of type "{origin}" are not supported.')
 

@@ -193,3 +193,21 @@ def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> No
     if field.sub_fields:
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
+
+
+def get_class(type_: AnyType) -> Union[None, bool, AnyType]:
+    """
+    Tries to get the class of a Type[T] annotation. Returns True if Type is used
+    without brackets. Otherwise returns None.
+    """
+    try:
+        origin = getattr(type_, '__origin__')
+        if origin is None:  # Python 3.6
+            origin = type_
+        if issubclass(origin, Type):  # type: ignore
+            if type_.__args__ is None or not isinstance(type_.__args__[0], type):
+                return True
+            return type_.__args__[0]
+    except AttributeError:
+        pass
+    return None
