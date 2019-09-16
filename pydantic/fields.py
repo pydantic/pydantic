@@ -44,7 +44,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
     ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
-    LocType = Union[Tuple[Union[int, str], ...], str]
+    LocStr = Union[Tuple[Union[int, str], ...], str]
 
 
 # used to be an enum but changed to int's for small performance improvement as less access overhead
@@ -303,7 +303,7 @@ class Field:
         return [make_generic_validator(f) for f in v_funcs if f]
 
     def validate(
-        self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional['ModelOrDc'] = None
+        self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
 
         errors: Optional['ErrorList'] = None
@@ -319,7 +319,7 @@ class Field:
                 else:
                     return None, None
             else:
-                return v, ErrorWrapper(NoneIsNotAllowedError(), loc=loc)
+                return v, ErrorWrapper(NoneIsNotAllowedError(), loc)
 
         if self.shape == SHAPE_SINGLETON:
             v, errors = self._validate_singleton(v, values, loc, cls)
@@ -336,7 +336,7 @@ class Field:
         return v, errors
 
     def _validate_sequence_like(  # noqa: C901 (ignore complexity)
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
@@ -353,7 +353,7 @@ class Field:
                 e = errors_.FrozenSetError()
             else:
                 e = errors_.SequenceError()
-            return v, ErrorWrapper(e, loc=loc)
+            return v, ErrorWrapper(e, loc)
 
         loc = loc if isinstance(loc, tuple) else (loc,)
         result = []
@@ -387,7 +387,7 @@ class Field:
         return converted, None
 
     def _validate_tuple(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         e: Optional[Exception] = None
         if not sequence_like(v):
@@ -398,7 +398,7 @@ class Field:
                 e = errors_.TupleLengthError(actual_length=actual_length, expected_length=expected_length)
 
         if e:
-            return v, ErrorWrapper(e, loc=loc)
+            return v, ErrorWrapper(e, loc)
 
         loc = loc if isinstance(loc, tuple) else (loc,)
         result = []
@@ -417,12 +417,12 @@ class Field:
             return tuple(result), None
 
     def _validate_mapping(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         try:
             v_iter = dict_validator(v)
         except TypeError as exc:
-            return v, ErrorWrapper(exc, loc=loc)
+            return v, ErrorWrapper(exc, loc)
 
         loc = loc if isinstance(loc, tuple) else (loc,)
         result, errors = {}, []
@@ -446,7 +446,7 @@ class Field:
             return result, None
 
     def _validate_singleton(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
@@ -461,13 +461,13 @@ class Field:
             return self._apply_validators(v, values, loc, cls, self.validators)
 
     def _apply_validators(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
     ) -> 'ValidateReturn':
         for validator in validators:
             try:
                 v = validator(cls, v, values, self, self.model_config)
             except (ValueError, TypeError, AssertionError) as exc:
-                return v, ErrorWrapper(exc, loc=loc)
+                return v, ErrorWrapper(exc, loc)
         return v, None
 
     def is_complex(self) -> bool:

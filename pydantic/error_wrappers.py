@@ -5,41 +5,26 @@ if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseConfig  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
 
+    Loc = Tuple[Union[int, str], ...]
+
 __all__ = 'ErrorWrapper', 'ValidationError'
 
 
 class ErrorWrapper:
-    __slots__ = 'exc', 'loc'
+    __slots__ = 'exc', '_loc'
 
-    def __init__(self, exc: Exception, *, loc: Union[Tuple[Union[int, str], ...], str]) -> None:
+    def __init__(self, exc: Exception, loc: Union[str, 'Loc']) -> None:
         self.exc = exc
-        self.loc: Tuple[str, ...] = loc if isinstance(loc, tuple) else (loc,)  # type: ignore
+        self._loc = loc
 
-    def dict(
-        self, config: Type['BaseConfig'], *, loc_prefix: Optional[Tuple[Union[int, str], ...]] = None
-    ) -> Dict[str, Any]:
-        loc = self.loc if loc_prefix is None else loc_prefix + self.loc
-
-        type_ = get_exc_type(type(self.exc))
-        msg_template = config.error_msg_templates.get(type_) or getattr(self.exc, 'msg_template', None)
-        ctx = getattr(self.exc, 'ctx', None)
-        if msg_template:
-            if ctx:
-                msg: str = msg_template.format(**ctx)
-            else:
-                msg = msg_template
+    def loc_tuple(self) -> 'Loc':
+        if isinstance(self._loc, tuple):
+            return self._loc
         else:
-            msg = str(self.exc)
-
-        d: Dict[str, Any] = {'loc': loc, 'msg': msg, 'type': type_}
-
-        if ctx is not None:
-            d['ctx'] = ctx
-
-        return d
+            return (self._loc,)
 
     def __repr__(self) -> str:
-        return f'<ErrorWrapper exc={self.exc!r} loc={self.loc!r}>'
+        return f'<ErrorWrapper exc={self.exc!r} loc={self.loc_tuple()!r}>'
 
 
 # ErrorList is something like Union[List[Union[List[ErrorWrapper], ErrorWrapper]], ErrorWrapper]
@@ -94,22 +79,44 @@ def _display_error_type_and_ctx(error: Dict[str, Any]) -> str:
 
 
 def flatten_errors(
-    errors: Sequence[Any], config: Type['BaseConfig'], *, loc: Optional[Tuple[str, ...]] = None
+    errors: Sequence[Any], config: Type['BaseConfig'], loc: Optional['Loc'] = None
 ) -> Generator[Dict[str, Any], None, None]:
     for error in errors:
         if isinstance(error, ErrorWrapper):
-            if isinstance(error.exc, ValidationError):
-                if loc is not None:
-                    error_loc = loc + error.loc
-                else:
-                    error_loc = error.loc
-                yield from flatten_errors(error.exc.raw_errors, config, loc=error_loc)
+
+            if loc:
+                error_loc = loc + error.loc_tuple()
             else:
-                yield error.dict(config, loc_prefix=loc)
+                error_loc = error.loc_tuple()
+
+            if isinstance(error.exc, ValidationError):
+                yield from flatten_errors(error.exc.raw_errors, config, error_loc)
+            else:
+                yield error_dict(error.exc, config, error_loc)
         elif isinstance(error, list):
             yield from flatten_errors(error, config)
         else:
             raise RuntimeError(f'Unknown error object: {error}')
+
+
+def error_dict(exc: Exception, config: Type['BaseConfig'], loc: 'Loc') -> Dict[str, Any]:
+    type_ = get_exc_type(type(exc))
+    msg_template = config.error_msg_templates.get(type_) or getattr(exc, 'msg_template', None)
+    ctx = getattr(exc, 'ctx', None)
+    if msg_template:
+        if ctx:
+            msg = msg_template.format(**ctx)
+        else:
+            msg = msg_template
+    else:
+        msg = str(exc)
+
+    d: Dict[str, Any] = {'loc': loc, 'msg': msg, 'type': type_}
+
+    if ctx is not None:
+        d['ctx'] = ctx
+
+    return d
 
 
 _EXC_TYPE_CACHE: Dict[Type[Exception], str] = {}
