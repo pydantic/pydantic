@@ -830,10 +830,10 @@ The ``PaymentCardNumber`` type validates `payment cards <https://en.wikipedia.or
 
 ``PaymentCardBrand`` can be one of the following based on the BIN:
 
-* PaymentCardBrand.amex
-* PaymentCardBrand.mastercard
-* PaymentCardBrand.visa
-* PaymentCardBrand.other
+* ``PaymentCardBrand.amex``
+* ``PaymentCardBrand.mastercard``
+* ``PaymentCardBrand.visa``
+* ``PaymentCardBrand.other``
 
 The actual validation verifies the card number is:
 
