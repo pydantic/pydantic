@@ -229,11 +229,10 @@ class PyObject:
         except errors.StrError:
             raise errors.PyObjectError(error_message='value is neither a valid import path not a valid callable')
 
-        if value is not None:
-            try:
-                return import_string(value)
-            except ImportError as e:
-                raise errors.PyObjectError(error_message=str(e))
+        try:
+            return import_string(value)
+        except ImportError as e:
+            raise errors.PyObjectError(error_message=str(e))
 
 
 class ConstrainedNumberMeta(type):

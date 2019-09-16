@@ -47,8 +47,6 @@ def str_validator(v: Any) -> Optional[str]:
             return v.value
         else:
             return v
-    elif v is None:
-        return None
     elif isinstance(v, (float, int, Decimal)):
         # is there anything else we want to add here? If you think so, create an issue.
         return str(v)
