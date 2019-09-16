@@ -153,10 +153,8 @@ class ConstrainedStr(str):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        if cls.strict:
-            yield make_arbitrary_type_validator(str)
         yield not_none_validator
-        yield str_validator
+        yield make_arbitrary_type_validator(str) if cls.strict else str_validator
         yield constr_strip_whitespace
         yield constr_length_validator
         yield cls.validate
