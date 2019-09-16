@@ -25,7 +25,7 @@ from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
 from .utils import lenient_issubclass, sequence_like
-from .validators import NoneType, constant_validator, dict_validator, find_validators, validate_json
+from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 try:
     from typing_extensions import Literal
@@ -33,6 +33,7 @@ except ImportError:
     Literal = None  # type: ignore
 
 Required: Any = Ellipsis
+NoneType = type(None)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .class_validators import ValidatorCallable  # noqa: F401

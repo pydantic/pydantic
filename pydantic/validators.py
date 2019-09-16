@@ -40,13 +40,6 @@ if TYPE_CHECKING:  # pragma: no cover
     Number = Union[int, float, Decimal]
     StrBytes = Union[str, bytes]
 
-NoneType = type(None)
-
-
-def is_none_validator(v: Any) -> None:
-    if v is not None:
-        raise errors.NoneIsAllowedError()
-
 
 def str_validator(v: Any) -> Optional[str]:
     if isinstance(v, str):
@@ -447,7 +440,6 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (bool, [bool_validator]),
     (int, [int_validator]),
     (float, [float_validator]),
-    (NoneType, [is_none_validator]),  # type: ignore
     (Path, [path_validator]),
     (datetime, [parse_datetime]),
     (date, [parse_date]),
