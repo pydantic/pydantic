@@ -40,6 +40,7 @@ from pydantic import (
     conlist,
     constr,
     create_model,
+    validator,
 )
 
 try:
@@ -1595,6 +1596,23 @@ def test_json_not_str():
         'msg': 'JSON object must be str, bytes or bytearray',
         'type': 'type_error.json',
     }
+
+
+def test_json_pre_validator():
+    call_count = 0
+
+    class JsonModel(BaseModel):
+        json_obj: Json
+
+        @validator('json_obj', pre=True)
+        def check(cls, v):
+            assert v == '"foobar"'
+            nonlocal call_count
+            call_count += 1
+            return v
+
+    assert JsonModel(json_obj='"foobar"').dict() == {'json_obj': 'foobar'}
+    assert call_count == 1
 
 
 def test_pattern():

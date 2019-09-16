@@ -515,6 +515,23 @@ def test_validator_always_optional():
     assert check_calls == 2
 
 
+def test_validator_always_pre():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: str = None
+
+        @validator('a', always=True, pre=True)
+        def check_a(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v or 'default value'
+
+    assert Model(a='y').a == 'y'
+    assert Model().a == 'default value'
+    assert check_calls == 2
+
+
 def test_validator_always_post():
     class Model(BaseModel):
         a: str = None
@@ -687,3 +704,14 @@ def test_optional_validator():
     assert Model(something=None).dict() == {'something': None}
     assert Model(something='hello').dict() == {'something': 'hello'}
     assert val_calls == [None, 'hello']
+
+
+def test_whole():
+    with pytest.warns(DeprecationWarning, match='The "whole" keyword argument is deprecated'):
+
+        class Model(BaseModel):
+            x: List[int]
+
+            @validator('x', whole=True)
+            def check_something(cls, v):
+                return v

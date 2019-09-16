@@ -293,7 +293,7 @@ class Field:
         if self.parse_json:
             v = make_generic_validator(validate_json)
             if self.pre_validators:
-                self.pre_validators.insert(0, v)
+                self.pre_validators.append(v)
             else:
                 self.pre_validators = [v]
 
