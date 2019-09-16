@@ -52,7 +52,7 @@ SHAPE_LIST = 2
 SHAPE_SET = 3
 SHAPE_MAPPING = 4
 SHAPE_TUPLE = 5
-SHAPE_TUPLE_ELLIPS = 6
+SHAPE_TUPLE_ELLIPSIS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
 
@@ -226,7 +226,7 @@ class Field:
             for i, t in enumerate(self.type_.__args__):  # type: ignore
                 if t is Ellipsis:
                     self.type_ = self.type_.__args__[0]  # type: ignore
-                    self.shape = SHAPE_TUPLE_ELLIPS
+                    self.shape = SHAPE_TUPLE_ELLIPSIS
                     return
                 self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
@@ -267,7 +267,7 @@ class Field:
             self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
     def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'Field':
-        return Field(
+        return self.__class__(
             type_=type_,
             name=name,
             class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if v.each_item},
@@ -371,7 +371,7 @@ class Field:
             converted = set(result)
         elif self.shape == SHAPE_FROZENSET:
             converted = frozenset(result)
-        elif self.shape == SHAPE_TUPLE_ELLIPS:
+        elif self.shape == SHAPE_TUPLE_ELLIPSIS:
             converted = tuple(result)
         elif self.shape == SHAPE_SEQUENCE:
             if isinstance(v, tuple):

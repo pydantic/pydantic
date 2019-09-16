@@ -83,7 +83,7 @@ def test_validate_kwargs():
     assert Model(a=[1, 2], b=6).a == [7, 8]
 
 
-def test_validate_whole_error():
+def test_validate_pre_error():
     calls = []
 
     class Model(BaseModel):
@@ -475,7 +475,7 @@ def test_inheritance_new():
     assert Child(a=0).a == 6
 
 
-def test_no_key_validation():
+def test_validation_each_item():
     class Model(BaseModel):
         foobar: Dict[int, int]
 
@@ -486,7 +486,7 @@ def test_no_key_validation():
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
-def test_key_validation_whole():
+def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
 
@@ -559,7 +559,7 @@ def test_datetime_validator():
     assert check_calls == 3
 
 
-def test_whole_called_once():
+def test_pre_called_once():
     check_calls = 0
 
     class Model(BaseModel):

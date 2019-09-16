@@ -19,7 +19,7 @@ def test_simple():
     assert MyDataclass(a='this is foobar good').a == 'this is foobar good changed'
 
 
-def test_validate_whole():
+def test_validate_pre():
     @dataclass
     class MyDataclass:
         a: List[int]
