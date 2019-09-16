@@ -16,7 +16,6 @@ from .validators import (
     decimal_validator,
     float_validator,
     int_validator,
-    make_arbitrary_type_validator,
     not_none_validator,
     number_multiple_validator,
     number_size_validator,
@@ -25,6 +24,7 @@ from .validators import (
     str_validator,
     strict_float_validator,
     strict_int_validator,
+    strict_str_validator,
 )
 
 try:
@@ -154,7 +154,7 @@ class ConstrainedStr(str):
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
-        yield make_arbitrary_type_validator(str) if cls.strict else str_validator
+        yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
         yield constr_length_validator
         yield cls.validate
