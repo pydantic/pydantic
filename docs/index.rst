@@ -617,12 +617,9 @@ A standard ``bool`` field will raise a ``ValidationError`` if the value is not o
   ``'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'``
 * a ``bytes`` which is valid (per the previous rule) when decoded to ``str``
 
-For stricter behavior, ``StrictBool`` can be used to require specifically ``True`` or ``False``;
-nothing else is permitted.
-
 Here is a script demonstrating some of these behaviors:
 
-.. literalinclude:: examples/booleans.py
+.. literalinclude:: examples/boolean.py
 
 (This script is complete, it should run "as is")
 

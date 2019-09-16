@@ -1,4 +1,5 @@
-from pydantic import BaseModel, confloat, StrictInt, ValidationError
+from pydantic import BaseModel, confloat,  StrictBool, StrictInt, ValidationError
+
 
 class StrictIntModel(BaseModel):
     strict_int: StrictInt
@@ -34,4 +35,17 @@ except ValidationError as e:
 1 validation error for ConstrainedFloatModel
 constrained_float
   ensure this value is greater than or equal to 0.0 (type=value_error.number.not_ge; limit_value=0.0)
+"""
+
+class StrictBoolModel(BaseModel):
+    strict_bool: StrictBool
+
+try:
+    StrictBoolModel(strict_bool='False')
+except ValidationError as e:
+    print(str(e))
+"""
+1 validation error
+strict_bool
+  value is not a valid boolean (type=value_error.strictbool)
 """
