@@ -1285,6 +1285,26 @@ def test_optional_dict():
     assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}
 
 
+def test_optional_validator():
+    class Model(BaseModel):
+        something: Optional[str]
+
+        @validator('something', always=True)
+        def check_something(cls, v):
+            assert v is None or 'x' not in v, 'should not contain x'
+            return v
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'something': {'title': 'Something', 'type': 'string'}},
+    }
+
+    assert Model().dict() == {'something': None}
+    assert Model(something=None).dict() == {'something': None}
+    assert Model(something='hello').dict() == {'something': 'hello'}
+
+
 def test_field_with_validator():
     class Model(BaseModel):
         something: Optional[int] = None

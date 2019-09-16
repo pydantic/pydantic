@@ -524,7 +524,7 @@ def test_validator_always_post():
             return v or 'default value'
 
     assert Model(a='y').a == 'y'
-    assert Model().a is None
+    assert Model().a == 'default value'
 
 
 def test_validator_always_post_optional():
@@ -670,3 +670,20 @@ def test_assert_raises_validation_error():
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
     ]
+
+
+def test_optional_validator():
+    val_calls = []
+
+    class Model(BaseModel):
+        something: Optional[str]
+
+        @validator('something')
+        def check_something(cls, v):
+            val_calls.append(v)
+            return v
+
+    assert Model().dict() == {'something': None}
+    assert Model(something=None).dict() == {'something': None}
+    assert Model(something='hello').dict() == {'something': 'hello'}
+    assert val_calls == [None, 'hello']

@@ -313,7 +313,10 @@ class Field:
 
         if v is None:
             if self.allow_none:
-                return None, None
+                if self.post_validators:
+                    return self._apply_validators(v, values, loc, cls, self.post_validators)
+                else:
+                    return None, None
             else:
                 return v, ErrorWrapper(NoneIsNotAllowedError(), loc=loc)
 
