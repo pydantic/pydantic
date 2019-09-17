@@ -265,9 +265,8 @@ class Field:
         else:
             raise TypeError(f'Fields of type "{origin}" are not supported.')
 
-        if getattr(self.type_, '__origin__', None):
-            # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
-            self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
+        # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
+        self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
     def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'Field':
         return self.__class__(
@@ -470,6 +469,12 @@ class Field:
             except (ValueError, TypeError, AssertionError) as exc:
                 return v, ErrorWrapper(exc, loc)
         return v, None
+
+    def include_in_schema(self) -> bool:
+        """
+        False if this is a simple field just allowing None as used in Unions/Optional.
+        """
+        return self.type_ != NoneType  # type: ignore
 
     def is_complex(self) -> bool:
         """

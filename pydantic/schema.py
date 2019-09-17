@@ -616,20 +616,31 @@ def field_singleton_sub_fields_schema(
     ref_prefix = ref_prefix or default_prefix
     definitions = {}
     nested_models: Set[str] = set()
-    sub_field_schemas = []
-    for sf in sub_fields:
-        sub_schema, sub_definitions, sub_nested_models = field_type_schema(
-            sf,
+    sub_fields = [sf for sf in sub_fields if sf.include_in_schema()]
+    if len(sub_fields) == 1:
+        return field_type_schema(
+            sub_fields[0],
             by_alias=by_alias,
             model_name_map=model_name_map,
             schema_overrides=schema_overrides,
             ref_prefix=ref_prefix,
             known_models=known_models,
         )
-        definitions.update(sub_definitions)
-        sub_field_schemas.append(sub_schema)
-        nested_models.update(sub_nested_models)
-    return {'anyOf': sub_field_schemas}, definitions, nested_models
+    else:
+        sub_field_schemas = []
+        for sf in sub_fields:
+            sub_schema, sub_definitions, sub_nested_models = field_type_schema(
+                sf,
+                by_alias=by_alias,
+                model_name_map=model_name_map,
+                schema_overrides=schema_overrides,
+                ref_prefix=ref_prefix,
+                known_models=known_models,
+            )
+            definitions.update(sub_definitions)
+            sub_field_schemas.append(sub_schema)
+            nested_models.update(sub_nested_models)
+        return {'anyOf': sub_field_schemas}, definitions, nested_models
 
 
 validation_attribute_to_schema_keyword = {
