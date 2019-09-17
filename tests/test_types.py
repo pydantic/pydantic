@@ -31,6 +31,8 @@ from pydantic import (
     SecretBytes,
     SecretStr,
     StrictBool,
+    StrictFloat,
+    StrictInt,
     StrictStr,
     ValidationError,
     conbytes,
@@ -953,6 +955,32 @@ def test_strict_bool():
 
     with pytest.raises(ValidationError):
         Model(v=b'1')
+
+
+def test_strict_int():
+    class Model(BaseModel):
+        v: StrictInt
+
+    assert Model(v=123456).v == 123456
+
+    with pytest.raises(ValidationError, match='value is not a valid int'):
+        Model(v='123456')
+
+    with pytest.raises(ValidationError, match='value is not a valid int'):
+        Model(v=3.14159)
+
+
+def test_strict_float():
+    class Model(BaseModel):
+        v: StrictFloat
+
+    assert Model(v=3.14159).v == 3.14159
+
+    with pytest.raises(ValidationError, match='value is not a valid float'):
+        Model(v='3.14159')
+
+    with pytest.raises(ValidationError, match='value is not a valid float'):
+        Model(v=123456)
 
 
 def test_bool_unhashable_fails():

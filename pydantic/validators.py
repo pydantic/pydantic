@@ -70,6 +70,12 @@ def str_validator(v: Any) -> Optional[str]:
         raise errors.StrError()
 
 
+def strict_str_validator(v: Any) -> str:
+    if isinstance(v, str):
+        return v
+    raise errors.StrError()
+
+
 def bytes_validator(v: Any) -> bytes:
     if isinstance(v, bytes):
         return v
@@ -110,12 +116,24 @@ def int_validator(v: Any) -> int:
         return int(v)
 
 
+def strict_int_validator(v: Any) -> int:
+    if isinstance(v, int) and not (v is True or v is False):
+        return v
+    raise errors.IntegerError()
+
+
 def float_validator(v: Any) -> float:
     if isinstance(v, float):
         return v
 
     with change_exception(errors.FloatError, TypeError, ValueError):
         return float(v)
+
+
+def strict_float_validator(v: Any) -> float:
+    if isinstance(v, float):
+        return v
+    raise errors.FloatError()
 
 
 def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':

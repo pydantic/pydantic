@@ -617,12 +617,9 @@ A standard ``bool`` field will raise a ``ValidationError`` if the value is not o
   ``'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'``
 * a ``bytes`` which is valid (per the previous rule) when decoded to ``str``
 
-For stricter behavior, ``StrictBool`` can be used to require specifically ``True`` or ``False``;
-nothing else is permitted.
-
 Here is a script demonstrating some of these behaviors:
 
-.. literalinclude:: examples/booleans.py
+.. literalinclude:: examples/boolean.py
 
 (This script is complete, it should run "as is")
 
@@ -782,6 +779,25 @@ that you do not want to be visible in logging or tracebacks.
 The SecretStr and SecretBytes will be formatted as either `'**********'` or `''` on conversion to json.
 
 .. literalinclude:: examples/ex_secret_types.py
+
+(This script is complete, it should run "as is")
+
+Strict Types
+............
+
+You can use the ``StrictStr``, ``StrictInt``, ``StrictFloat``, and ``StrictBool`` types
+to prevent coercion from compatible types.
+These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
+This behavior is also exposed via the ``strict`` field of the ``ConstrainedStr``, ``ConstrainedFloat`` and
+``ConstrainedInt`` classes and can be combined with a multitude of complex validation rules.
+
+The following caveats apply:
+
+- ``StrictInt`` (and the ``strict`` option of ``ConstrainedInt``) will not accept ``bool`` types,
+    even though ``bool`` is a subclass of ``int`` in Python. Other subclasses will work.
+- ``StrictFloat`` (and the ``strict`` option of ``ConstrainedFloat``) will not accept ``int``.
+
+.. literalinclude:: examples/strict_types.py
 
 (This script is complete, it should run "as is")
 

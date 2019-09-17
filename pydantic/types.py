@@ -23,6 +23,9 @@ from .validators import (
     path_exists_validator,
     path_validator,
     str_validator,
+    strict_float_validator,
+    strict_int_validator,
+    strict_str_validator,
 )
 
 try:
@@ -64,6 +67,8 @@ __all__ = [
     'SecretStr',
     'SecretBytes',
     'StrictBool',
+    'StrictInt',
+    'StrictFloat',
     'PaymentCardNumber',
 ]
 
@@ -82,18 +87,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from .typing import CallableGenerator
 
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
-
-
-class StrictStr(str):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v: Any) -> str:
-        if not isinstance(v, str):
-            raise errors.StrError()
-        return v
 
 
 class ConstrainedBytes(bytes):
@@ -158,11 +151,12 @@ class ConstrainedStr(str):
     max_length: OptionalInt = None
     curtail_length: OptionalInt = None
     regex: Optional[Pattern[str]] = None
+    strict = False
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield not_none_validator
-        yield str_validator
+        yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
         yield constr_length_validator
         yield cls.validate
@@ -182,6 +176,7 @@ class ConstrainedStr(str):
 def constr(
     *,
     strip_whitespace: bool = False,
+    strict: bool = False,
     min_length: int = None,
     max_length: int = None,
     curtail_length: int = None,
@@ -190,12 +185,17 @@ def constr(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        strict=strict,
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
         regex=regex and re.compile(regex),
     )
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
+
+
+class StrictStr(ConstrainedStr):
+    strict = True
 
 
 class StrictBool(int):
@@ -255,6 +255,7 @@ class ConstrainedNumberMeta(type):
 
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
+    strict: bool = False
     gt: OptionalInt = None
     ge: OptionalInt = None
     lt: OptionalInt = None
@@ -263,14 +264,17 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield int_validator
+
+        yield strict_int_validator if cls.strict else int_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
-def conint(*, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None) -> Type[int]:
+def conint(
+    *, strict: bool = False, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None
+) -> Type[int]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
 
 
@@ -282,7 +286,12 @@ class NegativeInt(ConstrainedInt):
     lt = 0
 
 
+class StrictInt(ConstrainedInt):
+    strict = True
+
+
 class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
+    strict: bool = False
     gt: OptionalIntFloat = None
     ge: OptionalIntFloat = None
     lt: OptionalIntFloat = None
@@ -291,16 +300,22 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield float_validator
+        yield strict_float_validator if cls.strict else float_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
 def confloat(
-    *, gt: float = None, ge: float = None, lt: float = None, le: float = None, multiple_of: float = None
+    *,
+    strict: bool = False,
+    gt: float = None,
+    ge: float = None,
+    lt: float = None,
+    le: float = None,
+    multiple_of: float = None,
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
 
 
@@ -310,6 +325,10 @@ class PositiveFloat(ConstrainedFloat):
 
 class NegativeFloat(ConstrainedFloat):
     lt = 0
+
+
+class StrictFloat(ConstrainedFloat):
+    strict = True
 
 
 class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
