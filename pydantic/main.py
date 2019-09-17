@@ -7,9 +7,9 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, no_type_check
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast, no_type_check
 
-from .class_validators import ValidatorGroup, extract_validators, inherit_validators
+from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import SHAPE_MAPPING, Field
@@ -106,13 +106,13 @@ def set_extra(config: Type[BaseConfig], cls_name: str) -> None:
 def is_valid_field(name: str) -> bool:
     if not name.startswith('_'):
         return True
-    return '__root__' == name
+    return ROOT_KEY == name
 
 
 def validate_custom_root_type(fields: Dict[str, Field]) -> None:
     if len(fields) > 1:
         raise ValueError('__root__ cannot be mixed with other fields')
-    if fields['__root__'].shape == SHAPE_MAPPING:
+    if fields[ROOT_KEY].shape == SHAPE_MAPPING:
         raise TypeError('custom root type cannot allow mapping')
 
 
@@ -188,7 +188,7 @@ class MetaModel(ABCMeta):
                         )
                     fields[var_name] = inferred
 
-        _custom_root_type = '__root__' in fields
+        _custom_root_type = ROOT_KEY in fields
         if _custom_root_type:
             validate_custom_root_type(fields)
         vg.check_for_unused()
@@ -196,10 +196,13 @@ class MetaModel(ABCMeta):
             json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
         else:
             json_encoder = pydantic_encoder
+        pre_root_validators, post_root_validators = extract_root_validators(namespace)
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
             '__validators__': vg.validators,
+            '__pre_root_validators__': pre_root_validators,
+            '__post_root_validators__': post_root_validators,
             '_schema_cache': {},
             '_json_encoder': staticmethod(json_encoder),
             '_custom_root_type': _custom_root_type,
@@ -213,6 +216,8 @@ class BaseModel(metaclass=MetaModel):
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, Field] = {}
         __validators__: Dict[str, AnyCallable] = {}
+        __pre_root_validators__: List[AnyCallable]
+        __post_root_validators__: List[AnyCallable]
         __config__: Type[BaseConfig] = BaseConfig
         __root__: Any = None
         _json_encoder: Callable[[Any], Any] = lambda x: x
@@ -227,7 +232,9 @@ class BaseModel(metaclass=MetaModel):
         if TYPE_CHECKING:  # pragma: no cover
             __pydantic_self__.__dict__: Dict[str, Any] = {}
             __pydantic_self__.__fields_set__: 'SetStr' = set()
-        values, fields_set, _ = validate_model(__pydantic_self__, data)
+        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)
+        if validation_error:
+            raise validation_error
         object.__setattr__(__pydantic_self__, '__dict__', values)
         object.__setattr__(__pydantic_self__, '__fields_set__', fields_set)
 
@@ -306,20 +313,20 @@ class BaseModel(metaclass=MetaModel):
         encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
         data = self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults)
         if self._custom_root_type:
-            data = data['__root__']
+            data = data[ROOT_KEY]
         return json.dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
         if not isinstance(obj, dict):
             if cls._custom_root_type:
-                obj = {'__root__': obj}
+                obj = {ROOT_KEY: obj}
             else:
                 try:
                     obj = dict(obj)
                 except (TypeError, ValueError) as e:
                     exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                    raise ValidationError([ErrorWrapper(exc, loc='__obj__')], cls) from e
+                    raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
         return cls(**obj)
 
     @classmethod
@@ -337,7 +344,7 @@ class BaseModel(metaclass=MetaModel):
                 b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle
             )
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([ErrorWrapper(e, loc='__obj__')], cls)
+            raise ValidationError([ErrorWrapper(e, loc=ROOT_KEY)], cls)
         return cls.parse_obj(obj)
 
     @classmethod
@@ -359,7 +366,9 @@ class BaseModel(metaclass=MetaModel):
             raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
         obj = cls._decompose_class(obj)
         m = cls.__new__(cls)
-        values, fields_set, _ = validate_model(m, obj)
+        values, fields_set, validation_error = validate_model(cls, obj)
+        if validation_error:
+            raise validation_error
         object.__setattr__(m, '__dict__', values)
         object.__setattr__(m, '__fields_set__', fields_set)
         return m
@@ -671,7 +680,7 @@ _missing = object()
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Union[BaseModel, Type[BaseModel]], input_data: 'DictStrAny', raise_exc: bool = True, cls: 'ModelOrDc' = None
+    model: Type[BaseModel], input_data: 'DictStrAny', cls: 'ModelOrDc' = None
 ) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
     """
     validate data against a model.
@@ -684,12 +693,19 @@ def validate_model(  # noqa: C901 (ignore complexity)
     fields_set = set()
     config = model.__config__
     check_extra = config.extra is not Extra.ignore
+    cls_ = cls or model
+
+    for validator in model.__pre_root_validators__:
+        try:
+            input_data = validator(cls_, input_data)
+        except (ValueError, TypeError, AssertionError) as exc:
+            return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_)
 
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:
             raise ConfigError(
                 f'field "{field.name}" not yet prepared so type is still a ForwardRef, '
-                f'you might need to call {model.__class__.__name__}.update_forward_refs().'
+                f'you might need to call {cls_.__name__}.update_forward_refs().'
             )
 
         value = input_data.get(field.alias, _missing)
@@ -711,7 +727,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
             if check_extra:
                 names_used.add(field.name if using_name else field.alias)
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls or model.__class__)  # type: ignore
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls_)
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):
@@ -730,15 +746,14 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 for f in sorted(extra):
                     errors.append(ErrorWrapper(ExtraError(), loc=f))
 
-    err = None
+    for validator in model.__post_root_validators__:
+        try:
+            values = validator(cls_, values, errors)
+        except (ValueError, TypeError, AssertionError) as exc:
+            errors.append(ErrorWrapper(exc, loc=ROOT_KEY))
+            break
+
     if errors:
-        model_type = model if isinstance(model, type) else type(model)
-        err = ValidationError(errors, model_type)
-
-    if not raise_exc:
-        return values, fields_set, err
-
-    if err:
-        raise err
-
-    return values, fields_set, None
+        return values, fields_set, ValidationError(errors, cls_)
+    else:
+        return values, fields_set, None

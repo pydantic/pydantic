@@ -3,18 +3,11 @@ from functools import wraps
 from inspect import Signature, signature
 from itertools import chain
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union
 
 from .errors import ConfigError
 from .typing import AnyCallable
 from .utils import in_ipython
-
-if TYPE_CHECKING:  # pragma: no cover
-    from .main import BaseConfig
-    from .fields import Field
-    from .types import ModelOrDc
-
-    ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
 
 
 class Validator:
@@ -26,7 +19,17 @@ class Validator:
         self.check_fields = check_fields
 
 
+if TYPE_CHECKING:  # pragma: no cover
+    from .main import BaseConfig
+    from .fields import Field
+    from .types import ModelOrDc
+
+    ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
+    ValidatorsList = List[ValidatorCallable]
+    ValidatorListDict = Dict[str, List[Validator]]
+
 _FUNCS: Set[str] = set()
+ROOT_KEY = '__root__'
 
 
 def validator(
@@ -49,13 +52,7 @@ def validator(
         )
 
     def dec(f: AnyCallable) -> classmethod:
-        # avoid validators with duplicated names since without this validators can be overwritten silently
-        # which generally isn't the intended behaviour, don't run in ipython - see #312
-        if not in_ipython():  # pragma: no branch
-            ref = f.__module__ + '.' + f.__qualname__
-            if ref in _FUNCS:
-                raise ConfigError(f'duplicate validator function "{ref}"')
-            _FUNCS.add(ref)
+        _check_validator_name(f)
         f_cls = classmethod(f)
         f_cls.__validator_config = (  # type: ignore
             fields,
@@ -66,22 +63,53 @@ def validator(
     return dec
 
 
-ValidatorListDict = Dict[str, List[Validator]]
+def root_validator(
+    _func: Optional[AnyCallable] = None, *, pre: bool = False
+) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
+    if _func:
+        f_cls = classmethod(_func)
+        f_cls.__root_validator_config = Validator(  # type: ignore
+            func=_func, pre=pre, whole=False, always=False, check_fields=False
+        )
+        return f_cls
+
+    def dec(f: AnyCallable) -> classmethod:
+        _check_validator_name(f)
+        f_cls2 = classmethod(f)
+        f_cls2.__root_validator_config = Validator(  # type: ignore
+            func=f, pre=pre, whole=False, always=False, check_fields=False
+        )
+        return f_cls2
+
+    return dec
+
+
+def _check_validator_name(f: AnyCallable) -> None:
+    """
+    avoid validators with duplicated names since without this validators can be overwritten silently
+    which generally isn't the intended behaviour, don't run in ipython - see #312
+    """
+    if not in_ipython():  # pragma: no branch
+        ref = f.__module__ + '.' + f.__qualname__
+        if ref in _FUNCS:
+            raise ConfigError(f'duplicate validator function "{ref}"')
+        _FUNCS.add(ref)
 
 
 class ValidatorGroup:
-    def __init__(self, validators: ValidatorListDict) -> None:
+    def __init__(self, validators: 'ValidatorListDict') -> None:
         self.validators = validators
         self.used_validators = {'*'}
 
     def get_validators(self, name: str) -> Optional[Dict[str, Validator]]:
         self.used_validators.add(name)
-        specific_validators = self.validators.get(name)
-        wildcard_validators = self.validators.get('*')
-        if specific_validators or wildcard_validators:
-            validators = (specific_validators or []) + (wildcard_validators or [])
+        validators = self.validators.get(name, [])
+        if name != ROOT_KEY:
+            validators += self.validators.get('*', [])
+        if validators:
             return {v.func.__name__: v for v in validators}
-        return None
+        else:
+            return None
 
     def check_for_unused(self) -> None:
         unused_validators = set(
@@ -114,7 +142,21 @@ def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
     return validators
 
 
-def inherit_validators(base_validators: ValidatorListDict, validators: ValidatorListDict) -> ValidatorListDict:
+def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[AnyCallable]]:
+    pre_validators: List[AnyCallable] = []
+    post_validators: List[AnyCallable] = []
+    for value in namespace.values():
+        validator_config = getattr(value, '__root_validator_config', None)
+        if validator_config:
+            # check function signature
+            if validator_config.pre:
+                pre_validators.append(validator_config.func)
+            else:
+                post_validators.append(validator_config.func)
+    return pre_validators, post_validators
+
+
+def inherit_validators(base_validators: 'ValidatorListDict', validators: 'ValidatorListDict') -> 'ValidatorListDict':
     for field, field_validators in base_validators.items():
         if field not in validators:
             validators[field] = []
@@ -146,6 +188,10 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
     else:
         # assume the first argument was value which has already been removed
         return wraps(validator)(_generic_validator_basic(validator, sig, set(args)))
+
+
+def prepare_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
+    return [make_generic_validator(f) for f in v_funcs if f]
 
 
 all_kwargs = {'values', 'field', 'config'}

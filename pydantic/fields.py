@@ -4,7 +4,6 @@ from typing import (
     Dict,
     FrozenSet,
     Generator,
-    Iterable,
     Iterator,
     List,
     Mapping,
@@ -19,10 +18,10 @@ from typing import (
 )
 
 from . import errors as errors_
-from .class_validators import Validator, make_generic_validator
+from .class_validators import Validator, prepare_validators
 from .error_wrappers import ErrorWrapper
 from .types import Json, JsonWrapper
-from .typing import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
+from .typing import AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
 from .utils import lenient_issubclass, sequence_like
 from .validators import NoneType, constant_validator, dict_validator, find_validators
 
@@ -34,13 +33,12 @@ except ImportError:
 Required: Any = Ellipsis
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .class_validators import ValidatorCallable  # noqa: F401
+    from .class_validators import ValidatorsList  # noqa: F401
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .schema import Schema  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
 
-    ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocType = Union[Tuple[str, ...], str]
 
@@ -275,15 +273,11 @@ class Field:
                 self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if not v.whole and not v.pre],
             )
-            self.validators = self._prep_vals(v_funcs)
+            self.validators = prepare_validators(v_funcs)
 
         if class_validators_:
-            self.whole_pre_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and v.pre)
-            self.whole_post_validators = self._prep_vals(v.func for v in class_validators_ if v.whole and not v.pre)
-
-    @staticmethod
-    def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
-        return [make_generic_validator(f) for f in v_funcs if f]
+            self.whole_pre_validators = prepare_validators(v.func for v in class_validators_ if v.whole and v.pre)
+            self.whole_post_validators = prepare_validators(v.func for v in class_validators_ if v.whole and not v.pre)
 
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional['ModelOrDc'] = None
