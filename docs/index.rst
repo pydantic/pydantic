@@ -818,6 +818,30 @@ With proper ordering in an annotated ``Union``, you can use this to parse types 
 
 (This script is complete, it should run "as is")
 
+Payment Card Numbers
+....................
+
+The ``PaymentCardNumber`` type validates `payment cards <https://en.wikipedia.org/wiki/Payment_card>`_
+(such as a debit or credit card).
+
+.. literalinclude:: examples/payment_card_number.py
+
+(This script is complete, it should be run "as is")
+
+``PaymentCardBrand`` can be one of the following based on the BIN:
+
+* ``PaymentCardBrand.amex``
+* ``PaymentCardBrand.mastercard``
+* ``PaymentCardBrand.visa``
+* ``PaymentCardBrand.other``
+
+The actual validation verifies the card number is:
+
+* a ``str`` of only digits
+* `luhn <https://en.wikipedia.org/wiki/Luhn_algorithm>`_ valid
+* the correct length based on the BIN, if Amex, Mastercard or Visa, and between
+  12 and 19 digits for all other brands
+
 Type Type
 ............
 

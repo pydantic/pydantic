@@ -402,3 +402,18 @@ class ColorError(PydanticValueError):
 
 class StrictBoolError(PydanticValueError):
     msg_template = 'value is not a valid boolean'
+
+
+class NotDigitError(PydanticValueError):
+    code = 'payment_card_number.digits'
+    msg_template = 'card number is not all digits'
+
+
+class LuhnValidationError(PydanticValueError):
+    code = 'payment_card_number.luhn_check'
+    msg_template = 'card number is not luhn valid'
+
+
+class InvalidLengthForBrand(PydanticValueError):
+    code = 'payment_card_number.invalid_length_for_brand'
+    msg_template = 'Length for a {brand} card must be {required_length}'
