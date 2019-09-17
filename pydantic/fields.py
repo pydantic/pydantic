@@ -108,8 +108,8 @@ class Field:
         self.sub_fields: Optional[List[Field]] = None
         self.key_field: Optional[Field] = None
         self.validators: 'ValidatorsList' = []
-        self.pre_validators: Optional['ValidatorsList'] = None
-        self.post_validators: Optional['ValidatorsList'] = None
+        self.pre_validators: 'ValidatorsList' = []
+        self.post_validators: 'ValidatorsList' = []
         self.parse_json: bool = False
         self.shape: int = SHAPE_SINGLETON
         self.prepare()
@@ -284,21 +284,20 @@ class Field:
             v_funcs = (
                 *[v.func for v in class_validators_ if v.each_item and v.pre],
                 *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
-                self.schema is not None and self.schema.const and constant_validator,
                 *[v.func for v in class_validators_ if v.each_item and not v.pre],
             )
             self.validators = self._prep_vals(v_funcs)
 
+        # Add const validator
+        if self.schema and self.schema.const:
+            self.pre_validators = self._prep_vals([constant_validator])
+
         if class_validators_:
-            self.pre_validators = self._prep_vals(v.func for v in class_validators_ if not v.each_item and v.pre)
+            self.pre_validators += self._prep_vals(v.func for v in class_validators_ if not v.each_item and v.pre)
             self.post_validators = self._prep_vals(v.func for v in class_validators_ if not v.each_item and not v.pre)
 
         if self.parse_json:
-            v = make_generic_validator(validate_json)
-            if self.pre_validators:
-                self.pre_validators.append(v)
-            else:
-                self.pre_validators = [v]
+            self.pre_validators.append(make_generic_validator(validate_json))
 
     @staticmethod
     def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
