@@ -536,7 +536,6 @@ class PaymentCardNumber(str):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield str_validator
         yield constr_strip_whitespace
         yield constr_length_validator
