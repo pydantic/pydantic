@@ -1,8 +1,9 @@
 import re
 from decimal import Decimal
+from enum import Enum
 from pathlib import Path
 from types import new_class
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Pattern, Type, TypeVar, Union, cast
 from uuid import UUID
 
 from . import errors
@@ -20,6 +21,9 @@ from .validators import (
     path_exists_validator,
     path_validator,
     str_validator,
+    strict_float_validator,
+    strict_int_validator,
+    strict_str_validator,
 )
 
 try:
@@ -61,6 +65,9 @@ __all__ = [
     'SecretStr',
     'SecretBytes',
     'StrictBool',
+    'StrictInt',
+    'StrictFloat',
+    'PaymentCardNumber',
 ]
 
 NoneStr = Optional[str]
@@ -78,18 +85,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from .typing import CallableGenerator
 
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
-
-
-class StrictStr(str):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v: Any) -> str:
-        if not isinstance(v, str):
-            raise errors.StrError()
-        return v
 
 
 class ConstrainedBytes(bytes):
@@ -153,10 +148,11 @@ class ConstrainedStr(str):
     max_length: OptionalInt = None
     curtail_length: OptionalInt = None
     regex: Optional[Pattern[str]] = None
+    strict = False
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
+        yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
         yield constr_length_validator
         yield cls.validate
@@ -176,6 +172,7 @@ class ConstrainedStr(str):
 def constr(
     *,
     strip_whitespace: bool = False,
+    strict: bool = False,
     min_length: int = None,
     max_length: int = None,
     curtail_length: int = None,
@@ -184,12 +181,17 @@ def constr(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        strict=strict,
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
         regex=regex and re.compile(regex),
     )
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
+
+
+class StrictStr(ConstrainedStr):
+    strict = True
 
 
 class StrictBool(int):
@@ -248,6 +250,7 @@ class ConstrainedNumberMeta(type):
 
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
+    strict: bool = False
     gt: OptionalInt = None
     ge: OptionalInt = None
     lt: OptionalInt = None
@@ -256,14 +259,17 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield int_validator
+
+        yield strict_int_validator if cls.strict else int_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
-def conint(*, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None) -> Type[int]:
+def conint(
+    *, strict: bool = False, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None
+) -> Type[int]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
 
 
@@ -275,7 +281,12 @@ class NegativeInt(ConstrainedInt):
     lt = 0
 
 
+class StrictInt(ConstrainedInt):
+    strict = True
+
+
 class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
+    strict: bool = False
     gt: OptionalIntFloat = None
     ge: OptionalIntFloat = None
     lt: OptionalIntFloat = None
@@ -284,16 +295,22 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield float_validator
+        yield strict_float_validator if cls.strict else float_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
 def confloat(
-    *, gt: float = None, ge: float = None, lt: float = None, le: float = None, multiple_of: float = None
+    *,
+    strict: bool = False,
+    gt: float = None,
+    ge: float = None,
+    lt: float = None,
+    le: float = None,
+    multiple_of: float = None,
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
 
 
@@ -303,6 +320,10 @@ class PositiveFloat(ConstrainedFloat):
 
 class NegativeFloat(ConstrainedFloat):
     lt = 0
+
+
+class StrictFloat(ConstrainedFloat):
+    strict = True
 
 
 class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
@@ -484,3 +505,101 @@ class SecretBytes:
 
     def get_secret_value(self) -> bytes:
         return self._secret_value
+
+
+class PaymentCardBrand(Enum):
+    amex = 'American Express'
+    mastercard = 'Mastercard'
+    visa = 'Visa'
+    other = 'other'
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class PaymentCardNumber(str):
+    """
+    Based on: https://en.wikipedia.org/wiki/Payment_card_number
+    """
+
+    strip_whitespace: ClassVar[bool] = True
+    min_length: ClassVar[int] = 12
+    max_length: ClassVar[int] = 19
+    bin: str
+    last4: str
+    brand: PaymentCardBrand
+
+    def __init__(self, card_number: str):
+        self.bin = card_number[:6]
+        self.last4 = card_number[-4:]
+        self.brand = self._get_brand(card_number)
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield not_none_validator
+        yield str_validator
+        yield constr_strip_whitespace
+        yield constr_length_validator
+        yield cls.validate_digits
+        yield cls.validate_luhn_check_digit
+        yield cls
+        yield cls.validate_length_for_brand
+
+    @property
+    def masked(self) -> str:
+        num_masked = len(self) - 10  # len(bin) + len(last4) == 10
+        return f'{self.bin}{"*" * num_masked}{self.last4}'
+
+    @classmethod
+    def validate_digits(cls, card_number: str) -> str:
+        if not card_number.isdigit():
+            raise errors.NotDigitError
+        return card_number
+
+    @classmethod
+    def validate_luhn_check_digit(cls, card_number: str) -> str:
+        """
+        Based on: https://en.wikipedia.org/wiki/Luhn_algorithm
+        """
+        sum_ = int(card_number[-1])
+        length = len(card_number)
+        parity = length % 2
+        for i in range(length - 1):
+            digit = int(card_number[i])
+            if i % 2 == parity:
+                digit *= 2
+            sum_ += digit
+        valid = sum_ % 10 == 0
+        if not valid:
+            raise errors.LuhnValidationError
+        return card_number
+
+    @classmethod
+    def validate_length_for_brand(cls, card_number: 'PaymentCardNumber') -> 'PaymentCardNumber':
+        """
+        Validate length based on BIN for major brands:
+        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
+        """
+        if card_number.brand is (PaymentCardBrand.visa or PaymentCardBrand.mastercard):
+            required_length = 16
+            valid = len(card_number) == required_length
+        elif card_number.brand is PaymentCardBrand.amex:
+            required_length = 15
+            valid = len(card_number) == required_length
+        else:
+            valid = True
+        if not valid:
+            raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
+        return card_number
+
+    @staticmethod
+    def _get_brand(card_number: str) -> PaymentCardBrand:
+        if card_number[0] == '4':
+            brand = PaymentCardBrand.visa
+        elif 51 <= int(card_number[:2]) <= 55:
+            brand = PaymentCardBrand.mastercard
+        elif card_number[:2] in {'34', '37'}:
+            brand = PaymentCardBrand.amex
+        else:
+            brand = PaymentCardBrand.other
+        return brand

@@ -27,8 +27,8 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, is_callable_type, is_literal_type
-from .utils import almost_equal_floats, change_exception, sequence_like
+from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, get_class, is_callable_type, is_literal_type
+from .utils import almost_equal_floats, change_exception, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -54,6 +54,12 @@ def str_validator(v: Any) -> Optional[str]:
         return v.decode()
     else:
         raise errors.StrError()
+
+
+def strict_str_validator(v: Any) -> str:
+    if isinstance(v, str):
+        return v
+    raise errors.StrError()
 
 
 def bytes_validator(v: Any) -> bytes:
@@ -96,12 +102,24 @@ def int_validator(v: Any) -> int:
         return int(v)
 
 
+def strict_int_validator(v: Any) -> int:
+    if isinstance(v, int) and not (v is True or v is False):
+        return v
+    raise errors.IntegerError()
+
+
 def float_validator(v: Any) -> float:
     if isinstance(v, float):
         return v
 
     with change_exception(errors.FloatError, TypeError, ValueError):
         return float(v)
+
+
+def strict_float_validator(v: Any) -> float:
+    if isinstance(v, float):
+        return v
+    raise errors.FloatError()
 
 
 def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
@@ -399,6 +417,21 @@ def make_arbitrary_type_validator(type_: Type[T]) -> Callable[[T], T]:
     return arbitrary_type_validator
 
 
+def make_class_validator(type_: Type[T]) -> Callable[[Any], Type[T]]:
+    def class_validator(v: Any) -> Type[T]:
+        if lenient_issubclass(v, type_):
+            return v
+        raise errors.SubclassError(expected_class=type_)
+
+    return class_validator
+
+
+def any_class_validator(v: Any) -> Type[T]:
+    if isinstance(v, type):
+        return v
+    raise errors.ClassError()
+
+
 def pattern_validator(v: Any) -> Pattern[str]:
     with change_exception(errors.PatternError, re.error):
         return re.compile(v)
@@ -476,6 +509,14 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if is_literal_type(type_):
         yield make_literal_validator(type_)
+        return
+
+    class_ = get_class(type_)
+    if class_ is not None:
+        if isinstance(class_, type):
+            yield make_class_validator(class_)
+        else:
+            yield any_class_validator
         return
 
     supertype = _find_supertype(type_)
