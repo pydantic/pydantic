@@ -380,4 +380,8 @@ def validate_email(value: str) -> Tuple[str, str]:
     except email_validator.EmailNotValidError as e:
         raise errors.EmailError() from e
 
-    return name or email[: email.index('@')], email.lower()
+    at_index = email.index('@')
+    local_part = email[:at_index]  # RFC 5321, local part must be case-sensitive.
+    global_part = email[at_index:].lower()
+
+    return name or local_part, local_part + global_part

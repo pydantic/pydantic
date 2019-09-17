@@ -834,6 +834,42 @@ With proper ordering in an annotated ``Union``, you can use this to parse types 
 
 (This script is complete, it should run "as is")
 
+Payment Card Numbers
+....................
+
+The ``PaymentCardNumber`` type validates `payment cards <https://en.wikipedia.org/wiki/Payment_card>`_
+(such as a debit or credit card).
+
+.. literalinclude:: examples/payment_card_number.py
+
+(This script is complete, it should be run "as is")
+
+``PaymentCardBrand`` can be one of the following based on the BIN:
+
+* ``PaymentCardBrand.amex``
+* ``PaymentCardBrand.mastercard``
+* ``PaymentCardBrand.visa``
+* ``PaymentCardBrand.other``
+
+The actual validation verifies the card number is:
+
+* a ``str`` of only digits
+* `luhn <https://en.wikipedia.org/wiki/Luhn_algorithm>`_ valid
+* the correct length based on the BIN, if Amex, Mastercard or Visa, and between
+  12 and 19 digits for all other brands
+
+Type Type
+............
+
+Pydantic supports the use of ``Type[T]`` to specify that a field may only accept classes (not instances)
+that are subclasses of ``T``.
+
+.. literalinclude:: examples/type_type.py
+
+You may also use ``Type`` to specify that any class is allowed.
+
+.. literalinclude:: examples/bare_type_type.py
+
 Custom Data Types
 .................
 
@@ -914,7 +950,7 @@ Options:
 :error_msg_templates: let's you to override default error message templates.
     Pass in a dictionary with keys matching the error messages you want to override (default: ``{}``)
 :arbitrary_types_allowed: whether to allow arbitrary user types for fields (they are validated simply by checking if the
-    value is instance of that type). If False - RuntimeError will be raised on model declaration (default: ``False``)
+    value is instance of that type). If ``False`` - ``RuntimeError`` will be raised on model declaration (default: ``False``)
 :json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
     details.
 :orm_mode: allows usage of :ref:`ORM mode <orm_mode>`

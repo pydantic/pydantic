@@ -324,6 +324,19 @@ class ArbitraryTypeError(PydanticTypeError):
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
 
 
+class ClassError(PydanticTypeError):
+    code = 'class'
+    msg_template = 'a class is expected'
+
+
+class SubclassError(PydanticTypeError):
+    code = 'subclass'
+    msg_template = 'subclass of {expected_class} expected'
+
+    def __init__(self, *, expected_class: AnyType) -> None:
+        super().__init__(expected_class=display_as_type(expected_class))
+
+
 class JsonError(PydanticValueError):
     msg_template = 'Invalid JSON'
 
@@ -389,3 +402,18 @@ class ColorError(PydanticValueError):
 
 class StrictBoolError(PydanticValueError):
     msg_template = 'value is not a valid boolean'
+
+
+class NotDigitError(PydanticValueError):
+    code = 'payment_card_number.digits'
+    msg_template = 'card number is not all digits'
+
+
+class LuhnValidationError(PydanticValueError):
+    code = 'payment_card_number.luhn_check'
+    msg_template = 'card number is not luhn valid'
+
+
+class InvalidLengthForBrand(PydanticValueError):
+    code = 'payment_card_number.invalid_length_for_brand'
+    msg_template = 'Length for a {brand} card must be {required_length}'
