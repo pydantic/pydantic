@@ -748,7 +748,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
 
     for validator in model.__post_root_validators__:
         try:
-            values = validator(cls_, values, errors)
+            values = validator(cls_, values)
         except (ValueError, TypeError, AssertionError) as exc:
             errors.append(ErrorWrapper(exc, loc=ROOT_KEY))
             break

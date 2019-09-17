@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple
 import pytest
 
 from pydantic import BaseModel, ConfigError, ValidationError, errors, validator
-from pydantic.class_validators import make_generic_validator
+from pydantic.class_validators import make_generic_validator, root_validator
 
 
 def test_simple():
@@ -671,3 +671,57 @@ def test_assert_raises_validation_error():
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
     ]
+
+
+def test_root_validator():
+    root_val_values = []
+
+    class Model(BaseModel):
+        a: int = 1
+        b: str
+
+        @validator('b')
+        def repeat_b(cls, v):
+            return v * 2
+
+        @root_validator
+        def root_validator(cls, values):
+            root_val_values.append(values)
+            if 'snap' in values.get('b', ''):
+                raise ValueError('foobar')
+            return dict(values, b='changed')
+
+    assert Model(a='123', b='bar').dict() == {'a': 123, 'b': 'changed'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(b='snap dragon')
+    assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}]
+
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
+
+
+def test_root_validator_pre():
+    root_val_values = []
+
+    class Model(BaseModel):
+        a: int = 1
+        b: str
+
+        @validator('b')
+        def repeat_b(cls, v):
+            return v * 2
+
+        @root_validator(pre=True)
+        def root_validator(cls, values):
+            root_val_values.append(values)
+            if 'snap' in values.get('b', ''):
+                raise ValueError('foobar')
+            return {'a': 42, 'b': 'changed'}
+
+    assert Model(a='123', b='bar').dict() == {'a': 42, 'b': 'changedchanged'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(b='snap dragon')
+
+    assert root_val_values == [{'a': '123', 'b': 'bar'}, {'b': 'snap dragon'}]
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
