@@ -4,25 +4,31 @@ from typing import Any, Set, Union
 
 from .typing import AnyType, display_as_type
 
+# PydanticTypeError and PydanticValueError have duplicated implementations to avoid problems with __slots__ conflicts
 
-class PydanticErrorMixin:
+
+class PydanticTypeError(TypeError):
+    __slots__ = ('ctx',)
     code: str
     msg_template: str
 
     def __init__(self, **ctx: Any) -> None:
         self.ctx = ctx
-        super().__init__()
 
     def __str__(self) -> str:
         return self.msg_template.format(**self.ctx)
 
 
-class PydanticTypeError(PydanticErrorMixin, TypeError):
-    pass
+class PydanticValueError(ValueError):
+    __slots__ = ('ctx',)
+    code: str
+    msg_template: str
 
+    def __init__(self, **ctx: Any) -> None:
+        self.ctx = ctx
 
-class PydanticValueError(PydanticErrorMixin, ValueError):
-    pass
+    def __str__(self) -> str:
+        return self.msg_template.format(**self.ctx)
 
 
 class ConfigError(RuntimeError):
