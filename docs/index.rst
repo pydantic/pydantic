@@ -198,7 +198,7 @@ A few things to note on validators:
 
 * validators are "class methods", the first value they receive here will be the ``UserModel`` not an instance
   of ``UserModel``
-* their signature can be ``(cls, value)`` or ``(cls, value, values, config, field)``. As of **v0.20**, any subset of
+* their signature can be ``(cls, value)`` or ``(cls, value, values, config, field)``. Any subset of
   ``values``, ``config`` and ``field`` is also permitted, eg. ``(cls, value, field)``, however due to the way
   validators are inspected, the variadic key word argument ("``**kwargs``") **must** be called ``kwargs``.
 * validators should either return the new value or raise a ``ValueError``, ``TypeError``, or ``AssertionError``
@@ -226,18 +226,12 @@ A few things to note on validators:
    (Within each group fields remain in the order they were defined.)
 
 
-.. note::
-
-   From ``v0.18`` onwards validators are not called on keys of dictionaries. If you wish to validate keys,
-   use ``whole`` (see below).
-
-
-Pre and Whole Validators
-~~~~~~~~~~~~~~~~~~~~~~~~
+Pre and per-item validators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Validators can do a few more complex things:
 
-.. literalinclude:: examples/validators_pre_whole.py
+.. literalinclude:: examples/validators_pre_item.py
 
 (This script is complete, it should run "as is")
 
@@ -246,8 +240,8 @@ A few more things to note:
 * a single validator can apply to multiple fields, either by defining multiple fields or by the special value ``'*'``
   which means that validator will be called for all fields.
 * the keyword argument ``pre`` will cause validators to be called prior to other validation
-* the ``whole`` keyword argument will mean validators are applied to entire objects rather than individual values
-  (applies for complex typing objects eg. ``List``, ``Dict``, ``Set``)
+* the ``each_item`` keyword argument will mean validators are applied to individual values
+  (eg. of ``List``, ``Dict``, ``Set`` etc.) not the whole object
 
 Validate Always
 ~~~~~~~~~~~~~~~
@@ -617,12 +611,9 @@ A standard ``bool`` field will raise a ``ValidationError`` if the value is not o
   ``'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'``
 * a ``bytes`` which is valid (per the previous rule) when decoded to ``str``
 
-For stricter behavior, ``StrictBool`` can be used to require specifically ``True`` or ``False``;
-nothing else is permitted.
-
 Here is a script demonstrating some of these behaviors:
 
-.. literalinclude:: examples/booleans.py
+.. literalinclude:: examples/boolean.py
 
 (This script is complete, it should run "as is")
 
@@ -785,6 +776,25 @@ The SecretStr and SecretBytes will be formatted as either `'**********'` or `''`
 
 (This script is complete, it should run "as is")
 
+Strict Types
+............
+
+You can use the ``StrictStr``, ``StrictInt``, ``StrictFloat``, and ``StrictBool`` types
+to prevent coercion from compatible types.
+These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
+This behavior is also exposed via the ``strict`` field of the ``ConstrainedStr``, ``ConstrainedFloat`` and
+``ConstrainedInt`` classes and can be combined with a multitude of complex validation rules.
+
+The following caveats apply:
+
+- ``StrictInt`` (and the ``strict`` option of ``ConstrainedInt``) will not accept ``bool`` types,
+    even though ``bool`` is a subclass of ``int`` in Python. Other subclasses will work.
+- ``StrictFloat`` (and the ``strict`` option of ``ConstrainedFloat``) will not accept ``int``.
+
+.. literalinclude:: examples/strict_types.py
+
+(This script is complete, it should run "as is")
+
 Json Type
 .........
 
@@ -817,6 +827,30 @@ With proper ordering in an annotated ``Union``, you can use this to parse types 
 .. literalinclude:: examples/literal3.py
 
 (This script is complete, it should run "as is")
+
+Payment Card Numbers
+....................
+
+The ``PaymentCardNumber`` type validates `payment cards <https://en.wikipedia.org/wiki/Payment_card>`_
+(such as a debit or credit card).
+
+.. literalinclude:: examples/payment_card_number.py
+
+(This script is complete, it should be run "as is")
+
+``PaymentCardBrand`` can be one of the following based on the BIN:
+
+* ``PaymentCardBrand.amex``
+* ``PaymentCardBrand.mastercard``
+* ``PaymentCardBrand.visa``
+* ``PaymentCardBrand.other``
+
+The actual validation verifies the card number is:
+
+* a ``str`` of only digits
+* `luhn <https://en.wikipedia.org/wiki/Luhn_algorithm>`_ valid
+* the correct length based on the BIN, if Amex, Mastercard or Visa, and between
+  12 and 19 digits for all other brands
 
 Type Type
 ............
@@ -1273,7 +1307,7 @@ Below are the results of crude benchmarks comparing *pydantic* to other validati
    :file: benchmarks.csv
 
 See `the benchmarks code <https://github.com/samuelcolvin/pydantic/tree/master/benchmarks>`_
-for more details on the test case. Feel free to submit more benchmarks or improve an existing one.
+for more details on the test case. Feel free to suggest more packages to benchmark or improve an existing one.
 
 Benchmarks were run with python 3.7.2 and the following package versions:
 

@@ -13,7 +13,7 @@ build-cython-trace:
 	python setup.py build_ext --force --inplace --define CYTHON_TRACE
 
 .PHONY: build-cython
-build-cython: clean
+build-cython:
 	python setup.py build_ext --inplace
 
 .PHONY: format

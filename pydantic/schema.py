@@ -681,6 +681,7 @@ field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (Color, {'type': 'string', 'format': 'color'}),
 )
 
+json_scheme = {'type': 'string', 'format': 'json-string'}
 
 # Order is important, subclasses of Path must go before Path, etc
 field_class_to_schema_enum_disabled = (
@@ -691,7 +692,7 @@ field_class_to_schema_enum_disabled = (
     (date, {'type': 'string', 'format': 'date'}),
     (time, {'type': 'string', 'format': 'time'}),
     (timedelta, {'type': 'number', 'format': 'time-delta'}),
-    (Json, {'type': 'string', 'format': 'json-string'}),
+    (Json, json_scheme),
     (IPv4Network, {'type': 'string', 'format': 'ipv4network'}),
     (IPv6Network, {'type': 'string', 'format': 'ipv6network'}),
     (IPvAnyNetwork, {'type': 'string', 'format': 'ipvanynetwork'}),
@@ -733,7 +734,10 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             known_models=known_models,
         )
     if field.type_ is Any or type(field.type_) == TypeVar:
-        return {}, definitions, nested_models  # no restrictions
+        if field.parse_json:
+            return json_scheme, definitions, nested_models
+        else:
+            return {}, definitions, nested_models  # no restrictions
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}

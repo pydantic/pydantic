@@ -50,7 +50,7 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not 
     except ImportError:
         pass
     else:
-        # For cython test coverage install with `make install-trace`
+        # For cython test coverage install with `make build-cython-trace`
         compiler_directives = {}
         if 'CYTHON_TRACE' in sys.argv:
             compiler_directives['linetrace'] = True

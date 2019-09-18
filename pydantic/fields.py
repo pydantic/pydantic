@@ -18,12 +18,13 @@ from typing import (
 )
 
 from . import errors as errors_
-from .class_validators import Validator, prepare_validators
+from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
+from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
 from .utils import lenient_issubclass, sequence_like
-from .validators import NoneType, constant_validator, dict_validator, find_validators
+from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 try:
     from typing_extensions import Literal
@@ -31,6 +32,7 @@ except ImportError:
     Literal = None  # type: ignore
 
 Required: Any = Ellipsis
+NoneType = type(None)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .class_validators import ValidatorsList  # noqa: F401
@@ -40,7 +42,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .types import ModelOrDc  # noqa: F401
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
-    LocType = Union[Tuple[str, ...], str]
+    LocStr = Union[Tuple[Union[int, str], ...], str]
 
 
 # used to be an enum but changed to int's for small performance improvement as less access overhead
@@ -49,7 +51,7 @@ SHAPE_LIST = 2
 SHAPE_SET = 3
 SHAPE_MAPPING = 4
 SHAPE_TUPLE = 5
-SHAPE_TUPLE_ELLIPS = 6
+SHAPE_TUPLE_ELLIPSIS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
 
@@ -60,8 +62,8 @@ class Field:
         'sub_fields',
         'key_field',
         'validators',
-        'whole_pre_validators',
-        'whole_post_validators',
+        'pre_validators',
+        'post_validators',
         'default',
         'required',
         'model_config',
@@ -104,8 +106,8 @@ class Field:
         self.sub_fields: Optional[List[Field]] = None
         self.key_field: Optional[Field] = None
         self.validators: 'ValidatorsList' = []
-        self.whole_pre_validators: Optional['ValidatorsList'] = None
-        self.whole_post_validators: Optional['ValidatorsList'] = None
+        self.pre_validators: Optional['ValidatorsList'] = None
+        self.post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
         self.shape: int = SHAPE_SINGLETON
         self.prepare()
@@ -173,13 +175,16 @@ class Field:
         if not self.required and self.default is None:
             self.allow_none = True
 
-        self._populate_sub_fields()
+        self._type_analysis()
         self._populate_validators()
 
-    def _populate_sub_fields(self) -> None:  # noqa: C901 (ignore complexity)
+    def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
         if lenient_issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type  # type: ignore
+            self.parse_json = True
+        elif lenient_issubclass(self.type_, Json):
+            self.type_ = Any  # type: ignore
             self.parse_json = True
 
         if self.type_ is Pattern:
@@ -201,10 +206,17 @@ class Field:
             types_ = []
             for type_ in self.type_.__args__:  # type: ignore
                 if type_ is NoneType:  # type: ignore
-                    self.allow_none = True
                     self.required = False
+                    self.allow_none = True
+                    continue
                 types_.append(type_)
-            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
+
+            if len(types_) == 1:
+                self.type_ = types_[0]
+                # re-run to correctly interpret the new self.type_
+                self._type_analysis()
+            else:
+                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
 
         if issubclass(origin, Tuple):  # type: ignore
@@ -213,7 +225,7 @@ class Field:
             for i, t in enumerate(self.type_.__args__):  # type: ignore
                 if t is Ellipsis:
                     self.type_ = self.type_.__args__[0]  # type: ignore
-                    self.shape = SHAPE_TUPLE_ELLIPS
+                    self.shape = SHAPE_TUPLE_ELLIPSIS
                     return
                 self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
@@ -224,7 +236,7 @@ class Field:
             if get_validators:
                 self.class_validators.update(
                     {
-                        f'list_{i}': Validator(validator, whole=True, pre=True, always=True, check_fields=False)
+                        f'list_{i}': Validator(validator, each_item=False, pre=True, always=True, check_fields=False)
                         for i, validator in enumerate(get_validators())
                     }
                 )
@@ -251,15 +263,14 @@ class Field:
         else:
             raise TypeError(f'Fields of type "{origin}" are not supported.')
 
-        if getattr(self.type_, '__origin__', None):
-            # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
-            self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
+        # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
+        self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
     def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'Field':
         return self.__class__(
             type_=type_,
             name=name,
-            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if not v.whole},
+            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if v.each_item},
             model_config=self.model_config,
         )
 
@@ -268,35 +279,46 @@ class Field:
         if not self.sub_fields:
             get_validators = getattr(self.type_, '__get_validators__', None)
             v_funcs = (
-                *[v.func for v in class_validators_ if not v.whole and v.pre],
+                *[v.func for v in class_validators_ if v.each_item and v.pre],
                 *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
-                self.schema is not None and self.schema.const and constant_validator,
-                *[v.func for v in class_validators_ if not v.whole and not v.pre],
+                *[v.func for v in class_validators_ if v.each_item and not v.pre],
             )
-            self.validators = prepare_validators(v_funcs)
+            self.validators = prep_validators(v_funcs)
+
+        # Add const validator
+        self.pre_validators = []
+        self.post_validators = []
+        if self.schema and self.schema.const:
+            self.pre_validators = [make_generic_validator(constant_validator)]
 
         if class_validators_:
-            self.whole_pre_validators = prepare_validators(v.func for v in class_validators_ if v.whole and v.pre)
-            self.whole_post_validators = prepare_validators(v.func for v in class_validators_ if v.whole and not v.pre)
+            self.pre_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and v.pre)
+            self.post_validators = prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
+
+        if self.parse_json:
+            self.pre_validators.append(make_generic_validator(validate_json))
+
+        self.pre_validators = self.pre_validators or None
+        self.post_validators = self.post_validators or None
 
     def validate(
-        self, v: Any, values: Dict[str, Any], *, loc: 'LocType', cls: Optional['ModelOrDc'] = None
+        self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
-        if self.allow_none and not self.validate_always and v is None:
-            return None, None
 
-        loc = loc if isinstance(loc, tuple) else (loc,)
-
-        if v is not None and self.parse_json:
-            v, error = self._validate_json(v, loc)
-            if error:
-                return v, error
-
-        errors: Optional['ErrorList'] = None
-        if self.whole_pre_validators:
-            v, errors = self._apply_validators(v, values, loc, cls, self.whole_pre_validators)
+        errors: Optional['ErrorList']
+        if self.pre_validators:
+            v, errors = self._apply_validators(v, values, loc, cls, self.pre_validators)
             if errors:
                 return v, errors
+
+        if v is None:
+            if self.allow_none:
+                if self.post_validators:
+                    return self._apply_validators(v, values, loc, cls, self.post_validators)
+                else:
+                    return None, None
+            else:
+                return v, ErrorWrapper(NoneIsNotAllowedError(), loc)
 
         if self.shape == SHAPE_SINGLETON:
             v, errors = self._validate_singleton(v, values, loc, cls)
@@ -305,21 +327,15 @@ class Field:
         elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
         else:
-            #  sequence, list, tuple, set, generator
+            #  sequence, list, set, generator, tuple with ellipsis, frozen set
             v, errors = self._validate_sequence_like(v, values, loc, cls)
 
-        if not errors and self.whole_post_validators:
-            v, errors = self._apply_validators(v, values, loc, cls, self.whole_post_validators)
+        if not errors and self.post_validators:
+            v, errors = self._apply_validators(v, values, loc, cls, self.post_validators)
         return v, errors
 
-    def _validate_json(self, v: Any, loc: Tuple[str, ...]) -> Tuple[Optional[Any], Optional[ErrorWrapper]]:
-        try:
-            return Json.validate(v), None
-        except (ValueError, TypeError) as exc:
-            return v, ErrorWrapper(exc, loc=loc)
-
     def _validate_sequence_like(  # noqa: C901 (ignore complexity)
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
@@ -336,8 +352,9 @@ class Field:
                 e = errors_.FrozenSetError()
             else:
                 e = errors_.SequenceError()
-            return v, ErrorWrapper(e, loc=loc)
+            return v, ErrorWrapper(e, loc)
 
+        loc = loc if isinstance(loc, tuple) else (loc,)
         result = []
         errors: List[ErrorList] = []
         for i, v_ in enumerate(v):
@@ -357,7 +374,7 @@ class Field:
             converted = set(result)
         elif self.shape == SHAPE_FROZENSET:
             converted = frozenset(result)
-        elif self.shape == SHAPE_TUPLE_ELLIPS:
+        elif self.shape == SHAPE_TUPLE_ELLIPSIS:
             converted = tuple(result)
         elif self.shape == SHAPE_SEQUENCE:
             if isinstance(v, tuple):
@@ -369,7 +386,7 @@ class Field:
         return converted, None
 
     def _validate_tuple(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         e: Optional[Exception] = None
         if not sequence_like(v):
@@ -380,8 +397,9 @@ class Field:
                 e = errors_.TupleLengthError(actual_length=actual_length, expected_length=expected_length)
 
         if e:
-            return v, ErrorWrapper(e, loc=loc)
+            return v, ErrorWrapper(e, loc)
 
+        loc = loc if isinstance(loc, tuple) else (loc,)
         result = []
         errors: List[ErrorList] = []
         for i, (v_, field) in enumerate(zip(v, self.sub_fields)):  # type: ignore
@@ -398,13 +416,14 @@ class Field:
             return tuple(result), None
 
     def _validate_mapping(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         try:
             v_iter = dict_validator(v)
         except TypeError as exc:
-            return v, ErrorWrapper(exc, loc=loc)
+            return v, ErrorWrapper(exc, loc)
 
+        loc = loc if isinstance(loc, tuple) else (loc,)
         result, errors = {}, []
         for k, v_ in v_iter.items():
             v_loc = *loc, '__key__'
@@ -426,7 +445,7 @@ class Field:
             return result, None
 
     def _validate_singleton(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
@@ -441,13 +460,13 @@ class Field:
             return self._apply_validators(v, values, loc, cls, self.validators)
 
     def _apply_validators(
-        self, v: Any, values: Dict[str, Any], loc: 'LocType', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
     ) -> 'ValidateReturn':
         for validator in validators:
             try:
                 v = validator(cls, v, values, self, self.model_config)
             except (ValueError, TypeError, AssertionError) as exc:
-                return v, ErrorWrapper(exc, loc=loc)
+                return v, ErrorWrapper(exc, loc)
         return v, None
 
     def include_in_schema(self) -> bool:

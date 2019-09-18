@@ -31,6 +31,8 @@ from pydantic import (
     SecretBytes,
     SecretStr,
     StrictBool,
+    StrictFloat,
+    StrictInt,
     StrictStr,
     ValidationError,
     conbytes,
@@ -40,6 +42,7 @@ from pydantic import (
     conlist,
     constr,
     create_model,
+    validator,
 )
 
 try:
@@ -955,6 +958,32 @@ def test_strict_bool():
         Model(v=b'1')
 
 
+def test_strict_int():
+    class Model(BaseModel):
+        v: StrictInt
+
+    assert Model(v=123456).v == 123456
+
+    with pytest.raises(ValidationError, match='value is not a valid int'):
+        Model(v='123456')
+
+    with pytest.raises(ValidationError, match='value is not a valid int'):
+        Model(v=3.14159)
+
+
+def test_strict_float():
+    class Model(BaseModel):
+        v: StrictFloat
+
+    assert Model(v=3.14159).v == 3.14159
+
+    with pytest.raises(ValidationError, match='value is not a valid float'):
+        Model(v='3.14159')
+
+    with pytest.raises(ValidationError, match='value is not a valid float'):
+        Model(v=123456)
+
+
 def test_bool_unhashable_fails():
     class Model(BaseModel):
         v: bool
@@ -1253,7 +1282,7 @@ def test_path_validation_fails():
         foo: Path
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=None)
+        Model(foo=123)
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid path', 'type': 'type_error.path'}]
 
 
@@ -1593,6 +1622,23 @@ def test_json_not_str():
         'msg': 'JSON object must be str, bytes or bytearray',
         'type': 'type_error.json',
     }
+
+
+def test_json_pre_validator():
+    call_count = 0
+
+    class JsonModel(BaseModel):
+        json_obj: Json
+
+        @validator('json_obj', pre=True)
+        def check(cls, v):
+            assert v == '"foobar"'
+            nonlocal call_count
+            call_count += 1
+            return v
+
+    assert JsonModel(json_obj='"foobar"').dict() == {'json_obj': 'foobar'}
+    assert call_count == 1
 
 
 def test_pattern():

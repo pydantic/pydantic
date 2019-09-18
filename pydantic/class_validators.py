@@ -1,3 +1,4 @@
+import warnings
 from collections import ChainMap
 from functools import wraps
 from inspect import Signature, signature
@@ -11,10 +12,12 @@ from .utils import in_ipython
 
 
 class Validator:
-    def __init__(self, func: AnyCallable, pre: bool, whole: bool, always: bool, check_fields: bool):
+    __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields'
+
+    def __init__(self, func: AnyCallable, pre: bool, each_item: bool, always: bool, check_fields: bool):
         self.func = func
         self.pre = pre
-        self.whole = whole
+        self.each_item = each_item
         self.always = always
         self.check_fields = check_fields
 
@@ -33,13 +36,19 @@ ROOT_KEY = '__root__'
 
 
 def validator(
-    *fields: str, pre: bool = False, whole: bool = False, always: bool = False, check_fields: bool = True
+    *fields: str,
+    pre: bool = False,
+    each_item: bool = False,
+    always: bool = False,
+    check_fields: bool = True,
+    whole: bool = None,
 ) -> Callable[[AnyCallable], classmethod]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
     :param pre: whether or not this validator should be called before the standard validators (else after)
-    :param whole: for complex objects (sets, lists etc.) whether to validate individual elements or the whole object
+    :param each_item: for complex objects (sets, lists etc.) whether to validate individual elements rather than the
+      whole object
     :param always: whether this method and other validators should be called even if the value is missing
     :param check_fields: whether to check that the fields actually exist on the model
     """
@@ -51,12 +60,20 @@ def validator(
             "E.g. usage should be `@validator('<field_name>', ...)`"
         )
 
+    if whole is not None:
+        warnings.warn(
+            'The "whole" keyword argument is deprecated, use "each_item" (inverse meaning, default False) instead',
+            DeprecationWarning,
+        )
+        assert each_item is False, '"each_item" and "whole" conflict, remove "whole"'
+        each_item = not whole
+
     def dec(f: AnyCallable) -> classmethod:
         _check_validator_name(f)
         f_cls = classmethod(f)
         f_cls.__validator_config = (  # type: ignore
             fields,
-            Validator(func=f, pre=pre, whole=whole, always=always, check_fields=check_fields),
+            Validator(func=f, pre=pre, each_item=each_item, always=always, check_fields=check_fields),
         )
         return f_cls
 
@@ -69,7 +86,7 @@ def root_validator(
     if _func:
         f_cls = classmethod(_func)
         f_cls.__root_validator_config = Validator(  # type: ignore
-            func=_func, pre=pre, whole=False, always=False, check_fields=False
+            func=_func, pre=pre, each_item=False, always=False, check_fields=False
         )
         return f_cls
 
@@ -77,7 +94,7 @@ def root_validator(
         _check_validator_name(f)
         f_cls2 = classmethod(f)
         f_cls2.__root_validator_config = Validator(  # type: ignore
-            func=f, pre=pre, whole=False, always=False, check_fields=False
+            func=f, pre=pre, each_item=False, always=False, check_fields=False
         )
         return f_cls2
 
@@ -190,7 +207,7 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
         return wraps(validator)(_generic_validator_basic(validator, sig, set(args)))
 
 
-def prepare_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
+def prep_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
     return [make_generic_validator(f) for f in v_funcs if f]
 
 

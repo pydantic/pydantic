@@ -1,3 +1,4 @@
+import json
 import re
 import sys
 from collections import OrderedDict
@@ -27,7 +28,7 @@ from uuid import UUID
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, get_class, is_callable_type, is_literal_type
-from .utils import almost_equal_floats, change_exception, lenient_issubclass, sequence_like
+from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:  # pragma: no cover
     from .fields import Field
@@ -39,19 +40,6 @@ if TYPE_CHECKING:  # pragma: no cover
     Number = Union[int, float, Decimal]
     StrBytes = Union[str, bytes]
 
-NoneType = type(None)
-
-
-def not_none_validator(v: Any) -> Any:
-    if v is None:
-        raise errors.NoneIsNotAllowedError()
-    return v
-
-
-def is_none_validator(v: Any) -> None:
-    if v is not None:
-        raise errors.NoneIsAllowedError()
-
 
 def str_validator(v: Any) -> Optional[str]:
     if isinstance(v, str):
@@ -59,8 +47,6 @@ def str_validator(v: Any) -> Optional[str]:
             return v.value
         else:
             return v
-    elif v is None:
-        return None
     elif isinstance(v, (float, int, Decimal)):
         # is there anything else we want to add here? If you think so, create an issue.
         return str(v)
@@ -68,6 +54,12 @@ def str_validator(v: Any) -> Optional[str]:
         return v.decode()
     else:
         raise errors.StrError()
+
+
+def strict_str_validator(v: Any) -> str:
+    if isinstance(v, str):
+        return v
+    raise errors.StrError()
 
 
 def bytes_validator(v: Any) -> bytes:
@@ -83,39 +75,57 @@ def bytes_validator(v: Any) -> bytes:
         raise errors.BytesError()
 
 
-BOOL_FALSE = {False, 0, '0', 'off', 'f', 'false', 'n', 'no'}
-BOOL_TRUE = {True, 1, '1', 'on', 't', 'true', 'y', 'yes'}
+BOOL_FALSE = {0, '0', 'off', 'f', 'false', 'n', 'no'}
+BOOL_TRUE = {1, '1', 'on', 't', 'true', 'y', 'yes'}
 
 
 def bool_validator(v: Any) -> bool:
-    if isinstance(v, bool):
+    if v is True or v is False:
         return v
     if isinstance(v, bytes):
         v = v.decode()
     if isinstance(v, str):
         v = v.lower()
-    with change_exception(errors.BoolError, TypeError):
+    try:
         if v in BOOL_TRUE:
             return True
         if v in BOOL_FALSE:
             return False
+    except TypeError:
+        raise errors.BoolError()
     raise errors.BoolError()
 
 
 def int_validator(v: Any) -> int:
-    if isinstance(v, int) and not isinstance(v, bool):
+    if isinstance(v, int) and not (v is True or v is False):
         return v
 
-    with change_exception(errors.IntegerError, TypeError, ValueError):
+    try:
         return int(v)
+    except (TypeError, ValueError):
+        raise errors.IntegerError()
+
+
+def strict_int_validator(v: Any) -> int:
+    if isinstance(v, int) and not (v is True or v is False):
+        return v
+    raise errors.IntegerError()
 
 
 def float_validator(v: Any) -> float:
     if isinstance(v, float):
         return v
 
-    with change_exception(errors.FloatError, TypeError, ValueError):
+    try:
         return float(v)
+    except (TypeError, ValueError):
+        raise errors.FloatError()
+
+
+def strict_float_validator(v: Any) -> float:
+    if isinstance(v, float):
+        return v
+    raise errors.FloatError()
 
 
 def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
@@ -177,16 +187,20 @@ def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
     if isinstance(v, OrderedDict):
         return v
 
-    with change_exception(errors.DictError, TypeError, ValueError):
+    try:
         return OrderedDict(v)
+    except (TypeError, ValueError):
+        raise errors.DictError()
 
 
 def dict_validator(v: Any) -> Dict[Any, Any]:
     if isinstance(v, dict):
         return v
 
-    with change_exception(errors.DictError, TypeError, ValueError):
+    try:
         return dict(v)
+    except (TypeError, ValueError):
+        raise errors.DictError()
 
 
 def list_validator(v: Any) -> List[Any]:
@@ -235,11 +249,13 @@ def enum_validator(v: Any, field: 'Field', config: 'BaseConfig') -> Enum:
 
 
 def uuid_validator(v: Any, field: 'Field') -> UUID:
-    with change_exception(errors.UUIDError, ValueError):
+    try:
         if isinstance(v, str):
             v = UUID(v)
         elif isinstance(v, (bytes, bytearray)):
             v = UUID(v.decode())
+    except ValueError:
+        raise errors.UUIDError()
 
     if not isinstance(v, UUID):
         raise errors.UUIDError()
@@ -259,8 +275,10 @@ def decimal_validator(v: Any) -> Decimal:
 
     v = str(v).strip()
 
-    with change_exception(errors.DecimalError, DecimalException):
+    try:
         v = Decimal(v)
+    except DecimalException:
+        raise errors.DecimalError()
 
     if not v.is_finite():
         raise errors.DecimalIsNotFiniteError()
@@ -272,16 +290,20 @@ def ip_v4_address_validator(v: Any) -> IPv4Address:
     if isinstance(v, IPv4Address):
         return v
 
-    with change_exception(errors.IPv4AddressError, ValueError):
+    try:
         return IPv4Address(v)
+    except ValueError:
+        raise errors.IPv4AddressError()
 
 
 def ip_v6_address_validator(v: Any) -> IPv6Address:
     if isinstance(v, IPv6Address):
         return v
 
-    with change_exception(errors.IPv6AddressError, ValueError):
+    try:
         return IPv6Address(v)
+    except ValueError:
+        raise errors.IPv6AddressError()
 
 
 def ip_v4_network_validator(v: Any) -> IPv4Network:
@@ -294,8 +316,10 @@ def ip_v4_network_validator(v: Any) -> IPv4Network:
     if isinstance(v, IPv4Network):
         return v
 
-    with change_exception(errors.IPv4NetworkError, ValueError):
+    try:
         return IPv4Network(v)
+    except ValueError:
+        raise errors.IPv4NetworkError()
 
 
 def ip_v6_network_validator(v: Any) -> IPv6Network:
@@ -308,32 +332,40 @@ def ip_v6_network_validator(v: Any) -> IPv6Network:
     if isinstance(v, IPv6Network):
         return v
 
-    with change_exception(errors.IPv6NetworkError, ValueError):
+    try:
         return IPv6Network(v)
+    except ValueError:
+        raise errors.IPv6NetworkError()
 
 
 def ip_v4_interface_validator(v: Any) -> IPv4Interface:
     if isinstance(v, IPv4Interface):
         return v
 
-    with change_exception(errors.IPv4InterfaceError, ValueError):
+    try:
         return IPv4Interface(v)
+    except ValueError:
+        raise errors.IPv4InterfaceError()
 
 
 def ip_v6_interface_validator(v: Any) -> IPv6Interface:
     if isinstance(v, IPv6Interface):
         return v
 
-    with change_exception(errors.IPv6InterfaceError, ValueError):
+    try:
         return IPv6Interface(v)
+    except ValueError:
+        raise errors.IPv6InterfaceError()
 
 
 def path_validator(v: Any) -> Path:
     if isinstance(v, Path):
         return v
 
-    with change_exception(errors.PathError, TypeError):
+    try:
         return Path(v)
+    except TypeError:
+        raise errors.PathError()
 
 
 def path_exists_validator(v: Any) -> Path:
@@ -392,6 +424,15 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig')
     return v
 
 
+def validate_json(v: Any) -> Any:
+    try:
+        return json.loads(v)
+    except ValueError:
+        raise errors.JsonError()
+    except TypeError:
+        raise errors.JsonTypeError()
+
+
 T = TypeVar('T')
 
 
@@ -420,8 +461,10 @@ def any_class_validator(v: Any) -> Type[T]:
 
 
 def pattern_validator(v: Any) -> Pattern[str]:
-    with change_exception(errors.PatternError, re.error):
+    try:
         return re.compile(v)
+    except re.error:
+        raise errors.PatternError()
 
 
 class IfConfig:
@@ -433,7 +476,7 @@ class IfConfig:
         return any(getattr(config, name) not in {None, False} for name in self.config_attr_names)
 
 
-pattern_validators = [not_none_validator, str_validator, pattern_validator]
+pattern_validators = [str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
@@ -442,7 +485,6 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (
         str,
         [
-            not_none_validator,
             str_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
@@ -451,7 +493,6 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (
         bytes,
         [
-            not_none_validator,
             bytes_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
@@ -460,7 +501,6 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (bool, [bool_validator]),
     (int, [int_validator]),
     (float, [float_validator]),
-    (NoneType, [is_none_validator]),  # type: ignore
     (Path, [path_validator]),
     (datetime, [parse_datetime]),
     (date, [parse_date]),
@@ -472,14 +512,14 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (tuple, [tuple_validator]),
     (set, [set_validator]),
     (frozenset, [frozenset_validator]),
-    (UUID, [not_none_validator, uuid_validator]),
-    (Decimal, [not_none_validator, decimal_validator]),
-    (IPv4Interface, [not_none_validator, ip_v4_interface_validator]),
-    (IPv6Interface, [not_none_validator, ip_v6_interface_validator]),
-    (IPv4Address, [not_none_validator, ip_v4_address_validator]),
-    (IPv6Address, [not_none_validator, ip_v6_address_validator]),
-    (IPv4Network, [not_none_validator, ip_v4_network_validator]),
-    (IPv6Network, [not_none_validator, ip_v6_network_validator]),
+    (UUID, [uuid_validator]),
+    (Decimal, [decimal_validator]),
+    (IPv4Interface, [ip_v4_interface_validator]),
+    (IPv6Interface, [ip_v6_interface_validator]),
+    (IPv4Address, [ip_v4_address_validator]),
+    (IPv6Address, [ip_v6_address_validator]),
+    (IPv4Network, [ip_v4_network_validator]),
+    (IPv6Network, [ip_v6_network_validator]),
 ]
 
 
@@ -523,8 +563,8 @@ def find_validators(  # noqa: C901 (ignore complexity)
                     else:
                         yield v
                 return
-        except TypeError as e:
-            raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
+        except TypeError:
+            raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})')
 
     if config.arbitrary_types_allowed:
         yield make_arbitrary_type_validator(type_)
