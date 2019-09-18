@@ -875,5 +875,7 @@ def test_root_validator_inheritance():
             calls.append(f'child validator: {values}')
             return {'extra2': 2, **values}
 
+    assert len(Child.__post_root_validators__) == 2
+    assert len(Child.__pre_root_validators__) == 0
     assert Child(a=123).dict() == {'extra2': 2, 'extra1': 1, 'a': 123}
     assert calls == ["parent validator: {'a': 123}", "child validator: {'extra1': 1, 'a': 123}"]
