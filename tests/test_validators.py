@@ -769,3 +769,61 @@ def test_whole():
             @validator('x', whole=True)
             def check_something(cls, v):
                 return v
+
+
+def test_root_validator_repeat():
+    with pytest.raises(errors.ConfigError, match='duplicate validator function'):
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @root_validator
+            def root_validator_repeated(cls, values):
+                return values
+
+            @root_validator  # noqa: F811
+            def root_validator_repeated(cls, values):
+                return values
+
+
+def test_root_validator_repeat2():
+    with pytest.raises(errors.ConfigError, match='duplicate validator function'):
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @validator('a')
+            def repeat_validator(cls, v):
+                return v
+
+            @root_validator(pre=True)  # noqa: F811
+            def repeat_validator(cls, values):
+                return values
+
+
+def test_root_validator_self():
+    with pytest.raises(
+        errors.ConfigError, match=r'Invalid signature for root validator root_validator: \(self, values\)'
+    ):
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @root_validator
+            def root_validator(self, values):
+                return values
+
+
+def test_root_validator_extra():
+    with pytest.raises(errors.ConfigError) as exc_info:
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @root_validator
+            def root_validator(cls, values, another):
+                return values
+
+    assert str(exc_info.value) == (
+        'Invalid signature for root validator root_validator: (cls, values, another), should be: (cls, values).'
+    )

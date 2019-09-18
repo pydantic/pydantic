@@ -94,6 +94,7 @@ def root_validator(
     _func: Optional[AnyCallable] = None, *, pre: bool = False
 ) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
     if _func:
+        _check_validator_name(_func)
         f_cls = classmethod(_func)
         setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=_func, pre=pre))
         return f_cls
@@ -168,9 +169,18 @@ def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
 def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[AnyCallable]]:
     pre_validators: List[AnyCallable] = []
     post_validators: List[AnyCallable] = []
-    for value in namespace.values():
-        validator_config = getattr(value, '__root_validator_config', None)
+    for name, value in namespace.items():
+        validator_config: Optional[Validator] = getattr(value, '__root_validator_config', None)
         if validator_config:
+            sig = signature(validator_config.func)
+            args = list(sig.parameters.keys())
+            if args[0] == 'self':
+                raise ConfigError(
+                    f'Invalid signature for root validator {name}: {sig}, "self" not permitted as first argument, '
+                    f'should be: (cls, values).'
+                )
+            if len(args) != 2:
+                raise ConfigError(f'Invalid signature for root validator {name}: {sig}, should be: (cls, values).')
             # check function signature
             if validator_config.pre:
                 pre_validators.append(validator_config.func)

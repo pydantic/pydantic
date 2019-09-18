@@ -26,11 +26,6 @@ from .validators import (
     strict_str_validator,
 )
 
-try:
-    import email_validator
-except ImportError:
-    email_validator = None
-
 __all__ = [
     'NoneStr',
     'NoneBytes',
