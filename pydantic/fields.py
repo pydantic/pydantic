@@ -236,7 +236,7 @@ class Field:
             if get_validators:
                 self.class_validators.update(
                     {
-                        f'list_{i}': Validator(validator, each_item=False, pre=True, always=True, check_fields=False)
+                        f'list_{i}': Validator(validator, pre=True, always=True)
                         for i, validator in enumerate(get_validators())
                     }
                 )

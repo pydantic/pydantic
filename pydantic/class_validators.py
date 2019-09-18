@@ -14,7 +14,14 @@ from .utils import in_ipython
 class Validator:
     __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields'
 
-    def __init__(self, func: AnyCallable, pre: bool, each_item: bool, always: bool, check_fields: bool):
+    def __init__(
+        self,
+        func: AnyCallable,
+        pre: bool = False,
+        each_item: bool = False,
+        always: bool = False,
+        check_fields: bool = False,
+    ):
         self.func = func
         self.pre = pre
         self.each_item = each_item
@@ -85,17 +92,13 @@ def root_validator(
 ) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
     if _func:
         f_cls = classmethod(_func)
-        f_cls.__root_validator_config = Validator(  # type: ignore
-            func=_func, pre=pre, each_item=False, always=False, check_fields=False
-        )
+        f_cls.__root_validator_config = Validator(func=_func, pre=pre)  # type: ignore
         return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
         _check_validator_name(f)
         f_cls2 = classmethod(f)
-        f_cls2.__root_validator_config = Validator(  # type: ignore
-            func=f, pre=pre, each_item=False, always=False, check_fields=False
-        )
+        f_cls2.__root_validator_config = Validator(func=f, pre=pre)  # type: ignore
         return f_cls2
 
     return dec
