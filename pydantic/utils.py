@@ -1,7 +1,6 @@
 import inspect
-from contextlib import contextmanager
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Generator, List, Optional, Set, Tuple, Type, Union, no_type_check
+from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Type, Union, no_type_check
 
 from .typing import AnyType
 
@@ -50,14 +49,6 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
 
 
 ExcType = Type[Exception]
-
-
-@contextmanager
-def change_exception(raise_exc: ExcType, *except_types: ExcType) -> Generator[None, None, None]:
-    try:
-        yield
-    except except_types as e:
-        raise raise_exc from e
 
 
 def sequence_like(v: AnyType) -> bool:

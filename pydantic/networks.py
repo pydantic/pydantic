@@ -12,7 +12,6 @@ from ipaddress import (
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Set, Tuple, Type, Union, cast, no_type_check
 
 from . import errors
-from .utils import change_exception
 from .validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -312,8 +311,10 @@ class IPvAnyAddress(_BaseAddress):
         except ValueError:
             pass
 
-        with change_exception(errors.IPvAnyAddressError, ValueError):
+        try:
             return IPv6Address(value)
+        except ValueError:
+            raise errors.IPvAnyAddressError()
 
 
 class IPvAnyInterface(_BaseAddress):
@@ -328,8 +329,10 @@ class IPvAnyInterface(_BaseAddress):
         except ValueError:
             pass
 
-        with change_exception(errors.IPvAnyInterfaceError, ValueError):
+        try:
             return IPv6Interface(value)
+        except ValueError:
+            raise errors.IPvAnyInterfaceError()
 
 
 class IPvAnyNetwork(_BaseNetwork):  # type: ignore
@@ -346,8 +349,10 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
         except ValueError:
             pass
 
-        with change_exception(errors.IPvAnyNetworkError, ValueError):
+        try:
             return IPv6Network(value)
+        except ValueError:
+            raise errors.IPvAnyNetworkError()
 
 
 pretty_email_regex = re.compile(r'([\w ]*?) *<(.*)> *')

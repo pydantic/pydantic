@@ -4,17 +4,99 @@ from typing import Any, Set, Union
 
 from .typing import AnyType, display_as_type
 
+# explicitly state exports to avoid "from .errors import *" also importing Decimal, Path etc.
+__all__ = (
+    'PydanticTypeError',
+    'PydanticValueError',
+    'ConfigError',
+    'MissingError',
+    'ExtraError',
+    'NoneIsNotAllowedError',
+    'NoneIsAllowedError',
+    'WrongConstantError',
+    'BoolError',
+    'BytesError',
+    'DictError',
+    'EmailError',
+    'UrlError',
+    'UrlSchemeError',
+    'UrlSchemePermittedError',
+    'UrlUserInfoError',
+    'UrlHostError',
+    'UrlHostTldError',
+    'UrlExtraError',
+    'EnumError',
+    'IntegerError',
+    'FloatError',
+    'PathError',
+    '_PathValueError',
+    'PathNotExistsError',
+    'PathNotAFileError',
+    'PathNotADirectoryError',
+    'PyObjectError',
+    'SequenceError',
+    'ListError',
+    'SetError',
+    'FrozenSetError',
+    'TupleError',
+    'TupleLengthError',
+    'ListMinLengthError',
+    'ListMaxLengthError',
+    'AnyStrMinLengthError',
+    'AnyStrMaxLengthError',
+    'StrError',
+    'StrRegexError',
+    '_NumberBoundError',
+    'NumberNotGtError',
+    'NumberNotGeError',
+    'NumberNotLtError',
+    'NumberNotLeError',
+    'NumberNotMultipleError',
+    'DecimalError',
+    'DecimalIsNotFiniteError',
+    'DecimalMaxDigitsError',
+    'DecimalMaxPlacesError',
+    'DecimalWholeDigitsError',
+    'DateTimeError',
+    'DateError',
+    'TimeError',
+    'DurationError',
+    'UUIDError',
+    'UUIDVersionError',
+    'ArbitraryTypeError',
+    'ClassError',
+    'SubclassError',
+    'JsonError',
+    'JsonTypeError',
+    'PatternError',
+    'DataclassTypeError',
+    'CallableError',
+    'IPvAnyAddressError',
+    'IPvAnyInterfaceError',
+    'IPvAnyNetworkError',
+    'IPv4AddressError',
+    'IPv6AddressError',
+    'IPv4NetworkError',
+    'IPv6NetworkError',
+    'IPv4InterfaceError',
+    'IPv6InterfaceError',
+    'ColorError',
+    'StrictBoolError',
+    'NotDigitError',
+    'LuhnValidationError',
+    'InvalidLengthForBrand',
+)
+
 
 class PydanticErrorMixin:
     code: str
     msg_template: str
 
     def __init__(self, **ctx: Any) -> None:
-        self.ctx = ctx or None
-        super().__init__()
+        self.__dict__ = ctx
 
     def __str__(self) -> str:
-        return self.msg_template.format(**self.ctx or {})
+        return self.msg_template.format(**self.__dict__)
 
 
 class PydanticTypeError(PydanticErrorMixin, TypeError):
@@ -51,7 +133,7 @@ class WrongConstantError(PydanticValueError):
     code = 'const'
 
     def __str__(self) -> str:
-        permitted = ', '.join(repr(v) for v in self.ctx['permitted'])  # type: ignore
+        permitted = ', '.join(repr(v) for v in self.permitted)  # type: ignore
         return f'unexpected value; permitted: {permitted}'
 
 
@@ -110,7 +192,7 @@ class UrlExtraError(UrlError):
 
 class EnumError(PydanticTypeError):
     def __str__(self) -> str:
-        permitted = ', '.join(repr(v.value) for v in self.ctx['enum_values'])  # type: ignore
+        permitted = ', '.join(repr(v.value) for v in self.enum_values)  # type: ignore
         return f'value is not a valid enumeration member; permitted: {permitted}'
 
 

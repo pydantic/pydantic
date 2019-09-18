@@ -19,7 +19,6 @@ from datetime import date, datetime, time, timedelta, timezone
 from typing import Dict, Union
 
 from . import errors
-from .utils import change_exception
 
 date_re = re.compile(r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$')
 
@@ -71,8 +70,8 @@ def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[Non
         return float(value)
     except ValueError:
         return None
-    except TypeError as e:
-        raise TypeError(f'invalid type; expected {native_expected_type}, string, bytes, int or float') from e
+    except TypeError:
+        raise TypeError(f'invalid type; expected {native_expected_type}, string, bytes, int or float')
 
 
 def from_unix_seconds(seconds: Union[int, float]) -> datetime:
@@ -108,8 +107,10 @@ def parse_date(value: Union[date, StrBytesIntFloat]) -> date:
 
     kw = {k: int(v) for k, v in match.groupdict().items()}
 
-    with change_exception(errors.DateError, ValueError):
+    try:
         return date(**kw)
+    except ValueError:
+        raise errors.DateError()
 
 
 def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
@@ -144,8 +145,10 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
 
     kw_ = {k: int(v) for k, v in kw.items() if v is not None}
 
-    with change_exception(errors.TimeError, ValueError):
+    try:
         return time(**kw_)  # type: ignore
+    except ValueError:
+        raise errors.TimeError()
 
 
 def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
@@ -191,8 +194,10 @@ def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
     kw_: Dict[str, Union[int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
     kw_['tzinfo'] = tzinfo
 
-    with change_exception(errors.DateTimeError, ValueError):
+    try:
         return datetime(**kw_)  # type: ignore
+    except ValueError:
+        raise errors.DateTimeError()
 
 
 def parse_duration(value: StrBytesIntFloat) -> timedelta:
@@ -214,8 +219,8 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
 
     try:
         match = standard_duration_re.match(value) or iso8601_duration_re.match(value)
-    except TypeError as e:
-        raise TypeError('invalid type; expected timedelta, string, bytes, int or float') from e
+    except TypeError:
+        raise TypeError('invalid type; expected timedelta, string, bytes, int or float')
 
     if not match:
         raise errors.DurationError()
