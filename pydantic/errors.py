@@ -4,31 +4,106 @@ from typing import Any, Set, Union
 
 from .typing import AnyType, display_as_type
 
-# PydanticTypeError and PydanticValueError have duplicated implementations to avoid problems with __slots__ conflicts
+__all__ = (
+    'PydanticTypeError',
+    'PydanticValueError',
+    'ConfigError',
+    'MissingError',
+    'ExtraError',
+    'NoneIsNotAllowedError',
+    'NoneIsAllowedError',
+    'WrongConstantError',
+    'BoolError',
+    'BytesError',
+    'DictError',
+    'EmailError',
+    'UrlError',
+    'UrlSchemeError',
+    'UrlSchemePermittedError',
+    'UrlUserInfoError',
+    'UrlHostError',
+    'UrlHostTldError',
+    'UrlExtraError',
+    'EnumError',
+    'IntegerError',
+    'FloatError',
+    'PathError',
+    '_PathValueError',
+    'PathNotExistsError',
+    'PathNotAFileError',
+    'PathNotADirectoryError',
+    'PyObjectError',
+    'SequenceError',
+    'ListError',
+    'SetError',
+    'FrozenSetError',
+    'TupleError',
+    'TupleLengthError',
+    'ListMinLengthError',
+    'ListMaxLengthError',
+    'AnyStrMinLengthError',
+    'AnyStrMaxLengthError',
+    'StrError',
+    'StrRegexError',
+    '_NumberBoundError',
+    'NumberNotGtError',
+    'NumberNotGeError',
+    'NumberNotLtError',
+    'NumberNotLeError',
+    'NumberNotMultipleError',
+    'DecimalError',
+    'DecimalIsNotFiniteError',
+    'DecimalMaxDigitsError',
+    'DecimalMaxPlacesError',
+    'DecimalWholeDigitsError',
+    'DateTimeError',
+    'DateError',
+    'TimeError',
+    'DurationError',
+    'UUIDError',
+    'UUIDVersionError',
+    'ArbitraryTypeError',
+    'ClassError',
+    'SubclassError',
+    'JsonError',
+    'JsonTypeError',
+    'PatternError',
+    'DataclassTypeError',
+    'CallableError',
+    'IPvAnyAddressError',
+    'IPvAnyInterfaceError',
+    'IPvAnyNetworkError',
+    'IPv4AddressError',
+    'IPv6AddressError',
+    'IPv4NetworkError',
+    'IPv6NetworkError',
+    'IPv4InterfaceError',
+    'IPv6InterfaceError',
+    'ColorError',
+    'StrictBoolError',
+    'NotDigitError',
+    'LuhnValidationError',
+    'InvalidLengthForBrand',
+)
 
 
-class PydanticTypeError(TypeError):
-    __slots__ = ('ctx',)
+class PydanticErrorMixin:
     code: str
     msg_template: str
 
     def __init__(self, **ctx: Any) -> None:
-        self.ctx = ctx
+        self.__dict__ = ctx
 
     def __str__(self) -> str:
-        return self.msg_template.format(**self.ctx)
+        return self.msg_template.format(**self.__dict__)
 
 
-class PydanticValueError(ValueError):
-    __slots__ = ('ctx',)
-    code: str
-    msg_template: str
+class PydanticTypeError(PydanticErrorMixin, TypeError):
+    pass
 
-    def __init__(self, **ctx: Any) -> None:
-        self.ctx = ctx
 
-    def __str__(self) -> str:
-        return self.msg_template.format(**self.ctx)
+class PydanticValueError(PydanticErrorMixin, ValueError):
+    pass
 
 
 class ConfigError(RuntimeError):
@@ -57,7 +132,7 @@ class WrongConstantError(PydanticValueError):
     code = 'const'
 
     def __str__(self) -> str:
-        permitted = ', '.join(repr(v) for v in self.ctx['permitted'])
+        permitted = ', '.join(repr(v) for v in self.permitted)  # type: ignore
         return f'unexpected value; permitted: {permitted}'
 
 
@@ -116,7 +191,7 @@ class UrlExtraError(UrlError):
 
 class EnumError(PydanticTypeError):
     def __str__(self) -> str:
-        permitted = ', '.join(repr(v.value) for v in self.ctx['enum_values'])
+        permitted = ', '.join(repr(v.value) for v in self.enum_values)  # type: ignore
         return f'value is not a valid enumeration member; permitted: {permitted}'
 
 

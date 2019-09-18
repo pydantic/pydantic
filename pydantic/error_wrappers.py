@@ -102,12 +102,9 @@ def flatten_errors(
 def error_dict(exc: Exception, config: Type['BaseConfig'], loc: 'Loc') -> Dict[str, Any]:
     type_ = get_exc_type(type(exc))
     msg_template = config.error_msg_templates.get(type_) or getattr(exc, 'msg_template', None)
-    ctx = getattr(exc, 'ctx', None)
+    ctx = exc.__dict__
     if msg_template:
-        if ctx:
-            msg = msg_template.format(**ctx)
-        else:
-            msg = msg_template
+        msg = msg_template.format(**ctx)
     else:
         msg = str(exc)
 

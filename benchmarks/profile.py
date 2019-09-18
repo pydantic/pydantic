@@ -23,7 +23,7 @@ def run():
 
 
 funcs_to_profile = [validate_model, Field.validate, Field._validate_singleton, Field._apply_validators]
-module_objects = {**vars(pydantic.validators), **vars(pydantic.datetime_parse)}
+module_objects = {**vars(pydantic.validators), **vars(pydantic.datetime_parse), **vars(Field)}
 funcs_to_profile += [v for k, v in module_objects.items() if not k.startswith('_') and str(v).startswith('<cyfunction')]
 
 
