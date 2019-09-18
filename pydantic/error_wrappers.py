@@ -113,7 +113,7 @@ def error_dict(exc: Exception, config: Type['BaseConfig'], loc: 'Loc') -> Dict[s
 
     d: Dict[str, Any] = {'loc': loc, 'msg': msg, 'type': type_}
 
-    if ctx is not None:
+    if ctx:
         d['ctx'] = ctx
 
     return d

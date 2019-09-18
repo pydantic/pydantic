@@ -10,11 +10,11 @@ class PydanticErrorMixin:
     msg_template: str
 
     def __init__(self, **ctx: Any) -> None:
-        self.ctx = ctx or None
+        self.ctx = ctx
         super().__init__()
 
     def __str__(self) -> str:
-        return self.msg_template.format(**self.ctx or {})
+        return self.msg_template.format(**self.ctx)
 
 
 class PydanticTypeError(PydanticErrorMixin, TypeError):
@@ -51,7 +51,7 @@ class WrongConstantError(PydanticValueError):
     code = 'const'
 
     def __str__(self) -> str:
-        permitted = ', '.join(repr(v) for v in self.ctx['permitted'])  # type: ignore
+        permitted = ', '.join(repr(v) for v in self.ctx['permitted'])
         return f'unexpected value; permitted: {permitted}'
 
 
@@ -110,7 +110,7 @@ class UrlExtraError(UrlError):
 
 class EnumError(PydanticTypeError):
     def __str__(self) -> str:
-        permitted = ', '.join(repr(v.value) for v in self.ctx['enum_values'])  # type: ignore
+        permitted = ', '.join(repr(v.value) for v in self.ctx['enum_values'])
         return f'value is not a valid enumeration member; permitted: {permitted}'
 
 

@@ -18,7 +18,7 @@ from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import GetterDict, ValueItems, change_exception, truncate, validate_field_name
+from .utils import GetterDict, ValueItems, truncate, validate_field_name
 
 if TYPE_CHECKING:  # pragma: no cover
     from .typing import CallableGenerator
@@ -452,8 +452,10 @@ class BaseModel(metaclass=MetaModel):
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
         else:
-            with change_exception(DictError, TypeError, ValueError):
+            try:
                 return cls(**dict(value))
+            except (TypeError, ValueError) as e:
+                raise DictError() from e
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:

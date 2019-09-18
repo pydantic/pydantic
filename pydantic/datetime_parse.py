@@ -19,7 +19,6 @@ from datetime import date, datetime, time, timedelta, timezone
 from typing import Dict, Union
 
 from . import errors
-from .utils import change_exception
 
 date_re = re.compile(r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$')
 
@@ -108,8 +107,10 @@ def parse_date(value: Union[date, StrBytesIntFloat]) -> date:
 
     kw = {k: int(v) for k, v in match.groupdict().items()}
 
-    with change_exception(errors.DateError, ValueError):
+    try:
         return date(**kw)
+    except ValueError as e:
+        raise errors.DateError() from e
 
 
 def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
@@ -144,8 +145,10 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
 
     kw_ = {k: int(v) for k, v in kw.items() if v is not None}
 
-    with change_exception(errors.TimeError, ValueError):
+    try:
         return time(**kw_)  # type: ignore
+    except ValueError as e:
+        raise errors.TimeError() from e
 
 
 def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
@@ -191,8 +194,10 @@ def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
     kw_: Dict[str, Union[int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
     kw_['tzinfo'] = tzinfo
 
-    with change_exception(errors.DateTimeError, ValueError):
+    try:
         return datetime(**kw_)  # type: ignore
+    except ValueError as e:
+        raise errors.DateTimeError() from e
 
 
 def parse_duration(value: StrBytesIntFloat) -> timedelta:

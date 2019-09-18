@@ -1,12 +1,40 @@
 import json
+
+from line_profiler import LineProfiler
+
+import pydantic.validators
+from pydantic import validate_model
+from pydantic.fields import Field
 from test_pydantic import TestPydantic
 
 with open('./benchmarks/cases.json') as f:
     cases = json.load(f)
 
-count, pass_count = 0, 0
-test = TestPydantic(False)
-for case in cases:
-    passed, result = test.validate(case)
-    count += 1
-    pass_count += passed
+
+def run():
+    count, pass_count = 0, 0
+    test = TestPydantic(False)
+    for case in cases:
+        passed, result = test.validate(case)
+        count += 1
+        pass_count += passed
+    print('success percentage:', pass_count / count * 100)
+
+
+# funcs_to_profile = [validate_model, Field.validate, Field._validate_singleton, Field._apply_validators]
+funcs_to_profile = [validate_model]
+funcs_to_profile += [
+    v for k, v in vars(pydantic.validators).items() if not k.startswith('_') and str(v).startswith('<cyfunction')
+]
+
+
+def main():
+    profiler = LineProfiler()
+    for f in funcs_to_profile:
+        profiler.add_function(f)
+    profiler.wrap_function(run)()
+    profiler.print_stats()
+
+
+if __name__ == '__main__':
+    main()
