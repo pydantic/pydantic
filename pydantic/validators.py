@@ -364,7 +364,7 @@ def path_validator(v: Any) -> Path:
 
     try:
         return Path(v)
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         raise errors.PathError() from e
 
 
