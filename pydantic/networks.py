@@ -313,8 +313,8 @@ class IPvAnyAddress(_BaseAddress):
 
         try:
             return IPv6Address(value)
-        except ValueError as e:
-            raise errors.IPvAnyAddressError() from e
+        except ValueError:
+            raise errors.IPvAnyAddressError()
 
 
 class IPvAnyInterface(_BaseAddress):
@@ -331,8 +331,8 @@ class IPvAnyInterface(_BaseAddress):
 
         try:
             return IPv6Interface(value)
-        except ValueError as e:
-            raise errors.IPvAnyInterfaceError() from e
+        except ValueError:
+            raise errors.IPvAnyInterfaceError()
 
 
 class IPvAnyNetwork(_BaseNetwork):  # type: ignore
@@ -351,8 +351,8 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
 
         try:
             return IPv6Network(value)
-        except ValueError as e:
-            raise errors.IPvAnyNetworkError() from e
+        except ValueError:
+            raise errors.IPvAnyNetworkError()
 
 
 pretty_email_regex = re.compile(r'([\w ]*?) *<(.*)> *')

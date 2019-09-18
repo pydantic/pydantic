@@ -1283,9 +1283,7 @@ def test_path_validation_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=123)
-    assert exc_info.value.errors() == [
-        {'loc': ('foo',), 'msg': 'expected str, bytes or os.PathLike object, not int', 'type': 'type_error'}
-    ]
+    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid path', 'type': 'type_error.path'}]
 
 
 @pytest.mark.parametrize(

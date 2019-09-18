@@ -91,8 +91,8 @@ def bool_validator(v: Any) -> bool:
             return True
         if v in BOOL_FALSE:
             return False
-    except TypeError as e:
-        raise errors.BoolError() from e
+    except TypeError:
+        raise errors.BoolError()
     raise errors.BoolError()
 
 
@@ -102,8 +102,8 @@ def int_validator(v: Any) -> int:
 
     try:
         return int(v)
-    except (TypeError, ValueError) as e:
-        raise errors.IntegerError() from e
+    except (TypeError, ValueError):
+        raise errors.IntegerError()
 
 
 def strict_int_validator(v: Any) -> int:
@@ -118,8 +118,8 @@ def float_validator(v: Any) -> float:
 
     try:
         return float(v)
-    except (TypeError, ValueError) as e:
-        raise errors.FloatError() from e
+    except (TypeError, ValueError):
+        raise errors.FloatError()
 
 
 def strict_float_validator(v: Any) -> float:
@@ -189,8 +189,8 @@ def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
 
     try:
         return OrderedDict(v)
-    except (TypeError, ValueError) as e:
-        raise errors.DictError() from e
+    except (TypeError, ValueError):
+        raise errors.DictError()
 
 
 def dict_validator(v: Any) -> Dict[Any, Any]:
@@ -199,8 +199,8 @@ def dict_validator(v: Any) -> Dict[Any, Any]:
 
     try:
         return dict(v)
-    except (TypeError, ValueError) as e:
-        raise errors.DictError() from e
+    except (TypeError, ValueError):
+        raise errors.DictError()
 
 
 def list_validator(v: Any) -> List[Any]:
@@ -254,8 +254,8 @@ def uuid_validator(v: Any, field: 'Field') -> UUID:
             v = UUID(v)
         elif isinstance(v, (bytes, bytearray)):
             v = UUID(v.decode())
-    except ValueError as e:
-        raise errors.UUIDError() from e
+    except ValueError:
+        raise errors.UUIDError()
 
     if not isinstance(v, UUID):
         raise errors.UUIDError()
@@ -277,8 +277,8 @@ def decimal_validator(v: Any) -> Decimal:
 
     try:
         v = Decimal(v)
-    except DecimalException as e:
-        raise errors.DecimalError() from e
+    except DecimalException:
+        raise errors.DecimalError()
 
     if not v.is_finite():
         raise errors.DecimalIsNotFiniteError()
@@ -292,8 +292,8 @@ def ip_v4_address_validator(v: Any) -> IPv4Address:
 
     try:
         return IPv4Address(v)
-    except ValueError as e:
-        raise errors.IPv4AddressError() from e
+    except ValueError:
+        raise errors.IPv4AddressError()
 
 
 def ip_v6_address_validator(v: Any) -> IPv6Address:
@@ -302,8 +302,8 @@ def ip_v6_address_validator(v: Any) -> IPv6Address:
 
     try:
         return IPv6Address(v)
-    except ValueError as e:
-        raise errors.IPv6AddressError() from e
+    except ValueError:
+        raise errors.IPv6AddressError()
 
 
 def ip_v4_network_validator(v: Any) -> IPv4Network:
@@ -318,8 +318,8 @@ def ip_v4_network_validator(v: Any) -> IPv4Network:
 
     try:
         return IPv4Network(v)
-    except ValueError as e:
-        raise errors.IPv4NetworkError() from e
+    except ValueError:
+        raise errors.IPv4NetworkError()
 
 
 def ip_v6_network_validator(v: Any) -> IPv6Network:
@@ -334,8 +334,8 @@ def ip_v6_network_validator(v: Any) -> IPv6Network:
 
     try:
         return IPv6Network(v)
-    except ValueError as e:
-        raise errors.IPv6NetworkError() from e
+    except ValueError:
+        raise errors.IPv6NetworkError()
 
 
 def ip_v4_interface_validator(v: Any) -> IPv4Interface:
@@ -344,8 +344,8 @@ def ip_v4_interface_validator(v: Any) -> IPv4Interface:
 
     try:
         return IPv4Interface(v)
-    except ValueError as e:
-        raise errors.IPv4InterfaceError() from e
+    except ValueError:
+        raise errors.IPv4InterfaceError()
 
 
 def ip_v6_interface_validator(v: Any) -> IPv6Interface:
@@ -354,8 +354,8 @@ def ip_v6_interface_validator(v: Any) -> IPv6Interface:
 
     try:
         return IPv6Interface(v)
-    except ValueError as e:
-        raise errors.IPv6InterfaceError() from e
+    except ValueError:
+        raise errors.IPv6InterfaceError()
 
 
 def path_validator(v: Any) -> Path:
@@ -364,8 +364,8 @@ def path_validator(v: Any) -> Path:
 
     try:
         return Path(v)
-    except (ValueError, TypeError) as e:
-        raise errors.PathError() from e
+    except TypeError:
+        raise errors.PathError()
 
 
 def path_exists_validator(v: Any) -> Path:
@@ -463,8 +463,8 @@ def any_class_validator(v: Any) -> Type[T]:
 def pattern_validator(v: Any) -> Pattern[str]:
     try:
         return re.compile(v)
-    except re.error as e:
-        raise errors.PatternError() from e
+    except re.error:
+        raise errors.PatternError()
 
 
 class IfConfig:
@@ -563,8 +563,8 @@ def find_validators(  # noqa: C901 (ignore complexity)
                     else:
                         yield v
                 return
-        except TypeError as e:
-            raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})') from e
+        except TypeError:
+            raise RuntimeError(f'error checking inheritance of {type_!r} (type: {display_as_type(type_)})')
 
     if config.arbitrary_types_allowed:
         yield make_arbitrary_type_validator(type_)
