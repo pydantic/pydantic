@@ -4,6 +4,7 @@ from typing import Any, Set, Union
 
 from .typing import AnyType, display_as_type
 
+# explicitly state exports to avoid "from .errors import *" also importing Decimal, Path etc.
 __all__ = (
     'PydanticTypeError',
     'PydanticValueError',

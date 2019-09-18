@@ -43,7 +43,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 def str_validator(v: Any) -> Optional[str]:
     if isinstance(v, str):
-        if hasattr(v, 'value') and isinstance(v, Enum):
+        if isinstance(v, Enum):
             return v.value
         else:
             return v

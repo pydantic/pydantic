@@ -712,7 +712,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
             else:
                 value = deepcopy(field.default)
 
-            if not model.__config__.validate_all and not field.validate_always:
+            if not config.validate_all and not field.validate_always:
                 values[name] = value
                 continue
         else:
