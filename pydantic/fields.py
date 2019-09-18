@@ -108,8 +108,8 @@ class Field:
         self.sub_fields: Optional[List[Field]] = None
         self.key_field: Optional[Field] = None
         self.validators: 'ValidatorsList' = []
-        self.pre_validators: 'ValidatorsList' = []
-        self.post_validators: 'ValidatorsList' = []
+        self.pre_validators: Optional['ValidatorsList'] = None
+        self.post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
         self.shape: int = SHAPE_SINGLETON
         self.prepare()
@@ -288,8 +288,10 @@ class Field:
             self.validators = self._prep_vals(v_funcs)
 
         # Add const validator
+        self.pre_validators = []
+        self.post_validators = []
         if self.schema and self.schema.const:
-            self.pre_validators = self._prep_vals([constant_validator])
+            self.pre_validators = [make_generic_validator(constant_validator)]
 
         if class_validators_:
             self.pre_validators += self._prep_vals(v.func for v in class_validators_ if not v.each_item and v.pre)
@@ -297,6 +299,9 @@ class Field:
 
         if self.parse_json:
             self.pre_validators.append(make_generic_validator(validate_json))
+
+        self.pre_validators = self.pre_validators or None
+        self.post_validators = self.post_validators or None
 
     @staticmethod
     def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
@@ -306,7 +311,7 @@ class Field:
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
 
-        errors: Optional['ErrorList'] = None
+        errors: Optional['ErrorList']
         if self.pre_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.pre_validators)
             if errors:
@@ -328,7 +333,7 @@ class Field:
         elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
         else:
-            #  sequence, list, set, generator, ellipsis tuple, frozen set
+            #  sequence, list, set, generator, tuple with ellipsis, frozen set
             v, errors = self._validate_sequence_like(v, values, loc, cls)
 
         if not errors and self.post_validators:
