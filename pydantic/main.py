@@ -125,11 +125,14 @@ class MetaModel(ABCMeta):
         fields: Dict[str, Field] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
+        parent_pre_root_validators, parent_post_root_validators = [], []
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(deepcopy(base.__fields__))
                 config = inherit_config(base.__config__, config)
                 validators = inherit_validators(base.__validators__, validators)
+                parent_pre_root_validators += base.__pre_root_validators__
+                parent_post_root_validators += base.__post_root_validators__
 
         config = inherit_config(namespace.get('Config'), config)
         validators = inherit_validators(extract_validators(namespace), validators)
@@ -201,8 +204,8 @@ class MetaModel(ABCMeta):
             '__config__': config,
             '__fields__': fields,
             '__validators__': vg.validators,
-            '__pre_root_validators__': pre_root_validators,
-            '__post_root_validators__': post_root_validators,
+            '__pre_root_validators__': parent_pre_root_validators + pre_root_validators,
+            '__post_root_validators__': parent_post_root_validators + post_root_validators,
             '_schema_cache': {},
             '_json_encoder': staticmethod(json_encoder),
             '_custom_root_type': _custom_root_type,

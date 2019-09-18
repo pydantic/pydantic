@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError, errors, validator
+from pydantic import BaseModel, ConfigError, Extra, ValidationError, errors, validator
 from pydantic.class_validators import make_generic_validator, root_validator
 
 
@@ -689,6 +689,34 @@ def test_assert_raises_validation_error():
     ]
 
 
+def test_optional_validator():
+    val_calls = []
+
+    class Model(BaseModel):
+        something: Optional[str]
+
+        @validator('something')
+        def check_something(cls, v):
+            val_calls.append(v)
+            return v
+
+    assert Model().dict() == {'something': None}
+    assert Model(something=None).dict() == {'something': None}
+    assert Model(something='hello').dict() == {'something': 'hello'}
+    assert val_calls == [None, 'hello']
+
+
+def test_whole():
+    with pytest.warns(DeprecationWarning, match='The "whole" keyword argument is deprecated'):
+
+        class Model(BaseModel):
+            x: List[int]
+
+            @validator('x', whole=True)
+            def check_something(cls, v):
+                return v
+
+
 def test_root_validator():
     root_val_values = []
 
@@ -711,9 +739,15 @@ def test_root_validator():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(b='snap dragon')
-    assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}]
-
     assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='broken', b='bar')
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+    assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}, {'b': 'barbar'}]
 
 
 def test_root_validator_pre():
@@ -741,34 +775,6 @@ def test_root_validator_pre():
 
     assert root_val_values == [{'a': '123', 'b': 'bar'}, {'b': 'snap dragon'}]
     assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
-
-
-def test_optional_validator():
-    val_calls = []
-
-    class Model(BaseModel):
-        something: Optional[str]
-
-        @validator('something')
-        def check_something(cls, v):
-            val_calls.append(v)
-            return v
-
-    assert Model().dict() == {'something': None}
-    assert Model(something=None).dict() == {'something': None}
-    assert Model(something='hello').dict() == {'something': 'hello'}
-    assert val_calls == [None, 'hello']
-
-
-def test_whole():
-    with pytest.warns(DeprecationWarning, match='The "whole" keyword argument is deprecated'):
-
-        class Model(BaseModel):
-            x: List[int]
-
-            @validator('x', whole=True)
-            def check_something(cls, v):
-                return v
 
 
 def test_root_validator_repeat():
@@ -827,3 +833,47 @@ def test_root_validator_extra():
     assert str(exc_info.value) == (
         'Invalid signature for root validator root_validator: (cls, values, another), should be: (cls, values).'
     )
+
+
+def test_root_validator_types():
+    root_val_values = None
+
+    class Model(BaseModel):
+        a: int = 1
+        b: str
+
+        @root_validator
+        def root_validator(cls, values):
+            nonlocal root_val_values
+            root_val_values = cls, values
+            return values
+
+        class Config:
+            extra = Extra.allow
+
+    assert Model(b='bar', c='wobble').dict() == {'a': 1, 'b': 'bar', 'c': 'wobble'}
+
+    assert root_val_values == (Model, {'a': 1, 'b': 'bar', 'c': 'wobble'})
+
+
+def test_root_validator_inheritance():
+    calls = []
+
+    class Parent(BaseModel):
+        pass
+
+        @root_validator
+        def root_validator_parent(cls, values):
+            calls.append(f'parent validator: {values}')
+            return {'extra1': 1, **values}
+
+    class Child(Parent):
+        a: int
+
+        @root_validator
+        def root_validator_child(cls, values):
+            calls.append(f'child validator: {values}')
+            return {'extra2': 2, **values}
+
+    assert Child(a=123).dict() == {'extra2': 2, 'extra1': 1, 'a': 123}
+    assert calls == ["parent validator: {'a': 123}", "child validator: {'extra1': 1, 'a': 123}"]

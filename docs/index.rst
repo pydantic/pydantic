@@ -268,11 +268,11 @@ Validation can also be performed on the entire model's data.
 
 As with field validators, root validators can be ``pre=True`` in which case they're called before field
 validation occurs with the raw input data, or ``pre=False`` (the default) in which case
-they're called after field validation with the values of valid fields.
+they're called after field validation.
 
-Field validation will not occur if "pre" root validators raise an error; as with field validators, post root validators
-will always be called but the ``values`` argument will be a dict containing only the values which passed
-field validation.
+Field validation will not occur if "pre" root validators raise an error. As with field validators,
+"post" (e.g. non ``pre``) root validators will be called even if field validation fails; the ``values`` argument will
+be a dict containing the values which passed field validation and field defaults where applicable.
 
 Dataclass Validators
 ~~~~~~~~~~~~~~~~~~~~
