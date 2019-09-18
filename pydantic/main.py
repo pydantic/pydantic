@@ -453,9 +453,10 @@ class BaseModel(metaclass=MetaModel):
             return cls.from_orm(value)
         else:
             try:
-                return cls(**dict(value))
+                value_as_dict = dict(value)
             except (TypeError, ValueError) as e:
                 raise DictError() from e
+            return cls(**value_as_dict)
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
