@@ -1,4 +1,3 @@
-import json
 import re
 from decimal import Decimal
 from enum import Enum
@@ -17,7 +16,6 @@ from .validators import (
     decimal_validator,
     float_validator,
     int_validator,
-    not_none_validator,
     number_multiple_validator,
     number_size_validator,
     path_exists_validator,
@@ -96,7 +94,6 @@ class ConstrainedBytes(bytes):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield bytes_validator
         yield constr_strip_whitespace
         yield constr_length_validator
@@ -155,7 +152,6 @@ class ConstrainedStr(str):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
         yield constr_length_validator
@@ -235,11 +231,10 @@ class PyObject:
         except errors.StrError:
             raise errors.PyObjectError(error_message='value is neither a valid import path not a valid callable')
 
-        if value is not None:
-            try:
-                return import_string(value)
-            except ImportError as e:
-                raise errors.PyObjectError(error_message=str(e))
+        try:
+            return import_string(value)
+        except ImportError as e:
+            raise errors.PyObjectError(error_message=str(e))
 
 
 class ConstrainedNumberMeta(type):
@@ -342,7 +337,6 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield decimal_validator
         yield number_size_validator
         yield number_multiple_validator
@@ -458,19 +452,7 @@ class JsonMeta(type):
 
 
 class Json(metaclass=JsonMeta):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v: Any) -> Any:
-        try:
-            return json.loads(v)
-        except ValueError:
-            raise errors.JsonError()
-        except TypeError:
-            raise errors.JsonTypeError()
+    pass
 
 
 class SecretStr:
@@ -554,7 +536,6 @@ class PaymentCardNumber(str):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield str_validator
         yield constr_strip_whitespace
         yield constr_length_validator

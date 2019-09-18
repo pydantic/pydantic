@@ -198,7 +198,7 @@ A few things to note on validators:
 
 * validators are "class methods", the first value they receive here will be the ``UserModel`` not an instance
   of ``UserModel``
-* their signature can be ``(cls, value)`` or ``(cls, value, values, config, field)``. As of **v0.20**, any subset of
+* their signature can be ``(cls, value)`` or ``(cls, value, values, config, field)``. Any subset of
   ``values``, ``config`` and ``field`` is also permitted, eg. ``(cls, value, field)``, however due to the way
   validators are inspected, the variadic key word argument ("``**kwargs``") **must** be called ``kwargs``.
 * validators should either return the new value or raise a ``ValueError``, ``TypeError``, or ``AssertionError``
@@ -226,18 +226,12 @@ A few things to note on validators:
    (Within each group fields remain in the order they were defined.)
 
 
-.. note::
-
-   From ``v0.18`` onwards validators are not called on keys of dictionaries. If you wish to validate keys,
-   use ``whole`` (see below).
-
-
-Pre and Whole Validators
-~~~~~~~~~~~~~~~~~~~~~~~~
+Pre and per-item validators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Validators can do a few more complex things:
 
-.. literalinclude:: examples/validators_pre_whole.py
+.. literalinclude:: examples/validators_pre_item.py
 
 (This script is complete, it should run "as is")
 
@@ -246,8 +240,8 @@ A few more things to note:
 * a single validator can apply to multiple fields, either by defining multiple fields or by the special value ``'*'``
   which means that validator will be called for all fields.
 * the keyword argument ``pre`` will cause validators to be called prior to other validation
-* the ``whole`` keyword argument will mean validators are applied to entire objects rather than individual values
-  (applies for complex typing objects eg. ``List``, ``Dict``, ``Set``)
+* the ``each_item`` keyword argument will mean validators are applied to individual values
+  (eg. of ``List``, ``Dict``, ``Set`` etc.) not the whole object
 
 Validate Always
 ~~~~~~~~~~~~~~~

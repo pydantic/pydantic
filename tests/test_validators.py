@@ -58,12 +58,12 @@ def test_validate_whole():
     class Model(BaseModel):
         a: List[int]
 
-        @validator('a', whole=True, pre=True)
+        @validator('a', pre=True)
         def check_a1(cls, v):
             v.append('123')
             return v
 
-        @validator('a', whole=True)
+        @validator('a')
         def check_a2(cls, v):
             v.append(456)
             return v
@@ -76,20 +76,20 @@ def test_validate_kwargs():
         b: int
         a: List[int]
 
-        @validator('a')
+        @validator('a', each_item=True)
         def check_a1(cls, v, values, **kwargs):
             return v + values['b']
 
     assert Model(a=[1, 2], b=6).a == [7, 8]
 
 
-def test_validate_whole_error():
+def test_validate_pre_error():
     calls = []
 
     class Model(BaseModel):
         a: List[int]
 
-        @validator('a', whole=True, pre=True)
+        @validator('a', pre=True)
         def check_a1(cls, v):
             calls.append(f'check_a1 {v}')
             if 1 in v:
@@ -97,7 +97,7 @@ def test_validate_whole_error():
             v[0] += 1
             return v
 
-        @validator('a', whole=True)
+        @validator('a')
         def check_a2(cls, v):
             calls.append(f'check_a2 {v}')
             if 10 in v:
@@ -475,22 +475,22 @@ def test_inheritance_new():
     assert Child(a=0).a == 6
 
 
-def test_no_key_validation():
+def test_validation_each_item():
     class Model(BaseModel):
         foobar: Dict[int, int]
 
-        @validator('foobar')
+        @validator('foobar', each_item=True)
         def check_foobar(cls, v):
             return v + 1
 
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
-def test_key_validation_whole():
+def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
 
-        @validator('foobar', whole=True)
+        @validator('foobar')
         def check_foobar(cls, value):
             return {k + 1: v + 1 for k, v in value.items()}
 
@@ -515,6 +515,23 @@ def test_validator_always_optional():
     assert check_calls == 2
 
 
+def test_validator_always_pre():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: str = None
+
+        @validator('a', always=True, pre=True)
+        def check_a(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v or 'default value'
+
+    assert Model(a='y').a == 'y'
+    assert Model().a == 'default value'
+    assert check_calls == 2
+
+
 def test_validator_always_post():
     class Model(BaseModel):
         a: str = None
@@ -524,15 +541,14 @@ def test_validator_always_post():
             return v or 'default value'
 
     assert Model(a='y').a == 'y'
-    with pytest.raises(ValidationError):
-        Model()
+    assert Model().a == 'default value'
 
 
 def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', always=True)
+        @validator('a', always=True, pre=True)
         def check_a(cls, v):
             return v or 'default value'
 
@@ -560,13 +576,13 @@ def test_datetime_validator():
     assert check_calls == 3
 
 
-def test_whole_called_once():
+def test_pre_called_once():
     check_calls = 0
 
     class Model(BaseModel):
         a: Tuple[int, int, int]
 
-        @validator('a', pre=True, whole=True)
+        @validator('a', pre=True)
         def check_a(cls, v):
             nonlocal check_calls
             check_calls += 1
@@ -671,3 +687,31 @@ def test_assert_raises_validation_error():
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
     ]
+
+
+def test_optional_validator():
+    val_calls = []
+
+    class Model(BaseModel):
+        something: Optional[str]
+
+        @validator('something')
+        def check_something(cls, v):
+            val_calls.append(v)
+            return v
+
+    assert Model().dict() == {'something': None}
+    assert Model(something=None).dict() == {'something': None}
+    assert Model(something='hello').dict() == {'something': 'hello'}
+    assert val_calls == [None, 'hello']
+
+
+def test_whole():
+    with pytest.warns(DeprecationWarning, match='The "whole" keyword argument is deprecated'):
+
+        class Model(BaseModel):
+            x: List[int]
+
+            @validator('x', whole=True)
+            def check_something(cls, v):
+                return v

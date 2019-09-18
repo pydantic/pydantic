@@ -1,3 +1,4 @@
+import json
 import re
 import sys
 from collections import OrderedDict
@@ -39,19 +40,6 @@ if TYPE_CHECKING:  # pragma: no cover
     Number = Union[int, float, Decimal]
     StrBytes = Union[str, bytes]
 
-NoneType = type(None)
-
-
-def not_none_validator(v: Any) -> Any:
-    if v is None:
-        raise errors.NoneIsNotAllowedError()
-    return v
-
-
-def is_none_validator(v: Any) -> None:
-    if v is not None:
-        raise errors.NoneIsAllowedError()
-
 
 def str_validator(v: Any) -> Optional[str]:
     if isinstance(v, str):
@@ -59,8 +47,6 @@ def str_validator(v: Any) -> Optional[str]:
             return v.value
         else:
             return v
-    elif v is None:
-        return None
     elif isinstance(v, (float, int, Decimal)):
         # is there anything else we want to add here? If you think so, create an issue.
         return str(v)
@@ -89,12 +75,12 @@ def bytes_validator(v: Any) -> bytes:
         raise errors.BytesError()
 
 
-BOOL_FALSE = {False, 0, '0', 'off', 'f', 'false', 'n', 'no'}
-BOOL_TRUE = {True, 1, '1', 'on', 't', 'true', 'y', 'yes'}
+BOOL_FALSE = {0, '0', 'off', 'f', 'false', 'n', 'no'}
+BOOL_TRUE = {1, '1', 'on', 't', 'true', 'y', 'yes'}
 
 
 def bool_validator(v: Any) -> bool:
-    if isinstance(v, bool):
+    if v is True or v is False:
         return v
     if isinstance(v, bytes):
         v = v.decode()
@@ -109,7 +95,7 @@ def bool_validator(v: Any) -> bool:
 
 
 def int_validator(v: Any) -> int:
-    if isinstance(v, int) and not isinstance(v, bool):
+    if isinstance(v, int) and not (v is True or v is False):
         return v
 
     with change_exception(errors.IntegerError, TypeError, ValueError):
@@ -410,6 +396,15 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig')
     return v
 
 
+def validate_json(v: Any) -> Any:
+    try:
+        return json.loads(v)
+    except ValueError:
+        raise errors.JsonError()
+    except TypeError:
+        raise errors.JsonTypeError()
+
+
 T = TypeVar('T')
 
 
@@ -451,7 +446,7 @@ class IfConfig:
         return any(getattr(config, name) not in {None, False} for name in self.config_attr_names)
 
 
-pattern_validators = [not_none_validator, str_validator, pattern_validator]
+pattern_validators = [str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
@@ -460,7 +455,6 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (
         str,
         [
-            not_none_validator,
             str_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
@@ -469,7 +463,6 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (
         bytes,
         [
-            not_none_validator,
             bytes_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
@@ -478,7 +471,6 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (bool, [bool_validator]),
     (int, [int_validator]),
     (float, [float_validator]),
-    (NoneType, [is_none_validator]),  # type: ignore
     (Path, [path_validator]),
     (datetime, [parse_datetime]),
     (date, [parse_date]),
@@ -490,14 +482,14 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
     (tuple, [tuple_validator]),
     (set, [set_validator]),
     (frozenset, [frozenset_validator]),
-    (UUID, [not_none_validator, uuid_validator]),
-    (Decimal, [not_none_validator, decimal_validator]),
-    (IPv4Interface, [not_none_validator, ip_v4_interface_validator]),
-    (IPv6Interface, [not_none_validator, ip_v6_interface_validator]),
-    (IPv4Address, [not_none_validator, ip_v4_address_validator]),
-    (IPv6Address, [not_none_validator, ip_v6_address_validator]),
-    (IPv4Network, [not_none_validator, ip_v4_network_validator]),
-    (IPv6Network, [not_none_validator, ip_v6_network_validator]),
+    (UUID, [uuid_validator]),
+    (Decimal, [decimal_validator]),
+    (IPv4Interface, [ip_v4_interface_validator]),
+    (IPv6Interface, [ip_v6_interface_validator]),
+    (IPv4Address, [ip_v4_address_validator]),
+    (IPv6Address, [ip_v6_address_validator]),
+    (IPv4Network, [ip_v4_network_validator]),
+    (IPv6Network, [ip_v6_network_validator]),
 ]
 
 

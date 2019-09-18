@@ -16,6 +16,7 @@ from pydantic import (
     constr,
     errors,
     validate_model,
+    validator,
 )
 
 
@@ -26,7 +27,6 @@ def test_str_bytes():
     m = Model(v='s')
     assert m.v == 's'
     assert '<Field(v type=typing.Union[str, bytes] required)>' == repr(m.fields['v'])
-    assert 'not_none_validator' in [v.__qualname__ for v in m.fields['v'].sub_fields[0].validators]
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -34,8 +34,7 @@ def test_str_bytes():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
-        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}
     ]
 
 
@@ -73,8 +72,7 @@ def test_union_int_str():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}
     ]
 
 
@@ -274,9 +272,9 @@ def test_list_unions():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
+
     assert exc_info.value.errors() == [
-        {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 2), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('v', 2), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}
     ]
 
 
@@ -773,7 +771,6 @@ def test_multiple_errors():
         Model(a='foobar')
 
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not none', 'type': 'type_error.none.allowed'},
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
         {'loc': ('a',), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
         {'loc': ('a',), 'msg': 'value is not a valid decimal', 'type': 'type_error.decimal'},
@@ -968,3 +965,44 @@ def test_ignored_type():
         b: int
 
     assert Model.__fields__.keys() == {'b'}
+
+
+def test_optional_subfields():
+    class Model(BaseModel):
+        a: Optional[int]
+
+    assert Model.__fields__['a'].sub_fields is None
+    assert Model.__fields__['a'].allow_none is True
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='foobar')
+
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+    assert Model().a is None
+    assert Model(a=None).a is None
+    assert Model(a=12).a == 12
+
+
+def test_not_optional_subfields():
+    class Model(BaseModel):
+        a: Optional[int]
+
+        @validator('a')
+        def check_a(cls, v):
+            return v
+
+    assert Model.__fields__['a'].sub_fields is None
+    # assert Model.__fields__['a'].required is True
+    assert Model.__fields__['a'].allow_none is True
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='foobar')
+
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+    assert Model().a is None
+    assert Model(a=None).a is None
+    assert Model(a=12).a == 12

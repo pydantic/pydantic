@@ -40,7 +40,7 @@ def test_value_validation():
     class Response(GenericModel, Generic[T]):
         data: T
 
-        @validator('data')
+        @validator('data', each_item=True)
         def validate_value_nonzero(cls, v):
             if isinstance(v, dict):
                 return v  # ensure v is actually a value of the dict, not the dict itself
@@ -330,15 +330,13 @@ def test_generic():
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](data=[Data(number=1, text='a')], error=Error(message='error'), positive_number=1)
     assert exc_info.value.errors() == [
-        {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'},
-        {'loc': ('error',), 'msg': 'value is not none', 'type': 'type_error.none.allowed'},
+        {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](data=[Data(number=1, text='a')], error=Error(message='error'), positive_number=1)
     assert exc_info.value.errors() == [
-        {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'},
-        {'loc': ('error',), 'msg': 'value is not none', 'type': 'type_error.none.allowed'},
+        {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'}
     ]
 
 
