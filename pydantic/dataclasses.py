@@ -1,7 +1,7 @@
 import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, Union
 
-from .class_validators import gather_validators
+from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
@@ -83,7 +83,7 @@ def _process_class(
         for field in dataclasses.fields(cls)
     }
 
-    validators = gather_validators(cls)
+    validators = gather_all_validators(cls)
     cls.__pydantic_model__ = create_model(
         cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **fields
     )

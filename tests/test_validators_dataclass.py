@@ -3,7 +3,7 @@ from typing import List
 
 import pytest
 
-from pydantic import ValidationError, validator
+from pydantic import ValidationError, root_validator, validator
 from pydantic.dataclasses import dataclass
 
 
@@ -108,3 +108,31 @@ def test_inheritance_replace():
             return v + 5
 
     assert Child(a=0).a == 5
+
+
+def test_root_validator():
+    root_val_values = []
+
+    @dataclass
+    class MyDataclass:
+        a: int
+        b: str
+
+        @validator('b')
+        def repeat_b(cls, v):
+            return v * 2
+
+        @root_validator
+        def root_validator(cls, values):
+            root_val_values.append(values)
+            if 'snap' in values.get('b', ''):
+                raise ValueError('foobar')
+            return dict(values, b='changed')
+
+    assert asdict(MyDataclass(a='123', b='bar')) == {'a': 123, 'b': 'changed'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyDataclass(a=1, b='snap dragon')
+    assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}]
+
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]

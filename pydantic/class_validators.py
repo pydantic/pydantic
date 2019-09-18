@@ -40,6 +40,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 _FUNCS: Set[str] = set()
 ROOT_KEY = '__root__'
+VALIDATOR_CONFIG_KEY = '__validator_config'
+ROOT_VALIDATOR_CONFIG_KEY = '__root_validator_config'
 
 
 def validator(
@@ -78,9 +80,10 @@ def validator(
     def dec(f: AnyCallable) -> classmethod:
         _check_validator_name(f)
         f_cls = classmethod(f)
-        f_cls.__validator_config = (  # type: ignore
-            fields,
-            Validator(func=f, pre=pre, each_item=each_item, always=always, check_fields=check_fields),
+        setattr(
+            f_cls,
+            VALIDATOR_CONFIG_KEY,
+            (fields, Validator(func=f, pre=pre, each_item=each_item, always=always, check_fields=check_fields)),
         )
         return f_cls
 
@@ -92,14 +95,14 @@ def root_validator(
 ) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
     if _func:
         f_cls = classmethod(_func)
-        f_cls.__root_validator_config = Validator(func=_func, pre=pre)  # type: ignore
+        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=_func, pre=pre))
         return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
         _check_validator_name(f)
-        f_cls2 = classmethod(f)
-        f_cls2.__root_validator_config = Validator(func=f, pre=pre)  # type: ignore
-        return f_cls2
+        f_cls = classmethod(f)
+        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f, pre=pre))
+        return f_cls
 
     return dec
 
@@ -151,7 +154,7 @@ class ValidatorGroup:
 def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
     validators: Dict[str, List[Validator]] = {}
     for var_name, value in namespace.items():
-        validator_config = getattr(value, '__validator_config', None)
+        validator_config = getattr(value, VALIDATOR_CONFIG_KEY, None)
         if validator_config:
             fields, v = validator_config
             for field in fields:
@@ -284,6 +287,10 @@ def _generic_validator_basic(validator: AnyCallable, sig: Signature, args: Set[s
         return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
 
 
-def gather_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:
+def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:
     all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])
-    return {k: v for k, v in all_attributes.items() if hasattr(v, '__validator_config')}
+    return {
+        k: v
+        for k, v in all_attributes.items()
+        if hasattr(v, VALIDATOR_CONFIG_KEY) or hasattr(v, ROOT_VALIDATOR_CONFIG_KEY)
+    }

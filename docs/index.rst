@@ -254,8 +254,25 @@ to set a dynamic default value.
 
 (This script is complete, it should run "as is")
 
-You'll often want to use this together with ``pre`` since otherwise the with ``always=True``
+You'll often want to use this together with ``pre`` since otherwise with ``always=True``
 *pydantic* would try to validate the default ``None`` which would cause an error.
+
+Root Validators
+~~~~~~~~~~~~~~~
+
+Validation can also be performed on the entire model's data.
+
+.. literalinclude:: examples/validators_root.py
+
+(This script is complete, it should run "as is")
+
+As with field validators, root validators can be ``pre=True`` in which case they're called before field
+validation occurs with the raw input data, or ``pre=False`` (the default) in which case
+they're called after field validation with the values of valid fields.
+
+Field validation will not occur if "pre" root validators raise an error; as with field validators, post root validators
+will always be called but the ``values`` argument will be a dict containing only the values which passed
+field validation.
 
 Dataclass Validators
 ~~~~~~~~~~~~~~~~~~~~
