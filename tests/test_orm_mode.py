@@ -34,8 +34,12 @@ def test_getdict():
     assert gd.get('d', None) == 4
     assert gd.get('e', None) == 5
     assert gd.get('f', 'missing') == 'missing'
+    assert list(gd.values()) == [1, 3, 4]
+    assert list(gd.items()) == [('a', 1), ('c', 3), ('d', 4)]
     assert list(gd) == ['a', 'c', 'd']
-    assert gd.as_dict() == {'a': 1, 'd': 4, 'c': 3}
+    assert gd.as_dict() == {'a': 1, 'c': 3, 'd': 4}
+    assert gd == {'a': 1, 'c': 3, 'd': 4}
+    assert 'a' in gd
     assert len(gd) == 3
     assert str(gd) == "<GetterDict(TestCls) {'a': 1, 'c': 3, 'd': 4}>"
 

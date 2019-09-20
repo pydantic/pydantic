@@ -1,6 +1,6 @@
 import inspect
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Optional, Set, Tuple, Type, Union, no_type_check
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Set, Tuple, Type, Union, no_type_check
 
 from .typing import AnyType, display_as_type
 
@@ -90,9 +90,11 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     return abs(value_1 - value_2) <= delta
 
 
-class GetterDict(Mapping[str, Any]):
+class GetterDict:
     """
     Hack to make object's smell just enough like dicts for validate_model.
+
+    We can't inherit from Mapping[str, Any] because it upsets cython so we have to implement all methods ourselves.
     """
 
     __slots__ = ('_obj',)
@@ -118,6 +120,19 @@ class GetterDict(Mapping[str, Any]):
     def keys(self) -> Set[Any]:
         return set(list(self))
 
+    def as_dict(self) -> 'DictStrAny':
+        """
+        This is required to maintain order since ``dict(self)`` uses ``self.keys()`` which does not maintain order.
+        """
+        return dict(self.items())
+
+    def values(self) -> List[Any]:
+        return [self[k] for k in self]
+
+    def items(self) -> Iterator[Tuple[str, Any]]:
+        for k in self:
+            yield k, self.get(k)
+
     def __iter__(self) -> Iterator[str]:
         for name in dir(self._obj):
             if not name.startswith('_'):
@@ -126,11 +141,11 @@ class GetterDict(Mapping[str, Any]):
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
-    def as_dict(self) -> 'DictStrAny':
-        """
-        This is required to maintain order since ``dict(self)`` uses ``self.keys()`` which does not maintain order.
-        """
-        return {k: self.get(k) for k in self}
+    def __contains__(self, item: Any) -> bool:
+        return item in self.keys()
+
+    def __eq__(self, other: Any) -> bool:
+        return dict(self) == dict(other.items())  # type: ignore
 
     def __repr__(self) -> str:
         return f'<GetterDict({display_as_type(self._obj)}) {self.as_dict()}>'
