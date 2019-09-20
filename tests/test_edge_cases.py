@@ -18,6 +18,7 @@ from pydantic import (
     validate_model,
     validator,
 )
+from pydantic.fields import Schema
 
 
 def test_str_bytes():
@@ -1006,3 +1007,11 @@ def test_not_optional_subfields():
     assert Model().a is None
     assert Model(a=None).a is None
     assert Model(a=12).a == 12
+
+
+def test_scheme_deprecated():
+
+    with pytest.warns(DeprecationWarning, match='`Schema` is deprecated, use `Field` instead'):
+
+        class Model(BaseModel):
+            foo: int = Schema(4)

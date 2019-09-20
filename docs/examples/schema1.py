@@ -15,7 +15,6 @@ class MainModel(BaseModel):
     """
     This is the description of the main model
     """
-
     foo_bar: FooBar = Field(...)
     gender: Gender = Field(None, alias='Gender')
     snap: int = Field(42, title='The Snap', description='this is the value of snap', gt=30, lt=50)
