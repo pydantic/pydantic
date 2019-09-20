@@ -344,3 +344,21 @@ def test_validate_assignment_error():
         str(exc_info.value)
         == '1 validation error for Model\nx\n  value is not a valid integer (type=type_error.integer)'
     )
+
+
+def test_submodel_override_validation_error():
+    class SubmodelA(BaseModel):
+        x: str
+
+    class SubmodelB(SubmodelA):
+        x: int
+
+    class Model(BaseModel):
+        submodel: SubmodelB
+
+    submodel = SubmodelA(x='a')
+    with pytest.raises(ValidationError) as exc_info:
+        Model(submodel=submodel)
+    assert exc_info.value.errors() == [
+        {'loc': ('submodel', 'x'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
