@@ -975,11 +975,12 @@ Options:
 :json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
     details.
 :orm_mode: allows usage of :ref:`ORM mode <orm_mode>`
+:getter_dict: custom class (should inherit from ``GetterDict``) to use when decomposing ORM classes for validation,
+  use with ``orm_mode``
 :alias_generator: callable that takes field name and returns alias for it
 :keep_untouched: tuple of types (e. g. descriptors) that won't change during model creation and won't be
   included in the model schemas.
 :schema_extra: takes a ``dict`` to extend/update the generated JSON Schema
-:getter_dict: custom class (should inherit from ``GetterDict``) to use when decomposing ORM classes for validation
 
 .. warning::
 

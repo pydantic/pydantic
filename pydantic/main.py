@@ -65,10 +65,10 @@ class BaseConfig:
     arbitrary_types_allowed = False
     json_encoders: Dict[AnyType, AnyCallable] = {}
     orm_mode: bool = False
+    getter_dict: Type[GetterDict] = GetterDict
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
     schema_extra: Dict[str, Any] = {}
-    getter_dict: Type[GetterDict] = GetterDict
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
