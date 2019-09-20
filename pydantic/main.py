@@ -68,6 +68,7 @@ class BaseConfig:
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
     schema_extra: Dict[str, Any] = {}
+    getter_dict: Type[GetterDict] = GetterDict
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
@@ -471,7 +472,7 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
-        return GetterDict(obj)
+        return cls.__config__.getter_dict(obj)
 
     @classmethod
     @no_type_check
@@ -747,7 +748,10 @@ def validate_model(  # noqa: C901 (ignore complexity)
             values[name] = v_
 
     if check_extra:
-        extra = input_data.keys() - names_used
+        if isinstance(input_data, GetterDict):
+            extra = input_data.extra_keys() - names_used
+        else:
+            extra = input_data.keys() - names_used
         if extra:
             fields_set |= extra
             if config.extra is Extra.allow:

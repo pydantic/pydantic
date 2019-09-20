@@ -1,8 +1,8 @@
 import inspect
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Type, Union, no_type_check
+from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Optional, Set, Tuple, Type, Union, no_type_check
 
-from .typing import AnyType
+from .typing import AnyType, display_as_type
 
 try:
     from typing_extensions import Literal
@@ -12,7 +12,7 @@ except ImportError:
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
-    from .typing import SetIntStr, DictIntStrAny, IntStr  # noqa: F401
+    from .typing import SetIntStr, DictIntStrAny, DictStrAny, IntStr  # noqa: F401
 
 
 def import_string(dotted_path: str) -> Any:
@@ -90,7 +90,7 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     return abs(value_1 - value_2) <= delta
 
 
-class GetterDict:
+class GetterDict(Mapping[str, Any]):
     """
     Hack to make object's smell just enough like dicts for validate_model.
     """
@@ -100,14 +100,40 @@ class GetterDict:
     def __init__(self, obj: Any):
         self._obj = obj
 
-    def get(self, item: Any, default: Any) -> Any:
-        return getattr(self._obj, item, default)
+    def __getitem__(self, key: str) -> Any:
+        try:
+            return getattr(self._obj, key)
+        except AttributeError as e:
+            raise KeyError(key) from e
 
-    def keys(self) -> Set[Any]:
+    def get(self, key: Any, default: Any = None) -> Any:
+        return getattr(self._obj, key, default)
+
+    def extra_keys(self) -> Set[Any]:
         """
         We don't want to get any other attributes of obj if the model didn't explicitly ask for them
         """
         return set()
+
+    def keys(self) -> Set[Any]:
+        return set(list(self))
+
+    def __iter__(self) -> Iterator[str]:
+        for name in dir(self._obj):
+            if not name.startswith('_'):
+                yield name
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
+
+    def as_dict(self) -> 'DictStrAny':
+        """
+        This is required to maintain order since ``dict(self)`` uses ``self.keys()`` which does not maintain order.
+        """
+        return {k: self.get(k) for k in self}
+
+    def __repr__(self) -> str:
+        return f'<GetterDict({display_as_type(self._obj)}) {self.as_dict()}>'
 
 
 class ValueItems:

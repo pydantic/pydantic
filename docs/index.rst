@@ -257,6 +257,8 @@ to set a dynamic default value.
 You'll often want to use this together with ``pre`` since otherwise with ``always=True``
 *pydantic* would try to validate the default ``None`` which would cause an error.
 
+.. _root_validators:
+
 Root Validators
 ~~~~~~~~~~~~~~~
 
@@ -390,6 +392,14 @@ Here a vanilla class is used to demonstrate the principle, but any ORM could be 
 .. literalinclude:: examples/orm_mode_recursive.py
 
 (This script is complete, it should run "as is")
+
+Arbitrary classes are processed by *pydantic* using the ``GetterDict``
+(see `utils.py <https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py>`__) class which attempts to
+provide a "dictionary-like" interface to any class. You can customise how this works by setting your own
+sub-class of ``GetterDict`` in ``Config.getter_dict`` (see :ref:`config <config>`).
+
+You can also customise class validation using :ref:`root_validators <root_validators>` with ``pre=True``, in this case
+your validator function will be passed a ``GetterDict`` instance which you may copy and modify.
 
 .. _schema:
 
@@ -969,6 +979,7 @@ Options:
 :keep_untouched: tuple of types (e. g. descriptors) that won't change during model creation and won't be
   included in the model schemas.
 :schema_extra: takes a ``dict`` to extend/update the generated JSON Schema
+:getter_dict: custom class (should inherit from ``GetterDict``) to use when decomposing ORM classes for validation
 
 .. warning::
 

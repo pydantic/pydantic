@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError
+from pydantic import BaseModel, ConfigError, ValidationError, root_validator
 from pydantic.utils import GetterDict
 
 
@@ -26,7 +26,7 @@ def test_getdict():
 
     t = TestCls()
     gd = GetterDict(t)
-    assert gd.keys() == set()
+    assert gd.keys() == {'a', 'c', 'd'}
     assert gd.get('a', None) == 1
     assert gd.get('b', None) is None
     assert gd.get('b', 1234) == 1234
@@ -34,6 +34,10 @@ def test_getdict():
     assert gd.get('d', None) == 4
     assert gd.get('e', None) == 5
     assert gd.get('f', 'missing') == 'missing'
+    assert list(gd) == ['a', 'c', 'd']
+    assert gd.as_dict() == {'a': 1, 'd': 4, 'c': 3}
+    assert len(gd) == 3
+    assert str(gd) == "<GetterDict(TestCls) {'a': 1, 'c': 3, 'd': 4}>"
 
 
 def test_orm_mode():
@@ -166,3 +170,51 @@ def test_extra_forbid():
 
     model = Model.from_orm(TestCls())
     assert model.dict() == {'x': 1}
+
+
+def test_root_validator():
+    validator_value = None
+
+    class TestCls:
+        x = 1
+        y = 2
+
+    class Model(BaseModel):
+        x: int
+        y: int
+        z: int
+
+        @root_validator(pre=True)
+        def change_input_data(cls, value):
+            nonlocal validator_value
+            validator_value = value
+            return {**value, 'z': value['x'] + value['y']}
+
+        class Config:
+            orm_mode = True
+
+    model = Model.from_orm(TestCls())
+    assert model.dict() == {'x': 1, 'y': 2, 'z': 3}
+    assert isinstance(validator_value, GetterDict)
+    assert validator_value == {'x': 1, 'y': 2}
+
+
+def test_custom_getter_dict():
+    class TestCls:
+        x = 1
+        y = 2
+
+    def custom_getter_dict(obj):
+        assert isinstance(obj, TestCls)
+        return {'x': 42, 'y': 24}
+
+    class Model(BaseModel):
+        x: int
+        y: int
+
+        class Config:
+            orm_mode = True
+            getter_dict = custom_getter_dict
+
+    model = Model.from_orm(TestCls())
+    assert model.dict() == {'x': 42, 'y': 24}
