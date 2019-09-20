@@ -615,7 +615,7 @@ class ModelField:
         )
 
     def __repr__(self) -> str:
-        return f'<Field({self})>'
+        return f'<ModelField({self})>'
 
     def __str__(self) -> str:
         parts = [self.name, 'type=' + display_as_type(self.type_)]

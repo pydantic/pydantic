@@ -17,7 +17,13 @@ class MainModel(BaseModel):
     """
     foo_bar: FooBar = Field(...)
     gender: Gender = Field(None, alias='Gender')
-    snap: int = Field(42, title='The Snap', description='this is the value of snap', gt=30, lt=50)
+    snap: int = Field(
+        42,
+        title='The Snap',
+        description='this is the value of snap',
+        gt=30,
+        lt=50,
+    )
 
     class Config:
         title = 'Main'

@@ -27,7 +27,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert '<Field(v type=typing.Union[str, bytes] required)>' == repr(m.fields['v'])
+    assert '<ModelField(v type=typing.Union[str, bytes] required)>' == repr(m.fields['v'])
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -324,7 +324,7 @@ def test_infer_alias():
             fields = {'a': '_a'}
 
     assert Model(_a='different').a == 'different'
-    assert repr(Model.__fields__['a']) == "<Field(a type=str default='foobar' alias=_a)>"
+    assert repr(Model.__fields__['a']) == "<ModelField(a type=str default='foobar' alias=_a)>"
 
 
 def test_alias_error():
