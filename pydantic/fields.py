@@ -49,8 +49,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class FieldInfo:
     """
-    Used to provide extra information about a field in a model schema. The parameters will be
-    converted to validations and will add annotations to the generated JSON Schema.
+    Captures extra information about a field.
     """
 
     __slots__ = (
@@ -115,9 +114,8 @@ def Field(
     **extra: Any,
 ) -> Any:
     """
-    Used to provide extra information about a field in a model schema. The parameters will be
-    converted to validations and will add annotations to the generated JSON Schema. Some arguments
-    apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``
+    Used to provide extra information about a field, either for the model schema or complex valiation. Some arguments
+    apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``.
 
     :param default: since the Schema is replacing the field’s default, its first argument is used
       to set the default, use ellipsis (``...``) to indicate the field is required
@@ -246,7 +244,7 @@ class ModelField:
         config: Type['BaseConfig'],
     ) -> 'ModelField':
         field_info_from_config = config.get_field_info(name)
-        from .schema import get_annotation_from_field_info  # noqa: F811
+        from .schema import get_annotation_from_field_info
 
         if isinstance(value, FieldInfo):
             field_info = value
@@ -389,6 +387,14 @@ class ModelField:
         # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
         self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
+    def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'ModelField':
+        return self.__class__(
+            type_=type_,
+            name=name,
+            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if v.each_item},
+            model_config=self.model_config,
+        )
+
     def _populate_validators(self) -> None:
         class_validators_ = self.class_validators.values()
         if not self.sub_fields:
@@ -415,14 +421,6 @@ class ModelField:
 
         self.pre_validators = self.pre_validators or None
         self.post_validators = self.post_validators or None
-
-    def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'ModelField':
-        return self.__class__(
-            type_=type_,
-            name=name,
-            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if v.each_item},
-            model_config=self.model_config,
-        )
 
     @staticmethod
     def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':

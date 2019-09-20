@@ -11,7 +11,7 @@ from uuid import UUID
 
 from pydantic.color import Color
 
-from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, ModelField
+from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, FieldInfo, ModelField
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from .types import (
@@ -41,26 +41,6 @@ from .utils import lenient_issubclass
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
-    from .fields import FieldInfo  # noqa: F401
-
-
-__all__ = [
-    'schema',
-    'model_schema',
-    'field_schema',
-    'get_model_name_map',
-    'get_flat_models_from_model',
-    'get_flat_models_from_field',
-    'get_flat_models_from_fields',
-    'get_flat_models_from_models',
-    'get_long_model_name',
-    'field_type_schema',
-    'model_process_schema',
-    'model_type_schema',
-    'field_singleton_sub_fields_schema',
-    'field_singleton_schema',
-    'get_annotation_from_field_info',
-]
 
 default_prefix = '#/definitions/'
 
@@ -164,7 +144,7 @@ def field_schema(
     """
     ref_prefix = ref_prefix or default_prefix
     schema_overrides = False
-    field_info = cast('FieldInfo', field.field_info)
+    field_info = cast(FieldInfo, field.field_info)
     s = dict(title=field_info.title or field.alias.title().replace('_', ' '))
     if field_info.title:
         schema_overrides = True
@@ -236,7 +216,7 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
                 f_schema[keyword] = attr
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
-    field_info = cast('FieldInfo', field.field_info)
+    field_info = cast(FieldInfo, field.field_info)
     if field_info.extra:
         f_schema.update(field_info.extra)
     return f_schema
@@ -722,7 +702,7 @@ def encode_default(dft: Any) -> Any:
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
 
 
-def get_annotation_from_field_info(annotation: Any, field_info: 'FieldInfo') -> Type[Any]:
+def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Type[Any]:
     """
     Get an annotation with validation implemented for numbers and strings based on the field_info.
 
