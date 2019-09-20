@@ -91,19 +91,20 @@ To test if *pydantic* is compiled run::
     import pydantic
     print('compiled:', pydantic.compiled)
 
-If you want *pydantic* to parse json faster you can add `ujson <https://pypi.python.org/pypi/ujson>`_
-as an optional dependency. Similarly *pydantic's* email validation relies on
-`email-validator <https://github.com/JoshData/python-email-validator>`_ ::
+If you require email validation you can add `email-validator <https://github.com/JoshData/python-email-validator>`_
+as an optional dependency. Similarly, use of ``Literal`` relies on
+`typing-extensions <https://pypi.org/project/typing-extensions/>`_::
 
-    pip install pydantic[ujson]
-    # or
     pip install pydantic[email]
+    # or
+    pip install pydantic[typing_extensions]
     # or just
-    pip install pydantic[ujson,email]
+    pip install pydantic[email,typing_extensions]
 
 Of course you can also install these requirements manually with ``pip install ...``.
 
-Pydantic is also available on `conda <https://www.anaconda.com>`_ under the `conda-forge <https://conda-forge.org>`_ channel::
+Pydantic is also available on `conda <https://www.anaconda.com>`_ under the `conda-forge <https://conda-forge.org>`_
+channel::
 
     conda install pydantic -c conda-forge
 

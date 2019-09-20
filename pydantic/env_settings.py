@@ -1,4 +1,3 @@
-import json
 import os
 from typing import Any, Dict, Optional, cast
 
@@ -47,7 +46,7 @@ class BaseSettings(BaseModel):
             if env_val:
                 if field.is_complex():
                     try:
-                        env_val = json.loads(env_val)
+                        env_val = self.__config__.json_loads(env_val)  # type: ignore
                     except ValueError as e:
                         raise SettingsError(f'error parsing JSON for "{env_name}"') from e
                 d[field.alias] = env_val
