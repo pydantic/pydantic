@@ -661,8 +661,8 @@ def test_alias_camel_case():
 
         class Config(BaseConfig):
             @classmethod
-            def get_field_schema(cls, name):
-                field_config = super().get_field_schema(name) or {}
+            def get_field_info(cls, name):
+                field_config = super().get_field_info(name) or {}
                 if 'alias' not in field_config:
                     field_config['alias'] = re.sub(r'(?:^|_)([a-z])', lambda m: m.group(1).upper(), name)
                 return field_config
@@ -673,12 +673,12 @@ def test_alias_camel_case():
     assert v == {'one_thing': 123, 'another_thing': 321}
 
 
-def test_get_field_schema_inherit():
+def test_get_field_info_inherit():
     class ModelOne(BaseModel):
         class Config(BaseConfig):
             @classmethod
-            def get_field_schema(cls, name):
-                field_config = super().get_field_schema(name) or {}
+            def get_field_info(cls, name):
+                field_config = super().get_field_info(name) or {}
                 if 'alias' not in field_config:
                     field_config['alias'] = re.sub(r'_([a-z])', lambda m: m.group(1).upper(), name)
                 return field_config

@@ -3,7 +3,7 @@ from typing import List, Union
 
 import pytest
 
-from pydantic import BaseModel, Protocol, Schema, ValidationError
+from pydantic import BaseModel, Field, Protocol, ValidationError
 
 
 class Model(BaseModel):
@@ -120,11 +120,11 @@ def test_file_pickle_no_ext(tmpdir):
 
 def test_const_differentiates_union():
     class SubModelA(BaseModel):
-        key: str = Schema('A', const=True)
+        key: str = Field('A', const=True)
         foo: int
 
     class SubModelB(BaseModel):
-        key: str = Schema('B', const=True)
+        key: str = Field('B', const=True)
         foo: int
 
     class Model(BaseModel):

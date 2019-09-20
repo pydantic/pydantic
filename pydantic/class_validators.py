@@ -12,10 +12,10 @@ from .utils import in_ipython
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseConfig
-    from .fields import Field
+    from .fields import ModelField
     from .types import ModelOrDc
 
-    ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
+    ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], ModelField, Type[BaseConfig]], Any]
 
 
 class Validator:

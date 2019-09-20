@@ -11,7 +11,7 @@ from uuid import UUID
 
 from pydantic.color import Color
 
-from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, Field
+from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, ModelField
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from .types import (
@@ -41,10 +41,10 @@ from .utils import lenient_issubclass
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
+    from .fields import FieldInfo  # noqa: F401
 
 
 __all__ = [
-    'Schema',
     'schema',
     'model_schema',
     'field_schema',
@@ -59,102 +59,10 @@ __all__ = [
     'model_type_schema',
     'field_singleton_sub_fields_schema',
     'field_singleton_schema',
-    'get_annotation_from_schema',
+    'get_annotation_from_field_info',
 ]
 
 default_prefix = '#/definitions/'
-
-
-class Schema:
-    """
-    Used to provide extra information about a field in a model schema. The parameters will be
-    converted to validations and will add annotations to the generated JSON Schema. Some arguments
-    apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``
-
-    :param default: since the Schema is replacing the field’s default, its first argument is used
-      to set the default, use ellipsis (``...``) to indicate the field is required
-    :param alias: the public name of the field
-    :param title: can be any string, used in the schema
-    :param description: can be any string, used in the schema
-    :param const: this field is required and *must* take it's default value
-    :param gt: only applies to numbers, requires the field to be "greater than". The schema
-      will have an ``exclusiveMinimum`` validation keyword
-    :param ge: only applies to numbers, requires the field to be "greater than or equal to". The
-      schema will have a ``minimum`` validation keyword
-    :param lt: only applies to numbers, requires the field to be "less than". The schema
-      will have an ``exclusiveMaximum`` validation keyword
-    :param le: only applies to numbers, requires the field to be "less than or equal to". The
-      schema will have a ``maximum`` validation keyword
-    :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
-      schema will have a ``multipleOf`` validation keyword
-    :param min_length: only applies to strings, requires the field to have a minimum length. The
-      schema will have a ``maximum`` validation keyword
-    :param max_length: only applies to strings, requires the field to have a maximum length. The
-      schema will have a ``maxLength`` validation keyword
-    :param regex: only applies to strings, requires the field match agains a regular expression
-      pattern string. The schema will have a ``pattern`` validation keyword
-    :param **extra: any additional keyword arguments will be added as is to the schema
-    """
-
-    __slots__ = (
-        'default',
-        'alias',
-        'title',
-        'description',
-        'const',
-        'gt',
-        'ge',
-        'lt',
-        'le',
-        'multiple_of',
-        'min_items',
-        'max_items',
-        'min_length',
-        'max_length',
-        'regex',
-        'extra',
-    )
-
-    def __init__(
-        self,
-        default: Any,
-        *,
-        alias: str = None,
-        title: str = None,
-        description: str = None,
-        const: bool = None,
-        gt: float = None,
-        ge: float = None,
-        lt: float = None,
-        le: float = None,
-        multiple_of: float = None,
-        min_items: int = None,
-        max_items: int = None,
-        min_length: int = None,
-        max_length: int = None,
-        regex: str = None,
-        **extra: Any,
-    ) -> None:
-        self.default = default
-        self.alias = alias
-        self.title = title
-        self.description = description
-        self.const = const
-        self.extra = extra
-        self.gt = gt
-        self.ge = ge
-        self.lt = lt
-        self.le = le
-        self.multiple_of = multiple_of
-        self.min_items = min_items
-        self.max_items = max_items
-        self.min_length = min_length
-        self.max_length = max_length
-        self.regex = regex
-
-    def __repr__(self) -> str:
-        attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return 'Schema({})'.format(', '.join(f'{a}: {v!r}' for a, v in attrs if v is not None))
 
 
 def schema(
@@ -233,7 +141,7 @@ def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Op
 
 
 def field_schema(
-    field: Field,
+    field: ModelField,
     *,
     by_alias: bool = True,
     model_name_map: Dict[Type['BaseModel'], str],
@@ -246,7 +154,7 @@ def field_schema(
     is a model and has sub-models, and those sub-models don't have overrides (as ``title``, ``default``, etc), they
     will be included in the definitions and referenced in the schema instead of included recursively.
 
-    :param field: a Pydantic ``Field``
+    :param field: a Pydantic ``ModelField``
     :param by_alias: use the defined alias (if any) in the returned schema
     :param model_name_map: used to generate the JSON Schema references to other models included in the definitions
     :param ref_prefix: the JSON Pointer prefix to use for references to other schemas, if None, the default of
@@ -256,16 +164,20 @@ def field_schema(
     """
     ref_prefix = ref_prefix or default_prefix
     schema_overrides = False
-    schema = cast('Schema', field.schema)
-    s = dict(title=schema.title or field.alias.title().replace('_', ' '))
-    if schema.title:
+    field_info = cast('FieldInfo', field.field_info)
+    s = dict(title=field_info.title or field.alias.title().replace('_', ' '))
+    if field_info.title:
         schema_overrides = True
 
-    if schema.description:
-        s['description'] = schema.description
+    if field_info.description:
+        s['description'] = field_info.description
         schema_overrides = True
 
-    if not field.required and not (field.schema is not None and field.schema.const) and field.default is not None:
+    if (
+        not field.required
+        and not (field.field_info is not None and field.field_info.const)
+        and field.default is not None
+    ):
         s['default'] = encode_default(field.default)
         schema_overrides = True
 
@@ -306,27 +218,27 @@ _numeric_types_attrs: Tuple[Tuple[str, Union[type, Tuple[type, ...]], str], ...]
 )
 
 
-def get_field_schema_validations(field: Field) -> Dict[str, Any]:
+def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
     """
     Get the JSON Schema validation keywords for a ``field`` with an annotation of
-    a Pydantic ``Schema`` with validation arguments.
+    a Pydantic ``FieldInfo`` with validation arguments.
     """
     f_schema: Dict[str, Any] = {}
     if lenient_issubclass(field.type_, (str, bytes)):
         for attr_name, t, keyword in _str_types_attrs:
-            attr = getattr(field.schema, attr_name, None)
+            attr = getattr(field.field_info, attr_name, None)
             if isinstance(attr, t):
                 f_schema[keyword] = attr
     if lenient_issubclass(field.type_, numeric_types) and not issubclass(field.type_, bool):
         for attr_name, t, keyword in _numeric_types_attrs:
-            attr = getattr(field.schema, attr_name, None)
+            attr = getattr(field.field_info, attr_name, None)
             if isinstance(attr, t):
                 f_schema[keyword] = attr
-    if field.schema is not None and field.schema.const:
+    if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
-    schema = cast('Schema', field.schema)
-    if schema.extra:
-        f_schema.update(schema.extra)
+    field_info = cast('FieldInfo', field.field_info)
+    if field_info.extra:
+        f_schema.update(field_info.extra)
     return f_schema
 
 
@@ -375,20 +287,20 @@ def get_flat_models_from_model(
     flat_models: Set[Type['BaseModel']] = set()
     flat_models.add(model)
     known_models |= flat_models
-    fields = cast(Sequence[Field], model.__fields__.values())
+    fields = cast(Sequence[ModelField], model.__fields__.values())
     flat_models |= get_flat_models_from_fields(fields, known_models=known_models)
     return flat_models
 
 
-def get_flat_models_from_field(field: Field, known_models: Set[Type['BaseModel']]) -> Set[Type['BaseModel']]:
+def get_flat_models_from_field(field: ModelField, known_models: Set[Type['BaseModel']]) -> Set[Type['BaseModel']]:
     """
-    Take a single Pydantic ``Field`` (from a model) that could have been declared as a sublcass of BaseModel
+    Take a single Pydantic ``ModelField`` (from a model) that could have been declared as a sublcass of BaseModel
     (so, it could be a submodel), and generate a set with its model and all the sub-models in the tree.
     I.e. if you pass a field that was declared to be of type ``Foo`` (subclass of BaseModel) as ``field``, and that
     model ``Foo`` has a field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of
     type ``Baz`` (also subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
 
-    :param field: a Pydantic ``Field``
+    :param field: a Pydantic ``ModelField``
     :param known_models: used to solve circular references
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
@@ -407,16 +319,16 @@ def get_flat_models_from_field(field: Field, known_models: Set[Type['BaseModel']
 
 
 def get_flat_models_from_fields(
-    fields: Sequence[Field], known_models: Set[Type['BaseModel']]
+    fields: Sequence[ModelField], known_models: Set[Type['BaseModel']]
 ) -> Set[Type['BaseModel']]:
     """
-    Take a list of Pydantic  ``Field``s (from a model) that could have been declared as sublcasses of ``BaseModel``
+    Take a list of Pydantic  ``ModelField``s (from a model) that could have been declared as sublcasses of ``BaseModel``
     (so, any of them could be a submodel), and generate a set with their models and all the sub-models in the tree.
     I.e. if you pass a the fields of a model ``Foo`` (subclass of ``BaseModel``) as ``fields``, and on of them has a
     field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of type ``Baz`` (also
     subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
 
-    :param fields: a list of Pydantic ``Field``s
+    :param fields: a list of Pydantic ``ModelField``s
     :param known_models: used to solve circular references
     :return: a set with any model declared in the fields, and all their sub-models
     """
@@ -443,7 +355,7 @@ def get_long_model_name(model: Type['BaseModel']) -> str:
 
 
 def field_type_schema(
-    field: Field,
+    field: ModelField,
     *,
     by_alias: bool,
     model_name_map: Dict[Type['BaseModel'], str],
@@ -476,7 +388,7 @@ def field_type_schema(
         return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions, nested_models
     elif field.shape == SHAPE_MAPPING:
         dict_schema: Dict[str, Any] = {'type': 'object'}
-        key_field = cast(Field, field.key_field)
+        key_field = cast(ModelField, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
@@ -493,7 +405,7 @@ def field_type_schema(
         return dict_schema, definitions, nested_models
     elif field.shape == SHAPE_TUPLE:
         sub_schema = []
-        sub_fields = cast(List[Field], field.sub_fields)
+        sub_fields = cast(List[ModelField], field.sub_fields)
         for sf in sub_fields:
             sf_schema, sf_definitions, sf_nested_models = field_type_schema(
                 sf, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
@@ -599,7 +511,7 @@ def model_type_schema(
 
 
 def field_singleton_sub_fields_schema(
-    sub_fields: Sequence[Field],
+    sub_fields: Sequence[ModelField],
     *,
     by_alias: bool,
     model_name_map: Dict[Type['BaseModel'], str],
@@ -610,7 +522,7 @@ def field_singleton_sub_fields_schema(
     """
     This function is indirectly used by ``field_schema()``, you probably should be using that function.
 
-    Take a list of Pydantic ``Field`` from the declaration of a type with parameters, and generate their
+    Take a list of Pydantic ``ModelField`` from the declaration of a type with parameters, and generate their
     schema. I.e., fields used as "type parameters", like ``str`` and ``int`` in ``Tuple[str, int]``.
     """
     ref_prefix = ref_prefix or default_prefix
@@ -705,7 +617,7 @@ field_class_to_schema_enum_disabled = (
 
 
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
-    field: Field,
+    field: ModelField,
     *,
     by_alias: bool,
     model_name_map: Dict[Type['BaseModel'], str],
@@ -716,7 +628,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     """
     This function is indirectly used by ``field_schema()``, you should probably be using that function.
 
-    Take a single Pydantic ``Field``, and return its schema and any additional definitions from sub-models.
+    Take a single Pydantic ``ModelField``, and return its schema and any additional definitions from sub-models.
     """
     from .main import BaseModel  # noqa: F811
 
@@ -740,7 +652,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}
-    if field.schema is not None and field.schema.const:
+    if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
     field_type = field.type_
     if is_new_type(field_type):
@@ -810,12 +722,12 @@ def encode_default(dft: Any) -> Any:
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
 
 
-def get_annotation_from_schema(annotation: Any, schema: Schema) -> Type[Any]:
+def get_annotation_from_field_info(annotation: Any, field_info: 'FieldInfo') -> Type[Any]:
     """
-    Get an annotation with validation implemented for numbers and strings based on the schema.
+    Get an annotation with validation implemented for numbers and strings based on the field_info.
 
     :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
-    :param schema: an instance of Schema, possibly with declarations for validations and JSON Schema
+    :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
     if isinstance(annotation, type):
@@ -837,7 +749,7 @@ def get_annotation_from_schema(annotation: Any, schema: Schema) -> Type[Any]:
         if attrs:
             kwargs = {
                 attr_name: attr
-                for attr_name, attr in ((attr_name, getattr(schema, attr_name)) for attr_name in attrs)
+                for attr_name, attr in ((attr_name, getattr(field_info, attr_name)) for attr_name in attrs)
                 if attr is not None
             }
             if kwargs:

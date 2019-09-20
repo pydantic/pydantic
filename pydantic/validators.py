@@ -31,7 +31,7 @@ from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, get_class
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .fields import Field
+    from .fields import ModelField
     from .main import BaseConfig
     from .types import ConstrainedDecimal, ConstrainedFloat, ConstrainedInt
 
@@ -128,7 +128,7 @@ def strict_float_validator(v: Any) -> float:
     raise errors.FloatError()
 
 
-def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
+def number_multiple_validator(v: 'Number', field: 'ModelField') -> 'Number':
     field_type: ConstrainedNumber = field.type_  # type: ignore
     if field_type.multiple_of is not None:
         mod = float(v) / float(field_type.multiple_of) % 1
@@ -137,7 +137,7 @@ def number_multiple_validator(v: 'Number', field: 'Field') -> 'Number':
     return v
 
 
-def number_size_validator(v: 'Number', field: 'Field') -> 'Number':
+def number_size_validator(v: 'Number', field: 'ModelField') -> 'Number':
     field_type: ConstrainedNumber = field.type_  # type: ignore
     if field_type.gt is not None and not v > field_type.gt:
         raise errors.NumberNotGtError(limit_value=field_type.gt)
@@ -152,7 +152,7 @@ def number_size_validator(v: 'Number', field: 'Field') -> 'Number':
     return v
 
 
-def constant_validator(v: 'Any', field: 'Field') -> 'Any':
+def constant_validator(v: 'Any', field: 'ModelField') -> 'Any':
     """Validate ``const`` fields.
 
     The value provided for a ``const`` field must be equal to the default value
@@ -239,7 +239,7 @@ def frozenset_validator(v: Any) -> FrozenSet[Any]:
         raise errors.FrozenSetError()
 
 
-def enum_validator(v: Any, field: 'Field', config: 'BaseConfig') -> Enum:
+def enum_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
     try:
         enum_v = field.type_(v)
     except ValueError:
@@ -248,7 +248,7 @@ def enum_validator(v: Any, field: 'Field', config: 'BaseConfig') -> Enum:
     return enum_v.value if config.use_enum_values else enum_v
 
 
-def uuid_validator(v: Any, field: 'Field') -> UUID:
+def uuid_validator(v: Any, field: 'ModelField') -> UUID:
     try:
         if isinstance(v, str):
             v = UUID(v)
@@ -402,7 +402,7 @@ def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     return literal_validator
 
 
-def constr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+def constr_length_validator(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 
     min_length = field.type_.min_length or config.min_anystr_length  # type: ignore
@@ -416,7 +416,7 @@ def constr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig')
     return v
 
 
-def constr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
+def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
     strip_whitespace = field.type_.strip_whitespace or config.anystr_strip_whitespace  # type: ignore
     if strip_whitespace:
         v = v.strip()

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, Ty
 from .class_validators import ValidatorGroup, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import SHAPE_MAPPING, Field
+from .fields import SHAPE_MAPPING, ModelField
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
@@ -70,16 +70,16 @@ class BaseConfig:
     schema_extra: Dict[str, Any] = {}
 
     @classmethod
-    def get_field_schema(cls, name: str) -> Dict[str, str]:
-        field_config = cls.fields.get(name) or {}
-        if isinstance(field_config, str):
-            field_config = {'alias': field_config}
-        elif cls.alias_generator and 'alias' not in field_config:
+    def get_field_info(cls, name: str) -> Dict[str, str]:
+        field_info = cls.fields.get(name) or {}
+        if isinstance(field_info, str):
+            field_info = {'alias': field_info}
+        elif cls.alias_generator and 'alias' not in field_info:
             alias = cls.alias_generator(name)
             if not isinstance(alias, str):
                 raise TypeError(f'Config.alias_generator must return str, not {type(alias)}')
-            field_config['alias'] = alias
-        return field_config
+            field_info['alias'] = alias
+        return field_info
 
 
 def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'ConfigType':
@@ -109,7 +109,7 @@ def is_valid_field(name: str) -> bool:
     return '__root__' == name
 
 
-def validate_custom_root_type(fields: Dict[str, Field]) -> None:
+def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
         raise ValueError('__root__ cannot be mixed with other fields')
     if fields['__root__'].shape == SHAPE_MAPPING:
@@ -122,7 +122,7 @@ UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 class MetaModel(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace):
-        fields: Dict[str, Field] = {}
+        fields: Dict[str, ModelField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
         for base in reversed(bases):
@@ -158,7 +158,7 @@ class MetaModel(ABCMeta):
                     value = namespace.get(ann_name, ...)
                     if isinstance(value, untouched_types) and ann_type != PyObject:
                         continue
-                    fields[ann_name] = Field.infer(
+                    fields[ann_name] = ModelField.infer(
                         name=ann_name,
                         value=value,
                         annotation=ann_type,
@@ -174,7 +174,7 @@ class MetaModel(ABCMeta):
                     and var_name not in class_vars
                 ):
                     validate_field_name(bases, var_name)
-                    inferred = Field.infer(
+                    inferred = ModelField.infer(
                         name=var_name,
                         value=value,
                         annotation=annotations.get(var_name),
@@ -211,7 +211,7 @@ class MetaModel(ABCMeta):
 class BaseModel(metaclass=MetaModel):
     if TYPE_CHECKING:  # pragma: no cover
         # populated by the metaclass, defined here to help IDEs only
-        __fields__: Dict[str, Field] = {}
+        __fields__: Dict[str, ModelField] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __config__: Type[BaseConfig] = BaseConfig
         __root__: Any = None
@@ -421,7 +421,7 @@ class BaseModel(metaclass=MetaModel):
         return m
 
     @property
-    def fields(self) -> Dict[str, Field]:
+    def fields(self) -> Dict[str, ModelField]:
         return self.__fields__
 
     @classmethod

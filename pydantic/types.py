@@ -79,7 +79,6 @@ OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .fields import Field
     from .dataclasses import DataclassType  # noqa: F401
     from .main import BaseModel, BaseConfig  # noqa: F401
     from .typing import CallableGenerator
@@ -123,7 +122,7 @@ class ConstrainedList(list):  # type: ignore
         yield cls.list_length_validator
 
     @classmethod
-    def list_length_validator(cls, v: 'List[T]', field: 'Field', config: 'BaseConfig') -> 'List[T]':
+    def list_length_validator(cls, v: 'List[T]') -> 'List[T]':
         v_len = len(v)
 
         if cls.min_items is not None and v_len < cls.min_items:

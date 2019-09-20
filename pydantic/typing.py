@@ -53,7 +53,7 @@ except ImportError:
 
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .fields import Field
+    from .fields import ModelField
 
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]
@@ -183,9 +183,9 @@ def is_classvar(ann_type: AnyType) -> bool:
     return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
 
 
-def update_field_forward_refs(field: 'Field', globalns: Any, localns: Any) -> None:
+def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) -> None:
     """
-    Try to update ForwardRefs on fields based on this Field, globalns and localns.
+    Try to update ForwardRefs on fields based on this ModelField, globalns and localns.
     """
     if type(field.type_) == ForwardRef:
         field.type_ = evaluate_forwardref(field.type_, globalns, localns or None)

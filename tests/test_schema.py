@@ -11,7 +11,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Extra, Schema, ValidationError, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, validator
 from pydantic.color import Color
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
@@ -142,8 +142,8 @@ def test_sub_model():
 
 def test_schema_class():
     class Model(BaseModel):
-        foo: int = Schema(4, title='Foo is Great')
-        bar: str = Schema(..., description='this description of bar')
+        foo: int = Field(4, title='Foo is Great')
+        bar: str = Field(..., description='this description of bar')
 
     with pytest.raises(ValidationError):
         Model()
@@ -163,14 +163,14 @@ def test_schema_class():
 
 
 def test_schema_repr():
-    s = Schema(4, title='Foo is Great')
-    assert repr(s) == "Schema(default: 4, title: 'Foo is Great', extra: {})"
-    assert str(s) == "Schema(default: 4, title: 'Foo is Great', extra: {})"
+    s = Field(4, title='Foo is Great')
+    assert repr(s) == "FieldInfo(default: 4, title: 'Foo is Great', extra: {})"
+    assert str(s) == "FieldInfo(default: 4, title: 'Foo is Great', extra: {})"
 
 
 def test_schema_class_by_alias():
     class Model(BaseModel):
-        foo: int = Schema(4, alias='foofoo')
+        foo: int = Field(4, alias='foofoo')
 
     assert list(Model.schema()['properties'].keys()) == ['foofoo']
     assert list(Model.schema(by_alias=False)['properties'].keys()) == ['foo']
@@ -187,7 +187,7 @@ def test_choices():
     class Model(BaseModel):
         foo: FooEnum
         bar: BarEnum
-        spam: SpamEnum = Schema(None)
+        spam: SpamEnum = Field(None)
 
     assert Model.schema() == {
         'type': 'object',
@@ -287,7 +287,7 @@ def test_set():
 
 def test_const_str():
     class Model(BaseModel):
-        a: str = Schema('some string', const=True)
+        a: str = Field('some string', const=True)
 
     assert Model.schema() == {
         'title': 'Model',
@@ -298,7 +298,7 @@ def test_const_str():
 
 def test_const_false():
     class Model(BaseModel):
-        a: str = Schema('some string', const=False)
+        a: str = Field('some string', const=False)
 
     assert Model.schema() == {
         'title': 'Model',
@@ -1115,7 +1115,7 @@ def test_dict_default():
 )
 def test_constraints_schema(kwargs, type_, expected_extra):
     class Foo(BaseModel):
-        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
     expected_schema = {
         'title': 'Foo',
@@ -1142,7 +1142,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
 )
 def test_not_constraints_schema(kwargs, type_, expected):
     class Foo(BaseModel):
-        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
     base_schema = {
         'title': 'Foo',
@@ -1190,7 +1190,7 @@ def test_not_constraints_schema(kwargs, type_, expected):
 )
 def test_constraints_schema_validation(kwargs, type_, value):
     class Foo(BaseModel):
-        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
     assert Foo(a=value)
 
@@ -1217,7 +1217,7 @@ def test_constraints_schema_validation(kwargs, type_, value):
 )
 def test_constraints_schema_validation_raises(kwargs, type_, value):
     class Foo(BaseModel):
-        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
     with pytest.raises(ValidationError):
         Foo(a=value)
@@ -1225,7 +1225,7 @@ def test_constraints_schema_validation_raises(kwargs, type_, value):
 
 def test_schema_kwargs():
     class Foo(BaseModel):
-        a: str = Schema('foo', examples=['bar'])
+        a: str = Field('foo', examples=['bar'])
 
     assert Foo.schema() == {
         'title': 'Foo',

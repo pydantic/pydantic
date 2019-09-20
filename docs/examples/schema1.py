@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel, Schema
+from pydantic import BaseModel, Field
 
 class FooBar(BaseModel):
     count: int
@@ -15,18 +15,10 @@ class MainModel(BaseModel):
     """
     This is the description of the main model
     """
-    foo_bar: FooBar = Schema(...)
-    gender: Gender = Schema(
-        None,
-        alias='Gender',
-    )
-    snap: int = Schema(
-        42,
-        title='The Snap',
-        description='this is the value of snap',
-        gt=30,
-        lt=50,
-    )
+
+    foo_bar: FooBar = Field(...)
+    gender: Gender = Field(None, alias='Gender')
+    snap: int = Field(42, title='The Snap', description='this is the value of snap', gt=30, lt=50)
 
     class Config:
         title = 'Main'

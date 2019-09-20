@@ -39,12 +39,127 @@ if TYPE_CHECKING:  # pragma: no cover
     from .class_validators import ValidatorCallable  # noqa: F401
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
-    from .schema import Schema  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
 
     ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
+
+
+class FieldInfo:
+    """
+    Used to provide extra information about a field in a model schema. The parameters will be
+    converted to validations and will add annotations to the generated JSON Schema.
+    """
+
+    __slots__ = (
+        'default',
+        'alias',
+        'title',
+        'description',
+        'const',
+        'gt',
+        'ge',
+        'lt',
+        'le',
+        'multiple_of',
+        'min_items',
+        'max_items',
+        'min_length',
+        'max_length',
+        'regex',
+        'extra',
+    )
+
+    def __init__(self, default: Any, **kwargs: Any) -> None:
+        self.default = default
+        self.alias = kwargs.pop('alias', None)
+        self.title = kwargs.pop('title', None)
+        self.description = kwargs.pop('description', None)
+        self.const = kwargs.pop('const', None)
+        self.gt = kwargs.pop('gt', None)
+        self.ge = kwargs.pop('ge', None)
+        self.lt = kwargs.pop('lt', None)
+        self.le = kwargs.pop('le', None)
+        self.multiple_of = kwargs.pop('multiple_of', None)
+        self.min_items = kwargs.pop('min_items', None)
+        self.max_items = kwargs.pop('max_items', None)
+        self.min_length = kwargs.pop('min_length', None)
+        self.max_length = kwargs.pop('max_length', None)
+        self.regex = kwargs.pop('regex', None)
+        self.extra = kwargs
+
+    def __repr__(self) -> str:
+        attrs = ((s, getattr(self, s)) for s in self.__slots__)
+        return 'FieldInfo({})'.format(', '.join(f'{a}: {v!r}' for a, v in attrs if v is not None))
+
+
+def Field(
+    default: Any,
+    *,
+    alias: str = None,
+    title: str = None,
+    description: str = None,
+    const: bool = None,
+    gt: float = None,
+    ge: float = None,
+    lt: float = None,
+    le: float = None,
+    multiple_of: float = None,
+    min_items: int = None,
+    max_items: int = None,
+    min_length: int = None,
+    max_length: int = None,
+    regex: str = None,
+    **extra: Any,
+) -> Any:
+    """
+    Used to provide extra information about a field in a model schema. The parameters will be
+    converted to validations and will add annotations to the generated JSON Schema. Some arguments
+    apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``
+
+    :param default: since the Schema is replacing the field’s default, its first argument is used
+      to set the default, use ellipsis (``...``) to indicate the field is required
+    :param alias: the public name of the field
+    :param title: can be any string, used in the schema
+    :param description: can be any string, used in the schema
+    :param const: this field is required and *must* take it's default value
+    :param gt: only applies to numbers, requires the field to be "greater than". The schema
+      will have an ``exclusiveMinimum`` validation keyword
+    :param ge: only applies to numbers, requires the field to be "greater than or equal to". The
+      schema will have a ``minimum`` validation keyword
+    :param lt: only applies to numbers, requires the field to be "less than". The schema
+      will have an ``exclusiveMaximum`` validation keyword
+    :param le: only applies to numbers, requires the field to be "less than or equal to". The
+      schema will have a ``maximum`` validation keyword
+    :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
+      schema will have a ``multipleOf`` validation keyword
+    :param min_length: only applies to strings, requires the field to have a minimum length. The
+      schema will have a ``maximum`` validation keyword
+    :param max_length: only applies to strings, requires the field to have a maximum length. The
+      schema will have a ``maxLength`` validation keyword
+    :param regex: only applies to strings, requires the field match agains a regular expression
+      pattern string. The schema will have a ``pattern`` validation keyword
+    :param **extra: any additional keyword arguments will be added as is to the schema
+    """
+    return FieldInfo(
+        default,
+        alias=alias,
+        title=title,
+        description=description,
+        const=const,
+        gt=gt,
+        ge=ge,
+        lt=lt,
+        le=le,
+        multiple_of=multiple_of,
+        min_items=min_items,
+        max_items=max_items,
+        min_length=min_length,
+        max_length=max_length,
+        regex=regex,
+        **extra,
+    )
 
 
 # used to be an enum but changed to int's for small performance improvement as less access overhead
@@ -58,7 +173,7 @@ SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
 
 
-class Field:
+class ModelField:
     __slots__ = (
         'type_',
         'sub_fields',
@@ -72,7 +187,7 @@ class Field:
         'name',
         'alias',
         'has_alias',
-        'schema',
+        'field_info',
         'validate_always',
         'allow_none',
         'shape',
@@ -90,7 +205,7 @@ class Field:
         default: Any = None,
         required: bool = True,
         alias: str = None,
-        schema: Optional['Schema'] = None,
+        field_info: Optional[FieldInfo] = None,
     ) -> None:
 
         self.name: str = name
@@ -101,12 +216,12 @@ class Field:
         self.default: Any = default
         self.required: bool = required
         self.model_config = model_config
-        self.schema: Optional['Schema'] = schema
+        self.field_info: Optional[FieldInfo] = field_info
 
         self.allow_none: bool = False
         self.validate_always: bool = False
-        self.sub_fields: Optional[List[Field]] = None
-        self.key_field: Optional[Field] = None
+        self.sub_fields: Optional[List[ModelField]] = None
+        self.key_field: Optional[ModelField] = None
         self.validators: 'ValidatorsList' = []
         self.pre_validators: Optional['ValidatorsList'] = None
         self.post_validators: Optional['ValidatorsList'] = None
@@ -123,36 +238,36 @@ class Field:
         annotation: Any,
         class_validators: Optional[Dict[str, Validator]],
         config: Type['BaseConfig'],
-    ) -> 'Field':
-        schema_from_config = config.get_field_schema(name)
-        from .schema import Schema, get_annotation_from_schema  # noqa: F811
+    ) -> 'ModelField':
+        field_info_from_config = config.get_field_info(name)
+        from .schema import get_annotation_from_field_info  # noqa: F811
 
-        if isinstance(value, Schema):
-            schema = value
-            value = schema.default
+        if isinstance(value, FieldInfo):
+            field_info = value
+            value = field_info.default
         else:
-            schema = Schema(value, **schema_from_config)  # type: ignore
-        schema.alias = schema.alias or schema_from_config.get('alias')
+            field_info = FieldInfo(value, **field_info_from_config)
+        field_info.alias = field_info.alias or field_info_from_config.get('alias')
         required = value == Required
-        annotation = get_annotation_from_schema(annotation, schema)
+        annotation = get_annotation_from_field_info(annotation, field_info)
         return cls(
             name=name,
             type_=annotation,
-            alias=schema.alias,
+            alias=field_info.alias,
             class_validators=class_validators,
             default=None if required else value,
             required=required,
             model_config=config,
-            schema=schema,
+            field_info=field_info,
         )
 
     def set_config(self, config: Type['BaseConfig']) -> None:
         self.model_config = config
-        schema_from_config = config.get_field_schema(self.name)
+        schema_from_config = config.get_field_info(self.name)
         if schema_from_config:
-            self.schema = cast('Schema', self.schema)
-            self.schema.alias = self.schema.alias or schema_from_config.get('alias')
-            self.alias = cast(str, self.schema.alias)
+            self.field_info = cast(FieldInfo, self.field_info)
+            self.field_info.alias = self.field_info.alias or schema_from_config.get('alias')
+            self.alias = cast(str, self.field_info.alias)
 
     @property
     def alt_alias(self) -> bool:
@@ -268,14 +383,6 @@ class Field:
         # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
         self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
-    def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'Field':
-        return self.__class__(
-            type_=type_,
-            name=name,
-            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if v.each_item},
-            model_config=self.model_config,
-        )
-
     def _populate_validators(self) -> None:
         class_validators_ = self.class_validators.values()
         if not self.sub_fields:
@@ -290,7 +397,7 @@ class Field:
         # Add const validator
         self.pre_validators = []
         self.post_validators = []
-        if self.schema and self.schema.const:
+        if self.field_info and self.field_info.const:
             self.pre_validators = [make_generic_validator(constant_validator)]
 
         if class_validators_:
@@ -302,6 +409,14 @@ class Field:
 
         self.pre_validators = self.pre_validators or None
         self.post_validators = self.post_validators or None
+
+    def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'ModelField':
+        return self.__class__(
+            type_=type_,
+            name=name,
+            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if v.each_item},
+            model_config=self.model_config,
+        )
 
     @staticmethod
     def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
