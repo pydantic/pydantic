@@ -63,13 +63,13 @@ class BaseConfig:
     validate_assignment = False
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
-    json_encoders: Dict[AnyType, AnyCallable] = {}
     orm_mode: bool = False
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
     schema_extra: Dict[str, Any] = {}
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
+    json_encoders: Dict[AnyType, AnyCallable] = {}
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
