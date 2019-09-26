@@ -238,9 +238,8 @@ def test_custom_getter_dict_derived_model_class():
         def __init__(self, *args, **kwargs):
             self.col = CustomCollection()
             self.id = 1
-            self.name = "name"
+            self.name = 'name'
 
-    
     class MyGetterDict(GetterDict):
 
         def get(self, key: Any, default: Any = None) -> Any:
@@ -248,18 +247,17 @@ def test_custom_getter_dict_derived_model_class():
             if hasattr(res, '__custom__'):
                 return list(res)
             return res
-        
+
     class ExampleBase(BaseModel):
-        name:str
-        col:List[int]
+        name: str
+        col: List[int]
 
     class ExampleOrm(ExampleBase):
-        id:int
+        id: int
 
         class Config:
             orm_mode = True
             getter_dict = MyGetterDict
 
-    
     model = ExampleOrm.from_orm(Example())
     assert model.dict() == {'name': 'name', 'col': [0, 1, 2, 3, 4], 'id': 1}
