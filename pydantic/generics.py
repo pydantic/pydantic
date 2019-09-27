@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, Dict, Generic, Tuple, Type, TypeVar, Union, get_type_hints
 
-from pydantic import BaseModel, create_model
+from pydantic.main import BaseModel, create_model
 from pydantic.class_validators import gather_validators
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
