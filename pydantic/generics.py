@@ -27,7 +27,7 @@ class GenericModel(BaseModel):
             raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
             params = (params,)
-        if any(isinstance(param, TypeVar) for param in params):  # type: ignore
+        if cls == GenericModel and any(isinstance(param, TypeVar) for param in params):  # type: ignore
             raise TypeError(f'Type parameters should be placed on typing.Generic, not GenericModel')
         if Generic not in cls.__bases__:
             raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
