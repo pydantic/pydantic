@@ -175,6 +175,15 @@ def test_parameters_must_be_typevar():
 
 
 @skip_36
+def test_subclass_can_be_genericized():
+    T = TypeVar('T')
+    class Result(GenericModel, Generic[T]):
+        pass
+
+    Result[T]
+
+
+@skip_36
 def test_parameter_count():
     T = TypeVar('T')
     S = TypeVar('S')
