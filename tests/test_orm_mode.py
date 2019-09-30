@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import Any, List
 
 import pytest
 
@@ -225,7 +225,6 @@ def test_custom_getter_dict():
 
 
 def test_custom_getter_dict_derived_model_class():
-
     class CustomCollection:
         __custom__ = True
 
@@ -234,14 +233,12 @@ def test_custom_getter_dict_derived_model_class():
                 yield elem
 
     class Example:
-
         def __init__(self, *args, **kwargs):
             self.col = CustomCollection()
             self.id = 1
             self.name = 'name'
 
     class MyGetterDict(GetterDict):
-
         def get(self, key: Any, default: Any = None) -> Any:
             res = getattr(self._obj, key, default)
             if hasattr(res, '__custom__'):
