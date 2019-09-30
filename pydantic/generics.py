@@ -1,7 +1,7 @@
 from typing import Any, ClassVar, Dict, Generic, Tuple, Type, TypeVar, Union, get_type_hints
 
-from pydantic import BaseModel, create_model
-from pydantic.class_validators import gather_validators
+from .class_validators import gather_all_validators
+from .main import BaseModel, create_model
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
@@ -27,7 +27,7 @@ class GenericModel(BaseModel):
             raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
             params = (params,)
-        if any(isinstance(param, TypeVar) for param in params):  # type: ignore
+        if cls is GenericModel and any(isinstance(param, TypeVar) for param in params):  # type: ignore
             raise TypeError(f'Type parameters should be placed on typing.Generic, not GenericModel')
         if Generic not in cls.__bases__:
             raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
@@ -41,7 +41,7 @@ class GenericModel(BaseModel):
         }
 
         model_name = concrete_name(cls, params)
-        validators = gather_validators(cls)
+        validators = gather_all_validators(cls)
         fields: Dict[str, Tuple[Type[Any], Any]] = {
             k: (v, cls.__fields__[k].default) for k, v in concrete_type_hints.items() if k in cls.__fields__
         }

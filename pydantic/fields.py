@@ -5,7 +5,6 @@ from typing import (
     Dict,
     FrozenSet,
     Generator,
-    Iterable,
     Iterator,
     List,
     Mapping,
@@ -20,11 +19,11 @@ from typing import (
 )
 
 from . import errors as errors_
-from .class_validators import Validator, make_generic_validator
+from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
-from .typing import AnyCallable, AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
+from .typing import AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
 from .utils import lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
@@ -37,12 +36,11 @@ Required: Any = Ellipsis
 NoneType = type(None)
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .class_validators import ValidatorCallable  # noqa: F401
+    from .class_validators import ValidatorsList  # noqa: F401
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
 
-    ValidatorsList = List[ValidatorCallable]
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
 
@@ -357,7 +355,7 @@ class ModelField:
             if get_validators:
                 self.class_validators.update(
                     {
-                        f'list_{i}': Validator(validator, each_item=False, pre=True, always=True, check_fields=False)
+                        f'list_{i}': Validator(validator, pre=True, always=True)
                         for i, validator in enumerate(get_validators())
                     }
                 )
@@ -404,7 +402,7 @@ class ModelField:
                 *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
                 *[v.func for v in class_validators_ if v.each_item and not v.pre],
             )
-            self.validators = self._prep_vals(v_funcs)
+            self.validators = prep_validators(v_funcs)
 
         # Add const validator
         self.pre_validators = []
@@ -413,18 +411,14 @@ class ModelField:
             self.pre_validators = [make_generic_validator(constant_validator)]
 
         if class_validators_:
-            self.pre_validators += self._prep_vals(v.func for v in class_validators_ if not v.each_item and v.pre)
-            self.post_validators = self._prep_vals(v.func for v in class_validators_ if not v.each_item and not v.pre)
+            self.pre_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and v.pre)
+            self.post_validators = prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
 
         if self.parse_json:
             self.pre_validators.append(make_generic_validator(validate_json))
 
         self.pre_validators = self.pre_validators or None
         self.post_validators = self.post_validators or None
-
-    @staticmethod
-    def _prep_vals(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
-        return [make_generic_validator(f) for f in v_funcs if f]
 
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None

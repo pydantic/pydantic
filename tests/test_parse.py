@@ -20,7 +20,7 @@ def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj([1, 2, 3])
     assert exc_info.value.errors() == [
-        {'loc': ('__obj__',), 'msg': 'Model expected dict not list', 'type': 'type_error'}
+        {'loc': ('__root__',), 'msg': 'Model expected dict not list', 'type': 'type_error'}
     ]
 
 
@@ -84,14 +84,14 @@ def test_bad_ct():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', content_type='application/missing')
     assert exc_info.value.errors() == [
-        {'loc': ('__obj__',), 'msg': 'Unknown content-type: application/missing', 'type': 'type_error'}
+        {'loc': ('__root__',), 'msg': 'Unknown content-type: application/missing', 'type': 'type_error'}
     ]
 
 
 def test_bad_proto():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', proto='foobar')
-    assert exc_info.value.errors() == [{'loc': ('__obj__',), 'msg': 'Unknown protocol: foobar', 'type': 'type_error'}]
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'Unknown protocol: foobar', 'type': 'type_error'}]
 
 
 def test_file_json(tmpdir):

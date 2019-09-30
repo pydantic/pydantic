@@ -91,19 +91,20 @@ To test if *pydantic* is compiled run::
     import pydantic
     print('compiled:', pydantic.compiled)
 
-If you want *pydantic* to parse json faster you can add `ujson <https://pypi.python.org/pypi/ujson>`_
-as an optional dependency. Similarly *pydantic's* email validation relies on
-`email-validator <https://github.com/JoshData/python-email-validator>`_ ::
+If you require email validation you can add `email-validator <https://github.com/JoshData/python-email-validator>`_
+as an optional dependency. Similarly, use of ``Literal`` relies on
+`typing-extensions <https://pypi.org/project/typing-extensions/>`_::
 
-    pip install pydantic[ujson]
-    # or
     pip install pydantic[email]
+    # or
+    pip install pydantic[typing_extensions]
     # or just
-    pip install pydantic[ujson,email]
+    pip install pydantic[email,typing_extensions]
 
 Of course you can also install these requirements manually with ``pip install ...``.
 
-Pydantic is also available on `conda <https://www.anaconda.com>`_ under the `conda-forge <https://conda-forge.org>`_ channel::
+Pydantic is also available on `conda <https://www.anaconda.com>`_ under the `conda-forge <https://conda-forge.org>`_
+channel::
 
     conda install pydantic -c conda-forge
 
@@ -254,8 +255,27 @@ to set a dynamic default value.
 
 (This script is complete, it should run "as is")
 
-You'll often want to use this together with ``pre`` since otherwise the with ``always=True``
+You'll often want to use this together with ``pre`` since otherwise with ``always=True``
 *pydantic* would try to validate the default ``None`` which would cause an error.
+
+.. _root_validators:
+
+Root Validators
+~~~~~~~~~~~~~~~
+
+Validation can also be performed on the entire model's data.
+
+.. literalinclude:: examples/validators_root.py
+
+(This script is complete, it should run "as is")
+
+As with field validators, root validators can be ``pre=True`` in which case they're called before field
+validation occurs with the raw input data, or ``pre=False`` (the default) in which case
+they're called after field validation.
+
+Field validation will not occur if "pre" root validators raise an error. As with field validators,
+"post" (e.g. non ``pre``) root validators will be called even if field validation fails; the ``values`` argument will
+be a dict containing the values which passed field validation and field defaults where applicable.
 
 Dataclass Validators
 ~~~~~~~~~~~~~~~~~~~~
@@ -373,6 +393,14 @@ Here a vanilla class is used to demonstrate the principle, but any ORM could be 
 .. literalinclude:: examples/orm_mode_recursive.py
 
 (This script is complete, it should run "as is")
+
+Arbitrary classes are processed by *pydantic* using the ``GetterDict`` class
+(see `utils.py <https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py>`__) which attempts to
+provide a dictionary-like interface to any class. You can customise how this works by setting your own
+sub-class of ``GetterDict`` in ``Config.getter_dict`` (see :ref:`config <config>`).
+
+You can also customise class validation using :ref:`root_validators <root_validators>` with ``pre=True``, in this case
+your validator function will be passed a ``GetterDict`` instance which you may copy and modify.
 
 .. _schema:
 
@@ -945,13 +973,16 @@ Options:
     Pass in a dictionary with keys matching the error messages you want to override (default: ``{}``)
 :arbitrary_types_allowed: whether to allow arbitrary user types for fields (they are validated simply by checking if the
     value is instance of that type). If ``False`` - ``RuntimeError`` will be raised on model declaration (default: ``False``)
-:json_encoders: customise the way types are encoded to json, see :ref:`JSON Serialisation <json_dump>` for more
-    details.
 :orm_mode: allows usage of :ref:`ORM mode <orm_mode>`
+:getter_dict: custom class (should inherit from ``GetterDict``) to use when decomposing ORM classes for validation,
+  use with ``orm_mode``
 :alias_generator: callable that takes field name and returns alias for it
 :keep_untouched: tuple of types (e. g. descriptors) that won't change during model creation and won't be
-  included in the model schemas.
+  included in the model schemas
 :schema_extra: takes a ``dict`` to extend/update the generated JSON Schema
+:json_loads: custom function for decoding JSON, see :ref:`custom JSON (de)serialisation <json_encode_decode>`
+:json_dumps: custom function for encoding JSON, see :ref:`custom JSON (de)serialisation <json_encode_decode>`
+:json_encoders: customise the way types are encoded to JSON, see :ref:`JSON Serialisation <json_dump>`
 
 .. warning::
 
@@ -1186,6 +1217,9 @@ Example:
 By default timedelta's are encoded as a simple float of total seconds. The ``timedelta_isoformat`` is provided
 as an optional alternative which implements ISO 8601 time diff encoding.
 
+See :ref:`below <json_encode_decode>` for details on how to use other libraries for more performant JSON encoding
+and decoding
+
 ``pickle.dumps(model)``
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1212,6 +1246,29 @@ Of course same can be done on any depth level:
 .. literalinclude:: examples/advanced_exclude2.py
 
 Same goes for ``json`` and ``copy`` methods.
+
+.. _json_encode_decode:
+
+Custom JSON (de)serialisation
+.............................
+
+To improve the performance of encoding and decoding JSON, alternative JSON implementations can be used via the
+``json_loads`` and ``json_dumps`` properties of ``Config``, e.g. `ujson <https://pypi.python.org/pypi/ujson>`_.
+
+.. literalinclude:: examples/json_ujson.py
+
+(This script is complete, it should run "as is")
+
+``ujson`` generally cannot be used to dump JSON since it doesn't support encoding of objects like datetimes and does
+not accept a ``default`` fallback function argument. To do this you may use another library like
+`orjson <https://github.com/ijl/orjson>`_.
+
+.. literalinclude:: examples/json_orjson.py
+
+(This script is complete, it should run "as is")
+
+Note that ``orjson`` takes care of ``datetime`` encoding natively, making it faster than ``json.dumps`` but
+meaning you cannot always customise encoding using ``Config.json_encoders``.
 
 Abstract Base Classes
 .....................

@@ -167,3 +167,29 @@ def test_encode_custom_root():
         __root__: List[str]
 
     assert Model(__root__=['a', 'b']).json() == '["a", "b"]'
+
+
+def test_custom_decode_encode():
+    load_calls, dump_calls = 0, 0
+
+    def custom_loads(s):
+        nonlocal load_calls
+        load_calls += 1
+        return json.loads(s.strip('$'))
+
+    def custom_dumps(s, default=None, **kwargs):
+        nonlocal dump_calls
+        dump_calls += 1
+        return json.dumps(s, default=default, indent=2)
+
+    class Model(BaseModel):
+        a: int
+        b: str
+
+        class Config:
+            json_loads = custom_loads
+            json_dumps = custom_dumps
+
+    m = Model.parse_raw('${"a": 1, "b": "foo"}$$')
+    assert m.dict() == {'a': 1, 'b': 'foo'}
+    assert m.json() == '{\n  "a": 1,\n  "b": "foo"\n}'

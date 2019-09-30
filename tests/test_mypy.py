@@ -37,7 +37,7 @@ expected_successes = [('tests/mypy/success.py', ('', '', 0))]
 @pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
 @pytest.mark.parametrize('filename,expected_result', expected_successes + expected_fails)
 def test_mypy_results(filename, expected_result):
-    actual_result = api.run([filename, '--config-file', 'tests/mypy/mypy-default.ini'])
+    actual_result = api.run([filename, '--config-file', 'tests/mypy/mypy-default.ini', '--no-error-summary'])
 
     expected_out, expected_err, expected_returncode = expected_result
     actual_out, actual_err, actual_returncode = actual_result

@@ -3,8 +3,8 @@ from typing import Dict, List, Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError, errors, validator
-from pydantic.class_validators import make_generic_validator
+from pydantic import BaseModel, ConfigError, Extra, ValidationError, errors, validator
+from pydantic.class_validators import make_generic_validator, root_validator
 
 
 def test_simple():
@@ -715,3 +715,167 @@ def test_whole():
             @validator('x', whole=True)
             def check_something(cls, v):
                 return v
+
+
+def test_root_validator():
+    root_val_values = []
+
+    class Model(BaseModel):
+        a: int = 1
+        b: str
+
+        @validator('b')
+        def repeat_b(cls, v):
+            return v * 2
+
+        @root_validator
+        def root_validator(cls, values):
+            root_val_values.append(values)
+            if 'snap' in values.get('b', ''):
+                raise ValueError('foobar')
+            return dict(values, b='changed')
+
+    assert Model(a='123', b='bar').dict() == {'a': 123, 'b': 'changed'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(b='snap dragon')
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='broken', b='bar')
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+    assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}, {'b': 'barbar'}]
+
+
+def test_root_validator_pre():
+    root_val_values = []
+
+    class Model(BaseModel):
+        a: int = 1
+        b: str
+
+        @validator('b')
+        def repeat_b(cls, v):
+            return v * 2
+
+        @root_validator(pre=True)
+        def root_validator(cls, values):
+            root_val_values.append(values)
+            if 'snap' in values.get('b', ''):
+                raise ValueError('foobar')
+            return {'a': 42, 'b': 'changed'}
+
+    assert Model(a='123', b='bar').dict() == {'a': 42, 'b': 'changedchanged'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(b='snap dragon')
+
+    assert root_val_values == [{'a': '123', 'b': 'bar'}, {'b': 'snap dragon'}]
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
+
+
+def test_root_validator_repeat():
+    with pytest.raises(errors.ConfigError, match='duplicate validator function'):
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @root_validator
+            def root_validator_repeated(cls, values):
+                return values
+
+            @root_validator  # noqa: F811
+            def root_validator_repeated(cls, values):
+                return values
+
+
+def test_root_validator_repeat2():
+    with pytest.raises(errors.ConfigError, match='duplicate validator function'):
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @validator('a')
+            def repeat_validator(cls, v):
+                return v
+
+            @root_validator(pre=True)  # noqa: F811
+            def repeat_validator(cls, values):
+                return values
+
+
+def test_root_validator_self():
+    with pytest.raises(
+        errors.ConfigError, match=r'Invalid signature for root validator root_validator: \(self, values\)'
+    ):
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @root_validator
+            def root_validator(self, values):
+                return values
+
+
+def test_root_validator_extra():
+    with pytest.raises(errors.ConfigError) as exc_info:
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @root_validator
+            def root_validator(cls, values, another):
+                return values
+
+    assert str(exc_info.value) == (
+        'Invalid signature for root validator root_validator: (cls, values, another), should be: (cls, values).'
+    )
+
+
+def test_root_validator_types():
+    root_val_values = None
+
+    class Model(BaseModel):
+        a: int = 1
+        b: str
+
+        @root_validator
+        def root_validator(cls, values):
+            nonlocal root_val_values
+            root_val_values = cls, values
+            return values
+
+        class Config:
+            extra = Extra.allow
+
+    assert Model(b='bar', c='wobble').dict() == {'a': 1, 'b': 'bar', 'c': 'wobble'}
+
+    assert root_val_values == (Model, {'a': 1, 'b': 'bar', 'c': 'wobble'})
+
+
+def test_root_validator_inheritance():
+    calls = []
+
+    class Parent(BaseModel):
+        pass
+
+        @root_validator
+        def root_validator_parent(cls, values):
+            calls.append(f'parent validator: {values}')
+            return {'extra1': 1, **values}
+
+    class Child(Parent):
+        a: int
+
+        @root_validator
+        def root_validator_child(cls, values):
+            calls.append(f'child validator: {values}')
+            return {'extra2': 2, **values}
+
+    assert len(Child.__post_root_validators__) == 2
+    assert len(Child.__pre_root_validators__) == 0
+    assert Child(a=123).dict() == {'extra2': 2, 'extra1': 1, 'a': 123}
+    assert calls == ["parent validator: {'a': 123}", "child validator: {'extra1': 1, 'a': 123}"]

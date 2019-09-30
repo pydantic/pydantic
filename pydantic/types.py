@@ -26,11 +26,6 @@ from .validators import (
     strict_str_validator,
 )
 
-try:
-    import email_validator
-except ImportError:
-    email_validator = None
-
 __all__ = [
     'NoneStr',
     'NoneBytes',
@@ -237,7 +232,7 @@ class PyObject:
 
 
 class ConstrainedNumberMeta(type):
-    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'ConstrainedInt':
+    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'ConstrainedInt':  # type: ignore
         new_cls = cast('ConstrainedInt', type.__new__(cls, name, bases, dct))
 
         if new_cls.gt is not None and new_cls.ge is not None:

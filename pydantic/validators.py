@@ -1,4 +1,3 @@
-import json
 import re
 import sys
 from collections import OrderedDict
@@ -424,9 +423,9 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseCon
     return v
 
 
-def validate_json(v: Any) -> Any:
+def validate_json(v: Any, config: 'BaseConfig') -> Any:
     try:
-        return json.loads(v)
+        return config.json_loads(v)  # type: ignore
     except ValueError:
         raise errors.JsonError()
     except TypeError:

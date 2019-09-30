@@ -4,7 +4,7 @@ from typing import Any, ClassVar, Dict, Generic, List, Optional, TypeVar, Union
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
@@ -42,11 +42,17 @@ def test_value_validation():
 
         @validator('data', each_item=True)
         def validate_value_nonzero(cls, v):
-            if isinstance(v, dict):
-                return v  # ensure v is actually a value of the dict, not the dict itself
             if v == 0:
                 raise ValueError('value is zero')
+            return v
 
+        @root_validator()
+        def validate_sum(cls, values):
+            if sum(values.get('data', {}).values()) > 5:
+                raise ValueError('sum too large')
+            return values
+
+    assert Response[Dict[int, int]](data={1: '4'}).dict() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 'a'})
     assert exc_info.value.errors() == [
@@ -56,6 +62,10 @@ def test_value_validation():
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 0})
     assert exc_info.value.errors() == [{'loc': ('data', 1), 'msg': 'value is zero', 'type': 'value_error'}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Response[Dict[int, int]](data={1: 3, 2: 6})
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'sum too large', 'type': 'value_error'}]
 
 
 @skip_36
@@ -172,6 +182,16 @@ def test_parameters_must_be_typevar():
             pass
 
     assert str(exc_info.value) == f'Type parameters should be placed on typing.Generic, not GenericModel'
+
+
+@skip_36
+def test_subclass_can_be_genericized():
+    T = TypeVar('T')
+
+    class Result(GenericModel, Generic[T]):
+        pass
+
+    Result[T]
 
 
 @skip_36
