@@ -10,6 +10,7 @@ from typing import Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, NoneStr
 from pydantic.dataclasses import dataclass
+from pydantic.fields import Field
 from pydantic.generics import GenericModel
 
 
@@ -103,3 +104,8 @@ if sys.version_info >= (3, 7):
     model_instance = WrapperModel[Model](payload=m)
     model_instance.payload.list_of_ints.append(4)
     assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
+
+
+class WithField(BaseModel):
+    age: int
+    first_name: str = Field('John', const=True)

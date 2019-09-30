@@ -257,7 +257,7 @@ def test_self_reference_json_schema(create_module):
     module = create_module(
         """
 from typing import List
-from pydantic import BaseModel, Schema
+from pydantic import BaseModel
 
 class Account(BaseModel):
   name: str
@@ -294,7 +294,7 @@ def test_self_reference_json_schema_with_future_annotations(create_module):
         """
 from __future__ import annotations
 from typing import List
-from pydantic import BaseModel, Schema
+from pydantic import BaseModel
 
 class Account(BaseModel):
   name: str
@@ -329,7 +329,7 @@ def test_circular_reference_json_schema(create_module):
     module = create_module(
         """
 from typing import List
-from pydantic import BaseModel, Schema
+from pydantic import BaseModel
 
 class Owner(BaseModel):
   account: 'Account'
@@ -378,7 +378,7 @@ def test_circular_reference_json_schema_with_future_annotations(create_module):
         """
 from __future__ import annotations
 from typing import List
-from pydantic import BaseModel, Schema
+from pydantic import BaseModel
 
 class Owner(BaseModel):
   account: Account

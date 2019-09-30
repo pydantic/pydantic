@@ -31,10 +31,10 @@ class Validator:
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseConfig
-    from .fields import Field
+    from .fields import ModelField
     from .types import ModelOrDc
 
-    ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], Field, Type[BaseConfig]], Any]
+    ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], ModelField, Type[BaseConfig]], Any]
     ValidatorsList = List[ValidatorCallable]
     ValidatorListDict = Dict[str, List[Validator]]
 

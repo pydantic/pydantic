@@ -3,7 +3,7 @@ from typing import Any, ClassVar, List, Mapping, Type
 
 import pytest
 
-from pydantic import BaseModel, Extra, NoneBytes, NoneStr, Required, Schema, ValidationError, constr
+from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
 
 
 def test_success():
@@ -40,7 +40,7 @@ def test_ultra_simple_failed():
 def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert repr(m) == '<UltraSimpleModel a=10.2 b=10>'
-    assert repr(m.fields['a']) == '<Field(a type=float required)>'
+    assert repr(m.fields['a']) == '<ModelField(a type=float required)>'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
     assert m.json() == '{"a": 10.2, "b": 10}'
@@ -366,7 +366,7 @@ def test_immutability():
 
 def test_const_validates():
     class Model(BaseModel):
-        a: int = Schema(3, const=True)
+        a: int = Field(3, const=True)
 
     m = Model(a=3)
     assert m.a == 3
@@ -374,7 +374,7 @@ def test_const_validates():
 
 def test_const_uses_default():
     class Model(BaseModel):
-        a: int = Schema(3, const=True)
+        a: int = Field(3, const=True)
 
     m = Model()
     assert m.a == 3
@@ -382,7 +382,7 @@ def test_const_uses_default():
 
 def test_const_with_wrong_value():
     class Model(BaseModel):
-        a: int = Schema(3, const=True)
+        a: int = Field(3, const=True)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=4)
@@ -402,8 +402,8 @@ def test_const_list():
         b: int
 
     class Model(BaseModel):
-        a: List[SubModel] = Schema([SubModel(b=1), SubModel(b=2), SubModel(b=3)], const=True)
-        b: List[SubModel] = Schema([{'b': 4}, {'b': 5}, {'b': 6}], const=True)
+        a: List[SubModel] = Field([SubModel(b=1), SubModel(b=2), SubModel(b=3)], const=True)
+        b: List[SubModel] = Field([{'b': 4}, {'b': 5}, {'b': 6}], const=True)
 
     m = Model()
     assert m.a == [SubModel(b=1), SubModel(b=2), SubModel(b=3)]
@@ -441,8 +441,8 @@ def test_const_list_with_wrong_value():
         b: int
 
     class Model(BaseModel):
-        a: List[SubModel] = Schema([SubModel(b=1), SubModel(b=2), SubModel(b=3)], const=True)
-        b: List[SubModel] = Schema([{'b': 4}, {'b': 5}, {'b': 6}], const=True)
+        a: List[SubModel] = Field([SubModel(b=1), SubModel(b=2), SubModel(b=3)], const=True)
+        b: List[SubModel] = Field([{'b': 4}, {'b': 5}, {'b': 6}], const=True)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[{'b': 3}, {'b': 1}, {'b': 2}], b=[{'b': 6}, {'b': 5}])
@@ -492,8 +492,8 @@ def test_const_validation_json_serializable():
         field: int
 
     class Form(BaseModel):
-        field1: SubForm = Schema({'field': 2}, const=True)
-        field2: List[SubForm] = Schema([{'field': 2}], const=True)
+        field1: SubForm = Field({'field': 2}, const=True)
+        field2: List[SubForm] = Field([{'field': 2}], const=True)
 
     with pytest.raises(ValidationError) as exc_info:
         # Fails
@@ -780,8 +780,8 @@ def test_skip_defaults_recursive():
 
 def test_dict_skip_defaults_populated_by_alias():
     class MyModel(BaseModel):
-        a: str = Schema('default', alias='alias_a')
-        b: str = Schema('default', alias='alias_b')
+        a: str = Field('default', alias='alias_a')
+        b: str = Field('default', alias='alias_b')
 
         class Config:
             allow_population_by_alias = True
@@ -794,8 +794,8 @@ def test_dict_skip_defaults_populated_by_alias():
 
 def test_dict_skip_defaults_populated_by_alias_with_extra():
     class MyModel(BaseModel):
-        a: str = Schema('default', alias='alias_a')
-        b: str = Schema('default', alias='alias_b')
+        a: str = Field('default', alias='alias_a')
+        b: str = Field('default', alias='alias_b')
 
         class Config:
             extra = 'allow'
@@ -821,7 +821,7 @@ def test_dir_fields():
 
 def test_dict_with_extra_keys():
     class MyModel(BaseModel):
-        a: str = Schema(None, alias='alias_a')
+        a: str = Field(None, alias='alias_a')
 
         class Config:
             extra = Extra.allow

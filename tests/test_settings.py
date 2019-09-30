@@ -3,7 +3,7 @@ from typing import List, Set
 
 import pytest
 
-from pydantic import BaseModel, BaseSettings, NoneStr, Schema, ValidationError, dataclasses
+from pydantic import BaseModel, BaseSettings, Field, NoneStr, ValidationError, dataclasses
 from pydantic.env_settings import SettingsError
 
 
@@ -137,7 +137,7 @@ def test_case_insensitive(env):
 
 def test_case_sensitive(monkeypatch):
     class Settings(BaseSettings):
-        foo: str = Schema(..., alias='foo')
+        foo: str = Field(..., alias='foo')
 
         class Config:
             case_sensitive = True

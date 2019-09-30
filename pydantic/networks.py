@@ -15,7 +15,7 @@ from . import errors
 from .validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .fields import Field
+    from .fields import ModelField
     from .main import BaseConfig  # noqa: F401
     from .typing import AnyCallable
 
@@ -143,7 +143,7 @@ class AnyUrl(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Any, field: 'Field', config: 'BaseConfig') -> 'AnyUrl':
+    def validate(cls, value: Any, field: 'ModelField', config: 'BaseConfig') -> 'AnyUrl':
         if type(value) == cls:
             return value
         value = str_validator(value)

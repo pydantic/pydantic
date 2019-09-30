@@ -18,6 +18,7 @@ from pydantic import (
     validate_model,
     validator,
 )
+from pydantic.fields import Schema
 
 
 def test_str_bytes():
@@ -26,7 +27,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert '<Field(v type=typing.Union[str, bytes] required)>' == repr(m.fields['v'])
+    assert '<ModelField(v type=typing.Union[str, bytes] required)>' == repr(m.fields['v'])
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -323,7 +324,7 @@ def test_infer_alias():
             fields = {'a': '_a'}
 
     assert Model(_a='different').a == 'different'
-    assert repr(Model.__fields__['a']) == "<Field(a type=str default='foobar' alias=_a)>"
+    assert repr(Model.__fields__['a']) == "<ModelField(a type=str default='foobar' alias=_a)>"
 
 
 def test_alias_error():
@@ -661,8 +662,8 @@ def test_alias_camel_case():
 
         class Config(BaseConfig):
             @classmethod
-            def get_field_schema(cls, name):
-                field_config = super().get_field_schema(name) or {}
+            def get_field_info(cls, name):
+                field_config = super().get_field_info(name) or {}
                 if 'alias' not in field_config:
                     field_config['alias'] = re.sub(r'(?:^|_)([a-z])', lambda m: m.group(1).upper(), name)
                 return field_config
@@ -673,12 +674,12 @@ def test_alias_camel_case():
     assert v == {'one_thing': 123, 'another_thing': 321}
 
 
-def test_get_field_schema_inherit():
+def test_get_field_info_inherit():
     class ModelOne(BaseModel):
         class Config(BaseConfig):
             @classmethod
-            def get_field_schema(cls, name):
-                field_config = super().get_field_schema(name) or {}
+            def get_field_info(cls, name):
+                field_config = super().get_field_info(name) or {}
                 if 'alias' not in field_config:
                     field_config['alias'] = re.sub(r'_([a-z])', lambda m: m.group(1).upper(), name)
                 return field_config
@@ -1006,3 +1007,11 @@ def test_not_optional_subfields():
     assert Model().a is None
     assert Model(a=None).a is None
     assert Model(a=12).a == 12
+
+
+def test_scheme_deprecated():
+
+    with pytest.warns(DeprecationWarning, match='`Schema` is deprecated, use `Field` instead'):
+
+        class Model(BaseModel):
+            foo: int = Schema(4)
