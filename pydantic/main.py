@@ -63,12 +63,14 @@ class BaseConfig:
     validate_assignment = False
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
-    json_encoders: Dict[AnyType, AnyCallable] = {}
     orm_mode: bool = False
     getter_dict: Type[GetterDict] = GetterDict
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
     schema_extra: Dict[str, Any] = {}
+    json_loads: Callable[[str], Any] = json.loads
+    json_dumps: Callable[..., str] = json.dumps
+    json_encoders: Dict[AnyType, AnyCallable] = {}
 
     @classmethod
     def get_field_schema(cls, name: str) -> Dict[str, str]:
@@ -318,7 +320,7 @@ class BaseModel(metaclass=MetaModel):
         data = self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults)
         if self._custom_root_type:
             data = data[ROOT_KEY]
-        return json.dumps(data, default=encoder, **dumps_kwargs)
+        return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
@@ -345,7 +347,12 @@ class BaseModel(metaclass=MetaModel):
     ) -> 'Model':
         try:
             obj = load_str_bytes(
-                b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle
+                b,
+                proto=proto,
+                content_type=content_type,
+                encoding=encoding,
+                allow_pickle=allow_pickle,
+                json_loads=cls.__config__.json_loads,
             )
         except (ValueError, TypeError, UnicodeDecodeError) as e:
             raise ValidationError([ErrorWrapper(e, loc=ROOT_KEY)], cls)
@@ -450,7 +457,7 @@ class BaseModel(metaclass=MetaModel):
     def schema_json(cls, *, by_alias: bool = True, **dumps_kwargs: Any) -> str:
         from .json import pydantic_encoder
 
-        return json.dumps(cls.schema(by_alias=by_alias), default=pydantic_encoder, **dumps_kwargs)
+        return cls.__config__.json_dumps(cls.schema(by_alias=by_alias), default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -466,9 +473,10 @@ class BaseModel(metaclass=MetaModel):
             return cls.from_orm(value)
         else:
             try:
-                return cls(**dict(value))
+                value_as_dict = dict(value)
             except (TypeError, ValueError) as e:
                 raise DictError() from e
+            return cls(**value_as_dict)
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
