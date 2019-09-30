@@ -40,8 +40,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 _FUNCS: Set[str] = set()
 ROOT_KEY = '__root__'
-VALIDATOR_CONFIG_KEY = '__validator_config'
-ROOT_VALIDATOR_CONFIG_KEY = '__root_validator_config'
+VALIDATOR_CONFIG_KEY = '__validator_config__'
+ROOT_VALIDATOR_CONFIG_KEY = '__root_validator_config__'
 
 
 def validator(
@@ -110,7 +110,7 @@ def root_validator(
 
 def _check_validator_name(f: AnyCallable) -> None:
     """
-    avoid validators with duplicated names since without this validators can be overwritten silently
+    avoid validators with duplicated names since without this, validators can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython - see #312
     """
     if not in_ipython():  # pragma: no branch
@@ -170,7 +170,7 @@ def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable
     pre_validators: List[AnyCallable] = []
     post_validators: List[AnyCallable] = []
     for name, value in namespace.items():
-        validator_config: Optional[Validator] = getattr(value, '__root_validator_config', None)
+        validator_config: Optional[Validator] = getattr(value, ROOT_VALIDATOR_CONFIG_KEY, None)
         if validator_config:
             sig = signature(validator_config.func)
             args = list(sig.parameters.keys())

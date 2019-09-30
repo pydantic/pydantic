@@ -12,7 +12,7 @@ except ImportError:
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main import BaseModel  # noqa: F401
-    from .typing import SetIntStr, DictIntStrAny, DictStrAny, IntStr  # noqa: F401
+    from .typing import SetIntStr, DictIntStrAny, IntStr  # noqa: F401
 
 
 def import_string(dotted_path: str) -> Any:
@@ -117,14 +117,12 @@ class GetterDict:
         """
         return set()
 
-    def keys(self) -> Set[Any]:
-        return set(list(self))
-
-    def as_dict(self) -> 'DictStrAny':
+    def keys(self) -> List[Any]:
         """
-        This is required to maintain order since ``dict(self)`` uses ``self.keys()`` which does not maintain order.
+        Keys of the pseudo dictionary, uses a list not set so order information can be maintained like python
+        dictionaries.
         """
-        return dict(self.items())
+        return list(self)
 
     def values(self) -> List[Any]:
         return [self[k] for k in self]
@@ -148,7 +146,7 @@ class GetterDict:
         return dict(self) == dict(other.items())  # type: ignore
 
     def __repr__(self) -> str:
-        return f'<GetterDict({display_as_type(self._obj)}) {self.as_dict()}>'
+        return f'<GetterDict({display_as_type(self._obj)}) {dict(self)}>'  # type: ignore
 
 
 class ValueItems:

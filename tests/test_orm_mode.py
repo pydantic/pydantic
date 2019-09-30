@@ -26,7 +26,7 @@ def test_getdict():
 
     t = TestCls()
     gd = GetterDict(t)
-    assert gd.keys() == {'a', 'c', 'd'}
+    assert gd.keys() == ['a', 'c', 'd']
     assert gd.get('a', None) == 1
     assert gd.get('b', None) is None
     assert gd.get('b', 1234) == 1234
@@ -37,7 +37,6 @@ def test_getdict():
     assert list(gd.values()) == [1, 3, 4]
     assert list(gd.items()) == [('a', 1), ('c', 3), ('d', 4)]
     assert list(gd) == ['a', 'c', 'd']
-    assert gd.as_dict() == {'a': 1, 'c': 3, 'd': 4}
     assert gd == {'a': 1, 'c': 3, 'd': 4}
     assert 'a' in gd
     assert len(gd) == 3

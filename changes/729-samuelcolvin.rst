@@ -1,1 +1,1 @@
-**Breaking change:** Implement ``root_validator`` and rename roots errors from ``__obj__`` to ``__root__``
+**Breaking change:** Implement ``root_validator`` and rename root errors from ``__obj__`` to ``__root__``
