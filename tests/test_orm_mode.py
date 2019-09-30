@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 import pytest
 
@@ -222,3 +222,39 @@ def test_custom_getter_dict():
 
     model = Model.from_orm(TestCls())
     assert model.dict() == {'x': 42, 'y': 24}
+
+
+def test_custom_getter_dict_derived_model_class():
+    class CustomCollection:
+        __custom__ = True
+
+        def __iter__(self):
+            for elem in range(5):
+                yield elem
+
+    class Example:
+        def __init__(self, *args, **kwargs):
+            self.col = CustomCollection()
+            self.id = 1
+            self.name = 'name'
+
+    class MyGetterDict(GetterDict):
+        def get(self, key: Any, default: Any = None) -> Any:
+            res = getattr(self._obj, key, default)
+            if hasattr(res, '__custom__'):
+                return list(res)
+            return res
+
+    class ExampleBase(BaseModel):
+        name: str
+        col: List[int]
+
+    class ExampleOrm(ExampleBase):
+        id: int
+
+        class Config:
+            orm_mode = True
+            getter_dict = MyGetterDict
+
+    model = ExampleOrm.from_orm(Example())
+    assert model.dict() == {'name': 'name', 'col': [0, 1, 2, 3, 4], 'id': 1}
