@@ -11,6 +11,7 @@ from uuid import UUID
 
 from pydantic.color import Color
 
+from .class_validators import ROOT_KEY
 from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, Field
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
@@ -586,8 +587,8 @@ def model_type_schema(
             properties[k] = f_schema
             if f.required:
                 required.append(k)
-    if '__root__' in properties:
-        out_schema = properties['__root__']
+    if ROOT_KEY in properties:
+        out_schema = properties[ROOT_KEY]
         out_schema['title'] = model.__config__.title or model.__name__
     else:
         out_schema = {'type': 'object', 'properties': properties}

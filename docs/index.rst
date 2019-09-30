@@ -255,8 +255,27 @@ to set a dynamic default value.
 
 (This script is complete, it should run "as is")
 
-You'll often want to use this together with ``pre`` since otherwise the with ``always=True``
+You'll often want to use this together with ``pre`` since otherwise with ``always=True``
 *pydantic* would try to validate the default ``None`` which would cause an error.
+
+.. _root_validators:
+
+Root Validators
+~~~~~~~~~~~~~~~
+
+Validation can also be performed on the entire model's data.
+
+.. literalinclude:: examples/validators_root.py
+
+(This script is complete, it should run "as is")
+
+As with field validators, root validators can be ``pre=True`` in which case they're called before field
+validation occurs with the raw input data, or ``pre=False`` (the default) in which case
+they're called after field validation.
+
+Field validation will not occur if "pre" root validators raise an error. As with field validators,
+"post" (e.g. non ``pre``) root validators will be called even if field validation fails; the ``values`` argument will
+be a dict containing the values which passed field validation and field defaults where applicable.
 
 Dataclass Validators
 ~~~~~~~~~~~~~~~~~~~~
@@ -374,6 +393,14 @@ Here a vanilla class is used to demonstrate the principle, but any ORM could be 
 .. literalinclude:: examples/orm_mode_recursive.py
 
 (This script is complete, it should run "as is")
+
+Arbitrary classes are processed by *pydantic* using the ``GetterDict`` class
+(see `utils.py <https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py>`__) which attempts to
+provide a dictionary-like interface to any class. You can customise how this works by setting your own
+sub-class of ``GetterDict`` in ``Config.getter_dict`` (see :ref:`config <config>`).
+
+You can also customise class validation using :ref:`root_validators <root_validators>` with ``pre=True``, in this case
+your validator function will be passed a ``GetterDict`` instance which you may copy and modify.
 
 .. _schema:
 
@@ -947,6 +974,8 @@ Options:
 :arbitrary_types_allowed: whether to allow arbitrary user types for fields (they are validated simply by checking if the
     value is instance of that type). If ``False`` - ``RuntimeError`` will be raised on model declaration (default: ``False``)
 :orm_mode: allows usage of :ref:`ORM mode <orm_mode>`
+:getter_dict: custom class (should inherit from ``GetterDict``) to use when decomposing ORM classes for validation,
+  use with ``orm_mode``
 :alias_generator: callable that takes field name and returns alias for it
 :keep_untouched: tuple of types (e. g. descriptors) that won't change during model creation and won't be
   included in the model schemas
