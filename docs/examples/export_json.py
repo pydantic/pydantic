@@ -20,7 +20,7 @@ class WithCustomEncoders(BaseModel):
 
     class Config:
         json_encoders = {
-            datetime: lambda v: (v - datetime(1970, 1, 1)).total_seconds(),
+            datetime: lambda v: v.timestamp(),
             timedelta: timedelta_isoformat,
         }
 
