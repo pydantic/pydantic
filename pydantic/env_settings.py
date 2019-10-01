@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import Any, Dict, Iterable, Optional, cast
 
 from .fields import ModelField
@@ -72,14 +73,20 @@ class BaseSettings(BaseModel):
 
             env_names: Iterable[str]
             env = field.field_info.extra.pop('env', None)
-            if isinstance(env, str):
+            if env is None:
+                if field.has_alias:
+                    warnings.warn(
+                        'aliases are no longer used by BaseSettings to define which environment variables to read. '
+                        'Instead use the "env" field setting. See https://pydantic-docs.helpmanual.io/#settings',
+                        DeprecationWarning,
+                    )
+                env_names = [cls.env_prefix + field.name]
+            elif isinstance(env, str):
                 env_names = {env}
             elif isinstance(env, (list, set, tuple)):
                 env_names = env
-            elif env is not None:
-                raise TypeError(f'invalid field env: {env!r} ({display_as_type(env)}); should be string, list or set')
             else:
-                env_names = [cls.env_prefix + field.name]
+                raise TypeError(f'invalid field env: {env!r} ({display_as_type(env)}); should be string, list or set')
 
             field.field_info.extra['env_names'] = env_names
 

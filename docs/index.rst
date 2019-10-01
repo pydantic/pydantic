@@ -1004,9 +1004,6 @@ Version for models based on ``@dataclass`` decorator:
 
 (This script is complete, it should run "as is")
 
-.. _settings:
-
-
 Alias Generator
 ~~~~~~~~~~~~~~~
 If data source field names do not match your code style (e. g. CamelCase fields),
@@ -1016,6 +1013,7 @@ you can automatically generate aliases using ``alias_generator``:
 
 (This script is complete, it should run "as is")
 
+.. _settings:
 
 Settings
 ........

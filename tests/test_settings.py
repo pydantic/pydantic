@@ -146,6 +146,48 @@ def test_env_list_last(env):
     env.set('different2', 'value 2')
     s = Settings()
     assert s.foobar == 'value 2'
+    assert Settings(foobar='abc').foobar == 'abc'
+
+
+def test_env_inheritance(env):
+    class SettingsParent(BaseSettings):
+        foobar: str = 'parent default'
+
+        class Config:
+            fields = {'foobar': {'env': 'different'}}
+
+    class SettingsChild(SettingsParent):
+        foobar: str = 'child default'
+
+    assert SettingsParent().foobar == 'parent default'
+    assert SettingsParent(foobar='abc').foobar == 'abc'
+
+    assert SettingsChild().foobar == 'child default'
+    assert SettingsChild(foobar='abc').foobar == 'abc'
+    env.set('different', 'env value')
+    assert SettingsParent().foobar == 'env value'
+    assert SettingsParent(foobar='abc').foobar == 'abc'
+    assert SettingsChild().foobar == 'env value'
+    assert SettingsChild(foobar='abc').foobar == 'abc'
+
+
+def test_env_inheritance_field(env):
+    class SettingsParent(BaseSettings):
+        foobar: str = Field('parent default', env='foobar_env')
+
+    class SettingsChild(SettingsParent):
+        foobar: str = 'child default'
+
+    assert SettingsParent().foobar == 'parent default'
+    assert SettingsParent(foobar='abc').foobar == 'abc'
+
+    assert SettingsChild().foobar == 'child default'
+    assert SettingsChild(foobar='abc').foobar == 'abc'
+    env.set('foobar_env', 'env value')
+    assert SettingsParent().foobar == 'env value'
+    assert SettingsParent(foobar='abc').foobar == 'abc'
+    assert SettingsChild().foobar == 'child default'
+    assert SettingsChild(foobar='abc').foobar == 'abc'
 
 
 def test_env_invalid(env):
@@ -165,16 +207,35 @@ def test_env_field(env):
             foobar: str = Field(..., env=123)
 
 
-def test_aliases_no_effect(env):
+def test_aliases_warning(env):
+    with pytest.warns(DeprecationWarning, match='aliases are no longer used by BaseSettings'):
+
+        class Settings(BaseSettings):
+            foobar: str = 'default value'
+
+            class Config:
+                fields = {'foobar': 'foobar_alias'}
+
+    assert Settings().foobar == 'default value'
+    env.set('foobar_alias', 'xxx')
+    assert Settings().foobar == 'default value'
+    assert Settings(foobar_alias='42').foobar == '42'
+
+
+def test_aliases_no_warning(env):
     class Settings(BaseSettings):
         foobar: str = 'default value'
 
         class Config:
-            fields = {'foobar': 'different'}
+            fields = {'foobar': {'alias': 'foobar_alias', 'env': 'foobar_env'}}
 
-    env.set('different', 'xxx')
-    s = Settings()
-    assert s.foobar == 'default value'
+    assert Settings().foobar == 'default value'
+    assert Settings(foobar_alias='42').foobar == '42'
+    env.set('foobar_alias', 'xxx')
+    assert Settings().foobar == 'default value'
+    env.set('foobar_env', 'xxx')
+    assert Settings().foobar == 'xxx'
+    assert Settings(foobar_alias='42').foobar == '42'
 
 
 def test_case_sensitive(monkeypatch):
