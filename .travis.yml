@@ -17,6 +17,7 @@ script:
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(1 if pydantic.compiled else 0)"
 - make test
 
+- python3 ./changes/make_history.py
 - make lint
 - make mypy
 
