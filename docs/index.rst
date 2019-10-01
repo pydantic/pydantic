@@ -136,6 +136,13 @@ Dataclasses work in python 3.6 using the `dataclasses backport package <https://
 
 (This script is complete, it should run "as is")
 
+.. note::
+
+   Keep in mind that ``pydantic.dataclasses.dataclass`` is a drop in replacement for ``dataclasses.dataclass``
+   with validation, not a repacement for ``pydantic.BaseModel``. There are cases where subclassing
+   ``pydantic.BaseModel`` is the better choice. For more information and disucssion see
+   `samuelcolvin/pydantic#6239 <https://github.com/samuelcolvin/pydantic/issues/710>`_.
+
 You can use all the standard pydantic field types and the resulting dataclass will be identical to the one
 created by the standard library ``dataclass`` decorator.
 
