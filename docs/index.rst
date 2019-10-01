@@ -8,6 +8,11 @@ pydantic
 
 Current Version: |version|
 
+.. note::
+
+   These docs refer to Version 1 of *pydantic* which is as-yet unreleased, *v0.32* docs are available
+   `here <https://5d5d36c5b8219300085d081b--pydantic-docs.netlify.com>`_.
+
 Data validation and settings management using python type hinting.
 
 Define how data should be in pure, canonical python; validate it with *pydantic*.
