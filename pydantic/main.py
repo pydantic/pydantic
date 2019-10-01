@@ -121,7 +121,7 @@ def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
 UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
 
-class ModelMetaClass(ABCMeta):
+class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace):
         fields: Dict[str, ModelField] = {}
@@ -216,7 +216,7 @@ class ModelMetaClass(ABCMeta):
         return super().__new__(mcs, name, bases, new_namespace)
 
 
-class BaseModel(metaclass=ModelMetaClass):
+class BaseModel(metaclass=ModelMetaclass):
     if TYPE_CHECKING:  # pragma: no cover
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
