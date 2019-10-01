@@ -229,6 +229,7 @@ class ModelField:
         self.post_validators: Optional['ValidatorsList'] = None
         self.parse_json: bool = False
         self.shape: int = SHAPE_SINGLETON
+        self.model_config.prepare_field(self)
         self.prepare()
 
     @classmethod

@@ -73,7 +73,7 @@ class BaseConfig:
     json_encoders: Dict[AnyType, AnyCallable] = {}
 
     @classmethod
-    def get_field_info(cls, name: str) -> Dict[str, str]:
+    def get_field_info(cls, name: str) -> Dict[str, Any]:
         field_info = cls.fields.get(name) or {}
         if isinstance(field_info, str):
             field_info = {'alias': field_info}
@@ -83,6 +83,13 @@ class BaseConfig:
                 raise TypeError(f'Config.alias_generator must return str, not {type(alias)}')
             field_info['alias'] = alias
         return field_info
+
+    @classmethod
+    def prepare_field(cls, field: 'ModelField') -> None:
+        """
+        Optional hook to check or modify fields during model creation.
+        """
+        pass
 
 
 def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'ConfigType':
