@@ -27,7 +27,10 @@ def test_getdict():
     t = TestCls()
     gd = GetterDict(t)
     assert gd.keys() == ['a', 'c', 'd']
-    assert gd.get('a', None) == 1
+    assert gd.get('a') == 1
+    assert gd['a'] == 1
+    with pytest.raises(KeyError):
+        assert gd['foobar']
     assert gd.get('b', None) is None
     assert gd.get('b', 1234) == 1234
     assert gd.get('c', None) == 3

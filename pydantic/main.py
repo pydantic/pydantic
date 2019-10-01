@@ -21,11 +21,10 @@ from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annot
 from .utils import GetterDict, ValueItems, truncate, validate_field_name
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .typing import CallableGenerator
-    from .types import ModelOrDc
     from .class_validators import ValidatorListDict
-
-    from .typing import TupleGenerator, DictStrAny, DictAny, SetStr, SetIntStr, DictIntStrAny  # noqa: F401
+    from .types import ModelOrDc
+    from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
+    from .typing import SetIntStr, DictIntStrAny  # noqa: F401
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
@@ -129,7 +128,7 @@ def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
 UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
 
-class MetaModel(ABCMeta):
+class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace):
         fields: Dict[str, ModelField] = {}
@@ -216,15 +215,15 @@ class MetaModel(ABCMeta):
             '__validators__': vg.validators,
             '__pre_root_validators__': pre_root_validators + pre_rv_new,
             '__post_root_validators__': post_root_validators + post_rv_new,
-            '_schema_cache': {},
-            '_json_encoder': staticmethod(json_encoder),
-            '_custom_root_type': _custom_root_type,
+            '__schema_cache__': {},
+            '__json_encoder__': staticmethod(json_encoder),
+            '__custom_root_type__': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace)
 
 
-class BaseModel(metaclass=MetaModel):
+class BaseModel(metaclass=ModelMetaclass):
     if TYPE_CHECKING:  # pragma: no cover
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
@@ -233,9 +232,9 @@ class BaseModel(metaclass=MetaModel):
         __post_root_validators__: List[AnyCallable]
         __config__: Type[BaseConfig] = BaseConfig
         __root__: Any = None
-        _json_encoder: Callable[[Any], Any] = lambda x: x
-        _schema_cache: 'DictAny' = {}
-        _custom_root_type: bool = False
+        __json_encoder__: Callable[[Any], Any] = lambda x: x
+        __schema_cache__: 'DictAny' = {}
+        __custom_root_type__: bool = False
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
@@ -323,16 +322,16 @@ class BaseModel(metaclass=MetaModel):
 
         `encoder` is an optional function to supply as `default` to json.dumps(), other arguments as per `json.dumps()`.
         """
-        encoder = cast(Callable[[Any], Any], encoder or self._json_encoder)
+        encoder = cast(Callable[[Any], Any], encoder or self.__json_encoder__)
         data = self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults)
-        if self._custom_root_type:
+        if self.__custom_root_type__:
             data = data[ROOT_KEY]
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
         if not isinstance(obj, dict):
-            if cls._custom_root_type:
+            if cls.__custom_root_type__:
                 obj = {ROOT_KEY: obj}
             else:
                 try:
@@ -453,11 +452,11 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def schema(cls, by_alias: bool = True) -> 'DictStrAny':
-        cached = cls._schema_cache.get(by_alias)
+        cached = cls.__schema_cache__.get(by_alias)
         if cached is not None:
             return cached
         s = model_schema(cls, by_alias=by_alias)
-        cls._schema_cache[by_alias] = s
+        cls.__schema_cache__[by_alias] = s
         return s
 
     @classmethod
