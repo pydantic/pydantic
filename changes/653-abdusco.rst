@@ -1,1 +1,0 @@
-add support for ``assert`` statements inside validators

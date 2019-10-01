@@ -1,1 +1,0 @@
-add documentation for Pycharm Plugin
