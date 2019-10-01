@@ -1,1 +1,0 @@
-Set ``additionalProperties`` to false in schema for models with extra fields disallowed.

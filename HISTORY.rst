@@ -3,6 +3,55 @@
 History
 -------
 
+v1.0b1 (2019-10-01)
+...................
+* **Breaking Change:** rename ``Schema`` to ``Field``, make it a function to placate mypy, #577 by @samuelcolvin
+* **Breaking Change:** modify parsing behavior for ``bool``, #617 by @dmontagu
+* **Breaking Change:** ``get_validators`` is no longer recognised, use ``__get_validators__``.
+  ``Config.ignore_extra`` and ``Config.allow_extra`` are no longer recognised, use ``Config.extra``, #720 by @samuelcolvin
+* **Breaking Change:** modify default config settings for ``BaseSettings``; ``case_insensitive`` renamed to ``case_sensitive``,
+  default changed to ``case_sensitive = False``, ``env_prefix`` default changed to ``''`` - e.g. no prefix, #721 by @dmontagu
+* **Breaking change:** Implement ``root_validator`` and rename root errors from ``__obj__`` to ``__root__``, #729 by @samuelcolvin
+* **Breaking Change:** alter the behaviour of ``dict(model)`` so that sub-models are nolonger
+  converted to dictionaries, #733 by @samuelcolvin
+* **Breaking change:** Added ``initvars`` support to ``post_init_post_parse``, #748 by @Raphael-C-Almeida
+* **Breaking Change:** Make ``BaseModel.json()`` only serialize the ``__root__`` key for models with custom root, #752 by @dmontagu
+* **Breaking Change:** complete rewrite of ``URL`` parsing logic, #755 by @samuelcolvin
+* **Breaking Change:** preserve superclass annotations for field-determination when not provided in subclass, #757 by @dmontagu
+* **Breaking Change:** ``BaseSettings`` now uses the special ``env`` settings to define which environment variables to
+  read, not aliases, #847 by @samuelcolvin
+* add support for ``assert`` statements inside validators, #653 by @abdusco
+* Update documentation to specify the use of ``pydantic.dataclasses.dataclass`` and subclassing ``pydantic.BaseModel``, #710 by @maddosaurus
+* Allow custom JSON decoding and encoding via ``json_loads`` and ``json_dumps`` ``Config`` properties, #714 by @samuelcolvin
+* make all annotated fields occur in the order declared, #715 by @dmontagu
+* use pytest to test ``mypy`` integration, #735 by @dmontagu
+* add ``__repr__`` method to ``ErrorWrapper``, #738 by @samuelcolvin
+* Added support for ``FrozenSet`` members in dataclasses, and a better error when attempting to use types from the ``typing`` module that are not supported by Pydantic, #745 by @djpetti
+* add documentation for Pycharm Plugin, #750 by @koxudaxi
+* fix broken examples in the docs, #753 by @dmontagu
+* moving typing related objects into ``pydantic.typing``, #761 by @samuelcolvin
+* Minor performance improvements to ``ErrorWrapper``, ``ValidationError`` and datetime parsing, #763 by @samuelcolvin
+* Improvements to ``datetime``/``date``/``time``/``timedelta`` types: more descriptive errors,
+  change errors to ``value_error`` not ``type_error``, support bytes, #766 by @samuelcolvin
+* fix error messages for ``Literal`` types with multiple allowed values, #770 by @dmontagu
+* Improved auto-generated ``title`` field in JSON schema by converting underscore to space, #772 by @skewty
+* support ``mypy --no-implicit-reexport`` for dataclasses, also respect ``--no-implicit-reexport`` in pydantic itself, #783 by @samuelcolvin
+* add the ``PaymentCardNumber`` type, #790 by @matin
+* Fix const validations for lists, #794 by @hmvp
+* Set ``additionalProperties`` to false in schema for models with extra fields disallowed, #796 by @Code0x58
+* ``EmailStr`` validation method now returns local part case-sensitive per RFC 5321, #798 by @henriklindgren
+* Added ability to validate strictness to ``ConstrainedFloat``, ``ConstrainedInt`` and ``ConstrainedStr`` and added
+  ``StrictFloat`` and ``StrictInt`` classes, #799 by @DerRidda
+* Improve handling of ``None`` and ``Optional``, replace ``whole`` with ``each_item`` (inverse meaning, default ``False``)
+  on validators, #803 by @samuelcolvin
+* add support for ``Type[T]`` type hints, #807 by @timonbimon
+* Performance improvements from removing ``change_exceptions``, change how pydantic error are constructed, #819 by @samuelcolvin
+* Fix the error message arising when a ``BaseModel``-type model field causes a ``ValidationError`` during parsing, #820 by @dmontagu
+* allow ``getter_dict`` on ``Config``, modify ``GetterDict`` to be more like a ``Mapping`` object and thus easier to work with, #821 by @samuelcolvin
+* Only check ``TypeVar`` param on base ``GenericModel`` class, #842 by @zpencerq
+* rename ``Model._schema_cache`` -> ``Model.__schema_cache__``, ``Model._json_encoder`` -> ``Model.__json_encoder__``,
+  ``Model._custom_root_type`` -> ``Model.__custom_root_type__``, #851 by @samuelcolvin
+
 v0.32.2 (2019-08-17)
 ....................
 * fix ``__post_init__`` usage with dataclass inheritance, fix #739 by @samuelcolvin

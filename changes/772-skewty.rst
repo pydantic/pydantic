@@ -1,1 +1,0 @@
-Improved auto-generated ``title`` field in JSON schema by converting underscore to space.
