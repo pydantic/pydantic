@@ -10,19 +10,15 @@ from pydantic.env_settings import SettingsError
 class SimpleSettings(BaseSettings):
     apple: str
 
-    class Config:
-        env_prefix = 'APP_'
-        case_sensitive = True
-
 
 def test_sub_env(env):
-    env.set('APP_APPLE', 'hello')
+    env.set('apple', 'hello')
     s = SimpleSettings()
     assert s.apple == 'hello'
 
 
 def test_sub_env_override(env):
-    env.set('APP_APPLE', 'hello')
+    env.set('apple', 'hello')
     s = SimpleSettings(apple='goodbye')
     assert s.apple == 'goodbye'
 
@@ -33,20 +29,23 @@ def test_sub_env_missing():
     assert exc_info.value.errors() == [{'loc': ('apple',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-def test_other_setting(env):
+def test_other_setting():
     with pytest.raises(ValidationError):
         SimpleSettings(apple='a', foobar=42)
 
 
-def test_env_with_aliass(env):
+def test_with_prefix(env):
     class Settings(BaseSettings):
-        apple: str = ...
+        apple: str
 
         class Config:
-            fields = {'apple': 'BOOM'}
+            env_prefix = 'foobar_'
 
-    env.set('BOOM', 'hello')
-    assert Settings().apple == 'hello'
+    with pytest.raises(ValidationError):
+        Settings()
+    env.set('foobar_apple', 'has_prefix')
+    s = Settings()
+    assert s.apple == 'has_prefix'
 
 
 class DateModel(BaseModel):
@@ -59,22 +58,18 @@ class ComplexSettings(BaseSettings):
     carrots: dict = {}
     date: DateModel = DateModel()
 
-    class Config:
-        env_prefix = 'APP_'
-        case_sensitive = True
-
 
 def test_list(env):
-    env.set('APP_APPLES', '["russet", "granny smith"]')
+    env.set('apples', '["russet", "granny smith"]')
     s = ComplexSettings()
     assert s.apples == ['russet', 'granny smith']
     assert s.date.pips is False
 
 
 def test_set_dict_model(env):
-    env.set('APP_BANANAS', '[1, 2, 3, 3]')
-    env.set('APP_CARROTS', '{"a": null, "b": 4}')
-    env.set('APP_DATE', '{"pips": true}')
+    env.set('bananas', '[1, 2, 3, 3]')
+    env.set('CARROTS', '{"a": null, "b": 4}')
+    env.set('daTE', '{"pips": true}')
     s = ComplexSettings()
     assert s.bananas == {1, 2, 3}
     assert s.carrots == {'a': None, 'b': 4}
@@ -82,8 +77,8 @@ def test_set_dict_model(env):
 
 
 def test_invalid_json(env):
-    env.set('APP_APPLES', '["russet", "granny smith",]')
-    with pytest.raises(SettingsError):
+    env.set('apples', '["russet", "granny smith",]')
+    with pytest.raises(SettingsError, match='error parsing JSON for "apples"'):
         ComplexSettings()
 
 
@@ -107,37 +102,145 @@ def test_non_class(env):
     assert s.foobar == 'xxx'
 
 
-def test_alias_matches_name(env):
+def test_env_str(env):
+    class Settings(BaseSettings):
+        apple: str = ...
+
+        class Config:
+            fields = {'apple': {'env': 'BOOM'}}
+
+    env.set('BOOM', 'hello')
+    assert Settings().apple == 'hello'
+
+
+def test_env_list(env):
     class Settings(BaseSettings):
         foobar: str
 
         class Config:
-            fields = {'foobar': 'foobar'}
+            fields = {'foobar': {'env': ['different1', 'different2']}}
 
-    env.set('foobar', 'xxx')
+    env.set('different1', 'value 1')
+    env.set('different2', 'value 2')
     s = Settings()
-    assert s.foobar == 'xxx'
+    assert s.foobar == 'value 1'
 
 
-def test_case_insensitive(env):
+def test_env_list_field(env):
     class Settings(BaseSettings):
-        foo: str
-        bAR: str
+        foobar: str = Field(..., env='foobar_env_name')
+
+    env.set('FOOBAR_ENV_NAME', 'env value')
+    s = Settings()
+    assert s.foobar == 'env value'
+
+
+def test_env_list_last(env):
+    class Settings(BaseSettings):
+        foobar: str
 
         class Config:
-            env_prefix = 'APP_'
-            case_sensitive = False
+            fields = {'foobar': {'env': ['different2']}}
 
-    env.set('apP_foO', 'foo')
-    env.set('app_bar', 'bar')
+    env.set('different1', 'value 1')
+    env.set('different2', 'value 2')
     s = Settings()
-    assert s.foo == 'foo'
-    assert s.bAR == 'bar'
+    assert s.foobar == 'value 2'
+    assert Settings(foobar='abc').foobar == 'abc'
+
+
+def test_env_inheritance(env):
+    class SettingsParent(BaseSettings):
+        foobar: str = 'parent default'
+
+        class Config:
+            fields = {'foobar': {'env': 'different'}}
+
+    class SettingsChild(SettingsParent):
+        foobar: str = 'child default'
+
+    assert SettingsParent().foobar == 'parent default'
+    assert SettingsParent(foobar='abc').foobar == 'abc'
+
+    assert SettingsChild().foobar == 'child default'
+    assert SettingsChild(foobar='abc').foobar == 'abc'
+    env.set('different', 'env value')
+    assert SettingsParent().foobar == 'env value'
+    assert SettingsParent(foobar='abc').foobar == 'abc'
+    assert SettingsChild().foobar == 'env value'
+    assert SettingsChild(foobar='abc').foobar == 'abc'
+
+
+def test_env_inheritance_field(env):
+    class SettingsParent(BaseSettings):
+        foobar: str = Field('parent default', env='foobar_env')
+
+    class SettingsChild(SettingsParent):
+        foobar: str = 'child default'
+
+    assert SettingsParent().foobar == 'parent default'
+    assert SettingsParent(foobar='abc').foobar == 'abc'
+
+    assert SettingsChild().foobar == 'child default'
+    assert SettingsChild(foobar='abc').foobar == 'abc'
+    env.set('foobar_env', 'env value')
+    assert SettingsParent().foobar == 'env value'
+    assert SettingsParent(foobar='abc').foobar == 'abc'
+    assert SettingsChild().foobar == 'child default'
+    assert SettingsChild(foobar='abc').foobar == 'abc'
+
+
+def test_env_invalid(env):
+    with pytest.raises(TypeError, match=r'invalid field env: 123 \(int\); should be string, list or set'):
+
+        class Settings(BaseSettings):
+            foobar: str
+
+            class Config:
+                fields = {'foobar': {'env': 123}}
+
+
+def test_env_field(env):
+    with pytest.raises(TypeError, match=r'invalid field env: 123 \(int\); should be string, list or set'):
+
+        class Settings(BaseSettings):
+            foobar: str = Field(..., env=123)
+
+
+def test_aliases_warning(env):
+    with pytest.warns(DeprecationWarning, match='aliases are no longer used by BaseSettings'):
+
+        class Settings(BaseSettings):
+            foobar: str = 'default value'
+
+            class Config:
+                fields = {'foobar': 'foobar_alias'}
+
+    assert Settings().foobar == 'default value'
+    env.set('foobar_alias', 'xxx')
+    assert Settings().foobar == 'default value'
+    assert Settings(foobar_alias='42').foobar == '42'
+
+
+def test_aliases_no_warning(env):
+    class Settings(BaseSettings):
+        foobar: str = 'default value'
+
+        class Config:
+            fields = {'foobar': {'alias': 'foobar_alias', 'env': 'foobar_env'}}
+
+    assert Settings().foobar == 'default value'
+    assert Settings(foobar_alias='42').foobar == '42'
+    env.set('foobar_alias', 'xxx')
+    assert Settings().foobar == 'default value'
+    env.set('foobar_env', 'xxx')
+    assert Settings().foobar == 'xxx'
+    assert Settings(foobar_alias='42').foobar == '42'
 
 
 def test_case_sensitive(monkeypatch):
     class Settings(BaseSettings):
-        foo: str = Field(..., alias='foo')
+        foo: str
 
         class Config:
             case_sensitive = True
@@ -165,7 +268,7 @@ def test_nested_dataclass(env):
     assert s.n.bar == 'bar value'
 
 
-def test_config_file_settings(env):
+def test_env_takes_precedence(env):
     class Settings(BaseSettings):
         foo: int
         bar: str

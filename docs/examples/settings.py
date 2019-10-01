@@ -1,44 +1,57 @@
 from typing import Set
 
-from pydantic import BaseModel, DSN, BaseSettings, PyObject
-
+from devtools import debug
+from pydantic import BaseModel, BaseSettings, PyObject, RedisDsn, PostgresDsn, Field
 
 class SubModel(BaseModel):
     foo = 'bar'
     apple = 1
 
-
 class Settings(BaseSettings):
-    redis_host = 'localhost'
-    redis_port = 6379
-    redis_database = 0
-    redis_password: str = None
+    auth_key: str
+    api_key: str = Field(..., env='my_api_key')
 
-    auth_key: str = ...
+    redis_dsn: RedisDsn = 'redis://user:pass@localhost:6379/1'
+    pg_dsn: PostgresDsn = 'postgres://user:pass@localhost:5432/foobar'
 
-    invoicing_cls: PyObject = 'path.to.Invoice'
-
-    db_name = 'foobar'
-    db_user = 'postgres'
-    db_password: str = None
-    db_host = 'localhost'
-    db_port = '5432'
-    db_driver = 'postgres'
-    db_query: dict = None
-    dsn: DSN = None
+    special_function: PyObject = 'math.cos'
 
     # to override domains:
-    # export MY_PREFIX_DOMAINS = '["foo.com", "bar.com"]'
+    # export my_prefix_domains='["foo.com", "bar.com"]'
     domains: Set[str] = set()
 
     # to override more_settings:
-    # export MY_PREFIX_MORE_SETTINGS = '{"foo": "x", "apple": 1}'
+    # export my_prefix_more_settings='{"foo": "x", "apple": 1}'
     more_settings: SubModel = SubModel()
 
     class Config:
-        env_prefix = 'MY_PREFIX_'  # defaults to 'APP_'
+        env_prefix = 'my_prefix_'  # defaults to no prefix, e.g. ""
         fields = {
             'auth_key': {
-                'alias': 'my_api_key'
+                'env': 'my_auth_key',
+            },
+            'redis_dsn': {
+                'env': ['service_redis_dsn', 'redis_url']
             }
         }
+
+"""
+When calling with
+my_auth_key=a \
+MY_API_KEY=b \
+my_prefix_domains='["foo.com", "bar.com"]' \
+python docs/examples/settings.py 
+"""
+debug(Settings().dict())
+"""
+docs/examples/settings.py:45 <module>
+  Settings().dict(): {
+    'auth_key': 'a',
+    'api_key': 'b',
+    'redis_dsn': <RedisDsn('redis://user:pass@localhost:6379/1' scheme='redis' ...)>,
+    'pg_dsn': <PostgresDsn('postgres://user:pass@localhost:5432/foobar' scheme='postgres' ...)>,
+    'special_function': <built-in function cos>,
+    'domains': {'bar.com', 'foo.com'},
+    'more_settings': {'foo': 'bar', 'apple': 1},
+  } (dict) len=7
+"""
