@@ -82,11 +82,11 @@ def test_key():
         'title': 'ApplePie',
         'description': 'This is a test.',
     }
-    assert True not in ApplePie._schema_cache
-    assert False not in ApplePie._schema_cache
+    assert True not in ApplePie.__schema_cache__
+    assert False not in ApplePie.__schema_cache__
     assert ApplePie.schema() == s
-    assert True in ApplePie._schema_cache
-    assert False not in ApplePie._schema_cache
+    assert True in ApplePie.__schema_cache__
+    assert False not in ApplePie.__schema_cache__
     assert ApplePie.schema() == s
 
 
