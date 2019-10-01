@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import Any, Dict, Iterable, Optional, cast
+from typing import Any, Dict, Iterable, Mapping, Optional
 
 from .fields import ModelField
 from .main import BaseModel, Extra
@@ -33,19 +33,15 @@ class BaseSettings(BaseModel):
         d: Dict[str, Optional[str]] = {}
 
         if self.__config__.case_sensitive:
-            env_vars = cast(Dict[str, str], os.environ)
+            env_vars: Mapping[str, str] = os.environ
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
         for field in self.__fields__.values():
             env_val: Optional[str] = None
             for env_name in field.field_info.extra['env_names']:  # type: ignore
-                env_name_ = env_name if self.__config__.case_sensitive else env_name.lower()
-                try:
-                    env_val = env_vars[env_name_]
-                except KeyError:
-                    pass
-                else:
+                env_val = env_vars.get(env_name)
+                if env_val is not None:
                     break
 
             if env_val is None:
@@ -88,6 +84,8 @@ class BaseSettings(BaseModel):
             else:
                 raise TypeError(f'invalid field env: {env!r} ({display_as_type(env)}); should be string, list or set')
 
+            if not cls.case_sensitive:
+                env_names = type(env_names)(n.lower() for n in env_names)
             field.field_info.extra['env_names'] = env_names
 
     __config__: Config  # type: ignore
