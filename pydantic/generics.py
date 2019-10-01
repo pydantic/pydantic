@@ -43,7 +43,7 @@ class GenericModel(BaseModel):
         model_name = concrete_name(cls, params)
         validators = gather_all_validators(cls)
         fields: Dict[str, Tuple[Type[Any], Any]] = {
-            k: (v, cls.__fields__[k].default) for k, v in concrete_type_hints.items() if k in cls.__fields__
+            k: (v, cls.__fields__[k].field_info) for k, v in concrete_type_hints.items() if k in cls.__fields__
         }
         created_model = create_model(
             model_name=model_name,

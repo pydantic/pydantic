@@ -4,7 +4,7 @@ from typing import Any, ClassVar, Dict, Generic, List, Optional, TypeVar, Union
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, root_validator, validator
+from pydantic import BaseModel, Field, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
@@ -387,3 +387,37 @@ def test_complex_nesting():
     item = [{1: 'a', 'a': 'a'}]
     model = MyModel[str](item=item)
     assert model.item == item
+
+
+@skip_36
+def test_required_value():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        a: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyModel[int]()
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+@skip_36
+def test_optional_value():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        a: Optional[int] = 1
+
+    model = MyModel[int]()
+    assert model.dict() == {'a': 1}
+
+
+@skip_36
+def test_custom_schema():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        a: int = Field(1, description='Custom')
+
+    schema = MyModel[int].schema()
+    assert schema['properties']['a'].get('description') == 'Custom'
