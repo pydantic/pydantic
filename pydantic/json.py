@@ -11,7 +11,7 @@ from uuid import UUID
 from pydantic.color import Color
 from pydantic.types import SecretBytes, SecretStr
 
-__all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
+__all__ = "pydantic_encoder", "custom_pydantic_encoder", "timedelta_isoformat"
 
 
 def isoformat(o: Union[datetime.date, datetime.time]) -> str:
@@ -38,6 +38,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     GeneratorType: list,
     bytes: lambda o: o.decode(),
     Decimal: float,
+    Path: str,
 }
 
 
@@ -75,4 +76,4 @@ def timedelta_isoformat(td: datetime.timedelta) -> str:
     """
     minutes, seconds = divmod(td.seconds, 60)
     hours, minutes = divmod(minutes, 60)
-    return f'P{td.days}DT{hours:d}H{minutes:d}M{seconds:d}.{td.microseconds:06d}S'
+    return f"P{td.days}DT{hours:d}H{minutes:d}M{seconds:d}.{td.microseconds:06d}S"

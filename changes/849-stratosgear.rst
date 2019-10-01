@@ -1,0 +1,1 @@
+Add Path to ``ENCODERS_BY_TYPE`` for proper model serialization
