@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.7
 import re
+import sys
 from datetime import date
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
@@ -20,6 +21,10 @@ for p in THIS_DIR.glob('*.rst'):
     order = 0 if '**breaking change' in content.lower() else 1
     bullet_list.append((order, int(gh_id), f'* {content}, #{gh_id} by @{creator}'))
 
+if not bullet_list:
+    print('no changes found')
+    sys.exit(0)
+
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 chunk_title = f'v{version.VERSION} ({date.today():%Y-%m-%d})'
 bullets = '\n'.join(c for *_, c in sorted(bullet_list))
@@ -37,4 +42,7 @@ history_path.write_text(history)
 for p in THIS_DIR.glob('*.rst'):
     p.unlink()
 
-print(f'changes deleted and {history_path} updated, use `git checkout -- changes/*.rst HISTORY.rst` to reset changes')
+print(
+    'changes deleted and HISTORY.rst successfully updated, to reset use:\n\n'
+    '  git checkout -- changes/*.rst HISTORY.rst\n'
+)
