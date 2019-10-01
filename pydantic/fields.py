@@ -23,7 +23,7 @@ from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
-from .typing import AnyType, Callable, ForwardRef, display_as_type, is_literal_type, literal_values
+from .typing import AnyType, Callable, ForwardRef, display_as_type, is_literal_type
 from .utils import lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
@@ -311,11 +311,7 @@ class ModelField:
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
         if is_literal_type(self.type_):
-            values = literal_values(self.type_)
-            if len(values) > 1:
-                self.type_ = Union[tuple(Literal[value] for value in values)]
-            else:
-                return
+            return
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.

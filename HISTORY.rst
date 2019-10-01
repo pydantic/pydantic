@@ -3,7 +3,17 @@
 History
 -------
 
-v0.32 (2019-08-08)
+v0.32.2 (2019-08-17)
+....................
+* fix ``__post_init__`` usage with dataclass inheritance, fix #739 by @samuelcolvin
+* fix required fields validation on GenericModels classes, #742 by @amitbl
+* fix defining custom ``Schema`` on ``GenericModel`` fields, #754 by @amitbl
+
+v0.32.1 (2019-08-08)
+....................
+* do not validate extra fields when ``validate_assignment`` is on, #724 by @YaraslauZhylko
+
+v0.32 (2019-08-06)
 ..................
 * add model name to ``ValidationError`` error message, #676 by @dmontagu
 * **breaking change**: remove ``__getattr__`` and rename ``__values__`` to ``__dict__`` on ``BaseModel``,

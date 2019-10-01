@@ -6,7 +6,7 @@ from typing import ClassVar, FrozenSet, Optional
 import pytest
 
 import pydantic
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, validator
 
 
 def test_simple():
@@ -91,6 +91,42 @@ def test_not_validate_assignment():
 
     d.a = '7'
     assert d.a == '7'
+
+
+def test_validate_assignment_value_change():
+    class Config:
+        validate_assignment = True
+
+    @pydantic.dataclasses.dataclass(config=Config, frozen=False)
+    class MyDataclass:
+        a: int
+
+        @validator('a')
+        def double_a(cls, v):
+            return v * 2
+
+    d = MyDataclass(2)
+    assert d.a == 4
+
+    d.a = 3
+    assert d.a == 6
+
+
+def test_validate_assignment_extra():
+    class Config:
+        validate_assignment = True
+
+    @pydantic.dataclasses.dataclass(config=Config, frozen=False)
+    class MyDataclass:
+        a: int
+
+    d = MyDataclass(1)
+    assert d.a == 1
+
+    d.extra_field = 1.23
+    assert d.extra_field == 1.23
+    d.extra_field = 'bye'
+    assert d.extra_field == 'bye'
 
 
 def test_post_init():
@@ -500,3 +536,22 @@ def test_frozenset_field():
     object_under_test = TestFrozenSet(set=test_set)
 
     assert object_under_test.set == test_set
+
+
+def test_inheritance_post_init():
+    post_init_called = False
+
+    @pydantic.dataclasses.dataclass
+    class Base:
+        a: int
+
+        def __post_init__(self):
+            nonlocal post_init_called
+            post_init_called = True
+
+    @pydantic.dataclasses.dataclass
+    class Child(Base):
+        b: int
+
+    Child(a=1, b=2)
+    assert post_init_called

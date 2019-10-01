@@ -123,6 +123,7 @@ def test_validate_pre_error():
 class ValidateAssignmentModel(BaseModel):
     a: int = 4
     b: str = ...
+    c: int = 0
 
     @validator('b')
     def b_length(cls, v, values, **kwargs):
@@ -130,8 +131,13 @@ class ValidateAssignmentModel(BaseModel):
             raise ValueError('b too short')
         return v
 
+    @validator('c')
+    def double_c(cls, v):
+        return v * 2
+
     class Config:
         validate_assignment = True
+        extra = Extra.allow
 
 
 def test_validating_assignment_ok():
@@ -146,6 +152,27 @@ def test_validating_assignment_fail():
     p = ValidateAssignmentModel(b='hello')
     with pytest.raises(ValidationError):
         p.b = 'x'
+
+
+def test_validating_assignment_value_change():
+    p = ValidateAssignmentModel(b='hello', c=2)
+    assert p.c == 4
+
+    p = ValidateAssignmentModel(b='hello')
+    assert p.c == 0
+    p.c = 3
+    assert p.c == 6
+
+
+def test_validating_assignment_extra():
+    p = ValidateAssignmentModel(b='hello', extra_field=1.23)
+    assert p.extra_field == 1.23
+
+    p = ValidateAssignmentModel(b='hello')
+    p.extra_field = 1.23
+    assert p.extra_field == 1.23
+    p.extra_field = 'bye'
+    assert p.extra_field == 'bye'
 
 
 def test_validating_assignment_dict():
