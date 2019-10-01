@@ -121,11 +121,12 @@ def test_any_url_obj():
     assert str(url2) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
     assert repr(url2) == (
         "<AnyUrl('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit' "
-        "scheme='http' user='user:password' host='example.org' tld='org' host_type='domain' port='1234' "
+        "scheme='http' user='user' password='password' host='example.org' tld='org' host_type='domain' port='1234' "
         "path='/the/path/' query='query=here' fragment='fragment=is;this=bit')>"
     )
     assert url2.scheme == 'http'
-    assert url2.user == 'user:password'
+    assert url2.user == 'user'
+    assert url2.password == 'password'
     assert url2.host == 'example.org'
     assert url.host_type == 'domain'
     assert url2.port == '1234'
@@ -138,6 +139,8 @@ def test_any_url_obj():
     assert url3.host == '123.45.67.8'
     assert url3.host_type == 'ipv4'
     assert url3.port == '8329'
+    assert url3.user is None
+    assert url3.password is None
 
     url4 = Model(v='wss://[2001:db8::ff00:42]:8329').v
     assert url4.scheme == 'wss'
@@ -150,12 +153,17 @@ def test_any_url_obj():
     assert url5.host_type == 'int_domain'
     assert str(url5) == 'https://xn--9aaa.org'
 
-    url = Model(v='http://example.co.uk').v
-    assert str(url) == 'http://example.co.uk'
-    assert url.scheme == 'http'
-    assert url.host == 'example.co.uk'
-    assert url.tld == 'uk'  # wrong but no better solution
-    assert url.host_type == 'domain'
+    url6 = Model(v='http://example.co.uk').v
+    assert str(url6) == 'http://example.co.uk'
+    assert url6.scheme == 'http'
+    assert url6.host == 'example.co.uk'
+    assert url6.tld == 'uk'  # wrong but no better solution
+    assert url6.host_type == 'domain'
+
+    url7 = Model(v='http://user:@example.org').v
+    assert url7.user == 'user'
+    assert url7.password == ''
+    assert url7.host == 'example.org'
 
 
 @pytest.mark.parametrize(
@@ -245,7 +253,10 @@ def test_redis_dsns():
     class Model(BaseModel):
         a: RedisDsn
 
-    assert Model(a='redis://user:pass@localhost:5432/app').a == 'redis://user:pass@localhost:5432/app'
+    m = Model(a='redis://user:pass@localhost:5432/app')
+    assert m.a == 'redis://user:pass@localhost:5432/app'
+    assert m.a.user == 'user'
+    assert m.a.password == 'pass'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
