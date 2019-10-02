@@ -84,7 +84,17 @@ clean:
 
 .PHONY: docs
 docs:
-	make -C docs html
+	./docs/pre_build.py
+	mkdocs build
+	@# to work with the old sphinx build and deploy:
+	@rm -r docs/_build/
+	@mkdir docs/_build/
+	@cp -r site docs/_build/html
+
+.PHONY: docs-dev
+docs-dev:
+	./docs/pre_build.py
+	mkdocs serve
 
 .PHONY: publish
 publish: docs

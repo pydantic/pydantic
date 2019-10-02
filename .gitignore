@@ -10,11 +10,11 @@ dist/
 .mypy_cache/
 test.py
 .coverage
-htmlcov/
-benchmarks/*.json
-docs/_build/
-docs/.TMP_HISTORY.rst
-docs/.tmp_schema_mappings.rst
+/htmlcov/
+/benchmarks/*.json
+/docs/changelog.md
+/docs/.tmp_schema_mappings.rst
+/site/
 .pytest_cache/
 .vscode/
 _build/
