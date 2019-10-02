@@ -10,6 +10,8 @@ name_regex = re.compile(r'(\d+)-(.*?)\.md')
 bullet_list = []
 
 for p in THIS_DIR.glob('*.md'):
+    if p.name == 'README.md':
+        continue
     m = name_regex.fullmatch(p.name)
     if not m:
         raise RuntimeError(f'{p.name!r}: invalid change file name')
@@ -39,7 +41,8 @@ history = history_path.read_text()
 
 history_path.write_text(history)
 for p in THIS_DIR.glob('*.md'):
-    p.unlink()
+    if p.name != 'README.md':
+        p.unlink()
 
 print(
     'changes deleted and HISTORY.md successfully updated, to reset use:\n\n'
