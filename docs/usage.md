@@ -377,7 +377,7 @@ for more complex `string` sub-types.
 
 The field schema mapping from Python / Pydantic to JSON Schema is done as follows:
 
-.. include: .tmp_schema_mappings.rst
+{!./.tmp_schema_mappings.md!}
 
 You can also generate a top-level JSON Schema that only includes a list of models and all their related
 submodules in its `definitions`:

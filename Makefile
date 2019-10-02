@@ -23,10 +23,15 @@ format:
 
 .PHONY: lint
 lint:
-	python setup.py check -rms
 	flake8 pydantic/ tests/
 	$(isort) --check-only
 	$(black) --check
+
+.PHONY: check-dist
+check-dist:
+	python setup.py check -ms
+	SKIP_CYTHON=1 python setup.py sdist
+	twine check dist/*
 
 .PHONY: mypy
 mypy:
@@ -80,11 +85,12 @@ clean:
 	rm -rf dist
 	rm -f pydantic/*.c pydantic/*.so
 	python setup.py clean
-	make -C docs clean
+	rm -rf site
+	rm -rf docs/_build
 
 .PHONY: docs
 docs:
-	./docs/pre_build.py
+	./docs/build/main.py
 	mkdocs build
 	@# to work with the old sphinx build and deploy:
 	@rm -rf docs/_build/
@@ -93,7 +99,7 @@ docs:
 
 .PHONY: docs-serve
 docs-serve:
-	./docs/pre_build.py
+	./docs/build/main.py
 	mkdocs serve
 
 .PHONY: publish

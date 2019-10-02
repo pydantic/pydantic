@@ -4,8 +4,9 @@ Build a table of Python / Pydantic to JSON Schema mappings.
 
 Done like this rather than as a raw rst table to make future edits easier.
 
-Please edit this file directly not .tmp_schema_mappings.rst
+Please edit this file directly not .tmp_schema_mappings.md
 """
+from pathlib import Path
 
 table = [
     [
@@ -451,26 +452,24 @@ headings = [
     'Notes',
 ]
 
-v = ''
-col_width = 300
-for _ in range(5):
-    v += '+' + '-' * col_width
-v += '+\n|'
-for heading in headings:
-    v += f' {heading:{col_width - 2}} |'
-v += '\n'
-for _ in range(5):
-    v += '+' + '=' * col_width
-v += '+'
-for row in table:
-    v += '\n|'
-    for i, text in enumerate(row):
-        text = f'``{text}``' if i < 3 and text else text
-        v += f' {text:{col_width - 2}} |'
-    v += '\n'
-    for _ in range(5):
-        v += '+' + '-' * col_width
-    v += '+'
 
-with open('.tmp_schema_mappings.rst', 'w') as f:
-    f.write(v)
+def build_schema_mappings():
+    col_width = 300
+    v = ' | '.join(f'{heading:{col_width - 2}}' for heading in headings)
+    v += '\n'
+    v += ' | '.join('-' * (col_width - 2) for _ in headings)
+
+    for row in table:
+        v += '\n'
+        cols = []
+        for i, text in enumerate(row):
+            text = f'`{text}`' if i < 3 and text else text
+            cols.append(f'{text:{col_width - 2}}')
+        v += ' | '.join(cols)
+    v += '\n'
+
+    (Path(__file__).parent / '..' / '.tmp_schema_mappings.md').write_text(v)
+
+
+if __name__ == '__main__':
+    build_schema_mappings()
