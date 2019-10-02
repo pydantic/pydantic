@@ -20,7 +20,7 @@ Define how data should be in pure, canonical python; validate it with *pydantic*
 
 There's also support for an extension to [dataclasses](usage/dataclasses.md) where the input data is validated.
 
-Example:
+## Example
 
 ```py
 {!./examples/example1.py!}
@@ -71,12 +71,14 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
 : In [benchmarks](benchmarks.md) *pydantic* is faster than all other tested libraries.
 
 **validate complex structures**
-: use of recursive *pydantic* models, `typing`'s `List` and `Dict` etc. and validators allow
-  complex data schemas to be clearly and easily defined and then checked.
+: use of [recursive *pydantic* models](usage/models.md#recursive-models), `typing`'s 
+  [standard types](usage/types.md#standard-library-types) (e.g. `List`, `Tuple`, `Dict` etc.) and 
+  [validators](usage/validators.md) allow
+  complex data schemas to be clearly and easily defined and then validated and parsed.
 
 **extensible**
-: *pydantic* allows custom data types to be defined or you can extend validation with methods on a model decorated
-  with the `validator` decorator.
+: *pydantic* allows [custom data types](usage/types.md#custom-data-types) to be defined or you can extend validation 
+  with methods on a model decorated with the [`validator`](usage/validators.md) decorator.
 
 
 ## Using Pydantic
@@ -97,8 +99,8 @@ Hundreds of organisations and packages are using *pydantic*, including:
   "getting integrated into the core Windows product and some Office products."
 
 **Amazon Web Services**
-: are using *pydantic* in [gluon-ts](https://github.com/awslabs/gluon-ts) an open-source probabilistic time series.
-  modeling library
+: are using *pydantic* in [gluon-ts](https://github.com/awslabs/gluon-ts) an open-source probabilistic time series
+  modeling library.
 
 **The NSA**
 : are using *pydantic* in [WALKOFF](https://github.com/nsacyber/WALKOFF) an open-source automation framework.

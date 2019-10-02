@@ -39,7 +39,7 @@ Here a vanilla class is used to demonstrate the principle, but any ORM could be 
 (This script is complete, it should run "as is")
 
 Arbitrary classes are processed by *pydantic* using the `GetterDict` class
-(see [utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)_) which attempts to
+(see [utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)) which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
 sub-class of `GetterDict` in `Config.getter_dict` (see [config](model_config.md)).
 
