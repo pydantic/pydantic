@@ -87,17 +87,17 @@ docs:
 	./docs/pre_build.py
 	mkdocs build
 	@# to work with the old sphinx build and deploy:
-	@rm -r docs/_build/
+	@rm -rf docs/_build/
 	@mkdir docs/_build/
 	@cp -r site docs/_build/html
 
-.PHONY: docs-dev
-docs-dev:
+.PHONY: docs-serve
+docs-serve:
 	./docs/pre_build.py
 	mkdocs serve
 
 .PHONY: publish
 publish: docs
-	cd docs/_build/ && cp -r html site && zip -r site.zip site
+	zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
-	      --data-binary "@docs/_build/site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
+	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys

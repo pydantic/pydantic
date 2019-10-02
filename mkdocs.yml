@@ -31,3 +31,4 @@ markdown_extensions:
     base_path: docs
 - admonition
 - codehilite
+- extra

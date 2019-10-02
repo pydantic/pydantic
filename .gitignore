@@ -15,6 +15,7 @@ test.py
 /docs/changelog.md
 /docs/.tmp_schema_mappings.rst
 /site/
+/site.zip
 .pytest_cache/
 .vscode/
 _build/
