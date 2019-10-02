@@ -1,4 +1,3 @@
-attrs==19.2.0
 black==19.3b0
 coverage==4.5.4
 Cython==0.29.13;sys_platform!='win32'
