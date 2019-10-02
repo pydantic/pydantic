@@ -15,20 +15,32 @@ google_analytics:
 - 'auto'
 
 nav:
-- Introduction: index.md
+- Overview: index.md
 - install.md
-- usage.md
+- Usage:
+  - usage/models.md
+  - 'Field Types': usage/types.md
+  - usage/validators.md
+  - usage/model_config.md
+  - usage/error_handling.md
+  - usage/schema.md
+  - usage/exporting_models.md
+  - usage/dataclasses.md
+  - 'Settings management': usage/settings.md
+  - usage/postponed_annotations.md
+  - 'Usage with mypy': usage/mypy.md
 - Contributing to Pydantic: contributing.md
 - benchmarks.md
-- Pycharm Plugin: pycharm_plugin.md
-- Using Pydantic: using_pydantic.md
-- Change Log: changelog.md
+- 'PyCharm plugin': pycharm_plugin.md
+- changelog.md
 
 markdown_extensions:
 - markdown.extensions.codehilite:
     guess_lang: false
 - markdown_include.include:
     base_path: docs
+- toc:
+    permalink: 🔗
 - admonition
 - codehilite
 - extra

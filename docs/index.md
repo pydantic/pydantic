@@ -6,7 +6,7 @@
 [![license](https://img.shields.io/github/license/samuelcolvin/pydantic.svg)](https://github.com/samuelcolvin/pydantic/blob/master/LICENSE)
 
 !!! note
-    These docs refer to Version 1 of *pydantic* which is as-yet unreleased. *V0.32* docs are available
+    These docs refer to Version 1 of *pydantic* which is as-yet unreleased. **v0.32** docs are available
     [here](https://5d5d36c5b8219300085d081b--pydantic-docs.netlify.com).
 
 Data validation and settings management using python type hinting.
@@ -18,8 +18,7 @@ Define how data should be in pure, canonical python; validate it with *pydantic*
 
 *pydantic* uses those annotations to validate that untrusted data takes the form you want.
 
-There's also support for an extension to [dataclasses](https://docs.python.org/3/library/dataclasses.html)
-where the input data is validated.
+There's also support for an extension to [dataclasses](usage/dataclasses.md) where the input data is validated.
 
 Example:
 
@@ -44,6 +43,10 @@ If validation fails pydantic with raise an error with a breakdown of what was wr
 ```py
 {!./examples/example2.py!}
 ```
+outputs:
+```py
+{!./examples/example2_output.py!}
+```
 
 ## Rationale
 
@@ -56,10 +59,11 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
 
 **plays nicely with your IDE/linter/brain**
 : because *pydantic* data structures are just instances of classes you define; auto-completion, linting,
-  [mypy](usage.md#usage_mypy), IDEs (especially [PyCharm](pycharm_plugin.md)) and your intuition should all work properly with your validated data.
+  [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)) and your intuition should 
+  all work properly with your validated data.
 
 **dual use**
-: *pydantic's* [BaseSettings](usage.md#settings) class allows it to be used in both a "validate this request data"
+: *pydantic's* [BaseSettings](usage/settings.md) class allows it to be used in both a "validate this request data"
   context and "load my system settings" context. The main difference being that system settings can have defaults
   changed by environment variables and more complex objects like DSNs and python objects are often required.
 
@@ -73,3 +77,40 @@ So *pydantic* uses some cool new language feature, but why should I actually go 
 **extensible**
 : *pydantic* allows custom data types to be defined or you can extend validation with methods on a model decorated
   with the `validator` decorator.
+
+
+## Using Pydantic
+
+Hundreds of organisations and packages are using *pydantic*, including:
+
+[FastAPI](https://fastapi.tiangolo.com/)
+: a high performance API framework, easy to learn,
+  fast to code and ready for production, based on *pydantic* and Starlette.
+
+[Project Jupyter](https://jupyter.org/)
+: developers of the Jupyter notebook, are using *pydantic* 
+  [for subprojects](https://github.com/samuelcolvin/pydantic/issues/773).
+
+**Microsoft**
+: are using *pydantic* (via FastAPI) for 
+  [numerous services](https://github.com/tiangolo/fastapi/pull/26#issuecomment-463768795) some of which are 
+  "getting integrated into the core Windows product and some Office products."
+
+**Amazon Web Services**
+: are using *pydantic* in [gluon-ts](https://github.com/awslabs/gluon-ts) an open-source probabilistic time series.
+  modeling library
+
+**The NSA**
+: are using *pydantic* in [WALKOFF](https://github.com/nsacyber/WALKOFF) an open-source automation framework.
+
+**Uber**
+: are using *pydantic* in [Ludwig](https://github.com/uber/ludwig) an an open-source TensorFlow wrapper.
+
+**Cuenca**
+: a Mexican neobank that uses *pydantic* for several internal
+  tools (including API validation) and for open source projects like
+  [stpmex](https://github.com/cuenca-mx/stpmex-python), which is used to process real-time, 24/7, inter-bank
+  transfers in Mexico.
+
+For a more comprehensive list of open-source projects using *pydantic* see 
+[dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).

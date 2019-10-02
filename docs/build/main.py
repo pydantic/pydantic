@@ -14,7 +14,7 @@ def main():
     history = re.sub(r'( +)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
     history = re.sub('@@', '@', history)
 
-    (PROJECT_ROOT / 'docs/changelog.md').write_text(history)
+    (PROJECT_ROOT / 'docs/.changelog.md').write_text(history)
 
     sys.path.append(str(THIS_DIR.resolve()))
     from schema_mapping import build_schema_mappings

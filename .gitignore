@@ -12,7 +12,7 @@ test.py
 .coverage
 /htmlcov/
 /benchmarks/*.json
-/docs/changelog.md
+/docs/.changelog.md
 /docs/.tmp_schema_mappings.md
 /site/
 /site.zip
