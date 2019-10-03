@@ -3,7 +3,6 @@
 ```py
 {!./examples/schema1.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 Outputs:
@@ -90,7 +89,6 @@ submodules in its `definitions`:
 ```py
 {!./examples/schema2.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 Outputs:
@@ -109,7 +107,6 @@ This is useful if you need to extend or modify JSON Schema default definitions l
 ```py
 {!./examples/schema3.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 Outputs:
@@ -127,7 +124,6 @@ For example, you could add `examples` to the JSON Schema:
 ```py
 {!./examples/schema4.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 Outputs:

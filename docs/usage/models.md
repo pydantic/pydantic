@@ -110,7 +110,6 @@ The ellipsis `...` just means "Required" same as annotation only declarations ab
 ```py
 {!./examples/recursive.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-models).
@@ -128,7 +127,6 @@ The example here uses SQLAlchemy but the same approach should work for any ORM.
 ```py
 {!./examples/orm_mode.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 ORM instances will be parsed with `from_orm` recursively as well as at the top level.
@@ -138,7 +136,6 @@ Here a vanilla class is used to demonstrate the principle, but any ORM could be 
 ```py
 {!./examples/orm_mode_recursive.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 Arbitrary classes are processed by *pydantic* using the `GetterDict` class
@@ -206,7 +203,6 @@ See [validators](validators.md) for more details on use of the `@validator` deco
 ```py
 {!./examples/errors2.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 You can also define your own error class with abilities to specify custom error code, message template and context:
@@ -214,7 +210,6 @@ You can also define your own error class with abilities to specify custom error 
 ```py
 {!./examples/errors3.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 ## Helper Functions
@@ -232,7 +227,6 @@ _(This script is complete, it should run "as is")_
 ```py
 {!./examples/parse.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 !!! note
@@ -261,7 +255,6 @@ Here is an example using `GenericModel` to create an easily-reused HTTP response
 ```py
 {!./examples/generics.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 If you set `Config` or make use of `validator` in your generic model definition, it is applied
@@ -370,7 +363,7 @@ class Model(BaseModel):
     b: int = ...
 ```
 
-Both `a` and `b` are required here.
+Here both `a` and `b` are required here.
 
 ## Data Conversion
 

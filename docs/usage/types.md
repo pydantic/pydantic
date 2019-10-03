@@ -1,24 +1,150 @@
-**TODO:** intro to types
+Where possible *pydantic* uses [standard library types](#standard-library-types) to define fields thus smoothing 
+the learning curve. For some types however no standard library type exists, 
+here *pydantic* implements [many commonly used types](#pydantic-types). If no existing type exists for your 
+purpose you can also implement your [own types](#custom-data-types) with custom properties and validation.
 
-## Standard iterable types
+## Standard Library Types
+
+*pydantic* supports many common types from the python standard library, you need stricter processing see 
+[Strict Types](#strict-types), if you need to constrain the values allowed (eg. require a positive int) see
+[Constrained Types](#constrained-types).
+
+`bool`
+: see [Booleans](#booleans) below for details on how bools are validated and what values are permitted
+
+`int`
+: *pydantic* uses `int(v)` to coerce types to an `int`, therefore strings and floats will be coerced
+  to ints, see [this](models.md#data-conversion) warning on loss of information during data conversion
+
+`float` 
+: similarly `float(v)` is used to coerce values to floats
+
+`str`
+: strings are accepted as-as, `int` `float` and `Decimal` are coerced using `str(v)`, `bytes` and `bytearray` are
+  converted using `v.decode()`, enums inheriting from `str` are converted using `v.value`, 
+  all other types cause an error
+
+`bytes`
+: `bytes` are accepted as-as, `bytearray` is converted using `bytes(v)`, `str` are converted using `v.encode()`,
+  `int` `float` and `Decimal` are coerced using `str(v).encode()`
+
+`list`
+: allows `list`, `tuple`, `set`, `frozenset` or generators and casts to a list, see `typing.List` below
+  for sub-type constraints
+
+`tuple`
+: allows `list`, `tuple`, `set`, `frozenset` or generators and casts to a tuple, see `typing.Tuple` below
+  for sub-type constraints
+
+`dict`
+: `dict(v)` is used to attempt to convert a dictionary, see `typing.Dict` below
+  for sub-type constraints
+
+`set`
+: allows `list`, `tuple`, `set`, `frozenset` or generators and casts to a set, see `typing.Set` below
+  for sub-type constraints
+
+`frozonset`
+: allows `list`, `tuple`, `set`, `frozenset` or generators and casts to a frozen set, see `typing.FrozenSet` below
+  for sub-type constraints
+
+`datetime.date`
+: see [Datetime Types](#datetime-types) below for more detail on parsing and validation
+
+`datetime.time`
+: see [Datetime Types](#datetime-types) below for more detail on parsing and validation
+
+`datetime.datetime`
+: see [Datetime Types](#datetime-types) below for more detail on parsing and validation
+
+`datetime.timedelta`
+: see [Datetime Types](#datetime-types) below for more detail on parsing and validation
+
+`typing.Union`
+: see [Unions](#unions) below for more detail on parsing and validation
+
+`typing.Optional`
+: `Optional[x]` is simply short hand for `Union[x, None]`, see [Unions](#unions) below for more detail on 
+  parsing and validation
+
+`typing.List`
+: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`typing.Tuple`
+: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`typing.Dict`
+: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`typing.Set`
+: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`typing.FrozenSet`
+: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`typing.Sequence`
+: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`typing.Callable`
+: see [Callable](#callable) below for more detail on parsing and validation
+
+`typing.Pattern`
+: will cause the input value to be passed to `re.compile(v)` to create a regex pattern
+
+`ipaddress.IPv4Address`
+: simply uses the type itself for validation by passing the value to `IPv4Address(v)`, 
+  see [Pydantic Types](#pydantic-types) for other custom IP address types
+
+`ipaddress.IPv4Interface`
+: simply uses the type itself for validation by passing the value to `IPv4Address(v)`, 
+  see [Pydantic Types](#pydantic-types) for other custom IP address types
+
+`ipaddress.IPv4Network`
+: simply uses the type itself for validation by passing the value to `IPv4Network(v)`, 
+  see [Pydantic Types](#pydantic-types) for other custom IP address types
+
+`ipaddress.IPv6Address`
+: simply uses the type itself for validation by passing the value to `IPv6Address(v)`, 
+  see [Pydantic Types](#pydantic-types) for other custom IP address types
+
+`ipaddress.IPv6Interface`
+: simply uses the type itself for validation by passing the value to `IPv6Interface(v)`, 
+  see [Pydantic Types](#pydantic-types) for other custom IP address types
+
+`ipaddress.IPv6Network`
+: simply uses the type itself for validation by passing the value to `IPv6Network(v)`, 
+  see [Pydantic Types](#pydantic-types) for other custom IP address types
+
+`decimal.Decimal`
+: *pydantic* attempts to convert the value to a string, then passes the string to `Decimal(v)`
+
+`pathlib.Path`
+: simply uses the type itself for validation by passing the value to `Path(v)`, 
+  see [Pydantic Types](#pydantic-types) for other more strict path types
+
+`uuid.UUID`
+: strings and bytes (converted to strings) are allowed passed to `UUID(v)`, 
+  see [Pydantic Types](#pydantic-types) for other more strict UUID types
+
+### Typing Iterables
 
 *pydantic* uses standard library `typing` types to define complex objects.
 
 ```py
 {!./examples/ex_typing.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
-## Unions
+### Unions
 
 Example of `Union` usage
 
-### Unions and Type Order
+#### Unions and Type Order
 
 The `Union` type allows a model attribute to accept different types, e.g.:
 
-**(This script is complete, it should run but may be is wrong, see below)**
+!!! warning
+    **This script is complete, it should run but may be is wrong, see below**
 
 ```py
 {!./examples/union_type_incorrect.py!}
@@ -38,18 +164,17 @@ classes to preclude the unexpected representation as such:
 ```
 
 
-## Enums and Choices
+### Enums and Choices
 
 *pydantic* uses python's standard `enum` classes to define choices.
 
 ```py
 {!./examples/choices.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 
-## Datetime Types
+### Datetime Types
 
 *Pydantic* supports the following [datetime](https://docs.python.org/library/datetime.html#available-types)
 types:
@@ -92,17 +217,16 @@ types:
 {!./examples/datetime_example.py!}
 ```
 
-## Exotic Types
+### Exotic Types
 
 *Pydantic* comes with a number of utilities for parsing or validating common objects.
 
 ```py
 {!./examples/exotic.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
-## Booleans
+### Booleans
 
 !!! warning
     The logic for parsing `bool` fields has changed as of version **v1.0**.
@@ -123,17 +247,15 @@ Here is a script demonstrating some of these behaviors:
 ```py
 {!./examples/boolean.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
-## Callable
+### Callable
 
 Fields can also be of type `Callable`:
 
 ```py
 {!./examples/callable.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 !!! warning
@@ -141,7 +263,53 @@ _(This script is complete, it should run "as is")_
     callable, no validation of arguments, their types or the return
     type is performed.
 
-## URLs
+### Type Type
+
+Pydantic supports the use of `Type[T]` to specify that a field may only accept classes (not instances)
+that are subclasses of `T`.
+
+```py
+{!./examples/type_type.py!}
+```
+
+You may also use `Type` to specify that any class is allowed.
+
+```py
+{!./examples/bare_type_type.py!}
+```
+
+## Literal Type
+
+Pydantic supports the use of `typing_extensions.Literal` as a lightweight way to specify that a field
+may accept only specific literal values:
+
+```py
+{!./examples/literal1.py!}
+```
+_(This script is complete, it should run "as is")_
+
+One benefit of this field type is that it can be used to check for equality with one or more specific values
+without needing to declare custom validators:
+
+```py
+{!./examples/literal2.py!}
+```
+_(This script is complete, it should run "as is")_
+
+With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
+
+```py
+{!./examples/literal3.py!}
+```
+_(This script is complete, it should run "as is")_
+
+
+## Pydantic Types
+
+**TODO:** list of pydantic types including the below + EmailStr, NameEmail, FilePath, DirectoryPath,
+custom UUID types, PyObject, special ip and network types
+
+### URLs
 
 For URI/URL validation the following types are available:
 
@@ -166,10 +334,9 @@ provided:
 ```py
 {!./examples/urls.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
-### URL Properties
+#### URL Properties
 
 Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
 the above types export the following properties:
@@ -198,10 +365,9 @@ If further validation is required, these properties can be used by validators to
 ```py
 {!./examples/url_properties.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
-### International Domains
+#### International Domains
 
 "International domains" (e.g. a URL where the host includes non-ascii characters) will be encode via
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
@@ -210,10 +376,9 @@ _(This script is complete, it should run "as is")_
 ```py
 {!./examples/url_punycode.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
-### Underscores in Hostnames
+#### Underscores in Hostnames
 
 !!! note
     In *pydantic* underscores are allowed in all parts of a domain except the tld.
@@ -229,7 +394,7 @@ _(This script is complete, it should run "as is")_
 
     Also, chrome currently accepts `http://exam_ple.com` as a URL, so we're in good (or at least big) company.
 
-## Color Type
+### Color Type
 
 You can use the `Color` data type for storing colors as per
 [CSS3 specification](http://www.w3.org/TR/css3-color/#svg-color). Color can be defined via:
@@ -246,7 +411,6 @@ You can use the `Color` data type for storing colors as per
 ```py
 {!./examples/ex_color_type.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 `Color` has the following methods:
@@ -286,7 +450,7 @@ The `__str__` method for `Color` returns `self.as_named(fallback=True)`.
     the `as_hsl*` refer to hue, saturation, lightness "HSL" as used in html and most of the world, **not**
     "HLS" as used in python's `colorsys`.
 
-## Secret Types
+### Secret Types
 
 You can use the `SecretStr` and the `SecretBytes` data types for storing sensitive information
 that you do not want to be visible in logging or tracebacks.
@@ -295,30 +459,9 @@ The SecretStr and SecretBytes will be formatted as either `'**********'` or `''`
 ```py
 {!./examples/ex_secret_types.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
-## Strict Types
-
-You can use the `StrictStr`, `StrictInt`, `StrictFloat`, and `StrictBool` types
-to prevent coercion from compatible types.
-These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
-This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedFloat` and
-`ConstrainedInt` classes and can be combined with a multitude of complex validation rules.
-
-The following caveats apply:
-
-- `StrictInt` (and the `strict` option of `ConstrainedInt`) will not accept `bool` types,
-    even though `bool` is a subclass of `int` in Python. Other subclasses will work.
-- `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.
-
-```py
-{!./examples/strict_types.py!}
-```
-
-_(This script is complete, it should run "as is")_
-
-## Json Type
+### Json Type
 
 You can use `Json` data type - *Pydantic* will first parse raw JSON string and then will validate parsed object
 against defined Json structure if it's provided.
@@ -326,40 +469,11 @@ against defined Json structure if it's provided.
 ```py
 {!./examples/ex_json_type.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
-## Literal Type
+### Payment Card Numbers
 
-Pydantic supports the use of `typing_extensions.Literal` as a lightweight way to specify that a field
-may accept only specific literal values:
-
-```py
-{!./examples/literal1.py!}
-```
-
-_(This script is complete, it should run "as is")_
-
-One benefit of this field type is that it can be used to check for equality with one or more specific values
-without needing to declare custom validators:
-
-```py
-{!./examples/literal2.py!}
-```
-
-_(This script is complete, it should run "as is")_
-
-With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
-
-```py
-{!./examples/literal3.py!}
-```
-
-_(This script is complete, it should run "as is")_
-
-## Payment Card Numbers
-
-The [`PaymentCardNumber`` type validates `payment cards](https://en.wikipedia.org/wiki/Payment_card)
+The [`PaymentCardNumber` type validates payment cards](https://en.wikipedia.org/wiki/Payment_card)
 (such as a debit or credit card).
 
 ```py
@@ -382,20 +496,26 @@ The actual validation verifies the card number is:
 * the correct length based on the BIN, if Amex, Mastercard or Visa, and between
   12 and 19 digits for all other brands
 
-## Type Type
+## Constrained Types
 
-Pydantic supports the use of `Type[T]` to specify that a field may only accept classes (not instances)
-that are subclasses of `T`.
+## Strict Types
+
+You can use the `StrictStr`, `StrictInt`, `StrictFloat`, and `StrictBool` types
+to prevent coercion from compatible types.
+These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
+This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedFloat` and
+`ConstrainedInt` classes and can be combined with a multitude of complex validation rules.
+
+The following caveats apply:
+
+- `StrictInt` (and the `strict` option of `ConstrainedInt`) will not accept `bool` types,
+    even though `bool` is a subclass of `int` in Python. Other subclasses will work.
+- `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.
 
 ```py
-{!./examples/type_type.py!}
+{!./examples/strict_types.py!}
 ```
-
-You may also use `Type` to specify that any class is allowed.
-
-```py
-{!./examples/bare_type_type.py!}
-```
+_(This script is complete, it should run "as is")_
 
 ## Custom Data Types
 
@@ -405,5 +525,4 @@ to get validators to parse and validate the input data.
 ```py
 {!./examples/custom_data_types.py!}
 ```
-
 _(This script is complete, it should run "as is")_

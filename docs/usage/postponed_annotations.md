@@ -7,7 +7,6 @@ Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/
 ```py
 {!./examples/postponed_annotations.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 Internally *pydantic*  will call a method similar to `typing.get_type_hints` to resolve annotations.
@@ -24,7 +23,6 @@ to properly set types before the model can be used.
 ```py
 {!./examples/forward_ref.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 !!! warning
@@ -57,7 +55,6 @@ Within the model, you can refer to the not-yet-constructed model by a string :
 ```py
 {!./examples/self_referencing_string.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 Since `python 3.7`, You can also refer it by its type, provided you import `annotations` (see
@@ -67,5 +64,4 @@ and pydantic versions).
 ```py
 {!./examples/self_referencing_annotations.py!}
 ```
-
 _(This script is complete, it should run "as is")_

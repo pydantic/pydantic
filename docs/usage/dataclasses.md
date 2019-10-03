@@ -6,7 +6,6 @@ Dataclasses work in python 3.6 using the [dataclasses backport package](https://
 ```py
 {!./examples/ex_dataclasses.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 !!! note
@@ -38,7 +37,6 @@ Nested dataclasses are supported both in dataclasses and normal models.
 ```py
 {!./examples/ex_nested_dataclasses.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 Dataclasses attributes can be populated by tuples, dictionaries or instances of that dataclass.
@@ -52,7 +50,6 @@ code before validation.
 ```py
 {!./examples/ex_post_init_post_parse.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 Since version **v1.0**, any fields annotated with `dataclasses.InitVar` are passed to both `__post_init__` *and*
@@ -61,6 +58,5 @@ Since version **v1.0**, any fields annotated with `dataclasses.InitVar` are pass
 ```py
 {!./examples/ex_post_init_post_parse_initvars.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 

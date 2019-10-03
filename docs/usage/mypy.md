@@ -4,7 +4,6 @@ required variables:
 ```py
 {!./examples/mypy.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 You can also run it through mypy with:

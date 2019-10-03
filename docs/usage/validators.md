@@ -3,7 +3,6 @@ Custom validation and complex relationships between objects can be achieved usin
 ```py
 {!./examples/validators_simple.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 A few things to note on validators:
@@ -40,7 +39,6 @@ Validators can do a few more complex things:
 ```py
 {!./examples/validators_pre_item.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 A few more things to note:
@@ -60,7 +58,6 @@ to set a dynamic default value.
 ```py
 {!./examples/validators_always.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 You'll often want to use this together with `pre` since otherwise with `always=True`
@@ -73,7 +70,6 @@ Validation can also be performed on the entire model's data.
 ```py
 {!./examples/validators_root.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 As with field validators, root validators can be `pre=True` in which case they're called before field
@@ -98,5 +94,4 @@ Validators also work in Dataclasses.
 ```py
 {!./examples/validators_dataclass.py!}
 ```
-
 _(This script is complete, it should run "as is")_

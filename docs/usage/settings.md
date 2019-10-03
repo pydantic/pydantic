@@ -4,7 +4,6 @@ environment variables or keyword arguments (e.g. in unit tests).
 ```py
 {!./examples/settings.py!}
 ```
-
 _(This script is complete, it should run "as is")_
 
 The following rules apply when finding and interpreting environment variables:
