@@ -85,6 +85,9 @@ purpose you can also implement your [own types](#custom-data-types) with custom 
 `typing.Sequence`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
+`typing.Type`
+: see [Type](#type) below for more detail on parsing and validation
+
 `typing.Callable`
 : see [Callable](#callable) below for more detail on parsing and validation
 
@@ -115,6 +118,14 @@ purpose you can also implement your [own types](#custom-data-types) with custom 
 : simply uses the type itself for validation by passing the value to `IPv6Network(v)`, 
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
+`enum.Enum`
+: checks that the value is a valid member of the enum, 
+  see [Enums and Choices](#enums-and-choices) for more details
+
+`enum.IntEnum`
+: checks that the value is a valid member of the integer enum, 
+  see [Enums and Choices](#enums-and-choices) for more details
+
 `decimal.Decimal`
 : *pydantic* attempts to convert the value to a string, then passes the string to `Decimal(v)`
 
@@ -137,10 +148,6 @@ _(This script is complete, it should run "as is")_
 
 ### Unions
 
-Example of `Union` usage
-
-#### Unions and Type Order
-
 The `Union` type allows a model attribute to accept different types, e.g.:
 
 !!! warning
@@ -162,7 +169,6 @@ classes to preclude the unexpected representation as such:
 ```py
 {!./examples/union_type_correct.py!}
 ```
-
 
 ### Enums and Choices
 
@@ -217,15 +223,6 @@ types:
 {!./examples/datetime_example.py!}
 ```
 
-### Exotic Types
-
-*Pydantic* comes with a number of utilities for parsing or validating common objects.
-
-```py
-{!./examples/exotic.py!}
-```
-_(This script is complete, it should run "as is")_
-
 ### Booleans
 
 !!! warning
@@ -263,9 +260,9 @@ _(This script is complete, it should run "as is")_
     callable, no validation of arguments, their types or the return
     type is performed.
 
-### Type Type
+### Type
 
-Pydantic supports the use of `Type[T]` to specify that a field may only accept classes (not instances)
+*pydantic* supports the use of `Type[T]` to specify that a field may only accept classes (not instances)
 that are subclasses of `T`.
 
 ```py
@@ -280,7 +277,11 @@ You may also use `Type` to specify that any class is allowed.
 
 ## Literal Type
 
-Pydantic supports the use of `typing_extensions.Literal` as a lightweight way to specify that a field
+!!! note
+    This is not strictly part of the python standard library, instead the 
+    [typing-extensions](https://pypi.org/project/typing-extensions/) package is required.
+
+*pydantic* supports the use of `typing_extensions.Literal` as a lightweight way to specify that a field
 may accept only specific literal values:
 
 ```py
@@ -306,8 +307,121 @@ _(This script is complete, it should run "as is")_
 
 ## Pydantic Types
 
-**TODO:** list of pydantic types including the below + EmailStr, NameEmail, FilePath, DirectoryPath,
-custom UUID types, PyObject, special ip and network types
+*pydantic* comes with the current types:
+
+`FilePath`
+: like `Path` but the path must exist and be a file
+
+`DirectoryPath`
+: like `Path` but the path must exist and be a directory
+
+`EmailStr`
+: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed, requires the input
+  string to be a valid email address, outputs a simple string
+
+`NameEmail`
+: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed, requires the input
+  string to be a valid email address, outputs a `NameEmail` object which has two properties: `name` and `email`, 
+  also accepts emails in the format `Fred Bloggs <fred.bloggs@example.com>` in which case "Fred Bloggs" is used
+  for name, if simply `fred.bloggs@example.com` is provided, name would be "fred.bloggs"
+
+`PyObject`
+: expects a string and loads the python object at that dotted path, e.g. if `'math.cos'` was provided the resulting
+  field value would be the function `cos`
+
+`Color`
+: for parsing HTML can CSS colors, see [Color Type](#color-type)
+
+`Json`
+: a special type wrapper which parses JSON before parsing, see [JSON Type](#json-type)
+
+`PaymentCardNumber`
+: for parsing and validating payment cards, see [payment cards](#payment-card-numbers)
+
+`AnyUrl`
+: any URL, see [URLs](#urls)
+
+`AnyHttpUrl`
+: an HTTP URL, see [URLs](#urls)
+
+`HttpUrl`
+: stricter HTTP URL, see [URLs](#urls)
+
+`PostgresDsn`
+: a postgres DSN style URL, see [URLs](#urls)
+
+`RedisDsn`
+: a redis DSN style URL, see [URLs](#urls)
+
+`stricturl`
+: a type method for arbitrary URL constraints, see [URLs](#urls)
+
+`UUID1`
+: requires a valid UUID of type 1, see `UUID` [above](#standard-library-types)
+
+`UUID3`
+: requires a valid UUID of type 3, see `UUID` [above](#standard-library-types)
+
+`UUID4`
+: requires a valid UUID of type 4, see `UUID` [above](#standard-library-types)
+
+`UUID5`
+: requires a valid UUID of type 5, see `UUID` [above](#standard-library-types)
+
+`SecretBytes`
+: bytes where the value is kept partially secret, see [Secrets](#secret-types) 
+
+`SecretStr`
+: string where the value is kept partially secret, see [Secrets](#secret-types)
+
+`IPvAnyAddress`
+: allows either a `IPv4Address` or a `IPv6Address`
+
+`IPvAnyInterface`
+: allows either a `IPv4Interface` or a `IPv6Interface`
+
+`IPvAnyNetwork`
+: allows either a `IPv4Network` or a `IPv6Network`
+
+`NegativeFloat`
+: allows a float which is negative, uses standard `float` parsing, then checks the value is less than 0,
+  see [Constrained Types](#constrained-types)
+
+`NegativeInt`
+: allows a int which is negative, uses standard `int` parsing, then checks the value is less than 0,
+  see [Constrained Types](#constrained-types)
+
+`PositiveFloat`
+: allows a float which is negative, uses standard `float` parsing, then checks the value is greater than 0,
+  see [Constrained Types](#constrained-types)
+
+`PositiveInt`
+: allows a int which is negative, uses standard `int` parsing, then checks the value is greater than 0,
+  see [Constrained Types](#constrained-types)
+
+`conbytes`
+: type method for constraining bytes,
+  see [Constrained Types](#constrained-types)
+
+`condecimal`
+: type method for constraining Decimals,
+  see [Constrained Types](#constrained-types)
+
+`confloat`
+: type method for constraining floats,
+  see [Constrained Types](#constrained-types)
+
+`conint`
+: type method for constraining ints,
+  see [Constrained Types](#constrained-types)
+
+`conlist`
+: type method for constraining lists,
+  see [Constrained Types](#constrained-types)
+
+`constr`
+: type method for constraining strs,
+  see [Constrained Types](#constrained-types)
 
 ### URLs
 
@@ -319,12 +433,11 @@ For URI/URL validation the following types are available:
 - `PostgresDsn`: schema `postgres` or `postgresql`, userinfo required, TLD not required
 - `RedisDsn`: schema `redis`, userinfo required, tld not required
 - `stricturl`, method with the following keyword arguments:
-
-  - `strip_whitespace: bool = True`
-  - `min_length: int = 1`
-  - `max_length: int = 2 ** 16`
-  - `tld_required: bool = True`
-  - `allowed_schemes: Optional[Set[str]] = None`
+    - `strip_whitespace: bool = True`
+    - `min_length: int = 1`
+    - `max_length: int = 2 ** 16`
+    - `tld_required: bool = True`
+    - `allowed_schemes: Optional[Set[str]] = None`
 
 If you require custom types they can be created in a similar way to the application specific types defined above.
 
@@ -473,7 +586,7 @@ _(This script is complete, it should run "as is")_
 
 ### Payment Card Numbers
 
-The [`PaymentCardNumber` type validates payment cards](https://en.wikipedia.org/wiki/Payment_card)
+The `PaymentCardNumber` type validates [payment cards](https://en.wikipedia.org/wiki/Payment_card)
 (such as a debit or credit card).
 
 ```py
@@ -497,6 +610,13 @@ The actual validation verifies the card number is:
   12 and 19 digits for all other brands
 
 ## Constrained Types
+
+The value of numerous common types can be restricted using `con*` type methods:
+
+```py
+{!./examples/constrained_types.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ## Strict Types
 
