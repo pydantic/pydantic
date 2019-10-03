@@ -25,8 +25,7 @@ There's also support for an extension to [dataclasses](usage/dataclasses.md) whe
 ```py
 {!./examples/example1.py!}
 ```
-
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 What's going on here:
 

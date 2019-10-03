@@ -139,7 +139,7 @@ purpose you can also implement your [own types](#custom-data-types) with custom 
 
 ### Typing Iterables
 
-*pydantic* uses standard library `typing` types to define complex objects.
+*pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
 
 ```py
 {!./examples/ex_typing.py!}
@@ -151,7 +151,7 @@ _(This script is complete, it should run "as is")_
 The `Union` type allows a model attribute to accept different types, e.g.:
 
 !!! warning
-    **This script is complete, it should run but may be is wrong, see below**
+    This script is complete, it should run but may be is wrong, see below.
 
 ```py
 {!./examples/union_type_incorrect.py!}
@@ -169,6 +169,7 @@ classes to preclude the unexpected representation as such:
 ```py
 {!./examples/union_type_correct.py!}
 ```
+_(This script is complete, it should run "as is")_
 
 ### Enums and Choices
 
@@ -592,8 +593,7 @@ The `PaymentCardNumber` type validates [payment cards](https://en.wikipedia.org/
 ```py
 {!./examples/payment_card_number.py!}
 ```
-
-(This script is complete, it should be run "as is")
+_(This script is complete, it should be run "as is")_
 
 `PaymentCardBrand` can be one of the following based on the BIN:
 
