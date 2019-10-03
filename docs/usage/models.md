@@ -1,4 +1,105 @@
-### Recursive Models
+The primary means of defining objects in *pydantic* is via models 
+(models are simply classes which inherit from `BaseModel`).
+
+You can think of models as similar to types in strictly typed languages or the requirements of a single endpoint
+in an API.
+
+Untrusted data can be passed to a model, after parsing and validation *pydantic* guarantees that the fields
+of the resultant model instance will conform to the field types defined on the model.
+
+!!! note
+    *pydantic* is primarily a parsing library, **not a validation library**.
+    Validation is a means to and end - building a model which forms to the types and constraints provided.
+
+    In other workds *pydantic* guarentees the types and constraints of the output model not the input data.
+
+    This might sound like an esoteric distinction, but it is not - you should read about 
+    [Data Conversion](#data-conversion) if you're unsure what this means or how it might effect your usage.
+
+## Model basic usage
+
+```py
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: int
+    name = 'Jane Doe'
+```
+`User` here is a model with two fields `id` which is an integer and is required, 
+and `name` which is a string and is not required (it has a a default value).
+```py
+user = User(id='123')
+```
+`user` here is an instance of `User`. Initialisation of the object will perform all parsing and validation,
+if no `ValidationError` is raised, you know the resulting model instance is valid.
+```py
+assert user.id == 123
+```
+fields of a model can be accessed as normal attributes of the user object
+the string '123' has been cast to an int as per the field type
+```py
+assert user.name == 'Jane Doe'
+```
+name wasn't set when user was initialised, so it has the default value
+```py
+assert user.__fields_set__ == {'id'}
+```
+the fields which were supplied when user was initialised:
+```py
+assert user.dict() == dict(user) == {'id': 123, 'name': 'Jane Doe'}
+```
+either `.dict()` or `dict(user)` will provide a dict of fields, but `.dict()` can take numerous other arguments.
+```py
+user.id = 321
+assert user.id == 321
+```
+This model is mutable so field can be changed.
+
+### Model properties
+
+The example above only shows the tip of the iceberg of what models can do, 
+models contains the following methods and attributes:
+
+`dict()`
+: returns a dictionary of the model's fields and values, 
+  see [exporting models](exporting_models.md#modeldict) for more details
+
+`json()`
+: returns a JSON string representation `dict()`, 
+  see [exporting models](exporting_models.md#modeljson) for more details
+
+`copy()`
+: returns a deep copy of the model, see [exporting models](exporting_models.md#modeldcopy) for more details
+
+`parse_obj()`
+: utility for loading any object into a model with error handling if the object is not a dictionary,
+  see [helper function below](#helper-functions)
+
+`parse_raw()`
+: utility for loading strings of numerous formats, see [helper function below](#helper-functions)
+
+`parse_file()`
+: like `parse_raw()` but for files, see [helper function below](#helper-functions)
+
+`from_orm()`
+: for loading data from arbitrary classes, see [ORM mode below](#orm-mode-aka-arbitrary-class-instances)
+
+`schema()`
+: returns a dictionary representing the model as JSON Schema, see [Schema](schema.md)
+
+`schema_json()`
+: returns a JSON string representation `schema()`, see [Schema](schema.md)
+
+`fields`
+: a dictionary of the model class's fields
+
+`__config__`
+: the configuration class for this model, see [model config](model_config.md)
+
+`__fields_set__`
+: Set of names of fields which were set when the model instance was initialised
+
+## Recursive Models
 
 More complex hierarchical data structures can be defined using models as types in annotations themselves.
 
@@ -12,7 +113,7 @@ The ellipsis `...` just means "Required" same as annotation only declarations ab
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-models).
 
-### ORM Mode (aka Arbitrary Class Instances)
+## ORM Mode (aka Arbitrary Class Instances)
 
 Pydantic models can be created from arbitrary class instances to support models that map to ORM objects.
 
@@ -46,7 +147,75 @@ sub-class of `GetterDict` in `Config.getter_dict` (see [config](model_config.md)
 You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`, in this case
 your validator function will be passed a `GetterDict` instance which you may copy and modify.
 
-### Helper Functions
+## Error Handling
+
+*pydantic* will raise `ValidationError` whenever it finds an error in the data it's validating.
+
+!!! note
+    Validation code should not raise `ValidationError` itself, but rather raise `ValueError`, `TypeError` or
+    `AssertionError` (or subclasses of `ValueError` or `TypeError`) which will be caught and used to populate
+    `ValidationError`.
+
+One exception will be raised regardless of the number of errors found, that `ValidationError` will
+contain information about all the errors and how they happened.
+
+You can access these errors in a several ways:
+
+`e.errors()`
+: method will return list of errors found in the input data.
+
+`e.json()`
+: method will return a JSON representation of `errors`.
+
+`str(e)`
+: method will return a human readable representation of the errors.
+
+Each error object contains:
+
+`loc`
+: the error's location as a list, the first item in the list will be the field where the error occurred,
+  subsequent items will represent the field where the error occurred
+  in [sub models](models.md#recursive_models) when they're used.
+
+`type`
+: a unique identifier of the error readable by a computer.
+
+`msg`
+: a human readable explanation of the error.
+
+`ctx`
+: an optional object which contains values required to render the error message.
+
+To demonstrate that:
+
+```py
+{!./examples/errors1.py!}
+```
+
+(This script is complete, it should run "as is". `json()` has `indent=2` set by default, but I've tweaked the
+JSON here and below to make it slightly more concise.)
+
+### Custom Errors
+
+In your custom data types or validators you should use `ValueError`, `TypeError` or `AssertionError` to raise errors.
+
+See [validators](validators.md) for more details on use of the `@validator` decorator.
+
+```py
+{!./examples/errors2.py!}
+```
+
+(This script is complete, it should run "as is")
+
+You can also define your own error class with abilities to specify custom error code, message template and context:
+
+```py
+{!./examples/errors3.py!}
+```
+
+(This script is complete, it should run "as is")
+
+## Helper Functions
 
 *Pydantic* provides three `classmethod` helper functions on models for parsing data:
 
@@ -139,7 +308,7 @@ the first and only argument to `parse_obj`.
 ## Faux Immutability
 
 Models can be configured to be immutable via `allow_mutation = False` this will prevent changing attributes of
-a model.
+a model. See [model config](model_config.md) for more details on `Config`.
 
 !!! warning
     Immutability in python is never strict. If developers are determined/stupid they can always
@@ -162,3 +331,8 @@ Pydantic models can be used alongside Python's
 ```
 
 (This script is complete, it should run "as is")
+
+## Data conversion
+
+*pydantic* may change input data to force it to conform model field types. This may result in data being lost, 
+e.g. if the float `3.1415` is passed to an `int` field, *pydantic* will convert the value to `3`.

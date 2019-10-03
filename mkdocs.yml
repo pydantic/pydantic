@@ -22,7 +22,6 @@ nav:
   - 'Field Types': usage/types.md
   - usage/validators.md
   - usage/model_config.md
-  - usage/error_handling.md
   - usage/schema.md
   - usage/exporting_models.md
   - usage/dataclasses.md

@@ -1,8 +1,8 @@
 **TODO intro to types**.
 
-## Standard Library Types
+## Standard iterable types
 
-*pydantic* uses `typing` types to define more complex objects.
+*pydantic* uses standard library `typing` types to define complex objects.
 
 ```py
 {!./examples/ex_typing.py!}

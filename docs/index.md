@@ -44,8 +44,8 @@ If validation fails pydantic with raise an error with a breakdown of what was wr
 {!./examples/example2.py!}
 ```
 outputs:
-```py
-{!./examples/example2_output.py!}
+```json
+{!./examples/example2_output.json!}
 ```
 
 ## Rationale
@@ -90,7 +90,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
   fast to code and ready for production, based on *pydantic* and Starlette.
 
 [Project Jupyter](https://jupyter.org/)
-: developers of the Jupyter notebook, are using *pydantic* 
+: developers of the Jupyter notebook are using *pydantic* 
   [for subprojects](https://github.com/samuelcolvin/pydantic/issues/773).
 
 **Microsoft**
