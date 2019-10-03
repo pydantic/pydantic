@@ -40,7 +40,7 @@ class GenericModel(BaseModel):
             k: resolve_type_hint(v, typevars_map) for k, v in instance_type_hints.items()
         }
 
-        model_name = concrete_name(cls, params)
+        model_name = cls.__concrete_name__(params)
         validators = gather_all_validators(cls)
         fields: Dict[str, Tuple[Type[Any], Any]] = {
             k: (v, cls.__fields__[k].field_info) for k, v in concrete_type_hints.items() if k in cls.__fields__
@@ -60,11 +60,14 @@ class GenericModel(BaseModel):
             _generic_types_cache[(cls, params[0])] = created_model
         return created_model
 
-
-def concrete_name(cls: Type[Any], params: Tuple[Type[Any], ...]) -> str:
-    param_names = [param.__name__ if hasattr(param, '__name__') else str(param) for param in params]
-    params_component = ', '.join(param_names)
-    return f'{cls.__name__}[{params_component}]'
+    @classmethod
+    def __concrete_name__(cls: Type[Any], params: Tuple[Type[Any], ...]) -> str:
+        """
+        This method can be overridden to achieve a custom naming scheme for GenericModels
+        """
+        param_names = [param.__name__ if hasattr(param, '__name__') else str(param) for param in params]
+        params_component = ', '.join(param_names)
+        return f'{cls.__name__}[{params_component}]'
 
 
 def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
