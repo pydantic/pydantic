@@ -31,9 +31,7 @@ A few things to note on validators:
     `if 'password1' in values and ...` in this example.
 
 !!! warning
-    Be aware that mixing annotated and non-annotated fields may alter the order of your fields in metadata and errors,
-    and for validation: annotated fields will always come before non-annotated fields.
-    (Within each group fields remain in the order they were defined.)
+    **TODO:** warning about field order
 
 ## Pre and per-item validators
 

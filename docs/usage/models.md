@@ -26,7 +26,9 @@ class User(BaseModel):
     name = 'Jane Doe'
 ```
 `User` here is a model with two fields `id` which is an integer and is required, 
-and `name` which is a string and is not required (it has a a default value).
+and `name` which is a string and is not required (it has a a default value). The type of `name` is inferred from the
+default value, thus a type annotation is not required (however note [this](#field-ordering) warning about field 
+order when some fields do not have type annotations).
 ```py
 user = User(id='123')
 ```
@@ -331,15 +333,44 @@ Pydantic models can be used alongside Python's
 ```
 _(This script is complete, it should run "as is")_
 
-## Required Fields and field order
+## Field Ordering
 
-Required fields can be defined in three ways:
+Field order is important in models since for the following reason:
 
-* annotation only fields
-* fields using ellipsis (`...`) as the value
-* using the object `Required`
+* validation is performed in the order fields are defined; validators for later fields can access the values of earlier
+  fields
+* field order is preserved in the model schema
+* field order is preserved in validation errors
+* field order is preserved by `.dict()`, `.json()` etc.
 
-**TODO:** example of different types of required and order
+As of **v1.0** all fields with annotations (both annotation only and annotations with a value) come first followed
+by fields with no annotation. Within each group fields remain in the order they were defined.
+
+```py
+{!./examples/field_order.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! warning
+    Note here that field order when both annotated and un-annotated fields are used is esoteric and not obvious
+    at first glance or to the uninitiated.
+
+    **In general therefore, it's preferable to add type annotations to all fields even when a default value
+    also defines the type.**
+
+## Required fields
+
+In addition to annotation only fields to denote required fields, an ellipsis (`...`) can be used as the value
+
+```py
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    a: int
+    b: int = ...
+```
+
+Both `a` and `b` are required here.
 
 ## Data Conversion
 
