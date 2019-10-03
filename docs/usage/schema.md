@@ -4,7 +4,7 @@
 {!./examples/schema1.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 Outputs:
 
@@ -91,7 +91,7 @@ submodules in its `definitions`:
 {!./examples/schema2.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 Outputs:
 
@@ -110,7 +110,7 @@ This is useful if you need to extend or modify JSON Schema default definitions l
 {!./examples/schema3.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 Outputs:
 
@@ -128,7 +128,7 @@ For example, you could add `examples` to the JSON Schema:
 {!./examples/schema4.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 Outputs:
 

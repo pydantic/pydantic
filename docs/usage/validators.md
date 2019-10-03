@@ -4,7 +4,7 @@ Custom validation and complex relationships between objects can be achieved usin
 {!./examples/validators_simple.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 A few things to note on validators:
 
@@ -43,7 +43,7 @@ Validators can do a few more complex things:
 {!./examples/validators_pre_item.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 A few more things to note:
 
@@ -63,7 +63,7 @@ to set a dynamic default value.
 {!./examples/validators_always.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 You'll often want to use this together with `pre` since otherwise with `always=True`
 *pydantic* would try to validate the default `None` which would cause an error.
@@ -76,7 +76,7 @@ Validation can also be performed on the entire model's data.
 {!./examples/validators_root.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 As with field validators, root validators can be `pre=True` in which case they're called before field
 validation occurs with the raw input data, or `pre=False` (the default) in which case
@@ -101,4 +101,4 @@ Validators also work in Dataclasses.
 {!./examples/validators_dataclass.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_

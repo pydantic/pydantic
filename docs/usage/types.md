@@ -1,4 +1,4 @@
-**TODO intro to types**.
+**TODO:** intro to types
 
 ## Standard iterable types
 
@@ -8,7 +8,7 @@
 {!./examples/ex_typing.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Unions
 
@@ -46,7 +46,7 @@ classes to preclude the unexpected representation as such:
 {!./examples/choices.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 
 ## Datetime Types
@@ -100,7 +100,7 @@ types:
 {!./examples/exotic.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Booleans
 
@@ -124,7 +124,7 @@ Here is a script demonstrating some of these behaviors:
 {!./examples/boolean.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Callable
 
@@ -134,7 +134,7 @@ Fields can also be of type `Callable`:
 {!./examples/callable.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 !!! warning
     Callable fields only perform a simple check that the argument is
@@ -167,7 +167,7 @@ provided:
 {!./examples/urls.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ### URL Properties
 
@@ -199,7 +199,7 @@ If further validation is required, these properties can be used by validators to
 {!./examples/url_properties.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ### International Domains
 
@@ -211,7 +211,7 @@ If further validation is required, these properties can be used by validators to
 {!./examples/url_punycode.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ### Underscores in Hostnames
 
@@ -247,7 +247,7 @@ You can use the `Color` data type for storing colors as per
 {!./examples/ex_color_type.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 `Color` has the following methods:
 
@@ -296,7 +296,7 @@ The SecretStr and SecretBytes will be formatted as either `'**********'` or `''`
 {!./examples/ex_secret_types.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Strict Types
 
@@ -316,7 +316,7 @@ The following caveats apply:
 {!./examples/strict_types.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Json Type
 
@@ -327,7 +327,7 @@ against defined Json structure if it's provided.
 {!./examples/ex_json_type.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Literal Type
 
@@ -338,7 +338,7 @@ may accept only specific literal values:
 {!./examples/literal1.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 One benefit of this field type is that it can be used to check for equality with one or more specific values
 without needing to declare custom validators:
@@ -347,7 +347,7 @@ without needing to declare custom validators:
 {!./examples/literal2.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
 
@@ -355,7 +355,7 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
 {!./examples/literal3.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Payment Card Numbers
 
@@ -406,4 +406,4 @@ to get validators to parse and validate the input data.
 {!./examples/custom_data_types.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_

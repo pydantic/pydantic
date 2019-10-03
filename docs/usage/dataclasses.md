@@ -7,7 +7,7 @@ Dataclasses work in python 3.6 using the [dataclasses backport package](https://
 {!./examples/ex_dataclasses.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 !!! note
     Keep in mind that `pydantic.dataclasses.dataclass` is a drop in replacement for `dataclasses.dataclass`
@@ -39,7 +39,7 @@ Nested dataclasses are supported both in dataclasses and normal models.
 {!./examples/ex_nested_dataclasses.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 Dataclasses attributes can be populated by tuples, dictionaries or instances of that dataclass.
 
@@ -53,7 +53,7 @@ code before validation.
 {!./examples/ex_post_init_post_parse.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 Since version **v1.0**, any fields annotated with `dataclasses.InitVar` are passed to both `__post_init__` *and*
 `__post_init_post_parse__`.
@@ -62,5 +62,5 @@ Since version **v1.0**, any fields annotated with `dataclasses.InitVar` are pass
 {!./examples/ex_post_init_post_parse_initvars.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 

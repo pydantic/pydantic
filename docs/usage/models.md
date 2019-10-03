@@ -109,7 +109,7 @@ The ellipsis `...` just means "Required" same as annotation only declarations ab
 {!./examples/recursive.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-models).
 
@@ -127,7 +127,7 @@ The example here uses SQLAlchemy but the same approach should work for any ORM.
 {!./examples/orm_mode.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ORM instances will be parsed with `from_orm` recursively as well as at the top level.
 
@@ -137,15 +137,15 @@ Here a vanilla class is used to demonstrate the principle, but any ORM could be 
 {!./examples/orm_mode_recursive.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 Arbitrary classes are processed by *pydantic* using the `GetterDict` class
 (see [utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)) which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
 sub-class of `GetterDict` in `Config.getter_dict` (see [config](model_config.md)).
 
-You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`, in this case
-your validator function will be passed a `GetterDict` instance which you may copy and modify.
+You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`, 
+in this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
 
 ## Error Handling
 
@@ -205,7 +205,7 @@ See [validators](validators.md) for more details on use of the `@validator` deco
 {!./examples/errors2.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 You can also define your own error class with abilities to specify custom error code, message template and context:
 
@@ -213,7 +213,7 @@ You can also define your own error class with abilities to specify custom error 
 {!./examples/errors3.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Helper Functions
 
@@ -231,7 +231,7 @@ You can also define your own error class with abilities to specify custom error 
 {!./examples/parse.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 !!! note
     Since `pickle` allows complex objects to be encoded, to use it you need to explicitly pass `allow_pickle` to
@@ -260,7 +260,7 @@ Here is an example using `GenericModel` to create an easily-reused HTTP response
 {!./examples/generics.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 If you set `Config` or make use of `validator` in your generic model definition, it is applied
 to concrete subclasses in the same way as when inheriting from `BaseModel`. Any methods defined on
@@ -329,10 +329,27 @@ Pydantic models can be used alongside Python's
 ```py
 {!./examples/ex_abc.py!}
 ```
+_(This script is complete, it should run "as is")_
 
-(This script is complete, it should run "as is")
+## Required Fields and field order
 
-## Data conversion
+Required fields can be defined in three ways:
 
-*pydantic* may change input data to force it to conform model field types. This may result in data being lost, 
-e.g. if the float `3.1415` is passed to an `int` field, *pydantic* will convert the value to `3`.
+* annotation only fields
+* fields using ellipsis (`...`) as the value
+* using the object `Required`
+
+**TODO:** example of different types of required and order
+
+## Data Conversion
+
+*pydantic* may cast input data to force it to conform model field types. This may result in data being lost, take
+the following example:
+
+```py
+{!./examples/data_conversion.py!}
+```
+_(This script is complete, it should run "as is")_
+
+This is a deliberate decision of *pydantic*, and in general it's the most useful approach, see 
+[here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion of the subject.

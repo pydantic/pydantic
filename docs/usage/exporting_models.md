@@ -19,7 +19,7 @@ Example:
 {!./examples/export_dict.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## `dict(model)` and iteration
 
@@ -33,7 +33,7 @@ Example:
 {!./examples/export_iterate.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## `model.copy(...)`
 
@@ -52,7 +52,7 @@ Example:
 {!./examples/export_copy.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## `model.json(...)`
 
@@ -80,7 +80,7 @@ Example:
 {!./examples/export_json.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 By default timedelta's are encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
 as an optional alternative which implements ISO 8601 time diff encoding.
@@ -96,7 +96,7 @@ Using the same plumbing as `copy()` *pydantic* models support efficient pickling
 {!./examples/export_pickle.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Advanced include and exclude
 
@@ -126,7 +126,7 @@ To improve the performance of encoding and decoding JSON, alternative JSON imple
 {!./examples/json_ujson.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 `ujson` generally cannot be used to dump JSON since it doesn't support encoding of objects like datetimes and does
 not accept a `default` fallback function argument. To do this you may use another library like
@@ -136,7 +136,7 @@ not accept a `default` fallback function argument. To do this you may use anothe
 {!./examples/json_orjson.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 Note that `orjson` takes care of `datetime` encoding natively, making it faster than `json.dumps` but
 meaning you cannot always customise encoding using `Config.json_encoders`.

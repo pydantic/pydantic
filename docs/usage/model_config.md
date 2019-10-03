@@ -87,7 +87,7 @@ Options:
 {!./examples/config.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 Version for models based on `@dataclass` decorator:
 
@@ -95,7 +95,7 @@ Version for models based on `@dataclass` decorator:
 {!./examples/ex_dataclasses_config.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
 
 ## Alias Generator
 
@@ -106,4 +106,4 @@ you can automatically generate aliases using `alias_generator`:
 {!./examples/alias_generator_config.py!}
 ```
 
-(This script is complete, it should run "as is")
+_(This script is complete, it should run "as is")_
