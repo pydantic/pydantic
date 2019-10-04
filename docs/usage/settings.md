@@ -1,4 +1,4 @@
-One of pydantic's most useful applications is to define default settings, allow them to be overridden by
+One of pydantic's most useful applications is to define default settings, and allow them to be overridden by
 environment variables or keyword arguments (e.g. in unit tests).
 
 ```py

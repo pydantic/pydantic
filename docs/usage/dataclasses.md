@@ -10,10 +10,10 @@ _(This script is complete, it should run "as is")_
 
 !!! note
     Keep in mind that `pydantic.dataclasses.dataclass` is a drop in replacement for `dataclasses.dataclass`
-    with validation, not a repacement for `pydantic.BaseModel`. There are cases where subclassing
+    with validation, not a replacement for `pydantic.BaseModel`. There are cases where subclassing
     `pydantic.BaseModel` is the better choice. 
     
-    For more information and disucssion see
+    For more information and discussion see
     [samuelcolvin/pydantic#710](https://github.com/samuelcolvin/pydantic/issues/710).
 
 You can use all the standard pydantic field types and the resulting dataclass will be identical to the one

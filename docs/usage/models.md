@@ -9,14 +9,14 @@ of the resultant model instance will conform to the field types defined on the m
 
 !!! note
     *pydantic* is primarily a parsing library, **not a validation library**.
-    Validation is a means to and end - building a model which forms to the types and constraints provided.
+    Validation is a means to an end - building a model which conforms to the types and constraints provided.
 
-    In other workds *pydantic* guarentees the types and constraints of the output model not the input data.
+    In other words *pydantic* guarantees the types and constraints of the output model, not the input data.
 
     This might sound like an esoteric distinction, but it is not - you should read about 
     [Data Conversion](#data-conversion) if you're unsure what this means or how it might effect your usage.
 
-## Model basic usage
+## Basic model usage
 
 ```py
 from pydantic import BaseModel
@@ -26,7 +26,7 @@ class User(BaseModel):
     name = 'Jane Doe'
 ```
 `User` here is a model with two fields `id` which is an integer and is required, 
-and `name` which is a string and is not required (it has a a default value). The type of `name` is inferred from the
+and `name` which is a string and is not required (it has a default value). The type of `name` is inferred from the
 default value, thus a type annotation is not required (however note [this](#field-ordering) warning about field 
 order when some fields do not have type annotations).
 ```py
@@ -55,12 +55,12 @@ either `.dict()` or `dict(user)` will provide a dict of fields, but `.dict()` ca
 user.id = 321
 assert user.id == 321
 ```
-This model is mutable so field can be changed.
+This model is mutable so field values can be changed.
 
 ### Model properties
 
-The example above only shows the tip of the iceberg of what models can do, 
-models contains the following methods and attributes:
+The example above only shows the tip of the iceberg of what models can do. 
+Models contains the following methods and attributes:
 
 `dict()`
 : returns a dictionary of the model's fields and values, 
@@ -313,7 +313,7 @@ a model. See [model config](model_config.md) for more details on `Config`.
 ```
 
 Trying to change `a` caused an error and it remains unchanged, however the dict `b` is mutable and the
-immutability of `foobar` doesn't stop being changed.
+immutability of `foobar` doesn't stop `b` from being changed.
 
 ## Abstract Base Classes
 
@@ -327,7 +327,7 @@ _(This script is complete, it should run "as is")_
 
 ## Field Ordering
 
-Field order is important in models since for the following reason:
+Field order is important in models for the following reason:
 
 * validation is performed in the order fields are defined; validators for later fields can access the values of earlier
   fields

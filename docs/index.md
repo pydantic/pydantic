@@ -31,13 +31,13 @@ What's going on here:
 
 * `id` is of type int; the annotation only declaration tells *pydantic* that this field is required. Strings,
   bytes or floats will be coerced to ints if possible, otherwise an exception would be raised.
-* `name` is inferred as a string from the default, it is not required as it has a default.
+* `name` is inferred as a string from the default; it is not required as it has a default.
 * `signup_ts` is a datetime field which is not required (``None`` if it's not supplied), pydantic will process
   either a unix timestamp int (e.g. `1496498400`) or a string representing the date & time.
 * `friends` uses python's typing system, it is required to be a list of integers, as with `id` integer-like objects
   will be converted to integers.
 
-If validation fails pydantic with raise an error with a breakdown of what was wrong:
+If validation fails pydantic will raise an error with a breakdown of what was wrong:
 
 ```py
 {!./examples/example2.py!}
@@ -50,10 +50,10 @@ outputs:
 ## Rationale
 
 
-So *pydantic* uses some cool new language feature, but why should I actually go and use it?
+So *pydantic* uses some cool new language features, but why should I actually go and use it?
 
 **no brainfuck**
-: no new schema definition micro-language to learn. If you know python (and perhaps skim read the
+: no new schema definition micro-language to learn. If you know python (and perhaps skim the
   [type hinting docs](https://docs.python.org/3/library/typing.html)) you know how to use *pydantic*.
 
 **plays nicely with your IDE/linter/brain**
