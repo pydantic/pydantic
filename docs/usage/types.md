@@ -5,8 +5,8 @@ purpose you can also implement your [own types](#custom-data-types) with custom 
 
 ## Standard Library Types
 
-*pydantic* supports many common types from the python standard library, you need stricter processing see 
-[Strict Types](#strict-types), if you need to constrain the values allowed (eg. require a positive int) see
+*pydantic* supports many common types from the python standard library. If you need stricter processing see 
+[Strict Types](#strict-types); if you need to constrain the values allowed (eg. require a positive int) see
 [Constrained Types](#constrained-types).
 
 `bool`
