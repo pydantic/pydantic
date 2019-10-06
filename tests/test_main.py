@@ -1001,3 +1001,19 @@ def test_model_iteration():
     assert m.dict() == {'c': 3, 'd': {'a': 1, 'b': 2}}
     assert list(m) == [('c', 3), ('d', Foo())]
     assert dict(m) == {'c': 3, 'd': Foo()}
+
+
+def test_custom_init_subclass_params():
+    class DerivedModel(BaseModel):
+        def __init_subclass__(cls, something):
+            cls.something = something
+
+    # if this raises a TypeError, then there is a regression of issue 867:
+    # pydantic.main.MetaModel.__new__ should include **kwargs at the end of the
+    # method definition and pass them on to the super call at the end in order
+    # to allow the special method __init_subclass__ to be defined with custom
+    # parameters on extended BaseModel classes.
+    class NewModel(DerivedModel, something=2):
+        something = 1
+
+    assert NewModel.something == 2

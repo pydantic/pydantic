@@ -130,7 +130,7 @@ UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
-    def __new__(mcs, name, bases, namespace):
+    def __new__(mcs, name, bases, namespace, **kwargs):
         fields: Dict[str, ModelField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
@@ -220,7 +220,7 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
-        return super().__new__(mcs, name, bases, new_namespace)
+        return super().__new__(mcs, name, bases, new_namespace, **kwargs)
 
 
 class BaseModel(metaclass=ModelMetaclass):
