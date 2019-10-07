@@ -8,10 +8,14 @@ import sys
 from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, NoneStr
+from pydantic import BaseModel, NoneStr, StrictBool
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Field
 from pydantic.generics import GenericModel
+
+
+class Flags(BaseModel):
+    strict_bool: StrictBool = False
 
 
 class Model(BaseModel):

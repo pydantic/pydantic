@@ -188,24 +188,28 @@ class StrictStr(ConstrainedStr):
     strict = True
 
 
-class StrictBool(int):
-    """
-    StrictBool to allow for bools which are not type-coerced.
-    """
+if TYPE_CHECKING:
+    StrictBool = bool
+else:
 
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Any) -> bool:
+    class StrictBool(int):
         """
-        Ensure that we only allow bools.
+        StrictBool to allow for bools which are not type-coerced.
         """
-        if isinstance(value, bool):
-            return value
 
-        raise errors.StrictBoolError()
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, value: Any) -> bool:
+            """
+            Ensure that we only allow bools.
+            """
+            if isinstance(value, bool):
+                return value
+
+            raise errors.StrictBoolError()
 
 
 class PyObject:
