@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import re
 import sys
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 THIS_DIR = Path(__file__).parent
@@ -19,6 +20,9 @@ def main():
     from schema_mapping import build_schema_mappings
 
     build_schema_mappings()
+
+    version = SourceFileLoader('version', str(PROJECT_ROOT / 'pydantic/version.py')).load_module()
+    (PROJECT_ROOT / 'docs/.version.md').write_text(f'Documentation for version: **v{version.VERSION}**\n')
 
 
 if __name__ == '__main__':

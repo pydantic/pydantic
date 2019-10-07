@@ -5,6 +5,8 @@
 [![downloads](https://img.shields.io/pypi/dm/pydantic.svg)](https://pypistats.org/packages/pydantic)
 [![license](https://img.shields.io/github/license/samuelcolvin/pydantic.svg)](https://github.com/samuelcolvin/pydantic/blob/master/LICENSE)
 
+{!./.version.md!}
+
 !!! note
     These docs refer to Version 1 of *pydantic* which is as-yet unreleased. **v0.32** docs are available
     [here](https://5d5d36c5b8219300085d081b--pydantic-docs.netlify.com).
@@ -115,3 +117,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
 
 For a more comprehensive list of open-source projects using *pydantic* see 
 [dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
+
+<script>
+{!./redirects.js!}
+</script>

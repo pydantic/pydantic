@@ -1,6 +1,7 @@
 site_name: Pydantic
 site_description: Data validation and settings management using python 3.6 type hinting
 strict: true
+site_url: https://pydantic-docs.helpmanual.io/
 
 theme:
   name: 'material'

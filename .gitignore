@@ -13,6 +13,7 @@ test.py
 /htmlcov/
 /benchmarks/*.json
 /docs/.changelog.md
+/docs/.version.md
 /docs/.tmp_schema_mappings.html
 /site/
 /site.zip
