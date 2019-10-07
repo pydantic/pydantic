@@ -1,8 +1,9 @@
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema, __version__, fields, validate
 
 
 class TestMarshmallow:
     package = 'marshmallow'
+    version = __version__
 
     def __init__(self, allow_extra):
         class LocationSchema(Schema):
@@ -21,7 +22,7 @@ class TestMarshmallow:
             id = fields.Integer(required=True)
             client_name = fields.Str(validate=validate.Length(max=255), required=True)
             sort_index = fields.Float(required=True)
-            #client_email = fields.Email()
+            # client_email = fields.Email()
             client_phone = fields.Str(validate=validate.Length(max=255), allow_none=True)
 
             location = LocationSchema()
