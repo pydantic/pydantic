@@ -16,12 +16,12 @@ for p in THIS_DIR.glob('*.md'):
     if not m:
         raise RuntimeError(f'{p.name!r}: invalid change file name')
     gh_id, creator = m.groups()
-    content = p.read_text().strip('\n. ').replace('\r\n', '\n')
+    content = p.read_text().replace('\r\n', '\n').strip('\n. ')
     if '\n\n' in content:
         raise RuntimeError(f'{p.name!r}: content includes multiple paragraphs')
     content = content.replace('\n', '\n  ')
-    order = 0 if '**breaking change' in content.lower() else 1
-    bullet_list.append((order, int(gh_id), f'* {content}, #{gh_id} by @{creator}'))
+    priority = 0 if '**breaking change' in content.lower() else 1
+    bullet_list.append((priority, int(gh_id), f'* {content}, #{gh_id} by @{creator}'))
 
 if not bullet_list:
     print('no changes found')
@@ -29,11 +29,7 @@ if not bullet_list:
 
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 chunk_title = f'v{version.VERSION} ({date.today():%Y-%m-%d})'
-bullets = '\n'.join(c for *_, c in sorted(bullet_list))
-new_chunk = f"""
-## {chunk_title}
-{bullets}
-"""
+new_chunk = '## {}\n{}\n'.format(chunk_title, '\n'.join(c for *_, c in sorted(bullet_list)))
 
 print(f'{chunk_title}...{len(bullet_list)} items')
 history_path = THIS_DIR / '..' / 'HISTORY.md'
@@ -46,5 +42,5 @@ for p in THIS_DIR.glob('*.md'):
 
 print(
     'changes deleted and HISTORY.md successfully updated, to reset use:\n\n'
-    '  git checkout -- changes/*.md HISTORY.md\n'
+    '  git checkout -- changes/*-*.md HISTORY.md\n'
 )
