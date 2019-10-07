@@ -188,7 +188,7 @@ class StrictStr(ConstrainedStr):
     strict = True
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     StrictBool = bool
 else:
 
