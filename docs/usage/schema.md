@@ -79,7 +79,7 @@ for more complex `string` sub-types.
 
 The field schema mapping from Python / Pydantic to JSON Schema is done as follows:
 
-{!./.tmp_schema_mappings.md!}
+{!./.tmp_schema_mappings.html!}
 
 ## Top-level schema generation
 

@@ -204,7 +204,7 @@ def save_md(data):
 
 {table}
 """
-    (Path(__file__).parent / '..' / 'docs' / 'benchmarks_table.md').write_text(text)
+    (Path(__file__).parent / '..' / 'docs' / '.benchmarks_table.md').write_text(text)
 
 
 def diff():
