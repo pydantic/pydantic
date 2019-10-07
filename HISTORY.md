@@ -1,3 +1,11 @@
+## v1.0b2 (2019-10-07)
+
+* Mark `StrictBool` typecheck as `bool` to allow for default values without mypy errors, #690 by @dmontagu
+* Transfer the documentation build from sphinx to mkdocs, re-write much of the documentation, #856 by @samuelcolvin
+* Add support for custom naming schemes for `GenericModel` subclasses, #859 by @dmontagu
+* Add `if TYPE_CHECKING:` to the excluded lines for test coverage, #874 by @dmontagu
+* Rename `allow_population_by_alias` to `allow_population_by_field_name`, remove unnecessary warning about it, #875 by @samuelcolvin
+
 ## v1.0b1 (2019-10-01)
 
 * **Breaking Change:** rename `Schema` to `Field`, make it a function to placate mypy, #577 by @samuelcolvin

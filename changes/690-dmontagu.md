@@ -1,1 +1,0 @@
-Make `StrictBool` typecheck as `bool` to allow for default values without mypy errors

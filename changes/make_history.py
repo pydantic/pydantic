@@ -29,11 +29,11 @@ if not bullet_list:
 
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 chunk_title = f'v{version.VERSION} ({date.today():%Y-%m-%d})'
-new_chunk = '## {}\n{}\n'.format(chunk_title, '\n'.join(c for *_, c in sorted(bullet_list)))
+new_chunk = '## {}\n\n{}\n\n'.format(chunk_title, '\n'.join(c for *_, c in sorted(bullet_list)))
 
 print(f'{chunk_title}...{len(bullet_list)} items')
 history_path = THIS_DIR / '..' / 'HISTORY.md'
-history = history_path.read_text()
+history = new_chunk + history_path.read_text()
 
 history_path.write_text(history)
 for p in THIS_DIR.glob('*.md'):
