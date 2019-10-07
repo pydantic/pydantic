@@ -265,6 +265,13 @@ you would expect mypy to provide if you were to declare the type without using `
     Internally, pydantic uses `create_model` to generate a (cached) concrete `BaseModel` at runtime,
     so there is essentially zero overhead introduced by making use of `GenericModel`.
 
+If the name of the concrete subclasses is important, you can also override the default behavior:
+
+```py
+{!./examples/generics-naming.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Dynamic model creation
 
 There are some occasions where the shape of a model is not known until runtime, for this *pydantic* provides

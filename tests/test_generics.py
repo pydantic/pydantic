@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Any, ClassVar, Dict, Generic, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -421,3 +421,20 @@ def test_custom_schema():
 
     schema = MyModel[int].schema()
     assert schema['properties']['a'].get('description') == 'Custom'
+
+
+@skip_36
+def test_custom_generic_naming():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        value: Optional[T]
+
+        @classmethod
+        def __concrete_name__(cls: Type[Any], params: Tuple[Type[Any], ...]) -> str:
+            param_names = [param.__name__ if hasattr(param, '__name__') else str(param) for param in params]
+            title = param_names[0].title()
+            return f'Optional{title}Wrapper'
+
+    assert str(MyModel[int](value=1)) == 'OptionalIntWrapper value=1'
+    assert str(MyModel[str](value=None)) == 'OptionalStrWrapper value=None'
