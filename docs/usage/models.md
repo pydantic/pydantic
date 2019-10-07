@@ -329,11 +329,11 @@ _(This script is complete, it should run "as is")_
 
 Field order is important in models for the following reason:
 
-* validation is performed in the order fields are defined; validators for later fields can access the values of earlier
-  fields
-* field order is preserved in the model schema
-* field order is preserved in validation errors
-* field order is preserved by `.dict()`, `.json()` etc.
+* validation is performed in the order fields are defined; [fields validators](validators.md) 
+  can access the values of earlier fields, but not later ones
+* field order is preserved in the model [schema](schema.md)
+* field order is preserved in [validation errors](#error-handling)
+* field order is preserved by [`.dict()` and `.json()` etc.](exporting_models.md#modeldict)
 
 As of **v1.0** all fields with annotations (both annotation only and annotations with a value) come first followed
 by fields with no annotation. Within each group fields remain in the order they were defined.
@@ -345,7 +345,7 @@ _(This script is complete, it should run "as is")_
 
 !!! warning
     Note here that field order when both annotated and un-annotated fields are used is esoteric and not obvious
-    at first glance or to the uninitiated.
+    at first glance.
 
     **In general therefore, it's preferable to add type annotations to all fields even when a default value
     also defines the type.**
@@ -362,11 +362,12 @@ class Model(BaseModel):
     b: int = ...
 ```
 
-Here both `a` and `b` are required here.
+Here both `a` and `b` are required here. Use of ellipses for required fields does not work well with [mypy](mypy.md)
+so should generally be avoided.
 
 ## Data Conversion
 
-*pydantic* may cast input data to force it to conform model field types. This may result in data being lost, take
+*pydantic* may cast input data to force it to conform model field types. This may result in information being lost, take
 the following example:
 
 ```py

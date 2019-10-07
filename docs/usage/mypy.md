@@ -1,5 +1,5 @@
 Pydantic works with [mypy](http://mypy-lang.org/) provided you use the "annotation only" version of
-required variables:
+required fields:
 
 ```py
 {!./examples/mypy.py!}
@@ -8,7 +8,11 @@ _(This script is complete, it should run "as is")_
 
 You can also run it through mypy with:
 
-    mypy --ignore-missing-imports --follow-imports=skip --strict-optional pydantic_mypy_test.py
+    mypy \
+      --ignore-missing-imports \
+      --follow-imports=skip \
+      --strict-optional \
+      pydantic_mypy_test.py
 
 ## Strict Optional
 
@@ -23,10 +27,3 @@ Pydantic provides a few useful optional or union types:
 * `NoneStrBytes` aka. `Optional[StrBytes]`
 
 If these aren't sufficient you can of course define your own.
-
-## Required Fields and mypy
-
-The ellipsis notation `...` will not work with mypy, you need to use annotation only fields as in the example above.
-
-To get round this you can use the `Required` (via `from pydantic import Required`) field as an alias for
-ellipses or annotation only.
