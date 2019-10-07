@@ -93,7 +93,7 @@ _(This script is complete, it should run "as is")_
 
 Outputs:
 
-```py
+```json
 {!./examples/schema2.json!}
 ```
 
@@ -111,7 +111,7 @@ _(This script is complete, it should run "as is")_
 
 Outputs:
 
-```py
+```json
 {!./examples/schema3.json!}
 ```
 
@@ -128,6 +128,6 @@ _(This script is complete, it should run "as is")_
 
 Outputs:
 
-```py
+```json
 {!./examples/schema4.json!}
 ```
