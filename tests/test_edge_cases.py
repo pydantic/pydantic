@@ -786,7 +786,7 @@ def test_pop_by_alias():
 
         class Config:
             extra = Extra.forbid
-            allow_population_by_alias = True
+            allow_population_by_field_name = True
             fields = {'last_updated_by': 'lastUpdatedBy'}
 
     assert Model(lastUpdatedBy='foo').dict() == {'last_updated_by': 'foo'}
@@ -846,25 +846,25 @@ def test_multiple_inheritance_config():
 
     class Child(Mixin, Parent):
         class Config:
-            allow_population_by_alias = True
+            allow_population_by_field_name = True
 
     assert BaseModel.__config__.allow_mutation is True
-    assert BaseModel.__config__.allow_population_by_alias is False
+    assert BaseModel.__config__.allow_population_by_field_name is False
     assert BaseModel.__config__.extra is Extra.ignore
     assert BaseModel.__config__.use_enum_values is False
 
     assert Parent.__config__.allow_mutation is False
-    assert Parent.__config__.allow_population_by_alias is False
+    assert Parent.__config__.allow_population_by_field_name is False
     assert Parent.__config__.extra is Extra.forbid
     assert Parent.__config__.use_enum_values is False
 
     assert Mixin.__config__.allow_mutation is True
-    assert Mixin.__config__.allow_population_by_alias is False
+    assert Mixin.__config__.allow_population_by_field_name is False
     assert Mixin.__config__.extra is Extra.ignore
     assert Mixin.__config__.use_enum_values is True
 
     assert Child.__config__.allow_mutation is False
-    assert Child.__config__.allow_population_by_alias is True
+    assert Child.__config__.allow_population_by_field_name is True
     assert Child.__config__.extra is Extra.forbid
     assert Child.__config__.use_enum_values is True
 
@@ -1015,3 +1015,19 @@ def test_scheme_deprecated():
 
         class Model(BaseModel):
             foo: int = Schema(4)
+
+
+def test_population_by_alias():
+    with pytest.warns(DeprecationWarning, match='"allow_population_by_alias" is deprecated and replaced by'):
+
+        class Model(BaseModel):
+            a: str
+
+            class Config:
+                allow_population_by_alias = True
+                fields = {'a': {'alias': '_a'}}
+
+    assert Model.__config__.allow_population_by_field_name is True
+    assert Model(a='different').a == 'different'
+    assert Model(a='different').dict() == {'a': 'different'}
+    assert Model(a='different').dict(by_alias=True) == {'_a': 'different'}

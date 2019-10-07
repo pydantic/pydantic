@@ -56,7 +56,7 @@ class BaseConfig:
     validate_all = False
     extra = Extra.ignore
     allow_mutation = True
-    allow_population_by_alias = False
+    allow_population_by_field_name = False
     use_enum_values = False
     fields: Dict[str, Union[str, Dict[str, str]]] = {}
     validate_assignment = False
@@ -104,12 +104,19 @@ def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'C
 EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/usage/model_config/'
 
 
-def set_extra(config: Type[BaseConfig], cls_name: str) -> None:
+def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
     if not isinstance(config.extra, Extra):
         try:
             config.extra = Extra(config.extra)
         except ValueError:
             raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
+
+    if hasattr(config, 'allow_population_by_alias'):
+        warnings.warn(
+            f'{cls_name}: "allow_population_by_alias" is deprecated and replaced by "allow_population_by_field_name"',
+            DeprecationWarning,
+        )
+        config.allow_population_by_field_name = config.allow_population_by_alias  # type: ignore
 
 
 def is_valid_field(name: str) -> bool:
@@ -155,7 +162,7 @@ class ModelMetaclass(ABCMeta):
                 # re-run prepare to add extra validators
                 f.prepare()
 
-        set_extra(config, name)
+        prepare_config(config, name)
 
         class_vars = set()
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
@@ -728,7 +735,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
 
         value = input_data.get(field.alias, _missing)
         using_name = False
-        if value is _missing and config.allow_population_by_alias and field.alt_alias:
+        if value is _missing and config.allow_population_by_field_name and field.alt_alias:
             value = input_data.get(field.name, _missing)
             using_name = True
 
