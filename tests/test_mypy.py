@@ -31,7 +31,7 @@ expected_fails = [
     ),
 ]
 
-expected_successes = [('tests/mypy/success.py', ('', '', 0))]
+expected_successes = [('tests/mypy/success.py', ('', '', 0)), ('tests/mypy/success_strict_bool.py', ('', '', 0))]
 
 
 @pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
