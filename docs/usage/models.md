@@ -105,8 +105,6 @@ Models contains the following methods and attributes:
 
 More complex hierarchical data structures can be defined using models as types in annotations themselves.
 
-The ellipsis `...` just means "Required" same as annotation only declarations above.
-
 ```py
 {!./examples/recursive.py!}
 ```

@@ -308,7 +308,7 @@ _(This script is complete, it should run "as is")_
 
 ## Pydantic Types
 
-*pydantic* comes with the current types:
+*pydantic* comes with the following types:
 
 `FilePath`
 : like `Path` but the path must exist and be a file
