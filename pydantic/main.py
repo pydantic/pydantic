@@ -20,7 +20,7 @@ from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import GetterDict, ValueItems, truncate, validate_field_name
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
@@ -224,7 +224,7 @@ class ModelMetaclass(ABCMeta):
 
 
 class BaseModel(metaclass=ModelMetaclass):
-    if TYPE_CHECKING:  # pragma: no cover
+    if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
         __validators__: Dict[str, AnyCallable] = {}
@@ -241,7 +241,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
-        if TYPE_CHECKING:  # pragma: no cover
+        if TYPE_CHECKING:
             __pydantic_self__.__dict__: Dict[str, Any] = {}
             __pydantic_self__.__fields_set__: 'SetStr' = set()
         values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)

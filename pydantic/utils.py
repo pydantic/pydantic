@@ -10,7 +10,7 @@ except ImportError:
     Literal = None  # type: ignore
 
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
     from .typing import SetIntStr, DictIntStrAny, IntStr  # noqa: F401
 
@@ -157,7 +157,7 @@ class ValueItems:
     __slots__ = ('_items', '_type')
 
     def __init__(self, value: Any, items: Union['SetIntStr', 'DictIntStrAny']) -> None:
-        if TYPE_CHECKING:  # pragma: no cover
+        if TYPE_CHECKING:
             self._items: Union['SetIntStr', 'DictIntStrAny']
             self._type: Type[Union[set, dict]]  # type: ignore
 
