@@ -9,5 +9,5 @@ pycodestyle==2.5.0
 pyflakes==2.1.1
 pytest==5.2.0
 pytest-cov==2.8.1
-pytest-mock==1.11.0
+pytest-mock==1.11.1
 pytest-sugar==0.9.2
