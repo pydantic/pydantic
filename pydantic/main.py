@@ -101,7 +101,7 @@ def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'C
     return type('Config', base_classes, {})
 
 
-EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/#model-config'
+EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/usage/model_config/'
 
 
 def set_extra(config: Type[BaseConfig], cls_name: str) -> None:

@@ -4,6 +4,7 @@ import trafaret as t
 
 class TestTrafaret:
     package = 'trafaret'
+    version = '.'.join(map(str, t.__VERSION__))
 
     def __init__(self, allow_extra):
         self.schema = t.Dict({

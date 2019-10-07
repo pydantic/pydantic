@@ -1,0 +1,48 @@
+site_name: Pydantic
+site_description: Data validation and settings management using python 3.6 type hinting
+strict: true
+site_url: https://pydantic-docs.helpmanual.io/
+
+theme:
+  name: 'material'
+  palette:
+    primary: pink
+    accent: pink
+  logo: 'logo-white.svg'
+  favicon: 'favicon.png'
+
+repo_name: samuelcolvin/pydantic
+repo_url: https://github.com/samuelcolvin/pydantic
+google_analytics:
+- 'UA-62733018-4'
+- 'auto'
+
+nav:
+- Overview: index.md
+- install.md
+- Usage:
+  - usage/models.md
+  - 'Field Types': usage/types.md
+  - usage/validators.md
+  - usage/model_config.md
+  - usage/schema.md
+  - usage/exporting_models.md
+  - usage/dataclasses.md
+  - 'Settings management': usage/settings.md
+  - usage/postponed_annotations.md
+  - 'Usage with mypy': usage/mypy.md
+- Contributing to Pydantic: contributing.md
+- benchmarks.md
+- 'PyCharm plugin': pycharm_plugin.md
+- changelog.md
+
+markdown_extensions:
+- markdown.extensions.codehilite:
+    guess_lang: false
+- markdown_include.include:
+    base_path: docs
+- toc:
+    permalink: 🔗
+- admonition
+- codehilite
+- extra

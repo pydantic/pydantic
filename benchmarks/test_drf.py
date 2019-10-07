@@ -6,11 +6,12 @@ settings.configure(
 )
 django.setup()
 
-from rest_framework import serializers
+from rest_framework import __version__, serializers
 
 
 class TestDRF:
     package = 'django-restful-framework'
+    version = __version__
 
     def __init__(self, allow_extra):
         class Model(serializers.Serializer):

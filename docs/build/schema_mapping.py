@@ -4,8 +4,10 @@ Build a table of Python / Pydantic to JSON Schema mappings.
 
 Done like this rather than as a raw rst table to make future edits easier.
 
-Please edit this file directly not .tmp_schema_mappings.rst
+Please edit this file directly not .tmp_schema_mappings.html
 """
+import re
+from pathlib import Path
 
 table = [
     [
@@ -69,7 +71,7 @@ table = [
         'array',
         '{"items": {"type": "string"}}',
         'JSON Schema Validation',
-        'And equivalently for any other sub type, e.g. List[int].'
+        'And equivalently for any other sub type, e.g. `List[int]`.'
     ],
     [
         'Tuple[str, int]',
@@ -244,7 +246,7 @@ table = [
         'timedelta',
         'number',
         '{"format": "time-delta"}',
-        'Difference in seconds (a ``float``), with Pydantic standard "format" extension',
+        'Difference in seconds (a `float`), with Pydantic standard "format" extension',
         'Suggested in JSON Schema repository\'s issues by maintainer.'
     ],
     [
@@ -273,49 +275,49 @@ table = [
         'string',
         '{"format": "ipvanyaddress"}',
         'Pydantic standard "format" extension',
-        'IPv4 or IPv6 address as used in ``ipaddress`` module',
+        'IPv4 or IPv6 address as used in `ipaddress` module',
     ],
     [
         'IPv4Interface',
         'string',
         '{"format": "ipv4interface"}',
         'Pydantic standard "format" extension',
-        'IPv4 interface as used in ``ipaddress`` module',
+        'IPv4 interface as used in `ipaddress` module',
     ],
     [
         'IPv6Interface',
         'string',
         '{"format": "ipv6interface"}',
         'Pydantic standard "format" extension',
-        'IPv6 interface as used in ``ipaddress`` module',
+        'IPv6 interface as used in `ipaddress` module',
     ],
     [
         'IPvAnyInterface',
         'string',
         '{"format": "ipvanyinterface"}',
         'Pydantic standard "format" extension',
-        'IPv4 or IPv6 interface as used in ``ipaddress`` module',
+        'IPv4 or IPv6 interface as used in `ipaddress` module',
     ],
     [
         'IPv4Network',
         'string',
         '{"format": "ipv4network"}',
         'Pydantic standard "format" extension',
-        'IPv4 network as used in ``ipaddress`` module',
+        'IPv4 network as used in `ipaddress` module',
     ],
     [
         'IPv6Network',
         'string',
         '{"format": "ipv6network"}',
         'Pydantic standard "format" extension',
-        'IPv6 network as used in ``ipaddress`` module',
+        'IPv6 network as used in `ipaddress` module',
     ],
     [
         'IPvAnyNetwork',
         'string',
         '{"format": "ipvanynetwork"}',
         'Pydantic standard "format" extension',
-        'IPv4 or IPv6 network as used in ``ipaddress`` module',
+        'IPv4 or IPv6 network as used in `ipaddress` module',
     ],
     [
         'StrictBool',
@@ -338,7 +340,7 @@ table = [
         'JSON Schema Core',
         (
             'If the type has values declared for the constraints, they are included as validations. '
-            'See the mapping for ``constr`` below.'
+            'See the mapping for `constr` below.'
         )
     ],
     [
@@ -355,7 +357,7 @@ table = [
         'JSON Schema Core',
         (
             'If the type has values declared for the constraints, they are included as validations. '
-            'See the mapping for ``conint`` below.'
+            'See the mapping for `conint` below.'
         )
     ],
     [
@@ -385,8 +387,8 @@ table = [
         '',
         'JSON Schema Core',
         (
-            'If the type has values declared for the constraints, they are included as validations.'
-            'See the mapping for ``confloat`` below.'
+            'If the type has values declared for the constraints, they are included as validations. '
+            'See the mapping for `confloat` below.'
         )
     ],
     [
@@ -417,7 +419,7 @@ table = [
         'JSON Schema Core',
         (
             'If the type has values declared for the constraints, they are included as validations. '
-            'See the mapping for ``condecimal`` below.'
+            'See the mapping for `condecimal` below.'
         )
     ],
     [
@@ -448,29 +450,55 @@ headings = [
     'JSON Schema Type',
     'Additional JSON Schema',
     'Defined in',
-    'Notes',
 ]
 
-v = ''
-col_width = 300
-for _ in range(5):
-    v += '+' + '-' * col_width
-v += '+\n|'
-for heading in headings:
-    v += f' {heading:{col_width - 2}} |'
-v += '\n'
-for _ in range(5):
-    v += '+' + '=' * col_width
-v += '+'
-for row in table:
-    v += '\n|'
-    for i, text in enumerate(row):
-        text = f'``{text}``' if i < 3 and text else text
-        v += f' {text:{col_width - 2}} |'
-    v += '\n'
-    for _ in range(5):
-        v += '+' + '-' * col_width
-    v += '+'
 
-with open('.tmp_schema_mappings.rst', 'w') as f:
-    f.write(v)
+def md2html(s):
+    return re.sub(r'`(.+?)`', r'<code>\1</code>', s)
+
+
+def build_schema_mappings():
+    rows = []
+
+    for py_type, json_type, additional, defined_in, notes in table:
+
+        cols = [
+            f'<code>{py_type}</code>',
+            f'<code>{json_type}</code>',
+            f'<code>{additional}</code>' if additional else '',
+            md2html(defined_in)
+        ]
+        rows.append('\n'.join(f'  <td>\n    {c}\n  </td>' for c in cols))
+        if notes:
+            rows.append(
+                f'  <td colspan=4 style="border-top: none; padding-top: 0">\n'
+                f'    <em>{md2html(notes)}</em>\n'
+                f'  </td>'
+            )
+
+    heading = '\n'.join(f'  <th>{h}</th>' for h in headings)
+    body = '\n</tr>\n<tr>\n'.join(rows)
+    text = f"""\
+<!-- 
+  Generated from docs/build/schema_mapping.py, DO NOT EDIT THIS FILE DIRECTLY.
+  Instead edit docs/build/schema_mapping.py and run `make docs`.
+-->
+
+<table style="width:100%">
+<thead>
+<tr>
+{heading}
+</tr>
+</thead>
+<tbody>
+<tr>
+{body}
+</tr>
+</tbody>
+</table>
+"""
+    (Path(__file__).parent / '..' / '.tmp_schema_mappings.html').write_text(text)
+
+
+if __name__ == '__main__':
+    build_schema_mappings()

@@ -23,10 +23,15 @@ format:
 
 .PHONY: lint
 lint:
-	python setup.py check -rms
 	flake8 pydantic/ tests/
 	$(isort) --check-only
 	$(black) --check
+
+.PHONY: check-dist
+check-dist:
+	python setup.py check -ms
+	SKIP_CYTHON=1 python setup.py sdist
+	twine check dist/*
 
 .PHONY: mypy
 mypy:
@@ -80,14 +85,25 @@ clean:
 	rm -rf dist
 	rm -f pydantic/*.c pydantic/*.so
 	python setup.py clean
-	make -C docs clean
+	rm -rf site
+	rm -rf docs/_build
 
 .PHONY: docs
 docs:
-	make -C docs html
+	./docs/build/main.py
+	mkdocs build
+	@# to work with the old sphinx build and deploy:
+	@rm -rf docs/_build/
+	@mkdir docs/_build/
+	@cp -r site docs/_build/html
+
+.PHONY: docs-serve
+docs-serve:
+	./docs/build/main.py
+	mkdocs serve
 
 .PHONY: publish
 publish: docs
-	cd docs/_build/ && cp -r html site && zip -r site.zip site
+	zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
-	      --data-binary "@docs/_build/site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
+	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys

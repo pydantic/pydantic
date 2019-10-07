@@ -22,9 +22,17 @@ class CompanyModel(BaseModel):
     class Config:
         orm_mode = True
 
-co_orm = CompanyOrm(id=123, public_key='foobar', name='Testing', domains=['example.com', 'foobar.com'])
+co_orm = CompanyOrm(
+    id=123,
+    public_key='foobar',
+    name='Testing',
+    domains=['example.com', 'foobar.com']
+)
 print(co_orm)
 #> <__main__.CompanyOrm object at 0x7ff4bf918278>
 co_model = CompanyModel.from_orm(co_orm)
 print(co_model)
-#> CompanyModel id=123 public_key='foobar' name='Testing' domains=['example.com', 'foobar.com']
+#> CompanyModel id=123
+#>              public_key='foobar'
+#>              name='Testing'
+#>              domains=['example.com', 'foobar.com']

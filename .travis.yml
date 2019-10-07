@@ -20,6 +20,7 @@ script:
 - python3 ./changes/make_history.py
 - make lint
 - make mypy
+- make check-dist
 
 env:
   global:
