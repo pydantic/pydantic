@@ -19,5 +19,5 @@ may be be delayed until after version 1 is released. If your PR is a bugfix for 
 * [ ] Unit tests for the changes exist
 * [ ] Tests pass on CI and coverage remains at 100%
 * [ ] Documentation reflects the changes where applicable
-* [ ] `changes/<pull request or issue id>-<github username>.rst` file added describing change
+* [ ] `changes/<pull request or issue id>-<github username>.md` file added describing change
   (see [changes/README.md](https://github.com/samuelcolvin/pydantic/blob/master/changes/README.md) for details)
