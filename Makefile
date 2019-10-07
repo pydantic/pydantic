@@ -87,6 +87,7 @@ clean:
 	python setup.py clean
 	rm -rf site
 	rm -rf docs/_build
+	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
 
 .PHONY: docs
 docs:

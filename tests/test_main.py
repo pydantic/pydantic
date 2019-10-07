@@ -292,12 +292,12 @@ def test_alias():
     }
 
 
-def test_population_by_alias():
+def test_population_by_field_name():
     class Model(BaseModel):
         a: str
 
         class Config:
-            allow_population_by_alias = True
+            allow_population_by_field_name = True
             fields = {'a': {'alias': '_a'}}
 
     assert Model(a='different').a == 'different'
@@ -784,7 +784,7 @@ def test_dict_skip_defaults_populated_by_alias():
         b: str = Field('default', alias='alias_b')
 
         class Config:
-            allow_population_by_alias = True
+            allow_population_by_field_name = True
 
     m = MyModel(alias_a='a')
 
