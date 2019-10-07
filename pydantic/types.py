@@ -73,7 +73,7 @@ OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .dataclasses import DataclassType  # noqa: F401
     from .main import BaseModel, BaseConfig  # noqa: F401
     from .typing import CallableGenerator

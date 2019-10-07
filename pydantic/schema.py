@@ -40,7 +40,7 @@ from .types import (
 from .typing import Literal, is_callable_type, is_literal_type, is_new_type, literal_values, new_type_supertype
 from .utils import lenient_issubclass
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
 
 default_prefix = '#/definitions/'

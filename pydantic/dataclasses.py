@@ -8,7 +8,7 @@ from .fields import Required
 from .main import create_model, validate_model
 from .typing import AnyType
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .main import BaseConfig, BaseModel  # noqa: F401
 
     class DataclassType:
@@ -105,7 +105,7 @@ def _process_class(
     return cls
 
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     # see https://github.com/python/mypy/issues/6239 for explanation of why we do this
     from dataclasses import dataclass as dataclass
 else:

@@ -29,7 +29,7 @@ class Validator:
         self.check_fields = check_fields
 
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .main import BaseConfig
     from .fields import ModelField
     from .types import ModelOrDc

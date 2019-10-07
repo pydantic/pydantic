@@ -52,7 +52,7 @@ except ImportError:
     Literal = None  # type: ignore
 
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .fields import ModelField
 
     TupleGenerator = Generator[Tuple[str, Any], None, None]

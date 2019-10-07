@@ -29,7 +29,7 @@ from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_ti
 from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, get_class, is_callable_type, is_literal_type
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .fields import ModelField
     from .main import BaseConfig
     from .types import ConstrainedDecimal, ConstrainedFloat, ConstrainedInt

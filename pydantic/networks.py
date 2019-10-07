@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Set, Tuple, Ty
 from . import errors
 from .validators import constr_length_validator, str_validator
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .fields import ModelField
     from .main import BaseConfig  # noqa: F401
     from .typing import AnyCallable

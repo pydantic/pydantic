@@ -35,7 +35,7 @@ except ImportError:
 Required: Any = Ellipsis
 NoneType = type(None)
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .class_validators import ValidatorsList  # noqa: F401
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
