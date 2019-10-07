@@ -8,6 +8,8 @@ theme:
   palette:
     primary: pink
     accent: pink
+  logo: 'logo-white.svg'
+  favicon: 'favicon.png'
 
 repo_name: samuelcolvin/pydantic
 repo_url: https://github.com/samuelcolvin/pydantic
