@@ -1,7 +1,7 @@
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
 import pytest
 
@@ -957,15 +957,19 @@ def test_init_inspection():
     Foobar(x=1)
 
 
-def test_ignored_type():
-    def foobar():
+def test_type_on_annotation():
+    class FooBar:
         pass
 
     class Model(BaseModel):
-        a: int = foobar
-        b: int
+        a: int = int
+        b: Type[int]
+        c: Type[int] = int
+        d: FooBar = FooBar
+        e: Type[FooBar]
+        f: Type[FooBar] = FooBar
 
-    assert Model.__fields__.keys() == {'b'}
+    assert Model.__fields__.keys() == {'b', 'c', 'e', 'f'}
 
 
 def test_optional_subfields():
