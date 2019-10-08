@@ -17,74 +17,77 @@ The generated schemas are compliant with the specifications:
 [OpenAPI](https://github.com/OAI/OpenAPI-Specification).
 
 `BaseModel.schema` will return a dict of the schema, while `BaseModel.schema_json` will return a JSON string
-representation of that.
+representation of that dict.
 
 Sub-models used are added to the `definitions` JSON attribute and referenced, as per the spec.
 
-All sub-models (and their sub-models) schemas are put directly in a top-level `definitions` JSON key for easy re-use
+All sub-models' (and their sub-models') schemas are put directly in a top-level `definitions` JSON key for easy re-use
 and reference.
 
-"sub-models" with modifications (via the `Field` class) like a custom title, description or default value,
+"Sub-models" with modifications (via the `Field` class) like a custom title, description or default value,
 are recursively included instead of referenced.
 
-The `description` for models is taken from the docstring of the class or the argument `description` to
+The `description` for models is taken from either the docstring of the class or the argument `description` to
 the `Field` class.
 
 ## Field customisation
 
-Optionally the `Field` function can be used to provide extra information about the field and validations, arguments:
+Optionally, the `Field` function can be used to provide extra information about the field and validations.
+It has the following arguments:
 
-* `default` (positional argument), since the `Field` is replacing the field's default, its first
-  argument is used to set the default, use ellipsis (``...``) to indicate the field is required
-* `alias` - the public name of the field
-* `title` if omitted `field_name.title()` is used
-* `description` if omitted and the annotation is a sub-model, the docstring of the sub-model will be used
-* `const` this field *must* take it's default value if it is present
-* `gt` for numeric values (``int``, `float`, `Decimal`), adds a validation of "greater than" and an annotation
+* `default`: (a positional argument) the default value of the field.
+    Since the `Field` replaces the field's default, this first argument can be used to set the default.
+    Use ellipsis (`...`) to indicate the field is required.
+* `alias`: the public name of the field
+* `title`: if omitted, `field_name.title()` is used
+* `description`: if omitted and the annotation is a sub-model,
+    the docstring of the sub-model will be used
+* `const`: this argument *must* have be the same as the field's default value if present
+* `gt`: for numeric values (``int``, `float`, `Decimal`), adds a validation of "greater than" and an annotation
   of `exclusiveMinimum` to the JSON Schema
-* `ge` for numeric values, adds a validation of "greater than or equal" and an annotation of `minimum` to the
+* `ge`: for numeric values, this adds a validation of "greater than or equal" and an annotation of `minimum` to the
   JSON Schema
-* `lt` for numeric values, adds a validation of "less than" and an annotation of `exclusiveMaximum` to the
+* `lt`: for numeric values, this adds a validation of "less than" and an annotation of `exclusiveMaximum` to the
   JSON Schema
-* `le` for numeric values, adds a validation of "less than or equal" and an annotation of `maximum` to the
+* `le`: for numeric values, this adds a validation of "less than or equal" and an annotation of `maximum` to the
   JSON Schema
-* `multiple_of` for numeric values, adds a validation of "a multiple of" and an annotation of `multipleOf` to the
+* `multiple_of`: for numeric values, this adds a validation of "a multiple of" and an annotation of `multipleOf` to the
   JSON Schema
-* `min_items` for list values, adds a corresponding validation and an annotation of `minItems` to the
+* `min_items`: for list values, this adds a corresponding validation and an annotation of `minItems` to the
   JSON Schema
-* `max_items` for list values, adds a corresponding validation and an annotation of `maxItems` to the
+* `max_items`: for list values, this adds a corresponding validation and an annotation of `maxItems` to the
   JSON Schema
-* `min_length` for string values, adds a corresponding validation and an annotation of `minLength` to the
+* `min_length`: for string values, this adds a corresponding validation and an annotation of `minLength` to the
   JSON Schema
-* `max_length` for string values, adds a corresponding validation and an annotation of `maxLength` to the
+* `max_length`: for string values, this adds a corresponding validation and an annotation of `maxLength` to the
   JSON Schema
-* `regex` for string values, adds a Regular Expression validation generated from the passed string and an
+* `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
   annotation of `pattern` to the JSON Schema
-* `**` any other keyword arguments (eg. `examples`) will be added verbatim to the field's schema
+* `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used
-to set all the arguments above except `default`.
+to set all of the arguments above except `default`.
 
-The schema is generated by default using aliases as keys, it can also be generated using model
-property names not aliases with `MainModel.schema/schema_json(by_alias=False)`.
+The schema is generated by default using aliases as keys, but it can be generated using model
+property names instead by calling `MainModel.schema/schema_json(by_alias=False)`.
 
 ## JSON Schema Types
 
-Types, custom field types, and constraints (as `max_length`) are mapped to the corresponding
-[JSON Schema Core](http://json-schema.org/latest/json-schema-core.html#rfc.section.4.3.1) spec format when there's
-an equivalent available, next to [JSON Schema Validation](http://json-schema.org/latest/json-schema-validation.html),
-[OpenAPI Data Types](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types)
-(which are based on JSON Schema), or otherwise use the standard `format` JSON field to define Pydantic extensions
-for more complex `string` sub-types.
+Types, custom field types, and constraints (like `max_length`) are mapped to the corresponding spec formats in the
+following priority order (when there is an equivalent available):
+1. [JSON Schema Core](http://json-schema.org/latest/json-schema-core.html#rfc.section.4.3.1)
+2. [JSON Schema Validation](http://json-schema.org/latest/json-schema-validation.html)
+3. [OpenAPI Data Types](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types)
+4. The standard `format` JSON field is used to define *pydantic* extensions for more complex `string` sub-types.
 
-The field schema mapping from Python / Pydantic to JSON Schema is done as follows:
+The field schema mapping from Python / *pydantic* to JSON Schema is done as follows:
 
 {!./.tmp_schema_mappings.html!}
 
 ## Top-level schema generation
 
-You can also generate a top-level JSON Schema that only includes a list of models and all their related
-submodules in its `definitions`:
+You can also generate a top-level JSON Schema that only includes a list of models and related
+sub-models in its `definitions`:
 
 ```py
 {!./examples/schema2.py!}
@@ -99,10 +102,10 @@ Outputs:
 
 ## Schema customization
 
-You can customize the generated `$ref` JSON location, the definitions will still be in the key `definitions` and
-you can still get them from there, but the references will point to your defined prefix instead of the default.
+You can customize the generated `$ref` JSON location: the definitions are always stored under the key
+`definitions`, but a specified prefix can be used for the references.
 
-This is useful if you need to extend or modify JSON Schema default definitions location, e.g. with OpenAPI:
+This is useful if you need to extend or modify the JSON Schema default definitions location. E.g. with OpenAPI:
 
 ```py
 {!./examples/schema3.py!}

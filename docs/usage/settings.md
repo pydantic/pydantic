@@ -44,4 +44,4 @@ so in this example `redis_host` could only be modified via `export REDIS_HOST`.
 
 !!! note
     On Windows, python's `os` module always treats environment variables as case-insensitive, so the
-    `case_sensitive` config setting will have no effect -- settings will always be updated ignoring case.
+    `case_sensitive` config setting will have no effect - settings will always be updated ignoring case.

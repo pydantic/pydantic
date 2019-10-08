@@ -6,7 +6,7 @@ purpose you can also implement your [own types](#custom-data-types) with custom 
 ## Standard Library Types
 
 *pydantic* supports many common types from the python standard library. If you need stricter processing see 
-[Strict Types](#strict-types); if you need to constrain the values allowed (eg. require a positive int) see
+[Strict Types](#strict-types); if you need to constrain the values allowed (e.g. to require a positive int) see
 [Constrained Types](#constrained-types).
 
 `bool`
@@ -151,7 +151,7 @@ _(This script is complete, it should run "as is")_
 The `Union` type allows a model attribute to accept different types, e.g.:
 
 !!! warning
-    This script is complete, it should run but may be is wrong, see below.
+    This script is complete, it should run "as is". However, it may not reflect the desired behavior; see below.
 
 ```py
 {!./examples/union_type_incorrect.py!}
@@ -234,7 +234,7 @@ types:
 
 A standard `bool` field will raise a `ValidationError` if the value is not one of the following:
 
-* A valid boolean (i.e., `True` or `False`),
+* A valid boolean (i.e. `True` or `False`),
 * The integers `0` or `1`,
 * a `str` which when converted to lower case is one of
   `'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'`
@@ -327,7 +327,7 @@ _(This script is complete, it should run "as is")_
   for name, if simply `fred.bloggs@example.com` is provided, name would be "fred.bloggs"
 
 `PyObject`
-: expects a string and loads the python object at that dotted path, e.g. if `'math.cos'` was provided the resulting
+: expects a string and loads the python object at that dotted path; e.g. if `'math.cos'` was provided, the resulting
   field value would be the function `cos`
 
 `Color`
@@ -455,24 +455,24 @@ _(This script is complete, it should run "as is")_
 Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
 the above types export the following properties:
 
-- `scheme`: always set - the url schema e.g. `http` above
-- `host`: always set - the url host e.g. `example.com` above
+- `scheme`: always set - the url schema (`http` above)
+- `host`: always set - the url host (`example.com` above)
 - `host_type`: always set - describes the type of host, either:
 
-  - `domain`: e.g. for `example.com`,
-  - `int_domain`: international domain, see [below](#international-domains), e.g. for `exampl£e.org`,
-  - `ipv4`: an IP V4 address, e.g. for `127.0.0.1`, or
-  - `ipv6`: an IP V6 address, e.g. for `2001:db8:ff00:42`
+  - `domain`: e.g. `example.com`,
+  - `int_domain`: international domain, see [below](#international-domains), e.g. `exampl£e.org`,
+  - `ipv4`: an IP V4 address, e.g. `127.0.0.1`, or
+  - `ipv6`: an IP V6 address, e.g. `2001:db8:ff00:42`
 
-- `user`: optional - the username if included e.g. `samuel` above
-- `password`: optional - the password if included e.g. `pass` above
-- `tld`: optional - the top level domain e.g. `com` above,
-  **Note: this will be wrong for any two level domain e.g. "co.uk".** You'll need to implement your own list of TLDs
+- `user`: optional - the username if included (`samuel` above)
+- `password`: optional - the password if included (`pass` above)
+- `tld`: optional - the top level domain (`com` above),
+  **Note: this will be wrong for any two-level domain, e.g. "co.uk".** You'll need to implement your own list of TLDs
   if you require full TLD validation
-- `port`: optional - the port e.g. `8000` above
-- `path`: optional - the path e.g. `/the/path/` above
-- `query`: optional - the URL query (aka GET arguments or "search string") e.g. `query=here` above
-- `fragment`: optional - the fragment e.g. `fragment=is;this=bit` above
+- `port`: optional - the port (`8000` above)
+- `path`: optional - the path (`/the/path/` above)
+- `query`: optional - the URL query (aka GET arguments or "search string") (`query=here` above)
+- `fragment`: optional - the fragment (`fragment=is;this=bit` above)
 
 If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
@@ -483,7 +483,7 @@ _(This script is complete, it should run "as is")_
 
 #### International Domains
 
-"International domains" (e.g. a URL where the host includes non-ascii characters) will be encode via
+"International domains" (e.g. a URL where the host includes non-ascii characters) will be encoded via
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
 [this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
 
@@ -496,31 +496,32 @@ _(This script is complete, it should run "as is")_
 
 !!! note
     In *pydantic* underscores are allowed in all parts of a domain except the tld.
-    Technically this might be wrong - in theory the hostname cannot have underscores but subdomains can.
+    Technically this might be wrong - in theory the hostname cannot have underscores, but subdomains can.
 
     To explain this; consider the following two cases:
 
-    - `exam_ple.co.uk` hostname is `exam_ple`, should not be allowed as there's an underscore in there
-    - `foo_bar.example.com` hostname is `example` should be allowed since the underscore is in the subdomain
+    - `exam_ple.co.uk`: the hostname is `exam_ple`, which should not be allowed since it contains an underscore
+    - `foo_bar.example.com` the hostname is `example`, which should be allowed since the underscore is in the subdomain
 
-    Without having an exhaustive list of TLDs it would be impossible to differentiate between these two. Therefore
-    underscores are allowed, you could do further validation in a validator if you wanted.
+    Without having an exhaustive list of TLDs, it would be impossible to differentiate between these two. Therefore
+    underscores are allowed, but you can always do further validation in a validator if desired.
 
-    Also, chrome currently accepts `http://exam_ple.com` as a URL, so we're in good (or at least big) company.
+    Also, Chrome, Firefox, and Safari all currently accept `http://exam_ple.com` as a URL, so we're in good
+    (or at least big) company.
 
 ### Color Type
 
 You can use the `Color` data type for storing colors as per
-[CSS3 specification](http://www.w3.org/TR/css3-color/#svg-color). Color can be defined via:
+[CSS3 specification](http://www.w3.org/TR/css3-color/#svg-color). Colors can be defined via:
 
 - [name](http://www.w3.org/TR/SVG11/types.html#ColorKeywords) (e.g. `"Black"`, `"azure"`)
 - [hexadecimal value](https://en.wikipedia.org/wiki/Web_colors#Hex_triplet)
   (e.g. `"0x000"`, `"#FFFFFF"`, `"7fffd4"`)
-- RGB/RGBA tuples (e.g. `(255, 255, 255)`, `(255, 255, 255, 0.5)`
+- RGB/RGBA tuples (e.g. `(255, 255, 255)`, `(255, 255, 255, 0.5)`)
 - [RGB/RGBA strings](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#RGB_colors)
-  (e.g. `"rgb(255, 255, 255)"` or `"rgba(255, 255, 255, 0.5)"`)
+  (e.g. `"rgb(255, 255, 255)"`, `"rgba(255, 255, 255, 0.5)"`)
 - [HSL strings](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#HSL_colors)
-  (e.g. `"hsl(270, 60%, 70%)"` or `"hsl(270, 60%, 70%, .5)"`)
+  (e.g. `"hsl(270, 60%, 70%)"`, `"hsl(270, 60%, 70%, .5)"`)
 
 ```py
 {!./examples/ex_color_type.py!}
@@ -533,29 +534,29 @@ _(This script is complete, it should run "as is")_
 : the original string or tuple passed to `Color`
 
 **`as_named`**
-: returns a named CSS3 color, fails if the alpha channel is set or no such color exists unless
-  `fallback=True` is supplied when it falls back to `as_hex`
+: returns a named CSS3 color; fails if the alpha channel is set or no such color exists unless
+  `fallback=True` is supplied, in which case it falls back to `as_hex`
 
 **`as_hex`**
-: string in the format `#ffffff` or `#fff`, can also be a 4 or 8 hex values if the alpha channel is set,
+: returns a string in the format `#fff` or `#ffffff`; will contain 4 (or 8) hex values if the alpha channel is set,
   e.g. `#7f33cc26`
 
 **`as_rgb`**
-: string in the format `rgb(<red>, <green>, <blue>)` or `rgba(<red>, <green>, <blue>, <alpha>)`
+: returns a string in the format `rgb(<red>, <green>, <blue>)`, or `rgba(<red>, <green>, <blue>, <alpha>)`
   if the alpha channel is set
 
 **`as_rgb_tuple`**
-: returns a 3- or 4-tuple in RGB(a) format, the `alpha` keyword argument can be used to define whether
-  the alpha channel should be included,
-  options: `True` - always include, `False` - never include, `None` (the default) - include if set
+: returns a 3- or 4-tuple in RGB(a) format. The `alpha` keyword argument can be used to define whether
+  the alpha channel should be included;
+  options: `True` - always include, `False` - never include, `None` (default) - include if set
 
 **`as_hsl`**
 : string in the format `hsl(<hue deg>, <saturation %>, <lightness %>)`
   or `hsl(<hue deg>, <saturation %>, <lightness %>, <alpha>)` if the alpha channel is set
 
 **`as_hsl_tuple`**
-: returns a 3- or 4-tuple in HSL(a) format, the `alpha` keyword argument can be used to define whether
-  the alpha channel should be included,
+: returns a 3- or 4-tuple in HSL(a) format. The `alpha` keyword argument can be used to define whether
+  the alpha channel should be included;
   options: `True` - always include, `False` - never include, `None` (the default)  - include if set
 
 The `__str__` method for `Color` returns `self.as_named(fallback=True)`.
@@ -568,7 +569,7 @@ The `__str__` method for `Color` returns `self.as_named(fallback=True)`.
 
 You can use the `SecretStr` and the `SecretBytes` data types for storing sensitive information
 that you do not want to be visible in logging or tracebacks.
-The SecretStr and SecretBytes will be formatted as either `'**********'` or `''` on conversion to json.
+The `SecretStr` and `SecretBytes` will be formatted as either `'**********'` or `''` on conversion to json.
 
 ```py
 {!./examples/ex_secret_types.py!}
@@ -593,7 +594,7 @@ The `PaymentCardNumber` type validates [payment cards](https://en.wikipedia.org/
 ```py
 {!./examples/payment_card_number.py!}
 ```
-_(This script is complete, it should be run "as is")_
+_(This script is complete, it should run "as is")_
 
 `PaymentCardBrand` can be one of the following based on the BIN:
 
@@ -611,7 +612,7 @@ The actual validation verifies the card number is:
 
 ## Constrained Types
 
-The value of numerous common types can be restricted using `con*` type methods:
+The value of numerous common types can be restricted using `con*` type functions:
 
 ```py
 {!./examples/constrained_types.py!}
@@ -639,7 +640,7 @@ _(This script is complete, it should run "as is")_
 
 ## Custom Data Types
 
-You can also define your own data types. The class method `__get_validators__` will be called
+You can also define your own data types. The classmethod `__get_validators__` will be called
 to get validators to parse and validate the input data.
 
 ```py
