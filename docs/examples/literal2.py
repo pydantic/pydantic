@@ -16,9 +16,9 @@ class Meal(BaseModel):
     dessert: Union[Cake, IceCream]
 
 print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
-# Cake
+#> Cake
 print(type(Meal(dessert={'kind': 'icecream'}).dessert).__name__)
-# IceCream
+#> IceCream
 try:
     Meal(dessert={'kind': 'pie'})
 except ValidationError as e:

@@ -29,11 +29,11 @@ class DemoModel(BaseModel):
         return v
 
 print(DemoModel(square_numbers=[1, 4, 9]))
-# > DemoModel square_numbers=[1, 4, 9] cube_numbers=[]
+#> DemoModel square_numbers=[1, 4, 9] cube_numbers=[]
 print(DemoModel(square_numbers='1|4|16'))
-# > DemoModel square_numbers=[1, 4, 16] cube_numbers=[]
+#> DemoModel square_numbers=[1, 4, 16] cube_numbers=[]
 print(DemoModel(square_numbers=[16], cube_numbers=[8, 27]))
-# > DemoModel square_numbers=[16] cube_numbers=[8, 27]
+#> DemoModel square_numbers=[16] cube_numbers=[8, 27]
 
 try:
     DemoModel(square_numbers=[1, 4, 2])

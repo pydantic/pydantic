@@ -19,8 +19,8 @@ class CookingModel(BaseModel):
 
 
 print(CookingModel())
-# > CookingModel fruit=<FruitEnum.pear: 'pear'> tool=<ToolEnum.spanner: 1>
+#> CookingModel fruit=<FruitEnum.pear: 'pear'> tool=<ToolEnum.spanner: 1>
 print(CookingModel(tool=2, fruit='banana'))
-# > CookingModel fruit=<FruitEnum.banana: 'banana'> tool=<ToolEnum.wrench: 2>
+#> CookingModel fruit=<FruitEnum.banana: 'banana'> tool=<ToolEnum.wrench: 2>
 print(CookingModel(fruit='other'))
 # will raise a validation error

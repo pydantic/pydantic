@@ -12,6 +12,6 @@ class Response(GenericModel, Generic[DataT]):
         return f'{params[0].__name__.title()}Response'
 
 print(Response[int](data=1))
-# IntResponse data=1
+#> IntResponse data=1
 print(Response[str](data='a'))
-# StrResponse data='a'
+#> StrResponse data='a'

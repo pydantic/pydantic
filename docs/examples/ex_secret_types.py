@@ -8,16 +8,16 @@ class SimpleModel(BaseModel):
 
 sm = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
 print(sm)
-# > SimpleModel password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
+#> SimpleModel password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
 
 print(sm.password.get_secret_value())
-# > IAmSensitive
+#> IAmSensitive
 print(sm.password_bytes.get_secret_value())
-# > b'IAmSensitiveBytes'
+#> b'IAmSensitiveBytes'
 print(sm.password.display())
-# > '**********'
+#> '**********'
 print(sm.json())
-# > '{"password": "**********", "password_bytes": "**********"}'
+#> '{"password": "**********", "password_bytes": "**********"}'
 
 
 try:

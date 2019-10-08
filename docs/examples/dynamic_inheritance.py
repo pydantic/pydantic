@@ -8,6 +8,6 @@ class FooModel(BaseModel):
 
 BarModel = create_model('BarModel', apple='russet', banana='yellow', __base__=FooModel)
 print(BarModel)
-# > <class 'pydantic.main.BarModel'>
+#> <class 'pydantic.main.BarModel'>
 print(', '.join(BarModel.__fields__.keys()))
-# > foo, bar, apple, banana
+#> foo, bar, apple, banana

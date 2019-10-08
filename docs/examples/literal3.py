@@ -21,10 +21,10 @@ class Meal(BaseModel):
     dessert: Union[ApplePie, PumpkinPie, Pie, Dessert]
 
 print(type(Meal(dessert={'kind': 'pie', 'flavor': 'apple'}).dessert).__name__)
-# ApplePie
+#> ApplePie
 print(type(Meal(dessert={'kind': 'pie', 'flavor': 'pumpkin'}).dessert).__name__)
-# PumpkinPie
+#> PumpkinPie
 print(type(Meal(dessert={'kind': 'pie'}).dessert).__name__)
-# Pie
+#> Pie
 print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
-# Dessert
+#> Dessert
