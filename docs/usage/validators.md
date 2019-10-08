@@ -7,10 +7,10 @@ _(This script is complete, it should run "as is")_
 
 A few things to note on validators:
 
-* validators are "class methods", the first value they receive here will be the `UserModel` not an instance
-  of `UserModel`
+* validators are "class methods", so the first value they receive here will be the `UserModel` class, not an instance
+  of `UserModel`.
 * their signature can be `(cls, value)` or `(cls, value, values, config, field)`. Any subset of
-  `values`, `config` and `field` is also permitted, eg. `(cls, value, field)`, however due to the way
+  `values`, `config` and `field` is also permitted, e.g. `(cls, value, field)`. However, due to the way
   validators are inspected, the variadic key word argument ("``**kwargs``") **must** be called `kwargs`.
 * validators should either return the new value or raise a `ValueError`, `TypeError`, or `AssertionError`
   (``assert`` statements may be used).
@@ -22,7 +22,7 @@ A few things to note on validators:
 
 * where validators rely on other values, you should be aware that:
 
-    - Validation is done in the order fields are defined, eg. here `password2` has access to `password1`
+    - Validation is done in the order fields are defined, e.g. here `password2` has access to `password1`
       (and `name`), but `password1` does not have access to `password2`. See [Field Ordering](models.md#field-ordering)
       for more information on how fields are ordered
 
@@ -44,7 +44,7 @@ A few more things to note:
   which means that validator will be called for all fields.
 * the keyword argument `pre` will cause validators to be called prior to other validation
 * the `each_item` keyword argument will mean validators are applied to individual values
-  (eg. of `List`, `Dict`, `Set` etc.) not the whole object
+  (e.g. of `List`, `Dict`, `Set`, etc.) not the whole object
 
 ## Validate Always
 
