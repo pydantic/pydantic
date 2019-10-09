@@ -50,7 +50,7 @@ def setattr_validate_assignment(self: 'DataclassType', name: str, value: Any) ->
         if known_field:
             value, error_ = known_field.validate(value, d, loc=name, cls=self.__class__)
             if error_:
-                raise ValidationError([error_], type(self))
+                raise ValidationError([error_], self.__class__)
 
     object.__setattr__(self, name, value)
 

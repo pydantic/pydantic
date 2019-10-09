@@ -343,13 +343,13 @@ class ModelField(Representation):
         """
         default_value = self.get_default()
         if default_value is not None and self.type_ is None:
-            self.type_ = type(default_value)
+            self.type_ = self.default.__class__
             self.outer_type_ = self.type_
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
-        if type(self.type_) == ForwardRef:
+        if self.type_.__class__ == ForwardRef:
             # self.type_ is currently a ForwardRef and there's nothing we can do now,
             # user will need to call model.update_forward_refs()
             return

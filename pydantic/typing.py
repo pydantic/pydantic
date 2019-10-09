@@ -107,12 +107,12 @@ __all__ = (
 
 
 AnyType = Type[Any]
-NoneType = type(None)
+NoneType = None.__class__
 
 
 def display_as_type(v: AnyType) -> str:
     if not isinstance(v, typing_base) and not isinstance(v, type):
-        v = type(v)
+        v = v.__class__
 
     if isinstance(v, type) and issubclass(v, Enum):
         if issubclass(v, int):
@@ -181,7 +181,7 @@ test_type = NewType('test_type', str)
 
 
 def is_new_type(type_: AnyType) -> bool:
-    return isinstance(type_, type(test_type)) and hasattr(type_, '__supertype__')
+    return isinstance(type_, test_type.__class__) and hasattr(type_, '__supertype__')  # type: ignore
 
 
 def new_type_supertype(type_: AnyType) -> AnyType:
@@ -191,7 +191,7 @@ def new_type_supertype(type_: AnyType) -> AnyType:
 
 
 def _check_classvar(v: AnyType) -> bool:
-    return type(v) == type(ClassVar) and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
+    return v.__class__ == ClassVar.__class__ and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
 
 
 def is_classvar(ann_type: AnyType) -> bool:
@@ -202,7 +202,7 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
     """
     Try to update ForwardRefs on fields based on this ModelField, globalns and localns.
     """
-    if type(field.type_) == ForwardRef:
+    if field.type_.__class__ == ForwardRef:
         field.type_ = evaluate_forwardref(field.type_, globalns, localns or None)
         field.prepare()
     if field.sub_fields:
