@@ -971,6 +971,8 @@ def test_type_on_annotation():
 
     assert Model.__fields__.keys() == {'b', 'c', 'e', 'f'}
 
+
+def test_assign_type():
     class Parent:
         def echo(self):
             return 'parent'
@@ -983,14 +985,14 @@ def test_type_on_annotation():
         def echo(self):
             return 'different'
 
-    class ModelParent(BaseModel):
+    class Model(BaseModel):
         v: Type[Parent] = Parent
 
-    assert ModelParent(v=Parent).v().echo() == 'parent'
-    assert ModelParent().v().echo() == 'parent'
-    assert ModelParent(v=Child).v().echo() == 'child'
+    assert Model(v=Parent).v().echo() == 'parent'
+    assert Model().v().echo() == 'parent'
+    assert Model(v=Child).v().echo() == 'child'
     with pytest.raises(ValidationError) as exc_info:
-        ModelParent(v=Different)
+        Model(v=Different)
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
