@@ -1,7 +1,7 @@
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
 import pytest
 
@@ -957,15 +957,50 @@ def test_init_inspection():
     Foobar(x=1)
 
 
-def test_ignored_type():
-    def foobar():
+def test_type_on_annotation():
+    class FooBar:
         pass
 
     class Model(BaseModel):
-        a: int = foobar
-        b: int
+        a: int = int
+        b: Type[int]
+        c: Type[int] = int
+        d: FooBar = FooBar
+        e: Type[FooBar]
+        f: Type[FooBar] = FooBar
 
-    assert Model.__fields__.keys() == {'b'}
+    assert Model.__fields__.keys() == {'b', 'c', 'e', 'f'}
+
+
+def test_assign_type():
+    class Parent:
+        def echo(self):
+            return 'parent'
+
+    class Child(Parent):
+        def echo(self):
+            return 'child'
+
+    class Different:
+        def echo(self):
+            return 'different'
+
+    class Model(BaseModel):
+        v: Type[Parent] = Parent
+
+    assert Model(v=Parent).v().echo() == 'parent'
+    assert Model().v().echo() == 'parent'
+    assert Model(v=Child).v().echo() == 'child'
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=Different)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'subclass of Parent expected',
+            'type': 'type_error.subclass',
+            'ctx': {'expected_class': 'Parent'},
+        }
+    ]
 
 
 def test_optional_subfields():
