@@ -16,6 +16,10 @@ The following rules apply when finding and interpreting environment variables:
 * In these cases `env` can either be a string or a list of strings. When a list of strings order is important:
   in the case of `redis_dsn` `service_redis_dsn` would take precedence over `redis_url`.
 
+<div id="alias-warning" style="height: 35px">
+  <!-- this div provides an anchor to link to from the warning in env_settings.py -->
+</div>
+
 !!! warning
     Since **v1.0** *pydantic* does not consider field aliases when finding environment variables to populate settings
     models, use `env` instead as described above.
