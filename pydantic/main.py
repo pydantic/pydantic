@@ -268,7 +268,7 @@ class BaseModel(metaclass=ModelMetaclass):
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.__config__.validate_assignment:
-            known_field = self.fields.get(name, None)
+            known_field = self.__fields__.get(name, None)
             if known_field:
                 value, error_ = known_field.validate(value, self.dict(exclude={name}), loc=name)
                 if error_:
@@ -295,7 +295,7 @@ class BaseModel(metaclass=ModelMetaclass):
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
         get_key = self._get_key_factory(by_alias)
-        get_key = partial(get_key, self.fields)
+        get_key = partial(get_key, self.__fields__)
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
         return {
@@ -457,6 +457,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
     @property
     def fields(self) -> Dict[str, ModelField]:
+        warnings.warn('`fields` attribute is deprecated, use `__fields__` instead', DeprecationWarning)
         return self.__fields__
 
     @classmethod
