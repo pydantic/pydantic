@@ -971,6 +971,35 @@ def test_type_on_annotation():
 
     assert Model.__fields__.keys() == {'b', 'c', 'e', 'f'}
 
+    class Parent:
+        def echo(self):
+            return 'parent'
+
+    class Child(Parent):
+        def echo(self):
+            return 'child'
+
+    class Different:
+        def echo(self):
+            return 'different'
+
+    class ModelParent(BaseModel):
+        v: Type[Parent] = Parent
+
+    assert ModelParent(v=Parent).v().echo() == 'parent'
+    assert ModelParent().v().echo() == 'parent'
+    assert ModelParent(v=Child).v().echo() == 'child'
+    with pytest.raises(ValidationError) as exc_info:
+        ModelParent(v=Different)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'subclass of Parent expected',
+            'type': 'type_error.subclass',
+            'ctx': {'expected_class': 'Parent'},
+        }
+    ]
+
 
 def test_optional_subfields():
     class Model(BaseModel):
