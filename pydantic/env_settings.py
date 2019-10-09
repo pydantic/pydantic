@@ -74,7 +74,7 @@ class BaseSettings(BaseModel):
                     warnings.warn(
                         'aliases are no longer used by BaseSettings to define which environment variables to read. '
                         'Instead use the "env" field setting. See https://pydantic-docs.helpmanual.io/usage/settings/',
-                        DeprecationWarning,
+                        FutureWarning,
                     )
                 env_names = [cls.env_prefix + field.name]
             elif isinstance(env, str):
