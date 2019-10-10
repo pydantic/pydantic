@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     more_settings: SubModel = SubModel()
 
     class Config:
-        env_prefix = 'my_prefix_'  # defaults to no prefix, e.g. ""
+        env_prefix = 'my_prefix_'  # defaults to no prefix, i.e. ""
         fields = {
             'auth_key': {
                 'env': 'my_auth_key',

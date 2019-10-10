@@ -1,4 +1,4 @@
-Pydantic works with [mypy](http://mypy-lang.org/) provided you use the "annotation only" version of
+Pydantic works with [mypy](http://mypy-lang.org/) provided you use the annotation-only version of
 required fields:
 
 ```py
@@ -16,8 +16,8 @@ You can also run it through mypy with:
 
 ## Strict Optional
 
-For your code to pass with `--strict-optional` you need to to use `Optional[]` or an alias of `Optional[]`
-for all fields with `None` default, this is standard with mypy.
+For your code to pass with `--strict-optional`, you need to to use `Optional[]` or an alias of `Optional[]`
+for all fields with `None` as the default. (This is standard with mypy.)
 
 Pydantic provides a few useful optional or union types:
 

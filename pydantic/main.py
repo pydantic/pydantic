@@ -18,7 +18,7 @@ from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import GetterDict, ValueItems, truncate, validate_field_name
+from .utils import GetterDict, ValueItems, lenient_issubclass, truncate, validate_field_name
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
@@ -175,7 +175,11 @@ class ModelMetaclass(ABCMeta):
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, ...)
-                    if isinstance(value, untouched_types) and ann_type != PyObject:
+                    if (
+                        isinstance(value, untouched_types)
+                        and ann_type != PyObject
+                        and not lenient_issubclass(getattr(ann_type, '__origin__', None), Type)
+                    ):
                         continue
                     fields[ann_name] = ModelField.infer(
                         name=ann_name,
