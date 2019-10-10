@@ -16,7 +16,9 @@ m = Model(
 )
 
 print(m.dict())
-# > {'d': datetime.date(2032, 4, 22),
-# 'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=datetime.timezone(datetime.timedelta(seconds=9000))),
-# 't': datetime.time(4, 8, 16),
-# 'td': datetime.timedelta(days=3, seconds=45005)}
+#> {
+#>     'd': datetime.date(2032, 4, 22),
+#>     'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=datetime.timezone(datetime.timedelta(seconds=9000))),
+#>     't': datetime.time(4, 8, 16),
+#>     'td': datetime.timedelta(days=3, seconds=45005)
+#> }

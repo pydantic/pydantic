@@ -242,6 +242,10 @@ A standard `bool` field will raise a `ValidationError` if the value is not one o
   `'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'`
 * a `bytes` which is valid (per the previous rule) when decoded to `str`
 
+!!! note
+    If you want stricter boolean logic (e.g. a field which only permits `True` and `False`) you can
+    use [`StrictBool`](#strict-types).
+
 Here is a script demonstrating some of these behaviors:
 
 ```py
@@ -306,7 +310,6 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
 {!./examples/literal3.py!}
 ```
 _(This script is complete, it should run "as is")_
-
 
 ## Pydantic Types
 
@@ -498,9 +501,10 @@ _(This script is complete, it should run "as is")_
 ```
 _(This script is complete, it should run "as is")_
 
-#### Underscores in Hostnames
 
-!!! note
+!!! warning
+    #### Underscores in Hostnames
+
     In *pydantic* underscores are allowed in all parts of a domain except the tld.
     Technically this might be wrong - in theory the hostname cannot have underscores, but subdomains can.
 
@@ -585,7 +589,8 @@ _(This script is complete, it should run "as is")_
 ### Json Type
 
 You can use `Json` data type to make *pydantic* first load a raw JSON string.
-It can also optionally be used to parse the loaded object into another type:
+It can also optionally be used to parse the loaded object into another type base on 
+the type `Json` is parameterised with:
 
 ```py
 {!./examples/ex_json_type.py!}

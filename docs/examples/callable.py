@@ -6,4 +6,4 @@ class Foo(BaseModel):
 
 m = Foo(callback=lambda x: x)
 print(m)
-# Foo callback=<function <lambda> at 0x7f16bc73e1e0>
+#> Foo callback=<function <lambda> at 0x7f16bc73e1e0>

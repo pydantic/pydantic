@@ -18,7 +18,7 @@ class Model(BaseModel):
 
 
 print(Model(s='hello'))
-# > Model s='hello'
+#> Model s='hello'
 
 try:
     print(Model(s=123))

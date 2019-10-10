@@ -19,7 +19,7 @@ class Model(BaseModel):
     color: Color
 
 print(Model(color='purple'))
-# > Model color=<Color('purple', (128, 0, 128))>
+#> Model color=<Color('purple', (128, 0, 128))>
 
 try:
     Model(color='hello')

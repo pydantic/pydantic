@@ -9,7 +9,7 @@
 
 !!! note
     These docs refer to Version 1 of *pydantic* which is as-yet unreleased. **v0.32** docs are available
-    [here](https://5d5d36c5b8219300085d081b--pydantic-docs.netlify.com).
+    [here](https://5d584fcca7c9b70007d1c997--pydantic-docs.netlify.com).
 
 Data validation and settings management using python type hinting.
 

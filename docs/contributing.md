@@ -1,8 +1,9 @@
 We'd love you to contribute to *pydantic*! It should be extremely simple to get started and create a Pull Request.
 *pydantic* is released regularly so you should see your improvements release in a matter of days or weeks.
 
-Unless your change is trivial (typo, docs tweak etc.), please create an issue to discuss the change before
-creating a pull request.
+!!! note
+    Unless your change is trivial (typo, docs tweak etc.), please create an issue to discuss the change before
+    creating a pull request.
 
 If you're looking for something to get your teeth into, check out the
 ["help wanted"](https://github.com/samuelcolvin/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
@@ -44,6 +45,7 @@ make
 # 7. Build documentation
 make docs
 # if you have changed the documentation make sure it builds successfully
+# you can also use `make docs-serve` to serve the documentation at localhost:8000
 
 # ... commit, push, and create your pull request
 ```
