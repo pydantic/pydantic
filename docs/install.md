@@ -14,10 +14,10 @@ channel:
 conda install pydantic -c conda-forge
 ```
 
-*pydantic* can optionally be compiled with [cython](https://cython.org/), which should give a 30-50% performance
+*pydantic* can optionally be compiled with [cython](https://cython.org/) which should give a 30-50% performance
 improvement. `manylinux` binaries exist for python 3.6 and 3.7, so if you're installing from PyPI on linux, you
 should get a compiled version of *pydantic* with no extra work. If you're installing manually, install `cython`
-before installing *pydantic* and compilation should happen automatically. Compilation with cython 
+before installing *pydantic* and compilation should happen automatically. Compilation with cython
 [is not tested](https://github.com/samuelcolvin/pydantic/issues/555) on windows or mac.
 
 To test if *pydantic* is compiled run:
