@@ -92,14 +92,14 @@ Models contains the following methods and attributes:
 `schema_json()`
 : returns a JSON string representation `schema()`, see [Schema](schema.md)
 
-`fields`
-: a dictionary of the model class's fields
+`__fields_set__`
+: Set of names of fields which were set when the model instance was initialised
+
+`__fields__`
+: a dictionary of the model's fields
 
 `__config__`
 : the configuration class for this model, see [model config](model_config.md)
-
-`__fields_set__`
-: Set of names of fields which were set when the model instance was initialised
 
 ## Recursive Models
 
