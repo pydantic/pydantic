@@ -102,12 +102,7 @@ sets or dictionaries. This allows nested selection of which fields to export:
 {!./examples/advanced_exclude1.py!}
 ```
 
-<<<<<<< Updated upstream
 The ellipsis (``...``) indicates that we want to exclude or include an entire key, just as if we included it in a set.
-=======
-The `...` value indicates that we want to exclude or include the entire key, just as if we included it in a set.
->>>>>>> Stashed changes
-
 Of course, the same can be done at any depth level:
 
 ```py
@@ -118,14 +113,9 @@ The same holds for the `json` and `copy` methods.
 
 ## Custom JSON (de)serialisation
 
-<<<<<<< Updated upstream
-To improve the performance of encoding and decoding JSON, alternative JSON implementations can be used via the
-`json_loads` and `json_dumps` properties of `Config`, e.g. [ujson](https://pypi.python.org/pypi/ujson).
-=======
 To improve the performance of encoding and decoding JSON, alternative JSON implementations
 (e.g. [ujson](https://pypi.python.org/pypi/ujson)) can be used via the
 `json_loads` and `json_dumps` properties of `Config`.
->>>>>>> Stashed changes
 
 ```py
 {!./examples/json_ujson.py!}
