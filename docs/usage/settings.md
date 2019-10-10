@@ -36,10 +36,6 @@ The following rules are used to determine which environment variable(s) are read
     * When specifying a list of strings, order matters: the first detected value is used.
     * For example, for `redis_dsn` above, `service_redis_dsn` would take precedence over `redis_url`.
 
-<div id="alias-warning" style="height: 35px">
-  <!-- this div provides an anchor to link to from the warning in env_settings.py -->
-</div>
-
 !!! warning
     Since **v1.0** *pydantic* does not consider field aliases when finding environment variables to populate settings
     models, use `env` instead as described above.
