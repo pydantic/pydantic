@@ -304,3 +304,33 @@ def test_config_file_settings_nornir(env):
     assert s.a == 'config a'
     assert s.b == 'argument b'
     assert s.c == 'env setting c'
+
+
+def test_alias_set(env):
+    class Settings(BaseSettings):
+        foo: str = 'default foo'
+        bar: str = 'bar default'
+
+        class Config:
+            fields = {'foo': {'env': 'foo_env'}}
+
+    assert Settings.__fields__['bar'].name == 'bar'
+    assert Settings.__fields__['bar'].alias == 'bar'
+    assert Settings.__fields__['foo'].name == 'foo'
+    assert Settings.__fields__['foo'].alias == 'foo'
+
+    class SubSettings(Settings):
+        spam: str = 'spam default'
+
+    assert SubSettings.__fields__['bar'].name == 'bar'
+    assert SubSettings.__fields__['bar'].alias == 'bar'
+    assert SubSettings.__fields__['foo'].name == 'foo'
+    assert SubSettings.__fields__['foo'].alias == 'foo'
+
+    assert SubSettings().dict() == {'foo': 'default foo', 'bar': 'bar default', 'spam': 'spam default'}
+    env.set('foo_env', 'fff')
+    assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bar default', 'spam': 'spam default'}
+    env.set('bar', 'bbb')
+    assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'spam default'}
+    env.set('spam', 'sss')
+    assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'sss'}
