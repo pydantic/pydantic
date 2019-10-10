@@ -208,7 +208,7 @@ def test_env_field(env):
 
 
 def test_aliases_warning(env):
-    with pytest.warns(DeprecationWarning, match='aliases are no longer used by BaseSettings'):
+    with pytest.warns(FutureWarning, match='aliases are no longer used by BaseSettings'):
 
         class Settings(BaseSettings):
             foobar: str = 'default value'
