@@ -338,11 +338,11 @@ def test_generic():
 
     success1 = Result[Data, Error](data=[Data(number=1, text='a')], positive_number=1)
     assert success1.dict() == {'data': [{'number': 1, 'text': 'a'}], 'error': None, 'positive_number': 1}
-    assert str(success1) == "Result[Data, Error] data=[<Data number=1 text='a'>] error=None positive_number=1"
+    assert repr(success1) == "<Result[Data, Error](data=[<Data(number=1 text='a')>] error=None positive_number=1)>"
 
     success2 = Result[Data, Error](error=Error(message='error'), positive_number=1)
     assert success2.dict() == {'data': None, 'error': {'message': 'error'}, 'positive_number': 1}
-    assert str(success2) == "Result[Data, Error] data=None error=<Error message='error'> positive_number=1"
+    assert repr(success2) == "<Result[Data, Error](data=None error=<Error(message='error')> positive_number=1)>"
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](error=Error(message='error'), positive_number=-1)
     assert exc_info.value.errors() == [{'loc': ('positive_number',), 'msg': '', 'type': 'value_error'}]
@@ -436,5 +436,5 @@ def test_custom_generic_naming():
             title = param_names[0].title()
             return f'Optional{title}Wrapper'
 
-    assert str(MyModel[int](value=1)) == 'OptionalIntWrapper value=1'
-    assert str(MyModel[str](value=None)) == 'OptionalStrWrapper value=None'
+    assert repr(MyModel[int](value=1)) == '<OptionalIntWrapper(value=1)>'
+    assert repr(MyModel[str](value=None)) == '<OptionalStrWrapper(value=None)>'

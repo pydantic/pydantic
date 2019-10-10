@@ -145,8 +145,11 @@ class GetterDict:
     def __eq__(self, other: Any) -> bool:
         return dict(self) == dict(other.items())  # type: ignore
 
+    def __str__(self) -> str:
+        return f'GetterDict[{display_as_type(self._obj)}]({dict(self)})'  # type: ignore
+
     def __repr__(self) -> str:
-        return f'<GetterDict({display_as_type(self._obj)}) {dict(self)}>'  # type: ignore
+        return f'<{self}>'
 
 
 class ValueItems:

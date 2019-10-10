@@ -23,8 +23,11 @@ class ErrorWrapper:
         else:
             return (self._loc,)
 
+    def __str__(self) -> str:
+        return f'exc={self.exc!r} loc={self.loc_tuple()!r}'
+
     def __repr__(self) -> str:
-        return f'<ErrorWrapper exc={self.exc!r} loc={self.loc_tuple()!r}>'
+        return f'<ErrorWrapper({self})>'
 
 
 # ErrorList is something like Union[List[Union[List[ErrorWrapper], ErrorWrapper]], ErrorWrapper]

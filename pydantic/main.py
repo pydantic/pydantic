@@ -629,19 +629,15 @@ class BaseModel(metaclass=ModelMetaclass):
         else:
             return self.dict() == other
 
-    def __repr__(self) -> str:
-        return f'<{self}>'
-
     def to_string(self, pretty: bool = False) -> str:
-        divider = '\n  ' if pretty else ' '
-        return '{}{}{}'.format(
-            self.__class__.__name__,
-            divider,
-            divider.join('{}={}'.format(k, truncate(v)) for k, v in self.__dict__.items()),
-        )
+        warnings.warn('`model.to_string()` method is deprecated, use `str(model)` instead', DeprecationWarning)
+        return str(self)
 
     def __str__(self) -> str:
-        return self.to_string()
+        return ' '.join(f'{k}={truncate(v)}' for k, v in self.__dict__.items())
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__}({self})>'
 
     @property
     def __values__(self) -> 'DictStrAny':

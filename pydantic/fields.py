@@ -87,9 +87,12 @@ class FieldInfo:
         self.regex = kwargs.pop('regex', None)
         self.extra = kwargs
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return 'FieldInfo({})'.format(', '.join(f'{a}: {v!r}' for a, v in attrs if v is not None))
+        return ' '.join(f'{a}={v!r}' for a, v in attrs if v is not None)
+
+    def __repr__(self) -> str:
+        return f'<FieldInfo({self})>'
 
 
 def Field(
@@ -603,17 +606,15 @@ class ModelField:
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
-    def __repr__(self) -> str:
-        return f'<ModelField({self})>'
-
     def __str__(self) -> str:
-        parts = [self.name, 'type=' + display_as_type(self.type_)]
+        parts = [self.name, 'type=' + display_as_type(self.type_), f'required={self.required}']
 
-        if self.required:
-            parts.append('required')
-        else:
+        if not self.required:
             parts.append(f'default={self.default!r}')
 
         if self.alt_alias:
-            parts.append('alias=' + self.alias)
+            parts.append(f'alias={self.alias!r}')
         return ' '.join(parts)
+
+    def __repr__(self) -> str:
+        return f'<ModelField({self})>'
