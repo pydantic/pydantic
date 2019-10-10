@@ -5,7 +5,8 @@ class DemoModel(BaseModel):
     square_numbers: List[int] = []
     cube_numbers: List[int] = []
 
-    @validator('*', pre=True)  # '*' is same as 'cube_numbers', 'square_numbers' here
+    # '*' is the same as 'cube_numbers', 'square_numbers' here:
+    @validator('*', pre=True)
     def split_str(cls, v):
         if isinstance(v, str):
             return v.split('|')
@@ -24,7 +25,8 @@ class DemoModel(BaseModel):
 
     @validator('cube_numbers', each_item=True)
     def check_cubes(cls, v):
-        # 64 ** (1 / 3) == 3.9999999999999996! this is not a good way of checking cubes
+        # 64 ** (1 / 3) == 3.9999999999999996 (!)
+        # this is not a good way of checking cubes
         assert v ** (1 / 3) % 1 == 0, f'{v} is not a cubed number'
         return v
 
