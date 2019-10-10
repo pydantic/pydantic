@@ -18,9 +18,9 @@ class Bar(BaseModel):
 top_level_schema = schema([Model, Bar], title='My Schema')
 print(json.dumps(top_level_schema, indent=2))
 
-# {
-#   "title": "My Schema",
-#   "definitions": {
-#     "Foo": {
-#       "title": "Foo",
-#       ...
+#> {
+#>   "title": "My Schema",
+#>   "definitions": {
+#>     "Foo": {
+#>       "title": "Foo",
+#>       ...

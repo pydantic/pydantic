@@ -34,15 +34,15 @@ data = DataModel(numbers=[1, 2, 3], people=[])
 error = Error(code=404, message='Not found')
 
 print(Response[int](data=1))
-# > Response[int] data=1 error=None
+#> Response[int] data=1 error=None
 print(Response[str](data='value'))
-# > Response[str] data='value' error=None
+#> Response[str] data='value' error=None
 print(Response[str](data='value').dict())
-# > {'data': 'value', 'error': None}
+#> {'data': 'value', 'error': None}
 print(Response[DataModel](data=data).dict())
-# > {'data': {'numbers': [1, 2, 3], 'people': []}, 'error': None}
+#> {'data': {'numbers': [1, 2, 3], 'people': []}, 'error': None}
 print(Response[DataModel](error=error).dict())
-# > {'data': None, 'error': {'code': 404, 'message': 'Not found'}}
+#> {'data': None, 'error': {'code': 404, 'message': 'Not found'}}
 
 try:
     Response[int](data='value')

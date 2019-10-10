@@ -4,10 +4,10 @@ class BooleanModel(BaseModel):
     bool_value: bool
 
 print(BooleanModel(bool_value=False))
-# BooleansModel bool_value=False
+#> BooleansModel bool_value=False
 
 print(BooleanModel(bool_value='False'))
-# BooleansModel bool_value=False
+#> BooleansModel bool_value=False
 
 try:
     BooleanModel(bool_value=[])

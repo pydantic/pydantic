@@ -1,20 +1,20 @@
 The primary means of defining objects in *pydantic* is via models 
 (models are simply classes which inherit from `BaseModel`).
 
-You can think of models as similar to types in strictly typed languages or the requirements of a single endpoint
+You can think of models as similar to types in strictly typed languages, or as the requirements of a single endpoint
 in an API.
 
-Untrusted data can be passed to a model, after parsing and validation *pydantic* guarantees that the fields
+Untrusted data can be passed to a model, and after parsing and validation *pydantic* guarantees that the fields
 of the resultant model instance will conform to the field types defined on the model.
 
 !!! note
     *pydantic* is primarily a parsing library, **not a validation library**.
-    Validation is a means to an end - building a model which conforms to the types and constraints provided.
+    Validation is a means to an end: building a model which conforms to the types and constraints provided.
 
-    In other words *pydantic* guarantees the types and constraints of the output model, not the input data.
+    In other words, *pydantic* guarantees the types and constraints of the output model, not the input data.
 
-    This might sound like an esoteric distinction, but it is not - you should read about 
-    [Data Conversion](#data-conversion) if you're unsure what this means or how it might effect your usage.
+    This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
+    how it might effect your usage you should read the section about [Data Conversion](#data-conversion) below.
 
 ## Basic model usage
 
@@ -27,7 +27,7 @@ class User(BaseModel):
 ```
 `User` here is a model with two fields `id` which is an integer and is required, 
 and `name` which is a string and is not required (it has a default value). The type of `name` is inferred from the
-default value, thus a type annotation is not required (however note [this](#field-ordering) warning about field 
+default value, and so a type annotation is not required (however note [this](#field-ordering) warning about field 
 order when some fields do not have type annotations).
 ```py
 user = User(id='123')
@@ -60,37 +60,37 @@ This model is mutable so field values can be changed.
 ### Model properties
 
 The example above only shows the tip of the iceberg of what models can do. 
-Models contains the following methods and attributes:
+Models possess the following methods and attributes:
 
 `dict()`
-: returns a dictionary of the model's fields and values, 
-  see [exporting models](exporting_models.md#modeldict) for more details
+: returns a dictionary of the model's fields and values; 
+  cf. [exporting models](exporting_models.md#modeldict)
 
 `json()`
-: returns a JSON string representation `dict()`, 
-  see [exporting models](exporting_models.md#modeljson) for more details
+: returns a JSON string representation `dict()`; 
+  cf. [exporting models](exporting_models.md#modeljson)
 
 `copy()`
-: returns a deep copy of the model, see [exporting models](exporting_models.md#modeldcopy) for more details
+: returns a deep copy of the model; cf. [exporting models](exporting_models.md#modeldcopy)
 
 `parse_obj()`
-: utility for loading any object into a model with error handling if the object is not a dictionary,
-  see [helper function below](#helper-functions)
+: a utility for loading any object into a model with error handling if the object is not a dictionary;
+  cf. [helper functions](#helper-functions)
 
 `parse_raw()`
-: utility for loading strings of numerous formats, see [helper function below](#helper-functions)
+: a utility for loading strings of numerous formats; cf. [helper functions](#helper-functions)
 
 `parse_file()`
-: like `parse_raw()` but for files, see [helper function below](#helper-functions)
+: like `parse_raw()` but for files; cf. [helper function](#helper-functions)
 
 `from_orm()`
-: for loading data from arbitrary classes, see [ORM mode below](#orm-mode-aka-arbitrary-class-instances)
+: loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
 
 `schema()`
-: returns a dictionary representing the model as JSON Schema, see [Schema](schema.md)
+: returns a dictionary representing the model as JSON Schema; cf. [Schema](schema.md)
 
 `schema_json()`
-: returns a JSON string representation `schema()`, see [Schema](schema.md)
+: returns a JSON string representation of `schema()`; cf. [Schema](schema.md)
 
 `__fields_set__`
 : Set of names of fields which were set when the model instance was initialised
@@ -99,11 +99,11 @@ Models contains the following methods and attributes:
 : a dictionary of the model's fields
 
 `__config__`
-: the configuration class for this model, see [model config](model_config.md)
+: the configuration class for the model, cf. [model config](model_config.md)
 
 ## Recursive Models
 
-More complex hierarchical data structures can be defined using models as types in annotations themselves.
+More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
 ```py
 {!./examples/recursive.py!}
@@ -120,7 +120,7 @@ To do this:
 1. The [Config](model_config.md) property `orm_mode` must be set to `True`.
 2. The special constructor `from_orm` must be used to create the model instance.
 
-The example here uses SQLAlchemy but the same approach should work for any ORM.
+The example here uses SQLAlchemy, but the same approach should work for any ORM.
 
 ```py
 {!./examples/orm_mode.py!}
@@ -129,7 +129,7 @@ _(This script is complete, it should run "as is")_
 
 ORM instances will be parsed with `from_orm` recursively as well as at the top level.
 
-Here a vanilla class is used to demonstrate the principle, but any ORM could be used instead.
+Here a vanilla class is used to demonstrate the principle, but any ORM class could be used instead.
 
 ```py
 {!./examples/orm_mode_recursive.py!}
@@ -137,12 +137,12 @@ Here a vanilla class is used to demonstrate the principle, but any ORM could be 
 _(This script is complete, it should run "as is")_
 
 Arbitrary classes are processed by *pydantic* using the `GetterDict` class
-(see [utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)) which attempts to
+(see [utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)), which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
-sub-class of `GetterDict` in `Config.getter_dict` (see [config](model_config.md)).
+sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
 
-You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`, 
-in this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
+You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`. 
+In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
 
 ## Error Handling
 
@@ -170,12 +170,12 @@ You can access these errors in a several ways:
 Each error object contains:
 
 `loc`
-: the error's location as a list, the first item in the list will be the field where the error occurred,
-  subsequent items will represent the field where the error occurred
-  in [sub models](models.md#recursive_models) when they're used.
+: the error's location as a list. The first item in the list will be the field where the error occurred,
+  and if the field is a [sub-model](models.md#recursive_models), subsequent items will be present to indicate
+  the nested location of the error.
 
 `type`
-: a unique identifier of the error readable by a computer.
+: a computer-readable identifier of the error type.
 
 `msg`
 : a human readable explanation of the error.
@@ -183,7 +183,7 @@ Each error object contains:
 `ctx`
 : an optional object which contains values required to render the error message.
 
-To demonstrate that:
+As a demonstration:
 
 ```py
 {!./examples/errors1.py!}
@@ -202,7 +202,7 @@ See [validators](validators.md) for more details on use of the `@validator` deco
 ```
 _(This script is complete, it should run "as is")_
 
-You can also define your own error class with abilities to specify custom error code, message template and context:
+You can also define your own error classes, which can specify a custom error code, message template, and context:
 
 ```py
 {!./examples/errors3.py!}
@@ -213,22 +213,26 @@ _(This script is complete, it should run "as is")_
 
 *Pydantic* provides three `classmethod` helper functions on models for parsing data:
 
-* **`parse_obj`** this is almost identical to the `__init__` method of the model except if the object passed is not
-  a dict `ValidationError` will be raised (rather than python raising a `TypeError`).
-* **`parse_raw`** takes a *str* or *bytes* parses it as *json*, or *pickle* data and then passes
-  the result to `parse_obj`. The data type is inferred from the `content_type` argument,
-  otherwise *json* is assumed.
-* **`parse_file`** reads a file and passes the contents to `parse_raw`, if `content_type` is omitted it is inferred
-  from the file's extension.
+* **`parse_obj`**: this is very similar to the `__init__` method of the model, except it takes a dict
+  rather than keyword arguments. If the object passed is not a dict a `ValidationError` will be raised.
+* **`parse_raw`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `parse_obj`.
+  Parsing *pickle* data is also supported by setting the `content_type` argument appropriately.
+* **`parse_file`**: this reads a file and passes the contents to `parse_raw`. If `content_type` is omitted,
+  it is inferred from the file's extension.
 
 ```py
 {!./examples/parse.py!}
 ```
 _(This script is complete, it should run "as is")_
 
-!!! note
-    Since `pickle` allows complex objects to be encoded, to use it you need to explicitly pass `allow_pickle` to
-    the parsing function.
+!!! warning
+    To quote the [official `pickle` docs](https://docs.python.org/3/library/pickle.html),
+    "The pickle module is not secure against erroneous or maliciously constructed data.
+    Never unpickle data received from an untrusted or unauthenticated source." 
+    
+!!! info
+    Because it can result in arbitrary code execution, as a security measure, you need
+    to explicitly pass `allow_pickle` to the parsing function in order to load `pickle` data.
 
 ## Generic Models
 
@@ -274,7 +278,7 @@ _(This script is complete, it should run "as is")_
 
 ## Dynamic model creation
 
-There are some occasions where the shape of a model is not known until runtime, for this *pydantic* provides
+There are some occasions where the shape of a model is not known until runtime. For this *pydantic* provides
 the `create_model` method to allow models to be created on the fly.
 
 ```py
@@ -283,7 +287,7 @@ the `create_model` method to allow models to be created on the fly.
 
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 
-Fields are defined by either a a tuple of the form `(<type>, <default value>)` or just a default value. The
+Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The
 special key word arguments `__config__` and `__base__` can be used to customise the new model. This includes
 extending a base model with extra fields.
 
@@ -294,9 +298,9 @@ extending a base model with extra fields.
 ## Custom Root Types
 
 Pydantic models which do not represent a `dict` ("object" in JSON parlance) can have a custom
-root type defined via the `__root__` field. The root type can of any type: list, float, int etc.
+root type defined via the `__root__` field. The root type can be of any type: list, float, int, etc.
 
-The root type can be defined via the type hint on the `__root__` field.
+The root type is defined via the type hint on the `__root__` field.
 The root value can be passed to model `__init__` via the `__root__` keyword argument or as
 the first and only argument to `parse_obj`.
 
@@ -306,8 +310,8 @@ the first and only argument to `parse_obj`.
 
 ## Faux Immutability
 
-Models can be configured to be immutable via `allow_mutation = False` this will prevent changing attributes of
-a model. See [model config](model_config.md) for more details on `Config`.
+Models can be configured to be immutable via `allow_mutation = False`. When this is set, attempting to change the
+values of instance attributes will raise errors. See [model config](model_config.md) for more details on `Config`.
 
 !!! warning
     Immutability in python is never strict. If developers are determined/stupid they can always
@@ -317,7 +321,7 @@ a model. See [model config](model_config.md) for more details on `Config`.
 {!./examples/mutation.py!}
 ```
 
-Trying to change `a` caused an error and it remains unchanged, however the dict `b` is mutable and the
+Trying to change `a` caused an error, and `a` remains unchanged. However, the dict `b` is mutable, and the
 immutability of `foobar` doesn't stop `b` from being changed.
 
 ## Abstract Base Classes
@@ -332,7 +336,7 @@ _(This script is complete, it should run "as is")_
 
 ## Field Ordering
 
-Field order is important in models for the following reason:
+Field order is important in models for the following reasons:
 
 * validation is performed in the order fields are defined; [fields validators](validators.md) 
   can access the values of earlier fields, but not later ones
@@ -340,8 +344,8 @@ Field order is important in models for the following reason:
 * field order is preserved in [validation errors](#error-handling)
 * field order is preserved by [`.dict()` and `.json()` etc.](exporting_models.md#modeldict)
 
-As of **v1.0** all fields with annotations (both annotation only and annotations with a value) come first followed
-by fields with no annotation. Within each group fields remain in the order they were defined.
+As of **v1.0** all fields with annotations (whether annotation-only or with a default value) will precede
+all fields without an annotation. Within their respective groups, fields remain in the order they were defined.
 
 ```py
 {!./examples/field_order.py!}
@@ -349,15 +353,16 @@ by fields with no annotation. Within each group fields remain in the order they 
 _(This script is complete, it should run "as is")_
 
 !!! warning
-    Note here that field order when both annotated and un-annotated fields are used is esoteric and not obvious
-    at first glance.
+    As demonstrated by the example above, combining the use of annotated and non-annotated fields
+    in the same model can result in surprising field orderings. (This is due to limitations of python.)
 
-    **In general therefore, it's preferable to add type annotations to all fields even when a default value
-    also defines the type.**
+    Therefore, **we recommend adding type annotations to all fields**, even when a default value
+    would determine the type by itself.
 
 ## Required fields
 
-In addition to annotation only fields to denote required fields, an ellipsis (`...`) can be used as the value
+To declare a field as required, you may declare it using just an annotation, or you may use an ellipsis (`...`) 
+as the value:
 
 ```py
 from pydantic import BaseModel
@@ -367,18 +372,19 @@ class Model(BaseModel):
     b: int = ...
 ```
 
-Here both `a` and `b` are required here. Use of ellipses for required fields does not work well with [mypy](mypy.md)
-so should generally be avoided.
+Here both `a` and `b` are required. However, use of ellipses for required fields does not work well
+with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
 
 ## Data Conversion
 
-*pydantic* may cast input data to force it to conform model field types. This may result in information being lost, take
-the following example:
+*pydantic* may cast input data to force it to conform to model field types,
+and in some cases this may result in a loss of information.
+For example:
 
 ```py
 {!./examples/data_conversion.py!}
 ```
 _(This script is complete, it should run "as is")_
 
-This is a deliberate decision of *pydantic*, and in general it's the most useful approach, see 
-[here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion of the subject.
+This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
+[here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.

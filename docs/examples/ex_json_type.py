@@ -9,10 +9,10 @@ class ComplexJsonModel(BaseModel):
     json_obj: Json[List[int]]
 
 print(SimpleJsonModel(json_obj='{"b": 1}'))
-# > SimpleJsonModel json_obj={'b': 1}
+#> SimpleJsonModel json_obj={'b': 1}
 
 print(ComplexJsonModel(json_obj='[1, 2, 3]'))
-# > ComplexJsonModel json_obj=[1, 2, 3]
+#> ComplexJsonModel json_obj=[1, 2, 3]
 
 
 try:
