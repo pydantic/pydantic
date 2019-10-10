@@ -1,7 +1,9 @@
-Where possible *pydantic* uses [standard library types](#standard-library-types) to define fields thus smoothing 
-the learning curve. For some types however no standard library type exists, 
-here *pydantic* implements [many commonly used types](#pydantic-types). If no existing type exists for your 
-purpose you can also implement your [own types](#custom-data-types) with custom properties and validation.
+Where possible *pydantic* uses [standard library types](#standard-library-types) to define fields, thus smoothing 
+the learning curve. For many useful applications, however, no standard library type exists, 
+so *pydantic* implements [many commonly used types](#pydantic-types).
+
+If no existing type suits your purpose you can also implement your [own pydantic-compatible types](#custom-data-types)
+with custom properties and validation.
 
 ## Standard Library Types
 
@@ -13,40 +15,40 @@ purpose you can also implement your [own types](#custom-data-types) with custom 
 : see [Booleans](#booleans) below for details on how bools are validated and what values are permitted
 
 `int`
-: *pydantic* uses `int(v)` to coerce types to an `int`, therefore strings and floats will be coerced
-  to ints, see [this](models.md#data-conversion) warning on loss of information during data conversion
+: *pydantic* uses `int(v)` to coerce types to an `int`;
+  see [this](models.md#data-conversion) warning on loss of information during data conversion
 
 `float` 
-: similarly `float(v)` is used to coerce values to floats
+: similarly, `float(v)` is used to coerce values to floats
 
 `str`
-: strings are accepted as-as, `int` `float` and `Decimal` are coerced using `str(v)`, `bytes` and `bytearray` are
+: strings are accepted as-is, `int` `float` and `Decimal` are coerced using `str(v)`, `bytes` and `bytearray` are
   converted using `v.decode()`, enums inheriting from `str` are converted using `v.value`, 
-  all other types cause an error
+  and all other types cause an error
 
 `bytes`
-: `bytes` are accepted as-as, `bytearray` is converted using `bytes(v)`, `str` are converted using `v.encode()`,
-  `int` `float` and `Decimal` are coerced using `str(v).encode()`
+: `bytes` are accepted as-is, `bytearray` is converted using `bytes(v)`, `str` are converted using `v.encode()`,
+  and `int`, `float`, and `Decimal` are coerced using `str(v).encode()`
 
 `list`
-: allows `list`, `tuple`, `set`, `frozenset` or generators and casts to a list, see `typing.List` below
-  for sub-type constraints
+: allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a list;
+  see `typing.List` below for sub-type constraints
 
 `tuple`
-: allows `list`, `tuple`, `set`, `frozenset` or generators and casts to a tuple, see `typing.Tuple` below
-  for sub-type constraints
+: allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a tuple;
+  see `typing.Tuple` below for sub-type constraints
 
 `dict`
-: `dict(v)` is used to attempt to convert a dictionary, see `typing.Dict` below
-  for sub-type constraints
+: `dict(v)` is used to attempt to convert a dictionary;
+  see `typing.Dict` below for sub-type constraints
 
 `set`
-: allows `list`, `tuple`, `set`, `frozenset` or generators and casts to a set, see `typing.Set` below
-  for sub-type constraints
+: allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a set;
+  see `typing.Set` below for sub-type constraints
 
 `frozonset`
-: allows `list`, `tuple`, `set`, `frozenset` or generators and casts to a frozen set, see `typing.FrozenSet` below
-  for sub-type constraints
+: allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a frozen set;
+  see `typing.FrozenSet` below for sub-type constraints
 
 `datetime.date`
 : see [Datetime Types](#datetime-types) below for more detail on parsing and validation
@@ -64,8 +66,8 @@ purpose you can also implement your [own types](#custom-data-types) with custom 
 : see [Unions](#unions) below for more detail on parsing and validation
 
 `typing.Optional`
-: `Optional[x]` is simply short hand for `Union[x, None]`, see [Unions](#unions) below for more detail on 
-  parsing and validation
+: `Optional[x]` is simply short hand for `Union[x, None]`;
+  see [Unions](#unions) below for more detail on parsing and validation
 
 `typing.List`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
@@ -95,47 +97,47 @@ purpose you can also implement your [own types](#custom-data-types) with custom 
 : will cause the input value to be passed to `re.compile(v)` to create a regex pattern
 
 `ipaddress.IPv4Address`
-: simply uses the type itself for validation by passing the value to `IPv4Address(v)`, 
+: simply uses the type itself for validation by passing the value to `IPv4Address(v)`; 
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv4Interface`
-: simply uses the type itself for validation by passing the value to `IPv4Address(v)`, 
+: simply uses the type itself for validation by passing the value to `IPv4Address(v)`; 
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv4Network`
-: simply uses the type itself for validation by passing the value to `IPv4Network(v)`, 
+: simply uses the type itself for validation by passing the value to `IPv4Network(v)`; 
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv6Address`
-: simply uses the type itself for validation by passing the value to `IPv6Address(v)`, 
+: simply uses the type itself for validation by passing the value to `IPv6Address(v)`; 
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv6Interface`
-: simply uses the type itself for validation by passing the value to `IPv6Interface(v)`, 
+: simply uses the type itself for validation by passing the value to `IPv6Interface(v)`; 
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv6Network`
-: simply uses the type itself for validation by passing the value to `IPv6Network(v)`, 
+: simply uses the type itself for validation by passing the value to `IPv6Network(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `enum.Enum`
-: checks that the value is a valid member of the enum, 
+: checks that the value is a valid member of the enum;
   see [Enums and Choices](#enums-and-choices) for more details
 
 `enum.IntEnum`
-: checks that the value is a valid member of the integer enum, 
+: checks that the value is a valid member of the integer enum;
   see [Enums and Choices](#enums-and-choices) for more details
 
 `decimal.Decimal`
 : *pydantic* attempts to convert the value to a string, then passes the string to `Decimal(v)`
 
 `pathlib.Path`
-: simply uses the type itself for validation by passing the value to `Path(v)`, 
+: simply uses the type itself for validation by passing the value to `Path(v)`; 
   see [Pydantic Types](#pydantic-types) for other more strict path types
 
 `uuid.UUID`
-: strings and bytes (converted to strings) are allowed passed to `UUID(v)`, 
-  see [Pydantic Types](#pydantic-types) for other more strict UUID types
+: strings and bytes (converted to strings) are passed to `UUID(v)`;
+  see [Pydantic Types](#pydantic-types) for other stricter UUID types
 
 ### Typing Iterables
 
@@ -162,7 +164,7 @@ the first one that matches. In the above example the `id` of `user_03` was defin
 is defined under the attribute's `Union` annotation) but as the `uuid.UUID` can be marshalled into an `int` it
 chose to match against the `int` type and disregarded the other types.
 
-As such, it is recommended that when defining `Union` annotations that the most specific type is defined first and
+As such, it is recommended that, when defining `Union` annotations, the most specific type is included first and
 followed by less specific types. In the above example, the `UUID` class should precede the `int` and `str`
 classes to preclude the unexpected representation as such:
 
@@ -189,7 +191,7 @@ types:
 * `datetime` fields can be:
 
   * `datetime`, existing `datetime` object
-  * `int` or `float`, assumed as Unix time, e.g. seconds (if <= `2e10`) or milliseconds (if > `2e10`) since 1 January 1970
+  * `int` or `float`, assumed as Unix time, i.e. seconds (if <= `2e10`) or milliseconds (if > `2e10`) since 1 January 1970
   * `str`, following formats work:
 
     * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z[±]HH[:]MM]]]`
@@ -258,7 +260,7 @@ _(This script is complete, it should run "as is")_
 
 !!! warning
     Callable fields only perform a simple check that the argument is
-    callable, no validation of arguments, their types or the return
+    callable; no validation of arguments, their types, or the return
     type is performed.
 
 ### Type
@@ -279,8 +281,8 @@ You may also use `Type` to specify that any class is allowed.
 ## Literal Type
 
 !!! note
-    This is not strictly part of the python standard library, instead the 
-    [typing-extensions](https://pypi.org/project/typing-extensions/) package is required.
+    This is not strictly part of the python standard library; 
+    it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
 
 *pydantic* supports the use of `typing_extensions.Literal` as a lightweight way to specify that a field
 may accept only specific literal values:
@@ -308,120 +310,124 @@ _(This script is complete, it should run "as is")_
 
 ## Pydantic Types
 
-*pydantic* comes with the following types:
+*pydantic* also provides a variety of other useful types:
 
 `FilePath`
-: like `Path` but the path must exist and be a file
+: like `Path`, but the path must exist and be a file
 
 `DirectoryPath`
-: like `Path` but the path must exist and be a directory
+: like `Path`, but the path must exist and be a directory
 
 `EmailStr`
-: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed, requires the input
-  string to be a valid email address, outputs a simple string
+: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
+  the input string must be a valid email address, and the output is a simple string
+  
+  
 
 `NameEmail`
-: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed, requires the input
-  string to be a valid email address, outputs a `NameEmail` object which has two properties: `name` and `email`, 
-  also accepts emails in the format `Fred Bloggs <fred.bloggs@example.com>` in which case "Fred Bloggs" is used
-  for name, if simply `fred.bloggs@example.com` is provided, name would be "fred.bloggs"
+: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
+  the input string must be either a valid email address or in the format `Fred Bloggs <fred.bloggs@example.com>`,
+  and the output is a `NameEmail` object which has two properties: `name` and `email`.
+  For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`;
+  for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
+  
 
 `PyObject`
-: expects a string and loads the python object at that dotted path; e.g. if `'math.cos'` was provided, the resulting
-  field value would be the function `cos`
+: expects a string and loads the python object importable at that dotted path;
+  e.g. if `'math.cos'` was provided, the resulting field value would be the function `cos`
 
 `Color`
-: for parsing HTML can CSS colors, see [Color Type](#color-type)
+: for parsing HTML and CSS colors; see [Color Type](#color-type)
 
 `Json`
-: a special type wrapper which parses JSON before parsing, see [JSON Type](#json-type)
+: a special type wrapper which loads JSON before parsing; see [JSON Type](#json-type)
 
 `PaymentCardNumber`
-: for parsing and validating payment cards, see [payment cards](#payment-card-numbers)
+: for parsing and validating payment cards; see [payment cards](#payment-card-numbers)
 
 `AnyUrl`
-: any URL, see [URLs](#urls)
+: any URL; see [URLs](#urls)
 
 `AnyHttpUrl`
-: an HTTP URL, see [URLs](#urls)
+: an HTTP URL; see [URLs](#urls)
 
 `HttpUrl`
-: stricter HTTP URL, see [URLs](#urls)
+: a stricter HTTP URL; see [URLs](#urls)
 
 `PostgresDsn`
-: a postgres DSN style URL, see [URLs](#urls)
+: a postgres DSN style URL; see [URLs](#urls)
 
 `RedisDsn`
-: a redis DSN style URL, see [URLs](#urls)
+: a redis DSN style URL; see [URLs](#urls)
 
 `stricturl`
-: a type method for arbitrary URL constraints, see [URLs](#urls)
+: a type method for arbitrary URL constraints; see [URLs](#urls)
 
 `UUID1`
-: requires a valid UUID of type 1, see `UUID` [above](#standard-library-types)
+: requires a valid UUID of type 1; see `UUID` [above](#standard-library-types)
 
 `UUID3`
-: requires a valid UUID of type 3, see `UUID` [above](#standard-library-types)
+: requires a valid UUID of type 3; see `UUID` [above](#standard-library-types)
 
 `UUID4`
-: requires a valid UUID of type 4, see `UUID` [above](#standard-library-types)
+: requires a valid UUID of type 4; see `UUID` [above](#standard-library-types)
 
 `UUID5`
-: requires a valid UUID of type 5, see `UUID` [above](#standard-library-types)
+: requires a valid UUID of type 5; see `UUID` [above](#standard-library-types)
 
 `SecretBytes`
-: bytes where the value is kept partially secret, see [Secrets](#secret-types) 
+: bytes where the value is kept partially secret; see [Secrets](#secret-types) 
 
 `SecretStr`
-: string where the value is kept partially secret, see [Secrets](#secret-types)
+: string where the value is kept partially secret; see [Secrets](#secret-types)
 
 `IPvAnyAddress`
-: allows either a `IPv4Address` or a `IPv6Address`
+: allows either an `IPv4Address` or an `IPv6Address`
 
 `IPvAnyInterface`
-: allows either a `IPv4Interface` or a `IPv6Interface`
+: allows either an `IPv4Interface` or an `IPv6Interface`
 
 `IPvAnyNetwork`
-: allows either a `IPv4Network` or a `IPv6Network`
+: allows either an `IPv4Network` or an `IPv6Network`
 
 `NegativeFloat`
-: allows a float which is negative, uses standard `float` parsing, then checks the value is less than 0,
+: allows a float which is negative; uses standard `float` parsing then checks the value is less than 0;
   see [Constrained Types](#constrained-types)
 
 `NegativeInt`
-: allows a int which is negative, uses standard `int` parsing, then checks the value is less than 0,
+: allows a int which is negative; uses standard `int` parsing then checks the value is less than 0;
   see [Constrained Types](#constrained-types)
 
 `PositiveFloat`
-: allows a float which is negative, uses standard `float` parsing, then checks the value is greater than 0,
+: allows a float which is negative; uses standard `float` parsing then checks the value is greater than 0;
   see [Constrained Types](#constrained-types)
 
 `PositiveInt`
-: allows a int which is negative, uses standard `int` parsing, then checks the value is greater than 0,
+: allows a int which is negative; uses standard `int` parsing then checks the value is greater than 0;
   see [Constrained Types](#constrained-types)
 
 `conbytes`
-: type method for constraining bytes,
+: type method for constraining bytes;
   see [Constrained Types](#constrained-types)
 
 `condecimal`
-: type method for constraining Decimals,
+: type method for constraining Decimals;
   see [Constrained Types](#constrained-types)
 
 `confloat`
-: type method for constraining floats,
+: type method for constraining floats;
   see [Constrained Types](#constrained-types)
 
 `conint`
-: type method for constraining ints,
+: type method for constraining ints;
   see [Constrained Types](#constrained-types)
 
 `conlist`
-: type method for constraining lists,
+: type method for constraining lists;
   see [Constrained Types](#constrained-types)
 
 `constr`
-: type method for constraining strs,
+: type method for constraining strs;
   see [Constrained Types](#constrained-types)
 
 ### URLs
@@ -440,8 +446,6 @@ For URI/URL validation the following types are available:
     - `tld_required: bool = True`
     - `allowed_schemes: Optional[Set[str]] = None`
 
-If you require custom types they can be created in a similar way to the application specific types defined above.
-
 The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are
 provided:
 
@@ -449,6 +453,8 @@ provided:
 {!./examples/urls.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+If you require a custom URI/URL type, it can be created in a similar way to the types defined above.
 
 #### URL Properties
 
@@ -578,8 +584,8 @@ _(This script is complete, it should run "as is")_
 
 ### Json Type
 
-You can use `Json` data type - *Pydantic* will first parse raw JSON string and then will validate parsed object
-against defined Json structure if it's provided.
+You can use `Json` data type to make *pydantic* first load a raw JSON string.
+It can also optionally be used to parse the loaded object into another type:
 
 ```py
 {!./examples/ex_json_type.py!}
@@ -640,7 +646,7 @@ _(This script is complete, it should run "as is")_
 
 ## Custom Data Types
 
-You can also define your own data types. The classmethod `__get_validators__` will be called
+You can also define your own custom data types. The classmethod `__get_validators__` will be called
 to get validators to parse and validate the input data.
 
 ```py
