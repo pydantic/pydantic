@@ -40,30 +40,14 @@ def test_ultra_simple_failed():
 def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
-    assert repr(m) == '<UltraSimpleModel(a=10.2 b=10)>'
-    assert repr(m.__fields__['a']) == '<ModelField(a type=float required=True)>'
-    assert repr(m.__fields__['b']) == '<ModelField(b type=int required=False default=10)>'
+    assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
+    assert repr(m.__fields__['a']) == "ModelField(name='a', type='float', required=True)"
+    assert repr(m.__fields__['b']) == "ModelField(name='b', type='int', required=False, default=10)"
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
     assert m.json() == '{"a": 10.2, "b": 10}'
     with pytest.raises(DeprecationWarning, match=r'`model.to_string\(\)` method is deprecated'):
         assert m.to_string() == 'a=10.2 b=10'
-
-
-def test_str_truncate():
-    class Model(BaseModel):
-        s1: str
-        s2: str
-        b1: bytes
-        b2: bytes
-
-    m = Model(s1='132', s2='x' * 100, b1='123', b2='x' * 100)
-    assert str(m) == (
-        "s1='132' "
-        "s2='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…' "
-        "b1=b'123' "
-        "b2=b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…"
-    )
 
 
 def test_comparing():
@@ -126,7 +110,7 @@ def test_recursion():
     assert m.grape is True
     assert m.banana.a == 1.0
     assert m.banana.b == 10
-    assert repr(m) == '<RecursiveModel(grape=True banana=<UltraSimpleModel(a=1.0 b=10)>)>'
+    assert repr(m) == 'RecursiveModel(grape=True, banana=UltraSimpleModel(a=1.0, b=10))'
 
 
 def test_recursion_fails():
@@ -449,7 +433,7 @@ def test_const_list_with_wrong_value():
                 'permitted': [[SubModel(b=1), SubModel(b=2), SubModel(b=3)]],
             },
             'loc': ('a',),
-            'msg': 'unexpected value; permitted: [<SubModel(b=1)>, <SubModel(b=2)>, <SubModel(b=3)>]',
+            'msg': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
             'type': 'value_error.const',
         },
         {
@@ -470,7 +454,7 @@ def test_const_list_with_wrong_value():
                 'permitted': [[SubModel(b=1), SubModel(b=2), SubModel(b=3)]],
             },
             'loc': ('a',),
-            'msg': 'unexpected value; permitted: [<SubModel(b=1)>, <SubModel(b=2)>, <SubModel(b=3)>]',
+            'msg': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
             'type': 'value_error.const',
         },
         {

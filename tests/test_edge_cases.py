@@ -27,7 +27,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert '<ModelField(v type=typing.Union[str, bytes] required=True)>' == repr(m.__fields__['v'])
+    assert repr(m.__fields__['v']) == "ModelField(name='v', type='typing.Union[str, bytes]', required=True)"
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -240,7 +240,7 @@ def test_recursive_list():
     assert m.v == []
 
     m = Model(v=[{'name': 'testing', 'count': 4}])
-    assert repr(m) == "<Model(v=[<SubModel(name='testing' count=4)>])>"
+    assert repr(m) == "Model(v=[SubModel(name='testing', count=4)])"
     assert m.v[0].name == 'testing'
     assert m.v[0].count == 4
     assert m.dict() == {'v': [{'count': 4, 'name': 'testing'}]}
@@ -324,7 +324,9 @@ def test_infer_alias():
             fields = {'a': '_a'}
 
     assert Model(_a='different').a == 'different'
-    assert repr(Model.__fields__['a']) == "<ModelField(a type=str required=False default='foobar' alias='_a')>"
+    assert repr(Model.__fields__['a']) == (
+        "ModelField(name='a', type='str', required=False, default='foobar', alias='_a')"
+    )
 
 
 def test_alias_error():
@@ -594,7 +596,7 @@ def test_inheritance_config():
             fields = {'a': 'aaa', 'b': 'bbb'}
 
     m = Child(aaa=1, bbb='s')
-    assert repr(m) == "<Child(a=1 b='s')>"
+    assert repr(m) == "Child(a=1, b='s')"
 
 
 def test_partial_inheritance_config():
@@ -611,7 +613,7 @@ def test_partial_inheritance_config():
             fields = {'b': 'bbb'}
 
     m = Child(aaa=1, bbb='s')
-    assert repr(m) == "<Child(a=1 b='s')>"
+    assert repr(m) == "Child(a=1, b='s')"
 
 
 def test_annotation_inheritance():

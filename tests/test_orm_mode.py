@@ -43,8 +43,8 @@ def test_getdict():
     assert gd == {'a': 1, 'c': 3, 'd': 4}
     assert 'a' in gd
     assert len(gd) == 3
-    assert str(gd) == "GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})"
-    assert repr(gd) == "<GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})>"
+    assert str(gd) == "{'a': 1, 'c': 3, 'd': 4}"
+    assert repr(gd) == "GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})"
 
 
 def test_orm_mode():

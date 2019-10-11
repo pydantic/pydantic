@@ -70,7 +70,8 @@ def test_lenient_issubclass_is_lenient():
 
 
 def test_truncate_type():
-    assert truncate(object) == "<class 'object'>"
+    with pytest.warns(DeprecationWarning, match='`truncate` is no-longer used by pydantic and deprecated'):
+        assert truncate(object) == "<class 'object'>"
 
 
 def test_value_items():
@@ -91,7 +92,8 @@ def test_value_items():
     assert not vi.is_excluded('c')
     assert not vi.is_included('c')
 
-    assert str(vi) == "ValueItems: dict({'a': {0, -1}, 'b': {'a': Ellipsis, 'b': -1}})"
+    assert str(vi) == "{'a': {0, -1}, 'b': {'a': Ellipsis, 'b': -1}}"
+    assert repr(vi) == "ValueItems({'a': {0, -1}, 'b': {'a': Ellipsis, 'b': -1}})"
 
     excluded = {k_: v_ for k_, v_ in v2.items() if not vi.is_excluded(k_)}
     assert excluded == {'a': v, 'b': {'a': 1, 'b': (1, 2)}, 'c': 1}
@@ -101,7 +103,7 @@ def test_value_items():
 
     sub_v = included['a']
     sub_vi = ValueItems(sub_v, vi.for_element('a'))
-    assert str(sub_vi) == 'ValueItems: set({0, 2})'
+    assert repr(sub_vi) == 'ValueItems({0, 2})'
 
     assert sub_vi.is_excluded(2)
     assert [v_ for i, v_ in enumerate(sub_v) if not sub_vi.is_excluded(i)] == ['b']

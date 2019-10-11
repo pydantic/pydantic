@@ -18,13 +18,13 @@ from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import GetterDict, ValueItems, lenient_issubclass, truncate, validate_field_name
+from .utils import GetterDict, Representation, ValueItems, lenient_issubclass, validate_field_name
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
-    from .typing import SetIntStr, DictIntStrAny  # noqa: F401
+    from .typing import SetIntStr, DictIntStrAny, ReprArgs  # noqa: F401
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
@@ -229,6 +229,12 @@ class ModelMetaclass(ABCMeta):
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
+            # equivalent of inheriting from Representation
+            '__repr_name__': Representation.__repr_name__,
+            '__repr_str__': Representation.__repr_str__,
+            '__pretty__': Representation.__pretty__,
+            '__str__': Representation.__str__,
+            '__repr__': Representation.__repr__,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace, **kwargs)
@@ -455,11 +461,6 @@ class BaseModel(metaclass=ModelMetaclass):
         m = self.__class__.construct(v, self.__fields_set__.copy())
         return m
 
-    @property
-    def fields(self) -> Dict[str, ModelField]:
-        warnings.warn('`fields` attribute is deprecated, use `__fields__` instead', DeprecationWarning)
-        return self.__fields__
-
     @classmethod
     def schema(cls, by_alias: bool = True) -> 'DictStrAny':
         cached = cls.__schema_cache__.get(by_alias)
@@ -630,15 +631,17 @@ class BaseModel(metaclass=ModelMetaclass):
         else:
             return self.dict() == other
 
+    def __repr_args__(self) -> 'ReprArgs':
+        return self.__dict__.items()  # type: ignore
+
+    @property
+    def fields(self) -> Dict[str, ModelField]:
+        warnings.warn('`fields` attribute is deprecated, use `__fields__` instead', DeprecationWarning)
+        return self.__fields__
+
     def to_string(self, pretty: bool = False) -> str:
         warnings.warn('`model.to_string()` method is deprecated, use `str(model)` instead', DeprecationWarning)
         return str(self)
-
-    def __str__(self) -> str:
-        return ' '.join(f'{k}={truncate(v)}' for k, v in self.__dict__.items())
-
-    def __repr__(self) -> str:
-        return f'<{self.__class__.__name__}({self})>'
 
     @property
     def __values__(self) -> 'DictStrAny':

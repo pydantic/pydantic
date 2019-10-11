@@ -1,6 +1,20 @@
 import inspect
+import warnings
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Set, Tuple, Type, Union, no_type_check
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generator,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    no_type_check,
+)
 
 from .typing import AnyType, display_as_type
 
@@ -12,7 +26,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
-    from .typing import SetIntStr, DictIntStrAny, IntStr  # noqa: F401
+    from .typing import SetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
 
 
 def import_string(dotted_path: str) -> Any:
@@ -36,11 +50,12 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     """
     Truncate a value and add a unicode ellipsis (three dots) to the end if it was too long
     """
+    warnings.warn('`truncate` is no-longer used by pydantic and deprecated', DeprecationWarning)
     if isinstance(v, str) and len(v) > (max_len - 2):
         # -3 so quote + string + … + quote has correct length
-        return (v[: (max_len - 3)] + '…').__repr__()
+        return repr(v[: (max_len - 3)] + '…')
     try:
-        v = v.__repr__()
+        v = repr(v)
     except TypeError:
         v = type(v).__repr__(v)  # in case v is a type
     if len(v) > max_len:
@@ -90,7 +105,37 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     return abs(value_1 - value_2) <= delta
 
 
-class GetterDict:
+class Representation:
+    def __repr_args__(self) -> 'ReprArgs':
+        attrs = ((s, getattr(self, s)) for s in self.__slots__)
+        return [(a, v) for a, v in attrs if v is not None]
+
+    def __repr_name__(self) -> str:
+        return self.__class__.__name__
+
+    def __repr_str__(self, join_str: str) -> str:
+        return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
+
+    def __pretty__(self, fmt: Callable[[Any], Any], **kwargs: Any) -> Generator[Any, None, None]:
+        yield self.__repr_name__() + '('
+        yield 1
+        for name, value in self.__repr_args__():
+            if name is not None:
+                yield name + '='
+            yield fmt(value)
+            yield ','
+            yield 0
+        yield -1
+        yield ')'
+
+    def __str__(self) -> str:
+        return self.__repr_str__(' ')
+
+    def __repr__(self) -> str:
+        return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
+
+
+class GetterDict(Representation):
     """
     Hack to make object's smell just enough like dicts for validate_model.
 
@@ -145,14 +190,14 @@ class GetterDict:
     def __eq__(self, other: Any) -> bool:
         return dict(self) == dict(other.items())  # type: ignore
 
-    def __str__(self) -> str:
-        return f'GetterDict[{display_as_type(self._obj)}]({dict(self)})'  # type: ignore
+    def __repr_args__(self) -> 'ReprArgs':
+        return [(None, dict(self))]  # type: ignore
 
-    def __repr__(self) -> str:
-        return f'<{self}>'
+    def __repr_name__(self) -> str:
+        return f'GetterDict[{display_as_type(self._obj)}]'
 
 
-class ValueItems:
+class ValueItems(Representation):
     """
     Class for more convenient calculation of excluded or included fields on values.
     """
@@ -227,5 +272,5 @@ class ValueItems:
         else:
             return {v_length + i if i < 0 else i: v for i, v in items.items()}
 
-    def __str__(self) -> str:
-        return f'{self.__class__.__name__}: {self._type.__name__}({self._items})'
+    def __repr_args__(self) -> 'ReprArgs':
+        return [(None, self._items)]

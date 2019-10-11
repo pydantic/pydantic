@@ -518,7 +518,7 @@ def test_string_success():
     assert m.str_regex == 'xxx123'
     assert m.str_curtailed == '12345'
     assert m.str_email == 'foobar@example.com'
-    assert repr(m.name_email) == '<NameEmail("foo bar <foobaR@example.com>")>'
+    assert repr(m.name_email) == "NameEmail(name='foo bar', email='foobaR@example.com')"
     assert m.name_email.name == 'foo bar'
     assert m.name_email.email == 'foobaR@example.com'
 
@@ -1679,8 +1679,8 @@ def test_secretstr():
     # Assert str and repr are correct.
     assert str(f.password) == '**********'
     assert str(f.empty_password) == ''
-    assert repr(f.password) == "<SecretStr('**********')>"
-    assert repr(f.empty_password) == "<SecretStr('')>"
+    assert repr(f.password) == "SecretStr('**********')"
+    assert repr(f.empty_password) == "SecretStr('')"
 
     # Assert retrieval of secret value is correct
     assert f.password.get_secret_value() == '1234'
@@ -1716,8 +1716,8 @@ def test_secretbytes():
     # Assert str and repr are correct.
     assert str(f.password) == '**********'
     assert str(f.empty_password) == ''
-    assert repr(f.password) == "<SecretBytes(b'**********')>"
-    assert repr(f.empty_password) == "<SecretBytes(b'')>"
+    assert repr(f.password) == "SecretBytes(b'**********')"
+    assert repr(f.empty_password) == "SecretBytes(b'')"
 
     # Assert retrieval of secret value is correct
     assert f.password.get_secret_value() == b'wearebytes'

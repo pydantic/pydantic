@@ -468,7 +468,7 @@ class SecretStr:
         self._secret_value = value
 
     def __repr__(self) -> str:
-        return f"<SecretStr('{self}')>"
+        return f"SecretStr('{self}')"
 
     def __str__(self) -> str:
         return '**********' if self._secret_value else ''
@@ -495,7 +495,7 @@ class SecretBytes:
         self._secret_value = value
 
     def __repr__(self) -> str:
-        return f"<SecretBytes(b'{self}')>"
+        return f"SecretBytes(b'{self}')"
 
     def __str__(self) -> str:
         return '**********' if self._secret_value else ''

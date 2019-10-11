@@ -220,7 +220,7 @@ def test_immutable_copy():
     assert m == m.copy()
 
     m2 = m.copy(update={'b': 12})
-    assert repr(m2) == '<Model(a=40 b=12)>'
+    assert repr(m2) == 'Model(a=40, b=12)'
     with pytest.raises(TypeError):
         m2.b = 13
 

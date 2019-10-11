@@ -9,6 +9,7 @@ from typing import (  # type: ignore
     List,
     NewType,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -64,6 +65,7 @@ if TYPE_CHECKING:
     SetIntStr = Set[IntStr]
     DictIntStrAny = Dict[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
+    ReprArgs = Sequence[Tuple[Optional[str], Any]]
 
 __all__ = (
     'ForwardRef',
@@ -89,6 +91,7 @@ __all__ = (
     'SetIntStr',
     'DictIntStrAny',
     'CallableGenerator',
+    'ReprArgs',
 )
 
 
