@@ -11,9 +11,8 @@ from ipaddress import (
 )
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Set, Tuple, Type, Union, cast, no_type_check
 
-from pydantic.utils import Representation
-
 from . import errors
+from .utils import Representation
 from .validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:

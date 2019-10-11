@@ -1,7 +1,7 @@
 import json
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 
-from pydantic.utils import Representation
+from .utils import Representation
 
 if TYPE_CHECKING:
     from .main import BaseConfig  # noqa: F401

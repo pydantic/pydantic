@@ -8,8 +8,8 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
 
-from pydantic.color import Color
-from pydantic.types import SecretBytes, SecretStr
+from .color import Color
+from .types import SecretBytes, SecretStr
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
 
