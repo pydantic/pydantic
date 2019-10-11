@@ -50,7 +50,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     """
     Truncate a value and add a unicode ellipsis (three dots) to the end if it was too long
     """
-    warnings.warn('`truncate` is no-longer used by pydantic and deprecated', DeprecationWarning)
+    warnings.warn('`truncate` is no-longer used by pydantic and is deprecated', DeprecationWarning)
     if isinstance(v, str) and len(v) > (max_len - 2):
         # -3 so quote + string + … + quote has correct length
         return (v[: (max_len - 3)] + '…').__repr__()
@@ -115,9 +115,9 @@ class Representation:
 
     def __repr_args__(self) -> 'ReprArgs':
         """
-        Yields the attributes to show in __str__ and __repr__, this is generally overridden.
+        Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
 
-        Can either be:
+        Can either return:
         * name - value pairs, e.g.: `[('foo_name', 'foo'), ('bar_name', ['b', 'a', 'r'])]`
         * or, just values, e.g.: `[(None, 'foo'), (None, ['b', 'a', 'r'])]`
         """
@@ -126,7 +126,7 @@ class Representation:
 
     def __repr_name__(self) -> str:
         """
-        Name of the instance's class, used in __repr__
+        Name of the instance's class, used in __repr__.
         """
         return self.__class__.__name__
 

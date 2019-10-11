@@ -77,13 +77,17 @@ def test_lenient_issubclass_is_lenient():
     assert lenient_issubclass('a', 'a') is False
 
 
-def test_truncate():
-    with pytest.warns(DeprecationWarning, match='`truncate` is no-longer used by pydantic and deprecated'):
-        assert truncate(object) == "<class 'object'>"
-    with pytest.warns(DeprecationWarning):
-        assert truncate(string.ascii_lowercase, max_len=20) == "'abcdefghijklmnopq…'"
-    with pytest.warns(DeprecationWarning):
-        assert truncate(list(range(20)), max_len=20) == '[0, 1, 2, 3, 4, 5, …'
+@pytest.mark.parametrize(
+    'input_value,output',
+    [
+        (object, "<class 'object'>"),
+        (string.ascii_lowercase, "'abcdefghijklmnopq…'"),
+        (list(range(20)), '[0, 1, 2, 3, 4, 5, …'),
+    ],
+)
+def test_truncate(input_value, output):
+    with pytest.warns(DeprecationWarning, match='`truncate` is no-longer used by pydantic and is deprecated'):
+        assert truncate(input_value, max_len=20) == output
 
 
 def test_value_items():
