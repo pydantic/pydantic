@@ -10,6 +10,11 @@ from pydantic.color import Color
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
 from pydantic.utils import ValueItems, import_string, lenient_issubclass, truncate
 
+try:
+    import devtools
+except ImportError:
+    devtools = None
+
 
 def test_import_module():
     assert import_string('os.path') == os.path
@@ -167,10 +172,6 @@ def test_pretty():
 
 
 def test_pretty_color():
-    class MyTestModel(BaseModel):
-        a = 1
-        b = [1, 2, 3]
-
     c = Color('red')
     assert str(c) == 'red'
     assert repr(c) == "Color('red', rgb=(255, 0, 0))"
@@ -187,3 +188,12 @@ def test_pretty_color():
         -1,
         ')',
     ]
+
+
+@pytest.mark.skipif(not devtools, reason='devtools not installed')
+def test_devtools_output():
+    class MyTestModel(BaseModel):
+        a = 1
+        b = [1, 2, 3]
+
+    assert devtools.pformat(MyTestModel()) == 'MyTestModel(\n    a=1,\n    b=[1, 2, 3],\n)'

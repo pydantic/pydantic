@@ -519,6 +519,7 @@ def test_string_success():
     assert m.str_curtailed == '12345'
     assert m.str_email == 'foobar@example.com'
     assert repr(m.name_email) == "NameEmail(name='foo bar', email='foobaR@example.com')"
+    assert str(m.name_email) == 'foo bar <foobaR@example.com>'
     assert m.name_email.name == 'foo bar'
     assert m.name_email.email == 'foobaR@example.com'
 
