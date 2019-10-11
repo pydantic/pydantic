@@ -272,7 +272,7 @@ class ModelField:
         schema_from_config = config.get_field_info(self.name)
         if schema_from_config:
             self.field_info = cast(FieldInfo, self.field_info)
-            self.field_info.alias = self.field_info.alias or schema_from_config.get('alias')
+            self.field_info.alias = self.field_info.alias or schema_from_config.get('alias') or self.name
             self.alias = cast(str, self.field_info.alias)
 
     @property

@@ -27,7 +27,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert '<ModelField(v type=typing.Union[str, bytes] required=True)>' == repr(m.fields['v'])
+    assert '<ModelField(v type=typing.Union[str, bytes] required=True)>' == repr(m.__fields__['v'])
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -1066,3 +1066,14 @@ def test_population_by_alias():
     assert Model(a='different').a == 'different'
     assert Model(a='different').dict() == {'a': 'different'}
     assert Model(a='different').dict(by_alias=True) == {'_a': 'different'}
+
+
+def test_fields_deprecated():
+    class Model(BaseModel):
+        v: str = 'x'
+
+    with pytest.warns(DeprecationWarning, match='`fields` attribute is deprecated, use `__fields__` instead'):
+        assert Model().fields.keys() == {'v'}
+
+    assert Model().__fields__.keys() == {'v'}
+    assert Model.__fields__.keys() == {'v'}
