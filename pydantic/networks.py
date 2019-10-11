@@ -216,8 +216,8 @@ class AnyUrl(str):
         return host, tld, host_type, rebuild  # type: ignore
 
     def __repr__(self) -> str:
-        extra = ' '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
-        return f'{self.__class__.__name__}({super().__repr__()} {extra})'
+        extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
+        return f'{self.__class__.__name__}({super().__repr__()}, {extra})'
 
 
 class AnyHttpUrl(AnyUrl):

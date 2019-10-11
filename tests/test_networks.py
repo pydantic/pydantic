@@ -109,7 +109,7 @@ def test_any_url_obj():
 
     url = Model(v='http://example.org').v
     assert str(url) == 'http://example.org'
-    assert repr(url) == "AnyUrl('http://example.org' scheme='http' host='example.org' tld='org' host_type='domain')"
+    assert repr(url) == "AnyUrl('http://example.org', scheme='http', host='example.org', tld='org', host_type='domain')"
     assert url.scheme == 'http'
     assert url.host == 'example.org'
     assert url.tld == 'org'
@@ -120,9 +120,9 @@ def test_any_url_obj():
     url2 = Model(v='http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit').v
     assert str(url2) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
     assert repr(url2) == (
-        "AnyUrl('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit' "
-        "scheme='http' user='user' password='password' host='example.org' tld='org' host_type='domain' port='1234' "
-        "path='/the/path/' query='query=here' fragment='fragment=is;this=bit')"
+        "AnyUrl('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit', "
+        "scheme='http', user='user', password='password', host='example.org', tld='org', host_type='domain', "
+        "port='1234', path='/the/path/', query='query=here', fragment='fragment=is;this=bit')"
     )
     assert url2.scheme == 'http'
     assert url2.user == 'user'
