@@ -35,7 +35,7 @@ class ErrorWrapper(Representation):
 ErrorList = Union[Sequence[Any], ErrorWrapper]
 
 
-class ValidationError(ValueError):
+class ValidationError(Representation, ValueError):
     __slots__ = 'raw_errors', 'model', '_error_cache'
 
     def __init__(self, errors: Sequence[ErrorList], model: 'ModelOrDc') -> None:
@@ -62,6 +62,9 @@ class ValidationError(ValueError):
             f'{no_errors} validation error{"" if no_errors == 1 else "s"} for {self.model.__name__}\n'
             f'{display_errors(errors)}'
         )
+
+    def __repr_args__(self) -> 'ReprArgs':
+        return [('model', self.model.__name__), ('errors', self.errors())]
 
 
 def display_errors(errors: List[Dict[str, Any]]) -> str:

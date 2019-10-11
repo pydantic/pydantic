@@ -197,3 +197,24 @@ def test_devtools_output():
         b = [1, 2, 3]
 
     assert devtools.pformat(MyTestModel()) == 'MyTestModel(\n    a=1,\n    b=[1, 2, 3],\n)'
+
+
+@pytest.mark.skipif(not devtools, reason='devtools not installed')
+def test_devtools_output_validation_error():
+    class Model(BaseModel):
+        a: int
+
+    with pytest.raises(ValueError) as exc_info:
+        Model()
+    assert devtools.pformat(exc_info.value) == (
+        'ValidationError(\n'
+        "    model='Model',\n"
+        '    errors=[\n'
+        '        {\n'
+        "            'loc': ('a',),\n"
+        "            'msg': 'field required',\n"
+        "            'type': 'value_error.missing',\n"
+        '        },\n'
+        '    ],\n'
+        ')'
+    )

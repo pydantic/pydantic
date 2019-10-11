@@ -362,3 +362,27 @@ def test_submodel_override_validation_error():
     assert exc_info.value.errors() == [
         {'loc': ('submodel', 'x'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
+
+
+def test_validation_error_methods():
+    class Model(BaseModel):
+        x: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='x')
+    e = exc_info.value
+    assert (
+        str(e)
+        == """\
+1 validation error for Model
+x
+  value is not a valid integer (type=type_error.integer)"""
+    )
+    assert e.errors() == [{'loc': ('x',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]
+    assert e.json(indent=None) == (
+        '[{"loc": ["x"], "msg": "value is not a valid integer", "type": "type_error.integer"}]'
+    )
+    assert repr(e) == (
+        "ValidationError(model='Model', errors=[{'loc': ('x',), 'msg': 'value is not a valid integer', "
+        "'type': 'type_error.integer'}])"
+    )
