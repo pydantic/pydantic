@@ -7,17 +7,20 @@ class SimpleModel(BaseModel):
     password_bytes: SecretBytes
 
 sm = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
-print(sm)
-#> SimpleModel password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
 
-print(sm.password.get_secret_value())
-#> IAmSensitive
-print(sm.password_bytes.get_secret_value())
-#> b'IAmSensitiveBytes'
+# Standard access methods will not display the secret
+print(sm)
+# > SimpleModel password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
 print(sm.password.display())
-#> '**********'
+# > '**********'
 print(sm.json())
-#> '{"password": "**********", "password_bytes": "**********"}'
+# > '{"password": "**********", "password_bytes": "**********"}'
+
+# Use get_secret_value method to see the secret's content.
+print(sm.password.get_secret_value())
+# > IAmSensitive
+print(sm.password_bytes.get_secret_value())
+# > b'IAmSensitiveBytes'
 
 
 try:
