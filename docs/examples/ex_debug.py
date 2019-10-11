@@ -25,5 +25,5 @@ user = User(
     address=dict(street='Testing', country='uk', lat=51.5, lng=0)
 )
 debug(user)
-
-print(f'should be much easier read than:', user, sep='\n')
+print('\nshould be much easier read than:\n')
+print('user:', user)
