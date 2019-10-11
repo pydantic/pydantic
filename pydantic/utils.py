@@ -53,9 +53,9 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     warnings.warn('`truncate` is no-longer used by pydantic and deprecated', DeprecationWarning)
     if isinstance(v, str) and len(v) > (max_len - 2):
         # -3 so quote + string + … + quote has correct length
-        return repr(v[: (max_len - 3)] + '…')
+        return (v[: (max_len - 3)] + '…').__repr__()
     try:
-        v = repr(v)
+        v = v.__repr__()
     except TypeError:
         v = type(v).__repr__(v)  # in case v is a type
     if len(v) > max_len:
@@ -106,17 +106,37 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
 
 
 class Representation:
+    """
+    Mixin to provide __str__, __repr__, and __pretty__ methods. See #884 for more details.
+
+    __pretty__ is used by [devtools](https://python-devtools.helpmanual.io/) to provide human readable representations
+    of objects.
+    """
+
     def __repr_args__(self) -> 'ReprArgs':
+        """
+        Yields the attributes to show in __str__ and __repr__, this is generally overridden.
+
+        Can either be:
+        * name - value pairs, e.g.: `[('foo_name', 'foo'), ('bar_name', ['b', 'a', 'r'])]`
+        * or, just values, e.g.: `[(None, 'foo'), (None, ['b', 'a', 'r'])]`
+        """
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
         return [(a, v) for a, v in attrs if v is not None]
 
     def __repr_name__(self) -> str:
+        """
+        Name of the instance's class, used in __repr__
+        """
         return self.__class__.__name__
 
     def __repr_str__(self, join_str: str) -> str:
         return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
 
     def __pretty__(self, fmt: Callable[[Any], Any], **kwargs: Any) -> Generator[Any, None, None]:
+        """
+        Used by devtools (https://python-devtools.helpmanual.io/) to provide a human readable representations of objects
+        """
         yield self.__repr_name__() + '('
         yield 1
         for name, value in self.__repr_args__():

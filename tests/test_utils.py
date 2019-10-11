@@ -1,9 +1,12 @@
 import os
+import string
 from enum import Enum
 from typing import NewType, Union
 
 import pytest
 
+from pydantic import BaseModel
+from pydantic.color import Color
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
 from pydantic.utils import ValueItems, import_string, lenient_issubclass, truncate
 
@@ -69,9 +72,13 @@ def test_lenient_issubclass_is_lenient():
     assert lenient_issubclass('a', 'a') is False
 
 
-def test_truncate_type():
+def test_truncate():
     with pytest.warns(DeprecationWarning, match='`truncate` is no-longer used by pydantic and deprecated'):
         assert truncate(object) == "<class 'object'>"
+    with pytest.warns(DeprecationWarning):
+        assert truncate(string.ascii_lowercase, max_len=20) == "'abcdefghijklmnopq…'"
+    with pytest.warns(DeprecationWarning):
+        assert truncate(list(range(20)), max_len=20) == '[0, 1, 2, 3, 4, 5, …'
 
 
 def test_value_items():
@@ -132,3 +139,51 @@ def test_new_type_supertype():
     new_new_type = NewType('new_new_type', new_type)
     assert new_type_supertype(new_type) == str
     assert new_type_supertype(new_new_type) == str
+
+
+def test_pretty():
+    class MyTestModel(BaseModel):
+        a = 1
+        b = [1, 2, 3]
+
+    m = MyTestModel()
+    assert m.__repr_name__() == 'MyTestModel'
+    assert str(m) == 'a=1 b=[1, 2, 3]'
+    assert repr(m) == 'MyTestModel(a=1, b=[1, 2, 3])'
+    assert list(m.__pretty__(lambda x: f'fmt: {x!r}')) == [
+        'MyTestModel(',
+        1,
+        'a=',
+        'fmt: 1',
+        ',',
+        0,
+        'b=',
+        'fmt: [1, 2, 3]',
+        ',',
+        0,
+        -1,
+        ')',
+    ]
+
+
+def test_pretty_color():
+    class MyTestModel(BaseModel):
+        a = 1
+        b = [1, 2, 3]
+
+    c = Color('red')
+    assert str(c) == 'red'
+    assert repr(c) == "Color('red', rgb=(255, 0, 0))"
+    assert list(c.__pretty__(lambda x: f'fmt: {x!r}')) == [
+        'Color(',
+        1,
+        "fmt: 'red'",
+        ',',
+        0,
+        'rgb=',
+        'fmt: (255, 0, 0)',
+        ',',
+        0,
+        -1,
+        ')',
+    ]
