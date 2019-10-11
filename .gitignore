@@ -5,7 +5,7 @@ env37/
 env38/
 *.py[cod]
 *.egg-info/
-build/
+/build/
 dist/
 .cache/
 .mypy_cache/
