@@ -4,7 +4,7 @@ env36/
 env37/
 *.py[cod]
 *.egg-info/
-build/
+/build/
 dist/
 .cache/
 .mypy_cache/

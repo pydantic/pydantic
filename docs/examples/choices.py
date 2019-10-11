@@ -1,6 +1,6 @@
 from enum import Enum, IntEnum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 class FruitEnum(str, Enum):
@@ -22,5 +22,7 @@ print(CookingModel())
 #> CookingModel fruit=<FruitEnum.pear: 'pear'> tool=<ToolEnum.spanner: 1>
 print(CookingModel(tool=2, fruit='banana'))
 #> CookingModel fruit=<FruitEnum.banana: 'banana'> tool=<ToolEnum.wrench: 2>
-print(CookingModel(fruit='other'))
-# will raise a validation error
+try:
+    CookingModel(fruit='other')
+except ValidationError as e:
+    print(e)
