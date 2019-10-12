@@ -3,6 +3,7 @@ import importlib
 import inspect
 import re
 import sys
+import traceback
 from pathlib import Path
 from typing import Callable, List
 from unittest.mock import patch
@@ -11,59 +12,73 @@ from unittest.mock import patch
 class MockPrint:
     def __init__(self, file: Path):
         self.file = file
+        self.statements = []
 
     def __call__(self, *args):
         frame = inspect.currentframe().f_back.f_back.f_back
         if not self.file.samefile(frame.f_code.co_filename):
+            # sys.stdout.write(' '.join(map(str, args)))
             raise RuntimeError("what's wrong here?")
-        expected_comment: List[str] = []
-        single_line: bool = False
-        multi_line: bool = False
-        target_line = frame.f_lineno
-        sys.stdout.write(f'{target_line}\n')
-        sys.stdout.write(' '.join(map(str, args)) + '\n')
-        # for line in self.file.read_text().splitlines()[target_line:]:
-        #     if re.match(SINGLE_LINE_COMMENT, line):
-        #         if not single_line:
-        #             single_line = True
-        #         expected_comment.append(re.sub(STRIP_PATTERN, '', line))
-        #     elif single_line:
-        #         break
-        #     elif re.match(MULTILINE_COMMENT, line):
-        #         if multi_line:
-        #             break
-        #         multi_line = True
-        #     else:
-        #         if multi_line:
-        #             expected_comment.append(re.sub(STRIP_PATTERN, '', line))
-        #         else:
-        #             break
-        # if not single_line and not multi_line:
-        #     raise Exception(f'NotFound expected comment. target_line is {target_line + 1}')
-        # actual = str(args[0]).splitlines()
-        # try:
-        #     assert actual == expected_comment
-        # except AssertionError:
-        #     raise InvalidComment(self.file, actual, expected_comment)
+        self.statements.append((frame.f_lineno, ' '.join(map(str, args))))
 
 
 THIS_DIR = Path(__file__).parent
-EXAMPLES_ROOT = THIS_DIR / '..' / 'examples'
+DOCS_DIR = THIS_DIR / '..'
+EXAMPLES_ROOT = DOCS_DIR / 'examples'
+
+
+def all_md_contents() -> str:
+    file_contents = []
+    for f in DOCS_DIR.glob('**/*.md'):
+        file_contents.append(f.read_text())
+    return '\n\n\n'.join(file_contents)
 
 
 def main():
+    errors = []
+    all_md = all_md_contents()
+
     sys.path.append(str(EXAMPLES_ROOT))
     for file in sorted(EXAMPLES_ROOT.glob('*.py')):
-        if file.name == 'settings.py':
-            # TODO
+        def error(desc: str):
+            errors.append((file, desc))
+            print(file.name, 'Error:', desc, file=sys.stderr)
+
+        if file.name in {'settings.py', 'constrained_types.py', 'example2.py'}:
+            # TODO fix these files
             continue
-        if file.name == 'example2.py':
-            continue
-        print(file.name)
+
+        if f'{{!./examples/{file.name}!}}' not in all_md:
+            error('file not used anywhere')
+        # print(file.name)
+        mp = MockPrint(file)
+        exc = None
         with patch('builtins.print') as mock_print:
-            mock_print.side_effect = MockPrint(file)
-            importlib.import_module(file.stem)
-        break  # while testing
+            mock_print.side_effect = mp
+            try:
+                importlib.import_module(file.stem)
+            except Exception:
+                exc = traceback.format_exc()
+
+        if exc is not None:
+            error(exc)
+
+        file_text = file.read_text()
+        # if '\n\n\n':
+        #     error('too many new lines')
+        lines = file_text.split('\n')
+
+        max_len = 80
+        if max(len(l) for l in lines) > 80:
+            error(f'lines longer than {max_len} characters')
+
+        # check for print statements
+
+        for line_no, text in reversed(mp.statements):
+            insert_text = '#> ' + text.replace('\n', '\n#> ')
+            lines.insert(line_no, insert_text)
+        # debug(lines)
+        # break  # while testing
 
 
 if __name__ == '__main__':
