@@ -16,7 +16,7 @@ from .fields import SHAPE_MAPPING, ModelField
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
-from .tools import parse_as_type, requires_casting
+from .tools import parse_as_type
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import GetterDict, ValueItems, lenient_issubclass, truncate, validate_field_name
@@ -513,67 +513,6 @@ class BaseModel(metaclass=ModelMetaclass):
         return cls.__config__.getter_dict(obj)
 
     @classmethod
-    @no_type_check
-    def _get_value(
-        cls,
-        v: Any,
-        to_dict: bool,
-        by_alias: bool,
-        include: Optional[Union['SetIntStr', 'DictIntStrAny']],
-        exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
-        skip_defaults: bool,
-        as_type: Optional[Type[Any]] = None,
-    ) -> Any:
-
-        if isinstance(v, BaseModel):
-            if to_dict:
-                return v.dict(
-                    by_alias=by_alias, skip_defaults=skip_defaults, include=include, exclude=exclude, as_type=as_type
-                )
-            else:
-                return v.copy(include=include, exclude=exclude)
-
-        value_exclude = ValueItems(v, exclude) if exclude else None
-        value_include = ValueItems(v, include) if include else None
-
-        if isinstance(v, dict):
-            return {
-                k_: cls._get_value(
-                    v_,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    skip_defaults=skip_defaults,
-                    include=value_include and value_include.for_element(k_),
-                    exclude=value_exclude and value_exclude.for_element(k_),
-                    as_type=as_type,
-                )
-                for k_, v_ in v.items()
-                if (not value_exclude or not value_exclude.is_excluded(k_))
-                and (not value_include or value_include.is_included(k_))
-            }
-
-        elif isinstance(v, (list, set, tuple)):
-            return type(v)(
-                cls._get_value(
-                    v_,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    skip_defaults=skip_defaults,
-                    include=value_include and value_include.for_element(i),
-                    exclude=value_exclude and value_exclude.for_element(i),
-                    as_type=as_type,
-                )
-                for i, v_ in enumerate(v)
-                if (not value_exclude or not value_exclude.is_excluded(i))
-                and (not value_include or value_include.is_included(i))
-            )
-
-        else:
-            if as_type is not None:
-                return parse_as_type(v, as_type)
-            return v
-
-    @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
         """
         Try to update ForwardRefs on fields based on this Model, globalns and localns.
@@ -611,7 +550,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     target_field = as_type.__fields__[k]
                     if requires_casting(v, target_field, self_type.__fields__[k]):
                         casting_type = target_field.type_
-                yield k, self._get_value(
+                yield k, _get_value(
                     v,
                     to_dict=to_dict,
                     by_alias=by_alias,
@@ -825,3 +764,116 @@ def validate_model(  # noqa: C901 (ignore complexity)
         return values, fields_set, ValidationError(errors, cls_)
     else:
         return values, fields_set, None
+
+
+@no_type_check
+def _get_value(
+    v: Any,
+    to_dict: bool,
+    by_alias: bool,
+    include: Optional[Union['SetIntStr', 'DictIntStrAny']],
+    exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
+    skip_defaults: bool,
+    as_type: Optional[Type[Any]] = None,
+) -> Any:
+    if isinstance(v, BaseModel):
+        if to_dict:
+            return v.dict(
+                by_alias=by_alias, skip_defaults=skip_defaults, include=include, exclude=exclude, as_type=as_type
+            )
+        else:
+            return v.copy(include=include, exclude=exclude)
+
+    value_exclude = ValueItems(v, exclude) if exclude else None
+    value_include = ValueItems(v, include) if include else None
+
+    if isinstance(v, dict):
+        return {
+            k_: _get_value(
+                v_,
+                to_dict=to_dict,
+                by_alias=by_alias,
+                skip_defaults=skip_defaults,
+                include=value_include and value_include.for_element(k_),
+                exclude=value_exclude and value_exclude.for_element(k_),
+                as_type=as_type,
+            )
+            for k_, v_ in v.items()
+            if (not value_exclude or not value_exclude.is_excluded(k_))
+            and (not value_include or value_include.is_included(k_))
+        }
+
+    elif isinstance(v, (list, set, tuple)):
+        return type(v)(
+            _get_value(
+                v_,
+                to_dict=to_dict,
+                by_alias=by_alias,
+                skip_defaults=skip_defaults,
+                include=value_include and value_include.for_element(i),
+                exclude=value_exclude and value_exclude.for_element(i),
+                as_type=as_type,
+            )
+            for i, v_ in enumerate(v)
+            if (not value_exclude or not value_exclude.is_excluded(i))
+            and (not value_include or value_include.is_included(i))
+        )
+
+    else:
+        if as_type is not None:
+            return parse_as_type(v, as_type)
+        return v
+
+
+# @no_type_check
+# def _get_value_plain(
+#     v: Any,
+#     to_dict: bool,
+#     by_alias: bool,
+#     skip_defaults: bool,
+#     as_type: Optional[Type[Any]] = None,
+# ) -> Any:
+#     if isinstance(v, BaseModel):
+#         if to_dict:
+#             return v.dict(
+#                 by_alias=by_alias, skip_defaults=skip_defaults, as_type=as_type
+#             )
+#         else:
+#             return v.copy()
+#
+#     if isinstance(v, dict):
+#         return {
+#             k_: _get_value_plain(
+#                 v_,
+#                 to_dict=to_dict,
+#                 by_alias=by_alias,
+#                 skip_defaults=skip_defaults,
+#                 as_type=as_type,
+#             )
+#             for k_, v_ in v.items()
+#         }
+#
+#     elif isinstance(v, (list, set, tuple)):
+#         return type(v)(
+#             _get_value_plain(
+#                 v_,
+#                 to_dict=to_dict,
+#                 by_alias=by_alias,
+#                 skip_defaults=skip_defaults,
+#                 as_type=as_type,
+#             )
+#             for i, v_ in enumerate(v)
+#         )
+#
+#     else:
+#         if as_type is not None:
+#             return parse_as_type(v, as_type)
+#         return v
+
+
+def requires_casting(obj: Any, old_field: ModelField, new_field: ModelField) -> bool:
+    if old_field.type_ != new_field.type_:
+        return True
+    if lenient_issubclass(old_field.type_, BaseModel):
+        return type(obj) != old_field.type_
+    return False

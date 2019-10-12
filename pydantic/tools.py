@@ -1,10 +1,6 @@
 from functools import lru_cache
 from typing import Any, Type, TypeVar
 
-from pydantic.utils import lenient_issubclass
-
-from .fields import ModelField
-
 __all__ = ('parse_as_type', 'dump_as_type')
 
 
@@ -29,13 +25,3 @@ def dump_as_type(obj: T, type_: Type[T]) -> Any:
     model = model_type(obj=obj)
     model_dict = model.dict(as_type=model_type)
     return model_dict['obj']
-
-
-def requires_casting(obj: Any, old_field: ModelField, new_field: ModelField) -> bool:
-    from pydantic.main import BaseModel
-
-    if old_field.type_ != new_field.type_:
-        return True
-    if lenient_issubclass(old_field.type_, BaseModel):
-        return type(obj) != old_field.type_
-    return False
