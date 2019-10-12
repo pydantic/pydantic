@@ -3,7 +3,7 @@ from typing import Any, Type, TypeVar
 
 from pydantic.utils import lenient_issubclass
 
-from .fields import Field
+from .fields import ModelField
 
 __all__ = ('parse_as_type', 'dump_as_type')
 
@@ -31,7 +31,7 @@ def dump_as_type(obj: T, type_: Type[T]) -> Any:
     return model_dict['obj']
 
 
-def requires_casting(obj: Any, old_field: Field, new_field: Field) -> bool:
+def requires_casting(obj: Any, old_field: ModelField, new_field: ModelField) -> bool:
     from pydantic.main import BaseModel
 
     if old_field.type_ != new_field.type_:
