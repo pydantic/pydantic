@@ -8,7 +8,7 @@ import pytest
 from pydantic import BaseModel
 from pydantic.color import Color
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
-from pydantic.utils import ValueItems, import_string, lenient_issubclass, truncate
+from pydantic.utils import ValueItems, deep_update, import_string, lenient_issubclass, truncate
 
 try:
     import devtools
@@ -222,3 +222,18 @@ def test_devtools_output_validation_error():
         '    ],\n'
         ')'
     )
+
+
+def test_deep_update_extra_keys():
+    mapping = {"key": {"inner_key": 0}}
+    assert deep_update(mapping, {"other_key": 1}) == {"key": {"inner_key": 0}, "other_key": 1}
+
+
+def test_deep_update_overwrites_keys():
+    mapping = {"key": {"inner_key": 0}, "other_key": 1}
+    assert deep_update(mapping, {"key": [1, 2, 3]}) == {"key": [1, 2, 3], "other_key": 1}
+
+
+def test_deep_update_merges_keys():
+    mapping = {"key": {"inner_key": 0}}
+    assert deep_update(mapping, {"key": {"other_key": 1}}) == {"key": {"inner_key": 0, "other_key": 1}}

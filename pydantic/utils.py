@@ -97,6 +97,13 @@ def in_ipython() -> bool:
     else:  # pragma: no cover
         return True
 
+def deep_update(mapping, updating_mapping):
+    for k, v in updating_mapping.items():
+        if (k in mapping) and isinstance(mapping[k], dict) and isinstance(v, dict):
+            deep_update(mapping[k], v)
+        else:
+            mapping[k] = v
+    return mapping
 
 def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
     """
