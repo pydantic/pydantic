@@ -747,9 +747,7 @@ def _iter(
     as_type: Optional[Type['BaseModel']] = None,
 ) -> 'TupleGenerator':
     if not (include or exclude):
-        yield from _iter_fast(
-            model, to_dict, by_alias, allowed_keys, skip_defaults, as_type
-        )
+        yield from _iter_fast(model, to_dict, by_alias, allowed_keys, skip_defaults, as_type)
         return
     value_exclude = ValueItems(model, exclude) if exclude else None
     value_include = ValueItems(model, include) if include else None
@@ -789,11 +787,7 @@ def _iter_fast(
                 if _requires_casting(v, target_field, self_type.__fields__[k]):
                     casting_type = target_field.type_
             yield k, _get_value_fast(
-                v,
-                to_dict=to_dict,
-                by_alias=by_alias,
-                skip_defaults=skip_defaults,
-                as_type=casting_type,
+                v, to_dict=to_dict, by_alias=by_alias, skip_defaults=skip_defaults, as_type=casting_type
             )
 
 
@@ -815,9 +809,7 @@ def _get_value(
         else:
             return v.copy(include=include, exclude=exclude)
     if not (include or exclude):
-        return _get_value_fast(
-            v, to_dict, by_alias, skip_defaults, as_type
-        )
+        return _get_value_fast(v, to_dict, by_alias, skip_defaults, as_type)
 
     value_exclude = ValueItems(v, exclude) if exclude else None
     value_include = ValueItems(v, include) if include else None
@@ -835,7 +827,7 @@ def _get_value(
             )
             for k_, v_ in v.items()
             if (not value_exclude or not value_exclude.is_excluded(k_))
-               and (not value_include or value_include.is_included(k_))
+            and (not value_include or value_include.is_included(k_))
         }
 
     elif isinstance(v, (list, set, tuple)):
@@ -862,41 +854,23 @@ def _get_value(
 
 @no_type_check
 def _get_value_fast(
-    v: Any,
-    to_dict: bool,
-    by_alias: bool,
-    skip_defaults: bool,
-    as_type: Optional[Type[Any]] = None,
+    v: Any, to_dict: bool, by_alias: bool, skip_defaults: bool, as_type: Optional[Type[Any]] = None
 ) -> Any:
     if isinstance(v, BaseModel):
         if to_dict:
-            return v.dict(
-                by_alias=by_alias, skip_defaults=skip_defaults, as_type=as_type
-            )
+            return v.dict(by_alias=by_alias, skip_defaults=skip_defaults, as_type=as_type)
         else:
             return v.copy()
 
     if isinstance(v, dict):
         return {
-            k_: _get_value_fast(
-                v_,
-                to_dict=to_dict,
-                by_alias=by_alias,
-                skip_defaults=skip_defaults,
-                as_type=as_type,
-            )
+            k_: _get_value_fast(v_, to_dict=to_dict, by_alias=by_alias, skip_defaults=skip_defaults, as_type=as_type)
             for k_, v_ in v.items()
         }
 
     elif isinstance(v, (list, set, tuple)):
         return type(v)(
-            _get_value_fast(
-                v_,
-                to_dict=to_dict,
-                by_alias=by_alias,
-                skip_defaults=skip_defaults,
-                as_type=as_type,
-            )
+            _get_value_fast(v_, to_dict=to_dict, by_alias=by_alias, skip_defaults=skip_defaults, as_type=as_type)
             for i, v_ in enumerate(v)
         )
 
