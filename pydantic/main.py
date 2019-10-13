@@ -313,7 +313,8 @@ class BaseModel(metaclass=ModelMetaclass):
             allowed_keys = model_keys if allowed_keys is None else allowed_keys.intersection(model_keys)
         return {
             get_key(k): v
-            for k, v in self._iter(
+            for k, v in _iter(
+                self,
                 to_dict=True,
                 by_alias=by_alias,
                 allowed_keys=allowed_keys,
@@ -452,7 +453,8 @@ class BaseModel(metaclass=ModelMetaclass):
             else:
                 v = {
                     **dict(
-                        self._iter(
+                        _iter(
+                            self,
                             to_dict=False,
                             by_alias=False,
                             include=include,
@@ -526,39 +528,7 @@ class BaseModel(metaclass=ModelMetaclass):
         """
         so `dict(model)` works
         """
-        yield from self._iter()
-
-    def _iter(
-        self,
-        to_dict: bool = False,
-        by_alias: bool = False,
-        allowed_keys: Optional['SetStr'] = None,
-        include: Union['SetIntStr', 'DictIntStrAny'] = None,
-        exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
-        skip_defaults: bool = False,
-        as_type: Optional[Type['BaseModel']] = None,
-    ) -> 'TupleGenerator':
-
-        value_exclude = ValueItems(self, exclude) if exclude else None
-        value_include = ValueItems(self, include) if include else None
-
-        self_type = type(self)
-        for k, v in self.__dict__.items():
-            if allowed_keys is None or k in allowed_keys:
-                casting_type = None
-                if as_type is not None:
-                    target_field = as_type.__fields__[k]
-                    if requires_casting(v, target_field, self_type.__fields__[k]):
-                        casting_type = target_field.type_
-                yield k, _get_value(
-                    v,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    include=value_include and value_include.for_element(k),
-                    exclude=value_exclude and value_exclude.for_element(k),
-                    skip_defaults=skip_defaults,
-                    as_type=casting_type,
-                )
+        yield from _iter(self)
 
     def _calculate_keys(
         self,
@@ -766,6 +736,67 @@ def validate_model(  # noqa: C901 (ignore complexity)
         return values, fields_set, None
 
 
+def _iter(
+    model: BaseModel,
+    to_dict: bool = False,
+    by_alias: bool = False,
+    allowed_keys: Optional['SetStr'] = None,
+    include: Union['SetIntStr', 'DictIntStrAny'] = None,
+    exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
+    skip_defaults: bool = False,
+    as_type: Optional[Type['BaseModel']] = None,
+) -> 'TupleGenerator':
+    if not (include or exclude):
+        yield from _iter_fast(
+            model, to_dict, by_alias, allowed_keys, skip_defaults, as_type
+        )
+        return
+    value_exclude = ValueItems(model, exclude) if exclude else None
+    value_include = ValueItems(model, include) if include else None
+    self_type = type(model)
+    for k, v in model.__dict__.items():
+        if allowed_keys is None or k in allowed_keys:
+            casting_type = None
+            if as_type is not None:
+                target_field = as_type.__fields__[k]
+                if _requires_casting(v, target_field, self_type.__fields__[k]):
+                    casting_type = target_field.type_
+            yield k, _get_value(
+                v,
+                to_dict=to_dict,
+                by_alias=by_alias,
+                include=value_include and value_include.for_element(k),
+                exclude=value_exclude and value_exclude.for_element(k),
+                skip_defaults=skip_defaults,
+                as_type=casting_type,
+            )
+
+
+def _iter_fast(
+    model: BaseModel,
+    to_dict: bool = False,
+    by_alias: bool = False,
+    allowed_keys: Optional['SetStr'] = None,
+    skip_defaults: bool = False,
+    as_type: Optional[Type['BaseModel']] = None,
+) -> 'TupleGenerator':
+    self_type = type(model)
+    for k, v in model.__dict__.items():
+        if allowed_keys is None or k in allowed_keys:
+            casting_type = None
+            if as_type is not None:
+                target_field = as_type.__fields__[k]
+                if _requires_casting(v, target_field, self_type.__fields__[k]):
+                    casting_type = target_field.type_
+            yield k, _get_value_fast(
+                v,
+                to_dict=to_dict,
+                by_alias=by_alias,
+                skip_defaults=skip_defaults,
+                as_type=casting_type,
+            )
+
+
 @no_type_check
 def _get_value(
     v: Any,
@@ -783,6 +814,10 @@ def _get_value(
             )
         else:
             return v.copy(include=include, exclude=exclude)
+    if not (include or exclude):
+        return _get_value_fast(
+            v, to_dict, by_alias, skip_defaults, as_type
+        )
 
     value_exclude = ValueItems(v, exclude) if exclude else None
     value_include = ValueItems(v, include) if include else None
@@ -800,7 +835,7 @@ def _get_value(
             )
             for k_, v_ in v.items()
             if (not value_exclude or not value_exclude.is_excluded(k_))
-            and (not value_include or value_include.is_included(k_))
+               and (not value_include or value_include.is_included(k_))
         }
 
     elif isinstance(v, (list, set, tuple)):
@@ -825,53 +860,53 @@ def _get_value(
         return v
 
 
-# @no_type_check
-# def _get_value_plain(
-#     v: Any,
-#     to_dict: bool,
-#     by_alias: bool,
-#     skip_defaults: bool,
-#     as_type: Optional[Type[Any]] = None,
-# ) -> Any:
-#     if isinstance(v, BaseModel):
-#         if to_dict:
-#             return v.dict(
-#                 by_alias=by_alias, skip_defaults=skip_defaults, as_type=as_type
-#             )
-#         else:
-#             return v.copy()
-#
-#     if isinstance(v, dict):
-#         return {
-#             k_: _get_value_plain(
-#                 v_,
-#                 to_dict=to_dict,
-#                 by_alias=by_alias,
-#                 skip_defaults=skip_defaults,
-#                 as_type=as_type,
-#             )
-#             for k_, v_ in v.items()
-#         }
-#
-#     elif isinstance(v, (list, set, tuple)):
-#         return type(v)(
-#             _get_value_plain(
-#                 v_,
-#                 to_dict=to_dict,
-#                 by_alias=by_alias,
-#                 skip_defaults=skip_defaults,
-#                 as_type=as_type,
-#             )
-#             for i, v_ in enumerate(v)
-#         )
-#
-#     else:
-#         if as_type is not None:
-#             return parse_as_type(v, as_type)
-#         return v
+@no_type_check
+def _get_value_fast(
+    v: Any,
+    to_dict: bool,
+    by_alias: bool,
+    skip_defaults: bool,
+    as_type: Optional[Type[Any]] = None,
+) -> Any:
+    if isinstance(v, BaseModel):
+        if to_dict:
+            return v.dict(
+                by_alias=by_alias, skip_defaults=skip_defaults, as_type=as_type
+            )
+        else:
+            return v.copy()
+
+    if isinstance(v, dict):
+        return {
+            k_: _get_value_fast(
+                v_,
+                to_dict=to_dict,
+                by_alias=by_alias,
+                skip_defaults=skip_defaults,
+                as_type=as_type,
+            )
+            for k_, v_ in v.items()
+        }
+
+    elif isinstance(v, (list, set, tuple)):
+        return type(v)(
+            _get_value_fast(
+                v_,
+                to_dict=to_dict,
+                by_alias=by_alias,
+                skip_defaults=skip_defaults,
+                as_type=as_type,
+            )
+            for i, v_ in enumerate(v)
+        )
+
+    else:
+        if as_type is not None:
+            return parse_as_type(v, as_type)
+        return v
 
 
-def requires_casting(obj: Any, old_field: ModelField, new_field: ModelField) -> bool:
+def _requires_casting(obj: Any, old_field: ModelField, new_field: ModelField) -> bool:
     if old_field.type_ != new_field.type_:
         return True
     if lenient_issubclass(old_field.type_, BaseModel):
