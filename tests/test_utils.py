@@ -225,15 +225,15 @@ def test_devtools_output_validation_error():
 
 
 def test_deep_update_extra_keys():
-    mapping = {"key": {"inner_key": 0}}
-    assert deep_update(mapping, {"other_key": 1}) == {"key": {"inner_key": 0}, "other_key": 1}
+    mapping = {'key': {'inner_key': 0}}
+    assert deep_update(mapping, {'other_key': 1}) == {'key': {'inner_key': 0}, 'other_key': 1}
 
 
 def test_deep_update_overwrites_keys():
-    mapping = {"key": {"inner_key": 0}, "other_key": 1}
-    assert deep_update(mapping, {"key": [1, 2, 3]}) == {"key": [1, 2, 3], "other_key": 1}
+    mapping = {'key': {'inner_key': 0}, 'other_key': 1}
+    assert deep_update(mapping, {'key': [1, 2, 3]}) == {'key': [1, 2, 3], 'other_key': 1}
 
 
 def test_deep_update_merges_keys():
-    mapping = {"key": {"inner_key": 0}}
-    assert deep_update(mapping, {"key": {"other_key": 1}}) == {"key": {"inner_key": 0, "other_key": 1}}
+    mapping = {'key': {'inner_key': 0}}
+    assert deep_update(mapping, {'key': {'other_key': 1}}) == {'key': {'inner_key': 0, 'other_key': 1}}
