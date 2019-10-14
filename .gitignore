@@ -4,7 +4,7 @@ env36/
 env37/
 *.py[cod]
 *.egg-info/
-build/
+/build/
 dist/
 .cache/
 .mypy_cache/
@@ -15,6 +15,7 @@ test.py
 /docs/.changelog.md
 /docs/.version.md
 /docs/.tmp_schema_mappings.html
+/docs/.tmp_examples/
 /site/
 /site.zip
 .pytest_cache/

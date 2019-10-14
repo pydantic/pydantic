@@ -23,17 +23,11 @@ class UserModel(BaseModel):
         assert v.isalpha(), 'must be alphanumeric'
         return v
 
-print(UserModel(name='samuel colvin', username='scolvin', password1='zxcvbn', password2='zxcvbn'))
-#> UserModel name='Samuel Colvin' username='scolvin' password1='zxcvbn' password2='zxcvbn'
+print(UserModel(name='samuel colvin', username='scolvin', password1='zxcvbn',
+                password2='zxcvbn'))
 
 try:
-    UserModel(name='samuel', username='scolvin', password1='zxcvbn', password2='zxcvbn2')
+    UserModel(name='samuel', username='scolvin', password1='zxcvbn',
+              password2='zxcvbn2')
 except ValidationError as e:
     print(e)
-"""
-2 validation errors for UserModel
-name
-  must contain a space (type=value_error)
-password2
-  passwords do not match (type=value_error)
-"""

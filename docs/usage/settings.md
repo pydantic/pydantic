@@ -13,7 +13,7 @@ This makes it easy to:
 For example:
 
 ```py
-{!./examples/settings.py!}
+{!.tmp_examples/settings.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -47,7 +47,7 @@ The following rules are used to determine which environment variable(s) are read
 Case-sensitivity can be turned on through the `Config`:
 
 ```py
-{!./examples/settings_case_sensitive.py!}
+{!.tmp_examples/settings_case_sensitive.py!}
 ```
 
 When `case_sensitive` is `True`, the environment variable must be in all-caps,

@@ -15,12 +15,3 @@ try:
 except ValidationError as e:
     print(e.errors())
 
-"""
-[
-    {
-        'loc': ('foo',),
-        'msg': 'value must be "bar"',
-        'type': 'value_error',
-    },
-]
-"""

@@ -7,18 +7,10 @@ m = MyModel(url='http://www.example.com')
 
 # the repr() method for a url will display all properties of the url
 print(repr(m.url))
-#>  <HttpUrl('http://www.example.com' scheme='http' host='www.example.com'
-#>   tld='com' host_type='domain')>
-
 print(m.url.scheme)
-#>  http
 print(m.url.host)
-#>  www.example.com
 print(m.url.host_type)
-#>  domain
 print(m.url.port)
-#>  None
-
 class MyDatabaseModel(BaseModel):
     db: PostgresDsn
 
@@ -29,14 +21,9 @@ class MyDatabaseModel(BaseModel):
 
 m = MyDatabaseModel(db='postgres://user:pass@localhost:5432/foobar')
 print(m.db)
-#>  postgres://user:pass@localhost:5432/foobar
 
 try:
     MyDatabaseModel(db='postgres://user:pass@localhost:5432')
 except ValidationError as e:
     print(e)
-"""
-1 validation error for MyDatabaseModel
-db
-  database must be provided (type=assertion_error)
-"""
+

@@ -1,3 +1,5 @@
+from example1 import User
+# === ignore above
 from pydantic import ValidationError
 
 try:

@@ -11,7 +11,5 @@ class Model(BaseModel):
 
 m = Model(age=42, list_of_ints=[1, '2', b'3'])
 print(m.age)
-#> 42
-
 Model()
 # will raise a validation error for age and list_of_ints
