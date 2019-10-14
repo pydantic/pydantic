@@ -13,6 +13,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
     no_type_check,
 )
@@ -24,10 +25,11 @@ try:
 except ImportError:
     Literal = None  # type: ignore
 
-
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
     from .typing import SetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+
+KeyType = TypeVar('KeyType')
 
 
 def import_string(dotted_path: str) -> Any:
@@ -99,13 +101,14 @@ def in_ipython() -> bool:
         return True
 
 
-def deep_update(mapping: Dict[str, Any], updating_mapping: Dict[str, Any]) -> Dict[str, Any]:
+def deep_update(mapping: Dict[KeyType, Any], updating_mapping: Dict[KeyType, Any]) -> Dict[KeyType, Any]:
+    updated_mapping = mapping.copy()
     for k, v in updating_mapping.items():
-        if (k in mapping) and isinstance(mapping[k], dict) and isinstance(v, dict):
-            deep_update(mapping[k], v)
+        if k in mapping and isinstance(mapping[k], dict) and isinstance(v, dict):
+            updated_mapping[k] = deep_update(mapping[k], v)
         else:
-            mapping[k] = v
-    return mapping
+            updated_mapping[k] = v
+    return updated_mapping
 
 
 def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
