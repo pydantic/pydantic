@@ -10,7 +10,7 @@ class FooBarModel(BaseModel):
 
 m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
 
+# returns a dictionary:
 print(m.dict())
-# (returns a dictionary)
 print(m.dict(include={'foo', 'bar'}))
 print(m.dict(exclude={'foo', 'bar'}))
