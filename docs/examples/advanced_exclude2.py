@@ -51,7 +51,8 @@ exclude_keys = {
     'second_name': ...,
     'address': {'post_code': ..., 'country': {'phone_code'}},
     'card_details': ...,
-    'hobbies': {-1: {'info'}},  # You can exclude values from tuples and lists by indexes
+    # You can exclude values from tuples and lists by indexes
+    'hobbies': {-1: {'info'}},
 }
 
 include_keys = {
@@ -70,4 +71,3 @@ print(
         ]
     }
 )
-#> True

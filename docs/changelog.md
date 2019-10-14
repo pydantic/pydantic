@@ -1,1 +1,1 @@
-{!./.changelog.md!}
+{!.changelog.md!}

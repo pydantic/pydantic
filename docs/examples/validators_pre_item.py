@@ -31,28 +31,16 @@ class DemoModel(BaseModel):
         return v
 
 print(DemoModel(square_numbers=[1, 4, 9]))
-#> DemoModel square_numbers=[1, 4, 9] cube_numbers=[]
 print(DemoModel(square_numbers='1|4|16'))
-#> DemoModel square_numbers=[1, 4, 16] cube_numbers=[]
 print(DemoModel(square_numbers=[16], cube_numbers=[8, 27]))
-#> DemoModel square_numbers=[16] cube_numbers=[8, 27]
-
 try:
     DemoModel(square_numbers=[1, 4, 2])
 except ValidationError as e:
     print(e)
-"""
-1 validation error for DemoModel
-square_numbers -> 2
-  2 is not a square number (type=assertion_error)
-"""
+
 
 try:
     DemoModel(cube_numbers=[27, 27])
 except ValidationError as e:
     print(e)
-"""
-1 validation error for DemoModel
-cube_numbers
-  sum of numbers greater than 42 (type=value_error)
-"""
+

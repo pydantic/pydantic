@@ -29,10 +29,4 @@ class MainModel(BaseModel):
         title = 'Main'
 
 print(MainModel.schema())
-#> {
-#>     'type': 'object',
-#>     'title': 'Main',
-#>     'properties': {
-#>         'foo_bar': {
-#>         ...
 print(MainModel.schema_json(indent=2))

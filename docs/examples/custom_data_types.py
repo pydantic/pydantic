@@ -18,20 +18,7 @@ class Model(BaseModel):
 
 
 print(Model(s='hello'))
-#> Model s='hello'
-
 try:
     print(Model(s=123))
 except ValidationError as e:
     print(e.json())
-"""
-[
-  {
-    "loc": [
-      "s"
-    ],
-    "msg": "strict string: str expected not <class 'int'>",
-    "type": "value_error"
-  }
-]
-"""

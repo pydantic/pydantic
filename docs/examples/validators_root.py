@@ -18,24 +18,14 @@ class UserModel(BaseModel):
         return values
 
 print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))
-#> UserModel username='scolvin' password1='zxcvbn' password2='zxcvbn'
-
 try:
     UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn2')
 except ValidationError as e:
     print(e)
-"""
-1 validation error for UserModel
-__root__
-  passwords do not match (type=value_error)
-"""
+
 
 try:
-    UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn', card_number='1234')
+    UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn',
+              card_number='1234')
 except ValidationError as e:
     print(e)
-"""
-1 validation error for UserModel
-__root__
-  card_number should not be included (type=assertion_error)
-"""

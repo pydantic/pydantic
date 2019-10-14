@@ -18,11 +18,6 @@ except TypeError as e:
     # > "FooBarModel" is immutable and does not support item assignment
 
 print(foobar.a)
-#> hello
-
 print(foobar.b)
-#> {'apple': 'pear'}
-
 foobar.b['apple'] = 'grape'
 print(foobar.b)
-#> {'apple': 'grape'}

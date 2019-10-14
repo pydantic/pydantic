@@ -5,7 +5,7 @@
 [![downloads](https://img.shields.io/pypi/dm/pydantic.svg)](https://pypistats.org/packages/pydantic)
 [![license](https://img.shields.io/github/license/samuelcolvin/pydantic.svg)](https://github.com/samuelcolvin/pydantic/blob/master/LICENSE)
 
-{!./.version.md!}
+{!.version.md!}
 
 !!! note
     These docs refer to Version 1 of *pydantic* which is as-yet unreleased. **v0.32** docs are available
@@ -25,7 +25,7 @@ There's also support for an extension to [dataclasses](usage/dataclasses.md) whe
 ## Example
 
 ```py
-{!./examples/example1.py!}
+{!.tmp_examples/example1.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -42,11 +42,11 @@ What's going on here:
 If validation fails pydantic will raise an error with a breakdown of what was wrong:
 
 ```py
-{!./examples/example2.py!}
+{!.tmp_examples/example2.py!}
 ```
 outputs:
 ```json
-{!./examples/example2_output.json!}
+{!.tmp_examples/example2_output.json!}
 ```
 
 ## Rationale
@@ -119,5 +119,5 @@ For a more comprehensive list of open-source projects using *pydantic* see the
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
 
 <script>
-{!./redirects.js!}
+{!redirects.js!}
 </script>

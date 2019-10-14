@@ -24,8 +24,3 @@ try:
     user.name = 'x' * 20
 except ValidationError as e:
     print(e)
-"""
-1 validation error
-name
-  max_length:10 (type=value_error.any_str.max_length; limit_value=10)
-"""

@@ -17,8 +17,3 @@ try:
     LenientSimpleModel(any_class_goes=Foo())
 except ValidationError as e:
     print(e)
-"""
-1 validation error
-any_class_goes
-  subclass of type expected (type=type_error.class)
-"""

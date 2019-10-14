@@ -1,14 +1,14 @@
 *Pydantic* allows auto creation of JSON Schemas from models:
 
 ```py
-{!./examples/schema1.py!}
+{!.tmp_examples/schema1.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Outputs:
 
 ```json
-{!./examples/schema1.json!}
+{!.tmp_examples/schema1.json!}
 ```
 
 The generated schemas are compliant with the specifications:
@@ -82,7 +82,7 @@ following priority order (when there is an equivalent available):
 
 The field schema mapping from Python / *pydantic* to JSON Schema is done as follows:
 
-{!./.tmp_schema_mappings.html!}
+{!.tmp_schema_mappings.html!}
 
 ## Top-level schema generation
 
@@ -90,14 +90,14 @@ You can also generate a top-level JSON Schema that only includes a list of model
 sub-models in its `definitions`:
 
 ```py
-{!./examples/schema2.py!}
+{!.tmp_examples/schema2.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Outputs:
 
 ```json
-{!./examples/schema2.json!}
+{!.tmp_examples/schema2.json!}
 ```
 
 ## Schema customization
@@ -108,14 +108,14 @@ You can customize the generated `$ref` JSON location: the definitions are always
 This is useful if you need to extend or modify the JSON Schema default definitions location. E.g. with OpenAPI:
 
 ```py
-{!./examples/schema3.py!}
+{!.tmp_examples/schema3.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Outputs:
 
 ```json
-{!./examples/schema3.json!}
+{!.tmp_examples/schema3.json!}
 ```
 
 It's also possible to extend/override the generated JSON schema in a model.
@@ -125,12 +125,12 @@ To do it, use the `Config` sub-class attribute `schema_extra`.
 For example, you could add `examples` to the JSON Schema:
 
 ```py
-{!./examples/schema4.py!}
+{!.tmp_examples/schema4.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Outputs:
 
 ```json
-{!./examples/schema4.json!}
+{!.tmp_examples/schema4.json!}
 ```

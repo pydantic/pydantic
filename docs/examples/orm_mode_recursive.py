@@ -32,9 +32,3 @@ orion = PetCls(name='Orion', species='cat')
 anna = PersonCls(name='Anna', age=20, pets=[bones, orion])
 anna_model = Person.from_orm(anna)
 print(anna_model)
-#> Person name='Anna'
-#>        pets=[
-#>          <Pet name='Bones' species='dog'>,
-#>          <Pet name='Orion' species='cat'>
-#>        ]
-#>        age=20.0

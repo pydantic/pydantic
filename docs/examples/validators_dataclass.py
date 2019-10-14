@@ -14,7 +14,4 @@ class DemoDataclass:
 
 
 print(DemoDataclass())
-#> DemoDataclass(ts=datetime.datetime(2019, 4, 2, 18, 1, 46, 66149))
-
 print(DemoDataclass(ts='2017-11-08T14:00'))
-#> DemoDataclass ts=datetime.datetime(2017, 11, 8, 14, 0)

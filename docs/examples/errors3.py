@@ -17,15 +17,3 @@ try:
     Model(foo='ber')
 except ValidationError as e:
     print(e.json())
-"""
-[
-  {
-    "loc": ["foo"],
-    "msg": "value is not \"bar\", got \"ber\"",
-    "type": "value_error.not_a_bar",
-    "ctx": {
-      "wrong_value": "ber"
-    }
-  }
-]
-"""
