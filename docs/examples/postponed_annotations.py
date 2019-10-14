@@ -6,4 +6,3 @@ class Model(BaseModel):
     a: List[int]
 
 print(Model(a=('1', 2, 3)))
-#> Model a=[1, 2, 3]

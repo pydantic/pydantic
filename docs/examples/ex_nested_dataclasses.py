@@ -11,4 +11,3 @@ class Navbar:
 
 navbar = Navbar(button=('https://example.com',))
 print(navbar)
-#> Navbar(button=NavbarButton(href='https://example.com'))

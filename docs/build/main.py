@@ -16,14 +16,16 @@ def main():
 
     (PROJECT_ROOT / 'docs/.changelog.md').write_text(history)
 
-    sys.path.append(str(THIS_DIR.resolve()))
-    from schema_mapping import build_schema_mappings
-
-    build_schema_mappings()
-
     version = SourceFileLoader('version', str(PROJECT_ROOT / 'pydantic/version.py')).load_module()
     (PROJECT_ROOT / 'docs/.version.md').write_text(f'Documentation for version: **v{version.VERSION}**\n')
 
+    sys.path.append(str(THIS_DIR.resolve()))
+    from schema_mapping import build_schema_mappings
+    from exec_examples import exec_examples
+
+    build_schema_mappings()
+    return exec_examples()
+
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

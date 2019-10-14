@@ -51,7 +51,8 @@ exclude_keys = {
     'second_name': ...,
     'address': {'post_code': ..., 'country': {'phone_code'}},
     'card_details': ...,
-    'hobbies': {-1: {'info'}},  # You can exclude values from tuples and lists by indexes
+    # You can exclude values from tuples and lists by indexes
+    'hobbies': {-1: {'info'}},
 }
 
 include_keys = {
@@ -60,14 +61,5 @@ include_keys = {
     'hobbies': {0: ..., -1: {'name'}}
 }
 
-print(
-    user.dict(include=include_keys) == user.dict(exclude=exclude_keys) == {
-        'first_name': 'John',
-        'address': {'country': {'name': 'USA'}},
-        'hobbies': [
-            {'name': 'Programming', 'info': 'Writing code and stuff'},
-            {'name': 'Gaming'}
-        ]
-    }
-)
-#> True
+# would be the same as user.dict(exclude=exclude_keys) in this case:
+print(user.dict(include=include_keys))

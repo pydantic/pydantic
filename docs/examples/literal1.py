@@ -11,8 +11,3 @@ try:
     Pie(flavor='cherry')
 except ValidationError as e:
     print(str(e))
-"""
-1 validation error
-flavor
-  unexpected value; permitted: 'apple', 'pumpkin' (type=value_error.const; given=cherry; permitted=('apple', 'pumpkin'))
-"""

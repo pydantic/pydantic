@@ -8,13 +8,7 @@ class Foo(BaseModel):
 class Model(BaseModel):
     a: Foo
 
-
-top_level_schema = schema([Model], ref_prefix='#/components/schemas/')  # Default location for OpenAPI
+# Default location for OpenAPI
+top_level_schema = schema([Model], ref_prefix='#/components/schemas/')
 print(json.dumps(top_level_schema, indent=2))
 
-#> {
-#>   "definitions": {
-#>     "Foo": {
-#>       "title": "Foo",
-#>       "type": "object",
-#>       ...

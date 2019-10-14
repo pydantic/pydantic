@@ -1,3 +1,6 @@
 mkdocs==1.0.4
 mkdocs-material==4.4.3
 markdown-include==0.5.1
+sqlalchemy   # pyup: ignore
+orjson       # pyup: ignore
+ujson        # pyup: ignore

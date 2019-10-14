@@ -106,7 +106,7 @@ Models possess the following methods and attributes:
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
 ```py
-{!./examples/recursive.py!}
+{!.tmp_examples/recursive.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -123,7 +123,7 @@ To do this:
 The example here uses SQLAlchemy, but the same approach should work for any ORM.
 
 ```py
-{!./examples/orm_mode.py!}
+{!.tmp_examples/orm_mode.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -132,7 +132,7 @@ ORM instances will be parsed with `from_orm` recursively as well as at the top l
 Here a vanilla class is used to demonstrate the principle, but any ORM class could be used instead.
 
 ```py
-{!./examples/orm_mode_recursive.py!}
+{!.tmp_examples/orm_mode_recursive.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -186,7 +186,7 @@ Each error object contains:
 As a demonstration:
 
 ```py
-{!./examples/errors1.py!}
+{!.tmp_examples/errors1.py!}
 ```
 _(This script is complete, it should run "as is". `json()` has `indent=2` set by default, but I've tweaked the
 JSON here and below to make it slightly more concise.)_
@@ -198,14 +198,14 @@ In your custom data types or validators you should use `ValueError`, `TypeError`
 See [validators](validators.md) for more details on use of the `@validator` decorator.
 
 ```py
-{!./examples/errors2.py!}
+{!.tmp_examples/errors2.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 You can also define your own error classes, which can specify a custom error code, message template, and context:
 
 ```py
-{!./examples/errors3.py!}
+{!.tmp_examples/errors3.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -221,7 +221,7 @@ _(This script is complete, it should run "as is")_
   it is inferred from the file's extension.
 
 ```py
-{!./examples/parse.py!}
+{!.tmp_examples/parse.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -254,7 +254,7 @@ In order to declare a generic model, you perform the following steps:
 Here is an example using `GenericModel` to create an easily-reused HTTP response payload wrapper:
 
 ```py
-{!./examples/generics.py!}
+{!.tmp_examples/generics.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -272,7 +272,7 @@ you would expect mypy to provide if you were to declare the type without using `
 If the name of the concrete subclasses is important, you can also override the default behavior:
 
 ```py
-{!./examples/generics-naming.py!}
+{!.tmp_examples/generics-naming.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -282,7 +282,7 @@ There are some occasions where the shape of a model is not known until runtime. 
 the `create_model` method to allow models to be created on the fly.
 
 ```py
-{!./examples/dynamic_model_creation.py!}
+{!.tmp_examples/dynamic_model_creation.py!}
 ```
 
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
@@ -292,7 +292,7 @@ special key word arguments `__config__` and `__base__` can be used to customise 
 extending a base model with extra fields.
 
 ```py
-{!./examples/dynamic_inheritance.py!}
+{!.tmp_examples/dynamic_inheritance.py!}
 ```
 
 ## Custom Root Types
@@ -305,7 +305,7 @@ The root value can be passed to model `__init__` via the `__root__` keyword argu
 the first and only argument to `parse_obj`.
 
 ```py
-{!examples/custom_root_field.py!}
+{!.tmp_examples/custom_root_field.py!}
 ```
 
 ## Faux Immutability
@@ -318,7 +318,7 @@ values of instance attributes will raise errors. See [model config](model_config
     modify a so-called "immutable" object.
 
 ```py
-{!./examples/mutation.py!}
+{!.tmp_examples/mutation.py!}
 ```
 
 Trying to change `a` caused an error, and `a` remains unchanged. However, the dict `b` is mutable, and the
@@ -330,7 +330,7 @@ Pydantic models can be used alongside Python's
 [Abstract Base Classes](https://docs.python.org/3/library/abc.html) (ABCs).
 
 ```py
-{!./examples/ex_abc.py!}
+{!.tmp_examples/ex_abc.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -348,7 +348,7 @@ As of **v1.0** all fields with annotations (whether annotation-only or with a de
 all fields without an annotation. Within their respective groups, fields remain in the order they were defined.
 
 ```py
-{!./examples/field_order.py!}
+{!.tmp_examples/field_order.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -382,7 +382,7 @@ and in some cases this may result in a loss of information.
 For example:
 
 ```py
-{!./examples/data_conversion.py!}
+{!.tmp_examples/data_conversion.py!}
 ```
 _(This script is complete, it should run "as is")_
 
