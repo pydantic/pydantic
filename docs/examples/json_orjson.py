@@ -15,6 +15,5 @@ class User(BaseModel):
         json_loads = orjson.loads
         json_dumps = orjson_dumps
 
-
 user = User.parse_raw('{"id":123,"signup_ts":1234567890,"name":"John Doe"}')
 print(user.json())

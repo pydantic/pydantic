@@ -7,7 +7,6 @@ class Birth:
     month: int
     day: int
 
-
 @dataclass
 class User:
     birth: Birth
@@ -19,6 +18,5 @@ class User:
     def __post_init_post_parse__(self):
         print(self.birth)
         # > Birth(year=1995, month=3, day=2)
-
 
 user = User(**{'birth': {'year': 1995, 'month': 3, 'day': 2}})

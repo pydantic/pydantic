@@ -61,13 +61,5 @@ include_keys = {
     'hobbies': {0: ..., -1: {'name'}}
 }
 
-print(
-    user.dict(include=include_keys) == user.dict(exclude=exclude_keys) == {
-        'first_name': 'John',
-        'address': {'country': {'name': 'USA'}},
-        'hobbies': [
-            {'name': 'Programming', 'info': 'Writing code and stuff'},
-            {'name': 'Gaming'}
-        ]
-    }
-)
+# would be the same as user.dict(exclude=exclude_keys) in this case:
+print(user.dict(include=include_keys))

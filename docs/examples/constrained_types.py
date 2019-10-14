@@ -14,7 +14,6 @@ from pydantic import (
     constr,
 )
 
-
 class Model(BaseModel):
     short_bytes: conbytes(min_length=2, max_length=10)
     strip_bytes: conbytes(strip_whitespace=True)
@@ -41,7 +40,6 @@ class Model(BaseModel):
     decimal_max_digits_and_places: condecimal(max_digits=2, decimal_places=2)
     mod_decimal: condecimal(multiple_of=Decimal('0.25'))
 
-
 m = Model(
     short_bytes=b'foo',
     strip_bytes=b'   bar',
@@ -63,4 +61,4 @@ m = Model(
     decimal_max_digits_and_places='0.99',
     mod_decimal='2.75',
 )
-debug(m.dict())
+print(m.dict())

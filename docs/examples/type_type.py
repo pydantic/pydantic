@@ -15,7 +15,6 @@ class Other:
 class SimpleModel(BaseModel):
     just_subclasses: Type[Foo]
 
-
 SimpleModel(just_subclasses=Foo)
 SimpleModel(just_subclasses=Bar)
 try:

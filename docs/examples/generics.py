@@ -3,19 +3,15 @@ from typing import Generic, TypeVar, Optional, List
 from pydantic import BaseModel, validator, ValidationError
 from pydantic.generics import GenericModel
 
-
 DataT = TypeVar('DataT')
-
 
 class Error(BaseModel):
     code: int
     message: str
 
-
 class DataModel(BaseModel):
     numbers: List[int]
     people: List[str]
-
 
 class Response(GenericModel, Generic[DataT]):
     data: Optional[DataT]
@@ -28,7 +24,6 @@ class Response(GenericModel, Generic[DataT]):
         if v is None and values.get('data') is None:
             raise ValueError('must provide data or error')
         return v
-
 
 data = DataModel(numbers=[1, 2, 3], people=[])
 error = Error(code=404, message='Not found')

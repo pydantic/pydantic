@@ -2,7 +2,6 @@ from typing import Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
 
 from pydantic import BaseModel
 
-
 class Model(BaseModel):
     simple_list: list = None
     list_of_ints: List[int] = None

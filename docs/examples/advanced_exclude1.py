@@ -10,7 +10,7 @@ class Transaction(BaseModel):
     user: User
     value: int
 
-transaction = Transaction(
+t = Transaction(
     id="1234567890",
     user=User(
         id=42,
@@ -21,11 +21,9 @@ transaction = Transaction(
 )
 
 # using a set:
-print(transaction.dict(exclude={'user', 'value'}))
+print(t.dict(exclude={'user', 'value'}))
 
 # using a dict:
-print(
-    transaction.dict(exclude={'user': {'username', 'password'}, 'value': ...})
-)
+print(t.dict(exclude={'user': {'username', 'password'}, 'value': ...}))
 
-print(transaction.dict(include={'id': ..., 'user': {'id'}}))
+print(t.dict(include={'id': ..., 'user': {'id'}}))

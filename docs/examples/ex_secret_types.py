@@ -12,7 +12,6 @@ print(sm.password_bytes.get_secret_value())
 print(sm.password.display())
 print(sm.json())
 
-
 try:
     SimpleModel(password=[1, 2, 3], password_bytes=[1, 2, 3])
 except ValidationError as e:

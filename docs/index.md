@@ -46,7 +46,7 @@ If validation fails pydantic will raise an error with a breakdown of what was wr
 ```
 outputs:
 ```json
-{!.tmp_examples/example2_output.json!}
+{!.tmp_examples/example2.json!}
 ```
 
 ## Rationale

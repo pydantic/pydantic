@@ -23,7 +23,6 @@ try:
 except ValidationError as e:
     print(e)
 
-
 try:
     UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn',
               card_number='1234')

@@ -38,7 +38,6 @@ try:
 except ValidationError as e:
     print(e)
 
-
 try:
     DemoModel(cube_numbers=[27, 27])
 except ValidationError as e:

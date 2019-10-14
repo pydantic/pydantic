@@ -7,7 +7,6 @@ class Model(BaseModel):
     t: time = None
     td: timedelta = None
 
-
 m = Model(
     d=1966280412345.6789,
     dt='2032-04-23T10:20:30.400+02:30',

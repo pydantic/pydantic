@@ -28,5 +28,5 @@ class MainModel(BaseModel):
     class Config:
         title = 'Main'
 
-print(MainModel.schema())
+# this is equivilant of json.dumps(MainModel.schema(), indent=2):
 print(MainModel.schema_json(indent=2))

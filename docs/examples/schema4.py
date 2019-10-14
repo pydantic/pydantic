@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 
-
 class Person(BaseModel):
     name: str
     age: int
@@ -15,6 +14,4 @@ class Person(BaseModel):
             ]
         }
 
-
-print(Person.schema())
 print(Person.schema_json(indent=2))

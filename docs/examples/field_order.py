@@ -13,6 +13,6 @@ print(m.dict())
 try:
     Model(a='x', b='x', c='x', d='x', e='x')
 except ValidationError as e:
-    error_logs = [e['loc'] for e in e.errors()]
+    error_locations = [e['loc'] for e in e.errors()]
 
-print(error_logs)
+print(error_locations)

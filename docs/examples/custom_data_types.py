@@ -1,6 +1,5 @@
 from pydantic import BaseModel, ValidationError
 
-
 class StrictStr(str):
     @classmethod
     def __get_validators__(cls):
@@ -12,10 +11,8 @@ class StrictStr(str):
             raise ValueError(f'strict string: str expected not {type(v)}')
         return v
 
-
 class Model(BaseModel):
     s: StrictStr
-
 
 print(Model(s='hello'))
 try:
