@@ -1,4 +1,5 @@
 import re
+import warnings
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -467,13 +468,14 @@ class SecretStr:
         self._secret_value = value
 
     def __repr__(self) -> str:
-        return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
+        return f"SecretStr('{self}')"
 
     def __str__(self) -> str:
-        return self.__repr__()
+        return '**********' if self._secret_value else ''
 
     def display(self) -> str:
-        return '**********' if self._secret_value else ''
+        warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)
+        return str(self)
 
     def get_secret_value(self) -> str:
         return self._secret_value
@@ -493,13 +495,14 @@ class SecretBytes:
         self._secret_value = value
 
     def __repr__(self) -> str:
-        return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
+        return f"SecretBytes(b'{self}')"
 
     def __str__(self) -> str:
-        return self.__repr__()
+        return '**********' if self._secret_value else ''
 
     def display(self) -> str:
-        return '**********' if self._secret_value else ''
+        warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning)
+        return str(self)
 
     def get_secret_value(self) -> bytes:
         return self._secret_value

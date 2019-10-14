@@ -59,7 +59,7 @@ jobs:
     python: 3.6
     name: 'Without Deps 3.6'
     script:
-    - pip uninstall -y ujson email-validator typing-extensions
+    - pip uninstall -y cython email-validator typing-extensions devtools
     - make test
     env:
     - 'DEPS=no'
@@ -67,7 +67,7 @@ jobs:
     python: 3.7
     name: 'Without Deps 3.7'
     script:
-    - pip uninstall -y ujson email-validator cython typing-extensions
+    - pip uninstall -y cython email-validator typing-extensions devtools
     - make test
     env:
     - 'DEPS=no'

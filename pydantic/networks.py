@@ -12,6 +12,7 @@ from ipaddress import (
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Set, Tuple, Type, Union, cast, no_type_check
 
 from . import errors
+from .utils import Representation
 from .validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:
@@ -214,8 +215,8 @@ class AnyUrl(str):
         return host, tld, host_type, rebuild  # type: ignore
 
     def __repr__(self) -> str:
-        extra = ' '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
-        return f'<{type(self).__name__}({super().__repr__()} {extra})>'
+        extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
+        return f'{self.__class__.__name__}({super().__repr__()}, {extra})'
 
 
 class AnyHttpUrl(AnyUrl):
@@ -273,7 +274,7 @@ class EmailStr(str):
         return validate_email(value)[1]
 
 
-class NameEmail:
+class NameEmail(Representation):
     __slots__ = 'name', 'email'
 
     def __init__(self, name: str, email: str):
@@ -294,9 +295,6 @@ class NameEmail:
 
     def __str__(self) -> str:
         return f'{self.name} <{self.email}>'
-
-    def __repr__(self) -> str:
-        return f'<NameEmail("{self}")>'
 
 
 class IPvAnyAddress(_BaseAddress):

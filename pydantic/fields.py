@@ -24,7 +24,7 @@ from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import AnyType, Callable, ForwardRef, display_as_type, is_literal_type
-from .utils import lenient_issubclass, sequence_like
+from .utils import Representation, lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 try:
@@ -40,12 +40,13 @@ if TYPE_CHECKING:
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
+    from .typing import ReprArgs  # noqa: F401
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
 
 
-class FieldInfo:
+class FieldInfo(Representation):
     """
     Captures extra information about a field.
     """
@@ -86,10 +87,6 @@ class FieldInfo:
         self.max_length = kwargs.pop('max_length', None)
         self.regex = kwargs.pop('regex', None)
         self.extra = kwargs
-
-    def __repr__(self) -> str:
-        attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return 'FieldInfo({})'.format(', '.join(f'{a}: {v!r}' for a, v in attrs if v is not None))
 
 
 def Field(
@@ -175,7 +172,7 @@ SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
 
 
-class ModelField:
+class ModelField(Representation):
     __slots__ = (
         'type_',
         'sub_fields',
@@ -603,17 +600,12 @@ class ModelField:
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
-    def __repr__(self) -> str:
-        return f'<ModelField({self})>'
+    def __repr_args__(self) -> 'ReprArgs':
+        args = [('name', self.name), ('type', display_as_type(self.type_)), ('required', self.required)]
 
-    def __str__(self) -> str:
-        parts = [self.name, 'type=' + display_as_type(self.type_)]
-
-        if self.required:
-            parts.append('required')
-        else:
-            parts.append(f'default={self.default!r}')
+        if not self.required:
+            args.append(('default', self.default))
 
         if self.alt_alias:
-            parts.append('alias=' + self.alias)
-        return ' '.join(parts)
+            args.append(('alias', self.alias))
+        return args

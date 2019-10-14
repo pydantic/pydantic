@@ -9,9 +9,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 from uuid import UUID
 
-from pydantic.color import Color
-
 from .class_validators import ROOT_KEY
+from .color import Color
 from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, FieldInfo, ModelField
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail

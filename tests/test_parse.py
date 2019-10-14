@@ -13,7 +13,7 @@ class Model(BaseModel):
 
 def test_obj():
     m = Model.parse_obj(dict(a=10.2))
-    assert str(m) == 'Model a=10.2 b=10'
+    assert str(m) == 'a=10.2 b=10'
 
 
 def test_parse_obj_fails():

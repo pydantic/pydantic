@@ -1,3 +1,4 @@
+# output-json
 import json
 from pydantic import BaseModel
 from pydantic.schema import schema

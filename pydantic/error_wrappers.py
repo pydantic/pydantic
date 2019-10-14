@@ -1,16 +1,19 @@
 import json
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 
+from .utils import Representation
+
 if TYPE_CHECKING:
     from .main import BaseConfig  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
+    from .typing import ReprArgs
 
     Loc = Tuple[Union[int, str], ...]
 
 __all__ = 'ErrorWrapper', 'ValidationError'
 
 
-class ErrorWrapper:
+class ErrorWrapper(Representation):
     __slots__ = 'exc', '_loc'
 
     def __init__(self, exc: Exception, loc: Union[str, 'Loc']) -> None:
@@ -23,8 +26,8 @@ class ErrorWrapper:
         else:
             return (self._loc,)
 
-    def __repr__(self) -> str:
-        return f'<ErrorWrapper exc={self.exc!r} loc={self.loc_tuple()!r}>'
+    def __repr_args__(self) -> 'ReprArgs':
+        return [('exc', self.exc), ('loc', self.loc_tuple())]
 
 
 # ErrorList is something like Union[List[Union[List[ErrorWrapper], ErrorWrapper]], ErrorWrapper]
@@ -32,7 +35,7 @@ class ErrorWrapper:
 ErrorList = Union[Sequence[Any], ErrorWrapper]
 
 
-class ValidationError(ValueError):
+class ValidationError(Representation, ValueError):
     __slots__ = 'raw_errors', 'model', '_error_cache'
 
     def __init__(self, errors: Sequence[ErrorList], model: 'ModelOrDc') -> None:
@@ -59,6 +62,9 @@ class ValidationError(ValueError):
             f'{no_errors} validation error{"" if no_errors == 1 else "s"} for {self.model.__name__}\n'
             f'{display_errors(errors)}'
         )
+
+    def __repr_args__(self) -> 'ReprArgs':
+        return [('model', self.model.__name__), ('errors', self.errors())]
 
 
 def display_errors(errors: List[Dict[str, Any]]) -> str:

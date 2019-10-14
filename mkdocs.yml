@@ -17,6 +17,9 @@ google_analytics:
 - 'UA-62733018-4'
 - 'auto'
 
+extra_css:
+- 'styles/terminal.css'
+
 nav:
 - Overview: index.md
 - install.md
@@ -31,6 +34,7 @@ nav:
   - 'Settings management': usage/settings.md
   - usage/postponed_annotations.md
   - 'Usage with mypy': usage/mypy.md
+  - 'Usage with devtools': usage/devtools.md
 - Contributing to Pydantic: contributing.md
 - benchmarks.md
 - 'PyCharm plugin': pycharm_plugin.md
