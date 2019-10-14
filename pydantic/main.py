@@ -118,6 +118,14 @@ def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
         )
         config.allow_population_by_field_name = config.allow_population_by_alias  # type: ignore
 
+    if hasattr(config, 'case_insensitive') and any('BaseSettings.Config' in c.__qualname__ for c in config.__mro__):
+        warnings.warn(
+            f'{cls_name}: "case_insensitive" is deprecated on BaseSettings config and replaced by '
+            f'"case_sensitive" (default False)',
+            DeprecationWarning,
+        )
+        config.case_sensitive = not config.case_insensitive  # type: ignore
+
 
 def is_valid_field(name: str) -> bool:
     if not name.startswith('_'):

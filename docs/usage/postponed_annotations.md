@@ -5,7 +5,7 @@ Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/
 "just work".
 
 ```py
-{!./examples/postponed_annotations.py!}
+{!.tmp_examples/postponed_annotations.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -20,7 +20,7 @@ For example, this happens whenever a model references itself as a field type.
 When this happens, you'll need to call `update_forward_refs` after the model has been created before it can be used:
 
 ```py
-{!./examples/forward_ref.py!}
+{!.tmp_examples/forward_ref.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -32,13 +32,13 @@ _(This script is complete, it should run "as is")_
 For example, this works fine:
 
 ```py
-{!./examples/postponed_works.py!}
+{!.tmp_examples/postponed_works.py!}
 ```
 
 While this will break:
 
 ```py
-{!./examples/postponed_broken.py!}
+{!.tmp_examples/postponed_broken.py!}
 ```
 
 Resolving this is beyond the call for *pydantic*: either remove the future import or declare the types globally.
@@ -52,7 +52,7 @@ with a friendly error message if you forget).
 Within the model, you can refer to the not-yet-constructed model using a string:
 
 ```py
-{!./examples/self_referencing_string.py!}
+{!.tmp_examples/self_referencing_string.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -61,6 +61,6 @@ Since `python 3.7`, you can also refer it by its type, provided you import `anno
 and *pydantic* versions).
 
 ```py
-{!./examples/self_referencing_annotations.py!}
+{!.tmp_examples/self_referencing_annotations.py!}
 ```
 _(This script is complete, it should run "as is")_

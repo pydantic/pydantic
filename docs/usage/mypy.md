@@ -2,17 +2,19 @@ Pydantic works with [mypy](http://mypy-lang.org/) provided you use the annotatio
 required fields:
 
 ```py
-{!./examples/mypy.py!}
+{!.tmp_examples/mypy.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 You can also run it through mypy with:
 
-    mypy \
-      --ignore-missing-imports \
-      --follow-imports=skip \
-      --strict-optional \
-      pydantic_mypy_test.py
+```bash
+mypy \
+  --ignore-missing-imports \
+  --follow-imports=skip \
+  --strict-optional \
+  pydantic_mypy_test.py
+```
 
 ## Strict Optional
 

@@ -1,6 +1,5 @@
 from pydantic import BaseModel, ValidationError
 
-
 class Model(BaseModel):
     v: str
 
@@ -10,13 +9,7 @@ class Model(BaseModel):
             'value_error.any_str.max_length': 'max_length:{limit_value}',
         }
 
-
 try:
     Model(v='x' * 20)
 except ValidationError as e:
     print(e)
-"""
-1 validation error
-v
-  max_length:10 (type=value_error.any_str.max_length; limit_value=10)
-"""

@@ -1,7 +1,7 @@
 Custom validation and complex relationships between objects can be achieved using the `validator` decorator.
 
 ```py
-{!./examples/validators_simple.py!}
+{!.tmp_examples/validators_simple.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -38,7 +38,7 @@ A few things to note on validators:
 Validators can do a few more complex things:
 
 ```py
-{!./examples/validators_pre_item.py!}
+{!.tmp_examples/validators_pre_item.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -57,7 +57,7 @@ However there are situations where it may be useful or required to always call t
 to set a dynamic default value.
 
 ```py
-{!./examples/validators_always.py!}
+{!.tmp_examples/validators_always.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -69,7 +69,7 @@ You'll often want to use this together with `pre`, since otherwise with `always=
 Validation can also be performed on the entire model's data.
 
 ```py
-{!./examples/validators_root.py!}
+{!.tmp_examples/validators_root.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -93,6 +93,6 @@ In this case you should set `check_fields=False` on the validator.
 Validators also work with *pydantic* dataclasses.
 
 ```py
-{!./examples/validators_dataclass.py!}
+{!.tmp_examples/validators_dataclass.py!}
 ```
 _(This script is complete, it should run "as is")_

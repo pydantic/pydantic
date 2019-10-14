@@ -28,11 +28,5 @@ class MainModel(BaseModel):
     class Config:
         title = 'Main'
 
-print(MainModel.schema())
-#> {
-#>     'type': 'object',
-#>     'title': 'Main',
-#>     'properties': {
-#>         'foo_bar': {
-#>         ...
+# this is equivilant of json.dumps(MainModel.schema(), indent=2):
 print(MainModel.schema_json(indent=2))

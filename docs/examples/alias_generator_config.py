@@ -14,8 +14,3 @@ class Voice(BaseModel):
 voice = Voice(Name='Filiz', Gender='Female', LanguageCode='tr-TR')
 print(voice.language_code)
 print(voice.dict(by_alias=True))
-
-"""
-tr-TR
-{'Name': 'Filiz', 'Gender': 'Female', 'LanguageCode': 'tr-TR'}
-"""

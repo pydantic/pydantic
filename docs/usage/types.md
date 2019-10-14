@@ -144,7 +144,7 @@ with custom properties and validation.
 *pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
 
 ```py
-{!./examples/ex_typing.py!}
+{!.tmp_examples/ex_typing.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -156,7 +156,7 @@ The `Union` type allows a model attribute to accept different types, e.g.:
     This script is complete, it should run "as is". However, it may not reflect the desired behavior; see below.
 
 ```py
-{!./examples/union_type_incorrect.py!}
+{!.tmp_examples/union_type_incorrect.py!}
 ```
 
 However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under `Union` and will use
@@ -169,7 +169,7 @@ followed by less specific types. In the above example, the `UUID` class should p
 classes to preclude the unexpected representation as such:
 
 ```py
-{!./examples/union_type_correct.py!}
+{!.tmp_examples/union_type_correct.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -178,7 +178,7 @@ _(This script is complete, it should run "as is")_
 *pydantic* uses python's standard `enum` classes to define choices.
 
 ```py
-{!./examples/choices.py!}
+{!.tmp_examples/choices.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -190,40 +190,40 @@ types:
 
 * `datetime` fields can be:
 
-  * `datetime`, existing `datetime` object
-  * `int` or `float`, assumed as Unix time, i.e. seconds (if <= `2e10`) or milliseconds (if > `2e10`) since 1 January 1970
-  * `str`, following formats work:
+    * `datetime`, existing `datetime` object
+    * `int` or `float`, assumed as Unix time, i.e. seconds (if <= `2e10`) or milliseconds (if > `2e10`) since 1 January 1970
+    * `str`, following formats work:
 
-    * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z[±]HH[:]MM]]]`
-    * `int` or `float` as a string (assumed as Unix time)
+        * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z[±]HH[:]MM]]]`
+        * `int` or `float` as a string (assumed as Unix time)
 
 * `date` fields can be:
 
-  * `date`, existing `date` object
-  * `int` or `float`, see `datetime`
-  * `str`, following formats work:
-
-    * `YYYY-MM-DD`
+    * `date`, existing `date` object
     * `int` or `float`, see `datetime`
+    * `str`, following formats work:
+
+        * `YYYY-MM-DD`
+        * `int` or `float`, see `datetime`
 
 * `time` fields can be:
 
-  * `time`, existing `time` object
-  * `str`, following formats work:
+    * `time`, existing `time` object
+    * `str`, following formats work:
 
-    * `HH:MM[:SS[.ffffff]]`
+        * `HH:MM[:SS[.ffffff]]`
 
 * `timedelta` fields can be:
 
-  * `timedelta`, existing `timedelta` object
-  * `int` or `float`, assumed as seconds
-  * `str`, following formats work:
+    * `timedelta`, existing `timedelta` object
+    * `int` or `float`, assumed as seconds
+    * `str`, following formats work:
 
-    * `[-][DD ][HH:MM]SS[.ffffff]`
-    * `[±]P[DD]DT[HH]H[MM]M[SS]S` (ISO 8601 format for timedelta)
+        * `[-][DD ][HH:MM]SS[.ffffff]`
+        * `[±]P[DD]DT[HH]H[MM]M[SS]S` (ISO 8601 format for timedelta)
 
 ```py
-{!./examples/datetime_example.py!}
+{!.tmp_examples/datetime_example.py!}
 ```
 
 ### Booleans
@@ -249,7 +249,7 @@ A standard `bool` field will raise a `ValidationError` if the value is not one o
 Here is a script demonstrating some of these behaviors:
 
 ```py
-{!./examples/boolean.py!}
+{!.tmp_examples/boolean.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -258,7 +258,7 @@ _(This script is complete, it should run "as is")_
 Fields can also be of type `Callable`:
 
 ```py
-{!./examples/callable.py!}
+{!.tmp_examples/callable.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -273,13 +273,13 @@ _(This script is complete, it should run "as is")_
 that are subclasses of `T`.
 
 ```py
-{!./examples/type_type.py!}
+{!.tmp_examples/type_type.py!}
 ```
 
 You may also use `Type` to specify that any class is allowed.
 
 ```py
-{!./examples/bare_type_type.py!}
+{!.tmp_examples/bare_type_type.py!}
 ```
 
 ## Literal Type
@@ -292,7 +292,7 @@ You may also use `Type` to specify that any class is allowed.
 may accept only specific literal values:
 
 ```py
-{!./examples/literal1.py!}
+{!.tmp_examples/literal1.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -300,14 +300,14 @@ One benefit of this field type is that it can be used to check for equality with
 without needing to declare custom validators:
 
 ```py
-{!./examples/literal2.py!}
+{!.tmp_examples/literal2.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
 
 ```py
-{!./examples/literal3.py!}
+{!.tmp_examples/literal3.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -453,7 +453,7 @@ The above types (which all inherit from `AnyUrl`) will attempt to give descripti
 provided:
 
 ```py
-{!./examples/urls.py!}
+{!.tmp_examples/urls.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -486,7 +486,7 @@ the above types export the following properties:
 If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
 ```py
-{!./examples/url_properties.py!}
+{!.tmp_examples/url_properties.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -497,7 +497,7 @@ _(This script is complete, it should run "as is")_
 [this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
 
 ```py
-{!./examples/url_punycode.py!}
+{!.tmp_examples/url_punycode.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -534,7 +534,7 @@ You can use the `Color` data type for storing colors as per
   (e.g. `"hsl(270, 60%, 70%)"`, `"hsl(270, 60%, 70%, .5)"`)
 
 ```py
-{!./examples/ex_color_type.py!}
+{!.tmp_examples/ex_color_type.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -582,7 +582,7 @@ that you do not want to be visible in logging or tracebacks.
 The `SecretStr` and `SecretBytes` will be formatted as either `'**********'` or `''` on conversion to json.
 
 ```py
-{!./examples/ex_secret_types.py!}
+{!.tmp_examples/ex_secret_types.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -593,7 +593,7 @@ It can also optionally be used to parse the loaded object into another type base
 the type `Json` is parameterised with:
 
 ```py
-{!./examples/ex_json_type.py!}
+{!.tmp_examples/ex_json_type.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -603,7 +603,7 @@ The `PaymentCardNumber` type validates [payment cards](https://en.wikipedia.org/
 (such as a debit or credit card).
 
 ```py
-{!./examples/payment_card_number.py!}
+{!.tmp_examples/payment_card_number.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -626,7 +626,7 @@ The actual validation verifies the card number is:
 The value of numerous common types can be restricted using `con*` type functions:
 
 ```py
-{!./examples/constrained_types.py!}
+{!.tmp_examples/constrained_types.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -645,7 +645,7 @@ The following caveats apply:
 - `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.
 
 ```py
-{!./examples/strict_types.py!}
+{!.tmp_examples/strict_types.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -655,6 +655,6 @@ You can also define your own custom data types. The classmethod `__get_validator
 to get validators to parse and validate the input data.
 
 ```py
-{!./examples/custom_data_types.py!}
+{!.tmp_examples/custom_data_types.py!}
 ```
 _(This script is complete, it should run "as is")_

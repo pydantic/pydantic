@@ -78,14 +78,14 @@ Options:
 : a `dict` used to customise the way types are encoded to JSON; see [JSON Serialisation](exporting_models.md#modeljson)
 
 ```py
-{!./examples/config.py!}
+{!.tmp_examples/config.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Similarly, if using the `@dataclass` decorator:
 
 ```py
-{!./examples/ex_dataclasses_config.py!}
+{!.tmp_examples/ex_dataclasses_config.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -95,6 +95,6 @@ If data source field names do not match your code style (e. g. CamelCase fields)
 you can automatically generate aliases using `alias_generator`:
 
 ```py
-{!./examples/alias_generator_config.py!}
+{!.tmp_examples/alias_generator_config.py!}
 ```
 _(This script is complete, it should run "as is")_
