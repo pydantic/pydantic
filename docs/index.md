@@ -117,7 +117,3 @@ Hundreds of organisations and packages are using *pydantic*, including:
 
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
-
-<script>
-{!redirects.js!}
-</script>

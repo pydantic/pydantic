@@ -18,7 +18,9 @@ google_analytics:
 - 'auto'
 
 extra_css:
-- 'styles/terminal.css'
+- 'extra/terminal.css'
+extra_javascript:
+- 'extra/redirects.js'
 
 nav:
 - Overview: index.md
@@ -50,3 +52,11 @@ markdown_extensions:
 - admonition
 - codehilite
 - extra
+
+plugins:
+- exclude:
+    glob:
+    - _build/*
+    - build/*
+    - examples/*
+    - requirements.txt
