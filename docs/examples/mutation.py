@@ -13,7 +13,6 @@ try:
     foobar.a = 'different'
 except TypeError as e:
     print(e)
-    # > "FooBarModel" is immutable and does not support item assignment
 
 print(foobar.a)
 print(foobar.b)

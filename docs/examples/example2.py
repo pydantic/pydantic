@@ -1,5 +1,6 @@
+# output-json
 from example1 import User
-# === ignore above
+# ignore-above
 from pydantic import ValidationError
 
 try:

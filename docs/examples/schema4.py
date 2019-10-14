@@ -1,3 +1,4 @@
+# output-json
 from pydantic import BaseModel
 
 class Person(BaseModel):

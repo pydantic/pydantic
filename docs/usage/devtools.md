@@ -12,16 +12,9 @@ In particular `debug()` is useful when inspecting models:
 
 
 ```py
-{!examples/ex_debug.py!}
+{!.tmp_examples/ex_debug.py!}
 ```
 
 Will output in your terminal:
 
-<div class="terminal">
-<!-- generate examples/ex_debug.html with 
-      PY_DEVTOOLS_HIGHLIGHT=true python docs/examples/ex_debug.py | ansi2html -p > docs/examples/ex_debug.html
--->
-<pre class="terminal-content">
-{!examples/ex_debug.html!}
-</pre>
-</div>
+{!.tmp_examples/ex_debug.html!}
