@@ -12,18 +12,27 @@ class Model(BaseModel):
 
 
 def test_simple_construct():
-    m = Model.construct(dict(a=40, b=10), {'a', 'b'})
-    assert m.a == 40
+    m = Model.construct({'a': 3.14})
+    assert m.a == 3.14
     assert m.b == 10
+    assert m.__fields_set__ == {'a'}
+    assert m.dict() == {'a': 3.14, 'b': 10}
 
 
-def test_construct_missing():
-    m = Model.construct(dict(a='not a float'), {'a'})
-    assert m.a == 'not a float'
-    with pytest.raises(AttributeError) as exc_info:
-        print(m.b)
+def test_construct_misuse():
+    m = Model.construct({'b': 'foobar'})
+    assert m.b == 'foobar'
+    assert m.dict() == {'b': 'foobar'}
+    with pytest.raises(AttributeError, match="'Model' object has no attribute 'a'"):
+        print(m.a)
 
-    assert "'Model' object has no attribute 'b'" in exc_info.value.args[0]
+
+def test_construct_fields_set():
+    m = Model.construct({'a': 3.0, 'b': -1}, {'a'})
+    assert m.a == 3
+    assert m.b == -1
+    assert m.__fields_set__ == {'a'}
+    assert m.dict() == {'a': 3, 'b': -1}
 
 
 def test_large_any_str():
