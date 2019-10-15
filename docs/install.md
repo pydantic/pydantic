@@ -39,4 +39,11 @@ pip install pydantic[typing_extensions]
 pip install pydantic[email,typing_extensions]
 ```
 
-Of course, you can also install these requirements manually with `pip install ...`.
+Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install typing_extensions`.
+
+And if you prefer to install *pydantic* directly from the repository:
+```bash
+pip install git+git://github.com/samuelcolvin/pydantic@master#egg=pydantic
+# or with extras
+pip install git+git://github.com/samuelcolvin/pydantic@master#egg=pydantic[email,typing_extensions]
+```
