@@ -5,6 +5,7 @@ from typing import Any, Dict, Iterable, Mapping, Optional
 from .fields import ModelField
 from .main import BaseModel, Extra
 from .typing import display_as_type
+from .utils import deep_update
 
 
 class SettingsError(ValueError):
@@ -24,7 +25,7 @@ class BaseSettings(BaseModel):
         super().__init__(**__pydantic_self__._build_values(values))
 
     def _build_values(self, init_kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        return {**self._build_environ(), **init_kwargs}
+        return deep_update(self._build_environ(), init_kwargs)
 
     def _build_environ(self) -> Dict[str, Optional[str]]:
         """

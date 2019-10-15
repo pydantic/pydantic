@@ -1,5 +1,5 @@
 import os
-from typing import List, Set
+from typing import Dict, List, Set
 
 import pytest
 
@@ -46,6 +46,32 @@ def test_with_prefix(env):
     env.set('foobar_apple', 'has_prefix')
     s = Settings()
     assert s.apple == 'has_prefix'
+
+
+def test_nested_env_with_basemodel(env):
+    class TopValue(BaseModel):
+        apple: str
+        banana: str
+
+    class Settings(BaseSettings):
+        top: TopValue
+
+    with pytest.raises(ValidationError):
+        Settings()
+    env.set('top', '{"banana": "secret_value"}')
+    s = Settings(top={'apple': 'value'})
+    assert s.top == {'apple': 'value', 'banana': 'secret_value'}
+
+
+def test_nested_env_with_dict(env):
+    class Settings(BaseSettings):
+        top: Dict[str, str]
+
+    with pytest.raises(ValidationError):
+        Settings()
+    env.set('top', '{"banana": "secret_value"}')
+    s = Settings(top={'apple': 'value'})
+    assert s.top == {'apple': 'value', 'banana': 'secret_value'}
 
 
 class DateModel(BaseModel):
