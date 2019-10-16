@@ -144,8 +144,8 @@ UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
 
 class ModelMetaclass(ABCMeta):
-    @no_type_check  # noqa C901
-    def __new__(mcs, name, bases, namespace, **kwargs):
+    @no_type_check
+    def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
         fields: Dict[str, ModelField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
