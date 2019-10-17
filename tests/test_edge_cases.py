@@ -27,7 +27,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert repr(m.__fields__['v']) == "ModelField(name='v', type='Union[str, bytes]', required=True)"
+    assert repr(m.__fields__['v']) == "ModelField(name='v', type=Union[str, bytes], required=True)"
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -325,7 +325,7 @@ def test_infer_alias():
 
     assert Model(_a='different').a == 'different'
     assert repr(Model.__fields__['a']) == (
-        "ModelField(name='a', type='str', required=False, default='foobar', alias='_a')"
+        "ModelField(name='a', type=str, required=False, default='foobar', alias='_a')"
     )
 
 
@@ -1125,7 +1125,8 @@ def test_field_str_shape():
     class Model(BaseModel):
         a: List[int]
 
-    assert repr(Model.__fields__['a']) == "ModelField(name='a', type='List[int]', required=True)"
+    assert repr(Model.__fields__['a']) == "ModelField(name='a', type=List[int], required=True)"
+    assert str(Model.__fields__['a']) == "name='a' type=List[int] required=True"
 
 
 @pytest.mark.parametrize(

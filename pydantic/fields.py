@@ -24,7 +24,7 @@ from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import AnyType, Callable, ForwardRef, display_as_type, is_literal_type
-from .utils import Representation, lenient_issubclass, sequence_like
+from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 try:
@@ -619,7 +619,7 @@ class ModelField(Representation):
 
         if self.allow_none and (self.shape != SHAPE_SINGLETON or not self.sub_fields):
             t = f'Optional[{t}]'
-        return t
+        return PyObjectStr(t)
 
     def __repr_args__(self) -> 'ReprArgs':
         args = [('name', self.name), ('type', self._type_display()), ('required', self.required)]

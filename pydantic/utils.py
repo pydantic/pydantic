@@ -118,6 +118,16 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     return abs(value_1 - value_2) <= delta
 
 
+class PyObjectStr(str):
+    """
+    String class where repr doesn't include quotes. Useful with Representation when you want to return a string
+    representation of something that valid (or pseudo-valid) python.
+    """
+
+    def __repr__(self) -> str:
+        return self
+
+
 class Representation:
     """
     Mixin to provide __str__, __repr__, and __pretty__ methods. See #884 for more details.

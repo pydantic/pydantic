@@ -41,8 +41,8 @@ def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
-    assert repr(m.__fields__['a']) == "ModelField(name='a', type='float', required=True)"
-    assert repr(m.__fields__['b']) == "ModelField(name='b', type='int', required=False, default=10)"
+    assert repr(m.__fields__['a']) == "ModelField(name='a', type=float, required=True)"
+    assert repr(m.__fields__['b']) == "ModelField(name='b', type=int, required=False, default=10)"
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
     assert m.json() == '{"a": 10.2, "b": 10}'
