@@ -4,7 +4,7 @@ Cython==0.29.13;sys_platform!='win32'
 flake8==3.7.8
 flake8-quotes==2.1.0
 isort==4.3.21
-mypy==0.730
+mypy==0.740
 pycodestyle==2.5.0
 pyflakes==2.1.1
 pytest==5.2.1
