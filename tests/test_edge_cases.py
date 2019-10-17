@@ -1,4 +1,5 @@
 import re
+import sys
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
@@ -1129,6 +1130,7 @@ def test_field_str_shape():
     assert str(Model.__fields__['a']) == "name='a' type=List[int] required=True"
 
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='output slightly different for 3.6')
 @pytest.mark.parametrize(
     'type_,expected',
     [
