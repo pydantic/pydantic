@@ -86,7 +86,7 @@ and decoding.
 
 ## `model.construct()`
 
-Using the construct function, it is possible to instatiate a model without validation.
+Using the construct function, it is possible to instantiate a model without validation.
 
 Example:
 
