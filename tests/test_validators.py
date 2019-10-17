@@ -815,7 +815,7 @@ def test_root_validator_repeat():
                 return values
 
             @root_validator  # noqa: F811
-            def root_validator_repeated(cls, values):
+            def root_validator_repeated(cls, values):  # noqa: F811
                 return values
 
 
@@ -830,7 +830,7 @@ def test_root_validator_repeat2():
                 return v
 
             @root_validator(pre=True)  # noqa: F811
-            def repeat_validator(cls, values):
+            def repeat_validator(cls, values):  # noqa: F811
                 return values
 
 
