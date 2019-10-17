@@ -6,7 +6,23 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from .class_validators import ROOT_KEY
@@ -36,7 +52,15 @@ from .types import (
     conlist,
     constr,
 )
-from .typing import Literal, is_callable_type, is_literal_type, is_new_type, literal_values, new_type_supertype
+from .typing import (
+    Literal,
+    NoneType,
+    is_callable_type,
+    is_literal_type,
+    is_new_type,
+    literal_values,
+    new_type_supertype,
+)
 from .utils import lenient_issubclass
 
 if TYPE_CHECKING:
@@ -731,32 +755,59 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Ty
     :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
-    if isinstance(annotation, type):
-        attrs: Optional[Tuple[str, ...]] = None
-        constraint_func: Optional[Callable[..., type]] = None
-        if issubclass(annotation, str) and not issubclass(annotation, (EmailStr, AnyUrl, ConstrainedStr)):
-            attrs = ('max_length', 'min_length', 'regex')
-            constraint_func = constr
-        elif lenient_issubclass(annotation, numeric_types) and not issubclass(
-            annotation, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
-        ):
-            # Is numeric type
-            attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
-            numeric_type = next(t for t in numeric_types if issubclass(annotation, t))  # pragma: no branch
-            constraint_func = _map_types_constraint[numeric_type]
-        elif issubclass(annotation, ConstrainedList):
-            attrs = ('min_items', 'max_items')
-            constraint_func = conlist
-        if attrs:
-            kwargs = {
-                attr_name: attr
-                for attr_name, attr in ((attr_name, getattr(field_info, attr_name)) for attr_name in attrs)
-                if attr is not None
-            }
-            if kwargs:
-                constraint_func = cast(Callable[..., type], constraint_func)
-                return constraint_func(**kwargs)
+    item_type = get_item_type(annotation)
+    if not isinstance(item_type, type):
+        return annotation
+
+    attrs: Tuple[str, ...] = ()
+    constraint_func: Optional[Callable[..., type]] = None
+    if issubclass(item_type, str) and not issubclass(item_type, (EmailStr, AnyUrl, ConstrainedStr)):
+        attrs = ('max_length', 'min_length', 'regex')
+        constraint_func = constr
+    elif issubclass(item_type, numeric_types) and not issubclass(
+        item_type, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
+    ):
+        # Is numeric type
+        attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
+        numeric_type = next(t for t in numeric_types if issubclass(item_type, t))  # pragma: no branch
+        constraint_func = _map_types_constraint[numeric_type]
+
+    if lenient_issubclass(annotation, ConstrainedList):
+        attrs = ('min_items', 'max_items')
+        constraint_func = conlist
+
+    if attrs:
+        kwargs = {
+            attr_name: attr
+            for attr_name, attr in ((attr_name, getattr(field_info, attr_name)) for attr_name in attrs)
+            if attr is not None
+        }
+        if kwargs:
+            constraint_func = cast(Callable[..., type], constraint_func)
+            return constraint_func(**kwargs)
     return annotation
+
+
+def get_item_type(annotation: Any) -> Any:
+    if is_literal_type(annotation):
+        return None
+    origin = getattr(annotation, '__origin__', None)
+    if origin is None:
+        return annotation
+
+    args: Tuple[Any, ...] = annotation.__args__
+
+    if origin is Union:
+        if sum(a is not NoneType for a in args) == 1:  # type: ignore
+            return args[0]
+    elif issubclass(origin, Tuple):  # type: ignore
+        for i, t in enumerate(args):
+            if t is Ellipsis:
+                return args[0]
+    elif issubclass(origin, (List, Set, FrozenSet, Sequence)):
+        return args[0]
+    elif issubclass(origin, Mapping):
+        return args[1]
 
 
 class SkipField(Exception):

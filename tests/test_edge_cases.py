@@ -18,7 +18,7 @@ from pydantic import (
     validate_model,
     validator,
 )
-from pydantic.fields import Schema
+from pydantic.fields import Field, Schema
 
 
 def test_str_bytes():
@@ -1079,3 +1079,19 @@ def test_fields_deprecated():
 
     assert Model().__fields__.keys() == {'v'}
     assert Model.__fields__.keys() == {'v'}
+
+
+def test_optional_field_constraints():
+    class MyModel(BaseModel):
+        my_int: Optional[int] = Field(..., ge=3)
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyModel(my_int=2)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('my_int',),
+            'msg': 'ensure this value is greater than or equal to 3',
+            'type': 'value_error.number.not_ge',
+            'ctx': {'limit_value': 3},
+        }
+    ]

@@ -72,6 +72,7 @@ __all__ = (
     'Callable',
     'AnyCallable',
     'AnyType',
+    'NoneType',
     'display_as_type',
     'resolve_annotations',
     'is_callable_type',
@@ -96,6 +97,7 @@ __all__ = (
 
 
 AnyType = Type[Any]
+NoneType = type(None)
 
 
 def display_as_type(v: AnyType) -> str:
