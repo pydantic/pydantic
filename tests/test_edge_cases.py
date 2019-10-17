@@ -27,7 +27,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert repr(m.__fields__['v']) == "ModelField(name='v', type='typing.Union[str, bytes]', required=True)"
+    assert repr(m.__fields__['v']) == "ModelField(name='v', type='Union[str, bytes]', required=True)"
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -1119,3 +1119,32 @@ def test_alias_generator_parent():
 
     assert Child.__fields__['y'].alias == 'y2'
     assert Child.__fields__['x'].alias == 'x2'
+
+
+def test_field_str_shape():
+    class Model(BaseModel):
+        a: List[int]
+
+    assert repr(Model.__fields__['a']) == "ModelField(name='a', type='List[int]', required=True)"
+
+
+@pytest.mark.parametrize(
+    'type_,expected',
+    [
+        (int, 'int'),
+        (Optional[int], 'Optional[int]'),
+        (Union[None, int, str], 'Union[NoneType, int, str]'),
+        (Union[int, str, bytes], 'Union[int, str, bytes]'),
+        (List[int], 'List[int]'),
+        (Union[List[int], Set[bytes]], 'Union[List[int], Set[bytes]]'),
+        (List[Tuple[int, int]], 'List[Tuple[int, int]]'),
+        (Dict[int, str], 'Mapping[int, str]'),
+        (Tuple[int, ...], 'Tuple[int, ...]'),
+        (Optional[List[int]], 'Optional[List[int]]'),
+    ],
+)
+def test_field_type_display(type_, expected):
+    class Model(BaseModel):
+        a: type_
+
+    assert Model.__fields__['a']._type_display() == expected
