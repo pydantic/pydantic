@@ -125,7 +125,7 @@ class PyObjectStr(str):
     """
 
     def __repr__(self) -> str:
-        return self
+        return str(self)
 
 
 class Representation:
