@@ -5,12 +5,11 @@ def to_camel(string: str) -> str:
 
 class Voice(BaseModel):
     name: str
-    gender: str
     language_code: str
 
     class Config:
         alias_generator = to_camel
 
-voice = Voice(Name='Filiz', Gender='Female', LanguageCode='tr-TR')
+voice = Voice(Name='Filiz', LanguageCode='tr-TR')
 print(voice.language_code)
 print(voice.dict(by_alias=True))

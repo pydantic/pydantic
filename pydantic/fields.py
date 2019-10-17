@@ -263,10 +263,10 @@ class ModelField(Representation):
 
     def set_config(self, config: Type['BaseConfig']) -> None:
         self.model_config = config
-        schema_from_config = config.get_field_info(self.name)
-        if schema_from_config:
+        info_from_config = config.get_field_info(self.name)
+        if info_from_config:
             self.field_info = cast(FieldInfo, self.field_info)
-            self.field_info.alias = self.field_info.alias or schema_from_config.get('alias') or self.name
+            self.field_info.alias = info_from_config.get('alias') or self.field_info.alias or self.name
             self.alias = cast(str, self.field_info.alias)
 
     @property

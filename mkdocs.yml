@@ -29,7 +29,7 @@ nav:
   - usage/models.md
   - 'Field Types': usage/types.md
   - usage/validators.md
-  - usage/model_config.md
+  - 'Model Config': usage/model_config.md
   - usage/schema.md
   - usage/exporting_models.md
   - usage/dataclasses.md
