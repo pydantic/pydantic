@@ -12,7 +12,7 @@ class Model(BaseModel):
 
 
 def test_simple_construct():
-    m = Model.construct({'a': 3.14})
+    m = Model.construct(a=3.14)
     assert m.a == 3.14
     assert m.b == 10
     assert m.__fields_set__ == {'a'}
@@ -20,7 +20,7 @@ def test_simple_construct():
 
 
 def test_construct_misuse():
-    m = Model.construct({'b': 'foobar'})
+    m = Model.construct(b='foobar')
     assert m.b == 'foobar'
     assert m.dict() == {'b': 'foobar'}
     with pytest.raises(AttributeError, match="'Model' object has no attribute 'a'"):
@@ -28,7 +28,7 @@ def test_construct_misuse():
 
 
 def test_construct_fields_set():
-    m = Model.construct({'a': 3.0, 'b': -1}, {'a'})
+    m = Model.construct(a=3.0, b=-1, _fields_set={'a'})
     assert m.a == 3
     assert m.b == -1
     assert m.__fields_set__ == {'a'}

@@ -414,7 +414,7 @@ class BaseModel(metaclass=ModelMetaclass):
         return m
 
     @classmethod
-    def construct(cls: Type['Model'], values: 'DictAny', fields_set: Optional['SetStr'] = None) -> 'Model':
+    def construct(cls: Type['Model'], _fields_set: Optional['SetStr'] = None, **values: Any) -> 'Model':
         """
         Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
@@ -422,9 +422,9 @@ class BaseModel(metaclass=ModelMetaclass):
         defaults = {name: deepcopy(field.default) for name, field in cls.__fields__.items() if not field.required}
         m = cls.__new__(cls)
         object.__setattr__(m, '__dict__', {**defaults, **values})
-        if fields_set is None:
-            fields_set = set(values.keys())
-        object.__setattr__(m, '__fields_set__', fields_set)
+        if _fields_set is None:
+            _fields_set = set(values.keys())
+        object.__setattr__(m, '__fields_set__', _fields_set)
         return m
 
     def copy(
