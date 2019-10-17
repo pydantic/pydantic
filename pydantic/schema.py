@@ -46,6 +46,7 @@ from .types import (
     SecretBytes,
     SecretStr,
     StrictBool,
+    conbytes,
     condecimal,
     confloat,
     conint,
@@ -747,7 +748,7 @@ def encode_default(dft: Any) -> Any:
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
 
 
-def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Type[Any]:
+def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field_name: str) -> Type[Any]:
     """
     Get an annotation with validation implemented for numbers and strings based on the field_info.
 
@@ -761,9 +762,15 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Ty
 
     attrs: Tuple[str, ...] = ()
     constraint_func: Optional[Callable[..., type]] = None
-    if issubclass(item_type, str) and not issubclass(item_type, (EmailStr, AnyUrl, ConstrainedStr)):
+    if lenient_issubclass(annotation, ConstrainedList):
+        attrs = ('min_items', 'max_items')
+        constraint_func = conlist
+    elif issubclass(item_type, str) and not issubclass(item_type, (EmailStr, AnyUrl, ConstrainedStr)):
         attrs = ('max_length', 'min_length', 'regex')
         constraint_func = constr
+    elif issubclass(item_type, bytes):
+        attrs = ('max_length', 'min_length', 'regex')
+        constraint_func = conbytes
     elif issubclass(item_type, numeric_types) and not issubclass(
         item_type, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
     ):
@@ -772,9 +779,13 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Ty
         numeric_type = next(t for t in numeric_types if issubclass(item_type, t))  # pragma: no branch
         constraint_func = _map_types_constraint[numeric_type]
 
-    if lenient_issubclass(annotation, ConstrainedList):
-        attrs = ('min_items', 'max_items')
-        constraint_func = conlist
+    unused_constraints = [
+        f for f in validation_attribute_to_schema_keyword if f not in attrs and getattr(field_info, f) is not None
+    ]
+    if unused_constraints:
+        raise ValueError(
+            f'{field_name}: the following field constraints are set but not enforced: {", ".join(unused_constraints)}'
+        )
 
     if attrs:
         kwargs = {

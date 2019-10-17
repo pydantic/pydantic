@@ -248,7 +248,7 @@ class ModelField(Representation):
             field_info = FieldInfo(value, **field_info_from_config)
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
         required = value == Required
-        annotation = get_annotation_from_field_info(annotation, field_info)
+        annotation = get_annotation_from_field_info(annotation, field_info, name)
         return cls(
             name=name,
             type_=annotation,

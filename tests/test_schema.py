@@ -1092,7 +1092,7 @@ def test_dict_default():
     'kwargs,type_,expected_extra',
     [
         ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
-        ({'max_length': 5}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
+        ({}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
         ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
         ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
         ({'regex': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
@@ -1140,29 +1140,20 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'le': 5}, bool, {'type': 'boolean'}),
     ],
 )
-def test_not_constraints_schema(kwargs, type_, expected):
-    class Foo(BaseModel):
-        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
+def test_unenforced_constraints_schema(kwargs, type_, expected):
+    with pytest.raises(ValueError, match='the following field constraints are set but not enforced'):
 
-    base_schema = {
-        'title': 'Foo',
-        'type': 'object',
-        'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
-    }
-
-    base_schema['properties']['a'].update(expected)
-    assert Foo.schema() == base_schema
+        class Foo(BaseModel):
+            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
 @pytest.mark.parametrize(
     'kwargs,type_,value',
     [
         ({'max_length': 5}, str, 'foo'),
-        ({'max_length': 5}, constr(max_length=6), 'foo'),
         ({'min_length': 2}, str, 'foo'),
         ({'max_length': 5}, bytes, b'foo'),
         ({'regex': '^foo$'}, str, 'foo'),
-        ({'max_length': 5}, bool, True),
         ({'gt': 2}, int, 3),
         ({'lt': 5}, int, 3),
         ({'ge': 2}, int, 3),
