@@ -607,7 +607,7 @@ class ModelField(Representation):
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
-    def _type_display(self) -> str:
+    def _type_display(self) -> PyObjectStr:
         t = display_as_type(self.type_)
 
         if self.shape == SHAPE_MAPPING:
