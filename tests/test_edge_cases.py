@@ -1081,6 +1081,46 @@ def test_fields_deprecated():
     assert Model.__fields__.keys() == {'v'}
 
 
+def test_alias_child_precedence():
+    class Parent(BaseModel):
+        x: int
+
+        class Config:
+            fields = {'x': 'x1'}
+
+    class Child(Parent):
+        y: int
+
+        class Config:
+            fields = {'y': 'y2', 'x': 'x2'}
+
+    assert Child.__fields__['y'].alias == 'y2'
+    assert Child.__fields__['x'].alias == 'x2'
+
+
+def test_alias_generator_parent():
+    class Parent(BaseModel):
+        x: int
+
+        class Config:
+            allow_population_by_field_name = True
+
+            @classmethod
+            def alias_generator(cls, f_name):
+                return f_name + '1'
+
+    class Child(Parent):
+        y: int
+
+        class Config:
+            @classmethod
+            def alias_generator(cls, f_name):
+                return f_name + '2'
+
+    assert Child.__fields__['y'].alias == 'y2'
+    assert Child.__fields__['x'].alias == 'x2'
+
+
 def test_optional_field_constraints():
     class MyModel(BaseModel):
         my_int: Optional[int] = Field(..., ge=3)
