@@ -60,6 +60,7 @@ from .types import (
     condecimal,
     confloat,
     conint,
+    conlist,
     constr,
 )
 from .typing import (
@@ -368,6 +369,9 @@ def get_long_model_name(model: Type['BaseModel']) -> str:
     return f'{model.__module__}__{model.__name__}'.replace('.', '__')
 
 
+validation_attribute_to_schema_keyword = {'min_items': 'minItems', 'max_items': 'maxItems'}
+
+
 def field_type_schema(
     field: ModelField,
     *,
@@ -386,20 +390,20 @@ def field_type_schema(
     definitions = {}
     nested_models: Set[str] = set()
     ref_prefix = ref_prefix or default_prefix
-    if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE}:
+    if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET}:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
-        return {'type': 'array', 'items': f_schema}, definitions, nested_models
-    elif field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
-        f_schema, f_definitions, f_nested_models = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
-        )
-        definitions.update(f_definitions)
-        nested_models.update(f_nested_models)
-        return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions, nested_models
+        s = {'type': 'array', 'items': f_schema}
+        if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
+            s['uniqueItems'] = True
+        if field.field_info.min_items is not None:
+            s['minItems'] = field.field_info.min_items
+        if field.field_info.max_items is not None:
+            s['maxItems'] = field.field_info.max_items
+        return s, definitions, nested_models
     elif field.shape == SHAPE_MAPPING:
         dict_schema: Dict[str, Any] = {'type': 'object'}
         key_field = cast(ModelField, field.key_field)
@@ -755,6 +759,18 @@ def encode_default(dft: Any) -> Any:
 
 
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
+_field_constraints = {
+    'min_length',
+    'max_length',
+    'regex',
+    'gt',
+    'lt',
+    'ge',
+    'le',
+    'multiple_of',
+    'min_items',
+    'max_items',
+}
 
 
 def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field_name: str) -> Type[Any]:  # noqa: C901
@@ -766,9 +782,9 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
     :param field_name: name of the field for use in error messages
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
-    constraints = {f for f in validation_attribute_to_schema_keyword if getattr(field_info, f) is not None}
-    if not constraints:
-        return annotation
+    constraints = {f for f in _field_constraints if getattr(field_info, f) is not None}
+    # if not constraints:
+    #     return annotation
     used_constraints: Set[str] = set()
 
     def go(type_: Any) -> Type[Any]:
@@ -784,10 +800,9 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
             if origin is Union:
                 return Union[tuple(go(a) for a in args)]
 
-            # conlist isn't working properly with schema #913
-            # if issubclass(origin, List):
-            #     used_constraints.update({'min_items', 'max_items'})
-            #     return conlist(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+            if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
+                used_constraints.update({'min_items', 'max_items'})
+                return conlist(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
 
             for t in (Tuple, List, Set, FrozenSet, Sequence):
                 if issubclass(origin, t):  # type: ignore
