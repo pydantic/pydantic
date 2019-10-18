@@ -60,7 +60,6 @@ from .types import (
     condecimal,
     confloat,
     conint,
-    conlist,
     constr,
 )
 from .typing import (
@@ -801,6 +800,7 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
             if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
                 used_constraints.update({'min_items', 'max_items'})
                 return conlist(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+
 
             for t in (Tuple, List, Set, FrozenSet, Sequence):
                 if issubclass(origin, t):  # type: ignore
