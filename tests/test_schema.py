@@ -11,7 +11,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, ValidationError, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, conlist, validator
 from pydantic.color import Color
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
@@ -1128,19 +1128,22 @@ def test_constraints_schema(kwargs, type_, expected_extra):
 
 
 @pytest.mark.parametrize(
-    'kwargs,type_,expected',
+    'kwargs,type_',
     [
-        ({'max_length': 5}, int, {'type': 'integer'}),
-        ({'min_length': 2}, float, {'type': 'number'}),
-        ({'max_length': 5}, Decimal, {'type': 'number'}),
-        ({'regex': '^foo$'}, int, {'type': 'integer'}),
-        ({'gt': 2}, str, {'type': 'string'}),
-        ({'lt': 5}, bytes, {'type': 'string', 'format': 'binary'}),
-        ({'ge': 2}, str, {'type': 'string'}),
-        ({'le': 5}, bool, {'type': 'boolean'}),
+        ({'max_length': 5}, int),
+        ({'min_length': 2}, float),
+        ({'max_length': 5}, Decimal),
+        ({'regex': '^foo$'}, int),
+        ({'gt': 2}, str),
+        ({'lt': 5}, bytes),
+        ({'ge': 2}, str),
+        ({'le': 5}, bool),
+        ({'gt': 0}, Callable),
+        ({'gt': 0}, Callable[[int], int]),
+        ({'gt': 0}, conlist(int, min_items=4)),
     ],
 )
-def test_unenforced_constraints_schema(kwargs, type_, expected):
+def test_unenforced_constraints_schema(kwargs, type_):
     with pytest.raises(ValueError, match='On field "a" the following field constraints are set but not enforced'):
 
         class Foo(BaseModel):

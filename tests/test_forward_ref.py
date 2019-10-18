@@ -419,3 +419,23 @@ Owner.update_forward_refs()
             },
         },
     }
+
+
+def test_forward_ref_with_field(create_module):
+    module = create_module(
+        """
+from typing import List
+from pydantic import BaseModel, Field
+from pydantic.typing import ForwardRef
+
+Foo = ForwardRef('Foo')
+
+try:
+    class Foo(BaseModel):
+        c: List[Foo] = Field(..., gt=0)
+except ValueError:
+    pass
+else:
+    raise AssertionError('error not raised')
+    """
+    )

@@ -784,7 +784,7 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
             if origin is Union:
                 return Union[tuple(go(a) for a in args)]
 
-            # conlist isn't working properly with schema
+            # conlist isn't working properly with schema #913
             # if issubclass(origin, List):
             #     used_constraints.update({'min_items', 'max_items'})
             #     return conlist(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
