@@ -830,7 +830,9 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
     unused_constraints = constraints - used_constraints
     if unused_constraints:
         raise ValueError(
-            f'{field_name}: the following field constraints are set but not enforced: {", ".join(unused_constraints)}.'
+            f'On field "{field_name}" the following field constraints are set but not enforced: '
+            f'{", ".join(unused_constraints)}. '
+            f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
         )
 
     return ans

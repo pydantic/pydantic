@@ -1141,7 +1141,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
     ],
 )
 def test_unenforced_constraints_schema(kwargs, type_, expected):
-    with pytest.raises(ValueError, match='the following field constraints are set but not enforced'):
+    with pytest.raises(ValueError, match='On field "a" the following field constraints are set but not enforced'):
 
         class Foo(BaseModel):
             a: type_ = Field('foo', title='A title', description='A description', **kwargs)

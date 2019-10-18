@@ -66,16 +66,27 @@ It has the following arguments:
   JSON Schema
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
   annotation of `pattern` to the JSON Schema
-* `**` (variadic keyword arguments) any other keyword arguments (e.g. `examples`) will be added 
-  verbatim to the field's schema
+* `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used
 to set all of the arguments above except `default`.
+
+### Unenforced Field constraints
+
+If *pydantic* finds constraints which are not being enforced, an error will be raised. If you want to force the 
+constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
+to `Field()` with the raw schema attribute name:
+
+```py
+{!.tmp_examples/unenforced_constraints.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ## JSON Schema Types
 
 Types, custom field types, and constraints (like `max_length`) are mapped to the corresponding spec formats in the
 following priority order (when there is an equivalent available):
+
 1. [JSON Schema Core](http://json-schema.org/latest/json-schema-core.html#rfc.section.4.3.1)
 2. [JSON Schema Validation](http://json-schema.org/latest/json-schema-validation.html)
 3. [OpenAPI Data Types](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types)
