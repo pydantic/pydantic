@@ -237,7 +237,7 @@ _(This script is complete, it should run "as is")_
 *Pydantic* also allows the ability to turn off model validation:
 
 ```py
-{!.tmp_examples/parse.py!}
+{!.tmp_examples/ex_construct.py!}
 ```
 _(This script is complete, it should run "as is")_
 
