@@ -1501,25 +1501,66 @@ def test_model_with_extra_forbidden():
     }
 
 
-def test_phony_constraint():
-    with pytest.raises(ValueError, match='foo: the following field constraints are set but not enforced: gt'):
+@pytest.mark.parametrize(
+    'annotation,kwargs,field_schema',
+    [
+        (int, dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (Optional[int], dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (
+            Tuple[int, ...],
+            dict(gt=0),
+            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+        ),
+        (
+            Tuple[int, int, int],
+            dict(gt=0),
+            {
+                'title': 'A',
+                'type': 'array',
+                'items': [
+                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                ],
+            },
+        ),
+        (
+            Union[int, float],
+            dict(gt=0),
+            {
+                'title': 'A',
+                'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'exclusiveMinimum': 0, 'type': 'number'}],
+            },
+        ),
+        (
+            List[int],
+            dict(gt=0),
+            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+        ),
+        (
+            Dict[str, int],
+            dict(gt=0),
+            {
+                'title': 'A',
+                'exclusiveMinimum': 0,
+                'type': 'object',
+                'additionalProperties': {'exclusiveMinimum': 0, 'type': 'integer'},
+            },
+        ),
+        (
+            Union[str, int],
+            dict(gt=0, max_length=5),
+            {'title': 'A', 'anyOf': [{'maxLength': 5, 'type': 'string'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
+        ),
+    ],
+)
+def test_enforced_constraints(annotation, kwargs, field_schema):
+    class Model(BaseModel):
+        a: annotation = Field(..., **kwargs)
 
-        class BadModel(BaseModel):
-            foo: Union[int, float] = Field(..., gt=123)
-
-    class GoodModel(BaseModel):
-        foo: Union[int, float] = Field(..., exclusiveMinimum=123)
-
-    assert GoodModel(foo=122).dict() == {'foo': 122}
-
-    assert GoodModel.schema() == {
-        'title': 'GoodModel',
-        'type': 'object',
-        'properties': {
-            'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'anyOf': [{'type': 'integer'}, {'type': 'number'}]}
-        },
-        'required': ['foo'],
-    }
+    schema = Model.schema()
+    debug(schema['properties']['a'])
+    assert schema['properties']['a'] == field_schema
 
 
 def test_real_vs_phony_constraints():

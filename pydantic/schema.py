@@ -13,7 +13,6 @@ from typing import (
     Dict,
     FrozenSet,
     List,
-    Mapping,
     Optional,
     Sequence,
     Set,
@@ -27,7 +26,18 @@ from uuid import UUID
 
 from .class_validators import ROOT_KEY
 from .color import Color
-from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, FieldInfo, ModelField
+from .fields import (
+    SHAPE_FROZENSET,
+    SHAPE_LIST,
+    SHAPE_MAPPING,
+    SHAPE_SEQUENCE,
+    SHAPE_SET,
+    SHAPE_SINGLETON,
+    SHAPE_TUPLE,
+    SHAPE_TUPLE_ELLIPSIS,
+    FieldInfo,
+    ModelField,
+)
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from .types import (
@@ -54,8 +64,8 @@ from .types import (
     constr,
 )
 from .typing import (
+    ForwardRef,
     Literal,
-    NoneType,
     is_callable_type,
     is_literal_type,
     is_new_type,
@@ -377,14 +387,14 @@ def field_type_schema(
     definitions = {}
     nested_models: Set[str] = set()
     ref_prefix = ref_prefix or default_prefix
-    if field.shape == SHAPE_LIST:
+    if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE}:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
         return {'type': 'array', 'items': f_schema}, definitions, nested_models
-    elif field.shape == SHAPE_SET:
+    elif field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
@@ -748,76 +758,83 @@ def encode_default(dft: Any) -> Any:
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
 
 
-def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field_name: str) -> Type[Any]:
+def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field_name: str) -> Type[Any]:  # noqa: C901
     """
     Get an annotation with validation implemented for numbers and strings based on the field_info.
 
     :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
     :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
+    :param field_name: name of the field for use in error messages
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
-    item_type = get_item_type(annotation)
+    constraints = {f for f in validation_attribute_to_schema_keyword if getattr(field_info, f) is not None}
+    if not constraints:
+        return annotation
+    used_constraints: Set[str] = set()
 
-    attrs: Tuple[str, ...] = ()
-    constraint_func: Optional[Callable[..., type]] = None
-    if isinstance(item_type, type):
-        if lenient_issubclass(annotation, ConstrainedList):
-            attrs = ('min_items', 'max_items')
-            constraint_func = conlist
-        elif issubclass(item_type, str) and not issubclass(item_type, (EmailStr, AnyUrl, ConstrainedStr)):
-            attrs = ('max_length', 'min_length', 'regex')
-            constraint_func = constr
-        elif issubclass(item_type, bytes):
-            attrs = ('max_length', 'min_length', 'regex')
-            constraint_func = conbytes
-        elif issubclass(item_type, numeric_types) and not issubclass(
-            item_type, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
-        ):
-            # Is numeric type
-            attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
-            numeric_type = next(t for t in numeric_types if issubclass(item_type, t))  # pragma: no branch
-            constraint_func = _map_types_constraint[numeric_type]
+    def go(type_: Any) -> Type[Any]:
+        if is_literal_type(annotation) or isinstance(type_, ForwardRef) or lenient_issubclass(type_, ConstrainedList):
+            return type_
+        origin = getattr(type_, '__origin__', None)
+        if origin is not None:
+            args: Tuple[Any, ...] = type_.__args__
+            if any(isinstance(a, ForwardRef) for a in args):
+                # forward refs cause infinite recursion below
+                return type_
 
-    unused_constraints = [
-        f for f in validation_attribute_to_schema_keyword if f not in attrs and getattr(field_info, f) is not None
-    ]
+            if origin is Union:
+                return Union[tuple(go(a) for a in args)]
+
+            # conlist isn't working properly with schema
+            # if issubclass(origin, List):
+            #     used_constraints.update({'min_items', 'max_items'})
+            #     return conlist(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+
+            for t in (Tuple, List, Set, FrozenSet, Sequence):
+                if issubclass(origin, t):  # type: ignore
+                    return t[tuple(go(a) for a in args)]  # type: ignore
+
+            if issubclass(origin, Dict):
+                return Dict[args[0], go(args[1])]  # type: ignore
+
+        attrs: Optional[Tuple[str, ...]] = None
+        constraint_func: Optional[Callable[..., type]] = None
+        if isinstance(type_, type):
+            if issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
+                attrs = ('max_length', 'min_length', 'regex')
+                constraint_func = constr
+            elif issubclass(type_, bytes):
+                attrs = ('max_length', 'min_length', 'regex')
+                constraint_func = conbytes
+            elif issubclass(type_, numeric_types) and not issubclass(
+                type_, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
+            ):
+                # Is numeric type
+                attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
+                numeric_type = next(t for t in numeric_types if issubclass(type_, t))  # pragma: no branch
+                constraint_func = _map_types_constraint[numeric_type]
+
+        if attrs:
+            used_constraints.update(set(attrs))
+            kwargs = {
+                attr_name: attr
+                for attr_name, attr in ((attr_name, getattr(field_info, attr_name)) for attr_name in attrs)
+                if attr is not None
+            }
+            if kwargs:
+                constraint_func = cast(Callable[..., type], constraint_func)
+                return constraint_func(**kwargs)
+        return type_
+
+    ans = go(annotation)
+
+    unused_constraints = constraints - used_constraints
     if unused_constraints:
         raise ValueError(
-            f'{field_name}: the following field constraints are set but not enforced: {", ".join(unused_constraints)}'
+            f'{field_name}: the following field constraints are set but not enforced: {", ".join(unused_constraints)}.'
         )
 
-    if attrs:
-        kwargs = {
-            attr_name: attr
-            for attr_name, attr in ((attr_name, getattr(field_info, attr_name)) for attr_name in attrs)
-            if attr is not None
-        }
-        if kwargs:
-            constraint_func = cast(Callable[..., type], constraint_func)
-            return constraint_func(**kwargs)
-    return annotation
-
-
-def get_item_type(annotation: Any) -> Any:
-    if is_literal_type(annotation):
-        return None
-    origin = getattr(annotation, '__origin__', None)
-    if origin is None:
-        return annotation
-
-    args: Tuple[Any, ...] = annotation.__args__
-
-    if origin is Union:
-        if sum(a is not NoneType for a in args) == 1:  # type: ignore
-            return args[0]
-    elif issubclass(origin, Tuple):  # type: ignore
-        for i, t in enumerate(args):
-            if t is Ellipsis:
-                return args[0]
-    elif issubclass(origin, (List, Set, FrozenSet, Sequence)):
-        return args[0]
-    elif issubclass(origin, Mapping):
-        return args[1]
+    return ans
 
 
 class SkipField(Exception):
