@@ -630,6 +630,8 @@ The value of numerous common types can be restricted using `con*` type functions
 ```
 _(This script is complete, it should run "as is")_
 
+Where `Field` refers to the [field function](schema.md#field-customisation).
+
 ## Strict Types
 
 You can use the `StrictStr`, `StrictInt`, `StrictFloat`, and `StrictBool` types

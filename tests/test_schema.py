@@ -11,7 +11,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, ValidationError, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, conlist, validator
 from pydantic.color import Color
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
@@ -1092,7 +1092,7 @@ def test_dict_default():
     'kwargs,type_,expected_extra',
     [
         ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
-        ({'max_length': 5}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
+        ({}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
         ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
         ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
         ({'regex': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
@@ -1128,41 +1128,35 @@ def test_constraints_schema(kwargs, type_, expected_extra):
 
 
 @pytest.mark.parametrize(
-    'kwargs,type_,expected',
+    'kwargs,type_',
     [
-        ({'max_length': 5}, int, {'type': 'integer'}),
-        ({'min_length': 2}, float, {'type': 'number'}),
-        ({'max_length': 5}, Decimal, {'type': 'number'}),
-        ({'regex': '^foo$'}, int, {'type': 'integer'}),
-        ({'gt': 2}, str, {'type': 'string'}),
-        ({'lt': 5}, bytes, {'type': 'string', 'format': 'binary'}),
-        ({'ge': 2}, str, {'type': 'string'}),
-        ({'le': 5}, bool, {'type': 'boolean'}),
+        ({'max_length': 5}, int),
+        ({'min_length': 2}, float),
+        ({'max_length': 5}, Decimal),
+        ({'regex': '^foo$'}, int),
+        ({'gt': 2}, str),
+        ({'lt': 5}, bytes),
+        ({'ge': 2}, str),
+        ({'le': 5}, bool),
+        ({'gt': 0}, Callable),
+        ({'gt': 0}, Callable[[int], int]),
+        ({'gt': 0}, conlist(int, min_items=4)),
     ],
 )
-def test_not_constraints_schema(kwargs, type_, expected):
-    class Foo(BaseModel):
-        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
+def test_unenforced_constraints_schema(kwargs, type_):
+    with pytest.raises(ValueError, match='On field "a" the following field constraints are set but not enforced'):
 
-    base_schema = {
-        'title': 'Foo',
-        'type': 'object',
-        'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
-    }
-
-    base_schema['properties']['a'].update(expected)
-    assert Foo.schema() == base_schema
+        class Foo(BaseModel):
+            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
 @pytest.mark.parametrize(
     'kwargs,type_,value',
     [
         ({'max_length': 5}, str, 'foo'),
-        ({'max_length': 5}, constr(max_length=6), 'foo'),
         ({'min_length': 2}, str, 'foo'),
         ({'max_length': 5}, bytes, b'foo'),
         ({'regex': '^foo$'}, str, 'foo'),
-        ({'max_length': 5}, bool, True),
         ({'gt': 2}, int, 3),
         ({'lt': 5}, int, 3),
         ({'ge': 2}, int, 3),
@@ -1508,3 +1502,95 @@ def test_model_with_extra_forbidden():
         'required': ['a'],
         'additionalProperties': False,
     }
+
+
+@pytest.mark.parametrize(
+    'annotation,kwargs,field_schema',
+    [
+        (int, dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (Optional[int], dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (
+            Tuple[int, ...],
+            dict(gt=0),
+            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+        ),
+        (
+            Tuple[int, int, int],
+            dict(gt=0),
+            {
+                'title': 'A',
+                'type': 'array',
+                'items': [
+                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                ],
+            },
+        ),
+        (
+            Union[int, float],
+            dict(gt=0),
+            {
+                'title': 'A',
+                'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'exclusiveMinimum': 0, 'type': 'number'}],
+            },
+        ),
+        (
+            List[int],
+            dict(gt=0),
+            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+        ),
+        (
+            Dict[str, int],
+            dict(gt=0),
+            {
+                'title': 'A',
+                'exclusiveMinimum': 0,
+                'type': 'object',
+                'additionalProperties': {'exclusiveMinimum': 0, 'type': 'integer'},
+            },
+        ),
+        (
+            Union[str, int],
+            dict(gt=0, max_length=5),
+            {'title': 'A', 'anyOf': [{'maxLength': 5, 'type': 'string'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
+        ),
+    ],
+)
+def test_enforced_constraints(annotation, kwargs, field_schema):
+    class Model(BaseModel):
+        a: annotation = Field(..., **kwargs)
+
+    schema = Model.schema()
+    # debug(schema['properties']['a'])
+    assert schema['properties']['a'] == field_schema
+
+
+def test_real_vs_phony_constraints():
+    class Model1(BaseModel):
+        foo: int = Field(..., gt=123)
+
+        class Config:
+            title = 'Test Model'
+
+    class Model2(BaseModel):
+        foo: int = Field(..., exclusiveMinimum=123)
+
+        class Config:
+            title = 'Test Model'
+
+    with pytest.raises(ValidationError, match='ensure this value is greater than 123'):
+        Model1(foo=122)
+
+    assert Model2(foo=122).dict() == {'foo': 122}
+
+    assert (
+        Model1.schema()
+        == Model2.schema()
+        == {
+            'title': 'Test Model',
+            'type': 'object',
+            'properties': {'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'type': 'integer'}},
+            'required': ['foo'],
+        }
+    )

@@ -23,7 +23,7 @@ from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
-from .typing import AnyType, Callable, ForwardRef, display_as_type, is_literal_type
+from .typing import AnyType, Callable, ForwardRef, NoneType, display_as_type, is_literal_type
 from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
@@ -33,7 +33,6 @@ except ImportError:
     Literal = None  # type: ignore
 
 Required: Any = Ellipsis
-NoneType = type(None)
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorsList  # noqa: F401
@@ -256,7 +255,7 @@ class ModelField(Representation):
             field_info = FieldInfo(value, **field_info_from_config)
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
         required = value == Required
-        annotation = get_annotation_from_field_info(annotation, field_info)
+        annotation = get_annotation_from_field_info(annotation, field_info, name)
         return cls(
             name=name,
             type_=annotation,
