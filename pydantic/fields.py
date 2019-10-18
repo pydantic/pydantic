@@ -24,7 +24,7 @@ from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import AnyType, Callable, ForwardRef, NoneType, display_as_type, is_literal_type
-from .utils import Representation, lenient_issubclass, sequence_like
+from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 try:
@@ -169,6 +169,13 @@ SHAPE_TUPLE = 5
 SHAPE_TUPLE_ELLIPSIS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
+SHAPE_NAME_LOOKUP = {
+    SHAPE_LIST: 'List[{}]',
+    SHAPE_SET: 'Set[{}]',
+    SHAPE_TUPLE_ELLIPSIS: 'Tuple[{}, ...]',
+    SHAPE_SEQUENCE: 'Sequence[{}]',
+    SHAPE_FROZENSET: 'FrozenSet[{}]',
+}
 
 
 class ModelField(Representation):
@@ -599,8 +606,22 @@ class ModelField(Representation):
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
+    def _type_display(self) -> PyObjectStr:
+        t = display_as_type(self.type_)
+
+        if self.shape == SHAPE_MAPPING:
+            t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
+        elif self.shape == SHAPE_TUPLE:
+            t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
+        elif self.shape != SHAPE_SINGLETON:
+            t = SHAPE_NAME_LOOKUP[self.shape].format(t)
+
+        if self.allow_none and (self.shape != SHAPE_SINGLETON or not self.sub_fields):
+            t = f'Optional[{t}]'
+        return PyObjectStr(t)
+
     def __repr_args__(self) -> 'ReprArgs':
-        args = [('name', self.name), ('type', display_as_type(self.type_)), ('required', self.required)]
+        args = [('name', self.name), ('type', self._type_display()), ('required', self.required)]
 
         if not self.required:
             args.append(('default', self.default))
