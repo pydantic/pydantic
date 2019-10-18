@@ -393,13 +393,14 @@ def field_type_schema(
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
-        s = {'type': 'array', 'items': f_schema}
+        s: Dict[str, Any] = {'type': 'array', 'items': f_schema}
         if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
             s['uniqueItems'] = True
-        if field.field_info.min_items is not None:
-            s['minItems'] = field.field_info.min_items
-        if field.field_info.max_items is not None:
-            s['maxItems'] = field.field_info.max_items
+        field_info = cast(FieldInfo, field.field_info)
+        if field_info.min_items is not None:
+            s['minItems'] = field_info.min_items
+        if field_info.max_items is not None:
+            s['maxItems'] = field_info.max_items
         return s, definitions, nested_models
     elif field.shape == SHAPE_MAPPING:
         dict_schema: Dict[str, Any] = {'type': 'object'}
