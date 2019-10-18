@@ -422,7 +422,7 @@ Owner.update_forward_refs()
 
 
 def test_forward_ref_with_field(create_module):
-    module = create_module(
+    create_module(
         """
 from typing import List
 from pydantic import BaseModel, Field
