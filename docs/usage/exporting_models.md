@@ -84,17 +84,6 @@ as an optional alternative which implements ISO 8601 time diff encoding.
 See [below](#custom-json-deserialisation) for details on how to use other libraries for more performant JSON encoding
 and decoding.
 
-## `model.construct()`
-
-Using the construct function, it is possible to instantiate a model without validation.
-
-Example:
-
-```py
-{!.tmp_examples/ex_construct.py!}
-```
-_(This script is complete, it should run "as is")_
-
 ## `pickle.dumps(model)`
 
 Using the same plumbing as `copy()`, *pydantic* models support efficient pickling and unpickling.
