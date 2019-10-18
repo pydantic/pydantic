@@ -1499,3 +1499,54 @@ def test_model_with_extra_forbidden():
         'required': ['a'],
         'additionalProperties': False,
     }
+
+
+def test_phony_constraint():
+    with pytest.raises(ValueError, match='foo: the following field constraints are set but not enforced: gt'):
+
+        class BadModel(BaseModel):
+            foo: Union[int, float] = Field(..., gt=123)
+
+    class GoodModel(BaseModel):
+        foo: Union[int, float] = Field(..., exclusiveMinimum=123)
+
+    assert GoodModel(foo=122).dict() == {'foo': 122}
+
+    assert GoodModel.schema() == {
+        'title': 'GoodModel',
+        'type': 'object',
+        'properties': {
+            'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'anyOf': [{'type': 'integer'}, {'type': 'number'}]}
+        },
+        'required': ['foo'],
+    }
+
+
+def test_real_vs_phony_constraints():
+    class Model1(BaseModel):
+        foo: int = Field(..., gt=123)
+
+        class Config:
+            title = 'Test Model'
+
+    class Model2(BaseModel):
+        foo: int = Field(..., exclusiveMinimum=123)
+
+        class Config:
+            title = 'Test Model'
+
+    with pytest.raises(ValidationError, match='ensure this value is greater than 123'):
+        Model1(foo=122)
+
+    assert Model2(foo=122).dict() == {'foo': 122}
+
+    assert (
+        Model1.schema()
+        == Model2.schema()
+        == {
+            'title': 'Test Model',
+            'type': 'object',
+            'properties': {'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'type': 'integer'}},
+            'required': ['foo'],
+        }
+    )

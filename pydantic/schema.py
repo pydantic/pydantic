@@ -757,27 +757,26 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
     item_type = get_item_type(annotation)
-    if not isinstance(item_type, type):
-        return annotation
 
     attrs: Tuple[str, ...] = ()
     constraint_func: Optional[Callable[..., type]] = None
-    if lenient_issubclass(annotation, ConstrainedList):
-        attrs = ('min_items', 'max_items')
-        constraint_func = conlist
-    elif issubclass(item_type, str) and not issubclass(item_type, (EmailStr, AnyUrl, ConstrainedStr)):
-        attrs = ('max_length', 'min_length', 'regex')
-        constraint_func = constr
-    elif issubclass(item_type, bytes):
-        attrs = ('max_length', 'min_length', 'regex')
-        constraint_func = conbytes
-    elif issubclass(item_type, numeric_types) and not issubclass(
-        item_type, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
-    ):
-        # Is numeric type
-        attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
-        numeric_type = next(t for t in numeric_types if issubclass(item_type, t))  # pragma: no branch
-        constraint_func = _map_types_constraint[numeric_type]
+    if isinstance(item_type, type):
+        if lenient_issubclass(annotation, ConstrainedList):
+            attrs = ('min_items', 'max_items')
+            constraint_func = conlist
+        elif issubclass(item_type, str) and not issubclass(item_type, (EmailStr, AnyUrl, ConstrainedStr)):
+            attrs = ('max_length', 'min_length', 'regex')
+            constraint_func = constr
+        elif issubclass(item_type, bytes):
+            attrs = ('max_length', 'min_length', 'regex')
+            constraint_func = conbytes
+        elif issubclass(item_type, numeric_types) and not issubclass(
+            item_type, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
+        ):
+            # Is numeric type
+            attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
+            numeric_type = next(t for t in numeric_types if issubclass(item_type, t))  # pragma: no branch
+            constraint_func = _map_types_constraint[numeric_type]
 
     unused_constraints = [
         f for f in validation_attribute_to_schema_keyword if f not in attrs and getattr(field_info, f) is not None
