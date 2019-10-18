@@ -32,9 +32,7 @@ def test_import_no_attr():
     assert exc_info.value.args[0] == 'Module "os" does not define a "foobar" attribute'
 
 
-@pytest.mark.parametrize(
-    'value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'typing.Union[str, int]'))
-)
+@pytest.mark.parametrize('value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'Union[str, int]')))
 def test_display_as_type(value, expected):
     assert display_as_type(value) == expected
 

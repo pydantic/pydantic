@@ -1,4 +1,5 @@
 import re
+import sys
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
@@ -27,7 +28,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert repr(m.__fields__['v']) == "ModelField(name='v', type='typing.Union[str, bytes]', required=True)"
+    assert repr(m.__fields__['v']) == "ModelField(name='v', type=Union[str, bytes], required=True)"
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -325,7 +326,7 @@ def test_infer_alias():
 
     assert Model(_a='different').a == 'different'
     assert repr(Model.__fields__['a']) == (
-        "ModelField(name='a', type='str', required=False, default='foobar', alias='_a')"
+        "ModelField(name='a', type=str, required=False, default='foobar', alias='_a')"
     )
 
 
@@ -1119,3 +1120,35 @@ def test_alias_generator_parent():
 
     assert Child.__fields__['y'].alias == 'y2'
     assert Child.__fields__['x'].alias == 'x2'
+
+
+def test_field_str_shape():
+    class Model(BaseModel):
+        a: List[int]
+
+    assert repr(Model.__fields__['a']) == "ModelField(name='a', type=List[int], required=True)"
+    assert str(Model.__fields__['a']) == "name='a' type=List[int] required=True"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='output slightly different for 3.6')
+@pytest.mark.parametrize(
+    'type_,expected',
+    [
+        (int, 'int'),
+        (Optional[int], 'Optional[int]'),
+        (Union[None, int, str], 'Union[NoneType, int, str]'),
+        (Union[int, str, bytes], 'Union[int, str, bytes]'),
+        (List[int], 'List[int]'),
+        (Tuple[int, str, bytes], 'Tuple[int, str, bytes]'),
+        (Union[List[int], Set[bytes]], 'Union[List[int], Set[bytes]]'),
+        (List[Tuple[int, int]], 'List[Tuple[int, int]]'),
+        (Dict[int, str], 'Mapping[int, str]'),
+        (Tuple[int, ...], 'Tuple[int, ...]'),
+        (Optional[List[int]], 'Optional[List[int]]'),
+    ],
+)
+def test_field_type_display(type_, expected):
+    class Model(BaseModel):
+        a: type_
+
+    assert Model.__fields__['a']._type_display() == expected
