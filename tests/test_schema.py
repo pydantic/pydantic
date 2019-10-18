@@ -1559,7 +1559,7 @@ def test_enforced_constraints(annotation, kwargs, field_schema):
         a: annotation = Field(..., **kwargs)
 
     schema = Model.schema()
-    debug(schema['properties']['a'])
+    # debug(schema['properties']['a'])
     assert schema['properties']['a'] == field_schema
 
 
