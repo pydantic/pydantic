@@ -369,9 +369,6 @@ def get_long_model_name(model: Type['BaseModel']) -> str:
     return f'{model.__module__}__{model.__name__}'.replace('.', '__')
 
 
-validation_attribute_to_schema_keyword = {'min_items': 'minItems', 'max_items': 'maxItems'}
-
-
 def field_type_schema(
     field: ModelField,
     *,
@@ -783,8 +780,8 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
     constraints = {f for f in _field_constraints if getattr(field_info, f) is not None}
-    # if not constraints:
-    #     return annotation
+    if not constraints:
+        return annotation
     used_constraints: Set[str] = set()
 
     def go(type_: Any) -> Type[Any]:
