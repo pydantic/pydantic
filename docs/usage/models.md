@@ -234,6 +234,17 @@ _(This script is complete, it should run "as is")_
     Because it can result in arbitrary code execution, as a security measure, you need
     to explicitly pass `allow_pickle` to the parsing function in order to load `pickle` data.
 
+*Pydantic* also allows the ability to turn off model validation:
+
+```py
+{!.tmp_examples/ex_construct.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! warning
+    Not validating the models can allow for errors. The user must ensure that the data is valid at the time
+    that it is passed into the model.
+
 ## Generic Models
 
 !!! note

@@ -1,0 +1,1 @@
+Add example for construct function
