@@ -60,6 +60,7 @@ from .types import (
     condecimal,
     confloat,
     conint,
+    Conlist,
     constr,
 )
 from .typing import (
