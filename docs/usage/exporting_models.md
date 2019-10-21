@@ -10,7 +10,7 @@ Arguments:
 * `include`: fields to include in the returned dictionary; see [below](#advanced-include-exclude)
 * `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-exclude)
 * `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
-* `skip_defaults`: whether fields which were not explicitly set when creating the model should
+* `exclude_unset`: whether fields which were not explicitly set when creating the model should
   be excluded from the returned dictionary; default `False`
 
 Example:
@@ -65,7 +65,7 @@ Arguments:
 * `include`: fields to include in the returned dictionary; see [below](#advanced-include-exclude)
 * `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-exclude)
 * `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
-* `skip_defaults`: whether fields which were not set when creating the model and have their default values should
+* `exclude_unset`: whether fields which were not set when creating the model and have their default values should
   be excluded from the returned dictionary; default `False`
 * `encoder`: a custom encoder function passed to the `default` argument of `json.dumps()`; defaults to a custom
   encoder designed to take care of all common types

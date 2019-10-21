@@ -383,16 +383,16 @@ def test_include_exclude_default():
     m = Model(a=1, b=2)
     assert m.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
     assert m.__fields_set__ == {'a', 'b'}
-    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+    assert m.dict(exclude_unset=True) == {'a': 1, 'b': 2}
 
-    assert m.dict(include={'a'}, skip_defaults=True) == {'a': 1}
-    assert m.dict(include={'c'}, skip_defaults=True) == {}
+    assert m.dict(include={'a'}, exclude_unset=True) == {'a': 1}
+    assert m.dict(include={'c'}, exclude_unset=True) == {}
 
-    assert m.dict(exclude={'a'}, skip_defaults=True) == {'b': 2}
-    assert m.dict(exclude={'c'}, skip_defaults=True) == {'a': 1, 'b': 2}
+    assert m.dict(exclude={'a'}, exclude_unset=True) == {'b': 2}
+    assert m.dict(exclude={'c'}, exclude_unset=True) == {'a': 1, 'b': 2}
 
-    assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, skip_defaults=True) == {'a': 1}
-    assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, skip_defaults=True) == {'b': 2}
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, exclude_unset=True) == {'a': 1}
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_unset=True) == {'b': 2}
 
 
 def test_advanced_exclude():
@@ -474,12 +474,12 @@ def test_field_set_ignore_extra():
     m = Model(a=1, b=2)
     assert m.dict() == {'a': 1, 'b': 2, 'c': 3}
     assert m.__fields_set__ == {'a', 'b'}
-    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+    assert m.dict(exclude_unset=True) == {'a': 1, 'b': 2}
 
     m2 = Model(a=1, b=2, d=4)
     assert m2.dict() == {'a': 1, 'b': 2, 'c': 3}
     assert m2.__fields_set__ == {'a', 'b'}
-    assert m2.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+    assert m2.dict(exclude_unset=True) == {'a': 1, 'b': 2}
 
 
 def test_field_set_allow_extra():
@@ -494,12 +494,12 @@ def test_field_set_allow_extra():
     m = Model(a=1, b=2)
     assert m.dict() == {'a': 1, 'b': 2, 'c': 3}
     assert m.__fields_set__ == {'a', 'b'}
-    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+    assert m.dict(exclude_unset=True) == {'a': 1, 'b': 2}
 
     m2 = Model(a=1, b=2, d=4)
     assert m2.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
     assert m2.__fields_set__ == {'a', 'b', 'd'}
-    assert m2.dict(skip_defaults=True) == {'a': 1, 'b': 2, 'd': 4}
+    assert m2.dict(exclude_unset=True) == {'a': 1, 'b': 2, 'd': 4}
 
 
 def test_field_set_field_name():
@@ -509,7 +509,7 @@ def test_field_set_field_name():
         b: int = 3
 
     assert Model(a=1, field_set=2).dict() == {'a': 1, 'field_set': 2, 'b': 3}
-    assert Model(a=1, field_set=2).dict(skip_defaults=True) == {'a': 1, 'field_set': 2}
+    assert Model(a=1, field_set=2).dict(exclude_unset=True) == {'a': 1, 'field_set': 2}
     assert Model.construct(dict(a=1, field_set=3), {'a', 'field_set'}).dict() == {'a': 1, 'field_set': 3}
 
 
