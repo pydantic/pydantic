@@ -231,7 +231,7 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
-            '__defaults__': {n: f.default for n, f in fields.items() if not f.required},
+            '__field_defaults__': {n: f.default for n, f in fields.items() if not f.required},
             '__validators__': vg.validators,
             '__pre_root_validators__': pre_root_validators + pre_rv_new,
             '__post_root_validators__': post_root_validators + post_rv_new,
@@ -253,7 +253,7 @@ class BaseModel(metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
-        __defaults__: Dict[str, Any] = {}
+        __field_defaults__: Dict[str, Any] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
         __post_root_validators__: List[AnyCallable]
@@ -314,7 +314,7 @@ class BaseModel(metaclass=ModelMetaclass):
         """
         if skip_defaults is not None:
             warnings.warn(
-                f'{type(self).__name__}.dict: "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                f'{self.__class__.__name__}.dict(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
@@ -360,7 +360,7 @@ class BaseModel(metaclass=ModelMetaclass):
         """
         if skip_defaults is not None:
             warnings.warn(
-                f'{type(self).__name__}.dict: "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                f'{self.__class__.__name__}.dict(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
@@ -628,7 +628,7 @@ class BaseModel(metaclass=ModelMetaclass):
         if exclude_defaults:
             if allowed_keys is None:
                 allowed_keys = set(self.__fields__)
-            for k, v in self.__defaults__.items():
+            for k, v in self.__field_defaults__.items():
                 if self.__dict__[k] == v:
                     allowed_keys.discard(k)
 
