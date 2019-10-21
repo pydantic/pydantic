@@ -8,7 +8,7 @@ a number of things have changed which might be of note.
 Below is a list of significant changes, for a full list of changes see release notes for 
 [v1.0b1](changelog.md#v10b1-2019-10-01), [v1.0b2](changelog.md#v10b2-2019-10-07), and [v1.0](changelog.md).
 
-## What's new in Version 1
+## What's new in pydantic v1
 
 ### Root validators
 

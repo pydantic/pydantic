@@ -7,15 +7,11 @@
 
 {!.version.md!}
 
-!!! note
-    These docs refer to Version 1 of *pydantic* which is as-yet unreleased. **v0.32** docs are available
-    [here](https://5d584fcca7c9b70007d1c997--pydantic-docs.netlify.com).
-
 Data validation and settings management using python type annotations.
 
-Define how data should be in pure, canonical python; validate it with *pydantic*.
+*pydantic* enforces type hints at runtime, and provides user friendly errors when data is invalid.
 
-*pydantic* enforces type annotations at runtime, and provides user friendly 
+Define how data should be in pure, canonical python; validate it with *pydantic*.
 
 ## Example
 
@@ -46,16 +42,13 @@ outputs:
 
 ## Rationale
 
-
 So *pydantic* uses some cool new language features, but why should I actually go and use it?
-
 
 **plays nicely with your IDE/linter/brain**
 : There's no new schema definition micro-language to learn. If you know how to use python type hints, 
-  you know how to use *pydantic*.
-  *pydantic* data structures are just instances of classes you define, so auto-completion, linting,
-  [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)), and your intuition should 
-  all work properly with your validated data.
+  you know how to use *pydantic*. Data structures are just instances of classes you define with type annotations, 
+  so auto-completion, linting, [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)), 
+  and your intuition should all work properly with your validated data.
 
 **dual use**
 : *pydantic's* [BaseSettings](usage/settings.md) class allows *pydantic* to be used in both a "validate this request
