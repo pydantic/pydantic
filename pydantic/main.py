@@ -231,6 +231,7 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
+            '__defaults__': {n: f.default for n, f in fields.items() if not f.required},
             '__validators__': vg.validators,
             '__pre_root_validators__': pre_root_validators + pre_rv_new,
             '__post_root_validators__': post_root_validators + post_rv_new,
@@ -252,6 +253,7 @@ class BaseModel(metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
+        __defaults__: Dict[str, Any] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
         __post_root_validators__: List[AnyCallable]
@@ -303,12 +305,19 @@ class BaseModel(metaclass=ModelMetaclass):
         include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
+        skip_defaults: bool = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
+        if skip_defaults is not None:
+            warnings.warn(
+                f'{type(self).__name__}.dict: "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                DeprecationWarning,
+            )
+            exclude_unset = skip_defaults
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.__fields__)
 
@@ -338,6 +347,7 @@ class BaseModel(metaclass=ModelMetaclass):
         include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
+        skip_defaults: bool = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
@@ -348,6 +358,12 @@ class BaseModel(metaclass=ModelMetaclass):
 
         `encoder` is an optional function to supply as `default` to json.dumps(), other arguments as per `json.dumps()`.
         """
+        if skip_defaults is not None:
+            warnings.warn(
+                f'{type(self).__name__}.dict: "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                DeprecationWarning,
+            )
+            exclude_unset = skip_defaults
         encoder = cast(Callable[[Any], Any], encoder or self.__json_encoder__)
         data = self.dict(
             include=include,
@@ -612,14 +628,12 @@ class BaseModel(metaclass=ModelMetaclass):
         if exclude_defaults:
             if allowed_keys is None:
                 allowed_keys = set(self.__fields__)
-            for k in allowed_keys:
-                if self.__dict__[k] == self.__fields__[k].default:
+            for k, v in self.__defaults__.items():
+                if self.__dict__[k] == v:
                     allowed_keys.discard(k)
 
         for k, v in self.__dict__.items():
             if allowed_keys is None or k in allowed_keys:
-                if exclude_defaults and v == self.__fields__[k].default:
-                    continue
                 yield k, self._get_value(
                     v,
                     to_dict=to_dict,
