@@ -167,6 +167,10 @@ def test_constrained_list_constraints():
         }
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelBoth(v=1)
+    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+
 
 def test_constrained_list_item_type_fails():
     class ConListModel(BaseModel):

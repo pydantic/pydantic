@@ -17,6 +17,7 @@ from .validators import (
     decimal_validator,
     float_validator,
     int_validator,
+    list_validator,
     number_multiple_validator,
     number_size_validator,
     path_exists_validator,
@@ -115,6 +116,7 @@ class ConstrainedList(list):  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
+        yield list_validator
         yield cls.list_length_validator
 
     @classmethod
