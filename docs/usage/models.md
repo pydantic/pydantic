@@ -121,6 +121,7 @@ For self-referencing models, see [postponed annotations](postponed_annotations.m
 Pydantic models can be created from arbitrary class instances to support models that map to ORM objects.
 
 To do this:
+
 1. The [Config](model_config.md) property `orm_mode` must be set to `True`.
 2. The special constructor `from_orm` must be used to create the model instance.
 
@@ -380,10 +381,10 @@ _(This script is complete, it should run "as is")_
 
 !!! warning
     As demonstrated by the example above, combining the use of annotated and non-annotated fields
-    in the same model can result in surprising field orderings. (This is due to limitations of python.)
+    in the same model can result in surprising field orderings. (This is due to limitations of python)
 
     Therefore, **we recommend adding type annotations to all fields**, even when a default value
-    would determine the type by itself.
+    would determine the type by itself to guarentee field order is preserved.
 
 ## Required fields
 

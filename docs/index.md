@@ -11,16 +11,11 @@
     These docs refer to Version 1 of *pydantic* which is as-yet unreleased. **v0.32** docs are available
     [here](https://5d584fcca7c9b70007d1c997--pydantic-docs.netlify.com).
 
-Data validation and settings management using python type hinting.
+Data validation and settings management using python type annotations.
 
 Define how data should be in pure, canonical python; validate it with *pydantic*.
 
-[PEP 484](https://www.python.org/dev/peps/pep-0484/) introduced type hinting into python 3.5;
-[PEP 526](https://www.python.org/dev/peps/pep-0526/) extended that with syntax for variable annotation in python 3.6.
-
-*pydantic* uses those annotations to validate that untrusted data takes the form you want.
-
-There's also support for an extension to [dataclasses](usage/dataclasses.md) where the input data is validated.
+*pydantic* enforces type annotations at runtime, and provides user friendly 
 
 ## Example
 
@@ -54,12 +49,11 @@ outputs:
 
 So *pydantic* uses some cool new language features, but why should I actually go and use it?
 
-**no brainfuck**
-: there's no new schema definition micro-language to learn. If you know python (and perhaps skim the
-  [type hinting docs](https://docs.python.org/3/library/typing.html)) you know how to use *pydantic*.
 
 **plays nicely with your IDE/linter/brain**
-: *pydantic* data structures are just instances of classes you define, so auto-completion, linting,
+: There's no new schema definition micro-language to learn. If you know how to use python type hints, 
+  you know how to use *pydantic*.
+  *pydantic* data structures are just instances of classes you define, so auto-completion, linting,
   [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)), and your intuition should 
   all work properly with your validated data.
 
@@ -80,7 +74,11 @@ So *pydantic* uses some cool new language features, but why should I actually go
 **extensible**
 : *pydantic* allows [custom data types](usage/types.md#custom-data-types) to be defined or you can extend validation 
   with methods on a model decorated with the [`validator`](usage/validators.md) decorator.
-
+  
+**dataclasses integration**
+: As well as `BaseModel`, *pydantic* provides
+  a [`dataclass`](usage/dataclasses.md) decorator which creates (almost) vanilla python dataclasses with input
+  data parsing and validation.
 
 ## Using Pydantic
 
