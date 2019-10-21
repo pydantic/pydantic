@@ -1,1 +1,1 @@
-Add example for construct function
+Add example for the `construct()` method
