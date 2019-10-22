@@ -1,6 +1,7 @@
 import json
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 
+from .json import pydantic_encoder
 from .utils import Representation
 
 if TYPE_CHECKING:
@@ -53,7 +54,7 @@ class ValidationError(Representation, ValueError):
         return self._error_cache
 
     def json(self, *, indent: Union[None, int, str] = 2) -> str:
-        return json.dumps(self.errors(), indent=indent)
+        return json.dumps(self.errors(), indent=indent, default=pydantic_encoder)
 
     def __str__(self) -> str:
         errors = self.errors()

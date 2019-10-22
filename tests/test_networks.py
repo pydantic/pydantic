@@ -247,6 +247,7 @@ def test_postgres_dsns():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+    assert exc_info.value.json().startswith('[')
 
 
 def test_redis_dsns():
