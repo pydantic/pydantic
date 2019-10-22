@@ -28,7 +28,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
-    from .typing import AbstractSetIntStr, SetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
 
 KeyType = TypeVar('KeyType')
 
@@ -289,7 +289,7 @@ class ValueItems(Representation):
         return item in self._items
 
     @no_type_check
-    def for_element(self, e: 'IntStr') -> Optional[Union['SetIntStr', 'DictIntStrAny']]:
+    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'DictIntStrAny']]:
         """
         :param e: key or index of element on value
         :return: raw values for elemet if self._items is dict and contain needed element
@@ -302,8 +302,8 @@ class ValueItems(Representation):
 
     @no_type_check
     def _normalize_indexes(
-        self, items: Union['SetIntStr', 'DictIntStrAny'], v_length: int
-    ) -> Union['SetIntStr', 'DictIntStrAny']:
+        self, items: Union['AbstractSetIntStr', 'DictIntStrAny'], v_length: int
+    ) -> Union['AbstractSetIntStr', 'DictIntStrAny']:
         """
         :param items: dict or set of indexes which will be normalized
         :param v_length: length of sequence indexes of which will be

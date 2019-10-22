@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
-    from .typing import AbstractSetIntStr, SetIntStr, DictIntStrAny, ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, DictIntStrAny, ReprArgs  # noqa: F401
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
@@ -300,8 +300,8 @@ class BaseModel(metaclass=ModelMetaclass):
     def dict(
         self,
         *,
-        include: Union['SetIntStr', 'DictIntStrAny'] = None,
-        exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
+        include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
+        exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
     ) -> 'DictStrAny':
@@ -333,8 +333,8 @@ class BaseModel(metaclass=ModelMetaclass):
     def json(
         self,
         *,
-        include: Union['SetIntStr', 'DictIntStrAny'] = None,
-        exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
+        include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
+        exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
@@ -514,8 +514,8 @@ class BaseModel(metaclass=ModelMetaclass):
         v: Any,
         to_dict: bool,
         by_alias: bool,
-        include: Optional[Union['SetIntStr', 'DictIntStrAny']],
-        exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
+        include: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
+        exclude: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
         skip_defaults: bool,
     ) -> Any:
 

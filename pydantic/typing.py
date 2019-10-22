@@ -63,7 +63,6 @@ if TYPE_CHECKING:
     SetStr = Set[str]
     ListStr = List[str]
     IntStr = Union[int, str]
-    SetIntStr = Set[IntStr]
     AbstractSetIntStr = AbstractSet[IntStr]
     DictIntStrAny = Dict[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
@@ -91,11 +90,10 @@ __all__ = (
     'SetStr',
     'ListStr',
     'IntStr',
-    'SetIntStr',
+    'AbstractSetIntStr',
     'DictIntStrAny',
     'CallableGenerator',
     'ReprArgs',
-    'AbstractSetIntStr',
     'CallableGenerator',
 )
 
