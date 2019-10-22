@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
-    from .typing import SetIntStr, DictIntStrAny, ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, SetIntStr, DictIntStrAny, ReprArgs  # noqa: F401
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
@@ -427,8 +427,8 @@ class BaseModel(metaclass=ModelMetaclass):
     def copy(
         self: 'Model',
         *,
-        include: Union['SetIntStr', 'DictIntStrAny'] = None,
-        exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
+        include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
+        exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         update: 'DictStrAny' = None,
         deep: bool = False,
     ) -> 'Model':
@@ -582,8 +582,8 @@ class BaseModel(metaclass=ModelMetaclass):
         to_dict: bool = False,
         by_alias: bool = False,
         allowed_keys: Optional['SetStr'] = None,
-        include: Union['SetIntStr', 'DictIntStrAny'] = None,
-        exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
+        include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
+        exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         skip_defaults: bool = False,
     ) -> 'TupleGenerator':
 
@@ -603,8 +603,8 @@ class BaseModel(metaclass=ModelMetaclass):
 
     def _calculate_keys(
         self,
-        include: Optional[Union['SetIntStr', 'DictIntStrAny']],
-        exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
+        include: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
+        exclude: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
         skip_defaults: bool,
         update: Optional['DictStrAny'] = None,
     ) -> Optional['SetStr']:

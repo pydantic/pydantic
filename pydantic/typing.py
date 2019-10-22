@@ -2,6 +2,7 @@ import sys
 from enum import Enum
 from typing import (  # type: ignore
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     ClassVar,
     Dict,
@@ -63,6 +64,7 @@ if TYPE_CHECKING:
     ListStr = List[str]
     IntStr = Union[int, str]
     SetIntStr = Set[IntStr]
+    AbstractSetIntStr = AbstractSet[IntStr]
     DictIntStrAny = Dict[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
     ReprArgs = Sequence[Tuple[Optional[str], Any]]
@@ -93,6 +95,8 @@ __all__ = (
     'DictIntStrAny',
     'CallableGenerator',
     'ReprArgs',
+    'AbstractSetIntStr',
+    'CallableGenerator',
 )
 
 

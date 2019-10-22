@@ -394,6 +394,10 @@ def test_include_exclude_default():
     assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, skip_defaults=True) == {'a': 1}
     assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, skip_defaults=True) == {'b': 2}
 
+    # abstract set
+    assert m.dict(include={'a': 1}.keys(), skip_defaults=True) == {'a': 1}
+    assert m.dict(exclude={'a': 1}.keys(), skip_defaults=True) == {'b': 2}
+
 
 def test_advanced_exclude():
     class SubSubModel(BaseModel):
