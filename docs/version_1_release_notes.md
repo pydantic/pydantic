@@ -6,7 +6,8 @@ While the fundamentals of *pydantic* have remained unchanged since the previous 
 a number of things have changed which you may wish to be aware of while migrating to Version 1.
 
 Below is a list of significant changes, for a full list of changes see release notes for 
-[v1.0b1](changelog.md#v10b1-2019-10-01), [v1.0b2](changelog.md#v10b2-2019-10-07), and [v1.0](changelog.md).
+[v1.0b1](changelog.md#v10b1-2019-10-01), [v1.0b2](changelog.md#v10b2-2019-10-07), 
+and [v1.0](changelog.md#v10-2019-10-23).
 
 ## What's new in pydantic v1
 
