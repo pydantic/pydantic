@@ -729,19 +729,19 @@ def test_fields_set():
     assert m.__fields_set__ == {'a', 'b'}
 
 
-def test_skip_defaults_dict():
+def test_exclude_unset_dict():
     class MyModel(BaseModel):
         a: int
         b: int = 2
 
     m = MyModel(a=5)
-    assert m.dict(skip_defaults=True) == {'a': 5}
+    assert m.dict(exclude_unset=True) == {'a': 5}
 
     m = MyModel(a=5, b=3)
-    assert m.dict(skip_defaults=True) == {'a': 5, 'b': 3}
+    assert m.dict(exclude_unset=True) == {'a': 5, 'b': 3}
 
 
-def test_skip_defaults_recursive():
+def test_exclude_unset_recursive():
     class ModelA(BaseModel):
         a: int
         b: int = 1
@@ -753,11 +753,11 @@ def test_skip_defaults_recursive():
 
     m = ModelB(c=5, e={'a': 0})
     assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
-    assert m.dict(skip_defaults=True) == {'c': 5, 'e': {'a': 0}}
+    assert m.dict(exclude_unset=True) == {'c': 5, 'e': {'a': 0}}
     assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
 
 
-def test_dict_skip_defaults_populated_by_alias():
+def test_dict_exclude_unset_populated_by_alias():
     class MyModel(BaseModel):
         a: str = Field('default', alias='alias_a')
         b: str = Field('default', alias='alias_b')
@@ -767,11 +767,11 @@ def test_dict_skip_defaults_populated_by_alias():
 
     m = MyModel(alias_a='a')
 
-    assert m.dict(skip_defaults=True) == {'a': 'a'}
-    assert m.dict(skip_defaults=True, by_alias=True) == {'alias_a': 'a'}
+    assert m.dict(exclude_unset=True) == {'a': 'a'}
+    assert m.dict(exclude_unset=True, by_alias=True) == {'alias_a': 'a'}
 
 
-def test_dict_skip_defaults_populated_by_alias_with_extra():
+def test_dict_exclude_unset_populated_by_alias_with_extra():
     class MyModel(BaseModel):
         a: str = Field('default', alias='alias_a')
         b: str = Field('default', alias='alias_b')
@@ -781,8 +781,8 @@ def test_dict_skip_defaults_populated_by_alias_with_extra():
 
     m = MyModel(alias_a='a', c='c')
 
-    assert m.dict(skip_defaults=True) == {'a': 'a', 'c': 'c'}
-    assert m.dict(skip_defaults=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
+    assert m.dict(exclude_unset=True) == {'a': 'a', 'c': 'c'}
+    assert m.dict(exclude_unset=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
 
 
 def test_dir_fields():

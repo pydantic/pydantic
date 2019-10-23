@@ -122,7 +122,7 @@ def test_object_with_getattr():
     model = Model.from_orm(foo)
     assert model.foo == 'Foo'
     assert model.bar == 1
-    assert model.dict(skip_defaults=True) == {'foo': 'Foo'}
+    assert model.dict(exclude_unset=True) == {'foo': 'Foo'}
     with pytest.raises(ValidationError):
         ModelInvalid.from_orm(foo)
 
