@@ -13,6 +13,10 @@ Data validation and settings management using python type annotations.
 
 Define how data should be in pure, canonical python; validate it with *pydantic*.
 
+!!! note "Version 0.32 Documentation"
+    This documentation refers to Version 1 of *pydantic* which has just been released, **v0.32.2** 
+    (the previous release) docs are available [here](https://5d584fcca7c9b70007d1c997--pydantic-docs.netlify.com).
+
 ## Example
 
 ```py

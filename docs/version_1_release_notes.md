@@ -2,8 +2,8 @@ After 2.5 years of development with contributions from over 80 people and 62 rel
 version 1!
 
 While the fundamentals of *pydantic* have remained unchanged since the previous release 
-[v0.32](changelog.md#v0322-2019-08-17) (indeed, since *pydantic* began in early 2017); 
-a number of things have changed which might be of note.
+[v0.32.2](changelog.md#v0322-2019-08-17) (indeed, since *pydantic* began in early 2017); 
+a number of things have changed which you may wish to be aware of while migrating to Version 1.
 
 Below is a list of significant changes, for a full list of changes see release notes for 
 [v1.0b1](changelog.md#v10b1-2019-10-01), [v1.0b2](changelog.md#v10b2-2019-10-07), and [v1.0](changelog.md).
