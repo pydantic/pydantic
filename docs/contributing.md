@@ -13,7 +13,7 @@ To make contributing as easy and fast as possible, you'll want to run tests and 
 *pydantic* has few dependencies, doesn't require compiling and tests don't need access to databases, etc.
 Because of this, setting up and running the tests should be very simple.
 
-You'll need to have **python 3.6** or **3.7**, **virtualenv**, **git**, and **make** installed.
+You'll need to have **python 3.6**, **3.7**, or **3.8**, **virtualenv**, **git**, and **make** installed.
 
 ```bash
 # 1. clone your fork and cd into the repo directory
