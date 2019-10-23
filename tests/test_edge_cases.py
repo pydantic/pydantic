@@ -420,23 +420,31 @@ def test_include_exclude_defaults():
     assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, exclude_defaults=True) == {'a': 1}
     assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_defaults=True) == {'b': 2}
 
+    # abstract set
+    assert m.dict(include={'a': 1}.keys()) == {'a': 1}
+    assert m.dict(exclude={'a': 1}.keys()) == {'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
+
+    assert m.dict(include={'a': 1}.keys(), exclude_unset=True) == {'a': 1}
+    assert m.dict(exclude={'a': 1}.keys(), exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
+
 
 def test_skip_defaults_deprecated():
     class Model(BaseModel):
         x: int
+        b: int = 2
 
     m = Model(x=1)
     match = r'Model.dict\(\): "skip_defaults" is deprecated and replaced by "exclude_unset"'
     with pytest.warns(DeprecationWarning, match=match):
-        assert m.dict(skip_defaults=True)
+        assert m.dict(skip_defaults=True) == m.dict(exclude_unset=True)
     with pytest.warns(DeprecationWarning, match=match):
-        assert m.dict(skip_defaults=False)
+        assert m.dict(skip_defaults=False) == m.dict(exclude_unset=False)
 
     match = r'Model.json\(\): "skip_defaults" is deprecated and replaced by "exclude_unset"'
     with pytest.warns(DeprecationWarning, match=match):
-        assert m.json(skip_defaults=True)
+        assert m.json(skip_defaults=True) == m.json(exclude_unset=True)
     with pytest.warns(DeprecationWarning, match=match):
-        assert m.json(skip_defaults=False)
+        assert m.json(skip_defaults=False) == m.json(exclude_unset=False)
 
 
 def test_advanced_exclude():

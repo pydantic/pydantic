@@ -3,6 +3,7 @@ import warnings
 from importlib import import_module
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -27,7 +28,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
-    from .typing import SetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
 
 KeyType = TypeVar('KeyType')
 
@@ -247,15 +248,15 @@ class ValueItems(Representation):
 
     __slots__ = ('_items', '_type')
 
-    def __init__(self, value: Any, items: Union['SetIntStr', 'DictIntStrAny']) -> None:
+    def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'DictIntStrAny']) -> None:
         if TYPE_CHECKING:
-            self._items: Union['SetIntStr', 'DictIntStrAny']
+            self._items: Union['AbstractSetIntStr', 'DictIntStrAny']
             self._type: Type[Union[set, dict]]  # type: ignore
 
         # For further type checks speed-up
         if isinstance(items, dict):
             self._type = dict
-        elif isinstance(items, set):
+        elif isinstance(items, AbstractSet):
             self._type = set
         else:
             raise TypeError(f'Unexpected type of exclude value {type(items)}')
@@ -288,7 +289,7 @@ class ValueItems(Representation):
         return item in self._items
 
     @no_type_check
-    def for_element(self, e: 'IntStr') -> Optional[Union['SetIntStr', 'DictIntStrAny']]:
+    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'DictIntStrAny']]:
         """
         :param e: key or index of element on value
         :return: raw values for elemet if self._items is dict and contain needed element
@@ -301,8 +302,8 @@ class ValueItems(Representation):
 
     @no_type_check
     def _normalize_indexes(
-        self, items: Union['SetIntStr', 'DictIntStrAny'], v_length: int
-    ) -> Union['SetIntStr', 'DictIntStrAny']:
+        self, items: Union['AbstractSetIntStr', 'DictIntStrAny'], v_length: int
+    ) -> Union['AbstractSetIntStr', 'DictIntStrAny']:
         """
         :param items: dict or set of indexes which will be normalized
         :param v_length: length of sequence indexes of which will be
