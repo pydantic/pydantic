@@ -443,6 +443,7 @@ def test_const_list_with_wrong_value():
             'type': 'value_error.const',
         },
     ]
+    assert exc_info.value.json().startswith('[')
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[SubModel(b=3), SubModel(b=1), SubModel(b=2)], b=[SubModel(b=3), SubModel(b=1)])
@@ -464,6 +465,7 @@ def test_const_list_with_wrong_value():
             'type': 'value_error.const',
         },
     ]
+    assert exc_info.value.json().startswith('[')
 
 
 def test_const_validation_json_serializable():

@@ -1270,6 +1270,7 @@ def test_decimal_validation(type_, value, result):
         with pytest.raises(ValidationError) as exc_info:
             model(foo=value)
         assert exc_info.value.errors() == result
+        assert exc_info.value.json().startswith('[')
     else:
         assert model(foo=value).foo == result
 

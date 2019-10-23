@@ -86,5 +86,6 @@ def test_valid():
     ],
 )
 def test_error_types(card_number: Any, error_message: str):
-    with pytest.raises(ValidationError, match=error_message):
+    with pytest.raises(ValidationError, match=error_message) as exc_info:
         PaymentCard(card_number=card_number)
+    assert exc_info.value.json().startswith('[')
