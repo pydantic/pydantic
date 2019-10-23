@@ -62,8 +62,8 @@ Options:
 : a callable that takes a field name and returns an alias for it
 
 **`keep_untouched`**
-: a tuple of types (e.g. descriptors) that should not be changed during model creation and will not be
-  included in the model schemas
+: a tuple of types (e.g. descriptors) for a model's default values that should not be changed during model creation and will
+not be included in the model schemas. **Note**: this means that attributes on the model with *defaults of this type*, not *annotations of this type*, will be left alone.
   
 **`schema_extra`**
 : a `dict` used to extend/update the generated JSON Schema
