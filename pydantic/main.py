@@ -444,9 +444,8 @@ class BaseModel(metaclass=ModelMetaclass):
         Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
         """
-        defaults = {name: deepcopy(field.default) for name, field in cls.__fields__.items() if not field.required}
         m = cls.__new__(cls)
-        object.__setattr__(m, '__dict__', {**defaults, **values})
+        object.__setattr__(m, '__dict__', {**deepcopy(cls.__field_defaults__), **values})
         if _fields_set is None:
             _fields_set = set(values.keys())
         object.__setattr__(m, '__fields_set__', _fields_set)
