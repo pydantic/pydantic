@@ -568,8 +568,9 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if config.arbitrary_types_allowed:
         yield make_arbitrary_type_validator(type_)
     else:
+        # keep_untouched refers to the behaviour for the default values, not the type annotation
         raise RuntimeError(
-            f'no validator found for {type_} see `keep_untouched` or `arbitrary_types_allowed` in Config'
+            f'no validator found for {type_}, see `arbitrary_types_allowed` in Config'
         )
 
 
