@@ -953,7 +953,7 @@ def test_custom_types_fail_without_keep_untouched():
 
     assert str(e.value) == (
         "no validator found for <class 'tests.test_main.test_custom_types_fail_without_keep_untouched.<locals>."
-        "_ClassPropertyDescriptor'> see `keep_untouched` or `arbitrary_types_allowed` in Config"
+        "_ClassPropertyDescriptor'>, see `arbitrary_types_allowed` in Config"
     )
 
     class Model(BaseModel):
