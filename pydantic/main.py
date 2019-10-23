@@ -360,7 +360,7 @@ class BaseModel(metaclass=ModelMetaclass):
         """
         if skip_defaults is not None:
             warnings.warn(
-                f'{self.__class__.__name__}.dict(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                f'{self.__class__.__name__}.json(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults

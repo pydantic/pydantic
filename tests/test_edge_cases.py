@@ -431,6 +431,8 @@ def test_skip_defaults_deprecated():
         assert m.dict(skip_defaults=True)
     with pytest.warns(DeprecationWarning, match=match):
         assert m.dict(skip_defaults=False)
+
+    match = r'Model.json\(\): "skip_defaults" is deprecated and replaced by "exclude_unset"'
     with pytest.warns(DeprecationWarning, match=match):
         assert m.json(skip_defaults=True)
     with pytest.warns(DeprecationWarning, match=match):
