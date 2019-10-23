@@ -48,7 +48,7 @@ easier to use and work with root validators, see
 There are a number of changes to how [`BaseSettings`](usage/settings.md) works:
 
 * `case_insensitive` has been renamed to `case_sensitive` and the default has changed to `case_sensitive = False`
-* the default for `env_prefix` has changed to an empty string, e.g. by default there's no prefix for environment
+* the default for `env_prefix` has changed to an empty string, i.e. by default there's no prefix for environment
   variable lookups
 * aliases are no longer used when looking up environment variables, instead there's a new `env` setting for `Field()` or 
   in `Config.fields`.
