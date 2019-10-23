@@ -1,3 +1,31 @@
+## v1.0 (2019-10-23)
+
+* **Breaking Change:** deprecate the `Model.fields` property, use `Model.__fields__` instead, #883 by @samuelcolvin
+* **Breaking Change:** Change the precedence of aliases so child model aliases override parent aliases, 
+  including using `alias_generator`, #904 by @samuelcolvin
+* **Breaking change:** Rename `skip_defaults` to `exclude_unset`, and add ability to exclude actual defaults, #915 by @dmontagu
+* Add `**kwargs` to `pydantic.main.ModelMetaclass.__new__` so `__init_subclass__` can take custom parameters on extended 
+  `BaseModel` classes, #867 by @retnikt
+* Fix field of a type that has a default value, #880 by @koxudaxi
+* Use `FutureWarning` instead of `DeprecationWarning` when `alias` instead of `env` is used for settings models, #881 by @samuelcolvin
+* Fix issue with `BaseSettings` inheritance and `alias` getting set to `None`, #882 by @samuelcolvin
+* Modify `__repr__` and `__str__` methods to be consistent across all public classes, add `__pretty__` to support
+  python-devtools, #884 by @samuelcolvin
+* deprecation warning for `case_insensitive` on `BaseSettings` config, #885 by @samuelcolvin
+* For `BaseSettings` merge environment variables and in-code values recursively, as long as they create a valid object
+  when merged together, to allow splitting init arguments, #888 by @idmitrievsky
+* change secret types example, #890 by @ashears
+* Change the signature of `Model.construct()` to be more user-friendly, document `construct()` usage, #898 by @samuelcolvin
+* Add example for the `construct()` method, #907 by @ashears
+* Improve use of `Field` constraints on complex types, raise an error if constraints are not enforceable,
+  also support tuples with an ellipsis `Tuple[X, ...]`, `Sequence` and `FrozenSet` in schema, #909 by @samuelcolvin
+* update docs for bool missing valid value, #911 by @trim21
+* Better `str`/`repr` logic for `ModelField`, #912 by @samuelcolvin
+* Fix `ConstrainedList`, update schema generation to reflect `min_items` and `max_items` `Field()` arguments, #917 by @samuelcolvin
+* Allow abstracts sets (eg. dict keys) in the `include` and `exclude` arguments of `dict()`, #921 by @samuelcolvin
+* Fix JSON serialization errors on `ValidationError.json()` by using `pydantic_encoder`, #922 by @samuelcolvin
+* Clarify usage of `remove_untouched`, improve error message for types with no validators, #926 by @retnikt
+
 ## v1.0b2 (2019-10-07)
 
 * Mark `StrictBool` typecheck as `bool` to allow for default values without mypy errors, #690 by @dmontagu
