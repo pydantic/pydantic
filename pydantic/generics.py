@@ -17,9 +17,7 @@ class GenericModel(BaseModel):
         else:
             raise TypeError(f'Type {cls.__name__} cannot be used without generic parameters, e.g. {cls.__name__}[T]')
 
-    def __class_getitem__(  # type: ignore
-        cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]
-    ) -> Type[BaseModel]:
+    def __class_getitem__(cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]) -> Type[BaseModel]:
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
             return cached

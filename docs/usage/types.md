@@ -239,7 +239,7 @@ A standard `bool` field will raise a `ValidationError` if the value is not one o
 * A valid boolean (i.e. `True` or `False`),
 * The integers `0` or `1`,
 * a `str` which when converted to lower case is one of
-  `'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'`
+  `'0', 'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'`
 * a `bytes` which is valid (per the previous rule) when decoded to `str`
 
 !!! note
@@ -629,6 +629,8 @@ The value of numerous common types can be restricted using `con*` type functions
 {!.tmp_examples/constrained_types.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+Where `Field` refers to the [field function](schema.md#field-customisation).
 
 ## Strict Types
 

@@ -6,12 +6,38 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from .class_validators import ROOT_KEY
 from .color import Color
-from .fields import SHAPE_LIST, SHAPE_MAPPING, SHAPE_SET, SHAPE_SINGLETON, SHAPE_TUPLE, FieldInfo, ModelField
+from .fields import (
+    SHAPE_FROZENSET,
+    SHAPE_LIST,
+    SHAPE_MAPPING,
+    SHAPE_SEQUENCE,
+    SHAPE_SET,
+    SHAPE_SINGLETON,
+    SHAPE_TUPLE,
+    SHAPE_TUPLE_ELLIPSIS,
+    FieldInfo,
+    ModelField,
+)
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from .types import (
@@ -30,13 +56,22 @@ from .types import (
     SecretBytes,
     SecretStr,
     StrictBool,
+    conbytes,
     condecimal,
     confloat,
     conint,
     conlist,
     constr,
 )
-from .typing import Literal, is_callable_type, is_literal_type, is_new_type, literal_values, new_type_supertype
+from .typing import (
+    ForwardRef,
+    Literal,
+    is_callable_type,
+    is_literal_type,
+    is_new_type,
+    literal_values,
+    new_type_supertype,
+)
 from .utils import lenient_issubclass
 
 if TYPE_CHECKING:
@@ -352,20 +387,21 @@ def field_type_schema(
     definitions = {}
     nested_models: Set[str] = set()
     ref_prefix = ref_prefix or default_prefix
-    if field.shape == SHAPE_LIST:
+    if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET}:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
-        return {'type': 'array', 'items': f_schema}, definitions, nested_models
-    elif field.shape == SHAPE_SET:
-        f_schema, f_definitions, f_nested_models = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
-        )
-        definitions.update(f_definitions)
-        nested_models.update(f_nested_models)
-        return {'type': 'array', 'uniqueItems': True, 'items': f_schema}, definitions, nested_models
+        s: Dict[str, Any] = {'type': 'array', 'items': f_schema}
+        if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
+            s['uniqueItems'] = True
+        field_info = cast(FieldInfo, field.field_info)
+        if field_info.min_items is not None:
+            s['minItems'] = field_info.min_items
+        if field_info.max_items is not None:
+            s['maxItems'] = field_info.max_items
+        return s, definitions, nested_models
     elif field.shape == SHAPE_MAPPING:
         dict_schema: Dict[str, Any] = {'type': 'object'}
         key_field = cast(ModelField, field.key_field)
@@ -721,33 +757,77 @@ def encode_default(dft: Any) -> Any:
 
 
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
+_field_constraints = {
+    'min_length',
+    'max_length',
+    'regex',
+    'gt',
+    'lt',
+    'ge',
+    'le',
+    'multiple_of',
+    'min_items',
+    'max_items',
+}
 
 
-def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Type[Any]:
+def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field_name: str) -> Type[Any]:  # noqa: C901
     """
     Get an annotation with validation implemented for numbers and strings based on the field_info.
 
     :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
     :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
+    :param field_name: name of the field for use in error messages
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
-    if isinstance(annotation, type):
+    constraints = {f for f in _field_constraints if getattr(field_info, f) is not None}
+    if not constraints:
+        return annotation
+    used_constraints: Set[str] = set()
+
+    def go(type_: Any) -> Type[Any]:
+        if is_literal_type(annotation) or isinstance(type_, ForwardRef) or lenient_issubclass(type_, ConstrainedList):
+            return type_
+        origin = getattr(type_, '__origin__', None)
+        if origin is not None:
+            args: Tuple[Any, ...] = type_.__args__
+            if any(isinstance(a, ForwardRef) for a in args):
+                # forward refs cause infinite recursion below
+                return type_
+
+            if origin is Union:
+                return Union[tuple(go(a) for a in args)]
+
+            if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
+                used_constraints.update({'min_items', 'max_items'})
+                return conlist(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+
+            for t in (Tuple, List, Set, FrozenSet, Sequence):
+                if issubclass(origin, t):  # type: ignore
+                    return t[tuple(go(a) for a in args)]  # type: ignore
+
+            if issubclass(origin, Dict):
+                return Dict[args[0], go(args[1])]  # type: ignore
+
         attrs: Optional[Tuple[str, ...]] = None
         constraint_func: Optional[Callable[..., type]] = None
-        if issubclass(annotation, str) and not issubclass(annotation, (EmailStr, AnyUrl, ConstrainedStr)):
-            attrs = ('max_length', 'min_length', 'regex')
-            constraint_func = constr
-        elif lenient_issubclass(annotation, numeric_types) and not issubclass(
-            annotation, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
-        ):
-            # Is numeric type
-            attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
-            numeric_type = next(t for t in numeric_types if issubclass(annotation, t))  # pragma: no branch
-            constraint_func = _map_types_constraint[numeric_type]
-        elif issubclass(annotation, ConstrainedList):
-            attrs = ('min_items', 'max_items')
-            constraint_func = conlist
+        if isinstance(type_, type):
+            if issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
+                attrs = ('max_length', 'min_length', 'regex')
+                constraint_func = constr
+            elif issubclass(type_, bytes):
+                attrs = ('max_length', 'min_length', 'regex')
+                constraint_func = conbytes
+            elif issubclass(type_, numeric_types) and not issubclass(
+                type_, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
+            ):
+                # Is numeric type
+                attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
+                numeric_type = next(t for t in numeric_types if issubclass(type_, t))  # pragma: no branch
+                constraint_func = _map_types_constraint[numeric_type]
+
         if attrs:
+            used_constraints.update(set(attrs))
             kwargs = {
                 attr_name: attr
                 for attr_name, attr in ((attr_name, getattr(field_info, attr_name)) for attr_name in attrs)
@@ -756,7 +836,19 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Ty
             if kwargs:
                 constraint_func = cast(Callable[..., type], constraint_func)
                 return constraint_func(**kwargs)
-    return annotation
+        return type_
+
+    ans = go(annotation)
+
+    unused_constraints = constraints - used_constraints
+    if unused_constraints:
+        raise ValueError(
+            f'On field "{field_name}" the following field constraints are set but not enforced: '
+            f'{", ".join(unused_constraints)}. '
+            f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
+        )
+
+    return ans
 
 
 class SkipField(Exception):

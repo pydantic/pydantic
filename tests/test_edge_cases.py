@@ -1,4 +1,5 @@
 import re
+import sys
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
@@ -18,7 +19,7 @@ from pydantic import (
     validate_model,
     validator,
 )
-from pydantic.fields import Schema
+from pydantic.fields import Field, Schema
 
 
 def test_str_bytes():
@@ -27,7 +28,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert repr(m.__fields__['v']) == "ModelField(name='v', type='typing.Union[str, bytes]', required=True)"
+    assert repr(m.__fields__['v']) == "ModelField(name='v', type=Union[str, bytes], required=True)"
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -325,7 +326,7 @@ def test_infer_alias():
 
     assert Model(_a='different').a == 'different'
     assert repr(Model.__fields__['a']) == (
-        "ModelField(name='a', type='str', required=False, default='foobar', alias='_a')"
+        "ModelField(name='a', type=str, required=False, default='foobar', alias='_a')"
     )
 
 
@@ -372,26 +373,70 @@ def test_success_values_include():
     assert m.dict(include={'a', 'b'}, exclude={'a'}) == {'b': 2}
 
 
-def test_include_exclude_default():
+def test_include_exclude_unset():
     class Model(BaseModel):
         a: int
         b: int
         c: int = 3
         d: int = 4
+        e: int = 5
+        f: int = 6
 
-    m = Model(a=1, b=2)
-    assert m.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
-    assert m.__fields_set__ == {'a', 'b'}
-    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+    m = Model(a=1, b=2, e=5, f=7)
+    assert m.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
+    assert m.__fields_set__ == {'a', 'b', 'e', 'f'}
+    assert m.dict(exclude_unset=True) == {'a': 1, 'b': 2, 'e': 5, 'f': 7}
 
-    assert m.dict(include={'a'}, skip_defaults=True) == {'a': 1}
-    assert m.dict(include={'c'}, skip_defaults=True) == {}
+    assert m.dict(include={'a'}, exclude_unset=True) == {'a': 1}
+    assert m.dict(include={'c'}, exclude_unset=True) == {}
 
-    assert m.dict(exclude={'a'}, skip_defaults=True) == {'b': 2}
-    assert m.dict(exclude={'c'}, skip_defaults=True) == {'a': 1, 'b': 2}
+    assert m.dict(exclude={'a'}, exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
+    assert m.dict(exclude={'c'}, exclude_unset=True) == {'a': 1, 'b': 2, 'e': 5, 'f': 7}
 
-    assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, skip_defaults=True) == {'a': 1}
-    assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, skip_defaults=True) == {'b': 2}
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, exclude_unset=True) == {'a': 1}
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_unset=True) == {'b': 2}
+
+
+def test_include_exclude_defaults():
+    class Model(BaseModel):
+        a: int
+        b: int
+        c: int = 3
+        d: int = 4
+        e: int = 5
+        f: int = 6
+
+    m = Model(a=1, b=2, e=5, f=7)
+    assert m.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
+    assert m.__fields_set__ == {'a', 'b', 'e', 'f'}
+    assert m.dict(exclude_defaults=True) == {'a': 1, 'b': 2, 'f': 7}
+
+    assert m.dict(include={'a'}, exclude_defaults=True) == {'a': 1}
+    assert m.dict(include={'c'}, exclude_defaults=True) == {}
+
+    assert m.dict(exclude={'a'}, exclude_defaults=True) == {'b': 2, 'f': 7}
+    assert m.dict(exclude={'c'}, exclude_defaults=True) == {'a': 1, 'b': 2, 'f': 7}
+
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, exclude_defaults=True) == {'a': 1}
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_defaults=True) == {'b': 2}
+
+
+def test_skip_defaults_deprecated():
+    class Model(BaseModel):
+        x: int
+
+    m = Model(x=1)
+    match = r'Model.dict\(\): "skip_defaults" is deprecated and replaced by "exclude_unset"'
+    with pytest.warns(DeprecationWarning, match=match):
+        assert m.dict(skip_defaults=True)
+    with pytest.warns(DeprecationWarning, match=match):
+        assert m.dict(skip_defaults=False)
+
+    match = r'Model.json\(\): "skip_defaults" is deprecated and replaced by "exclude_unset"'
+    with pytest.warns(DeprecationWarning, match=match):
+        assert m.json(skip_defaults=True)
+    with pytest.warns(DeprecationWarning, match=match):
+        assert m.json(skip_defaults=False)
 
 
 def test_advanced_exclude():
@@ -473,12 +518,12 @@ def test_field_set_ignore_extra():
     m = Model(a=1, b=2)
     assert m.dict() == {'a': 1, 'b': 2, 'c': 3}
     assert m.__fields_set__ == {'a', 'b'}
-    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+    assert m.dict(exclude_unset=True) == {'a': 1, 'b': 2}
 
     m2 = Model(a=1, b=2, d=4)
     assert m2.dict() == {'a': 1, 'b': 2, 'c': 3}
     assert m2.__fields_set__ == {'a', 'b'}
-    assert m2.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+    assert m2.dict(exclude_unset=True) == {'a': 1, 'b': 2}
 
 
 def test_field_set_allow_extra():
@@ -493,12 +538,12 @@ def test_field_set_allow_extra():
     m = Model(a=1, b=2)
     assert m.dict() == {'a': 1, 'b': 2, 'c': 3}
     assert m.__fields_set__ == {'a', 'b'}
-    assert m.dict(skip_defaults=True) == {'a': 1, 'b': 2}
+    assert m.dict(exclude_unset=True) == {'a': 1, 'b': 2}
 
     m2 = Model(a=1, b=2, d=4)
     assert m2.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
     assert m2.__fields_set__ == {'a', 'b', 'd'}
-    assert m2.dict(skip_defaults=True) == {'a': 1, 'b': 2, 'd': 4}
+    assert m2.dict(exclude_unset=True) == {'a': 1, 'b': 2, 'd': 4}
 
 
 def test_field_set_field_name():
@@ -508,7 +553,7 @@ def test_field_set_field_name():
         b: int = 3
 
     assert Model(a=1, field_set=2).dict() == {'a': 1, 'field_set': 2, 'b': 3}
-    assert Model(a=1, field_set=2).dict(skip_defaults=True) == {'a': 1, 'field_set': 2}
+    assert Model(a=1, field_set=2).dict(exclude_unset=True) == {'a': 1, 'field_set': 2}
     assert Model.construct(a=1, field_set=3).dict() == {'a': 1, 'field_set': 3, 'b': 3}
 
 
@@ -1079,3 +1124,91 @@ def test_fields_deprecated():
 
     assert Model().__fields__.keys() == {'v'}
     assert Model.__fields__.keys() == {'v'}
+
+
+def test_alias_child_precedence():
+    class Parent(BaseModel):
+        x: int
+
+        class Config:
+            fields = {'x': 'x1'}
+
+    class Child(Parent):
+        y: int
+
+        class Config:
+            fields = {'y': 'y2', 'x': 'x2'}
+
+    assert Child.__fields__['y'].alias == 'y2'
+    assert Child.__fields__['x'].alias == 'x2'
+
+
+def test_alias_generator_parent():
+    class Parent(BaseModel):
+        x: int
+
+        class Config:
+            allow_population_by_field_name = True
+
+            @classmethod
+            def alias_generator(cls, f_name):
+                return f_name + '1'
+
+    class Child(Parent):
+        y: int
+
+        class Config:
+            @classmethod
+            def alias_generator(cls, f_name):
+                return f_name + '2'
+
+    assert Child.__fields__['y'].alias == 'y2'
+    assert Child.__fields__['x'].alias == 'x2'
+
+
+def test_optional_field_constraints():
+    class MyModel(BaseModel):
+        my_int: Optional[int] = Field(..., ge=3)
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyModel(my_int=2)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('my_int',),
+            'msg': 'ensure this value is greater than or equal to 3',
+            'type': 'value_error.number.not_ge',
+            'ctx': {'limit_value': 3},
+        }
+    ]
+
+
+def test_field_str_shape():
+    class Model(BaseModel):
+        a: List[int]
+
+    assert repr(Model.__fields__['a']) == "ModelField(name='a', type=List[int], required=True)"
+    assert str(Model.__fields__['a']) == "name='a' type=List[int] required=True"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='output slightly different for 3.6')
+@pytest.mark.parametrize(
+    'type_,expected',
+    [
+        (int, 'int'),
+        (Optional[int], 'Optional[int]'),
+        (Union[None, int, str], 'Union[NoneType, int, str]'),
+        (Union[int, str, bytes], 'Union[int, str, bytes]'),
+        (List[int], 'List[int]'),
+        (Tuple[int, str, bytes], 'Tuple[int, str, bytes]'),
+        (Union[List[int], Set[bytes]], 'Union[List[int], Set[bytes]]'),
+        (List[Tuple[int, int]], 'List[Tuple[int, int]]'),
+        (Dict[int, str], 'Mapping[int, str]'),
+        (Tuple[int, ...], 'Tuple[int, ...]'),
+        (Optional[List[int]], 'Optional[List[int]]'),
+    ],
+)
+def test_field_type_display(type_, expected):
+    class Model(BaseModel):
+        a: type_
+
+    assert Model.__fields__['a']._type_display() == expected

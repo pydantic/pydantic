@@ -72,6 +72,7 @@ __all__ = (
     'Callable',
     'AnyCallable',
     'AnyType',
+    'NoneType',
     'display_as_type',
     'resolve_annotations',
     'is_callable_type',
@@ -96,6 +97,7 @@ __all__ = (
 
 
 AnyType = Type[Any]
+NoneType = type(None)
 
 
 def display_as_type(v: AnyType) -> str:
@@ -113,8 +115,8 @@ def display_as_type(v: AnyType) -> str:
     try:
         return v.__name__
     except AttributeError:
-        # happens with unions
-        return str(v)
+        # happens with typing objects
+        return str(v).replace('typing.', '')
 
 
 def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Optional[str]) -> Dict[str, AnyType]:

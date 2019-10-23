@@ -23,8 +23,8 @@ from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
-from .typing import AnyType, Callable, ForwardRef, display_as_type, is_literal_type
-from .utils import Representation, lenient_issubclass, sequence_like
+from .typing import AnyType, Callable, ForwardRef, NoneType, display_as_type, is_literal_type
+from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 try:
@@ -33,7 +33,6 @@ except ImportError:
     Literal = None  # type: ignore
 
 Required: Any = Ellipsis
-NoneType = type(None)
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorsList  # noqa: F401
@@ -170,6 +169,13 @@ SHAPE_TUPLE = 5
 SHAPE_TUPLE_ELLIPSIS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
+SHAPE_NAME_LOOKUP = {
+    SHAPE_LIST: 'List[{}]',
+    SHAPE_SET: 'Set[{}]',
+    SHAPE_TUPLE_ELLIPSIS: 'Tuple[{}, ...]',
+    SHAPE_SEQUENCE: 'Sequence[{}]',
+    SHAPE_FROZENSET: 'FrozenSet[{}]',
+}
 
 
 class ModelField(Representation):
@@ -249,7 +255,7 @@ class ModelField(Representation):
             field_info = FieldInfo(value, **field_info_from_config)
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
         required = value == Required
-        annotation = get_annotation_from_field_info(annotation, field_info)
+        annotation = get_annotation_from_field_info(annotation, field_info, name)
         return cls(
             name=name,
             type_=annotation,
@@ -263,10 +269,10 @@ class ModelField(Representation):
 
     def set_config(self, config: Type['BaseConfig']) -> None:
         self.model_config = config
-        schema_from_config = config.get_field_info(self.name)
-        if schema_from_config:
+        info_from_config = config.get_field_info(self.name)
+        if info_from_config:
             self.field_info = cast(FieldInfo, self.field_info)
-            self.field_info.alias = self.field_info.alias or schema_from_config.get('alias') or self.name
+            self.field_info.alias = info_from_config.get('alias') or self.field_info.alias or self.name
             self.alias = cast(str, self.field_info.alias)
 
     @property
@@ -600,8 +606,22 @@ class ModelField(Representation):
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
+    def _type_display(self) -> PyObjectStr:
+        t = display_as_type(self.type_)
+
+        if self.shape == SHAPE_MAPPING:
+            t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
+        elif self.shape == SHAPE_TUPLE:
+            t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
+        elif self.shape != SHAPE_SINGLETON:
+            t = SHAPE_NAME_LOOKUP[self.shape].format(t)
+
+        if self.allow_none and (self.shape != SHAPE_SINGLETON or not self.sub_fields):
+            t = f'Optional[{t}]'
+        return PyObjectStr(t)
+
     def __repr_args__(self) -> 'ReprArgs':
-        args = [('name', self.name), ('type', display_as_type(self.type_)), ('required', self.required)]
+        args = [('name', self.name), ('type', self._type_display()), ('required', self.required)]
 
         if not self.required:
             args.append(('default', self.default))

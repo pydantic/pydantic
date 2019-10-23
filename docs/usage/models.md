@@ -391,14 +391,18 @@ To declare a field as required, you may declare it using just an annotation, or 
 as the value:
 
 ```py
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Model(BaseModel):
     a: int
     b: int = ...
+    c: int = Field(...)
 ```
+_(This script is complete, it should run "as is")_
 
-Here both `a` and `b` are required. However, use of ellipses for required fields does not work well
+Where `Field` refers to the [field function](schema.md#field-customisation).
+
+Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
 with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
 
 ## Data Conversion

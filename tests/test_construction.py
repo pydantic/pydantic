@@ -190,8 +190,8 @@ def test_copy_set_fields():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy()
 
-    assert m.dict(skip_defaults=True) == {'a': 24.0, 'd': {'a': 12}}
-    assert m.dict(skip_defaults=True) == m2.dict(skip_defaults=True)
+    assert m.dict(exclude_unset=True) == {'a': 24.0, 'd': {'a': 12}}
+    assert m.dict(exclude_unset=True) == m2.dict(exclude_unset=True)
 
 
 def test_simple_pickle():
@@ -236,9 +236,9 @@ def test_immutable_copy():
 
 def test_pickle_fields_set():
     m = Model(a=24)
-    assert m.dict(skip_defaults=True) == {'a': 24}
+    assert m.dict(exclude_unset=True) == {'a': 24}
     m2 = pickle.loads(pickle.dumps(m))
-    assert m2.dict(skip_defaults=True) == {'a': 24}
+    assert m2.dict(exclude_unset=True) == {'a': 24}
 
 
 def test_copy_update_exclude():
@@ -255,5 +255,5 @@ def test_copy_update_exclude():
     assert m.copy(exclude={'c'}).dict() == {'d': {'a': 'ax', 'b': 'bx'}}
     assert m.copy(exclude={'c'}, update={'c': 42}).dict() == {'c': 42, 'd': {'a': 'ax', 'b': 'bx'}}
 
-    assert m._calculate_keys(exclude={'x'}, include=None, skip_defaults=False) == {'c', 'd'}
-    assert m._calculate_keys(exclude={'x'}, include=None, skip_defaults=False, update={'c': 42}) == {'d'}
+    assert m._calculate_keys(exclude={'x'}, include=None, exclude_unset=False) == {'c', 'd'}
+    assert m._calculate_keys(exclude={'x'}, include=None, exclude_unset=False, update={'c': 42}) == {'d'}

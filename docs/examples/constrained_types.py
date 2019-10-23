@@ -12,6 +12,7 @@ from pydantic import (
     conint,
     conlist,
     constr,
+    Field,
 )
 
 class Model(BaseModel):
@@ -40,25 +41,4 @@ class Model(BaseModel):
     decimal_max_digits_and_places: condecimal(max_digits=2, decimal_places=2)
     mod_decimal: condecimal(multiple_of=Decimal('0.25'))
 
-m = Model(
-    short_bytes=b'foo',
-    strip_bytes=b'   bar',
-    short_str='foo',
-    regex_str='apple pie',
-    strip_str='   bar',
-    big_int=1001,
-    mod_int=155,
-    pos_int=1,
-    neg_int=-1,
-    big_float=1002.1,
-    mod_float=1.5,
-    pos_float=2.2,
-    neg_float=-2.3,
-    unit_interval=0.5,
-    short_list=[1, 2],
-    decimal_positive='21.12',
-    decimal_negative='-21.12',
-    decimal_max_digits_and_places='0.99',
-    mod_decimal='2.75',
-)
-print(m.dict())
+    bigger_int: int = Field(..., gt=10000)

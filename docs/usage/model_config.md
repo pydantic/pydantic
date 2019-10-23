@@ -98,3 +98,16 @@ you can automatically generate aliases using `alias_generator`:
 {!.tmp_examples/alias_generator_config.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+
+## Alias Precedence
+
+Aliases defined on the `Config` class of child models will take priority over any aliases defined on `Config` of a
+parent model:
+
+```py
+{!.tmp_examples/alias_precedence.py!}
+```
+_(This script is complete, it should run "as is")_
+
+This includes when a child model uses `alias_generator` where the aliases of all parent model fields will be updated.

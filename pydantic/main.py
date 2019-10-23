@@ -145,7 +145,7 @@ UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
-    def __new__(mcs, name, bases, namespace, **kwargs):
+    def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
         fields: Dict[str, ModelField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
@@ -231,6 +231,7 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
+            '__field_defaults__': {n: f.default for n, f in fields.items() if not f.required},
             '__validators__': vg.validators,
             '__pre_root_validators__': pre_root_validators + pre_rv_new,
             '__post_root_validators__': post_root_validators + post_rv_new,
@@ -252,6 +253,7 @@ class BaseModel(metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
+        __field_defaults__: Dict[str, Any] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
         __post_root_validators__: List[AnyCallable]
@@ -303,15 +305,23 @@ class BaseModel(metaclass=ModelMetaclass):
         include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
-        skip_defaults: bool = False,
+        skip_defaults: bool = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
         """
+        if skip_defaults is not None:
+            warnings.warn(
+                f'{self.__class__.__name__}.dict(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                DeprecationWarning,
+            )
+            exclude_unset = skip_defaults
         get_key = self._get_key_factory(by_alias)
         get_key = partial(get_key, self.__fields__)
 
-        allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=skip_defaults)
+        allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
         return {
             get_key(k): v
             for k, v in self._iter(
@@ -320,7 +330,8 @@ class BaseModel(metaclass=ModelMetaclass):
                 allowed_keys=allowed_keys,
                 include=include,
                 exclude=exclude,
-                skip_defaults=skip_defaults,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
             )
         }
 
@@ -336,7 +347,9 @@ class BaseModel(metaclass=ModelMetaclass):
         include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
         by_alias: bool = False,
-        skip_defaults: bool = False,
+        skip_defaults: bool = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -345,8 +358,20 @@ class BaseModel(metaclass=ModelMetaclass):
 
         `encoder` is an optional function to supply as `default` to json.dumps(), other arguments as per `json.dumps()`.
         """
+        if skip_defaults is not None:
+            warnings.warn(
+                f'{self.__class__.__name__}.json(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                DeprecationWarning,
+            )
+            exclude_unset = skip_defaults
         encoder = cast(Callable[[Any], Any], encoder or self.__json_encoder__)
-        data = self.dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults)
+        data = self.dict(
+            include=include,
+            exclude=exclude,
+            by_alias=by_alias,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+        )
         if self.__custom_root_type__:
             data = data[ROOT_KEY]
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
@@ -449,7 +474,7 @@ class BaseModel(metaclass=ModelMetaclass):
             # skip constructing values if no arguments are passed
             v = self.__dict__
         else:
-            allowed_keys = self._calculate_keys(include=include, exclude=exclude, skip_defaults=False, update=update)
+            allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=False, update=update)
             if allowed_keys is None:
                 v = {**self.__dict__, **(update or {})}
             else:
@@ -460,7 +485,7 @@ class BaseModel(metaclass=ModelMetaclass):
                             by_alias=False,
                             include=include,
                             exclude=exclude,
-                            skip_defaults=False,
+                            exclude_unset=False,
                             allowed_keys=allowed_keys,
                         )
                     ),
@@ -523,12 +548,19 @@ class BaseModel(metaclass=ModelMetaclass):
         by_alias: bool,
         include: Optional[Union['SetIntStr', 'DictIntStrAny']],
         exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
-        skip_defaults: bool,
+        exclude_unset: bool,
+        exclude_defaults: bool,
     ) -> Any:
 
         if isinstance(v, BaseModel):
             if to_dict:
-                return v.dict(by_alias=by_alias, skip_defaults=skip_defaults, include=include, exclude=exclude)
+                return v.dict(
+                    by_alias=by_alias,
+                    exclude_unset=exclude_unset,
+                    exclude_defaults=exclude_defaults,
+                    include=include,
+                    exclude=exclude,
+                )
             else:
                 return v.copy(include=include, exclude=exclude)
 
@@ -541,7 +573,8 @@ class BaseModel(metaclass=ModelMetaclass):
                     v_,
                     to_dict=to_dict,
                     by_alias=by_alias,
-                    skip_defaults=skip_defaults,
+                    exclude_unset=exclude_unset,
+                    exclude_defaults=exclude_defaults,
                     include=value_include and value_include.for_element(k_),
                     exclude=value_exclude and value_exclude.for_element(k_),
                 )
@@ -556,7 +589,8 @@ class BaseModel(metaclass=ModelMetaclass):
                     v_,
                     to_dict=to_dict,
                     by_alias=by_alias,
-                    skip_defaults=skip_defaults,
+                    exclude_unset=exclude_unset,
+                    exclude_defaults=exclude_defaults,
                     include=value_include and value_include.for_element(i),
                     exclude=value_exclude and value_exclude.for_element(i),
                 )
@@ -591,11 +625,19 @@ class BaseModel(metaclass=ModelMetaclass):
         allowed_keys: Optional['SetStr'] = None,
         include: Union['SetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['SetIntStr', 'DictIntStrAny'] = None,
-        skip_defaults: bool = False,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
     ) -> 'TupleGenerator':
 
         value_exclude = ValueItems(self, exclude) if exclude else None
         value_include = ValueItems(self, include) if include else None
+
+        if exclude_defaults:
+            if allowed_keys is None:
+                allowed_keys = set(self.__fields__)
+            for k, v in self.__field_defaults__.items():
+                if self.__dict__[k] == v:
+                    allowed_keys.discard(k)
 
         for k, v in self.__dict__.items():
             if allowed_keys is None or k in allowed_keys:
@@ -605,20 +647,21 @@ class BaseModel(metaclass=ModelMetaclass):
                     by_alias=by_alias,
                     include=value_include and value_include.for_element(k),
                     exclude=value_exclude and value_exclude.for_element(k),
-                    skip_defaults=skip_defaults,
+                    exclude_unset=exclude_unset,
+                    exclude_defaults=exclude_defaults,
                 )
 
     def _calculate_keys(
         self,
         include: Optional[Union['SetIntStr', 'DictIntStrAny']],
         exclude: Optional[Union['SetIntStr', 'DictIntStrAny']],
-        skip_defaults: bool,
+        exclude_unset: bool,
         update: Optional['DictStrAny'] = None,
     ) -> Optional['SetStr']:
-        if include is None and exclude is None and skip_defaults is False:
+        if include is None and exclude is None and exclude_unset is False:
             return None
 
-        if skip_defaults:
+        if exclude_unset:
             keys = self.__fields_set__.copy()
         else:
             keys = set(self.__dict__.keys())
