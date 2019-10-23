@@ -92,6 +92,10 @@ Models possess the following methods and attributes:
 `schema_json()`
 : returns a JSON string representation of `schema()`; cf. [Schema](schema.md)
 
+`construct()`
+: a class method for creating models without running validation; 
+  cf. [Creating models without validation](#creating-models-without-validation)
+
 `__fields_set__`
 : Set of names of fields which were set when the model instance was initialised
 
@@ -233,6 +237,28 @@ _(This script is complete, it should run "as is")_
 !!! info
     Because it can result in arbitrary code execution, as a security measure, you need
     to explicitly pass `allow_pickle` to the parsing function in order to load `pickle` data.
+    
+### Creating models without validation
+
+*pydantic* also provides the `construct()` method which allows models to be created **without validation** this
+can be useful when data has already been validated or comes from a trusted source and you want to create a model
+as efficiently as possible (`construct()` is generally around 30x faster than creating a model with full validation).
+
+!!! warning
+    `construct()` does not do any validation, meaning it can create models which are invalid. **You should only
+    ever use the `construct()` method with data which has already been validated, or you trust.**
+
+```py
+{!.tmp_examples/ex_construct.py!}
+```
+_(This script is complete, it should run "as is")_
+
+The `_fields_set` keyword argument to `construct()` is optional, but allows you to be more precise about 
+which fields were originally set and which weren't. If it's omitted `__fields_set__` will just be the keys
+of the data provided. 
+
+For example, in the example above, if `_fields_set` was not provided, 
+`new_user.__fields_set__` would be `{'id', 'age', 'name'}`.
 
 ## Generic Models
 

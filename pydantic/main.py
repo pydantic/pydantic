@@ -439,14 +439,16 @@ class BaseModel(metaclass=ModelMetaclass):
         return m
 
     @classmethod
-    def construct(cls: Type['Model'], values: 'DictAny', fields_set: 'SetStr') -> 'Model':
+    def construct(cls: Type['Model'], _fields_set: Optional['SetStr'] = None, **values: Any) -> 'Model':
         """
-        Creates a new model and set __dict__ without any validation, thus values should already be trusted.
-        Chances are you don't want to use this method directly.
+        Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
+        Default values are respected, but no other validation is performed.
         """
         m = cls.__new__(cls)
-        object.__setattr__(m, '__dict__', values)
-        object.__setattr__(m, '__fields_set__', fields_set)
+        object.__setattr__(m, '__dict__', {**deepcopy(cls.__field_defaults__), **values})
+        if _fields_set is None:
+            _fields_set = set(values.keys())
+        object.__setattr__(m, '__fields_set__', _fields_set)
         return m
 
     def copy(
@@ -491,7 +493,11 @@ class BaseModel(metaclass=ModelMetaclass):
 
         if deep:
             v = deepcopy(v)
-        m = self.__class__.construct(v, self.__fields_set__.copy())
+
+        cls = self.__class__
+        m = cls.__new__(cls)
+        object.__setattr__(m, '__dict__', v)
+        object.__setattr__(m, '__fields_set__', self.__fields_set__.copy())
         return m
 
     @classmethod
