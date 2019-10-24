@@ -12,7 +12,7 @@ Please complete:
 * Pydantic version `import pydantic; print(pydantic.VERSION)`: **?**
 
 **Please read the [docs](https://pydantic-docs.helpmanual.io/) and search through issues to
-confirm your bug hasn't already been reported before.**
+confirm your bug hasn't already been reported.**
 
 Where possible please include a self contained code snippet describing your bug:
 

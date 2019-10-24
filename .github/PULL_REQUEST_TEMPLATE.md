@@ -1,10 +1,6 @@
 <!-- Thank you for your contribution! -->
 <!-- Unless your change is trivial, please create an issue to discuss the change before creating a PR -->
-<!-- See https://pydantic-docs.helpmanual.io/#contributing-to-pydantic for help on Contributing -->
-
-**NOTICE**: pydantic is currently pushing towards V1 release, 
-see [issue 576](https://github.com/samuelcolvin/pydantic/issues/576). Changes not required to release version 1
-may be be delayed until after version 1 is released. If your PR is a bugfix for v0.32, please base off and target the `v0.32.x` branch.
+<!-- See https://pydantic-docs.helpmanual.io/contributing/ for help on Contributing -->
 
 ## Change Summary
 
