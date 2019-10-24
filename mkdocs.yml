@@ -55,6 +55,7 @@ markdown_extensions:
 - extra
 
 plugins:
+- search
 - exclude:
     glob:
     - _build/*
