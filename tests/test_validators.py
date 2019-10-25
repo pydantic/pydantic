@@ -933,13 +933,13 @@ def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
         def duplicate_name(cls, v):
             return v
 
-        @validator('b', allow_reuse=allow_2)  # noqa
-        def duplicate_name(cls, v):  # noqa
+        @validator('b', allow_reuse=allow_2)  # noqa F811
+        def duplicate_name(cls, v):
             return v
 
         if include_root:
 
-            @root_validator(allow_reuse=allow_3)
+            @root_validator(allow_reuse=allow_3)  # noqa F811
             def duplicate_name(cls, values):
                 return values
 

@@ -80,9 +80,9 @@ def validator(
         each_item = not whole
 
     def dec(f: AnyCallable) -> classmethod:
-        f = f.__func__ if isinstance(f, classmethod) else f
+        f_cls = classmethod(f) if not isinstance(f, classmethod) else f
+        f = f_cls.__func__
         _check_validator_name(f, allow_reuse)
-        f_cls = classmethod(f)
         setattr(
             f_cls,
             VALIDATOR_CONFIG_KEY,
@@ -97,16 +97,16 @@ def root_validator(
     _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False
 ) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
     if _func:
-        _func = _func.__func__ if isinstance(_func, classmethod) else _func
+        f_cls = classmethod(_func) if not isinstance(_func, classmethod) else _func
+        _func = f_cls.__func__
         _check_validator_name(_func, allow_reuse)
-        f_cls = classmethod(_func)
         setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=_func, pre=pre))
         return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
-        f = f.__func__ if isinstance(f, classmethod) else f
+        f_cls = classmethod(f) if not isinstance(f, classmethod) else f
+        f = f_cls.__func__
         _check_validator_name(f, allow_reuse)
-        f_cls = classmethod(f)
         setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f, pre=pre))
         return f_cls
 
