@@ -121,7 +121,7 @@ def _check_validator_name(f: AnyCallable, allow_reuse: bool) -> None:
     does not check for duplicated names in functions defined at the module-global level
     since such validators are likely intended for reuse
     """
-    if in_ipython():  # pragma: no branch
+    if in_ipython():  # pragma: no cover
         return
     if not allow_reuse and '.' in f.__qualname__:
         ref = f.__module__ + '.' + f.__qualname__
