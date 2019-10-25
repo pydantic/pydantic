@@ -1,13 +1,12 @@
 from collections import OrderedDict
 from functools import partial
-from typing import Callable, Dict, List, Set, Type as TypingType, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Set, Type as TypingType, TypeVar
 
 from mypy.nodes import (
     ARG_NAMED,
     ARG_NAMED_OPT,
     ARG_STAR2,
     MDEF,
-    Any,
     Argument,
     AssignmentStmt,
     CallExpr,
@@ -17,6 +16,7 @@ from mypy.nodes import (
     MemberExpr,
     NameExpr,
     PlaceholderNode,
+    RefExpr,
     StrExpr,
     SymbolTableNode,
     TempNode,
@@ -26,7 +26,7 @@ from mypy.nodes import (
 from mypy.plugin import ClassDefContext, Plugin
 from mypy.plugins.common import add_method
 from mypy.server.trigger import make_wildcard_trigger
-from mypy.types import AnyType, NoneTyp, Optional, TypeOfAny, UnionType
+from mypy.types import AnyType, NoneTyp, TypeOfAny, UnionType
 
 T = TypeVar('T')
 CB = Optional[Callable[[T], None]]
@@ -65,7 +65,7 @@ class PydanticModelField:
         self.column = column
 
     def to_argument(self, info: TypeInfo, strict: bool, for_settings: bool = False) -> Argument:
-        if strict:
+        if strict and info[self.name].type is not None:
             type_annotation = info[self.name].type
         else:
             type_annotation = AnyType(TypeOfAny.explicit)
@@ -83,7 +83,7 @@ class PydanticModelField:
         return {'name': self.name, 'has_default': self.has_default, 'line': self.line, 'column': self.column}
 
     @classmethod
-    def deserialize(cls, info: TypeInfo, data: JsonDict) -> "PydanticModelField":
+    def deserialize(cls, info: TypeInfo, data: JsonDict) -> 'PydanticModelField':
         return cls(**data)
 
 
@@ -114,18 +114,16 @@ class PydanticModelTransformer:
         config = self.collect_config()
         is_settings = self.is_settings()
 
-        if ctx.api.options.new_semantic_analyzer:
-            # Check if attribute types are ready.
-            for attr in attributes:
-                if info[attr.name].type is None:
-                    # TODO: Figure out why this is necessary
-                    if not ctx.api.final_iteration:
-                        ctx.api.defer()
-                    return
+        for attr in attributes:
+            if info[attr.name].type is None:
+                if not ctx.api.final_iteration:
+                    ctx.api.defer()
 
         self.add_basemodel_init(attributes, config, is_settings)
         if config.get('allow_mutation') is False:
-            self._freeze(attributes)
+            self._set_frozen(attributes, frozen=True)
+        else:
+            self._set_frozen(attributes, frozen=False)
 
         info.metadata['pydanticmodel'] = {
             'attributes': OrderedDict((attr.name, attr.serialize()) for attr in attributes),
@@ -140,12 +138,13 @@ class PydanticModelTransformer:
         for stmt in cls.defs.body:
             if not isinstance(stmt, ClassDef):
                 continue
+            if stmt.name != 'Config':
+                continue
             for substmt in stmt.defs.body:
                 if not isinstance(substmt, AssignmentStmt):
                     continue
                 config.update(self.get_config_update(substmt))
-
-        for info in cls.info.mro[1:-1]:  # 0 is the current class, -1 is object
+        for info in cls.info.mro[1:]:  # 0 is the current class
             if 'pydanticmodel' not in info.metadata:
                 continue
 
@@ -159,7 +158,7 @@ class PydanticModelTransformer:
 
     def is_settings(self) -> bool:
         for info in self._ctx.cls.info.mro[:-1]:  # 0 is the current class, -1 is object
-            if info.fullname() == "pydantic.env_settings.BaseSettings":
+            if info.fullname() == 'pydantic.env_settings.BaseSettings':
                 return True
         return False
 
@@ -173,13 +172,16 @@ class PydanticModelTransformer:
             elif isinstance(substmt.rvalue, MemberExpr):
                 extra_value = substmt.rvalue.name != 'forbid'
             else:
+                self.error_invalid_config_value(lhs.name, substmt)
                 return {}
             return {lhs.name: extra_value}
-        if not isinstance(substmt.rvalue, NameExpr):
-            return {}
-        if substmt.rvalue.fullname in ('builtins.True', 'builtins.False'):
+        if isinstance(substmt.rvalue, NameExpr) and substmt.rvalue.fullname in ('builtins.True', 'builtins.False'):
             return {lhs.name: substmt.rvalue.fullname == 'builtins.True'}
+        self.error_invalid_config_value(lhs.name, substmt)
         return {}
+
+    def error_invalid_config_value(self, lhs_name: str, stmt: AssignmentStmt) -> None:
+        self._ctx.api.fail(f'Invalid value specified for "Config.{lhs_name}" [pydantic]', stmt)
 
     def collect_attributes(self) -> List[PydanticModelField]:
         # First, collect attributes belonging to the current class.
@@ -200,13 +202,16 @@ class PydanticModelTransformer:
                 continue
 
             sym = cls.info.names.get(lhs.name)
-            if sym is None:
-                assert ctx.api.options.new_semantic_analyzer
+            if sym is None:  # pragma: no cover
+                # This is likely due to a star import (see the dataclasses plugin for a more detailed explanation)
+                # This is the same logic used in the dataclasses plugin
                 continue
 
             node = sym.node
-            if isinstance(node, PlaceholderNode):
-                # This node is not ready yet.
+            if isinstance(node, PlaceholderNode):  # pragma: no cover
+                # See the PlaceholderNode docstring for more detail about how this can occur
+                # Basically, it is an edge case when dealing with complex import logic
+                # This is the same logic used in the dataclasses plugin
                 continue
             assert isinstance(node, Var)
 
@@ -217,9 +222,8 @@ class PydanticModelTransformer:
             has_default = self._get_has_default(cls, stmt, lhs)
             known_attrs.add(lhs.name)
             attrs.append(PydanticModelField(name=lhs.name, has_default=has_default, line=stmt.line, column=stmt.column))
-
         all_attrs = attrs.copy()
-        for info in cls.info.mro[1:-2]:  # 0 is the current class, -2 is BaseModel, -1 is object
+        for info in cls.info.mro[1:]:  # 0 is the current class, -2 is BaseModel, -1 is object
             if 'pydanticmodel' not in info.metadata:
                 continue
 
@@ -240,40 +244,36 @@ class PydanticModelTransformer:
         return all_attrs
 
     def _get_has_default(self, cls: ClassDef, stmt: AssignmentStmt, lhs: NameExpr) -> bool:
-        if not isinstance(stmt.rvalue, TempNode):
-            if isinstance(stmt.rvalue, CallExpr):
-                callee = stmt.rvalue.callee
-                if not isinstance(callee, (NameExpr, MemberExpr)):
-                    return True
-                callee_is_schema = callee.fullname == 'pydantic.schema.Schema'
-                arg_is_ellipsis = len(stmt.rvalue.args) > 0 and type(stmt.rvalue.args[0]) is EllipsisExpr
-                if callee_is_schema and arg_is_ellipsis:
-                    return False
-            return True
+        expr = stmt.rvalue
+        if not isinstance(expr, TempNode):
+            if (
+                isinstance(expr, CallExpr)
+                and isinstance(expr.callee, RefExpr)
+                and expr.callee.fullname == 'pydantic.fields.Field'
+            ):
+                arg_is_ellipsis = len(expr.args) > 0 and type(expr.args[0]) is EllipsisExpr
+            else:
+                arg_is_ellipsis = isinstance(expr, EllipsisExpr)
+            return not arg_is_ellipsis
         value_type = cls.info[lhs.name].type
         if type(value_type) is UnionType:
             item_types = [type(item) for item in value_type.items]  # type: ignore
             if NoneTyp in item_types:
-                # Optional has default of None
                 return True
         return False
 
-    def _freeze(self, attributes: List[PydanticModelField]) -> None:
-        """
-        Converts all attributes to @property methods in order to
-        emulate frozen classes.
-        """
+    def _set_frozen(self, attributes: List[PydanticModelField], frozen: bool) -> None:
         info = self._ctx.cls.info
         for attr in attributes:
             sym_node = info.names.get(attr.name)
             if sym_node is not None:
                 var = sym_node.node
                 assert isinstance(var, Var)
-                var.is_property = True
+                var.is_property = frozen
             else:
                 var = attr.to_var(info)
                 var.info = info
-                var.is_property = True
+                var.is_property = frozen
                 var._fullname = info.fullname() + '.' + var.name()
                 info.names[var.name()] = SymbolTableNode(MDEF, var)
 
