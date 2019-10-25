@@ -17,7 +17,7 @@ class GenericModel(BaseModel):
         else:
             raise TypeError(f'Type {cls.__name__} cannot be used without generic parameters, e.g. {cls.__name__}[T]')
 
-    # Setting the return type as Type[Any] instead of Type[BaseModel] prevents PyCharm errors
+    # Setting the return type as Type[Any] instead of Type[BaseModel] prevents PyCharm warnings
     def __class_getitem__(cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]) -> Type[Any]:
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
