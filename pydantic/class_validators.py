@@ -51,6 +51,7 @@ def validator(
     always: bool = False,
     check_fields: bool = True,
     whole: bool = None,
+    allow_reuse: bool = False,
 ) -> Callable[[AnyCallable], classmethod]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
@@ -60,6 +61,7 @@ def validator(
       whole object
     :param always: whether this method and other validators should be called even if the value is missing
     :param check_fields: whether to check that the fields actually exist on the model
+    :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
     if not fields:
         raise ConfigError('validator with no fields specified')
@@ -78,7 +80,8 @@ def validator(
         each_item = not whole
 
     def dec(f: AnyCallable) -> classmethod:
-        _check_validator_name(f)
+        f = f.__func__ if isinstance(f, classmethod) else f
+        _check_validator_name(f, allow_reuse)
         f_cls = classmethod(f)
         setattr(
             f_cls,
@@ -91,16 +94,18 @@ def validator(
 
 
 def root_validator(
-    _func: Optional[AnyCallable] = None, *, pre: bool = False
+    _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False
 ) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
     if _func:
-        _check_validator_name(_func)
+        _func = _func.__func__ if isinstance(_func, classmethod) else _func
+        _check_validator_name(_func, allow_reuse)
         f_cls = classmethod(_func)
         setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=_func, pre=pre))
         return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
-        _check_validator_name(f)
+        f = f.__func__ if isinstance(f, classmethod) else f
+        _check_validator_name(f, allow_reuse)
         f_cls = classmethod(f)
         setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f, pre=pre))
         return f_cls
@@ -108,12 +113,17 @@ def root_validator(
     return dec
 
 
-def _check_validator_name(f: AnyCallable) -> None:
+def _check_validator_name(f: AnyCallable, allow_reuse: bool) -> None:
     """
     avoid validators with duplicated names since without this, validators can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython - see #312
+
+    does not check for duplicated names in functions defined at the module-global level
+    since such validators are likely intended for reuse
     """
-    if not in_ipython():  # pragma: no branch
+    if in_ipython():  # pragma: no branch
+        return
+    if not allow_reuse and '.' in f.__qualname__:
         ref = f.__module__ + '.' + f.__qualname__
         if ref in _FUNCS:
             raise ConfigError(f'duplicate validator function "{ref}"')
