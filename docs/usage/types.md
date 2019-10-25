@@ -695,3 +695,30 @@ to get validators to parse and validate the input data.
 {!.tmp_examples/types_custom_type.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+## Parsing data into a specified type
+
+Pydantic includes a utility function `parse_as_type` that can be used to apply pydantic's
+parsing logic in an ad-hoc way.
+
+This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
+For example: 
+
+```python
+from typing import List
+
+import requests
+from pydantic import BaseModel, parse_as_type
+
+class Item(BaseModel):
+    id: int
+    name: str
+
+item_data = requests.get('https://my-api.com/items').json()
+# item_data == [{'id': 1, 'name': 'My Item'}, ...]
+
+items = parse_as_type(item_data, List[Item])
+# items == [Item(id=1, name='My Item'), ...]
+```
+
+This function is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
