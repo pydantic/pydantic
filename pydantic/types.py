@@ -210,15 +210,14 @@ class StrictStr(ConstrainedStr):
 
 class TemplateStrMeta(type):
     # can't use __class_getattr__ since it doesnt work on python 3.6
-    def __getitem__(cls, keys: Union[str, int, Tuple[str, ...]]):
+    def __getitem__(cls, keys: Union[str, int, Tuple[str, ...]]) -> Type['TemplateStr']:
         if isinstance(keys, int):
             # no named keys, check their quantity
-            name = f"{cls.__name__}[{keys}]"
+            name = f'{cls.__name__}[{keys}]'
             namespace = dict(__quantity__=keys)
         else:
-            keys = set(keys) if isinstance(keys, tuple) else {keys}
             name = f'{cls.__name__}[{", ".join(map(repr, keys))}]'
-            namespace = dict(__keys__=keys)
+            namespace = dict(__keys__=set(keys) if isinstance(keys, tuple) else {keys})  # type: ignore
 
         return new_class(name=name, bases=(cls,), exec_body=lambda ns: ns.update(namespace))
 
@@ -235,7 +234,7 @@ class TemplateStr(str, metaclass=TemplateStrMeta):
             yield cls.validate_quantity
 
     @classmethod
-    def validate_keys(cls, v) -> str:
+    def validate_keys(cls, v: Any) -> str:
         v = str(v)
         found_keys = {
             field_name + ('!' + conversion if conversion else '') + (':' + format_spec if format_spec else '')
@@ -248,7 +247,7 @@ class TemplateStr(str, metaclass=TemplateStrMeta):
         return v
 
     @classmethod
-    def validate_quantity(cls, v):
+    def validate_quantity(cls, v: Any) -> str:
         v = str(v)
         expected_quantity = cls.__quantity__
         found_keys = [
@@ -264,7 +263,6 @@ class TemplateStr(str, metaclass=TemplateStrMeta):
 
 
 if TYPE_CHECKING:
-    TemplateStr = str
     StrictBool = bool
 else:
 

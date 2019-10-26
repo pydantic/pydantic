@@ -1,6 +1,6 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Set, Union
+from typing import Any, List, Set, Union
 
 from .typing import AnyType, display_as_type
 
@@ -308,7 +308,9 @@ class TemplateStrError(PydanticValueError):
     code = 'str.template'
     msg_template = 'invalid template string, expected keys: {expected_keys}, actual keys: {actual_keys}'
 
-    def __init__(self, expected_keys, actual_keys):
+    def __init__(
+        self, expected_keys: Union[int, Set[str], List[str]], actual_keys: Union[int, Set[str], List[str]]
+    ) -> None:
         super().__init__(expected_keys=expected_keys, actual_keys=actual_keys)
 
 
