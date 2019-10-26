@@ -94,14 +94,14 @@ class Settings(BaseSettings):
 
 
 Model.construct(x=1)
-Model.construct(_fields_set={"x"}, x=1, y="2")
+Model.construct(_fields_set={'x'}, x=1, y='2')
 Model.construct(x='1', y='2')
 
 Settings()  # should pass here due to possibly reading from environment
 
 # Strict mode fails
 inheriting = InheritingModel(x='1', y='1')
-Settings(x="1")
+Settings(x='1')
 Model(x='1', y='2')
 
 

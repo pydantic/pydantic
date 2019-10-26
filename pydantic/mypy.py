@@ -30,7 +30,7 @@ from mypy.nodes import (
     Var,
 )
 from mypy.plugin import ClassDefContext, MethodContext, Plugin
-from mypy.semanal import set_callable_name
+from mypy.semanal import set_callable_name  # type: ignore
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.types import (
     AnyType,
@@ -51,15 +51,16 @@ T = TypeVar('T')
 CB = Optional[Callable[[T], None]]
 
 BASEMODEL_NAME = 'pydantic.main.BaseModel'
-SELF_TVAR_NAME = "_BMT"  # type: Final
+SELF_TVAR_NAME = 'Model'
 
 
 class PydanticPlugin(Plugin):
     pydantic_strict: bool = False
 
     def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
-        if fullname.endswith(".from_orm"):
+        if fullname.endswith('.from_orm'):
             return from_orm_callback
+        return None
 
     def get_base_class_hook(self, fullname: str) -> 'CB[ClassDefContext]':
         # This function is called on any class that is the base class for another class
@@ -138,10 +139,11 @@ class PydanticModelTransformer:
                     self._ctx.api.defer()
                 return None
             if not isinstance(construct_method_type, CallableType):
-                return  # fails for uninherited BaseSettings for some reason
-            arg_kind = construct_method_type.arg_kinds[1]
-            arg_name = construct_method_type.arg_names[1]
-            arg_type = construct_method_type.arg_types[1]
+                return None  # fails for uninherited BaseSettings for some reason
+            arg_name = '_fields_set'
+            arg_index = construct_method_type.arg_names.index(arg_name)
+            arg_kind = construct_method_type.arg_kinds[arg_index]
+            arg_type = construct_method_type.arg_types[arg_index]
             variable = Var(arg_name, arg_type)
             argument = Argument(variable, arg_type, None, arg_kind)
             type(self)._fields_set_argument = argument
@@ -366,9 +368,10 @@ def from_orm_callback(ctx: MethodContext) -> Type:
     else:  # pragma: no cover
         # Not sure if there is any way to get to this branch, but better to fail gracefully
         return ctx.default_return_type
-    orm_mode = model_type.type.metadata.get('pydanticmodel', {}).get('config', {}).get('orm_mode')
+    type_info = model_type.type  # type: ignore
+    orm_mode = type_info.metadata.get('pydanticmodel', {}).get('config', {}).get('orm_mode')
     if orm_mode is not True:
-        ctx.api.fail(f'"{model_type.type.name()}" does not have orm_mode=True in its Config [pydantic]', ctx.context)
+        ctx.api.fail(f'"{type_info.name()}" does not have orm_mode=True in its Config [pydantic]', ctx.context)
     return ctx.default_return_type
 
 
@@ -440,7 +443,7 @@ def add_method(
         r_name = get_unique_redefinition_name(name, info.names)
         info.names[r_name] = info.names[name]
 
-    if is_classmethod:  #  or is_staticmethod:
+    if is_classmethod:  # or is_staticmethod:
         func.is_decorated = True
         v = Var(name, func.type)
         v.info = info
