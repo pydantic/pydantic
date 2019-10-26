@@ -1,7 +1,6 @@
-from typing import Generic, Optional, TypeVar
+from typing import Optional
 
 from pydantic import BaseModel
-from pydantic.generics import GenericModel
 
 
 class Model(BaseModel):
@@ -32,16 +31,6 @@ model.x = 2
 model.from_orm(model)
 
 self_referencing_model = SelfReferencingModel(submodel=SelfReferencingModel(submodel=None))
-
-T = TypeVar('T')
-
-
-class Response(GenericModel, Generic[T]):
-    data: T
-    error: Optional[str]
-
-
-response = Response[Model](data=model, error=None)
 
 
 class InheritingModel(Model):

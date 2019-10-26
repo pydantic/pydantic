@@ -42,26 +42,26 @@ def test_mypy_results(filename, expected_result):
 
 
 plugin_fail_output = (
-    'tests/mypy/plugin-fail.py:21: error: Unexpected keyword argument "z" for "Model"\n'
-    'tests/mypy/plugin-fail.py:22: error: Missing named argument "y" for "Model"\n'
-    'tests/mypy/plugin-fail.py:23: error: Property "y" defined in "Model" is read-only\n'
-    'tests/mypy/plugin-fail.py:24: error: "Model" does not have orm_mode=True in its Config [pydantic]\n'
-    'tests/mypy/plugin-fail.py:32: error: Unexpected keyword argument "x" for "ForbidExtraModel"\n'
-    'tests/mypy/plugin-fail.py:43: error: Unexpected keyword argument "x" for "ForbidExtraModel2"\n'
-    'tests/mypy/plugin-fail.py:48: error: Invalid value specified for "Config.extra" [pydantic]\n'
-    'tests/mypy/plugin-fail.py:53: error: Invalid value specified for "Config.orm_mode" [pydantic]\n'
-    'tests/mypy/plugin-fail.py:58: error: Invalid value specified for "Config.orm_mode" [pydantic]\n'
-    'tests/mypy/plugin-fail.py:69: error: '
+    'tests/mypy/plugin-fail.py:22: error: Unexpected keyword argument "z" for "Model"\n'
+    'tests/mypy/plugin-fail.py:23: error: Missing named argument "y" for "Model"\n'
+    'tests/mypy/plugin-fail.py:24: error: Property "y" defined in "Model" is read-only\n'
+    'tests/mypy/plugin-fail.py:25: error: "Model" does not have orm_mode=True in its Config [pydantic]\n'
+    'tests/mypy/plugin-fail.py:33: error: Unexpected keyword argument "x" for "ForbidExtraModel"\n'
+    'tests/mypy/plugin-fail.py:44: error: Unexpected keyword argument "x" for "ForbidExtraModel2"\n'
+    'tests/mypy/plugin-fail.py:49: error: Invalid value specified for "Config.extra" [pydantic]\n'
+    'tests/mypy/plugin-fail.py:54: error: Invalid value specified for "Config.orm_mode" [pydantic]\n'
+    'tests/mypy/plugin-fail.py:59: error: Invalid value specified for "Config.orm_mode" [pydantic]\n'
+    'tests/mypy/plugin-fail.py:70: error: '
     'Incompatible types in assignment (expression has type "ellipsis", variable has type "int")\n'
-    'tests/mypy/plugin-fail.py:82: error: Missing named argument "a" for "DefaultTestingModel"\n'
-    'tests/mypy/plugin-fail.py:82: error: Missing named argument "b" for "DefaultTestingModel"\n'
-    'tests/mypy/plugin-fail.py:82: error: Missing named argument "c" for "DefaultTestingModel"\n'
-    'tests/mypy/plugin-fail.py:82: error: Missing named argument "d" for "DefaultTestingModel"\n'
-    'tests/mypy/plugin-fail.py:82: error: Missing named argument "e" for "DefaultTestingModel"\n'
-    "tests/mypy/plugin-fail.py:86: error: Name 'Undefined' is not defined\n"
-    'tests/mypy/plugin-fail.py:89: error: Missing named argument "undefined" for "UndefinedAnnotationModel"\n'
-    'tests/mypy/plugin-fail.py:96: error: Missing named argument "y" for "construct" of "Model"\n'
-    'tests/mypy/plugin-fail.py:98: error: '
+    'tests/mypy/plugin-fail.py:83: error: Missing named argument "a" for "DefaultTestingModel"\n'
+    'tests/mypy/plugin-fail.py:83: error: Missing named argument "b" for "DefaultTestingModel"\n'
+    'tests/mypy/plugin-fail.py:83: error: Missing named argument "c" for "DefaultTestingModel"\n'
+    'tests/mypy/plugin-fail.py:83: error: Missing named argument "d" for "DefaultTestingModel"\n'
+    'tests/mypy/plugin-fail.py:83: error: Missing named argument "e" for "DefaultTestingModel"\n'
+    "tests/mypy/plugin-fail.py:87: error: Name 'Undefined' is not defined\n"
+    'tests/mypy/plugin-fail.py:90: error: Missing named argument "undefined" for "UndefinedAnnotationModel"\n'
+    'tests/mypy/plugin-fail.py:97: error: Missing named argument "y" for "construct" of "Model"\n'
+    'tests/mypy/plugin-fail.py:99: error: '
     'Argument "x" to "construct" of "Model" has incompatible type "str"; expected "int"\n'
 )
 plugin_results = [
@@ -78,17 +78,19 @@ def test_mypy_plugin(filename, expected_result):
 
 
 strict_plugin_fail_output = (
-    'tests/mypy/plugin-fail.py:103: error: '
+    'tests/mypy/plugin-fail.py:104: error: '
     'Argument "x" to "InheritingModel" has incompatible type "str"; expected "int"\n'
-    'tests/mypy/plugin-fail.py:104: error: Argument "x" to "Settings" has incompatible type "str"; expected "int"\n'
-    'tests/mypy/plugin-fail.py:105: error: Argument "x" to "Model" has incompatible type "str"; expected "int"\n'
+    'tests/mypy/plugin-fail.py:105: error: Argument "x" to "Settings" has incompatible type "str"; expected "int"\n'
+    'tests/mypy/plugin-fail.py:106: error: Argument "x" to "Model" has incompatible type "str"; expected "int"\n'
+    'tests/mypy/plugin-fail.py:123: error: '
+    'Argument "data" to "Response" has incompatible type "int"; expected "Model"\n'
 )
 strict_plugin_results = [
     (
         'tests/mypy/plugin-success.py',
         (
-            'tests/mypy/plugin-success.py:30: error: Unexpected keyword argument "z" for "Model"\n'
-            'tests/mypy/plugin-success.py:90: '
+            'tests/mypy/plugin-success.py:29: error: Unexpected keyword argument "z" for "Model"\n'
+            'tests/mypy/plugin-success.py:79: '
             'error: Argument "x" to "OverrideModel" has incompatible type "float"; expected "int"\n',
             '',
             1,

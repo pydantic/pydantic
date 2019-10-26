@@ -1,6 +1,7 @@
-from typing import Any, Optional, Set, Union
+from typing import Any, Generic, Optional, Set, TypeVar, Union
 
 from pydantic import BaseModel, BaseSettings, Extra, Field
+from pydantic.generics import GenericModel
 
 
 class Model(BaseModel):
@@ -107,3 +108,16 @@ Model(x='1', y='2')
 
 class Blah(BaseModel):
     fields_set: Optional[Set[str]] = None
+
+
+# Need to test generic checking here since generics don't work in 3.6, and plugin-success.py is executed
+T = TypeVar('T')
+
+
+class Response(GenericModel, Generic[T]):
+    data: T
+    error: Optional[str]
+
+
+response = Response[Model](data=model, error=None)
+response = Response[Model](data=1, error=None)
