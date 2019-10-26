@@ -1,6 +1,6 @@
-from typing import Any, Optional, Union
+from typing import Any, Optional, Set, Union
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, BaseSettings, Extra, Field
 
 
 class Model(BaseModel):
@@ -21,7 +21,7 @@ class Model(BaseModel):
 model = Model(x=1, y='y', z='z')
 model = Model(x=1)
 model.y = 'a'
-model.from_orm({})
+Model.from_orm({})
 
 
 class ForbidExtraModel(BaseModel):
@@ -88,6 +88,22 @@ class UndefinedAnnotationModel(BaseModel):
 
 UndefinedAnnotationModel()
 
+
+class Settings(BaseSettings):
+    x: int
+
+
+Model.construct(x=1)
+Model.construct(_fields_set={"x"}, x=1, y="2")
+Model.construct(x='1', y='2')
+
+Settings()  # should pass here due to possibly reading from environment
+
 # Strict mode fails
-model = Model(x='1', y='2')
 inheriting = InheritingModel(x='1', y='1')
+Settings(x="1")
+Model(x='1', y='2')
+
+
+class Blah(BaseModel):
+    fields_set: Optional[Set[str]] = None

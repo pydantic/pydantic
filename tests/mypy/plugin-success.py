@@ -23,10 +23,13 @@ class SelfReferencingModel(BaseModel):
         ...
 
 
+SelfReferencingModel.update_forward_refs()
+
+
 model = Model(x=1, y='y')
 Model(x=1, y='y', z='z')
 model.x = 2
-Model.from_orm(model)
+model.from_orm(model)
 
 self_referencing_model = SelfReferencingModel(submodel=SelfReferencingModel(submodel=None))
 
@@ -56,6 +59,7 @@ class FutureModel(Model):
     pass
 
 
+ForwardReferencingModel.update_forward_refs()
 future_model = FutureModel(x=1, y='a')
 forward_model = ForwardReferencingModel(x=1, y='a', future=future_model)
 

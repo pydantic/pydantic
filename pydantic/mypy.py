@@ -5,37 +5,61 @@ from typing import Any, Callable, Dict, List, Optional, Set, Type as TypingType,
 from mypy.nodes import (
     ARG_NAMED,
     ARG_NAMED_OPT,
+    ARG_POS,
     ARG_STAR2,
     MDEF,
     Argument,
     AssignmentStmt,
+    Block,
     CallExpr,
     ClassDef,
+    Decorator,
     EllipsisExpr,
+    FuncDef,
     JsonDict,
     MemberExpr,
     NameExpr,
+    PassStmt,
     PlaceholderNode,
     RefExpr,
     StrExpr,
     SymbolTableNode,
     TempNode,
     TypeInfo,
+    TypeVarExpr,
     Var,
 )
-from mypy.plugin import ClassDefContext, Plugin
-from mypy.plugins.common import add_method
+from mypy.plugin import ClassDefContext, MethodContext, Plugin
+from mypy.semanal import set_callable_name
 from mypy.server.trigger import make_wildcard_trigger
-from mypy.types import AnyType, NoneTyp, TypeOfAny, UnionType
+from mypy.types import (
+    AnyType,
+    CallableType,
+    Instance,
+    NoneTyp,
+    Type,
+    TypeOfAny,
+    TypeType,
+    TypeVarDef,
+    TypeVarType,
+    UnionType,
+)
+from mypy.typevars import fill_typevars
+from mypy.util import get_unique_redefinition_name
 
 T = TypeVar('T')
 CB = Optional[Callable[[T], None]]
 
 BASEMODEL_NAME = 'pydantic.main.BaseModel'
+SELF_TVAR_NAME = "_BMT"  # type: Final
 
 
 class PydanticPlugin(Plugin):
     pydantic_strict: bool = False
+
+    def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
+        if fullname.endswith(".from_orm"):
+            return from_orm_callback
 
     def get_base_class_hook(self, fullname: str) -> 'CB[ClassDefContext]':
         # This function is called on any class that is the base class for another class
@@ -64,8 +88,8 @@ class PydanticModelField:
         self.line = line
         self.column = column
 
-    def to_argument(self, info: TypeInfo, strict: bool, for_settings: bool = False) -> Argument:
-        if strict and info[self.name].type is not None:
+    def to_argument(self, info: TypeInfo, typed: bool, for_settings: bool) -> Argument:
+        if typed and info[self.name].type is not None:
             type_annotation = info[self.name].type
         else:
             type_annotation = AnyType(TypeOfAny.explicit)
@@ -88,19 +112,68 @@ class PydanticModelField:
 
 
 class PydanticModelTransformer:
+    _fields_set_argument: Optional[Argument] = None
+
     def __init__(self, ctx: ClassDefContext, strict: bool) -> None:
         self._ctx = ctx
-        self.config_fields = ('extra', 'allow_mutation', 'use_enum_values', 'arbitrary_types_allowed', 'orm_mode')
+        self.config_fields = ('extra', 'allow_mutation', 'orm_mode')
         self.strict = strict
 
-    def add_basemodel_init(
-        self, attributes: List[PydanticModelField], config: Dict[str, Any], is_settings: bool
-    ) -> None:
+    def get_initializer_arguments(
+        self, attributes: List[PydanticModelField], typed: bool, is_settings: bool
+    ) -> List[Argument]:
+        info = self._ctx.cls.info
+        arguments = [attribute.to_argument(info, typed=typed, for_settings=is_settings) for attribute in attributes]
+        return arguments
+
+    def get_fields_set_argument(self) -> Optional[Argument]:
+        if self._fields_set_argument is None:
+            for cls in self._ctx.cls.info.mro:
+                if cls.fullname() == BASEMODEL_NAME:
+                    construct_method_type = cls.names['construct'].type
+                    break
+            else:  # pragma: no cover
+                # Can't reproduce, but this branch seems to need handling intermittently
+                if not self._ctx.api.final_iteration:
+                    self._ctx.api.defer()
+                return None
+            if not isinstance(construct_method_type, CallableType):
+                return  # fails for uninherited BaseSettings for some reason
+            arg_kind = construct_method_type.arg_kinds[1]
+            arg_name = construct_method_type.arg_names[1]
+            arg_type = construct_method_type.arg_types[1]
+            variable = Var(arg_name, arg_type)
+            argument = Argument(variable, arg_type, None, arg_kind)
+            type(self)._fields_set_argument = argument
+        return self._fields_set_argument
+
+    def add_construct(self, attributes: List[PydanticModelField], is_settings: bool) -> None:
+        fields_set_argument = self.get_fields_set_argument()
+        if fields_set_argument is None:
+            return
         ctx = self._ctx
-        init_arguments = [
-            attribute.to_argument(ctx.cls.info, strict=self.strict, for_settings=is_settings)
-            for attribute in attributes
-        ]
+        construct_arguments = self.get_initializer_arguments(attributes, typed=True, is_settings=is_settings)
+        construct_arguments = [fields_set_argument] + construct_arguments
+
+        obj_type = ctx.api.named_type('__builtins__.object')
+        tvar_fullname = ctx.cls.fullname + '.' + SELF_TVAR_NAME
+        tvd = TypeVarDef(SELF_TVAR_NAME, tvar_fullname, -1, [], obj_type)
+        self_tvar_expr = TypeVarExpr(SELF_TVAR_NAME, tvar_fullname, [], obj_type)
+        ctx.cls.info.names[SELF_TVAR_NAME] = SymbolTableNode(MDEF, self_tvar_expr)
+        self_type = TypeVarType(tvd)
+        add_method(
+            ctx,
+            'construct',
+            construct_arguments,
+            return_type=self_type,
+            self_type=self_type,
+            tvar_def=tvd,
+            is_classmethod=True,
+        )
+
+    def add_initializer(self, attributes: List[PydanticModelField], config: Dict[str, Any], is_settings: bool) -> None:
+        ctx = self._ctx
+        init_arguments = self.get_initializer_arguments(attributes, typed=self.strict, is_settings=is_settings)
         if config.get('extra') is not False and not self.strict:
             var = Var('kwargs')
             init_arguments.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
@@ -119,7 +192,8 @@ class PydanticModelTransformer:
                 if not ctx.api.final_iteration:
                     ctx.api.defer()
 
-        self.add_basemodel_init(attributes, config, is_settings)
+        self.add_initializer(attributes, config, is_settings)
+        self.add_construct(attributes, is_settings)
         if config.get('allow_mutation') is False:
             self._set_frozen(attributes, frozen=True)
         else:
@@ -283,9 +357,106 @@ def pydantic_model_class_maker_callback(ctx: ClassDefContext, strict: bool) -> N
     transformer.transform()
 
 
+def from_orm_callback(ctx: MethodContext) -> Type:
+    """Raise an error if orm_mode is not enabled"""
+    if isinstance(ctx.type, CallableType):
+        model_type = ctx.type.ret_type  # called on the class
+    elif isinstance(ctx.type, Instance):
+        model_type = ctx.type  # called on an instance (unusual, but still valid)
+    else:  # pragma: no cover
+        # Not sure if there is any way to get to this branch, but better to fail gracefully
+        return ctx.default_return_type
+    orm_mode = model_type.type.metadata.get('pydanticmodel', {}).get('config', {}).get('orm_mode')
+    if orm_mode is not True:
+        ctx.api.fail(f'"{model_type.type.name()}" does not have orm_mode=True in its Config [pydantic]', ctx.context)
+    return ctx.default_return_type
+
+
 def plugin(version: str) -> 'TypingType[Plugin]':
     return PydanticPlugin
 
 
 def strict(version: str) -> 'TypingType[Plugin]':
     return StrictPydanticPlugin
+
+
+def add_method(
+    ctx: ClassDefContext,
+    name: str,
+    args: List[Argument],
+    return_type: Type,
+    self_type: Optional[Type] = None,
+    tvar_def: Optional[TypeVarDef] = None,
+    is_classmethod: bool = False,
+    is_new: bool = False,
+    # is_staticmethod: bool = False,
+) -> None:
+    """Adds a new method to a class.
+
+    This can be dropped once https://github.com/python/mypy/issues/7301 is merged
+    """
+    info = ctx.cls.info
+
+    # First remove any previously generated methods with the same name
+    # to avoid clashes and problems in the semantic analyzer.
+    if name in info.names:
+        sym = info.names[name]
+        if sym.plugin_generated and isinstance(sym.node, FuncDef):
+            ctx.cls.defs.body.remove(sym.node)
+
+    self_type = self_type or fill_typevars(info)
+    if is_classmethod or is_new:
+        first = [Argument(Var('_cls'), TypeType.make_normalized(self_type), None, ARG_POS)]
+    # elif is_staticmethod:
+    #     first = []
+    else:
+        self_type = self_type or fill_typevars(info)
+        first = [Argument(Var('self'), self_type, None, ARG_POS)]
+    args = first + args
+    arg_types, arg_names, arg_kinds = [], [], []
+    for arg in args:
+        assert arg.type_annotation, 'All arguments must be fully typed.'
+        arg_types.append(arg.type_annotation)
+        arg_names.append(arg.variable.name())
+        arg_kinds.append(arg.kind)
+
+    function_type = ctx.api.named_type('__builtins__.function')
+    signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
+    if tvar_def:
+        signature.variables = [tvar_def]
+
+    func = FuncDef(name, args, Block([PassStmt()]))
+    func.info = info
+    func.type = set_callable_name(signature, func)
+    func.is_class = is_classmethod
+    # func.is_static = is_staticmethod
+    func._fullname = info.fullname() + '.' + name
+    func.line = info.line
+
+    # NOTE: we would like the plugin generated node to dominate, but we still
+    # need to keep any existing definitions so they get semantically analyzed.
+    if name in info.names:
+        # Get a nice unique name instead.
+        r_name = get_unique_redefinition_name(name, info.names)
+        info.names[r_name] = info.names[name]
+
+    if is_classmethod:  #  or is_staticmethod:
+        func.is_decorated = True
+        v = Var(name, func.type)
+        v.info = info
+        v._fullname = func._fullname
+        # if is_classmethod:
+        v.is_classmethod = True
+        dec = Decorator(func, [NameExpr('classmethod')], v)
+        # else:
+        #     v.is_staticmethod = True
+        #     dec = Decorator(func, [NameExpr('staticmethod')], v)
+
+        dec.line = info.line
+        sym = SymbolTableNode(MDEF, dec)
+    else:
+        sym = SymbolTableNode(MDEF, func)
+    sym.plugin_generated = True
+
+    info.names[name] = sym
+    info.defn.defs.body.append(func)
