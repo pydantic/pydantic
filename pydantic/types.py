@@ -3,8 +3,24 @@ import warnings
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
+from string import Formatter
 from types import new_class
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Pattern, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Pattern,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from . import errors
@@ -64,6 +80,7 @@ __all__ = [
     'StrictBool',
     'StrictInt',
     'StrictFloat',
+    'TemplateStr',
     'PaymentCardNumber',
 ]
 
@@ -191,7 +208,63 @@ class StrictStr(ConstrainedStr):
     strict = True
 
 
+class TemplateStrMeta(type):
+    # can't use __class_getattr__ since it doesnt work on python 3.6
+    def __getitem__(cls, keys: Union[str, int, Tuple[str, ...]]):
+        if isinstance(keys, int):
+            # no named keys, check their quantity
+            name = f"{cls.__name__}[{keys}]"
+            namespace = dict(__quantity__=keys)
+        else:
+            keys = set(keys) if isinstance(keys, tuple) else {keys}
+            name = f'{cls.__name__}[{", ".join(map(repr, keys))}]'
+            namespace = dict(__keys__=keys)
+
+        return new_class(name=name, bases=(cls,), exec_body=lambda ns: ns.update(namespace))
+
+
+class TemplateStr(str, metaclass=TemplateStrMeta):
+    __keys__: Set[str] = set()
+    __quantity__: int = 0
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        if cls.__keys__:
+            yield cls.validate_keys
+        else:
+            yield cls.validate_quantity
+
+    @classmethod
+    def validate_keys(cls, v) -> str:
+        v = str(v)
+        found_keys = {
+            field_name + ('!' + conversion if conversion else '') + (':' + format_spec if format_spec else '')
+            for literal_text, field_name, format_spec, conversion in Formatter().parse(v)
+            if field_name is not None
+        }
+
+        if cls.__keys__ != found_keys:
+            raise errors.TemplateStrError(cls.__keys__, found_keys)
+        return v
+
+    @classmethod
+    def validate_quantity(cls, v):
+        v = str(v)
+        expected_quantity = cls.__quantity__
+        found_keys = [
+            field_name + ('!' + conversion if conversion else '') + (':' + format_spec if format_spec else '')
+            for literal_text, field_name, format_spec, conversion in Formatter().parse(v)
+            if field_name is not None
+        ]
+        if any(found_keys):
+            raise errors.TemplateStrError(['{}'] * expected_quantity, found_keys)
+        elif len(found_keys) != expected_quantity:
+            raise errors.TemplateStrError(expected_quantity, len(found_keys))
+        return v
+
+
 if TYPE_CHECKING:
+    TemplateStr = str
     StrictBool = bool
 else:
 
@@ -260,7 +333,6 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-
         yield strict_int_validator if cls.strict else int_validator
         yield number_size_validator
         yield number_multiple_validator

@@ -304,6 +304,14 @@ class StrRegexError(PydanticValueError):
         super().__init__(pattern=pattern)
 
 
+class TemplateStrError(PydanticValueError):
+    code = 'str.template'
+    msg_template = 'invalid template string, expected keys: {expected_keys}, actual keys: {actual_keys}'
+
+    def __init__(self, expected_keys, actual_keys):
+        super().__init__(expected_keys=expected_keys, actual_keys=actual_keys)
+
+
 class _NumberBoundError(PydanticValueError):
     def __init__(self, *, limit_value: Union[int, float, Decimal]) -> None:
         super().__init__(limit_value=limit_value)
