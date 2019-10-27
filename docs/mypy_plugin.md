@@ -42,7 +42,7 @@ There are other benefits too! See below for more details.
  
 #### Generate a typed signature for `Model.construct`
 * This method is a (potentially much faster) alternative to `__init__` when input data is known to be valid,
-  and does not need to be  parsed 
+  and does not need to be parsed.
 * However, this method performs no runtime validation, so static checks are important to detect errors.
 
 #### Respect `Config.allow_mutation`
