@@ -3,6 +3,7 @@ from configparser import ConfigParser
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, TypeVar
 
+from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
     ARG_NAMED_OPT,
@@ -519,20 +520,26 @@ class ModelConfigData:
             setattr(self, key, value)
 
 
+ERROR_ORM = ErrorCode('pydantic-orm', 'Invalid from_orm call', 'Pydantic')
+ERROR_CONFIG = ErrorCode('pydantic-config', 'Invalid config value', 'Pydantic')
+ERROR_ALIAS = ErrorCode('pydantic-alias', 'Dynamic alias disallowed', 'Pydantic')
+ERROR_UNTYPED = ErrorCode('pydantic-field', 'Untyped field disallowed', 'Pydantic')
+
+
 def error_from_orm(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
-    api.fail(f'"{model_name}" does not have orm_mode=True in its Config [pydantic]', context)
+    api.fail(f'"{model_name}" does not have orm_mode=True', context, code=ERROR_ORM)
 
 
 def error_invalid_config_value(name: str, api: SemanticAnalyzerPluginInterface, context: Context) -> None:
-    api.fail(f'Invalid value specified for "Config.{name}" [pydantic]', context)
+    api.fail(f'Invalid value for "Config.{name}"', context, code=ERROR_CONFIG)
 
 
 def error_required_dynamic_aliases(api: SemanticAnalyzerPluginInterface, context: Context) -> None:
-    api.fail('Required dynamic aliases not allowed by plugin config [pydantic]', context)
+    api.fail('Required dynamic aliases disallowed', context, code=ERROR_ALIAS)
 
 
 def error_untyped_fields(api: SemanticAnalyzerPluginInterface, context: Context) -> None:
-    api.fail('Untyped fields not allowed by plugin config [pydantic]', context)
+    api.fail('Untyped fields disallowed', context, code=ERROR_UNTYPED)
 
 
 def add_method(

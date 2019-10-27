@@ -1,1 +1,1 @@
-20: error: "Model" has no attribute "foobar"
+20: error: "Model" has no attribute "foobar"  [attr-defined]

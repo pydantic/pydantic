@@ -24,6 +24,7 @@ model = Model(x=1, y='y', z='z')
 model = Model(x=1)
 model.y = 'a'
 Model.from_orm({})
+Model.from_orm({})  # type: ignore[pydantic-orm]  # noqa F821
 
 
 class ForbidExtraModel(BaseModel):
@@ -47,6 +48,7 @@ ForbidExtraModel2(x=1)
 
 class BadExtraModel(BaseModel):
     class Config:
+        extra = 1  # type: ignore[pydantic-config]  # noqa F821
         extra = 1
 
 
@@ -169,13 +171,14 @@ AliasGeneratorModel(z=1)
 class AliasGeneratorModel2(BaseModel):
     x: int = Field(..., alias='y')
 
-    class Config:
+    class Config:  # type: ignore[pydantic-alias]  # noqa F821
         alias_generator = lambda x: x + '_'  # noqa E731
 
 
 class UntypedFieldModel(BaseModel):
     x: int = 1
     y = 2
+    z = 2  # type: ignore[pydantic-field]  # noqa F821
 
 
 AliasGeneratorModel2(x=1)
