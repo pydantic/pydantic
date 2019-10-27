@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import ClassVar, Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,6 @@ class SelfReferencingModel(BaseModel):
 
 SelfReferencingModel.update_forward_refs()
 
-# reveal_type(Model)
 model = Model(x=1, y='y')
 Model(x=1, y='y', z='z')
 model.x = 2
@@ -97,3 +96,11 @@ class AliasModel(BaseModel):
 
 alias_model = AliasModel(y='hello')
 assert alias_model.x == 'hello'
+
+
+class ClassVarModel(BaseModel):
+    x: int
+    y: ClassVar[int] = 1
+
+
+ClassVarModel(x=1)

@@ -13,24 +13,24 @@ except ImportError:
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
 
-# You can change the following variable to True to overwrite the existing files with generated output
-GENERATE = True
+# You can change the following variable to True during development to overwrite expected output with generated output
+GENERATE = False
 
 cases = [
+    ('mypy-plugin.ini', 'plugin_success.py', None),
+    ('mypy-plugin.ini', 'plugin_fail.py', 'plugin-fail.txt'),
+    ('mypy-plugin-strict.ini', 'plugin_success.py', 'plugin-success-strict.txt'),
+    ('mypy-plugin-strict.ini', 'plugin_fail.py', 'plugin-fail-strict.txt'),
     ('mypy-default.ini', 'success.py', None),
     ('mypy-default.ini', 'fail1.py', 'fail1.txt'),
     ('mypy-default.ini', 'fail2.py', 'fail2.txt'),
     ('mypy-default.ini', 'fail3.py', 'fail3.txt'),
     ('mypy-default.ini', 'plugin_success.py', None),
-    ('mypy-plugin.ini', 'plugin_success.py', None),
-    ('mypy-plugin.ini', 'plugin_fail.py', 'plugin-fail.txt'),
-    ('mypy-plugin-strict.ini', 'plugin_success.py', 'plugin-success-strict.txt'),
-    ('mypy-plugin-strict.ini', 'plugin_fail.py', 'plugin-fail-strict.txt'),
 ]
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
 
-# @pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
 @pytest.mark.parametrize('config_filename,python_filename,output_filename', cases)
 def test_mypy_results(config_filename, python_filename, output_filename):
     full_config_filename = f'tests/mypy/configs/{config_filename}'

@@ -1,19 +1,21 @@
-22: error: Unexpected keyword argument "z" for "Model"
-23: error: Missing named argument "y" for "Model"
-24: error: Property "y" defined in "Model" is read-only
-25: error: "Model" does not have orm_mode=True in its Config [pydantic]
-33: error: Unexpected keyword argument "x" for "ForbidExtraModel"
-44: error: Unexpected keyword argument "x" for "ForbidExtraModel2"
-49: error: Invalid value specified for "Config.extra" [pydantic]
-54: error: Invalid value specified for "Config.orm_mode" [pydantic]
-59: error: Invalid value specified for "Config.orm_mode" [pydantic]
-70: error: Incompatible types in assignment (expression has type "ellipsis", variable has type "int")
-83: error: Missing named argument "a" for "DefaultTestingModel"
-83: error: Missing named argument "b" for "DefaultTestingModel"
-83: error: Missing named argument "c" for "DefaultTestingModel"
-83: error: Missing named argument "d" for "DefaultTestingModel"
-83: error: Missing named argument "e" for "DefaultTestingModel"
-87: error: Name 'Undefined' is not defined
-90: error: Missing named argument "undefined" for "UndefinedAnnotationModel"
-97: error: Missing named argument "y" for "construct" of "Model"
-99: error: Argument "x" to "construct" of "Model" has incompatible type "str"; expected "int"
+23: error: Unexpected keyword argument "z" for "Model"
+24: error: Missing named argument "y" for "Model"
+25: error: Property "y" defined in "Model" is read-only
+26: error: "Model" does not have orm_mode=True in its Config [pydantic]
+34: error: Unexpected keyword argument "x" for "ForbidExtraModel"
+45: error: Unexpected keyword argument "x" for "ForbidExtraModel2"
+50: error: Invalid value specified for "Config.extra" [pydantic]
+55: error: Invalid value specified for "Config.orm_mode" [pydantic]
+60: error: Invalid value specified for "Config.orm_mode" [pydantic]
+71: error: Incompatible types in assignment (expression has type "ellipsis", variable has type "int")
+84: error: Missing named argument "a" for "DefaultTestingModel"
+84: error: Missing named argument "b" for "DefaultTestingModel"
+84: error: Missing named argument "c" for "DefaultTestingModel"
+84: error: Missing named argument "d" for "DefaultTestingModel"
+84: error: Missing named argument "e" for "DefaultTestingModel"
+88: error: Name 'Undefined' is not defined
+91: error: Missing named argument "undefined" for "UndefinedAnnotationModel"
+98: error: Missing named argument "y" for "construct" of "Model"
+100: error: Argument "x" to "construct" of "Model" has incompatible type "str"; expected "int"
+153: error: Missing named argument "x" for "DynamicAliasModel2"
+185: error: Name 'Missing' is not defined
