@@ -33,7 +33,7 @@ from mypy.nodes import (
     Var,
 )
 from mypy.options import Options
-from mypy.plugin import CheckerPluginInterface, ClassDefContext, MethodContext, Plugin
+from mypy.plugin import CheckerPluginInterface, ClassDefContext, MethodContext, Plugin, SemanticAnalyzerPluginInterface
 from mypy.semanal import set_callable_name  # type: ignore
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.types import (
@@ -523,15 +523,15 @@ def error_from_orm(model_name: str, api: CheckerPluginInterface, context: Contex
     api.fail(f'"{model_name}" does not have orm_mode=True in its Config [pydantic]', context)
 
 
-def error_invalid_config_value(name: str, api: CheckerPluginInterface, context: Context) -> None:
+def error_invalid_config_value(name: str, api: SemanticAnalyzerPluginInterface, context: Context) -> None:
     api.fail(f'Invalid value specified for "Config.{name}" [pydantic]', context)
 
 
-def error_required_dynamic_aliases(api: CheckerPluginInterface, context: Context) -> None:
+def error_required_dynamic_aliases(api: SemanticAnalyzerPluginInterface, context: Context) -> None:
     api.fail('Required dynamic aliases not allowed by plugin config [pydantic]', context)
 
 
-def error_untyped_fields(api: CheckerPluginInterface, context: Context) -> None:
+def error_untyped_fields(api: SemanticAnalyzerPluginInterface, context: Context) -> None:
     api.fail('Untyped fields not allowed by plugin config [pydantic]', context)
 
 

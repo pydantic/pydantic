@@ -10,6 +10,5 @@ class Model(BaseModel):
     list_of_ints: List[int]
 
 m = Model(age=42, list_of_ints=[1, '2', b'3'])
-print(m.age)
-Model()
-# will raise a validation error for age and list_of_ints
+print(m.middle_name)  # not a model field!
+Model()  # will raise a validation error for age and list_of_ints

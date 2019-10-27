@@ -40,6 +40,7 @@ nav:
   - 'Usage with devtools': usage/devtools.md
 - Contributing to pydantic: contributing.md
 - benchmarks.md
+- 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md
 - changelog.md
 
