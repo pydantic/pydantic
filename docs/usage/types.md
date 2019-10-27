@@ -402,11 +402,11 @@ _(This script is complete, it should run "as is")_
   see [Constrained Types](#constrained-types)
 
 `PositiveFloat`
-: allows a float which is negative; uses standard `float` parsing then checks the value is greater than 0;
+: allows a float which is positive; uses standard `float` parsing then checks the value is greater than 0;
   see [Constrained Types](#constrained-types)
 
 `PositiveInt`
-: allows a int which is negative; uses standard `int` parsing then checks the value is greater than 0;
+: allows a int which is positive; uses standard `int` parsing then checks the value is greater than 0;
   see [Constrained Types](#constrained-types)
 
 `conbytes`
