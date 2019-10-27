@@ -14,7 +14,7 @@ except ImportError:
 os.chdir(Path(__file__).parent.parent.parent)
 
 # You can change the following variable to True to overwrite the existing files with generated output
-GENERATE = False
+GENERATE = True
 
 cases = [
     ('mypy-default.ini', 'success.py', None),

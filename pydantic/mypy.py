@@ -317,12 +317,13 @@ class PydanticModelTransformer:
         return all_attrs
 
     def get_field_arguments(
-        self, attributes: List[PydanticModelField], typed: bool, force_all_optional: bool, use_alias: bool
+        self, fields: List[PydanticModelField], typed: bool, force_all_optional: bool, use_alias: bool
     ) -> List[Argument]:
         info = self._ctx.cls.info
         arguments = [
-            attribute.to_argument(info, typed=typed, force_optional=force_all_optional, use_alias=use_alias)
-            for attribute in attributes
+            field.to_argument(info, typed=typed, force_optional=force_all_optional, use_alias=use_alias)
+            for field in fields
+            if not (use_alias and field.has_dynamic_alias)
         ]
         return arguments
 

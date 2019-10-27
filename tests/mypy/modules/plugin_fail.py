@@ -121,3 +121,33 @@ class Response(GenericModel, Generic[T]):
 
 response = Response[Model](data=model, error=None)
 response = Response[Model](data=1, error=None)
+
+
+class AliasModel(BaseModel):
+    x: str = Field(..., alias='y')
+    z: int
+
+
+AliasModel(y=1, z=2)
+
+x_alias = 'y'
+
+
+class DynamicAliasModel(BaseModel):
+    x: str = Field(..., alias=x_alias)
+    z: int
+
+
+DynamicAliasModel(y='y', z='1')
+
+
+class AliasGeneratorModel(BaseModel):
+    x: int
+
+    class Config:
+        alias_generator = lambda x: x + '_'  # noqa E731
+
+
+AliasGeneratorModel(x=1)
+AliasGeneratorModel(x_=1)
+AliasGeneratorModel(z=1)

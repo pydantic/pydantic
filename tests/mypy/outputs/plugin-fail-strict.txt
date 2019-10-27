@@ -23,3 +23,5 @@
 105: error: Argument "x" to "Settings" has incompatible type "str"; expected "int"
 106: error: Argument "x" to "Model" has incompatible type "str"; expected "int"
 123: error: Argument "data" to "Response" has incompatible type "int"; expected "Model"
+131: error: Argument "y" to "AliasModel" has incompatible type "int"; expected "str"
+141: error: Argument "z" to "DynamicAliasModel" has incompatible type "str"; expected "int"
