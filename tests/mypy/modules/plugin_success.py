@@ -25,6 +25,7 @@ class SelfReferencingModel(BaseModel):
 SelfReferencingModel.update_forward_refs()
 
 
+# reveal_type(Model)
 model = Model(x=1, y='y')
 Model(x=1, y='y', z='z')
 model.x = 2
