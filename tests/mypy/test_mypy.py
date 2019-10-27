@@ -46,17 +46,14 @@ def test_mypy_results(config_filename, python_filename, output_filename):
 
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
-    cache_dir = f".mypy_cache/test-{config_filename[:-4]}"
+    cache_dir = f'.mypy_cache/test-{config_filename[:-4]}'
     actual_result = api.run([full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir])
     actual_out, actual_err, actual_returncode = actual_result
     # Need to strip filenames due to differences in formatting by OS
-    actual_out = '\n'.join([
-        '.py:'.join(line.split('.py:')[1:])
-        for line in actual_out.split('\n')
-    ]).strip()
+    actual_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in actual_out.split('\n')]).strip()
 
     if GENERATE and output_filename is not None:
-        with open(full_output_filename, 'w')as f:
+        with open(full_output_filename, 'w') as f:
             f.write(actual_out)
     else:
         assert actual_out == expected_out, actual_out

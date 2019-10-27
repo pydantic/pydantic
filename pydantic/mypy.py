@@ -76,7 +76,7 @@ class ModelConfigData:
     def as_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}
 
-    def update(self, config: Optional["ModelConfigData"]) -> None:
+    def update(self, config: Optional['ModelConfigData']) -> None:
         if config is None:
             return
         for k, v in config.as_dict().items():
@@ -94,12 +94,9 @@ class PydanticPluginConfig:
     init_typed: bool
 
     def __init__(self, options: Options) -> None:
-        default_plugin_settings: Dict[str, bool] = {
-            "allow_dynamic_aliases": True,
-            "allow_untyped_fields": True,
-            "init_allow_extra": True,
-            "init_typed": False,
-        }
+        default_plugin_settings: Dict[str, bool] = dict(
+            allow_dynamic_aliases=True, allow_untyped_fields=True, init_allow_extra=True, init_typed=False
+        )
         if options.config_file is not None:
             plugin_config = ConfigParser()
             plugin_config.read(options.config_file)
@@ -262,7 +259,7 @@ class PydanticModelTransformer:
                 continue
 
             if not stmt.new_syntax and not self.plugin_config.allow_untyped_fields:
-                ctx.api.fail("Untyped fields not allowed by plugin config [pydantic]", stmt)
+                ctx.api.fail('Untyped fields not allowed by plugin config [pydantic]', stmt)
 
             # if lhs.name == '__config__':  # BaseConfig not well handled; I'm not sure why yet
             #     continue

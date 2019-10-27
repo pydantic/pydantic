@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
@@ -23,7 +23,6 @@ class SelfReferencingModel(BaseModel):
 
 
 SelfReferencingModel.update_forward_refs()
-
 
 # reveal_type(Model)
 model = Model(x=1, y='y')
@@ -90,3 +89,11 @@ class MultiInheritanceModel(BaseModel, Mixin):
 
 
 MultiInheritanceModel().f()
+
+
+class AliasModel(BaseModel):
+    x: str = Field(..., alias='y')
+
+
+alias_model = AliasModel(y='hello')
+assert alias_model.x == 'hello'
