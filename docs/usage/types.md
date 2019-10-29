@@ -398,7 +398,7 @@ _(This script is complete, it should run "as is")_
   see [Constrained Types](#constrained-types)
 
 `NegativeInt`
-: allows a int which is negative; uses standard `int` parsing then checks the value is less than 0;
+: allows an int which is negative; uses standard `int` parsing then checks the value is less than 0;
   see [Constrained Types](#constrained-types)
 
 `PositiveFloat`
@@ -406,7 +406,7 @@ _(This script is complete, it should run "as is")_
   see [Constrained Types](#constrained-types)
 
 `PositiveInt`
-: allows a int which is positive; uses standard `int` parsing then checks the value is greater than 0;
+: allows an int which is positive; uses standard `int` parsing then checks the value is greater than 0;
   see [Constrained Types](#constrained-types)
 
 `conbytes`
