@@ -1,4 +1,4 @@
-black==19.3b0
+black==19.10b0
 coverage==4.5.4
 Cython==0.29.13;sys_platform!='win32'
 flake8==3.7.8
