@@ -14,7 +14,7 @@ except ImportError:
 os.chdir(Path(__file__).parent.parent.parent)
 
 # You can change the following variable to True during development to overwrite expected output with generated output
-GENERATE = False
+GENERATE = True
 
 cases = [
     ('mypy-plugin.ini', 'plugin_success.py', None),
