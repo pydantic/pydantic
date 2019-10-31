@@ -1,5 +1,4 @@
 from configparser import ConfigParser
-from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType
 
 from mypy.errorcodes import ErrorCode
@@ -477,14 +476,16 @@ class PydanticModelTransformer:
         return False
 
 
-@dataclass
 class PydanticModelField:
-    name: str
-    is_required: bool
-    alias: Optional[str]
-    has_dynamic_alias: bool
-    line: int
-    column: int
+    def __init__(
+        self, name: str, is_required: bool, alias: Optional[str], has_dynamic_alias: bool, line: int, column: int
+    ):
+        self.name = name
+        self.is_required = is_required
+        self.alias = alias
+        self.has_dynamic_alias = has_dynamic_alias
+        self.line = line
+        self.column = column
 
     def to_var(self, info: TypeInfo, use_alias: bool) -> Var:
         name = self.name
@@ -505,23 +506,30 @@ class PydanticModelField:
         )
 
     def serialize(self) -> JsonDict:
-        return asdict(self)
+        return self.__dict__
 
     @classmethod
     def deserialize(cls, info: TypeInfo, data: JsonDict) -> 'PydanticModelField':
         return cls(**data)
 
 
-@dataclass
 class ModelConfigData:
-    forbid_extra: Optional[bool] = None
-    allow_mutation: Optional[bool] = None
-    orm_mode: Optional[bool] = None
-    allow_population_by_field_name: Optional[bool] = None
-    has_alias_generator: Optional[bool] = None
+    def __init__(
+        self,
+        forbid_extra: Optional[bool] = None,
+        allow_mutation: Optional[bool] = None,
+        orm_mode: Optional[bool] = None,
+        allow_population_by_field_name: Optional[bool] = None,
+        has_alias_generator: Optional[bool] = None,
+    ):
+        self.forbid_extra = forbid_extra
+        self.allow_mutation = allow_mutation
+        self.orm_mode = orm_mode
+        self.allow_population_by_field_name = allow_population_by_field_name
+        self.has_alias_generator = has_alias_generator
 
     def set_values_dict(self) -> Dict[str, Any]:
-        return {k: v for k, v in asdict(self).items() if v is not None}
+        return {k: v for k, v in self.__dict__.items() if v is not None}
 
     def update(self, config: Optional['ModelConfigData']) -> None:
         if config is None:
