@@ -1,0 +1,1 @@
+Add a mypy plugin for type checking `BaseModel.__init__` and more

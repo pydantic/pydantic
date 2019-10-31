@@ -2,11 +2,10 @@ Pydantic works with [mypy](http://mypy-lang.org/) provided you use the annotatio
 required fields:
 
 ```py
-{!.tmp_examples/mypy.py!}
+{!.tmp_examples/mypy_example.py!}
 ```
-_(This script is complete, it should run "as is")_
 
-You can also run it through mypy with:
+You can run your code through mypy with:
 
 ```bash
 mypy \
@@ -15,6 +14,12 @@ mypy \
   --strict-optional \
   pydantic_mypy_test.py
 ```
+
+If you call mypy on the example code above, you should see mypy detect the attribute access error:
+```
+13: error: "Model" has no attribute "middle_name"
+```
+
 
 ## Strict Optional
 
@@ -29,3 +34,10 @@ Pydantic provides a few useful optional or union types:
 * `NoneStrBytes` aka. `Optional[StrBytes]`
 
 If these aren't sufficient you can of course define your own.
+
+## Mypy Plugin
+
+Pydantic ships with a mypy plugin that adds a number of important pydantic-specific
+features to mypy that improve its ability to type-check your code.
+ 
+See the [pydantic mypy plugin docs](../mypy_plugin.md) for more details. 
