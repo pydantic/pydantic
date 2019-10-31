@@ -5,7 +5,7 @@ features to mypy that improve its ability to type-check your code.
 
 For example, consider the following script:
 ```py
-{!.tmp_examples/mypy.py!}
+{!.tmp_examples/mypy_example.py!}
 ```
 
 Without any special configuration, mypy catches one of the errors (see [here](usage/mypy.md) for usage instructions):

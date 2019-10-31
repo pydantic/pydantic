@@ -2,7 +2,7 @@ Pydantic works with [mypy](http://mypy-lang.org/) provided you use the annotatio
 required fields:
 
 ```py
-{!.tmp_examples/mypy.py!}
+{!.tmp_examples/mypy_example.py!}
 ```
 
 You can run your code through mypy with:

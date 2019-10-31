@@ -119,37 +119,45 @@ def exec_examples():
             error('no trailing new line')
         if re.search('^ *# *>', file_text, flags=re.M):
             error('contains comments with print output, please remove')
-        no_print_intercept_re = re.compile(r'^# no-print-intercept\n', flags=re.M)
-        no_print_intercept = bool(no_print_intercept_re.search(file_text))
-        if no_print_intercept:
-            file_text = no_print_intercept_re.sub('', file_text)
 
-        mp = MockPrint(file)
-        with patch('builtins.print') as mock_print:
-            if not no_print_intercept:
-                mock_print.side_effect = mp
-            try:
-                importlib.import_module(file.stem)
-            except Exception:
-                tb = traceback.format_exception(*sys.exc_info())
-                error(''.join(e for e in tb if '/pydantic/docs/examples/' in e or not e.startswith('  File ')))
-
-        lines = file_text.split('\n')
-
-        to_json_line = '# output-json'
-        if to_json_line in lines:
-            lines = [line for line in lines if line != to_json_line]
-            if len(mp.statements) != 1:
-                error('should only have one print statement')
-            new_files[file.stem + '.json'] = '\n'.join(mp.statements[0][1]) + '\n'
-
+        dont_execute_re = re.compile(r'^# dont-execute\n', flags=re.M)
+        if dont_execute_re.search(file_text):
+            lines = dont_execute_re.sub('', file_text).split('\n')
         else:
-            for line_no, print_lines in reversed(mp.statements):
-                if len(print_lines) > 2:
-                    text = '"""\n{}\n"""'.format('\n'.join(print_lines))
-                else:
-                    text = '\n'.join('#> ' + l for l in print_lines)
-                lines.insert(line_no, text)
+            no_print_intercept_re = re.compile(r'^# no-print-intercept\n', flags=re.M)
+            no_print_intercept = bool(no_print_intercept_re.search(file_text))
+            if no_print_intercept:
+                file_text = no_print_intercept_re.sub('', file_text)
+
+            mp = MockPrint(file)
+            with patch('builtins.print') as mock_print:
+                if not no_print_intercept:
+                    mock_print.side_effect = mp
+                try:
+                    mod = importlib.import_module(file.stem)
+                except Exception:
+                    tb = traceback.format_exception(*sys.exc_info())
+                    error(''.join(e for e in tb if '/pydantic/docs/examples/' in e or not e.startswith('  File ')))
+
+            if not mod.__file__.startswith(str(EXAMPLES_DIR)):
+                error(f'module path not inside "{EXAMPLES_DIR}", name may shadow another module?')
+
+            lines = file_text.split('\n')
+
+            to_json_line = '# output-json'
+            if to_json_line in lines:
+                lines = [line for line in lines if line != to_json_line]
+                if len(mp.statements) != 1:
+                    error('should only have one print statement')
+                new_files[file.stem + '.json'] = '\n'.join(mp.statements[0][1]) + '\n'
+
+            else:
+                for line_no, print_lines in reversed(mp.statements):
+                    if len(print_lines) > 2:
+                        text = '"""\n{}\n"""'.format('\n'.join(print_lines))
+                    else:
+                        text = '\n'.join('#> ' + l for l in print_lines)
+                    lines.insert(line_no, text)
 
         try:
             ignore_above = lines.index('# ignore-above')
