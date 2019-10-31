@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+from dataclasses import asdict, dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType
 
 from mypy.errorcodes import ErrorCode
@@ -77,7 +78,7 @@ class PydanticPlugin(Plugin):
         if sym and isinstance(sym.node, TypeInfo):  # pragma: no branch
             # No branching may occur if the mypy cache has not been cleared
             if any(base.fullname() == BASEMODEL_FULLNAME for base in sym.node.mro):
-                return self.pydantic_model_class_maker_callback
+                return self._pydantic_model_class_maker_callback
         return None
 
     def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
@@ -85,7 +86,7 @@ class PydanticPlugin(Plugin):
             return from_orm_callback
         return None
 
-    def pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:
+    def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:
         transformer = PydanticModelTransformer(ctx, self.plugin_config)
         transformer.transform()
 
@@ -130,7 +131,7 @@ def from_orm_callback(ctx: MethodContext) -> Type:
 
 
 class PydanticModelTransformer:
-    model_config_fields: Set[str] = {
+    tracked_config_fields: Set[str] = {
         'extra',
         'allow_mutation',
         'orm_mode',
@@ -167,7 +168,7 @@ class PydanticModelTransformer:
         self.set_frozen(fields, frozen=config.allow_mutation is False)
         info.metadata[METADATA_KEY] = {
             'fields': {field.name: field.serialize() for field in fields},
-            'config': config.as_dict(),
+            'config': config.set_values_dict(),
         }
 
     def collect_config(self) -> 'ModelConfigData':
@@ -360,7 +361,7 @@ class PydanticModelTransformer:
         Warns if a tracked config attribute is set to a value the plugin doesn't know how to interpret (e.g., an int)
         """
         lhs = substmt.lvalues[0]
-        if not (isinstance(lhs, NameExpr) and lhs.name in self.model_config_fields):
+        if not (isinstance(lhs, NameExpr) and lhs.name in self.tracked_config_fields):
             return None
         if lhs.name == 'extra':
             if isinstance(substmt.rvalue, StrExpr):
@@ -476,16 +477,14 @@ class PydanticModelTransformer:
         return False
 
 
+@dataclass
 class PydanticModelField:
-    def __init__(
-        self, name: str, is_required: bool, alias: Optional[str], has_dynamic_alias: bool, line: int, column: int
-    ) -> None:
-        self.name = name
-        self.is_required = is_required
-        self.alias = alias
-        self.has_dynamic_alias = has_dynamic_alias
-        self.line = line
-        self.column = column
+    name: str
+    is_required: bool
+    alias: Optional[str]
+    has_dynamic_alias: bool
+    line: int
+    column: int
 
     def to_var(self, info: TypeInfo, use_alias: bool) -> Var:
         name = self.name
@@ -506,42 +505,28 @@ class PydanticModelField:
         )
 
     def serialize(self) -> JsonDict:
-        return {
-            'name': self.name,
-            'is_required': self.is_required,
-            'alias': self.alias,
-            'has_dynamic_alias': self.has_dynamic_alias,
-            'line': self.line,
-            'column': self.column,
-        }
+        return asdict(self)
 
     @classmethod
     def deserialize(cls, info: TypeInfo, data: JsonDict) -> 'PydanticModelField':
         return cls(**data)
 
 
+@dataclass
 class ModelConfigData:
-    def __init__(
-        self,
-        forbid_extra: Optional[bool] = None,
-        allow_mutation: Optional[bool] = None,
-        orm_mode: Optional[bool] = None,
-        allow_population_by_field_name: Optional[bool] = None,
-        has_alias_generator: Optional[bool] = None,
-    ):
-        self.forbid_extra = forbid_extra
-        self.allow_mutation = allow_mutation
-        self.orm_mode = orm_mode
-        self.allow_population_by_field_name = allow_population_by_field_name
-        self.has_alias_generator = has_alias_generator
+    forbid_extra: Optional[bool] = None
+    allow_mutation: Optional[bool] = None
+    orm_mode: Optional[bool] = None
+    allow_population_by_field_name: Optional[bool] = None
+    has_alias_generator: Optional[bool] = None
 
-    def as_dict(self) -> Dict[str, Any]:
-        return {k: v for k, v in self.__dict__.items() if v is not None}
+    def set_values_dict(self) -> Dict[str, Any]:
+        return {k: v for k, v in asdict(self).items() if v is not None}
 
     def update(self, config: Optional['ModelConfigData']) -> None:
         if config is None:
             return
-        for k, v in config.as_dict().items():
+        for k, v in config.set_values_dict().items():
             setattr(self, k, v)
 
     def setdefault(self, key: str, value: Any) -> None:

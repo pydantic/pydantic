@@ -14,7 +14,7 @@ except ImportError:
 os.chdir(Path(__file__).parent.parent.parent)
 
 # You can change the following variable to True during development to overwrite expected output with generated output
-GENERATE = True
+GENERATE = False
 
 cases = [
     ('mypy-plugin.ini', 'plugin_success.py', None),
@@ -70,3 +70,10 @@ def test_success_cases_run(module):
     Ensure the "success" files can actually be executed
     """
     importlib.import_module(f'tests.mypy.modules.{module}')
+
+
+def test_generation_is_disabled():
+    """
+    Makes sure we don't accidentally leave generation on
+    """
+    assert not GENERATE
