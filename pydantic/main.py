@@ -136,8 +136,6 @@ def is_valid_field(name: str) -> bool:
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
         raise ValueError('__root__ cannot be mixed with other fields')
-    if fields[ROOT_KEY].shape == SHAPE_MAPPING:
-        raise TypeError('custom root type cannot allow mapping')
 
 
 UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
@@ -240,7 +238,15 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
-        return super().__new__(mcs, name, bases, new_namespace, **kwargs)
+        cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
+        if _custom_root_type and cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING:
+            original_parse_obj = cls.parse_obj
+
+            def parse_obj(obj: Any) -> 'Model':
+                return original_parse_obj({ROOT_KEY: obj})
+
+            setattr(cls, 'parse_obj', staticmethod(parse_obj))
+        return cls
 
 
 class BaseModel(metaclass=ModelMetaclass):

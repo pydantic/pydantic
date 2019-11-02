@@ -900,10 +900,10 @@ def test_root_undefined_failed():
 
 
 def test_parse_root_as_mapping():
-    with pytest.raises(TypeError, match='custom root type cannot allow mapping'):
+    class MyModel(BaseModel):
+        __root__: Mapping[str, str]
 
-        class MyModel(BaseModel):
-            __root__: Mapping[str, str]
+    assert MyModel.parse_obj({1: 2}).__root__ == {'1': '2'}
 
 
 def test_untouched_types():
