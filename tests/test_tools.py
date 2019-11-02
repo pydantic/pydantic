@@ -39,4 +39,4 @@ def test_parse_as_type_fails():
     assert exc_info.value.errors() == [
         {'loc': ('obj',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
-    assert exc_info.value.model.__name__ == 'ParsingModel[int] (for parse_as_type)'
+    assert exc_info.value.model.__name__ == 'ParsingModel[int]'
