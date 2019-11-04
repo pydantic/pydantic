@@ -1220,3 +1220,19 @@ def test_field_type_display(type_, expected):
         a: type_
 
     assert Model.__fields__['a']._type_display() == expected
+
+
+def test_dict_bare():
+    class MyModel(BaseModel):
+        foo: Dict
+
+    m = MyModel(foo={'x': 'a', 'y': None})
+    assert m.foo == {'x': 'a', 'y': None}
+
+
+def test_dict_any():
+    class MyModel(BaseModel):
+        foo: Dict[str, Any]
+
+    m = MyModel(foo={'x': 'a', 'y': None})
+    assert m.foo == {'x': 'a', 'y': None}
