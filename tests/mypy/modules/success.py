@@ -81,16 +81,6 @@ assert m_copy.last_name == m_from_obj.last_name
 assert m_copy.list_of_ints == m_from_obj.list_of_ints
 
 
-@dataclass
-class AddProject:
-    name: str
-    slug: Optional[str]
-    description: Optional[str]
-
-
-p = AddProject(name='x', slug='y', description='z')
-
-
 if sys.version_info >= (3, 7):
     T = TypeVar('T')
 

@@ -22,6 +22,9 @@ if TYPE_CHECKING:
         def __validate__(cls, v: Any) -> 'DataclassType':
             pass
 
+        def __call__(self, *args, **kwargs):
+            pass
+
 
 def _validate_dataclass(cls: Type['DataclassType'], v: Any) -> 'DataclassType':
     if isinstance(v, cls):
@@ -105,33 +108,28 @@ def _process_class(
     return cls
 
 
-if TYPE_CHECKING:
-    # see https://github.com/python/mypy/issues/6239 for explanation of why we do this
-    from dataclasses import dataclass as dataclass
-else:
+def dataclass(
+    _cls: Optional[AnyType] = None,
+    *,
+    init: bool = True,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
+    unsafe_hash: bool = False,
+    frozen: bool = False,
+    config: Type['BaseConfig'] = None,
+) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
+    """
+    Like the python standard lib dataclasses but with type validation.
 
-    def dataclass(
-        _cls: Optional[AnyType] = None,
-        *,
-        init: bool = True,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool = False,
-        config: Type['BaseConfig'] = None,
-    ) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
-        """
-        Like the python standard lib dataclasses but with type validation.
+    Arguments are the same as for standard dataclasses, except for validate_assignment which has the same meaning
+    as Config.validate_assignment.
+    """
 
-        Arguments are the same as for standard dataclasses, except for validate_assignment which has the same meaning
-        as Config.validate_assignment.
-        """
+    def wrap(cls: AnyType) -> 'DataclassType':
+        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
 
-        def wrap(cls: AnyType) -> 'DataclassType':
-            return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
+    if _cls is None:
+        return wrap
 
-        if _cls is None:
-            return wrap
-
-        return wrap(_cls)
+    return wrap(_cls)
