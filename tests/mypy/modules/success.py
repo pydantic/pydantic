@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, NoneStr, StrictBool
-from pydantic.dataclasses import dataclass
 from pydantic.fields import Field
 from pydantic.generics import GenericModel
 

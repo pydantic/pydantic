@@ -22,7 +22,7 @@ if TYPE_CHECKING:
         def __validate__(cls, v: Any) -> 'DataclassType':
             pass
 
-        def __call__(self, *args, **kwargs):
+        def __call__(self, *args: Any, **kwargs: Any) -> 'DataclassType':
             pass
 
 
@@ -62,7 +62,7 @@ def _process_class(
     order: bool,
     unsafe_hash: bool,
     frozen: bool,
-    config: Type['BaseConfig'],
+    config: Optional[Type['BaseConfig']],
 ) -> 'DataclassType':
     post_init_original = getattr(_cls, '__post_init__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
