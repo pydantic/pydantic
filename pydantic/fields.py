@@ -14,6 +14,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -309,12 +310,24 @@ class ModelField(Representation):
         elif lenient_issubclass(self.type_, Json):
             self.type_ = Any  # type: ignore
             self.parse_json = True
+        elif isinstance(self.type_, TypeVar):
+            if self.type_.__bound__:
+                self.type_ = self.type_.__bound__
+            elif self.type_.__constraints__:
+                self.type_ = Union[self.type_.__constraints__]
+            else:
+                self.type_ = Any
 
-        if self.type_ is Pattern:
+        if self.type_ is Any:
+            self.required = False
+            self.allow_none = True
+            return
+        elif self.type_ is Pattern:
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
-        if is_literal_type(self.type_):
+        elif is_literal_type(self.type_):
             return
+
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.

@@ -2,7 +2,7 @@ import re
 import sys
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -1222,12 +1222,79 @@ def test_field_type_display(type_, expected):
     assert Model.__fields__['a']._type_display() == expected
 
 
+def test_any_none():
+    class MyModel(BaseModel):
+        foo: Any
+
+    m = MyModel(foo=None)
+    assert dict(m) == {'foo': None}
+
+
+def test_type_var_any():
+    Foobar = TypeVar('Foobar')
+
+    class MyModel(BaseModel):
+        foo: Foobar
+
+    assert MyModel.schema() == {'title': 'MyModel', 'type': 'object', 'properties': {'foo': {'title': 'Foo'}}}
+    assert MyModel(foo=None).foo is None
+    assert MyModel(foo='x').foo == 'x'
+    assert MyModel(foo=123).foo == 123
+
+
+def test_type_var_constraint():
+    Foobar = TypeVar('Foobar', int, str)
+
+    class MyModel(BaseModel):
+        foo: Foobar
+
+    assert MyModel.schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {'foo': {'title': 'Foo', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['foo'],
+    }
+    with pytest.raises(ValidationError, match='none is not an allowed value'):
+        MyModel(foo=None)
+    with pytest.raises(ValidationError, match='value is not a valid integer'):
+        MyModel(foo=[1, 2, 3])
+    assert MyModel(foo='x').foo == 'x'
+    assert MyModel(foo=123).foo == 123
+
+
+def test_type_var_bound():
+    Foobar = TypeVar('Foobar', bound=int)
+
+    class MyModel(BaseModel):
+        foo: Foobar
+
+    assert MyModel.schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {'foo': {'title': 'Foo', 'type': 'integer'}},
+        'required': ['foo'],
+    }
+    with pytest.raises(ValidationError, match='none is not an allowed value'):
+        MyModel(foo=None)
+    with pytest.raises(ValidationError, match='value is not a valid integer'):
+        MyModel(foo='x')
+    assert MyModel(foo=123).foo == 123
+
+
 def test_dict_bare():
     class MyModel(BaseModel):
         foo: Dict
 
     m = MyModel(foo={'x': 'a', 'y': None})
     assert m.foo == {'x': 'a', 'y': None}
+
+
+def test_list_bare():
+    class MyModel(BaseModel):
+        foo: List
+
+    m = MyModel(foo=[1, 2, None])
+    assert m.foo == [1, 2, None]
 
 
 def test_dict_any():

@@ -261,12 +261,7 @@ def test_any():
     class Model(BaseModel):
         a: Any
 
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'title': 'A'}},
-        'required': ['a'],
-    }
+    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'title': 'A'}}}
 
 
 def test_set():
@@ -677,7 +672,6 @@ def test_json_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
-        'required': ['a'],
     }
 
 
