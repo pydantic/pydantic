@@ -65,9 +65,6 @@ class BaseSettings(BaseModel):
 
         @classmethod
         def prepare_field(cls, field: ModelField) -> None:
-            if not field.field_info:
-                return
-
             env_names: Iterable[str]
             env = field.field_info.extra.pop('env', None)
             if env is None:
