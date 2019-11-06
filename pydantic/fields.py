@@ -221,7 +221,7 @@ class ModelField(Representation):
         self.default: Any = default
         self.required: bool = required
         self.model_config = model_config
-        self.field_info: Optional[FieldInfo] = field_info
+        self.field_info: FieldInfo = field_info or FieldInfo(default)
 
         self.allow_none: bool = False
         self.validate_always: bool = False
@@ -271,7 +271,6 @@ class ModelField(Representation):
         self.model_config = config
         info_from_config = config.get_field_info(self.name)
         if info_from_config:
-            self.field_info = cast(FieldInfo, self.field_info)
             self.field_info.alias = info_from_config.get('alias') or self.field_info.alias or self.name
             self.alias = cast(str, self.field_info.alias)
 

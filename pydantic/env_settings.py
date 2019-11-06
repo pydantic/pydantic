@@ -40,7 +40,7 @@ class BaseSettings(BaseModel):
 
         for field in self.__fields__.values():
             env_val: Optional[str] = None
-            for env_name in field.field_info.extra['env_names']:  # type: ignore
+            for env_name in field.field_info.extra['env_names']:
                 env_val = env_vars.get(env_name)
                 if env_val is not None:
                     break
