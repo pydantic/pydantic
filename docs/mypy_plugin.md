@@ -53,7 +53,12 @@ There are other benefits too! See below for more details.
 #### Respect `Config.orm_mode`
 * If `Config.orm_mode` is `False`, you'll get a mypy error if you try to call `.from_orm()`;
   cf. [ORM mode](usage/models.md#orm-mode-aka-arbitrary-class-instances)
- 
+
+#### Generate a signature for `dataclasses`
+* The [`dataclasses`](usage/dataclasses.md) is decorated class with `@pydantic.dataclasess.dataclass` which is inspected
+ as python [dataclasses](https://docs.python.org/3/library/dataclasses.html) 
+* The `@pydantic.dataclasess.dataclass` decorator accepts `Config` as a keyword argument which has the same meaning as [Config](model_config.md).
+
 ### Optional Capabilites:
 #### Prevent the use of required dynamic aliases
 * If the [`warn_required_dynamic_aliases` **plugin setting**](#plugin-settings) is set to `True`, you'll get a mypy

@@ -9,7 +9,7 @@ from .main import create_model, validate_model
 from .typing import AnyType
 
 if TYPE_CHECKING:
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .main import BaseModel  # noqa: F401
 
     class DataclassType:
         __pydantic_model__: Type[BaseModel]
@@ -62,7 +62,7 @@ def _process_class(
     order: bool,
     unsafe_hash: bool,
     frozen: bool,
-    config: Optional[Type['BaseConfig']],
+    config: Optional[Type[Any]],
 ) -> 'DataclassType':
     post_init_original = getattr(_cls, '__post_init__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
@@ -117,7 +117,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Type['BaseConfig'] = None,
+    config: Type[Any] = None,
 ) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
     """
     Like the python standard lib dataclasses but with type validation.

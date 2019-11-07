@@ -21,4 +21,4 @@
 175: error: unused 'type: ignore' comment
 182: error: unused 'type: ignore' comment
 189: error: Name 'Missing' is not defined  [name-defined]
-197: error: Argument "config" to "dataclass" has incompatible type "Dict[<nothing>, <nothing>]"; expected "Optional[Type[BaseConfig]]"  [arg-type]
+197: error: Argument "config" to "dataclass" has incompatible type "Dict[<nothing>, <nothing>]"; expected "Optional[Type[Any]]"  [arg-type]
