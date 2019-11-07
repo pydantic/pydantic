@@ -174,14 +174,20 @@ def test_must_inherit_from_generic():
 
 
 @skip_36
-def test_parameters_must_be_typevar():
+def test_parameters_placed_on_generic():
     T = TypeVar('T')
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(TypeError, match='Type parameters should be placed on typing.Generic, not GenericModel'):
 
         class Result(GenericModel[T]):
             pass
 
-    assert str(exc_info.value) == f'Type parameters should be placed on typing.Generic, not GenericModel'
+
+@skip_36
+def test_parameters_must_be_typevar():
+    with pytest.raises(TypeError, match='Type GenericModel must inherit from typing.Generic before being '):
+
+        class Result(GenericModel[int]):
+            pass
 
 
 @skip_36
