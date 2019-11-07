@@ -1627,3 +1627,21 @@ def test_conlist():
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=1)
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+
+
+def test_subfield_field_info():
+    class MyModel(BaseModel):
+        entries: Dict[str, List[int]]
+
+    assert MyModel.schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {
+            'entries': {
+                'title': 'Entries',
+                'type': 'object',
+                'additionalProperties': {'type': 'array', 'items': {'type': 'integer'}},
+            }
+        },
+        'required': ['entries'],
+    }
