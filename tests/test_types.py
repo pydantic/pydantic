@@ -17,6 +17,7 @@ from pydantic import (
     UUID4,
     UUID5,
     BaseModel,
+    ByteSize,
     ConfigError,
     DirectoryPath,
     EmailStr,
@@ -1837,3 +1838,24 @@ def test_frozenset_field_not_convertible():
 
     with pytest.raises(ValidationError, match=r'frozenset'):
         FrozenSetModel(set=42)
+
+
+@pytest.mark.parametrize('value', (('1', 1), ('1.0', 1), ('1b', 1), ('1.5 MB', int(1.5e6)), ('5.1kib', 5222)))
+def test_bytesize_conversions(value):
+    class Model(BaseModel):
+        size: ByteSize
+
+    m = Model(size=value[0])
+
+    assert value[1] == m.size
+
+
+def test_bytesize_raises():
+    class Model(BaseModel):
+        size: ByteSize
+
+    with pytest.raises(ValidationError, match=r'parse value'):
+        Model(size="d1MB")
+
+    with pytest.raises(ValidationError, match=r'byte unit'):
+        Model(size="1LiB")

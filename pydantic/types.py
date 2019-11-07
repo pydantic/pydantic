@@ -65,6 +65,7 @@ __all__ = [
     'StrictInt',
     'StrictFloat',
     'PaymentCardNumber',
+    'ByteSize',
 ]
 
 NoneStr = Optional[str]
@@ -606,3 +607,59 @@ class PaymentCardNumber(str):
         else:
             brand = PaymentCardBrand.other
         return brand
+
+
+BYTE_SIZES = {
+    '': 1,
+    'B': 1,
+    'kB': 10 ** 3,
+    'MB': 10 ** 6,
+    'GB': 10 ** 9,
+    'TB': 10 ** 12,
+    'PB': 10 ** 15,
+    'EB': 10 ** 18,
+    'KiB': 2 ** 10,
+    'MiB': 2 ** 20,
+    'GiB': 2 ** 30,
+    'TiB': 2 ** 40,
+    'PiB': 2 ** 50,
+    'EiB': 2 ** 60,
+}
+BYTE_SIZES.update({k.lower(): v for k, v in BYTE_SIZES.items()})
+byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
+
+
+class ByteSize(int):
+
+    def __init__(self, value):
+        self.value = value
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+
+        if type(v) == cls:
+            return v
+
+        try:
+            return cls(int(v))
+        except ValueError:
+            pass
+
+        str_match = byte_string_re.match(v)
+        if str_match is None:
+            raise errors.InvalidByteString
+
+        scalar, unit = str_match.groups()
+        if unit is None:
+            unit = "B"
+
+        try:
+            unit_mult = BYTE_SIZES[unit.lower()]
+        except KeyError:
+            raise errors.InvalidByteUnit(unit=unit)
+
+        return cls(int(float(scalar) * unit_mult))
