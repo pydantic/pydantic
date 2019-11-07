@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, NoneStr, StrictBool
+from pydantic.dataclasses import dataclass
 from pydantic.fields import Field
 from pydantic.generics import GenericModel
 
@@ -102,3 +103,17 @@ if sys.version_info >= (3, 7):
 class WithField(BaseModel):
     age: int
     first_name: str = Field('John', const=True)
+
+
+class Config:
+    validate_assignment = True
+
+
+@dataclass(config=Config)
+class AddProject:
+    name: str
+    slug: Optional[str]
+    description: Optional[str]
+
+
+p = AddProject(name='x', slug='y', description='z')

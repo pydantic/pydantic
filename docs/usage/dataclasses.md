@@ -22,11 +22,8 @@ created by the standard library `dataclass` decorator.
 `pydantic.dataclasses.dataclass`'s arguments are the same as the standard decorator, except one extra
 keyword argument `config` which has the same meaning as [Config](model_config.md).
 
-!!! note
-    As a side effect of getting pydantic dataclasses to play nicely with mypy, the `config` argument will show
-    as invalid in IDEs and mypy. Use `@dataclass(..., config=Config) # type: ignore` as a workaround. 
-
-    See [python/mypy#6239](https://github.com/python/mypy/issues/6239) for an explanation of this issue.
+!!! warning
+    After v1.2, [The Mypy plugin](usage/mypy.md) must be installed to type check pydantic dataclasses.
 
 For more information about combining validators with dataclasses, see 
 [dataclass validators](validators.md#dataclass-validators).

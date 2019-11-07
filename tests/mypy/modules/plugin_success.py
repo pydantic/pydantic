@@ -1,6 +1,7 @@
 from typing import ClassVar, Optional
 
 from pydantic import BaseModel, Field
+from pydantic.dataclasses import dataclass
 
 
 class Model(BaseModel):
@@ -104,3 +105,17 @@ class ClassVarModel(BaseModel):
 
 
 ClassVarModel(x=1)
+
+
+class Config:
+    validate_assignment = True
+
+
+@dataclass(config=Config)
+class AddProject:
+    name: str
+    slug: Optional[str]
+    description: Optional[str]
+
+
+p = AddProject(name='x', slug='y', description='z')
