@@ -630,7 +630,6 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 
 class ByteSize(int):
-
     def __init__(self, value):
         self.value = value
 
@@ -663,3 +662,13 @@ class ByteSize(int):
             raise errors.InvalidByteUnit(unit=unit)
 
         return cls(int(float(scalar) * unit_mult))
+
+    def human_readable(self):
+
+        num = float(self.value)
+        for unit in ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']:
+            if abs(num) < 1024:
+                return f'{num:0.2}{unit}'
+            num /= 1024
+
+        return f'{num:0.2}EiB'
