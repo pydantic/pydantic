@@ -62,6 +62,12 @@ with custom properties and validation.
 `datetime.timedelta`
 : see [Datetime Types](#datetime-types) below for more detail on parsing and validation
 
+`typing.Any`
+: allows any value include `None`, thus an `Any` field is optional
+
+`typing.TypeVar`
+: constrains the values allowed based on `constraints` or `bound`, see [TypeVar](#typevar)
+
 `typing.Union`
 : see [Unions](#unions) below for more detail on parsing and validation
 
@@ -275,12 +281,23 @@ that are subclasses of `T`.
 ```py
 {!.tmp_examples/type_type.py!}
 ```
+_(This script is complete, it should run "as is")_
 
 You may also use `Type` to specify that any class is allowed.
 
 ```py
 {!.tmp_examples/bare_type_type.py!}
 ```
+_(This script is complete, it should run "as is")_
+
+### TypeVar
+
+`TypeVar` is supported either unconstrained, constrained or with a bound.
+
+```py
+{!.tmp_examples/types_typevar.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ## Literal Type
 
