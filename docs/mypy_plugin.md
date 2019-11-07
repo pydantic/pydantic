@@ -57,7 +57,7 @@ There are other benefits too! See below for more details.
 #### Generate a signature for `dataclasses`
 * classes decorated with [`@pydantic.dataclasess.dataclass`](usage/dataclasses.md) are type checked the same as standard python dataclasses
  as python [dataclasses](https://docs.python.org/3/library/dataclasses.html) 
-* The `@pydantic.dataclasess.dataclass` decorator accepts `Config` as a keyword argument which has the same meaning as [Config](usage/model_config.md).
+* The `@pydantic.dataclasess.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](usage/model_config.md).
 
 ### Optional Capabilites:
 #### Prevent the use of required dynamic aliases
