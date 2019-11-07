@@ -78,14 +78,14 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : a `dict` used to customise the way types are encoded to JSON; see [JSON Serialisation](exporting_models.md#modeljson)
 
 ```py
-{!.tmp_examples/config.py!}
+{!.tmp_examples/model_config_main.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Similarly, if using the `@dataclass` decorator:
 
 ```py
-{!.tmp_examples/ex_dataclasses_config.py!}
+{!.tmp_examples/model_config_dataclass.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -95,7 +95,7 @@ If data source field names do not match your code style (e. g. CamelCase fields)
 you can automatically generate aliases using `alias_generator`:
 
 ```py
-{!.tmp_examples/alias_generator_config.py!}
+{!.tmp_examples/model_config_alias_generator.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -106,7 +106,7 @@ Aliases defined on the `Config` class of child models will take priority over an
 parent model:
 
 ```py
-{!.tmp_examples/alias_precedence.py!}
+{!.tmp_examples/model_config_alias_precedence.py!}
 ```
 _(This script is complete, it should run "as is")_
 

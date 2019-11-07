@@ -13,7 +13,7 @@ This makes it easy to:
 For example:
 
 ```py
-{!.tmp_examples/settings.py!}
+{!.tmp_examples/settings_main.py!}
 ```
 _(This script is complete, it should run "as is")_
 

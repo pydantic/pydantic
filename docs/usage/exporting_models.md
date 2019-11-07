@@ -19,7 +19,7 @@ Arguments:
 Example:
 
 ```py
-{!.tmp_examples/export_dict.py!}
+{!.tmp_examples/exporting_models_dict.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -32,7 +32,7 @@ returned, so sub-models will not be converted to dictionaries.
 Example:
 
 ```py
-{!.tmp_examples/export_iterate.py!}
+{!.tmp_examples/exporting_models_iterate.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -50,7 +50,7 @@ Arguments:
 Example:
 
 ```py
-{!.tmp_examples/export_copy.py!}
+{!.tmp_examples/exporting_models_copy.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -80,7 +80,7 @@ Arguments:
 Example:
 
 ```py
-{!.tmp_examples/export_json.py!}
+{!.tmp_examples/exporting_models_json.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -95,7 +95,7 @@ and decoding.
 Using the same plumbing as `copy()`, *pydantic* models support efficient pickling and unpickling.
 
 ```py
-{!.tmp_examples/export_pickle.py!}
+{!.tmp_examples/exporting_models_pickle.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -105,14 +105,14 @@ The `dict`, `json`, and `copy` methods support `include` and `exclude` arguments
 sets or dictionaries. This allows nested selection of which fields to export:
 
 ```py
-{!.tmp_examples/advanced_exclude1.py!}
+{!.tmp_examples/exporting_models_exclude1.py!}
 ```
 
-The ellipsis (``...``) indicates that we want to exclude or include an entire key, just as if we included it in a set.
+The ellipsis (``...``) indicates that we wantr to exclude or include an entire key, just as if we included it in a set.
 Of course, the same can be done at any depth level:
 
 ```py
-{!.tmp_examples/advanced_exclude2.py!}
+{!.tmp_examples/exporting_models_exclude2.py!}
 ```
 
 The same holds for the `json` and `copy` methods.
@@ -124,7 +124,7 @@ To improve the performance of encoding and decoding JSON, alternative JSON imple
 `json_loads` and `json_dumps` properties of `Config`.
 
 ```py
-{!.tmp_examples/json_ujson.py!}
+{!.tmp_examples/exporting_models_ujson.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -133,7 +133,7 @@ not accept a `default` fallback function argument. To do this, you may use anoth
 [orjson](https://github.com/ijl/orjson).
 
 ```py
-{!.tmp_examples/json_orjson.py!}
+{!.tmp_examples/exporting_models_orjson.py!}
 ```
 _(This script is complete, it should run "as is")_
 

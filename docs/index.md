@@ -20,7 +20,7 @@ Define how data should be in pure, canonical python; validate it with *pydantic*
 ## Example
 
 ```py
-{!.tmp_examples/example1.py!}
+{!.tmp_examples/index_main.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -37,11 +37,11 @@ What's going on here:
 If validation fails pydantic will raise an error with a breakdown of what was wrong:
 
 ```py
-{!.tmp_examples/example2.py!}
+{!.tmp_examples/index_error.py!}
 ```
 outputs:
 ```json
-{!.tmp_examples/example2.json!}
+{!.tmp_examples/index_error.json!}
 ```
 
 ## Rationale
