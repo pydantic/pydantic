@@ -4,7 +4,7 @@ If you don't want to use pydantic's `BaseModel` you can instead get the same dat
 Dataclasses work in python 3.6 using the [dataclasses backport package](https://github.com/ericvsmith/dataclasses).
 
 ```py
-{!.tmp_examples/ex_dataclasses.py!}
+{!.tmp_examples/dataclasses_main.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -36,7 +36,7 @@ For more information about combining validators with dataclasses, see
 Nested dataclasses are supported both in dataclasses and normal models.
 
 ```py
-{!.tmp_examples/ex_nested_dataclasses.py!}
+{!.tmp_examples/dataclasses_nested.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -49,7 +49,7 @@ with the help of `__post_init_post_parse__`. This is not the same as `__post_ini
 code *before* validation.
 
 ```py
-{!.tmp_examples/ex_post_init_post_parse.py!}
+{!.tmp_examples/dataclasses_post_init_post_parse.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -57,6 +57,6 @@ Since version **v1.0**, any fields annotated with `dataclasses.InitVar` are pass
 `__post_init_post_parse__`.
 
 ```py
-{!.tmp_examples/ex_post_init_post_parse_initvars.py!}
+{!.tmp_examples/dataclasses_initvars.py!}
 ```
 _(This script is complete, it should run "as is")_
