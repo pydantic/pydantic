@@ -108,7 +108,7 @@ sets or dictionaries. This allows nested selection of which fields to export:
 {!.tmp_examples/exporting_models_exclude1.py!}
 ```
 
-The ellipsis (``...``) indicates that we wantr to exclude or include an entire key, just as if we included it in a set.
+The ellipsis (``...``) indicates that we want to exclude or include an entire key, just as if we included it in a set.
 Of course, the same can be done at any depth level:
 
 ```py

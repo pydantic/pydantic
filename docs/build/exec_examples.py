@@ -53,7 +53,7 @@ class MockPrint:
     def __call__(self, *args, file=None, flush=None):
         frame = inspect.currentframe().f_back.f_back.f_back
         if not self.file.samefile(frame.f_code.co_filename):
-            # happens when index_error import index_main
+            # happens when index_error.py imports index_main.py
             return
         s = ' '.join(map(to_string, args))
 
