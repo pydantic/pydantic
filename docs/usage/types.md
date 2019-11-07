@@ -145,6 +145,9 @@ with custom properties and validation.
 : strings and bytes (converted to strings) are passed to `UUID(v)`;
   see [Pydantic Types](#pydantic-types) for other stricter UUID types
 
+`ByteSize`
+: converts a bytes string with units to bytes
+
 ### Typing Iterables
 
 *pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.

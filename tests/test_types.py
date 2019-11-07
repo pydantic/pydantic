@@ -1867,7 +1867,7 @@ def test_bytesize_raises():
         size: ByteSize
 
     with pytest.raises(ValidationError, match=r'parse value'):
-        Model(size="d1MB")
+        Model(size='d1MB')
 
     with pytest.raises(ValidationError, match=r'byte unit'):
-        Model(size="1LiB")
+        Model(size='1LiB')

@@ -504,8 +504,8 @@ class InvalidLengthForBrand(PydanticValueError):
 
 
 class InvalidByteString(PydanticValueError):
-    msg_template = "could not parse value and unit from byte string"
+    msg_template = 'could not parse value and unit from byte string'
 
 
 class InvalidByteUnit(PydanticValueError):
-    msg_template = "could not interpret byte unit: {unit}"
+    msg_template = 'could not interpret byte unit: {unit}'
