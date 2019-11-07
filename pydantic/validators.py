@@ -128,7 +128,7 @@ def strict_float_validator(v: Any) -> float:
 
 
 def number_multiple_validator(v: 'Number', field: 'ModelField') -> 'Number':
-    field_type: ConstrainedNumber = field.type_  # type: ignore
+    field_type: ConstrainedNumber = field.type_
     if field_type.multiple_of is not None:
         mod = float(v) / float(field_type.multiple_of) % 1
         if not almost_equal_floats(mod, 0.0) and not almost_equal_floats(mod, 1.0):
@@ -137,7 +137,7 @@ def number_multiple_validator(v: 'Number', field: 'ModelField') -> 'Number':
 
 
 def number_size_validator(v: 'Number', field: 'ModelField') -> 'Number':
-    field_type: ConstrainedNumber = field.type_  # type: ignore
+    field_type: ConstrainedNumber = field.type_
     if field_type.gt is not None and not v > field_type.gt:
         raise errors.NumberNotGtError(limit_value=field_type.gt)
     elif field_type.ge is not None and not v >= field_type.ge:
@@ -243,7 +243,7 @@ def enum_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
         enum_v = field.type_(v)
     except ValueError:
         # field.type_ should be an enum, so will be iterable
-        raise errors.EnumError(enum_values=list(field.type_))  # type: ignore
+        raise errors.EnumError(enum_values=list(field.type_))
     return enum_v.value if config.use_enum_values else enum_v
 
 
@@ -404,11 +404,11 @@ def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
 def constr_length_validator(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 
-    min_length = field.type_.min_length or config.min_anystr_length  # type: ignore
+    min_length = field.type_.min_length or config.min_anystr_length
     if min_length is not None and v_len < min_length:
         raise errors.AnyStrMinLengthError(limit_value=min_length)
 
-    max_length = field.type_.max_length or config.max_anystr_length  # type: ignore
+    max_length = field.type_.max_length or config.max_anystr_length
     if max_length is not None and v_len > max_length:
         raise errors.AnyStrMaxLengthError(limit_value=max_length)
 
@@ -416,7 +416,7 @@ def constr_length_validator(v: 'StrBytes', field: 'ModelField', config: 'BaseCon
 
 
 def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
-    strip_whitespace = field.type_.strip_whitespace or config.anystr_strip_whitespace  # type: ignore
+    strip_whitespace = field.type_.strip_whitespace or config.anystr_strip_whitespace
     if strip_whitespace:
         v = v.strip()
 
