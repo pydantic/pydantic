@@ -95,7 +95,7 @@ def root_validator(_func: Optional[AnyCallable] = None, *, pre: bool = False) ->
         _check_validator_name(_func)
         f_cls = classmethod(_func)
         setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=_func, pre=pre))
-        return f_cls
+        return f_cls  # type: ignore
 
     def dec(f: AnyCallable) -> classmethod:
         _check_validator_name(f)
