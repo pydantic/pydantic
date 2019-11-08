@@ -4,3 +4,5 @@ django               # pyup: ignore
 djangorestframework  # pyup: ignore
 #marshmallow          # pyup: ignore
 toastedmarshmallow   # pyup: ignore
+attr                 # pyup: ignore
+cattrs               # pyup: ignore
