@@ -610,7 +610,6 @@ class PaymentCardNumber(str):
 
 
 BYTE_SIZES = {
-    '': 1,
     'B': 1,
     'kB': 10 ** 3,
     'MB': 10 ** 6,
@@ -626,12 +625,12 @@ BYTE_SIZES = {
     'EiB': 2 ** 60,
 }
 BYTE_SIZES.update({k.lower(): v for k, v in BYTE_SIZES.items()})
-byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)\s*', re.IGNORECASE)
+BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if "i" not in k})
+BYTE_SIZES.update({k.lower()[:2]: v for k, v in BYTE_SIZES.items() if "i" in k})
+byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 
 class ByteSize(int):
-    def __init__(self, value):
-        self.value = value
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -640,9 +639,6 @@ class ByteSize(int):
     @classmethod
     def validate(cls, v) -> 'ByteSize':
 
-        if type(v) == cls:
-            return v
-
         try:
             return cls(int(v))
         except ValueError:
@@ -650,7 +646,7 @@ class ByteSize(int):
 
         str_match = byte_string_re.match(v)
         if str_match is None:
-            raise errors.InvalidByteString()
+            raise errors.InvalidByteSize()
 
         scalar, unit = str_match.groups()
         if unit is None:
@@ -659,7 +655,7 @@ class ByteSize(int):
         try:
             unit_mult = BYTE_SIZES[unit.lower()]
         except KeyError:
-            raise errors.InvalidByteUnit(unit=unit)
+            raise errors.InvalidByteSizeUnit(unit=unit)
 
         return cls(int(float(scalar) * unit_mult))
 
@@ -674,7 +670,7 @@ class ByteSize(int):
             units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
             final_unit = "EiB"
 
-        num = float(self.value)
+        num = float(self)
         for unit in units:
             if abs(num) < divisor:
                 return f'{num:0.2}{unit}'

@@ -85,8 +85,8 @@ __all__ = (
     'NotDigitError',
     'LuhnValidationError',
     'InvalidLengthForBrand',
-    'InvalidByteString',
-    'InvalidByteUnit',
+    'InvalidByteSize',
+    'InvalidByteSizeUnit',
 )
 
 
@@ -507,5 +507,5 @@ class InvalidByteSize(PydanticValueError):
     msg_template = 'could not parse value and unit from byte string'
 
 
-class InvalidByteUnit(PydanticValueError):
+class InvalidByteSizeUnit(PydanticValueError):
     msg_template = 'could not interpret byte unit: {unit}'
