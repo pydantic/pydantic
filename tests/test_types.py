@@ -1847,25 +1847,23 @@ def test_frozenset_field_not_convertible():
         ('1.0', 1, '1.0B', '1.0B'),
         ('1b', 1, '1.0B', '1.0B'),
         ('1.5 KB', int(1.5e3), '1.5KiB', '1.5KB'),
-        ('1.5 K', int(1.5e3), '1.5KiB', '1.5KB'),
         ('1.5 MB', int(1.5e6), '1.4MiB', '1.5MB'),
-        ('1.5 M', int(1.5e6), '1.4MiB', '1.5MB'),
         ('5.1kib', 5222, '5.1KiB', '5.2KB'),
-        ('5.1ki', 5222, '5.1KiB', '5.2KB'),
         ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB'),
-        ('6.2Ei', 7148113328562451456, '6.2EiB', '7.1EB'),
     ),
 )
 def test_bytesize_conversions(value):
     class Model(BaseModel):
         size: ByteSize
 
-    m = Model(size=value[0])
+    # Test with/without B, KB->K
+    for size_str in [value[0], value[0].replace("B", "").replace("b", "")]:
+        m = Model(size=size_str)
 
-    assert value[1] == m.size
+        assert value[1] == m.size
 
-    assert m.size.human_readable() == value[2]
-    assert m.size.human_readable(decimal=True) == value[3]
+        assert m.size.human_readable() == value[2]
+        assert m.size.human_readable(decimal=True) == value[3]
 
 
 def test_bytesize_raises():
