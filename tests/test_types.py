@@ -1843,12 +1843,12 @@ def test_frozenset_field_not_convertible():
 @pytest.mark.parametrize(
     'value',
     (
-        ('1', 1, '1.0B'),
-        ('1.0', 1, '1.0B'),
-        ('1b', 1, '1.0B'),
-        ('1.5 MB', int(1.5e6), '1.4MiB'),
-        ('5.1kib', 5222, '5.1KiB'),
-        ('6.2EiB', 7148113328562451456, '6.2EiB'),
+        ('1', 1, '1.0B', '1.0B'),
+        ('1.0', 1, '1.0B', '1.0B'),
+        ('1b', 1, '1.0B', '1.0B'),
+        ('1.5 MB', int(1.5e6), '1.4MiB', '1.5MB'),
+        ('5.1kib', 5222, '5.1KiB', '5.2KB'),
+        ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB'),
     ),
 )
 def test_bytesize_conversions(value):
@@ -1860,6 +1860,7 @@ def test_bytesize_conversions(value):
     assert value[1] == m.size
 
     assert m.size.human_readable() == value[2]
+    assert m.size.human_readable(decimal=True) == value[3]
 
 
 def test_bytesize_raises():

@@ -638,7 +638,7 @@ class ByteSize(int):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v) -> 'ByteSize':
 
         if type(v) == cls:
             return v
@@ -654,7 +654,7 @@ class ByteSize(int):
 
         scalar, unit = str_match.groups()
         if unit is None:
-            unit = "B"
+            unit = 'B'
 
         try:
             unit_mult = BYTE_SIZES[unit.lower()]
@@ -663,12 +663,21 @@ class ByteSize(int):
 
         return cls(int(float(scalar) * unit_mult))
 
-    def human_readable(self):
+    def human_readable(self, decimal: bool = False) -> str:
+
+        if decimal:
+            divisor = 1000
+            units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+            final_unit = "EB"
+        else:
+            divisor = 1024
+            units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+            final_unit = "EiB"
 
         num = float(self.value)
-        for unit in ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']:
-            if abs(num) < 1024:
+        for unit in units:
+            if abs(num) < divisor:
                 return f'{num:0.2}{unit}'
-            num /= 1024
+            num /= divisor
 
-        return f'{num:0.2}EiB'
+        return f'{num:0.2}{final_unit}'
