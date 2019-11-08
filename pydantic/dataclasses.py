@@ -83,10 +83,17 @@ def _process_class(
     _cls.__post_init__ = _pydantic_post_init
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore
 
-    fields: Dict[str, Any] = {
-        field.name: (field.type, field.default if field.default != dataclasses.MISSING else Required)
-        for field in dataclasses.fields(cls)
-    }
+    fields: Dict[str, Any] = {}
+    for field in dataclasses.fields(cls):
+
+        if field.default != dataclasses.MISSING:
+            field_value = field.default
+        elif field.default_factory != dataclasses.MISSING:
+            field_value = field.default_factory()
+        else:
+            field_value = Required
+
+        fields[field.name] = (field.type, field_value)
 
     validators = gather_all_validators(cls)
     cls.__pydantic_model__ = create_model(
