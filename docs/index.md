@@ -110,5 +110,9 @@ Hundreds of organisations and packages are using *pydantic*, including:
   [stpmex](https://github.com/cuenca-mx/stpmex-python), which is used to process real-time, 24/7, inter-bank
   transfers in Mexico.
 
+[The Molecular Sciences Software Institute](https://molssi.org)
+: are using *pydantic* in [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
+  for quantum chemsitry.
+
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
