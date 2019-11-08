@@ -1,7 +1,0 @@
-pydantic,,20.7μs,1.978μs
-attr,4.6x faster,4.5μs,0.240μs
-cattr,1.0x faster,20.4μs,0.378μs
-marshmallow,2.4x slower,49.1μs,5.006μs
-trafaret,2.7x slower,55.1μs,3.809μs
-toasted-marshmallow,2.9x slower,60.3μs,4.102μs
-django-restful-framework,23.8x slower,492.6μs,12.778μs

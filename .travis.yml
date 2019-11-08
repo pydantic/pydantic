@@ -7,20 +7,20 @@ cache: pip
 python:
 - '3.6'
 - '3.7'
-- '3.8-dev'
+- '3.8'
 
 install:
 - make install
 - pip freeze
 
 script:
-# test without cython but with ujson and email-validator
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(1 if pydantic.compiled else 0)"
 - make test
 
+- python3 ./changes/make_history.py
 - make lint
 - make mypy
-- make external-mypy
+- make check-dist
 
 env:
   global:
@@ -32,15 +32,11 @@ after_success:
 - bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS
 
 jobs:
-  allow_failures:
-  - python: '3.8-dev'
-
   include:
   - stage: test
     python: 3.6
     name: 'Cython: 3.6'
     script:
-    # test with cython, ujson and email-validator
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
     - make test
@@ -50,7 +46,15 @@ jobs:
     python: 3.7
     name: 'Cython: 3.7'
     script:
-    # test with cython, ujson and email-validator
+    - make build-cython-trace
+    - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+    - make test
+    env:
+    - 'CYTHON=yes'
+  - stage: test
+    python: 3.8
+    name: 'Cython: 3.8'
+    script:
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
     - make test
@@ -61,8 +65,7 @@ jobs:
     python: 3.6
     name: 'Without Deps 3.6'
     script:
-    # test without cython, ujson and email-validator
-    - pip uninstall -y ujson email-validator
+    - pip uninstall -y cython email-validator typing-extensions devtools
     - make test
     env:
     - 'DEPS=no'
@@ -70,17 +73,23 @@ jobs:
     python: 3.7
     name: 'Without Deps 3.7'
     script:
-    # test without cython, ujson and email-validator
-    - pip uninstall -y ujson email-validator cython
+    - pip uninstall -y cython email-validator typing-extensions devtools
     - make test
     env:
     - 'DEPS=no'
+  - stage: test
+    python: 3.8
+    name: 'Without Deps 3.8'
+    script:
+      - pip uninstall -y cython email-validator typing-extensions devtools
+      - make test
+    env:
+      - 'DEPS=no'
 
   - stage: test
     python: 3.7
     name: 'Benchmarks'
     script:
-    # default install skips cython compilation, need to compile for benchmarks
     - make build-cython
     - BENCHMARK_REPEATS=1 make benchmark-all
     after_success: skip

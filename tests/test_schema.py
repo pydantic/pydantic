@@ -4,16 +4,24 @@ import tempfile
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, NewType, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Schema, ValidationError, validator
-from pydantic.schema import get_flat_models_from_model, get_flat_models_from_models, get_model_name_map, schema
+from pydantic import BaseModel, Extra, Field, ValidationError, conlist, validator
+from pydantic.color import Color
+from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
+from pydantic.schema import (
+    get_flat_models_from_model,
+    get_flat_models_from_models,
+    get_model_name_map,
+    model_schema,
+    schema,
+)
 from pydantic.types import (
-    DSN,
     UUID1,
     UUID3,
     UUID4,
@@ -24,19 +32,8 @@ from pydantic.types import (
     ConstrainedInt,
     ConstrainedStr,
     DirectoryPath,
-    EmailStr,
     FilePath,
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-    IPvAnyAddress,
-    IPvAnyInterface,
-    IPvAnyNetwork,
     Json,
-    NameEmail,
     NegativeFloat,
     NegativeInt,
     NoneBytes,
@@ -50,19 +47,23 @@ from pydantic.types import (
     StrBytes,
     StrictBool,
     StrictStr,
-    UrlStr,
     conbytes,
     condecimal,
     confloat,
     conint,
     constr,
-    urlstr,
 )
+from pydantic.typing import Literal
 
 try:
     import email_validator
 except ImportError:
     email_validator = None
+
+try:
+    import typing_extensions
+except ImportError:
+    typing_extensions = None
 
 
 def test_key():
@@ -81,11 +82,11 @@ def test_key():
         'title': 'ApplePie',
         'description': 'This is a test.',
     }
-    assert True not in ApplePie._schema_cache
-    assert False not in ApplePie._schema_cache
+    assert True not in ApplePie.__schema_cache__
+    assert False not in ApplePie.__schema_cache__
     assert ApplePie.schema() == s
-    assert True in ApplePie._schema_cache
-    assert False not in ApplePie._schema_cache
+    assert True in ApplePie.__schema_cache__
+    assert False not in ApplePie.__schema_cache__
     assert ApplePie.schema() == s
 
 
@@ -141,8 +142,8 @@ def test_sub_model():
 
 def test_schema_class():
     class Model(BaseModel):
-        foo: int = Schema(4, title='Foo is Great')
-        bar: str = Schema(..., description='this description of bar')
+        foo: int = Field(4, title='Foo is Great')
+        bar: str = Field(..., description='this description of bar')
 
     with pytest.raises(ValidationError):
         Model()
@@ -162,14 +163,14 @@ def test_schema_class():
 
 
 def test_schema_repr():
-    s = Schema(4, title='Foo is Great')
-    assert repr(s) == "Schema(default: 4, title: 'Foo is Great', extra: {})"
-    assert str(s) == "Schema(default: 4, title: 'Foo is Great', extra: {})"
+    s = Field(4, title='Foo is Great')
+    assert str(s) == "default=4 title='Foo is Great' extra={}"
+    assert repr(s) == "FieldInfo(default=4, title='Foo is Great', extra={})"
 
 
 def test_schema_class_by_alias():
     class Model(BaseModel):
-        foo: int = Schema(4, alias='foofoo')
+        foo: int = Field(4, alias='foofoo')
 
     assert list(Model.schema()['properties'].keys()) == ['foofoo']
     assert list(Model.schema(by_alias=False)['properties'].keys()) == ['foo']
@@ -186,7 +187,7 @@ def test_choices():
     class Model(BaseModel):
         foo: FooEnum
         bar: BarEnum
-        spam: SpamEnum = Schema(None)
+        spam: SpamEnum = Field(None)
 
     assert Model.schema() == {
         'type': 'object',
@@ -260,12 +261,7 @@ def test_any():
     class Model(BaseModel):
         a: Any
 
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'title': 'A'}},
-        'required': ['a'],
-    }
+    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'title': 'A'}}}
 
 
 def test_set():
@@ -286,7 +282,7 @@ def test_set():
 
 def test_const_str():
     class Model(BaseModel):
-        a: str = Schema('some string', const=True)
+        a: str = Field('some string', const=True)
 
     assert Model.schema() == {
         'title': 'Model',
@@ -297,7 +293,7 @@ def test_const_str():
 
 def test_const_false():
     class Model(BaseModel):
-        a: str = Schema('some string', const=False)
+        a: str = Field('some string', const=False)
 
     assert Model.schema() == {
         'title': 'Model',
@@ -329,13 +325,10 @@ def test_tuple(field_type, expected_schema):
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'array', 'items': None}},
+        'properties': {'a': {'title': 'A', 'type': 'array'}},
         'required': ['a'],
     }
-    # noinspection PyTypeChecker
     base_schema['properties']['a']['items'] = expected_schema
-    if expected_schema is None:
-        base_schema['properties']['a'].pop('items', None)
 
     assert Model.schema() == base_schema
 
@@ -528,12 +521,11 @@ def test_str_constrained_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (UrlStr, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
+        (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
         (
-            urlstr(min_length=5, max_length=10),
+            stricturl(min_length=5, max_length=10),
             {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
         ),
-        (DSN, {'title': 'A', 'type': 'string', 'format': 'dsn'}),
     ],
 )
 def test_special_str_types(field_type, expected_schema):
@@ -680,7 +672,6 @@ def test_json_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
-        'required': ['a'],
     }
 
 
@@ -692,7 +683,7 @@ def test_ipv4address_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv4'}},
+        'properties': {'ip_address': {'title': 'Ip Address', 'type': 'string', 'format': 'ipv4'}},
         'required': ['ip_address'],
     }
 
@@ -705,7 +696,7 @@ def test_ipv6address_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipv6'}},
+        'properties': {'ip_address': {'title': 'Ip Address', 'type': 'string', 'format': 'ipv6'}},
         'required': ['ip_address'],
     }
 
@@ -718,7 +709,7 @@ def test_ipvanyaddress_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_address': {'title': 'Ip_Address', 'type': 'string', 'format': 'ipvanyaddress'}},
+        'properties': {'ip_address': {'title': 'Ip Address', 'type': 'string', 'format': 'ipvanyaddress'}},
         'required': ['ip_address'],
     }
 
@@ -731,7 +722,7 @@ def test_ipv4interface_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipv4interface'}},
+        'properties': {'ip_interface': {'title': 'Ip Interface', 'type': 'string', 'format': 'ipv4interface'}},
         'required': ['ip_interface'],
     }
 
@@ -744,7 +735,7 @@ def test_ipv6interface_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipv6interface'}},
+        'properties': {'ip_interface': {'title': 'Ip Interface', 'type': 'string', 'format': 'ipv6interface'}},
         'required': ['ip_interface'],
     }
 
@@ -757,7 +748,7 @@ def test_ipvanyinterface_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_interface': {'title': 'Ip_Interface', 'type': 'string', 'format': 'ipvanyinterface'}},
+        'properties': {'ip_interface': {'title': 'Ip Interface', 'type': 'string', 'format': 'ipvanyinterface'}},
         'required': ['ip_interface'],
     }
 
@@ -770,7 +761,7 @@ def test_ipv4network_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipv4network'}},
+        'properties': {'ip_network': {'title': 'Ip Network', 'type': 'string', 'format': 'ipv4network'}},
         'required': ['ip_network'],
     }
 
@@ -783,7 +774,7 @@ def test_ipv6network_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipv6network'}},
+        'properties': {'ip_network': {'title': 'Ip Network', 'type': 'string', 'format': 'ipv6network'}},
         'required': ['ip_network'],
     }
 
@@ -796,7 +787,7 @@ def test_ipvanynetwork_type():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'ip_network': {'title': 'Ip_Network', 'type': 'string', 'format': 'ipvanynetwork'}},
+        'properties': {'ip_network': {'title': 'Ip Network', 'type': 'string', 'format': 'ipvanynetwork'}},
         'required': ['ip_network'],
     }
 
@@ -1095,7 +1086,7 @@ def test_dict_default():
     'kwargs,type_,expected_extra',
     [
         ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
-        ({'max_length': 5}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
+        ({}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
         ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
         ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
         ({'regex': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
@@ -1118,7 +1109,7 @@ def test_dict_default():
 )
 def test_constraints_schema(kwargs, type_, expected_extra):
     class Foo(BaseModel):
-        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
     expected_schema = {
         'title': 'Foo',
@@ -1131,41 +1122,35 @@ def test_constraints_schema(kwargs, type_, expected_extra):
 
 
 @pytest.mark.parametrize(
-    'kwargs,type_,expected',
+    'kwargs,type_',
     [
-        ({'max_length': 5}, int, {'type': 'integer'}),
-        ({'min_length': 2}, float, {'type': 'number'}),
-        ({'max_length': 5}, Decimal, {'type': 'number'}),
-        ({'regex': '^foo$'}, int, {'type': 'integer'}),
-        ({'gt': 2}, str, {'type': 'string'}),
-        ({'lt': 5}, bytes, {'type': 'string', 'format': 'binary'}),
-        ({'ge': 2}, str, {'type': 'string'}),
-        ({'le': 5}, bool, {'type': 'boolean'}),
+        ({'max_length': 5}, int),
+        ({'min_length': 2}, float),
+        ({'max_length': 5}, Decimal),
+        ({'regex': '^foo$'}, int),
+        ({'gt': 2}, str),
+        ({'lt': 5}, bytes),
+        ({'ge': 2}, str),
+        ({'le': 5}, bool),
+        ({'gt': 0}, Callable),
+        ({'gt': 0}, Callable[[int], int]),
+        ({'gt': 0}, conlist(int, min_items=4)),
     ],
 )
-def test_not_constraints_schema(kwargs, type_, expected):
-    class Foo(BaseModel):
-        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+def test_unenforced_constraints_schema(kwargs, type_):
+    with pytest.raises(ValueError, match='On field "a" the following field constraints are set but not enforced'):
 
-    base_schema = {
-        'title': 'Foo',
-        'type': 'object',
-        'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
-    }
-
-    base_schema['properties']['a'].update(expected)
-    assert Foo.schema() == base_schema
+        class Foo(BaseModel):
+            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
 @pytest.mark.parametrize(
     'kwargs,type_,value',
     [
         ({'max_length': 5}, str, 'foo'),
-        ({'max_length': 5}, constr(max_length=6), 'foo'),
         ({'min_length': 2}, str, 'foo'),
         ({'max_length': 5}, bytes, b'foo'),
         ({'regex': '^foo$'}, str, 'foo'),
-        ({'max_length': 5}, bool, True),
         ({'gt': 2}, int, 3),
         ({'lt': 5}, int, 3),
         ({'ge': 2}, int, 3),
@@ -1193,7 +1178,7 @@ def test_not_constraints_schema(kwargs, type_, expected):
 )
 def test_constraints_schema_validation(kwargs, type_, value):
     class Foo(BaseModel):
-        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
     assert Foo(a=value)
 
@@ -1220,7 +1205,7 @@ def test_constraints_schema_validation(kwargs, type_, value):
 )
 def test_constraints_schema_validation_raises(kwargs, type_, value):
     class Foo(BaseModel):
-        a: type_ = Schema('foo', title='A title', description='A description', **kwargs)
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
     with pytest.raises(ValidationError):
         Foo(a=value)
@@ -1228,7 +1213,7 @@ def test_constraints_schema_validation_raises(kwargs, type_, value):
 
 def test_schema_kwargs():
     class Foo(BaseModel):
-        a: str = Schema('foo', examples=['bar'])
+        a: str = Field('foo', examples=['bar'])
 
     assert Foo.schema() == {
         'title': 'Foo',
@@ -1288,6 +1273,26 @@ def test_optional_dict():
     assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}
 
 
+def test_optional_validator():
+    class Model(BaseModel):
+        something: Optional[str]
+
+        @validator('something', always=True)
+        def check_something(cls, v):
+            assert v is None or 'x' not in v, 'should not contain x'
+            return v
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'something': {'title': 'Something', 'type': 'string'}},
+    }
+
+    assert Model().dict() == {'something': None}
+    assert Model(something=None).dict() == {'something': None}
+    assert Model(something='hello').dict() == {'something': 'hello'}
+
+
 def test_field_with_validator():
     class Model(BaseModel):
         something: Optional[int] = None
@@ -1300,4 +1305,337 @@ def test_field_with_validator():
         'title': 'Model',
         'type': 'object',
         'properties': {'something': {'type': 'integer', 'title': 'Something'}},
+    }
+
+
+def test_unparameterized_schema_generation():
+    class FooList(BaseModel):
+        d: List
+
+    class BarList(BaseModel):
+        d: list
+
+    assert model_schema(FooList) == {
+        'title': 'FooList',
+        'type': 'object',
+        'properties': {'d': {'items': {}, 'title': 'D', 'type': 'array'}},
+        'required': ['d'],
+    }
+
+    foo_list_schema = model_schema(FooList)
+    bar_list_schema = model_schema(BarList)
+    bar_list_schema['title'] = 'FooList'  # to check for equality
+    assert foo_list_schema == bar_list_schema
+
+    class FooDict(BaseModel):
+        d: Dict
+
+    class BarDict(BaseModel):
+        d: dict
+
+    model_schema(Foo)
+    assert model_schema(FooDict) == {
+        'title': 'FooDict',
+        'type': 'object',
+        'properties': {'d': {'title': 'D', 'type': 'object'}},
+        'required': ['d'],
+    }
+
+    foo_dict_schema = model_schema(FooDict)
+    bar_dict_schema = model_schema(BarDict)
+    bar_dict_schema['title'] = 'FooDict'  # to check for equality
+    assert foo_dict_schema == bar_dict_schema
+
+
+def test_known_model_optimization():
+    class Dep(BaseModel):
+        number: int
+
+    class Model(BaseModel):
+        dep: Dep
+        dep_l: List[Dep]
+
+    expected = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'dep': {'$ref': '#/definitions/Dep'},
+            'dep_l': {'title': 'Dep L', 'type': 'array', 'items': {'$ref': '#/definitions/Dep'}},
+        },
+        'required': ['dep', 'dep_l'],
+        'definitions': {
+            'Dep': {
+                'title': 'Dep',
+                'type': 'object',
+                'properties': {'number': {'title': 'Number', 'type': 'integer'}},
+                'required': ['number'],
+            }
+        },
+    }
+
+    assert Model.schema() == expected
+
+
+def test_root():
+    class Model(BaseModel):
+        __root__: str
+
+    assert Model.schema() == {'title': 'Model', 'type': 'string'}
+
+
+def test_root_list():
+    class Model(BaseModel):
+        __root__: List[str]
+
+    assert Model.schema() == {'title': 'Model', 'type': 'array', 'items': {'type': 'string'}}
+
+
+def test_root_nested_model():
+    class NestedModel(BaseModel):
+        a: str
+
+    class Model(BaseModel):
+        __root__: List[NestedModel]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'array',
+        'items': {'$ref': '#/definitions/NestedModel'},
+        'definitions': {
+            'NestedModel': {
+                'title': 'NestedModel',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            }
+        },
+    }
+
+
+def test_new_type_schema():
+    a_type = NewType('a_type', int)
+    b_type = NewType('b_type', a_type)
+    c_type = NewType('c_type', str)
+
+    class Model(BaseModel):
+        a: a_type
+        b: b_type
+        c: c_type
+
+    assert Model.schema() == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'title': 'B', 'type': 'integer'},
+            'c': {'title': 'C', 'type': 'string'},
+        },
+        'required': ['a', 'b', 'c'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+def test_literal_schema():
+    class Model(BaseModel):
+        a: Literal[1]
+        b: Literal['a']
+        c: Literal['a', 1]
+
+    assert Model.schema() == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer', 'const': 1},
+            'b': {'title': 'B', 'type': 'string', 'const': 'a'},
+            'c': {'anyOf': [{'type': 'string', 'const': 'a'}, {'type': 'integer', 'const': 1}], 'title': 'C'},
+        },
+        'required': ['a', 'b', 'c'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_color_type():
+    class Model(BaseModel):
+        color: Color
+
+    model_schema = Model.schema()
+    assert model_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'color': {'title': 'Color', 'type': 'string', 'format': 'color'}},
+        'required': ['color'],
+    }
+
+
+def test_model_with_schema_extra():
+    class Model(BaseModel):
+        a: str
+
+        class Config:
+            schema_extra = {'examples': [{'a': 'Foo'}]}
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'examples': [{'a': 'Foo'}],
+    }
+
+
+def test_model_with_extra_forbidden():
+    class Model(BaseModel):
+        a: str
+
+        class Config:
+            extra = Extra.forbid
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': False,
+    }
+
+
+@pytest.mark.parametrize(
+    'annotation,kwargs,field_schema',
+    [
+        (int, dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (Optional[int], dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (
+            Tuple[int, ...],
+            dict(gt=0),
+            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+        ),
+        (
+            Tuple[int, int, int],
+            dict(gt=0),
+            {
+                'title': 'A',
+                'type': 'array',
+                'items': [
+                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                ],
+            },
+        ),
+        (
+            Union[int, float],
+            dict(gt=0),
+            {
+                'title': 'A',
+                'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'exclusiveMinimum': 0, 'type': 'number'}],
+            },
+        ),
+        (
+            List[int],
+            dict(gt=0),
+            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+        ),
+        (
+            Dict[str, int],
+            dict(gt=0),
+            {
+                'title': 'A',
+                'exclusiveMinimum': 0,
+                'type': 'object',
+                'additionalProperties': {'exclusiveMinimum': 0, 'type': 'integer'},
+            },
+        ),
+        (
+            Union[str, int],
+            dict(gt=0, max_length=5),
+            {'title': 'A', 'anyOf': [{'maxLength': 5, 'type': 'string'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
+        ),
+    ],
+)
+def test_enforced_constraints(annotation, kwargs, field_schema):
+    class Model(BaseModel):
+        a: annotation = Field(..., **kwargs)
+
+    schema = Model.schema()
+    # debug(schema['properties']['a'])
+    assert schema['properties']['a'] == field_schema
+
+
+def test_real_vs_phony_constraints():
+    class Model1(BaseModel):
+        foo: int = Field(..., gt=123)
+
+        class Config:
+            title = 'Test Model'
+
+    class Model2(BaseModel):
+        foo: int = Field(..., exclusiveMinimum=123)
+
+        class Config:
+            title = 'Test Model'
+
+    with pytest.raises(ValidationError, match='ensure this value is greater than 123'):
+        Model1(foo=122)
+
+    assert Model2(foo=122).dict() == {'foo': 122}
+
+    assert (
+        Model1.schema()
+        == Model2.schema()
+        == {
+            'title': 'Test Model',
+            'type': 'object',
+            'properties': {'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'type': 'integer'}},
+            'required': ['foo'],
+        }
+    )
+
+
+def test_conlist():
+    class Model(BaseModel):
+        foo: List[int] = Field(..., min_items=2, max_items=4)
+
+    assert Model(foo=[1, 2]).dict() == {'foo': [1, 2]}
+
+    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+        Model(foo=[1])
+
+    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+        Model(foo=list(range(5)))
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4}
+        },
+        'required': ['foo'],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=[1, 'x', 'y'])
+    assert exc_info.value.errors() == [
+        {'loc': ('foo', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('foo', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=1)
+    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+
+
+def test_subfield_field_info():
+    class MyModel(BaseModel):
+        entries: Dict[str, List[int]]
+
+    assert MyModel.schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {
+            'entries': {
+                'title': 'Entries',
+                'type': 'object',
+                'additionalProperties': {'type': 'array', 'items': {'type': 'integer'}},
+            }
+        },
+        'required': ['entries'],
     }

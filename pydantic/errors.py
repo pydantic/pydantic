@@ -1,8 +1,91 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Set, Union
 
-from .utils import AnyType, display_as_type
+from .typing import AnyType, display_as_type
+
+# explicitly state exports to avoid "from .errors import *" also importing Decimal, Path etc.
+__all__ = (
+    'PydanticTypeError',
+    'PydanticValueError',
+    'ConfigError',
+    'MissingError',
+    'ExtraError',
+    'NoneIsNotAllowedError',
+    'NoneIsAllowedError',
+    'WrongConstantError',
+    'BoolError',
+    'BytesError',
+    'DictError',
+    'EmailError',
+    'UrlError',
+    'UrlSchemeError',
+    'UrlSchemePermittedError',
+    'UrlUserInfoError',
+    'UrlHostError',
+    'UrlHostTldError',
+    'UrlExtraError',
+    'EnumError',
+    'IntegerError',
+    'FloatError',
+    'PathError',
+    '_PathValueError',
+    'PathNotExistsError',
+    'PathNotAFileError',
+    'PathNotADirectoryError',
+    'PyObjectError',
+    'SequenceError',
+    'ListError',
+    'SetError',
+    'FrozenSetError',
+    'TupleError',
+    'TupleLengthError',
+    'ListMinLengthError',
+    'ListMaxLengthError',
+    'AnyStrMinLengthError',
+    'AnyStrMaxLengthError',
+    'StrError',
+    'StrRegexError',
+    '_NumberBoundError',
+    'NumberNotGtError',
+    'NumberNotGeError',
+    'NumberNotLtError',
+    'NumberNotLeError',
+    'NumberNotMultipleError',
+    'DecimalError',
+    'DecimalIsNotFiniteError',
+    'DecimalMaxDigitsError',
+    'DecimalMaxPlacesError',
+    'DecimalWholeDigitsError',
+    'DateTimeError',
+    'DateError',
+    'TimeError',
+    'DurationError',
+    'UUIDError',
+    'UUIDVersionError',
+    'ArbitraryTypeError',
+    'ClassError',
+    'SubclassError',
+    'JsonError',
+    'JsonTypeError',
+    'PatternError',
+    'DataclassTypeError',
+    'CallableError',
+    'IPvAnyAddressError',
+    'IPvAnyInterfaceError',
+    'IPvAnyNetworkError',
+    'IPv4AddressError',
+    'IPv6AddressError',
+    'IPv4NetworkError',
+    'IPv6NetworkError',
+    'IPv4InterfaceError',
+    'IPv6InterfaceError',
+    'ColorError',
+    'StrictBoolError',
+    'NotDigitError',
+    'LuhnValidationError',
+    'InvalidLengthForBrand',
+)
 
 
 class PydanticErrorMixin:
@@ -10,11 +93,10 @@ class PydanticErrorMixin:
     msg_template: str
 
     def __init__(self, **ctx: Any) -> None:
-        self.ctx = ctx or None
-        super().__init__()
+        self.__dict__ = ctx
 
     def __str__(self) -> str:
-        return self.msg_template.format(**self.ctx or {})
+        return self.msg_template.format(**self.__dict__)
 
 
 class PydanticTypeError(PydanticErrorMixin, TypeError):
@@ -49,7 +131,14 @@ class NoneIsAllowedError(PydanticTypeError):
 
 class WrongConstantError(PydanticValueError):
     code = 'const'
-    msg_template = 'expected constant value {const!r}'
+
+    def __str__(self) -> str:
+        permitted = ', '.join(repr(v) for v in self.permitted)  # type: ignore
+        return f'unexpected value; permitted: {permitted}'
+
+
+class BoolError(PydanticTypeError):
+    msg_template = 'value could not be parsed to a boolean'
 
 
 class BytesError(PydanticTypeError):
@@ -60,30 +149,51 @@ class DictError(PydanticTypeError):
     msg_template = 'value is not a valid dict'
 
 
-class DSNDriverIsEmptyError(PydanticValueError):
-    code = 'dsn.driver_is_empty'
-    msg_template = '"driver" field may not be empty'
-
-
 class EmailError(PydanticValueError):
     msg_template = 'value is not a valid email address'
 
 
-class UrlSchemeError(PydanticValueError):
+class UrlError(PydanticValueError):
+    code = 'url'
+
+
+class UrlSchemeError(UrlError):
     code = 'url.scheme'
-    msg_template = 'url scheme "{scheme}" is not allowed'
-
-    def __init__(self, *, scheme: str) -> None:
-        super().__init__(scheme=scheme)
+    msg_template = 'invalid or missing URL scheme'
 
 
-class UrlRegexError(PydanticValueError):
-    code = 'url.regex'
-    msg_template = 'url string does not match regex'
+class UrlSchemePermittedError(UrlError):
+    code = 'url.scheme'
+    msg_template = 'URL scheme not permitted'
+
+    def __init__(self, allowed_schemes: Set[str]):
+        super().__init__(allowed_schemes=allowed_schemes)
+
+
+class UrlUserInfoError(UrlError):
+    code = 'url.userinfo'
+    msg_template = 'userinfo required in URL but missing'
+
+
+class UrlHostError(UrlError):
+    code = 'url.host'
+    msg_template = 'URL host invalid'
+
+
+class UrlHostTldError(UrlError):
+    code = 'url.host'
+    msg_template = 'URL host invalid, top level domain required'
+
+
+class UrlExtraError(UrlError):
+    code = 'url.extra'
+    msg_template = 'URL invalid, extra characters found after valid URL: {extra!r}'
 
 
 class EnumError(PydanticTypeError):
-    msg_template = 'value is not a valid enumeration member'
+    def __str__(self) -> str:
+        permitted = ', '.join(repr(v.value) for v in self.enum_values)  # type: ignore
+        return f'value is not a valid enumeration member; permitted: {permitted}'
 
 
 class IntegerError(PydanticTypeError):
@@ -134,6 +244,10 @@ class SetError(PydanticTypeError):
     msg_template = 'value is not a valid set'
 
 
+class FrozenSetError(PydanticTypeError):
+    msg_template = 'value is not a valid frozenset'
+
+
 class TupleError(PydanticTypeError):
     msg_template = 'value is not a valid tuple'
 
@@ -144,6 +258,22 @@ class TupleLengthError(PydanticValueError):
 
     def __init__(self, *, actual_length: int, expected_length: int) -> None:
         super().__init__(actual_length=actual_length, expected_length=expected_length)
+
+
+class ListMinLengthError(PydanticValueError):
+    code = 'list.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class ListMaxLengthError(PydanticValueError):
+    code = 'list.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
 
 
 class AnyStrMinLengthError(PydanticValueError):
@@ -240,19 +370,19 @@ class DecimalWholeDigitsError(PydanticValueError):
         super().__init__(whole_digits=whole_digits)
 
 
-class DateTimeError(PydanticTypeError):
+class DateTimeError(PydanticValueError):
     msg_template = 'invalid datetime format'
 
 
-class DateError(PydanticTypeError):
+class DateError(PydanticValueError):
     msg_template = 'invalid date format'
 
 
-class TimeError(PydanticTypeError):
+class TimeError(PydanticValueError):
     msg_template = 'invalid time format'
 
 
-class DurationError(PydanticTypeError):
+class DurationError(PydanticValueError):
     msg_template = 'invalid duration format'
 
 
@@ -274,6 +404,19 @@ class ArbitraryTypeError(PydanticTypeError):
 
     def __init__(self, *, expected_arbitrary_type: AnyType) -> None:
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
+
+
+class ClassError(PydanticTypeError):
+    code = 'class'
+    msg_template = 'a class is expected'
+
+
+class SubclassError(PydanticTypeError):
+    code = 'subclass'
+    msg_template = 'subclass of {expected_class} expected'
+
+    def __init__(self, *, expected_class: AnyType) -> None:
+        super().__init__(expected_class=display_as_type(expected_class))
 
 
 class JsonError(PydanticValueError):
@@ -341,3 +484,18 @@ class ColorError(PydanticValueError):
 
 class StrictBoolError(PydanticValueError):
     msg_template = 'value is not a valid boolean'
+
+
+class NotDigitError(PydanticValueError):
+    code = 'payment_card_number.digits'
+    msg_template = 'card number is not all digits'
+
+
+class LuhnValidationError(PydanticValueError):
+    code = 'payment_card_number.luhn_check'
+    msg_template = 'card number is not luhn valid'
+
+
+class InvalidLengthForBrand(PydanticValueError):
+    code = 'payment_card_number.invalid_length_for_brand'
+    msg_template = 'Length for a {brand} card must be {required_length}'

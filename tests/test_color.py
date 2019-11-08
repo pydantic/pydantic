@@ -180,6 +180,6 @@ def test_as_named():
 
 def test_str_repr():
     assert str(Color('red')) == 'red'
-    assert repr(Color('red')) == "<Color('red', (255, 0, 0))>"
+    assert repr(Color('red')) == "Color('red', rgb=(255, 0, 0))"
     assert str(Color((1, 2, 3))) == '#010203'
-    assert repr(Color((1, 2, 3))) == "<Color('#010203', (1, 2, 3))>"
+    assert repr(Color((1, 2, 3))) == "Color('#010203', rgb=(1, 2, 3))"

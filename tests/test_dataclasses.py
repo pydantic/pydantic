@@ -1,11 +1,12 @@
 import dataclasses
 from datetime import datetime
-from typing import ClassVar
+from pathlib import Path
+from typing import ClassVar, FrozenSet, Optional
 
 import pytest
 
 import pydantic
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, validator
 
 
 def test_simple():
@@ -92,6 +93,42 @@ def test_not_validate_assignment():
     assert d.a == '7'
 
 
+def test_validate_assignment_value_change():
+    class Config:
+        validate_assignment = True
+
+    @pydantic.dataclasses.dataclass(config=Config, frozen=False)
+    class MyDataclass:
+        a: int
+
+        @validator('a')
+        def double_a(cls, v):
+            return v * 2
+
+    d = MyDataclass(2)
+    assert d.a == 4
+
+    d.a = 3
+    assert d.a == 6
+
+
+def test_validate_assignment_extra():
+    class Config:
+        validate_assignment = True
+
+    @pydantic.dataclasses.dataclass(config=Config, frozen=False)
+    class MyDataclass:
+        a: int
+
+    d = MyDataclass(1)
+    assert d.a == 1
+
+    d.extra_field = 1.23
+    assert d.extra_field == 1.23
+    d.extra_field = 'bye'
+    assert d.extra_field == 'bye'
+
+
 def test_post_init():
     post_init_called = False
 
@@ -105,6 +142,34 @@ def test_post_init():
 
     d = MyDataclass('1')
     assert d.a == 1
+    assert post_init_called
+
+
+def test_post_init_inheritance_chain():
+    parent_post_init_called = False
+    post_init_called = False
+
+    @pydantic.dataclasses.dataclass
+    class ParentDataclass:
+        a: int
+
+        def __post_init__(self):
+            nonlocal parent_post_init_called
+            parent_post_init_called = True
+
+    @pydantic.dataclasses.dataclass
+    class MyDataclass(ParentDataclass):
+        b: int
+
+        def __post_init__(self):
+            super().__post_init__()
+            nonlocal post_init_called
+            post_init_called = True
+
+    d = MyDataclass(a=1, b=2)
+    assert d.a == 1
+    assert d.b == 2
+    assert parent_post_init_called
     assert post_init_called
 
 
@@ -352,7 +417,7 @@ def test_schema():
         'properties': {
             'id': {'title': 'Id', 'type': 'integer'},
             'name': {'title': 'Name', 'default': 'John Doe', 'type': 'string'},
-            'signup_ts': {'title': 'Signup_Ts', 'type': 'string', 'format': 'date-time'},
+            'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
         },
         'required': ['id'],
     }
@@ -411,7 +476,45 @@ def test_derived_field_from_initvar():
     derived = DerivedWithInitVar(1)
     assert derived.plusone == 2
     with pytest.raises(TypeError):
-        DerivedWithInitVar("Not A Number")
+        DerivedWithInitVar('Not A Number')
+
+
+def test_initvars_post_init():
+    @pydantic.dataclasses.dataclass
+    class PathDataPostInit:
+        path: Path
+        base_path: dataclasses.InitVar[Optional[Path]] = None
+
+        def __post_init__(self, base_path):
+            if base_path is not None:
+                self.path = base_path / self.path
+
+    path_data = PathDataPostInit('world')
+    assert 'path' in path_data.__dict__
+    assert 'base_path' not in path_data.__dict__
+    assert path_data.path == Path('world')
+
+    with pytest.raises(TypeError) as exc_info:
+        PathDataPostInit('world', base_path='/hello')
+    assert str(exc_info.value) == "unsupported operand type(s) for /: 'str' and 'str'"
+
+
+def test_initvars_post_init_post_parse():
+    @pydantic.dataclasses.dataclass
+    class PathDataPostInitPostParse:
+        path: Path
+        base_path: dataclasses.InitVar[Optional[Path]] = None
+
+        def __post_init_post_parse__(self, base_path):
+            if base_path is not None:
+                self.path = base_path / self.path
+
+    path_data = PathDataPostInitPostParse('world')
+    assert 'path' in path_data.__dict__
+    assert 'base_path' not in path_data.__dict__
+    assert path_data.path == Path('world')
+
+    assert PathDataPostInitPostParse('world', base_path='/hello').path == Path('/hello/world')
 
 
 def test_classvar():
@@ -422,3 +525,33 @@ def test_classvar():
 
     tcv = TestClassVar(2)
     assert tcv.klassvar == "I'm a Class variable"
+
+
+def test_frozenset_field():
+    @pydantic.dataclasses.dataclass
+    class TestFrozenSet:
+        set: FrozenSet[int]
+
+    test_set = frozenset({1, 2, 3})
+    object_under_test = TestFrozenSet(set=test_set)
+
+    assert object_under_test.set == test_set
+
+
+def test_inheritance_post_init():
+    post_init_called = False
+
+    @pydantic.dataclasses.dataclass
+    class Base:
+        a: int
+
+        def __post_init__(self):
+            nonlocal post_init_called
+            post_init_called = True
+
+    @pydantic.dataclasses.dataclass
+    class Child(Base):
+        b: int
+
+    Child(a=1, b=2)
+    assert post_init_called

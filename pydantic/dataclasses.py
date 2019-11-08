@@ -1,20 +1,18 @@
 import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, Union
 
-from .class_validators import gather_validators
+from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
 from .main import create_model, validate_model
-from .utils import AnyType
+from .typing import AnyType
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .main import BaseConfig, BaseModel  # noqa: F401
 
     class DataclassType:
         __pydantic_model__: Type[BaseModel]
-        __post_init_original__: Callable[..., None]
-        __post_init_post_parse__: Callable[..., None]
         __initialised__: bool
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -23,16 +21,6 @@ if TYPE_CHECKING:  # pragma: no cover
         @classmethod
         def __validate__(cls, v: Any) -> 'DataclassType':
             pass
-
-
-def _pydantic_post_init(self: 'DataclassType', *initvars: Any) -> None:
-    if self.__post_init_original__:
-        self.__post_init_original__(*initvars)
-    d = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)[0]
-    object.__setattr__(self, '__dict__', d)
-    object.__setattr__(self, '__initialised__', True)
-    if self.__post_init_post_parse__:
-        self.__post_init_post_parse__()
 
 
 def _validate_dataclass(cls: Type['DataclassType'], v: Any) -> 'DataclassType':
@@ -53,10 +41,12 @@ def _get_validators(cls: Type['DataclassType']) -> Generator[Any, None, None]:
 def setattr_validate_assignment(self: 'DataclassType', name: str, value: Any) -> None:
     if self.__initialised__:
         d = dict(self.__dict__)
-        d.pop(name)
-        value, error_ = self.__pydantic_model__.__fields__[name].validate(value, d, loc=name, cls=self.__class__)
-        if error_:
-            raise ValidationError([error_])
+        d.pop(name, None)
+        known_field = self.__pydantic_model__.__fields__.get(name, None)
+        if known_field:
+            value, error_ = known_field.validate(value, d, loc=name, cls=self.__class__)
+            if error_:
+                raise ValidationError([error_], type(self))
 
     object.__setattr__(self, name, value)
 
@@ -72,9 +62,24 @@ def _process_class(
     config: Type['BaseConfig'],
 ) -> 'DataclassType':
     post_init_original = getattr(_cls, '__post_init__', None)
-    post_init_post_parse = getattr(_cls, '__post_init_post_parse__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
+    if not post_init_original:
+        post_init_original = getattr(_cls, '__post_init_original__', None)
+
+    post_init_post_parse = getattr(_cls, '__post_init_post_parse__', None)
+
+    def _pydantic_post_init(self: 'DataclassType', *initvars: Any) -> None:
+        if post_init_original is not None:
+            post_init_original(self, *initvars)
+        d, _, validation_error = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)
+        if validation_error:
+            raise validation_error
+        object.__setattr__(self, '__dict__', d)
+        object.__setattr__(self, '__initialised__', True)
+        if post_init_post_parse is not None:
+            post_init_post_parse(self, *initvars)
+
     _cls.__post_init__ = _pydantic_post_init
     cls = dataclasses._process_class(_cls, init, repr, eq, order, unsafe_hash, frozen)  # type: ignore
 
@@ -82,10 +87,8 @@ def _process_class(
         field.name: (field.type, field.default if field.default != dataclasses.MISSING else Required)
         for field in dataclasses.fields(cls)
     }
-    cls.__post_init_original__ = post_init_original
-    cls.__post_init_post_parse__ = post_init_post_parse
 
-    validators = gather_validators(cls)
+    validators = gather_all_validators(cls)
     cls.__pydantic_model__ = create_model(
         cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **fields
     )
@@ -93,6 +96,8 @@ def _process_class(
     cls.__initialised__ = False
     cls.__validate__ = classmethod(_validate_dataclass)
     cls.__get_validators__ = classmethod(_get_validators)
+    if post_init_original:
+        cls.__post_init_original__ = post_init_original
 
     if cls.__pydantic_model__.__config__.validate_assignment and not frozen:
         cls.__setattr__ = setattr_validate_assignment
@@ -100,9 +105,9 @@ def _process_class(
     return cls
 
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     # see https://github.com/python/mypy/issues/6239 for explanation of why we do this
-    from dataclasses import dataclass
+    from dataclasses import dataclass as dataclass
 else:
 
     def dataclass(

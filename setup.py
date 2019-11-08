@@ -22,21 +22,18 @@ class ReplaceLinks:
         return f'{m.group(1)}`@{name}`_'
 
     def extra(self):
-        return '\n\n' + '\n'.join(self.links) + '\n'
+        return '\n\n' + '\n'.join(sorted(self.links)) + '\n'
 
 
 description = 'Data validation and settings management using python 3.6 type hinting'
 THIS_DIR = Path(__file__).resolve().parent
 try:
-    history = THIS_DIR.joinpath('HISTORY.rst').read_text()
+    history = (THIS_DIR / 'HISTORY.md').read_text()
+    history = re.sub(r'#(\d+)', r'[#\1](https://github.com/samuelcolvin/pydantic/issues/\1)', history)
+    history = re.sub(r'( +)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
+    history = re.sub('@@', '@', history)
 
-    replacer = ReplaceLinks()
-    history = re.sub(r'#(\d+)', replacer.replace_issues, history)
-    history = re.sub(r'( +)@([\w\-]+)', replacer.replace_users, history, flags=re.I)
-    history = re.sub(r'@@', '@', history)
-    history += replacer.extra()
-
-    long_description = '\n\n'.join([THIS_DIR.joinpath('README.rst').read_text(), history])
+    long_description = (THIS_DIR / 'README.md').read_text() + '\n\n' + history
 except FileNotFoundError:
     long_description = description + '.\n\nSee https://pydantic-docs.helpmanual.io/ for documentation.'
 
@@ -50,13 +47,14 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not 
     except ImportError:
         pass
     else:
-        # For cython test coverage install with `make install-trace`
+        # For cython test coverage install with `make build-cython-trace`
         compiler_directives = {}
         if 'CYTHON_TRACE' in sys.argv:
             compiler_directives['linetrace'] = True
         os.environ['CFLAGS'] = '-O3'
         ext_modules = cythonize(
             'pydantic/*.py',
+            exclude=['pydantic/generics.py'],
             nthreads=4,
             language_level=3,
             compiler_directives=compiler_directives,
@@ -67,6 +65,7 @@ setup(
     version=str(version.VERSION),
     description=description,
     long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python',
@@ -98,8 +97,8 @@ setup(
         'dataclasses>=0.6;python_version<"3.7"'
     ],
     extras_require={
-        'ujson': ['ujson>=1.35'],
         'email': ['email-validator>=1.0.3'],
+        'typing_extensions': ['typing-extensions>=3.7.2']
     },
     ext_modules=ext_modules,
 )

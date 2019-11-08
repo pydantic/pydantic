@@ -1,9 +1,9 @@
 import pickle
-from typing import Union
+from typing import List, Union
 
 import pytest
 
-from pydantic import BaseModel, Protocol, Schema, ValidationError
+from pydantic import BaseModel, Field, Protocol, ValidationError
 
 
 class Model(BaseModel):
@@ -13,14 +13,14 @@ class Model(BaseModel):
 
 def test_obj():
     m = Model.parse_obj(dict(a=10.2))
-    assert str(m) == 'Model a=10.2 b=10'
+    assert str(m) == 'a=10.2 b=10'
 
 
 def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj([1, 2, 3])
     assert exc_info.value.errors() == [
-        {'loc': ('__obj__',), 'msg': 'Model expected dict not list', 'type': 'type_error'}
+        {'loc': ('__root__',), 'msg': 'Model expected dict not list', 'type': 'type_error'}
     ]
 
 
@@ -36,6 +36,24 @@ def test_parse_obj_wrong_model():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj(Foo())
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+def test_parse_obj_root():
+    class MyModel(BaseModel):
+        __root__: str
+
+    m = MyModel.parse_obj('a')
+    assert m.dict() == {'__root__': 'a'}
+    assert m.__root__ == 'a'
+
+
+def test_parse_root_list():
+    class MyModel(BaseModel):
+        __root__: List[str]
+
+    m = MyModel.parse_obj(['a'])
+    assert m.dict() == {'__root__': ['a']}
+    assert m.__root__ == ['a']
 
 
 def test_json():
@@ -66,14 +84,14 @@ def test_bad_ct():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', content_type='application/missing')
     assert exc_info.value.errors() == [
-        {'loc': ('__obj__',), 'msg': 'Unknown content-type: application/missing', 'type': 'type_error'}
+        {'loc': ('__root__',), 'msg': 'Unknown content-type: application/missing', 'type': 'type_error'}
     ]
 
 
 def test_bad_proto():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_raw('{"a": 12, "b": 8}', proto='foobar')
-    assert exc_info.value.errors() == [{'loc': ('__obj__',), 'msg': 'Unknown protocol: foobar', 'type': 'type_error'}]
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'Unknown protocol: foobar', 'type': 'type_error'}]
 
 
 def test_file_json(tmpdir):
@@ -102,11 +120,11 @@ def test_file_pickle_no_ext(tmpdir):
 
 def test_const_differentiates_union():
     class SubModelA(BaseModel):
-        key: str = Schema('A', const=True)
+        key: str = Field('A', const=True)
         foo: int
 
     class SubModelB(BaseModel):
-        key: str = Schema('B', const=True)
+        key: str = Field('B', const=True)
         foo: int
 
     class Model(BaseModel):
