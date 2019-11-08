@@ -19,6 +19,14 @@ _(This script is complete, it should run "as is")_
 You can use all the standard pydantic field types, and the resulting dataclass will be identical to the one
 created by the standard library `dataclass` decorator.
 
+The underlying model and its schema can be accessed through `__pydantic_model__`.
+Also, fields that require a `default_factory` can be specified by a `dataclasses.field`.
+
+```py
+{!.tmp_examples/dataclasses_default_schema.py!}
+```
+_(This script is complete, it should run "as is")_
+
 `pydantic.dataclasses.dataclass`'s arguments are the same as the standard decorator, except one extra
 keyword argument `config` which has the same meaning as [Config](model_config.md).
 
