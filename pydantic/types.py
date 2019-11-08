@@ -650,7 +650,7 @@ class ByteSize(int):
 
         str_match = byte_string_re.match(v)
         if str_match is None:
-            raise errors.InvalidByteString
+            raise errors.InvalidByteString()
 
         scalar, unit = str_match.groups()
         if unit is None:
