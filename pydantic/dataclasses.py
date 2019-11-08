@@ -88,8 +88,9 @@ def _process_class(
 
         if field.default != dataclasses.MISSING:
             field_value = field.default
-        elif field.default_factory != dataclasses.MISSING:
-            field_value = field.default_factory()
+        # mypy issue 7020 and 708
+        elif field.default_factory != dataclasses.MISSING:  # type: ignore
+            field_value = field.default_factory()  # type: ignore
         else:
             field_value = Required
 
