@@ -1857,7 +1857,7 @@ def test_bytesize_conversions(value):
         size: ByteSize
 
     # Test with/without B, KB->K
-    for size_str in [value[0], value[0].replace("B", "").replace("b", "")]:
+    for size_str in [value[0], value[0].replace('B', '').replace('b', '')]:
         m = Model(size=size_str)
 
         assert value[1] == m.size

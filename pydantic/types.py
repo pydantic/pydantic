@@ -664,16 +664,16 @@ class ByteSize(int):
         if decimal:
             divisor = 1000
             units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-            final_unit = "EB"
+            final_unit = 'EB'
         else:
             divisor = 1024
             units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
-            final_unit = "EiB"
+            final_unit = 'EiB'
 
         num = float(self)
         for unit in units:
             if abs(num) < divisor:
-                return f'{num:0.2}{unit}'
+                return f'{num:0.2f}{unit}'
             num /= divisor
 
-        return f'{num:0.2}{final_unit}'
+        return f'{num:0.2f}{final_unit}'

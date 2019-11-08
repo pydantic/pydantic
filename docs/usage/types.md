@@ -671,6 +671,19 @@ The following caveats apply:
 ```
 _(This script is complete, it should run "as is")_
 
+## ByteSize
+
+You can use the `ByteSize` data type to convert byte string representation to
+raw bytes and print out human readable versions of the bytes as well. Note that
+`1b` will be parsed as "1 byte" and not "1 bit".
+
+```py
+{!.tmp_examples/types_bytesize.py!}
+```
+_(This script is complete, it should run "as is")_
+
+
+
 ## Custom Data Types
 
 You can also define your own custom data types. The classmethod `__get_validators__` will be called
