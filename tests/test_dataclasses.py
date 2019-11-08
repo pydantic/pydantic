@@ -424,6 +424,7 @@ def test_schema():
     class User:
         id: int
         name: str = 'John Doe'
+        aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
         signup_ts: datetime = None
 
     user = User(id=123)
@@ -433,6 +434,12 @@ def test_schema():
         'properties': {
             'id': {'title': 'Id', 'type': 'integer'},
             'name': {'title': 'Name', 'default': 'John Doe', 'type': 'string'},
+            'aliases': {
+                'title': 'Aliases',
+                'default': {'John': 'Joey'},
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+            },
             'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
         },
         'required': ['id'],
