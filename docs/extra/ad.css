@@ -3,6 +3,11 @@
   padding: 0.525rem 0.6rem;
   min-height: 80px;
 }
+@media screen and (max-width: 799px) {
+  #bsa-cpc {
+    display: none;
+  }
+}
 #bsa-cpc.loaded {
   background: hsla(0, 0%, 92.5%, 0.5);
 }

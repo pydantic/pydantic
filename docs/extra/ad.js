@@ -1,11 +1,16 @@
 function main () {
   const ad_el = document.getElementById('bsa-cpc')
-  if (!ad_el) {
-    // if no ad element, don't load buysellads
+  if (!ad_el || innerWidth < 800) {
+    // if no ad element or element hidden, don't load buysellads
     return
   }
   const script = document.createElement('script')
   script.onload = () => {
+    if (_bsa.isMobile()) {
+      // bsa doesn't show ads on mobile, hide th box
+      ad_el.remove()
+      return
+    }
     _bsa.init('default', 'CKYDVKJJ', 'placement:helpmanualio', {
       target: '#bsa-cpc',
       align: 'horizontal',
