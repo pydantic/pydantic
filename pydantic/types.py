@@ -610,28 +610,25 @@ class PaymentCardNumber(str):
 
 
 BYTE_SIZES = {
-    'B': 1,
-    'kB': 10 ** 3,
-    'MB': 10 ** 6,
-    'GB': 10 ** 9,
-    'TB': 10 ** 12,
-    'PB': 10 ** 15,
-    'EB': 10 ** 18,
-    'KiB': 2 ** 10,
-    'MiB': 2 ** 20,
-    'GiB': 2 ** 30,
-    'TiB': 2 ** 40,
-    'PiB': 2 ** 50,
-    'EiB': 2 ** 60,
+    'b': 1,
+    'kb': 10 ** 3,
+    'mb': 10 ** 6,
+    'gb': 10 ** 9,
+    'tb': 10 ** 12,
+    'pb': 10 ** 15,
+    'eb': 10 ** 18,
+    'kib': 2 ** 10,
+    'mib': 2 ** 20,
+    'gib': 2 ** 30,
+    'tib': 2 ** 40,
+    'pib': 2 ** 50,
+    'eib': 2 ** 60,
 }
-BYTE_SIZES.update({k.lower(): v for k, v in BYTE_SIZES.items()})
 BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if "i" not in k})
-BYTE_SIZES.update({k.lower()[:2]: v for k, v in BYTE_SIZES.items() if "i" in k})
 byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 
 class ByteSize(int):
-
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
@@ -650,7 +647,7 @@ class ByteSize(int):
 
         scalar, unit = str_match.groups()
         if unit is None:
-            unit = 'B'
+            unit = 'b'
 
         try:
             unit_mult = BYTE_SIZES[unit.lower()]
@@ -673,7 +670,7 @@ class ByteSize(int):
         num = float(self)
         for unit in units:
             if abs(num) < divisor:
-                return f'{num:0.2f}{unit}'
+                return f'{num:0.1f}{unit}'
             num /= divisor
 
-        return f'{num:0.2f}{final_unit}'
+        return f'{num:0.1f}{final_unit}'

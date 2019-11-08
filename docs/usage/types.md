@@ -674,8 +674,10 @@ _(This script is complete, it should run "as is")_
 ## ByteSize
 
 You can use the `ByteSize` data type to convert byte string representation to
-raw bytes and print out human readable versions of the bytes as well. Note that
-`1b` will be parsed as "1 byte" and not "1 bit".
+raw bytes and print out human readable versions of the bytes as well.
+
+!!! info 
+    Note that `1b` will be parsed as "1 byte" and not "1 bit".
 
 ```py
 {!.tmp_examples/types_bytesize.py!}
