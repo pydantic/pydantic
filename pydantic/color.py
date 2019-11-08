@@ -12,13 +12,11 @@ import re
 from colorsys import hls_to_rgb, rgb_to_hls
 from typing import TYPE_CHECKING, Any, Optional, Tuple, Union, cast
 
-from pydantic.validators import not_none_validator
-
 from .errors import ColorError
-from .utils import almost_equal_floats
+from .utils import Representation, almost_equal_floats
 
-if TYPE_CHECKING:  # pragma: no cover
-    from .types import CallableGenerator
+if TYPE_CHECKING:
+    from .typing import CallableGenerator, ReprArgs
 
 ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]
@@ -61,7 +59,7 @@ repeat_colors = {int(c * 2, 16) for c in '0123456789abcdef'}
 rads = 2 * math.pi
 
 
-class Color:
+class Color(Representation):
     __slots__ = '_original', '_rgba'
 
     def __init__(self, value: ColorType) -> None:
@@ -184,14 +182,13 @@ class Color:
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield cls
 
     def __str__(self) -> str:
         return self.as_named(fallback=True)
 
-    def __repr__(self) -> str:
-        return f'<Color({str(self)!r}, {self.as_rgb_tuple()})>'
+    def __repr_args__(self) -> 'ReprArgs':
+        return [(None, self.as_named(fallback=True))] + [('rgb', self.as_rgb_tuple())]  # type: ignore
 
 
 def parse_tuple(value: Tuple[Any, ...]) -> RGBA:

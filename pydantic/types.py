@@ -1,55 +1,32 @@
-import json
 import re
+import warnings
 from decimal import Decimal
-from ipaddress import (
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-    _BaseAddress,
-    _BaseNetwork,
-)
+from enum import Enum
 from pathlib import Path
 from types import new_class
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Pattern,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Pattern, Type, TypeVar, Union, cast
 from uuid import UUID
 
 from . import errors
-from .utils import AnyType, change_exception, import_string, make_dsn, url_regex_generator, validate_email
+from .typing import AnyType
+from .utils import import_string
 from .validators import (
     bytes_validator,
+    constr_length_validator,
+    constr_strip_whitespace,
     decimal_validator,
     float_validator,
     int_validator,
-    not_none_validator,
+    list_validator,
     number_multiple_validator,
     number_size_validator,
     path_exists_validator,
     path_validator,
     str_validator,
+    strict_float_validator,
+    strict_int_validator,
+    strict_str_validator,
 )
-
-try:
-    import email_validator
-except ImportError:
-    email_validator = None
 
 __all__ = [
     'NoneStr',
@@ -63,12 +40,7 @@ __all__ = [
     'conlist',
     'ConstrainedStr',
     'constr',
-    'EmailStr',
-    'UrlStr',
-    'urlstr',
-    'NameEmail',
     'PyObject',
-    'DSN',
     'ConstrainedInt',
     'conint',
     'PositiveInt',
@@ -87,12 +59,12 @@ __all__ = [
     'DirectoryPath',
     'Json',
     'JsonWrapper',
-    'IPvAnyAddress',
-    'IPvAnyInterface',
-    'IPvAnyNetwork',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
+    'StrictInt',
+    'StrictFloat',
+    'PaymentCardNumber',
 ]
 
 NoneStr = Optional[str]
@@ -102,28 +74,13 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
-NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, int]]]
 
-if TYPE_CHECKING:  # pragma: no cover
-    from .fields import Field
+if TYPE_CHECKING:
     from .dataclasses import DataclassType  # noqa: F401
     from .main import BaseModel, BaseConfig  # noqa: F401
-    from .utils import AnyCallable
+    from .typing import CallableGenerator
 
-    CallableGenerator = Generator[AnyCallable, None, None]
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
-
-
-class StrictStr(str):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v: Any) -> str:
-        if not isinstance(v, str):
-            raise errors.StrError()
-        return v
 
 
 class ConstrainedBytes(bytes):
@@ -133,7 +90,6 @@ class ConstrainedBytes(bytes):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield bytes_validator
         yield constr_strip_whitespace
         yield constr_length_validator
@@ -160,10 +116,11 @@ class ConstrainedList(list):  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
+        yield list_validator
         yield cls.list_length_validator
 
     @classmethod
-    def list_length_validator(cls, v: 'List[T]', field: 'Field', config: 'BaseConfig') -> 'List[T]':
+    def list_length_validator(cls, v: 'List[T]') -> 'List[T]':
         v_len = len(v)
 
         if cls.min_items is not None and v_len < cls.min_items:
@@ -188,11 +145,11 @@ class ConstrainedStr(str):
     max_length: OptionalInt = None
     curtail_length: OptionalInt = None
     regex: Optional[Pattern[str]] = None
+    strict = False
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
-        yield str_validator
+        yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
         yield constr_length_validator
         yield cls.validate
@@ -212,6 +169,7 @@ class ConstrainedStr(str):
 def constr(
     *,
     strip_whitespace: bool = False,
+    strict: bool = False,
     min_length: int = None,
     max_length: int = None,
     curtail_length: int = None,
@@ -220,6 +178,7 @@ def constr(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        strict=strict,
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
@@ -228,118 +187,32 @@ def constr(
     return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
 
 
-class EmailStr(str):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        # included here and below so the error happens straight away
-        if email_validator is None:
-            raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
-
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str) -> str:
-        return validate_email(value)[1]
+class StrictStr(ConstrainedStr):
+    strict = True
 
 
-class StrictBool(int):
-    """
-    StrictBool to allow for bools which are not type-coerced.
-    """
+if TYPE_CHECKING:
+    StrictBool = bool
+else:
 
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Any) -> bool:
+    class StrictBool(int):
         """
-        Ensure that we only allow bools.
+        StrictBool to allow for bools which are not type-coerced.
         """
-        if isinstance(value, bool):
-            return value
 
-        raise errors.StrictBoolError()
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield cls.validate
 
+        @classmethod
+        def validate(cls, value: Any) -> bool:
+            """
+            Ensure that we only allow bools.
+            """
+            if isinstance(value, bool):
+                return value
 
-class UrlStr(str):
-    strip_whitespace = True
-    min_length = 1
-    max_length = 2 ** 16
-    schemes: Optional[Set[str]] = None
-    relative = False  # whether to allow relative URLs
-    require_tld = True  # whether to reject non-FQDN hostnames
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
-        yield str_validator
-        yield constr_strip_whitespace
-        yield constr_length_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str) -> str:
-        # Check first if the scheme is valid
-        schemes = cls.schemes or {'http', 'https', 'ftp', 'ftps'}
-        if '://' in value:
-            scheme = value.split('://')[0].lower()
-            if scheme not in schemes:
-                raise errors.UrlSchemeError(scheme=scheme)
-
-        regex = url_regex_generator(relative=cls.relative, require_tld=cls.require_tld)
-        if not regex.match(value):
-            raise errors.UrlRegexError()
-
-        return value
-
-
-def urlstr(
-    *,
-    strip_whitespace: bool = True,
-    min_length: int = 1,
-    max_length: int = 2 ** 16,
-    relative: bool = False,
-    require_tld: bool = True,
-    schemes: Optional[Set[str]] = None,
-) -> Type[str]:
-    # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(
-        strip_whitespace=strip_whitespace,
-        min_length=min_length,
-        max_length=max_length,
-        relative=relative,
-        require_tld=require_tld,
-        schemes=schemes,
-    )
-    return type('UrlStrValue', (UrlStr,), namespace)
-
-
-class NameEmail:
-    __slots__ = 'name', 'email'
-
-    def __init__(self, name: str, email: str):
-        self.name = name
-        self.email = email
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        if email_validator is None:
-            raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
-
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str) -> 'NameEmail':
-        return cls(*validate_email(value))
-
-    def __str__(self) -> str:
-        return f'{self.name} <{self.email}>'
-
-    def __repr__(self) -> str:
-        return f'<NameEmail("{self}")>'
+            raise errors.StrictBoolError()
 
 
 class PyObject:
@@ -359,37 +232,14 @@ class PyObject:
         except errors.StrError:
             raise errors.PyObjectError(error_message='value is neither a valid import path not a valid callable')
 
-        if value is not None:
-            try:
-                return import_string(value)
-            except ImportError as e:
-                raise errors.PyObjectError(error_message=str(e))
-
-
-class DSN(str):
-    prefix = 'db_'
-    fields = 'driver', 'user', 'password', 'host', 'port', 'name', 'query'
-    validate_always = True
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str, values: Dict[str, Any]) -> str:
-        if value:
-            return value
-
-        kwargs = {f: values.get(cls.prefix + f) for f in cls.fields}
-        if kwargs['driver'] is None:
-            raise errors.DSNDriverIsEmptyError()
-
-        return make_dsn(**kwargs)  # type: ignore
+        try:
+            return import_string(value)
+        except ImportError as e:
+            raise errors.PyObjectError(error_message=str(e))
 
 
 class ConstrainedNumberMeta(type):
-    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'ConstrainedInt':
+    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'ConstrainedInt':  # type: ignore
         new_cls = cast('ConstrainedInt', type.__new__(cls, name, bases, dct))
 
         if new_cls.gt is not None and new_cls.ge is not None:
@@ -401,6 +251,7 @@ class ConstrainedNumberMeta(type):
 
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
+    strict: bool = False
     gt: OptionalInt = None
     ge: OptionalInt = None
     lt: OptionalInt = None
@@ -409,14 +260,17 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield int_validator
+
+        yield strict_int_validator if cls.strict else int_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
-def conint(*, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None) -> Type[int]:
+def conint(
+    *, strict: bool = False, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None
+) -> Type[int]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
 
 
@@ -428,7 +282,12 @@ class NegativeInt(ConstrainedInt):
     lt = 0
 
 
+class StrictInt(ConstrainedInt):
+    strict = True
+
+
 class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
+    strict: bool = False
     gt: OptionalIntFloat = None
     ge: OptionalIntFloat = None
     lt: OptionalIntFloat = None
@@ -437,16 +296,22 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield float_validator
+        yield strict_float_validator if cls.strict else float_validator
         yield number_size_validator
         yield number_multiple_validator
 
 
 def confloat(
-    *, gt: float = None, ge: float = None, lt: float = None, le: float = None, multiple_of: float = None
+    *,
+    strict: bool = False,
+    gt: float = None,
+    ge: float = None,
+    lt: float = None,
+    le: float = None,
+    multiple_of: float = None,
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
     return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
 
 
@@ -456,6 +321,10 @@ class PositiveFloat(ConstrainedFloat):
 
 class NegativeFloat(ConstrainedFloat):
     lt = 0
+
+
+class StrictFloat(ConstrainedFloat):
+    strict = True
 
 
 class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
@@ -469,7 +338,6 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield not_none_validator
         yield decimal_validator
         yield number_size_validator
         yield number_multiple_validator
@@ -585,69 +453,7 @@ class JsonMeta(type):
 
 
 class Json(metaclass=JsonMeta):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v: Any) -> Any:
-        try:
-            return json.loads(v)
-        except ValueError:
-            raise errors.JsonError()
-        except TypeError:
-            raise errors.JsonTypeError()
-
-
-class IPvAnyAddress(_BaseAddress):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Union[str, bytes, int]) -> Union[IPv4Address, IPv6Address]:
-        try:
-            return IPv4Address(value)
-        except ValueError:
-            pass
-
-        with change_exception(errors.IPvAnyAddressError, ValueError):
-            return IPv6Address(value)
-
-
-class IPvAnyInterface(_BaseAddress):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: NetworkType) -> Union[IPv4Interface, IPv6Interface]:
-        try:
-            return IPv4Interface(value)
-        except ValueError:
-            pass
-
-        with change_exception(errors.IPvAnyInterfaceError, ValueError):
-            return IPv6Interface(value)
-
-
-class IPvAnyNetwork(_BaseNetwork):  # type: ignore
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: NetworkType) -> Union[IPv4Network, IPv6Network]:
-        # Assume IP Network is defined with a default value for ``strict`` argument.
-        # Define your own class if you want to specify network address check strictness.
-        try:
-            return IPv4Network(value)
-        except ValueError:
-            pass
-
-        with change_exception(errors.IPvAnyNetworkError, ValueError):
-            return IPv6Network(value)
+    pass
 
 
 class SecretStr:
@@ -664,13 +470,14 @@ class SecretStr:
         self._secret_value = value
 
     def __repr__(self) -> str:
-        return "SecretStr('**********')" if self._secret_value else "SecretStr('')"
+        return f"SecretStr('{self}')"
 
     def __str__(self) -> str:
-        return self.__repr__()
+        return '**********' if self._secret_value else ''
 
     def display(self) -> str:
-        return '**********' if self._secret_value else ''
+        warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)
+        return str(self)
 
     def get_secret_value(self) -> str:
         return self._secret_value
@@ -690,35 +497,112 @@ class SecretBytes:
         self._secret_value = value
 
     def __repr__(self) -> str:
-        return "SecretBytes(b'**********')" if self._secret_value else "SecretBytes(b'')"
+        return f"SecretBytes(b'{self}')"
 
     def __str__(self) -> str:
-        return self.__repr__()
+        return '**********' if self._secret_value else ''
 
     def display(self) -> str:
-        return '**********' if self._secret_value else ''
+        warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning)
+        return str(self)
 
     def get_secret_value(self) -> bytes:
         return self._secret_value
 
 
-def constr_length_validator(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
-    v_len = len(v)
+class PaymentCardBrand(Enum):
+    amex = 'American Express'
+    mastercard = 'Mastercard'
+    visa = 'Visa'
+    other = 'other'
 
-    min_length = field.type_.min_length or config.min_anystr_length  # type: ignore
-    if min_length is not None and v_len < min_length:
-        raise errors.AnyStrMinLengthError(limit_value=min_length)
-
-    max_length = field.type_.max_length or config.max_anystr_length  # type: ignore
-    if max_length is not None and v_len > max_length:
-        raise errors.AnyStrMaxLengthError(limit_value=max_length)
-
-    return v
+    def __str__(self) -> str:
+        return self.value
 
 
-def constr_strip_whitespace(v: 'StrBytes', field: 'Field', config: 'BaseConfig') -> 'StrBytes':
-    strip_whitespace = field.type_.strip_whitespace or config.anystr_strip_whitespace  # type: ignore
-    if strip_whitespace:
-        v = v.strip()
+class PaymentCardNumber(str):
+    """
+    Based on: https://en.wikipedia.org/wiki/Payment_card_number
+    """
 
-    return v
+    strip_whitespace: ClassVar[bool] = True
+    min_length: ClassVar[int] = 12
+    max_length: ClassVar[int] = 19
+    bin: str
+    last4: str
+    brand: PaymentCardBrand
+
+    def __init__(self, card_number: str):
+        self.bin = card_number[:6]
+        self.last4 = card_number[-4:]
+        self.brand = self._get_brand(card_number)
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield str_validator
+        yield constr_strip_whitespace
+        yield constr_length_validator
+        yield cls.validate_digits
+        yield cls.validate_luhn_check_digit
+        yield cls
+        yield cls.validate_length_for_brand
+
+    @property
+    def masked(self) -> str:
+        num_masked = len(self) - 10  # len(bin) + len(last4) == 10
+        return f'{self.bin}{"*" * num_masked}{self.last4}'
+
+    @classmethod
+    def validate_digits(cls, card_number: str) -> str:
+        if not card_number.isdigit():
+            raise errors.NotDigitError
+        return card_number
+
+    @classmethod
+    def validate_luhn_check_digit(cls, card_number: str) -> str:
+        """
+        Based on: https://en.wikipedia.org/wiki/Luhn_algorithm
+        """
+        sum_ = int(card_number[-1])
+        length = len(card_number)
+        parity = length % 2
+        for i in range(length - 1):
+            digit = int(card_number[i])
+            if i % 2 == parity:
+                digit *= 2
+            sum_ += digit
+        valid = sum_ % 10 == 0
+        if not valid:
+            raise errors.LuhnValidationError
+        return card_number
+
+    @classmethod
+    def validate_length_for_brand(cls, card_number: 'PaymentCardNumber') -> 'PaymentCardNumber':
+        """
+        Validate length based on BIN for major brands:
+        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
+        """
+        required_length: Optional[int] = None
+        if card_number.brand is (PaymentCardBrand.visa or PaymentCardBrand.mastercard):
+            required_length = 16
+            valid = len(card_number) == required_length
+        elif card_number.brand is PaymentCardBrand.amex:
+            required_length = 15
+            valid = len(card_number) == required_length
+        else:
+            valid = True
+        if not valid:
+            raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
+        return card_number
+
+    @staticmethod
+    def _get_brand(card_number: str) -> PaymentCardBrand:
+        if card_number[0] == '4':
+            brand = PaymentCardBrand.visa
+        elif 51 <= int(card_number[:2]) <= 55:
+            brand = PaymentCardBrand.mastercard
+        elif card_number[:2] in {'34', '37'}:
+            brand = PaymentCardBrand.amex
+        else:
+            brand = PaymentCardBrand.other
+        return brand

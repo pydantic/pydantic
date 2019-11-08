@@ -1,10 +1,10 @@
 import sys
 from enum import Enum
-from typing import Any, ClassVar, Dict, Generic, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, Field, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
@@ -40,13 +40,19 @@ def test_value_validation():
     class Response(GenericModel, Generic[T]):
         data: T
 
-        @validator('data')
+        @validator('data', each_item=True)
         def validate_value_nonzero(cls, v):
-            if isinstance(v, dict):
-                return v  # ensure v is actually a value of the dict, not the dict itself
             if v == 0:
                 raise ValueError('value is zero')
+            return v
 
+        @root_validator()
+        def validate_sum(cls, values):
+            if sum(values.get('data', {}).values()) > 5:
+                raise ValueError('sum too large')
+            return values
+
+    assert Response[Dict[int, int]](data={1: '4'}).dict() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 'a'})
     assert exc_info.value.errors() == [
@@ -56,6 +62,10 @@ def test_value_validation():
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 0})
     assert exc_info.value.errors() == [{'loc': ('data', 1), 'msg': 'value is zero', 'type': 'value_error'}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Response[Dict[int, int]](data={1: 3, 2: 6})
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'sum too large', 'type': 'value_error'}]
 
 
 @skip_36
@@ -164,14 +174,30 @@ def test_must_inherit_from_generic():
 
 
 @skip_36
-def test_parameters_must_be_typevar():
+def test_parameters_placed_on_generic():
     T = TypeVar('T')
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(TypeError, match='Type parameters should be placed on typing.Generic, not GenericModel'):
 
         class Result(GenericModel[T]):
             pass
 
-    assert str(exc_info.value) == f'Type parameters should be placed on typing.Generic, not GenericModel'
+
+@skip_36
+def test_parameters_must_be_typevar():
+    with pytest.raises(TypeError, match='Type GenericModel must inherit from typing.Generic before being '):
+
+        class Result(GenericModel[int]):
+            pass
+
+
+@skip_36
+def test_subclass_can_be_genericized():
+    T = TypeVar('T')
+
+    class Result(GenericModel, Generic[T]):
+        pass
+
+    Result[T]
 
 
 @skip_36
@@ -318,11 +344,11 @@ def test_generic():
 
     success1 = Result[Data, Error](data=[Data(number=1, text='a')], positive_number=1)
     assert success1.dict() == {'data': [{'number': 1, 'text': 'a'}], 'error': None, 'positive_number': 1}
-    assert str(success1) == "Result[Data, Error] data=[<Data number=1 text='a'>] error=None positive_number=1"
+    assert repr(success1) == "Result[Data, Error](data=[Data(number=1, text='a')], error=None, positive_number=1)"
 
     success2 = Result[Data, Error](error=Error(message='error'), positive_number=1)
     assert success2.dict() == {'data': None, 'error': {'message': 'error'}, 'positive_number': 1}
-    assert str(success2) == "Result[Data, Error] data=None error=<Error message='error'> positive_number=1"
+    assert repr(success2) == "Result[Data, Error](data=None, error=Error(message='error'), positive_number=1)"
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](error=Error(message='error'), positive_number=-1)
     assert exc_info.value.errors() == [{'loc': ('positive_number',), 'msg': '', 'type': 'value_error'}]
@@ -330,13 +356,91 @@ def test_generic():
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](data=[Data(number=1, text='a')], error=Error(message='error'), positive_number=1)
     assert exc_info.value.errors() == [
-        {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'},
-        {'loc': ('error',), 'msg': 'value is not none', 'type': 'type_error.none.allowed'},
+        {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](data=[Data(number=1, text='a')], error=Error(message='error'), positive_number=1)
     assert exc_info.value.errors() == [
-        {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'},
-        {'loc': ('error',), 'msg': 'value is not none', 'type': 'type_error.none.allowed'},
+        {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'}
     ]
+
+
+@skip_36
+def test_alongside_concrete_generics():
+    from pydantic.generics import GenericModel
+
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        item: T
+        metadata: Dict[str, Any]
+
+    model = MyModel[int](item=1, metadata={})
+    assert model.item == 1
+    assert model.metadata == {}
+
+
+@skip_36
+def test_complex_nesting():
+    from pydantic.generics import GenericModel
+
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        item: List[Dict[Union[int, T], str]]
+
+    item = [{1: 'a', 'a': 'a'}]
+    model = MyModel[str](item=item)
+    assert model.item == item
+
+
+@skip_36
+def test_required_value():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        a: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyModel[int]()
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+@skip_36
+def test_optional_value():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        a: Optional[int] = 1
+
+    model = MyModel[int]()
+    assert model.dict() == {'a': 1}
+
+
+@skip_36
+def test_custom_schema():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        a: int = Field(1, description='Custom')
+
+    schema = MyModel[int].schema()
+    assert schema['properties']['a'].get('description') == 'Custom'
+
+
+@skip_36
+def test_custom_generic_naming():
+    T = TypeVar('T')
+
+    class MyModel(GenericModel, Generic[T]):
+        value: Optional[T]
+
+        @classmethod
+        def __concrete_name__(cls: Type[Any], params: Tuple[Type[Any], ...]) -> str:
+            param_names = [param.__name__ if hasattr(param, '__name__') else str(param) for param in params]
+            title = param_names[0].title()
+            return f'Optional{title}Wrapper'
+
+    assert repr(MyModel[int](value=1)) == 'OptionalIntWrapper(value=1)'
+    assert repr(MyModel[str](value=None)) == 'OptionalStrWrapper(value=None)'

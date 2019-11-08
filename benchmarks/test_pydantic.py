@@ -1,14 +1,14 @@
 from datetime import datetime
 from typing import List
 
-from pydantic import BaseModel, Extra, PositiveInt, ValidationError, constr
+from pydantic import VERSION, BaseModel, Extra, PositiveInt, ValidationError, constr
 
 
 class TestPydantic:
     package = 'pydantic'
+    version = str(VERSION)
 
     def __init__(self, allow_extra):
-
         class Model(BaseModel):
             id: int
             client_name: constr(max_length=255)
@@ -19,6 +19,7 @@ class TestPydantic:
             class Location(BaseModel):
                 latitude: float = None
                 longitude: float = None
+
             location: Location = None
 
             contractor: PositiveInt = None
@@ -33,6 +34,7 @@ class TestPydantic:
                 qual_level: str
                 qual_level_id: int
                 qual_level_ranking: float = 0
+
             skills: List[Skill] = []
 
             class Config:

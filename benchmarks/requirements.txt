@@ -1,4 +1,3 @@
-devtools             # pyup: ignore
 python-dateutil      # pyup: ignore
 trafaret             # pyup: ignore
 django               # pyup: ignore

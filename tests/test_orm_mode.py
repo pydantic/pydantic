@@ -1,8 +1,8 @@
-from typing import List
+from typing import Any, List
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError
+from pydantic import BaseModel, ConfigError, ValidationError, root_validator
 from pydantic.utils import GetterDict
 
 
@@ -26,14 +26,25 @@ def test_getdict():
 
     t = TestCls()
     gd = GetterDict(t)
-    assert gd.keys() == set()
-    assert gd.get('a', None) == 1
+    assert gd.keys() == ['a', 'c', 'd']
+    assert gd.get('a') == 1
+    assert gd['a'] == 1
+    with pytest.raises(KeyError):
+        assert gd['foobar']
     assert gd.get('b', None) is None
     assert gd.get('b', 1234) == 1234
     assert gd.get('c', None) == 3
     assert gd.get('d', None) == 4
     assert gd.get('e', None) == 5
     assert gd.get('f', 'missing') == 'missing'
+    assert list(gd.values()) == [1, 3, 4]
+    assert list(gd.items()) == [('a', 1), ('c', 3), ('d', 4)]
+    assert list(gd) == ['a', 'c', 'd']
+    assert gd == {'a': 1, 'c': 3, 'd': 4}
+    assert 'a' in gd
+    assert len(gd) == 3
+    assert str(gd) == "{'a': 1, 'c': 3, 'd': 4}"
+    assert repr(gd) == "GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})"
 
 
 def test_orm_mode():
@@ -111,7 +122,7 @@ def test_object_with_getattr():
     model = Model.from_orm(foo)
     assert model.foo == 'Foo'
     assert model.bar == 1
-    assert model.dict(skip_defaults=True) == {'foo': 'Foo'}
+    assert model.dict(exclude_unset=True) == {'foo': 'Foo'}
     with pytest.raises(ValidationError):
         ModelInvalid.from_orm(foo)
 
@@ -166,3 +177,87 @@ def test_extra_forbid():
 
     model = Model.from_orm(TestCls())
     assert model.dict() == {'x': 1}
+
+
+def test_root_validator():
+    validator_value = None
+
+    class TestCls:
+        x = 1
+        y = 2
+
+    class Model(BaseModel):
+        x: int
+        y: int
+        z: int
+
+        @root_validator(pre=True)
+        def change_input_data(cls, value):
+            nonlocal validator_value
+            validator_value = value
+            return {**value, 'z': value['x'] + value['y']}
+
+        class Config:
+            orm_mode = True
+
+    model = Model.from_orm(TestCls())
+    assert model.dict() == {'x': 1, 'y': 2, 'z': 3}
+    assert isinstance(validator_value, GetterDict)
+    assert validator_value == {'x': 1, 'y': 2}
+
+
+def test_custom_getter_dict():
+    class TestCls:
+        x = 1
+        y = 2
+
+    def custom_getter_dict(obj):
+        assert isinstance(obj, TestCls)
+        return {'x': 42, 'y': 24}
+
+    class Model(BaseModel):
+        x: int
+        y: int
+
+        class Config:
+            orm_mode = True
+            getter_dict = custom_getter_dict
+
+    model = Model.from_orm(TestCls())
+    assert model.dict() == {'x': 42, 'y': 24}
+
+
+def test_custom_getter_dict_derived_model_class():
+    class CustomCollection:
+        __custom__ = True
+
+        def __iter__(self):
+            for elem in range(5):
+                yield elem
+
+    class Example:
+        def __init__(self, *args, **kwargs):
+            self.col = CustomCollection()
+            self.id = 1
+            self.name = 'name'
+
+    class MyGetterDict(GetterDict):
+        def get(self, key: Any, default: Any = None) -> Any:
+            res = getattr(self._obj, key, default)
+            if hasattr(res, '__custom__'):
+                return list(res)
+            return res
+
+    class ExampleBase(BaseModel):
+        name: str
+        col: List[int]
+
+    class ExampleOrm(ExampleBase):
+        id: int
+
+        class Config:
+            orm_mode = True
+            getter_dict = MyGetterDict
+
+    model = ExampleOrm.from_orm(Example())
+    assert model.dict() == {'name': 'name', 'col': [0, 1, 2, 3, 4], 'id': 1}

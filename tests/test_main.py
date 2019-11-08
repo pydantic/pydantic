@@ -1,9 +1,9 @@
 from enum import Enum
-from typing import Any, ClassVar, List, Mapping
+from typing import Any, ClassVar, List, Mapping, Type
 
 import pytest
 
-from pydantic import BaseModel, Extra, NoneBytes, NoneStr, Required, Schema, ValidationError, constr
+from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
 
 
 def test_success():
@@ -18,7 +18,7 @@ def test_success():
 
 
 class UltraSimpleModel(BaseModel):
-    a: float = ...
+    a: float
     b: int = 10
 
 
@@ -39,36 +39,15 @@ def test_ultra_simple_failed():
 
 def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
-    assert repr(m) == '<UltraSimpleModel a=10.2 b=10>'
-    assert repr(m.fields['a']) == '<Field(a type=float required)>'
+    assert str(m) == 'a=10.2 b=10'
+    assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
+    assert repr(m.__fields__['a']) == "ModelField(name='a', type=float, required=True)"
+    assert repr(m.__fields__['b']) == "ModelField(name='b', type=int, required=False, default=10)"
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
     assert m.json() == '{"a": 10.2, "b": 10}'
-
-
-def test_str_truncate():
-    class Model(BaseModel):
-        s1: str
-        s2: str
-        b1: bytes
-        b2: bytes
-
-    m = Model(s1='132', s2='x' * 100, b1='123', b2='x' * 100)
-    print(repr(m.to_string()))
-    assert m.to_string() == (
-        "Model s1='132' "
-        "s2='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…' "
-        "b1=b'123' "
-        "b2=b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…"
-    )
-    assert """\
-Model
-  s1='132'
-  s2='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…'
-  b1=b'123'
-  b2=b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…""" == m.to_string(
-        pretty=True
-    )
+    with pytest.raises(DeprecationWarning, match=r'`model.to_string\(\)` method is deprecated'):
+        assert m.to_string() == 'a=10.2 b=10'
 
 
 def test_comparing():
@@ -131,7 +110,7 @@ def test_recursion():
     assert m.grape is True
     assert m.banana.a == 1.0
     assert m.banana.b == 10
-    assert repr(m) == '<RecursiveModel grape=True banana=<UltraSimpleModel a=1.0 b=10>>'
+    assert repr(m) == 'RecursiveModel(grape=True, banana=UltraSimpleModel(a=1.0, b=10))'
 
 
 def test_recursion_fails():
@@ -292,12 +271,12 @@ def test_alias():
     }
 
 
-def test_population_by_alias():
+def test_population_by_field_name():
     class Model(BaseModel):
         a: str
 
         class Config:
-            allow_population_by_alias = True
+            allow_population_by_field_name = True
             fields = {'a': {'alias': '_a'}}
 
     assert Model(a='different').a == 'different'
@@ -312,8 +291,7 @@ def test_field_order():
         a: str
         d: dict = {}
 
-    # fields are ordered as defined except annotation-only fields come last
-    assert list(Model.__fields__.keys()) == ['c', 'a', 'b', 'd']
+    assert list(Model.__fields__.keys()) == ['c', 'b', 'a', 'd']
 
 
 def test_required():
@@ -367,7 +345,7 @@ def test_immutability():
 
 def test_const_validates():
     class Model(BaseModel):
-        a: int = Schema(3, const=True)
+        a: int = Field(3, const=True)
 
     m = Model(a=3)
     assert m.a == 3
@@ -375,7 +353,7 @@ def test_const_validates():
 
 def test_const_uses_default():
     class Model(BaseModel):
-        a: int = Schema(3, const=True)
+        a: int = Field(3, const=True)
 
     m = Model()
     assert m.a == 3
@@ -383,7 +361,7 @@ def test_const_uses_default():
 
 def test_const_with_wrong_value():
     class Model(BaseModel):
-        a: int = Schema(3, const=True)
+        a: int = Field(3, const=True)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=4)
@@ -396,6 +374,114 @@ def test_const_with_wrong_value():
             'ctx': {'given': 4, 'permitted': [3]},
         }
     ]
+
+
+def test_const_list():
+    class SubModel(BaseModel):
+        b: int
+
+    class Model(BaseModel):
+        a: List[SubModel] = Field([SubModel(b=1), SubModel(b=2), SubModel(b=3)], const=True)
+        b: List[SubModel] = Field([{'b': 4}, {'b': 5}, {'b': 6}], const=True)
+
+    m = Model()
+    assert m.a == [SubModel(b=1), SubModel(b=2), SubModel(b=3)]
+    assert m.b == [SubModel(b=4), SubModel(b=5), SubModel(b=6)]
+    assert m.schema() == {
+        'definitions': {
+            'SubModel': {
+                'properties': {'b': {'title': 'B', 'type': 'integer'}},
+                'required': ['b'],
+                'title': 'SubModel',
+                'type': 'object',
+            }
+        },
+        'properties': {
+            'a': {
+                'const': [SubModel(b=1), SubModel(b=2), SubModel(b=3)],
+                'items': {'$ref': '#/definitions/SubModel'},
+                'title': 'A',
+                'type': 'array',
+            },
+            'b': {
+                'const': [{'b': 4}, {'b': 5}, {'b': 6}],
+                'items': {'$ref': '#/definitions/SubModel'},
+                'title': 'B',
+                'type': 'array',
+            },
+        },
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_const_list_with_wrong_value():
+    class SubModel(BaseModel):
+        b: int
+
+    class Model(BaseModel):
+        a: List[SubModel] = Field([SubModel(b=1), SubModel(b=2), SubModel(b=3)], const=True)
+        b: List[SubModel] = Field([{'b': 4}, {'b': 5}, {'b': 6}], const=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=[{'b': 3}, {'b': 1}, {'b': 2}], b=[{'b': 6}, {'b': 5}])
+
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {
+                'given': [{'b': 3}, {'b': 1}, {'b': 2}],
+                'permitted': [[SubModel(b=1), SubModel(b=2), SubModel(b=3)]],
+            },
+            'loc': ('a',),
+            'msg': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
+            'type': 'value_error.const',
+        },
+        {
+            'ctx': {'given': [{'b': 6}, {'b': 5}], 'permitted': [[{'b': 4}, {'b': 5}, {'b': 6}]]},
+            'loc': ('b',),
+            'msg': "unexpected value; permitted: [{'b': 4}, {'b': 5}, {'b': 6}]",
+            'type': 'value_error.const',
+        },
+    ]
+    assert exc_info.value.json().startswith('[')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=[SubModel(b=3), SubModel(b=1), SubModel(b=2)], b=[SubModel(b=3), SubModel(b=1)])
+
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {
+                'given': [SubModel(b=3), SubModel(b=1), SubModel(b=2)],
+                'permitted': [[SubModel(b=1), SubModel(b=2), SubModel(b=3)]],
+            },
+            'loc': ('a',),
+            'msg': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
+            'type': 'value_error.const',
+        },
+        {
+            'ctx': {'given': [SubModel(b=3), SubModel(b=1)], 'permitted': [[{'b': 4}, {'b': 5}, {'b': 6}]]},
+            'loc': ('b',),
+            'msg': "unexpected value; permitted: [{'b': 4}, {'b': 5}, {'b': 6}]",
+            'type': 'value_error.const',
+        },
+    ]
+    assert exc_info.value.json().startswith('[')
+
+
+def test_const_validation_json_serializable():
+    class SubForm(BaseModel):
+        field: int
+
+    class Form(BaseModel):
+        field1: SubForm = Field({'field': 2}, const=True)
+        field2: List[SubForm] = Field([{'field': 2}], const=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        # Fails
+        Form(field1={'field': 1}, field2=[{'field': 1}])
+
+    # This should not raise an Json error
+    exc_info.value.json()
 
 
 class ValidateAssignmentModel(BaseModel):
@@ -531,6 +617,81 @@ def test_arbitrary_types_not_allowed():
     assert exc_info.value.args[0].startswith('no validator found for')
 
 
+def test_type_type_validation_success():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    arbitrary_type_class = ArbitraryType
+    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    assert m.t == arbitrary_type_class
+
+
+def test_type_type_subclass_validation_success():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    class ArbitrarySubType(ArbitraryType):
+        pass
+
+    arbitrary_type_class = ArbitrarySubType
+    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    assert m.t == arbitrary_type_class
+
+
+def test_type_type_validation_fails_for_instance():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    class C:
+        pass
+
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryClassAllowedModel(t=C)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('t',),
+            'msg': 'subclass of ArbitraryType expected',
+            'type': 'type_error.subclass',
+            'ctx': {'expected_class': 'ArbitraryType'},
+        }
+    ]
+
+
+def test_type_type_validation_fails_for_basic_type():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type[ArbitraryType]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryClassAllowedModel(t=1)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('t',),
+            'msg': 'subclass of ArbitraryType expected',
+            'type': 'type_error.subclass',
+            'ctx': {'expected_class': 'ArbitraryType'},
+        }
+    ]
+
+
+def test_bare_type_type_validation_success():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type
+
+    arbitrary_type_class = ArbitraryType
+    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    assert m.t == arbitrary_type_class
+
+
+def test_bare_type_type_validation_fails():
+    class ArbitraryClassAllowedModel(BaseModel):
+        t: Type
+
+    arbitrary_type = ArbitraryType()
+    with pytest.raises(ValidationError) as exc_info:
+        ArbitraryClassAllowedModel(t=arbitrary_type)
+    assert exc_info.value.errors() == [{'loc': ('t',), 'msg': 'a class is expected', 'type': 'type_error.class'}]
+
+
 def test_annotation_field_name_shadows_attribute():
     with pytest.raises(NameError):
         # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
@@ -570,19 +731,19 @@ def test_fields_set():
     assert m.__fields_set__ == {'a', 'b'}
 
 
-def test_skip_defaults_dict():
+def test_exclude_unset_dict():
     class MyModel(BaseModel):
         a: int
         b: int = 2
 
     m = MyModel(a=5)
-    assert m.dict(skip_defaults=True) == {'a': 5}
+    assert m.dict(exclude_unset=True) == {'a': 5}
 
     m = MyModel(a=5, b=3)
-    assert m.dict(skip_defaults=True) == {'a': 5, 'b': 3}
+    assert m.dict(exclude_unset=True) == {'a': 5, 'b': 3}
 
 
-def test_skip_defaults_recursive():
+def test_exclude_unset_recursive():
     class ModelA(BaseModel):
         a: int
         b: int = 1
@@ -594,36 +755,36 @@ def test_skip_defaults_recursive():
 
     m = ModelB(c=5, e={'a': 0})
     assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
-    assert m.dict(skip_defaults=True) == {'c': 5, 'e': {'a': 0}}
+    assert m.dict(exclude_unset=True) == {'c': 5, 'e': {'a': 0}}
     assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
 
 
-def test_dict_skip_defaults_populated_by_alias():
+def test_dict_exclude_unset_populated_by_alias():
     class MyModel(BaseModel):
-        a: str = Schema('default', alias='alias_a')
-        b: str = Schema('default', alias='alias_b')
+        a: str = Field('default', alias='alias_a')
+        b: str = Field('default', alias='alias_b')
 
         class Config:
-            allow_population_by_alias = True
+            allow_population_by_field_name = True
 
     m = MyModel(alias_a='a')
 
-    assert m.dict(skip_defaults=True) == {'a': 'a'}
-    assert m.dict(skip_defaults=True, by_alias=True) == {'alias_a': 'a'}
+    assert m.dict(exclude_unset=True) == {'a': 'a'}
+    assert m.dict(exclude_unset=True, by_alias=True) == {'alias_a': 'a'}
 
 
-def test_dict_skip_defaults_populated_by_alias_with_extra():
+def test_dict_exclude_unset_populated_by_alias_with_extra():
     class MyModel(BaseModel):
-        a: str = Schema('default', alias='alias_a')
-        b: str = Schema('default', alias='alias_b')
+        a: str = Field('default', alias='alias_a')
+        b: str = Field('default', alias='alias_b')
 
         class Config:
             extra = 'allow'
 
     m = MyModel(alias_a='a', c='c')
 
-    assert m.dict(skip_defaults=True) == {'a': 'a', 'c': 'c'}
-    assert m.dict(skip_defaults=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
+    assert m.dict(exclude_unset=True) == {'a': 'a', 'c': 'c'}
+    assert m.dict(exclude_unset=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
 
 
 def test_dir_fields():
@@ -641,7 +802,7 @@ def test_dir_fields():
 
 def test_dict_with_extra_keys():
     class MyModel(BaseModel):
-        a: str = Schema(None, alias='alias_a')
+        a: str = Field(None, alias='alias_a')
 
         class Config:
             extra = Extra.allow
@@ -681,7 +842,7 @@ def test_alias_generator_with_field_schema():
 
         class Config:
             alias_generator = to_upper_case
-            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}}
+            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}, 'another_field': {'not_alias': 'a'}}
 
     data = {'MY_FIELD': ['a'], 'FOO': 'bar', 'BAZ_BAR': 'ok', 'ANOTHER_FIELD': '...'}
     m = MyModel(**data)
@@ -743,3 +904,97 @@ def test_parse_root_as_mapping():
 
         class MyModel(BaseModel):
             __root__: Mapping[str, str]
+
+
+def test_untouched_types():
+    from pydantic import BaseModel
+
+    class _ClassPropertyDescriptor:
+        def __init__(self, getter):
+            self.getter = getter
+
+        def __get__(self, instance, owner):
+            return self.getter(owner)
+
+    classproperty = _ClassPropertyDescriptor
+
+    class Model(BaseModel):
+        class Config:
+            keep_untouched = (classproperty,)
+
+        @classproperty
+        def class_name(cls) -> str:
+            return cls.__name__
+
+    assert Model.class_name == 'Model'
+    assert Model().class_name == 'Model'
+
+
+def test_custom_types_fail_without_keep_untouched():
+    from pydantic import BaseModel
+
+    class _ClassPropertyDescriptor:
+        def __init__(self, getter):
+            self.getter = getter
+
+        def __get__(self, instance, owner):
+            return self.getter(owner)
+
+    classproperty = _ClassPropertyDescriptor
+
+    with pytest.raises(RuntimeError) as e:
+
+        class Model(BaseModel):
+            @classproperty
+            def class_name(cls) -> str:
+                return cls.__name__
+
+        Model.class_name
+
+    assert str(e.value) == (
+        "no validator found for <class 'tests.test_main.test_custom_types_fail_without_keep_untouched.<locals>."
+        "_ClassPropertyDescriptor'>, see `arbitrary_types_allowed` in Config"
+    )
+
+    class Model(BaseModel):
+        class Config:
+            arbitrary_types_allowed = True
+
+        @classproperty
+        def class_name(cls) -> str:
+            return cls.__name__
+
+    with pytest.raises(AttributeError) as e:
+        Model.class_name
+    assert str(e.value) == "type object 'Model' has no attribute 'class_name'"
+
+
+def test_model_iteration():
+    class Foo(BaseModel):
+        a: int = 1
+        b: int = 2
+
+    class Bar(BaseModel):
+        c: int
+        d: Foo
+
+    m = Bar(c=3, d={})
+    assert m.dict() == {'c': 3, 'd': {'a': 1, 'b': 2}}
+    assert list(m) == [('c', 3), ('d', Foo())]
+    assert dict(m) == {'c': 3, 'd': Foo()}
+
+
+def test_custom_init_subclass_params():
+    class DerivedModel(BaseModel):
+        def __init_subclass__(cls, something):
+            cls.something = something
+
+    # if this raises a TypeError, then there is a regression of issue 867:
+    # pydantic.main.MetaModel.__new__ should include **kwargs at the end of the
+    # method definition and pass them on to the super call at the end in order
+    # to allow the special method __init_subclass__ to be defined with custom
+    # parameters on extended BaseModel classes.
+    class NewModel(DerivedModel, something=2):
+        something = 1
+
+    assert NewModel.something == 2

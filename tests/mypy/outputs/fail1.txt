@@ -1,0 +1,1 @@
+20: error: Unsupported operand types for + ("int" and "str")  [operator]

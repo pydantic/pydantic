@@ -6,13 +6,12 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Dict, Iterator, List, NewType, Pattern, Sequence, Set, Tuple
+from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Pattern, Sequence, Set, Tuple
 from uuid import UUID
 
 import pytest
 
 from pydantic import (
-    DSN,
     UUID1,
     UUID3,
     UUID4,
@@ -32,6 +31,8 @@ from pydantic import (
     SecretBytes,
     SecretStr,
     StrictBool,
+    StrictFloat,
+    StrictInt,
     StrictStr,
     ValidationError,
     conbytes,
@@ -41,6 +42,7 @@ from pydantic import (
     conlist,
     constr,
     create_model,
+    validator,
 )
 
 try:
@@ -165,6 +167,10 @@ def test_constrained_list_constraints():
         }
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelBoth(v=1)
+    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+
 
 def test_constrained_list_item_type_fails():
     class ConListModel(BaseModel):
@@ -203,41 +209,6 @@ def test_constrained_str_too_long():
             'type': 'value_error.any_str.max_length',
             'ctx': {'limit_value': 10},
         }
-    ]
-
-
-class DsnModel(BaseModel):
-    db_name = 'foobar'
-    db_user = 'postgres'
-    db_password: str = None
-    db_host = 'localhost'
-    db_port = '5432'
-    db_driver = 'postgres'
-    db_query: dict = None
-    dsn: DSN = None
-
-
-def test_dsn_compute():
-    m = DsnModel()
-    assert m.dsn == 'postgres://postgres@localhost:5432/foobar'
-
-
-def test_dsn_define():
-    m = DsnModel(dsn='postgres://postgres@localhost:5432/different')
-    assert m.dsn == 'postgres://postgres@localhost:5432/different'
-
-
-def test_dsn_pw_host():
-    m = DsnModel(db_password='pword', db_host='before:after', db_query={'v': 1})
-    assert m.dsn == 'postgres://postgres:pword@[before:after]:5432/foobar?v=1'
-
-
-def test_dsn_no_driver():
-    with pytest.raises(ValidationError) as exc_info:
-        DsnModel(db_driver=None)
-    assert exc_info.value.errors() == [
-        {'loc': ('db_driver',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
-        {'loc': ('dsn',), 'msg': '"driver" field may not be empty', 'type': 'value_error.dsn.driver_is_empty'},
     ]
 
 
@@ -316,22 +287,59 @@ class CheckModel(BaseModel):
         max_anystr_length = 10
 
 
+class BoolCastable:
+    def __bool__(self) -> bool:
+        return True
+
+
 @pytest.mark.parametrize(
     'field,value,result',
     [
         ('bool_check', True, True),
-        ('bool_check', False, False),
-        ('bool_check', None, False),
-        ('bool_check', '', False),
         ('bool_check', 1, True),
-        ('bool_check', 'TRUE', True),
-        ('bool_check', b'TRUE', True),
-        ('bool_check', 'true', True),
-        ('bool_check', '1', True),
-        ('bool_check', '2', False),
-        ('bool_check', 2, True),
-        ('bool_check', 'on', True),
+        ('bool_check', 'y', True),
+        ('bool_check', 'Y', True),
         ('bool_check', 'yes', True),
+        ('bool_check', 'Yes', True),
+        ('bool_check', 'YES', True),
+        ('bool_check', 'true', True),
+        ('bool_check', 'True', True),
+        ('bool_check', 'TRUE', True),
+        ('bool_check', 'on', True),
+        ('bool_check', 'On', True),
+        ('bool_check', 'ON', True),
+        ('bool_check', '1', True),
+        ('bool_check', 't', True),
+        ('bool_check', 'T', True),
+        ('bool_check', b'TRUE', True),
+        ('bool_check', False, False),
+        ('bool_check', 0, False),
+        ('bool_check', 'n', False),
+        ('bool_check', 'N', False),
+        ('bool_check', 'no', False),
+        ('bool_check', 'No', False),
+        ('bool_check', 'NO', False),
+        ('bool_check', 'false', False),
+        ('bool_check', 'False', False),
+        ('bool_check', 'FALSE', False),
+        ('bool_check', 'off', False),
+        ('bool_check', 'Off', False),
+        ('bool_check', 'OFF', False),
+        ('bool_check', '0', False),
+        ('bool_check', 'f', False),
+        ('bool_check', 'F', False),
+        ('bool_check', b'FALSE', False),
+        ('bool_check', None, ValidationError),
+        ('bool_check', '', ValidationError),
+        ('bool_check', [], ValidationError),
+        ('bool_check', {}, ValidationError),
+        ('bool_check', [1, 2, 3, 4], ValidationError),
+        ('bool_check', {1: 2, 3: 4}, ValidationError),
+        ('bool_check', b'2', ValidationError),
+        ('bool_check', '2', ValidationError),
+        ('bool_check', 2, ValidationError),
+        ('bool_check', b'\x81', ValidationError),
+        ('bool_check', BoolCastable(), ValidationError),
         ('str_check', 's', 's'),
         ('str_check', '  s  ', 's'),
         ('str_check', b's', 's'),
@@ -440,10 +448,10 @@ def test_datetime_errors():
     with pytest.raises(ValueError) as exc_info:
         DatetimeModel(dt='2017-13-5T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001 broken')
     assert exc_info.value.errors() == [
-        {'loc': ('dt',), 'msg': 'invalid datetime format', 'type': 'type_error.datetime'},
-        {'loc': ('date_',), 'msg': 'invalid date format', 'type': 'type_error.date'},
-        {'loc': ('time_',), 'msg': 'invalid time format', 'type': 'type_error.time'},
-        {'loc': ('duration',), 'msg': 'invalid duration format', 'type': 'type_error.duration'},
+        {'loc': ('dt',), 'msg': 'invalid datetime format', 'type': 'value_error.datetime'},
+        {'loc': ('date_',), 'msg': 'invalid date format', 'type': 'value_error.date'},
+        {'loc': ('time_',), 'msg': 'invalid time format', 'type': 'value_error.time'},
+        {'loc': ('duration',), 'msg': 'invalid duration format', 'type': 'value_error.duration'},
     ]
 
 
@@ -473,8 +481,14 @@ def test_enum_fails():
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
     assert exc_info.value.errors() == [
-        {'loc': ('tool',), 'msg': 'value is not a valid enumeration member', 'type': 'type_error.enum'}
+        {
+            'loc': ('tool',),
+            'msg': 'value is not a valid enumeration member; permitted: 1, 2',
+            'type': 'type_error.enum',
+            'ctx': {'enum_values': [ToolEnum.spanner, ToolEnum.wrench]},
+        }
     ]
+    assert len(exc_info.value.json()) == 217
 
 
 def test_int_enum_successful_for_str_int():
@@ -508,9 +522,10 @@ def test_string_success():
     assert m.str_regex == 'xxx123'
     assert m.str_curtailed == '12345'
     assert m.str_email == 'foobar@example.com'
-    assert repr(m.name_email) == '<NameEmail("foo bar <foobar@example.com>")>'
+    assert repr(m.name_email) == "NameEmail(name='foo bar', email='foobaR@example.com')"
+    assert str(m.name_email) == 'foo bar <foobaR@example.com>'
     assert m.name_email.name == 'foo bar'
-    assert m.name_email.email == 'foobar@example.com'
+    assert m.name_email.email == 'foobaR@example.com'
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -948,6 +963,43 @@ def test_strict_bool():
         Model(v=b'1')
 
 
+def test_strict_int():
+    class Model(BaseModel):
+        v: StrictInt
+
+    assert Model(v=123456).v == 123456
+
+    with pytest.raises(ValidationError, match='value is not a valid int'):
+        Model(v='123456')
+
+    with pytest.raises(ValidationError, match='value is not a valid int'):
+        Model(v=3.14159)
+
+
+def test_strict_float():
+    class Model(BaseModel):
+        v: StrictFloat
+
+    assert Model(v=3.14159).v == 3.14159
+
+    with pytest.raises(ValidationError, match='value is not a valid float'):
+        Model(v='3.14159')
+
+    with pytest.raises(ValidationError, match='value is not a valid float'):
+        Model(v=123456)
+
+
+def test_bool_unhashable_fails():
+    class Model(BaseModel):
+        v: bool
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v={})
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
+    ]
+
+
 def test_uuid_error():
     class Model(BaseModel):
         v: UUID
@@ -1218,6 +1270,7 @@ def test_decimal_validation(type_, value, result):
         with pytest.raises(ValidationError) as exc_info:
             model(foo=value)
         assert exc_info.value.errors() == result
+        assert exc_info.value.json().startswith('[')
     else:
         assert model(foo=value).foo == result
 
@@ -1235,7 +1288,7 @@ def test_path_validation_fails():
         foo: Path
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=None)
+        Model(foo=123)
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid path', 'type': 'type_error.path'}]
 
 
@@ -1422,16 +1475,42 @@ def test_number_le():
         Model(a=6)
 
 
-def test_number_multiple_of():
+@pytest.mark.parametrize('value', ((10), (100), (20)))
+def test_number_multiple_of_int_valid(value):
     class Model(BaseModel):
         a: conint(multiple_of=5)
 
-    assert Model(a=10).dict() == {'a': 10}
+    assert Model(a=value).dict() == {'a': value}
+
+
+@pytest.mark.parametrize('value', ((1337), (23), (6), (14)))
+def test_number_multiple_of_int_invalid(value):
+    class Model(BaseModel):
+        a: conint(multiple_of=5)
 
     multiple_message = base_message.replace('limit_value', 'multiple_of')
     message = multiple_message.format(msg='a multiple of 5', ty='multiple', value=5)
     with pytest.raises(ValidationError, match=message):
-        Model(a=42)
+        Model(a=value)
+
+
+@pytest.mark.parametrize('value', ((0.2), (0.3), (0.4), (0.5), (1)))
+def test_number_multiple_of_float_valid(value):
+    class Model(BaseModel):
+        a: confloat(multiple_of=0.1)
+
+    assert Model(a=value).dict() == {'a': value}
+
+
+@pytest.mark.parametrize('value', ((0.07), (1.27), (1.003)))
+def test_number_multiple_of_float_invalid(value):
+    class Model(BaseModel):
+        a: confloat(multiple_of=0.1)
+
+    multiple_message = base_message.replace('limit_value', 'multiple_of')
+    message = multiple_message.format(msg='a multiple of 0.1', ty='multiple', value=0.1)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=value)
 
 
 @pytest.mark.parametrize('fn', [conint, confloat, condecimal])
@@ -1551,6 +1630,23 @@ def test_json_not_str():
     }
 
 
+def test_json_pre_validator():
+    call_count = 0
+
+    class JsonModel(BaseModel):
+        json_obj: Json
+
+        @validator('json_obj', pre=True)
+        def check(cls, v):
+            assert v == '"foobar"'
+            nonlocal call_count
+            call_count += 1
+            return v
+
+    assert JsonModel(json_obj='"foobar"').dict() == {'json_obj': 'foobar'}
+    assert call_count == 1
+
+
 def test_pattern():
     class Foobar(BaseModel):
         pattern: Pattern
@@ -1587,8 +1683,8 @@ def test_secretstr():
     assert f.empty_password.__class__.__name__ == 'SecretStr'
 
     # Assert str and repr are correct.
-    assert str(f.password) == "SecretStr('**********')"
-    assert str(f.empty_password) == "SecretStr('')"
+    assert str(f.password) == '**********'
+    assert str(f.empty_password) == ''
     assert repr(f.password) == "SecretStr('**********')"
     assert repr(f.empty_password) == "SecretStr('')"
 
@@ -1596,9 +1692,10 @@ def test_secretstr():
     assert f.password.get_secret_value() == '1234'
     assert f.empty_password.get_secret_value() == ''
 
-    # Assert display function is correct
-    assert f.password.display() == '**********'
-    assert f.empty_password.display() == ''
+    with pytest.warns(DeprecationWarning, match=r'`secret_str.display\(\)` is deprecated'):
+        assert f.password.display() == '**********'
+    with pytest.warns(DeprecationWarning, match=r'`secret_str.display\(\)` is deprecated'):
+        assert f.empty_password.display() == ''
 
 
 def test_secretstr_error():
@@ -1623,8 +1720,8 @@ def test_secretbytes():
     assert f.empty_password.__class__.__name__ == 'SecretBytes'
 
     # Assert str and repr are correct.
-    assert str(f.password) == "SecretBytes(b'**********')"
-    assert str(f.empty_password) == "SecretBytes(b'')"
+    assert str(f.password) == '**********'
+    assert str(f.empty_password) == ''
     assert repr(f.password) == "SecretBytes(b'**********')"
     assert repr(f.empty_password) == "SecretBytes(b'')"
 
@@ -1632,9 +1729,10 @@ def test_secretbytes():
     assert f.password.get_secret_value() == b'wearebytes'
     assert f.empty_password.get_secret_value() == b''
 
-    # Assert display function is correct
-    assert f.password.display() == '**********'
-    assert f.empty_password.display() == ''
+    with pytest.warns(DeprecationWarning, match=r'`secret_bytes.display\(\)` is deprecated'):
+        assert f.password.display() == '**********'
+    with pytest.warns(DeprecationWarning, match=r'`secret_bytes.display\(\)` is deprecated'):
+        assert f.empty_password.display() == ''
 
 
 def test_secretbytes_error():
@@ -1698,14 +1796,44 @@ def test_literal_multiple():
     assert exc_info.value.errors() == [
         {
             'loc': ('a_or_b',),
-            'msg': "unexpected value; permitted: 'a'",
+            'msg': "unexpected value; permitted: 'a', 'b'",
             'type': 'value_error.const',
-            'ctx': {'given': 'c', 'permitted': ('a',)},
-        },
-        {
-            'loc': ('a_or_b',),
-            'msg': "unexpected value; permitted: 'b'",
-            'type': 'value_error.const',
-            'ctx': {'given': 'c', 'permitted': ('b',)},
-        },
+            'ctx': {'given': 'c', 'permitted': ('a', 'b')},
+        }
     ]
+
+
+def test_unsupported_field_type():
+    with pytest.raises(TypeError, match=r'MutableSet(.*)not supported'):
+
+        class UnsupportedModel(BaseModel):
+            unsupported: MutableSet[int]
+
+
+def test_frozenset_field():
+    class FrozenSetModel(BaseModel):
+        set: FrozenSet[int]
+
+    test_set = frozenset({1, 2, 3})
+    object_under_test = FrozenSetModel(set=test_set)
+
+    assert object_under_test.set == test_set
+
+
+def test_frozenset_field_conversion():
+    class FrozenSetModel(BaseModel):
+        set: FrozenSet[int]
+
+    test_list = [1, 2, 3]
+    test_set = frozenset(test_list)
+    object_under_test = FrozenSetModel(set=test_list)
+
+    assert object_under_test.set == test_set
+
+
+def test_frozenset_field_not_convertible():
+    class FrozenSetModel(BaseModel):
+        set: FrozenSet[int]
+
+    with pytest.raises(ValidationError, match=r'frozenset'):
+        FrozenSetModel(set=42)

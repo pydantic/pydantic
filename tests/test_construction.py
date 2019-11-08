@@ -1,4 +1,5 @@
 import pickle
+from typing import List
 
 import pytest
 
@@ -11,18 +12,27 @@ class Model(BaseModel):
 
 
 def test_simple_construct():
-    m = Model.construct(dict(a=40, b=10), {'a', 'b'})
-    assert m.a == 40
+    m = Model.construct(a=3.14)
+    assert m.a == 3.14
     assert m.b == 10
+    assert m.__fields_set__ == {'a'}
+    assert m.dict() == {'a': 3.14, 'b': 10}
 
 
-def test_construct_missing():
-    m = Model.construct(dict(a='not a float'), {'a'})
-    assert m.a == 'not a float'
-    with pytest.raises(AttributeError) as exc_info:
-        print(m.b)
+def test_construct_misuse():
+    m = Model.construct(b='foobar')
+    assert m.b == 'foobar'
+    assert m.dict() == {'b': 'foobar'}
+    with pytest.raises(AttributeError, match="'Model' object has no attribute 'a'"):
+        print(m.a)
 
-    assert "'Model' object has no attribute 'b'" in exc_info.value.args[0]
+
+def test_construct_fields_set():
+    m = Model.construct(a=3.0, b=-1, _fields_set={'a'})
+    assert m.a == 3
+    assert m.b == -1
+    assert m.__fields_set__ == {'a'}
+    assert m.dict() == {'a': 3, 'b': -1}
 
 
 def test_large_any_str():
@@ -101,6 +111,70 @@ def test_copy_include_exclude():
     assert set(m2.dict().keys()) == {'a', 'b'}
 
 
+def test_copy_advanced_exclude():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
+
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
+
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+    m2 = m.copy(exclude={'f': {'c': ..., 'd': {-1: {'a'}}}})
+    assert hasattr(m.f, 'c')
+    assert not hasattr(m2.f, 'c')
+
+    assert m2.dict() == {'e': 'e', 'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}}
+    m2 = m.copy(exclude={'e': ..., 'f': {'d'}})
+    assert m2.dict() == {'f': {'c': 'foo'}}
+
+
+def test_copy_advanced_include():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
+
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
+
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+    m2 = m.copy(include={'f': {'c'}})
+    assert hasattr(m.f, 'c')
+    assert hasattr(m2.f, 'c')
+    assert m2.dict() == {'f': {'c': 'foo'}}
+
+    m2 = m.copy(include={'e': ..., 'f': {'d': {-1}}})
+    assert m2.dict() == {'e': 'e', 'f': {'d': [{'a': 'c', 'b': 'e'}]}}
+
+
+def test_copy_advanced_include_exclude():
+    class SubSubModel(BaseModel):
+        a: str
+        b: str
+
+    class SubModel(BaseModel):
+        c: str
+        d: List[SubSubModel]
+
+    class Model(BaseModel):
+        e: str
+        f: SubModel
+
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
+    m2 = m.copy(include={'e': ..., 'f': {'d'}}, exclude={'e': ..., 'f': {'d': {0}}})
+    assert m2.dict() == {'f': {'d': [{'a': 'c', 'b': 'e'}]}}
+
+
 def test_copy_update():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(update={'a': 'different'})
@@ -116,8 +190,8 @@ def test_copy_set_fields():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy()
 
-    assert m.dict(skip_defaults=True) == {'a': 24.0, 'd': {'a': 12}}
-    assert m.dict(skip_defaults=True) == m2.dict(skip_defaults=True)
+    assert m.dict(exclude_unset=True) == {'a': 24.0, 'd': {'a': 12}}
+    assert m.dict(exclude_unset=True) == m2.dict(exclude_unset=True)
 
 
 def test_simple_pickle():
@@ -155,13 +229,31 @@ def test_immutable_copy():
     assert m == m.copy()
 
     m2 = m.copy(update={'b': 12})
-    assert str(m2) == 'Model a=40 b=12'
+    assert repr(m2) == 'Model(a=40, b=12)'
     with pytest.raises(TypeError):
         m2.b = 13
 
 
 def test_pickle_fields_set():
     m = Model(a=24)
-    assert m.dict(skip_defaults=True) == {'a': 24}
+    assert m.dict(exclude_unset=True) == {'a': 24}
     m2 = pickle.loads(pickle.dumps(m))
-    assert m2.dict(skip_defaults=True) == {'a': 24}
+    assert m2.dict(exclude_unset=True) == {'a': 24}
+
+
+def test_copy_update_exclude():
+    class SubModel(BaseModel):
+        a: str
+        b: str
+
+    class Model(BaseModel):
+        c: str
+        d: SubModel
+
+    m = Model(c='ex', d=dict(a='ax', b='bx'))
+    assert m.dict() == {'c': 'ex', 'd': {'a': 'ax', 'b': 'bx'}}
+    assert m.copy(exclude={'c'}).dict() == {'d': {'a': 'ax', 'b': 'bx'}}
+    assert m.copy(exclude={'c'}, update={'c': 42}).dict() == {'c': 42, 'd': {'a': 'ax', 'b': 'bx'}}
+
+    assert m._calculate_keys(exclude={'x'}, include=None, exclude_unset=False) == {'c', 'd'}
+    assert m._calculate_keys(exclude={'x'}, include=None, exclude_unset=False, update={'c': 42}) == {'d'}

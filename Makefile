@@ -9,11 +9,11 @@ install:
 	SKIP_CYTHON=1 pip install -e .
 
 .PHONY: build-cython-trace
-build-cython-trace: clean
+build-cython-trace:
 	python setup.py build_ext --force --inplace --define CYTHON_TRACE
 
 .PHONY: build-cython
-build-cython: clean
+build-cython:
 	python setup.py build_ext --inplace
 
 .PHONY: format
@@ -23,10 +23,15 @@ format:
 
 .PHONY: lint
 lint:
-	python setup.py check -rms
 	flake8 pydantic/ tests/
 	$(isort) --check-only
 	$(black) --check
+
+.PHONY: check-dist
+check-dist:
+	python setup.py check -ms
+	SKIP_CYTHON=1 python setup.py sdist
+	twine check dist/*
 
 .PHONY: mypy
 mypy:
@@ -35,22 +40,7 @@ mypy:
 .PHONY: test
 test:
 	pytest --cov=pydantic
-
-.PHONY: external-mypy
-external-mypy:
-	@echo "testing simple example with mypy (and python to check it's sane)..."
-	python tests/mypy_test_success.py
-	mypy tests/mypy_test_success.py
-	@echo "checking code with incorrect types fails..."
-	@mypy tests/mypy_test_fails1.py 1>/dev/null; \
-	  test $$? -eq 1 || \
-	  (echo "mypy_test_fails1: mypy passed when it should have failed!"; exit 1)
-	@mypy tests/mypy_test_fails2.py 1>/dev/null; \
-	  test $$? -eq 1 || \
-	  (echo "mypy_test_fails2: mypy passed when it should have failed!"; exit 1)
-	@mypy tests/mypy_test_fails3.py 1>/dev/null; \
-	  test $$? -eq 1 || \
-	  (echo "mypy_test_fails3: mypy passed when it should have failed!"; exit 1)
+	@python tests/try_assert.py
 
 .PHONY: testcov
 testcov: test
@@ -62,8 +52,13 @@ testcov-compile: build-cython-trace test
 	@echo "building coverage html"
 	@coverage html
 
+.PHONY: test-examples
+test-examples:
+	@echo "running examples"
+	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
+
 .PHONY: all
-all: testcov lint mypy external-mypy
+all: testcov lint mypy
 
 .PHONY: benchmark-all
 benchmark-all:
@@ -90,14 +85,26 @@ clean:
 	rm -rf dist
 	rm -f pydantic/*.c pydantic/*.so
 	python setup.py clean
-	make -C docs clean
+	rm -rf site
+	rm -rf docs/_build
+	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
 
 .PHONY: docs
 docs:
-	make -C docs html
+	./docs/build/main.py
+	mkdocs build
+	@# to work with the old sphinx build and deploy:
+	@rm -rf docs/_build/
+	@mkdir docs/_build/
+	@cp -r site docs/_build/html
+
+.PHONY: docs-serve
+docs-serve:
+	./docs/build/main.py
+	mkdocs serve
 
 .PHONY: publish
 publish: docs
-	cd docs/_build/ && cp -r html site && zip -r site.zip site
+	zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
-	      --data-binary "@docs/_build/site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
+	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
