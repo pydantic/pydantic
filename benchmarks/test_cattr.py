@@ -1,53 +1,42 @@
 from datetime import datetime
-from typing import List, Optional, Type
-from dateutil.parser import parse
+from typing import List, Optional
 
-import re
 import attr
 import cattr
-
-#
-# Benchmark against attr. Slightly involved to get nested structuring without
-# any third party library like cattrs
-#
-
-
-# cf. https://github.com/Tinche/cattrs/issues/26 why at least structure_str is needed
-def structure_str(s, _):
-    if not isinstance(s, str):
-        raise ValueError()
-    return s
-
-
-def structure_int(i, _):
-    if not isinstance(i, int):
-        raise ValueError()
-    return i
-
-
-class PositiveInt(int):
-    ...
-
-
-def structure_posint(i, x):
-    i = PositiveInt(i)
-    if not isinstance(i, PositiveInt):
-        raise ValueError()
-    if i <= 0:
-        raise ValueError()
-    return i
-
-
-cattr.register_structure_hook(datetime, lambda isostring, _: parse(isostring))
-cattr.register_structure_hook(str, structure_str)
-cattr.register_structure_hook(int, structure_int)
-cattr.register_structure_hook(PositiveInt, structure_posint)
+from dateutil.parser import parse
 
 
 class TestCAttr:
     package = 'cattr'
+    version = attr.__version__
 
     def __init__(self, allow_extra):
+        # cf. https://github.com/Tinche/cattrs/issues/26 why at least structure_str is needed
+        def structure_str(s, _):
+            if not isinstance(s, str):
+                raise ValueError()
+            return s
+
+        def structure_int(i, _):
+            if not isinstance(i, int):
+                raise ValueError()
+            return i
+
+        class PositiveInt(int):
+            ...
+
+        def structure_posint(i, x):
+            i = PositiveInt(i)
+            if not isinstance(i, PositiveInt):
+                raise ValueError()
+            if i <= 0:
+                raise ValueError()
+            return i
+
+        cattr.register_structure_hook(datetime, lambda isostring, _: parse(isostring))
+        cattr.register_structure_hook(str, structure_str)
+        cattr.register_structure_hook(int, structure_int)
+        cattr.register_structure_hook(PositiveInt, structure_posint)
 
         def str_len_val(max_len: int, min_len: int = 0, required: bool = False):
             # validate the max len of a string and optionally its min len and whether None is
@@ -62,6 +51,7 @@ class TestCAttr:
                     raise ValueError("")
                 if min_len and len(value) < min_len:
                     raise ValueError("")
+
             return _check_str_len
 
         def pos_int(self, attribute, value):

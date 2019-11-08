@@ -32,10 +32,7 @@ try:
     from test_toasted_marshmallow import TestToastedMarshmallow
 except Exception:
     TestToastedMarshmallow = None
-try:
-    from test_attr import TestAttr
-except Exception:
-    TestAttr = None
+
 try:
     from test_cattr import TestCAttr
 except Exception:
@@ -50,7 +47,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF, TestAttr, TestCAttr]
+    [TestCAttr, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
     if t is not None
 ]
 
@@ -157,6 +154,7 @@ def main():
     tests = [TestPydantic]
     if 'pydantic-only' not in sys.argv:
         tests += other_tests
+
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     results = []
     csv_results = []
