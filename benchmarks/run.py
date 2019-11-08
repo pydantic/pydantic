@@ -38,7 +38,7 @@ except Exception:
     TestValideer = None
 
 try:
-    from test_cattr import TestCAttr
+    from test_cattrs import TestCAttrs
 except Exception:
     TestCAttr = None
 
@@ -51,7 +51,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestCAttr, TestValideer, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
+    [TestCAttrs, TestValideer, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
     if t is not None
 ]
 

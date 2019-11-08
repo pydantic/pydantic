@@ -6,8 +6,8 @@ import cattr
 from dateutil.parser import parse
 
 
-class TestCAttr:
-    package = 'cattr'
+class TestCAttrs:
+    package = 'attrs + cattrs'
     version = attr.__version__
 
     def __init__(self, allow_extra):
