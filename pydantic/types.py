@@ -626,7 +626,7 @@ BYTE_SIZES = {
     'EiB': 2 ** 60,
 }
 BYTE_SIZES.update({k.lower(): v for k, v in BYTE_SIZES.items()})
-byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
+byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)\s*', re.IGNORECASE)
 
 
 class ByteSize(int):
