@@ -1,7 +1,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 pool:
-  vmImage: 'windows-2019'
+  vmImage: 'windows-latest'
 
 strategy:
   matrix:
