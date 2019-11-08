@@ -46,7 +46,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF, TestValideer]
+    [TestValideer, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
     if t is not None
 ]
 
