@@ -503,7 +503,7 @@ class InvalidLengthForBrand(PydanticValueError):
     msg_template = 'Length for a {brand} card must be {required_length}'
 
 
-class InvalidByteString(PydanticValueError):
+class InvalidByteSize(PydanticValueError):
     msg_template = 'could not parse value and unit from byte string'
 
 
