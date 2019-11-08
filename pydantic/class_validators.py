@@ -4,7 +4,7 @@ from functools import wraps
 from inspect import Signature, signature
 from itertools import chain
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type
 
 from .errors import ConfigError
 from .typing import AnyCallable
@@ -90,9 +90,7 @@ def validator(
     return dec
 
 
-def root_validator(
-    _func: Optional[AnyCallable] = None, *, pre: bool = False
-) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
+def root_validator(_func: Optional[AnyCallable] = None, *, pre: bool = False) -> Callable[[AnyCallable], classmethod]:
     if _func:
         _check_validator_name(_func)
         f_cls = classmethod(_func)
