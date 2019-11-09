@@ -4,7 +4,7 @@ from functools import wraps
 from inspect import Signature, signature
 from itertools import chain
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
 
 from .errors import ConfigError
 from .typing import AnyCallable
@@ -90,12 +90,28 @@ def validator(
     return dec
 
 
-def root_validator(_func: Optional[AnyCallable] = None, *, pre: bool = False) -> Callable[[AnyCallable], classmethod]:
+@overload
+def root_validator(_func: AnyCallable) -> classmethod:
+    ...
+
+
+@overload
+def root_validator(*, pre: bool = False) -> Callable[[AnyCallable], classmethod]:
+    ...
+
+
+def root_validator(
+    _func: Optional[AnyCallable] = None, *, pre: bool = False
+) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
+    """
+    Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
+    before or after standard model parsing/validation is performed.
+    """
     if _func:
         _check_validator_name(_func)
         f_cls = classmethod(_func)
         setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=_func, pre=pre))
-        return f_cls  # type: ignore
+        return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
         _check_validator_name(f)
