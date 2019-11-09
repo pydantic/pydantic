@@ -1841,7 +1841,7 @@ def test_frozenset_field_not_convertible():
 
 
 @pytest.mark.parametrize(
-    'value',
+    'input_value,output,human_bin,human_dec',
     (
         ('1', 1, '1.0B', '1.0B'),
         ('1.0', 1, '1.0B', '1.0B'),
@@ -1854,29 +1854,28 @@ def test_frozenset_field_not_convertible():
         ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB'),
     ),
 )
-def test_bytesize_conversions(value):
+def test_bytesize_conversions(input_value, output, human_bin, human_dec):
     class Model(BaseModel):
         size: ByteSize
 
-    # Test with/without B, KB->K
-    m = Model(size=value[0])
+    m = Model(size=input_value)
 
-    assert value[1] == m.size
+    assert m.size == output
 
-    assert m.size.human_readable() == value[2]
-    assert m.size.human_readable(decimal=True) == value[3]
+    assert m.size.human_readable() == human_bin
+    assert m.size.human_readable(decimal=True) == human_dec
 
 
 def test_bytesize_raises():
     class Model(BaseModel):
         size: ByteSize
 
-    with pytest.raises(ValidationError, match=r'parse value'):
+    with pytest.raises(ValidationError, match='parse value'):
         Model(size='d1MB')
 
-    with pytest.raises(ValidationError, match=r'byte unit'):
+    with pytest.raises(ValidationError, match='byte unit'):
         Model(size='1LiB')
 
     # 1Gi is not a valid unit unlike 1G
-    with pytest.raises(ValidationError, match=r'byte unit'):
+    with pytest.raises(ValidationError, match='byte unit'):
         Model(size='1Gi')
