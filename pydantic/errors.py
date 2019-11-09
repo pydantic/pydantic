@@ -85,6 +85,8 @@ __all__ = (
     'NotDigitError',
     'LuhnValidationError',
     'InvalidLengthForBrand',
+    'InvalidByteSize',
+    'InvalidByteSizeUnit',
 )
 
 
@@ -499,3 +501,11 @@ class LuhnValidationError(PydanticValueError):
 class InvalidLengthForBrand(PydanticValueError):
     code = 'payment_card_number.invalid_length_for_brand'
     msg_template = 'Length for a {brand} card must be {required_length}'
+
+
+class InvalidByteSize(PydanticValueError):
+    msg_template = 'could not parse value and unit from byte string'
+
+
+class InvalidByteSizeUnit(PydanticValueError):
+    msg_template = 'could not interpret byte unit: {unit}'

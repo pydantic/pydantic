@@ -145,6 +145,9 @@ with custom properties and validation.
 : strings and bytes (converted to strings) are passed to `UUID(v)`;
   see [Pydantic Types](#pydantic-types) for other stricter UUID types
 
+`ByteSize`
+: converts a bytes string with units to bytes
+
 ### Typing Iterables
 
 *pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
@@ -667,6 +670,21 @@ The following caveats apply:
 {!.tmp_examples/types_strict.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+## ByteSize
+
+You can use the `ByteSize` data type to convert byte string representation to
+raw bytes and print out human readable versions of the bytes as well.
+
+!!! info 
+    Note that `1b` will be parsed as "1 byte" and not "1 bit".
+
+```py
+{!.tmp_examples/types_bytesize.py!}
+```
+_(This script is complete, it should run "as is")_
+
+
 
 ## Custom Data Types
 
