@@ -338,7 +338,9 @@ def test_son():
         ('foo.bar@exam-ple.com ', 'foo.bar', 'foo.bar@exam-ple.com'),
         ('ιωάννης@εεττ.gr', 'ιωάννης', 'ιωάννης@εεττ.gr'),
         ('foobar@аррӏе.com', 'foobar', 'foobar@аррӏе.com'),
+        ('foobar@xn--80ak6aa92e.com', 'foobar', 'foobar@аррӏе.com'),
         ('аррӏе@example.com', 'аррӏе', 'аррӏе@example.com'),
+        ('xn--80ak6aa92e@example.com', 'xn--80ak6aa92e', 'xn--80ak6aa92e@example.com'),
         ('葉士豪@臺網中心.tw', '葉士豪', '葉士豪@臺網中心.tw'),
     ],
 )
