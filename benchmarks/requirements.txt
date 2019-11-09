@@ -4,8 +4,7 @@ python-dateutil
 trafaret
 django
 djangorestframework
-#marshmallow
-toastedmarshmallow
+marshmallow
 valideer
 attr
 cattrs

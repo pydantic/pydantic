@@ -15,23 +15,22 @@ from statistics import stdev as stdev_
 
 from test_pydantic import TestPydantic
 
-# trafaret currently (2018-07-02) fails on python 3.7
 try:
     from test_trafaret import TestTrafaret
 except Exception:
     TestTrafaret = None
+
 try:
     from test_drf import TestDRF
 except Exception:
     TestDRF = None
+
 try:
     from test_marshmallow import TestMarshmallow
 except Exception:
     TestMarshmallow = None
-try:
-    from test_toasted_marshmallow import TestToastedMarshmallow
-except Exception:
-    TestToastedMarshmallow = None
+
+
 try:
     from test_valideer import TestValideer
 except Exception:
@@ -56,7 +55,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestCAttrs, TestValideer, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF, TestCerberus]
+    [TestCAttrs, TestValideer, TestMarshmallow, TestTrafaret, TestDRF, TestCerberus]
     if t is not None
 ]
 
