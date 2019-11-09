@@ -42,6 +42,11 @@ try:
 except Exception:
     TestCAttr = None
 
+try:
+    from test_cerberus import TestCerberus
+except Exception:
+    TestCerberus = None
+
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
 UNICODE = '\xa0\xad¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
@@ -51,7 +56,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestCAttrs, TestValideer, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
+    [TestCAttrs, TestValideer, TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF, TestCerberus]
     if t is not None
 ]
 
