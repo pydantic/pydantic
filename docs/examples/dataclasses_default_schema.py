@@ -9,4 +9,4 @@ class User:
     friends: List[int] = dataclasses.field(default_factory=lambda: [0])
 
 user = User(id='42')
-print(user.__pydantic_model__.schema()['properties']['friends'])
+print(user.__pydantic_model__.schema())
