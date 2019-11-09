@@ -321,6 +321,9 @@ def test_son():
         ('foo.bar@example.com ', 'foo.bar', 'foo.bar@example.com'),
         ('foo BAR <foobar@example.com >', 'foo BAR', 'foobar@example.com'),
         ('FOO bar   <foobar@example.com> ', 'FOO bar', 'foobar@example.com'),
+        (' Whatever <foobar@example.com>', 'Whatever', 'foobar@example.com'),
+        ('Whatever < foobar@example.com>', 'Whatever', 'foobar@example.com'),
+        ('Whatever < foobar@example.com>', 'Whatever', 'foobar@example.com'),
         ('<FOOBAR@example.com> ', 'FOOBAR', 'FOOBAR@example.com'),
         ('ñoñó@example.com', 'ñoñó', 'ñoñó@example.com'),
         ('我買@example.com', '我買', '我買@example.com'),
@@ -334,6 +337,9 @@ def test_son():
         ('foo.bar@example.com', 'foo.bar', 'foo.bar@example.com'),
         ('foo.bar@exam-ple.com ', 'foo.bar', 'foo.bar@exam-ple.com'),
         ('ιωάννης@εεττ.gr', 'ιωάννης', 'ιωάννης@εεττ.gr'),
+        ('foobar@аррӏе.com', 'foobar', 'foobar@аррӏе.com'),
+        ('аррӏе@example.com', 'аррӏе', 'аррӏе@example.com'),
+        ('葉士豪@臺網中心.tw', '葉士豪', '葉士豪@臺網中心.tw'),
     ],
 )
 def test_address_valid(value, name, email):
@@ -363,6 +369,9 @@ def test_address_valid(value, name, email):
         '\"@example.com',
         ',@example.com',
         'foobar <foobar<@example.com>',
+        'foobar <foobar@example.com>>',
+        'foobar <<foobar<@example.com>',
+        'foobar <>',
     ],
 )
 def test_address_invalid(value):
