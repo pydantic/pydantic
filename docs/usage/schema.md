@@ -1,14 +1,14 @@
 *Pydantic* allows auto creation of JSON Schemas from models:
 
 ```py
-{!.tmp_examples/schema1.py!}
+{!.tmp_examples/schema_main.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Outputs:
 
 ```json
-{!.tmp_examples/schema1.json!}
+{!.tmp_examples/schema_main.json!}
 ```
 
 The generated schemas are compliant with the specifications:
@@ -78,7 +78,7 @@ constraint to appear in the schema, even though it's not being checked upon pars
 to `Field()` with the raw schema attribute name:
 
 ```py
-{!.tmp_examples/unenforced_constraints.py!}
+{!.tmp_examples/schema_unenforced_constraints.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -102,14 +102,14 @@ You can also generate a top-level JSON Schema that only includes a list of model
 sub-models in its `definitions`:
 
 ```py
-{!.tmp_examples/schema2.py!}
+{!.tmp_examples/schema_top_level.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Outputs:
 
 ```json
-{!.tmp_examples/schema2.json!}
+{!.tmp_examples/schema_top_level.json!}
 ```
 
 ## Schema customization
@@ -120,14 +120,14 @@ You can customize the generated `$ref` JSON location: the definitions are always
 This is useful if you need to extend or modify the JSON Schema default definitions location. E.g. with OpenAPI:
 
 ```py
-{!.tmp_examples/schema3.py!}
+{!.tmp_examples/schema_custom.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Outputs:
 
 ```json
-{!.tmp_examples/schema3.json!}
+{!.tmp_examples/schema_custom.json!}
 ```
 
 It's also possible to extend/override the generated JSON schema in a model.
@@ -137,12 +137,12 @@ To do it, use the `Config` sub-class attribute `schema_extra`.
 For example, you could add `examples` to the JSON Schema:
 
 ```py
-{!.tmp_examples/schema4.py!}
+{!.tmp_examples/schema_with_example.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 Outputs:
 
 ```json
-{!.tmp_examples/schema4.json!}
+{!.tmp_examples/schema_with_example.json!}
 ```

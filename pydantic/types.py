@@ -65,6 +65,7 @@ __all__ = [
     'StrictInt',
     'StrictFloat',
     'PaymentCardNumber',
+    'ByteSize',
 ]
 
 NoneStr = Optional[str]
@@ -74,6 +75,7 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
+StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
     from .dataclasses import DataclassType  # noqa: F401
@@ -606,3 +608,70 @@ class PaymentCardNumber(str):
         else:
             brand = PaymentCardBrand.other
         return brand
+
+
+BYTE_SIZES = {
+    'b': 1,
+    'kb': 10 ** 3,
+    'mb': 10 ** 6,
+    'gb': 10 ** 9,
+    'tb': 10 ** 12,
+    'pb': 10 ** 15,
+    'eb': 10 ** 18,
+    'kib': 2 ** 10,
+    'mib': 2 ** 20,
+    'gib': 2 ** 30,
+    'tib': 2 ** 40,
+    'pib': 2 ** 50,
+    'eib': 2 ** 60,
+}
+BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
+byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
+
+
+class ByteSize(int):
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v: StrIntFloat) -> 'ByteSize':
+
+        try:
+            return cls(int(v))
+        except ValueError:
+            pass
+
+        str_match = byte_string_re.match(str(v))
+        if str_match is None:
+            raise errors.InvalidByteSize()
+
+        scalar, unit = str_match.groups()
+        if unit is None:
+            unit = 'b'
+
+        try:
+            unit_mult = BYTE_SIZES[unit.lower()]
+        except KeyError:
+            raise errors.InvalidByteSizeUnit(unit=unit)
+
+        return cls(int(float(scalar) * unit_mult))
+
+    def human_readable(self, decimal: bool = False) -> str:
+
+        if decimal:
+            divisor = 1000
+            units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+            final_unit = 'EB'
+        else:
+            divisor = 1024
+            units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+            final_unit = 'EiB'
+
+        num = float(self)
+        for unit in units:
+            if abs(num) < divisor:
+                return f'{num:0.1f}{unit}'
+            num /= divisor
+
+        return f'{num:0.1f}{final_unit}'

@@ -14,6 +14,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -216,12 +217,12 @@ class ModelField(Representation):
         self.name: str = name
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
-        self.type_: type = type_
+        self.type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
         self.required: bool = required
         self.model_config = model_config
-        self.field_info: Optional[FieldInfo] = field_info
+        self.field_info: FieldInfo = field_info or FieldInfo(default)
 
         self.allow_none: bool = False
         self.validate_always: bool = False
@@ -271,7 +272,6 @@ class ModelField(Representation):
         self.model_config = config
         info_from_config = config.get_field_info(self.name)
         if info_from_config:
-            self.field_info = cast(FieldInfo, self.field_info)
             self.field_info.alias = info_from_config.get('alias') or self.field_info.alias or self.name
             self.alias = cast(str, self.field_info.alias)
 
@@ -304,17 +304,29 @@ class ModelField(Representation):
     def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
         if lenient_issubclass(self.type_, JsonWrapper):
-            self.type_ = self.type_.inner_type  # type: ignore
+            self.type_ = self.type_.inner_type
             self.parse_json = True
         elif lenient_issubclass(self.type_, Json):
-            self.type_ = Any  # type: ignore
+            self.type_ = Any
             self.parse_json = True
+        elif isinstance(self.type_, TypeVar):  # type: ignore
+            if self.type_.__bound__:
+                self.type_ = self.type_.__bound__
+            elif self.type_.__constraints__:
+                self.type_ = Union[self.type_.__constraints__]
+            else:
+                self.type_ = Any
 
-        if self.type_ is Pattern:
+        if self.type_ is Any:
+            self.required = False
+            self.allow_none = True
+            return
+        elif self.type_ is Pattern:
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
-        if is_literal_type(self.type_):
+        elif is_literal_type(self.type_):
             return
+
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
@@ -323,7 +335,7 @@ class ModelField(Representation):
             return
         if origin is Union:
             types_ = []
-            for type_ in self.type_.__args__:  # type: ignore
+            for type_ in self.type_.__args__:
                 if type_ is NoneType:  # type: ignore
                     self.required = False
                     self.allow_none = True
@@ -341,9 +353,9 @@ class ModelField(Representation):
         if issubclass(origin, Tuple):  # type: ignore
             self.shape = SHAPE_TUPLE
             self.sub_fields = []
-            for i, t in enumerate(self.type_.__args__):  # type: ignore
+            for i, t in enumerate(self.type_.__args__):
                 if t is Ellipsis:
-                    self.type_ = self.type_.__args__[0]  # type: ignore
+                    self.type_ = self.type_.__args__[0]
                     self.shape = SHAPE_TUPLE_ELLIPSIS
                     return
                 self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
@@ -360,22 +372,20 @@ class ModelField(Representation):
                     }
                 )
 
-            self.type_ = self.type_.__args__[0]  # type: ignore
+            self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_LIST
         elif issubclass(origin, Set):
-            self.type_ = self.type_.__args__[0]  # type: ignore
+            self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_SET
         elif issubclass(origin, FrozenSet):
-            self.type_ = self.type_.__args__[0]  # type: ignore
+            self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_FROZENSET
         elif issubclass(origin, Sequence):
-            self.type_ = self.type_.__args__[0]  # type: ignore
+            self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_SEQUENCE
         elif issubclass(origin, Mapping):
-            self.key_field = self._create_sub_type(
-                self.type_.__args__[0], 'key_' + self.name, for_keys=True  # type: ignore
-            )
-            self.type_ = self.type_.__args__[1]  # type: ignore
+            self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name, for_keys=True)
+            self.type_ = self.type_.__args__[1]
             self.shape = SHAPE_MAPPING
         elif issubclass(origin, Type):  # type: ignore
             return

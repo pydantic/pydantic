@@ -1,3 +1,11 @@
+## v1.1 (2019-11-07)
+
+* Add a mypy plugin for type checking `BaseModel.__init__` and more, #722 by @dmontagu
+* Change return type typehint for `GenericModel.__class_getitem__` to prevent PyCharm warnings, #936 by @dmontagu
+* Fix usage of `Any` to allow `None`, also support `TypeVar` thus allowing use of un-parameterised collection types
+  e.g. `Dict` and `List`, #962 by @samuelcolvin
+* Set `FieldInfo` on subfields to fix schema generation for complex nested types, #965 by @samuelcolvin
+
 ## v1.0 (2019-10-23)
 
 * **Breaking Change:** deprecate the `Model.fields` property, use `Model.__fields__` instead, #883 by @samuelcolvin

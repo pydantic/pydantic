@@ -20,7 +20,7 @@ Define how data should be in pure, canonical python; validate it with *pydantic*
 ## Example
 
 ```py
-{!.tmp_examples/example1.py!}
+{!.tmp_examples/index_main.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -37,11 +37,11 @@ What's going on here:
 If validation fails pydantic will raise an error with a breakdown of what was wrong:
 
 ```py
-{!.tmp_examples/example2.py!}
+{!.tmp_examples/index_error.py!}
 ```
 outputs:
 ```json
-{!.tmp_examples/example2.json!}
+{!.tmp_examples/index_error.json!}
 ```
 
 ## Rationale
@@ -109,6 +109,10 @@ Hundreds of organisations and packages are using *pydantic*, including:
   tools (including API validation) and for open source projects like
   [stpmex](https://github.com/cuenca-mx/stpmex-python), which is used to process real-time, 24/7, inter-bank
   transfers in Mexico.
+
+[The Molecular Sciences Software Institute](https://molssi.org)
+: are using *pydantic* in [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
+  for quantum chemsitry.
 
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).

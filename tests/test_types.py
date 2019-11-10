@@ -17,6 +17,7 @@ from pydantic import (
     UUID4,
     UUID5,
     BaseModel,
+    ByteSize,
     ConfigError,
     DirectoryPath,
     EmailStr,
@@ -1837,3 +1838,44 @@ def test_frozenset_field_not_convertible():
 
     with pytest.raises(ValidationError, match=r'frozenset'):
         FrozenSetModel(set=42)
+
+
+@pytest.mark.parametrize(
+    'input_value,output,human_bin,human_dec',
+    (
+        ('1', 1, '1.0B', '1.0B'),
+        ('1.0', 1, '1.0B', '1.0B'),
+        ('1b', 1, '1.0B', '1.0B'),
+        ('1.5 KB', int(1.5e3), '1.5KiB', '1.5KB'),
+        ('1.5 K', int(1.5e3), '1.5KiB', '1.5KB'),
+        ('1.5 MB', int(1.5e6), '1.4MiB', '1.5MB'),
+        ('1.5 M', int(1.5e6), '1.4MiB', '1.5MB'),
+        ('5.1kib', 5222, '5.1KiB', '5.2KB'),
+        ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB'),
+    ),
+)
+def test_bytesize_conversions(input_value, output, human_bin, human_dec):
+    class Model(BaseModel):
+        size: ByteSize
+
+    m = Model(size=input_value)
+
+    assert m.size == output
+
+    assert m.size.human_readable() == human_bin
+    assert m.size.human_readable(decimal=True) == human_dec
+
+
+def test_bytesize_raises():
+    class Model(BaseModel):
+        size: ByteSize
+
+    with pytest.raises(ValidationError, match='parse value'):
+        Model(size='d1MB')
+
+    with pytest.raises(ValidationError, match='byte unit'):
+        Model(size='1LiB')
+
+    # 1Gi is not a valid unit unlike 1G
+    with pytest.raises(ValidationError, match='byte unit'):
+        Model(size='1Gi')

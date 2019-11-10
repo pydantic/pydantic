@@ -6,9 +6,9 @@ Do a little skipping about with types to demonstrate its usage.
 import json
 import sys
 from datetime import datetime
-from typing import Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, NoneStr, StrictBool
+from pydantic import BaseModel, NoneStr, StrictBool, root_validator, validator
 from pydantic.fields import Field
 from pydantic.generics import GenericModel
 
@@ -23,6 +23,19 @@ class Model(BaseModel):
     last_name: NoneStr = None
     signup_ts: Optional[datetime] = None
     list_of_ints: List[int]
+
+    @validator('age')
+    def check_age(cls, value: int) -> int:
+        assert value < 100, 'too old'
+        return value
+
+    @root_validator
+    def root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        return values
+
+    @root_validator(pre=True)
+    def pre_root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        return values
 
 
 def dog_years(age: int) -> int:

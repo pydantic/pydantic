@@ -1,5 +1,5 @@
 # output-json
-from example1 import User
+from index_main import User
 # ignore-above
 from pydantic import ValidationError
 

@@ -179,20 +179,15 @@ def field_schema(
     """
     ref_prefix = ref_prefix or default_prefix
     schema_overrides = False
-    field_info = cast(FieldInfo, field.field_info)
-    s = dict(title=field_info.title or field.alias.title().replace('_', ' '))
-    if field_info.title:
+    s = dict(title=field.field_info.title or field.alias.title().replace('_', ' '))
+    if field.field_info.title:
         schema_overrides = True
 
-    if field_info.description:
-        s['description'] = field_info.description
+    if field.field_info.description:
+        s['description'] = field.field_info.description
         schema_overrides = True
 
-    if (
-        not field.required
-        and not (field.field_info is not None and field.field_info.const)
-        and field.default is not None
-    ):
+    if not field.required and not field.field_info.const and field.default is not None:
         s['default'] = encode_default(field.default)
         schema_overrides = True
 
@@ -251,9 +246,8 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
                 f_schema[keyword] = attr
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
-    field_info = cast(FieldInfo, field.field_info)
-    if field_info.extra:
-        f_schema.update(field_info.extra)
+    if field.field_info.extra:
+        f_schema.update(field.field_info.extra)
     return f_schema
 
 
@@ -325,7 +319,7 @@ def get_flat_models_from_field(field: ModelField, known_models: Set[Type['BaseMo
     # Handle dataclass-based models
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
-        field_type = field_type.__pydantic_model__  # type: ignore
+        field_type = field_type.__pydantic_model__
     if field.sub_fields:
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
     elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
@@ -396,11 +390,10 @@ def field_type_schema(
         s: Dict[str, Any] = {'type': 'array', 'items': f_schema}
         if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
             s['uniqueItems'] = True
-        field_info = cast(FieldInfo, field.field_info)
-        if field_info.min_items is not None:
-            s['minItems'] = field_info.min_items
-        if field_info.max_items is not None:
-            s['maxItems'] = field_info.max_items
+        if field.field_info.min_items is not None:
+            s['minItems'] = field.field_info.min_items
+        if field.field_info.max_items is not None:
+            s['maxItems'] = field.field_info.max_items
         return s, definitions, nested_models
     elif field.shape == SHAPE_MAPPING:
         dict_schema: Dict[str, Any] = {'type': 'object'}
@@ -707,7 +700,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             return t_schema, definitions, nested_models
     # Handle dataclass-based models
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
-        field_type = field_type.__pydantic_model__  # type: ignore
+        field_type = field_type.__pydantic_model__
     if issubclass(field_type, BaseModel):
         model_name = model_name_map[field_type]
         if field_type not in known_models:

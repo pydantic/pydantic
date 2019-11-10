@@ -53,7 +53,8 @@ class MockPrint:
     def __call__(self, *args, file=None, flush=None):
         frame = inspect.currentframe().f_back.f_back.f_back
         if not self.file.samefile(frame.f_code.co_filename):
-            raise RuntimeError('print statement outside the example file')
+            # happens when index_error.py imports index_main.py
+            return
         s = ' '.join(map(to_string, args))
 
         lines = []
@@ -76,7 +77,7 @@ def gen_ansi_output():
 
     conv = Ansi2HTMLConverter()
 
-    input_file = EXAMPLES_DIR / 'ex_debug.py'
+    input_file = EXAMPLES_DIR / 'devtools_main.py'
     os.environ['PY_DEVTOOLS_HIGHLIGHT'] = 'true'
     p = subprocess.run((sys.executable, str(input_file)), stdout=subprocess.PIPE, check=True, encoding='utf8')
     html = conv.convert(p.stdout, full=False).strip('\r\n')
@@ -130,6 +131,7 @@ def exec_examples():
                 file_text = no_print_intercept_re.sub('', file_text)
 
             mp = MockPrint(file)
+            mod = None
             with patch('builtins.print') as mock_print:
                 if not no_print_intercept:
                     mock_print.side_effect = mp
@@ -139,8 +141,8 @@ def exec_examples():
                     tb = traceback.format_exception(*sys.exc_info())
                     error(''.join(e for e in tb if '/pydantic/docs/examples/' in e or not e.startswith('  File ')))
 
-            if not mod.__file__.startswith(str(EXAMPLES_DIR)):
-                error(f'module path not inside "{EXAMPLES_DIR}", name may shadow another module?')
+            if mod and not mod.__file__.startswith(str(EXAMPLES_DIR)):
+                error(f'module path "{mod.__file__}" not inside "{EXAMPLES_DIR}", name may shadow another module?')
 
             lines = file_text.split('\n')
 

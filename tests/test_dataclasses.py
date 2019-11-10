@@ -1,7 +1,7 @@
 import dataclasses
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, FrozenSet, Optional
+from typing import ClassVar, Dict, FrozenSet, Optional
 
 import pytest
 
@@ -403,11 +403,28 @@ def test_fields():
     assert fields['signup_ts'].default is None
 
 
+def test_default_factory_field():
+    @pydantic.dataclasses.dataclass
+    class User:
+        id: int
+        aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
+
+    user = User(id=123)
+    fields = user.__pydantic_model__.__fields__
+
+    assert fields['id'].required is True
+    assert fields['id'].default is None
+
+    assert fields['aliases'].required is False
+    assert fields['aliases'].default == {'John': 'Joey'}
+
+
 def test_schema():
     @pydantic.dataclasses.dataclass
     class User:
         id: int
         name: str = 'John Doe'
+        aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
         signup_ts: datetime = None
 
     user = User(id=123)
@@ -417,6 +434,12 @@ def test_schema():
         'properties': {
             'id': {'title': 'Id', 'type': 'integer'},
             'name': {'title': 'Name', 'default': 'John Doe', 'type': 'string'},
+            'aliases': {
+                'title': 'Aliases',
+                'default': {'John': 'Joey'},
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+            },
             'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
         },
         'required': ['id'],
