@@ -559,8 +559,24 @@ def test_string_fails():
             'type': 'value_error.any_str.min_length',
             'ctx': {'limit_value': 5},
         },
-        {'loc': ('str_email',), 'msg': 'value is not a valid email address', 'type': 'value_error.email'},
-        {'loc': ('name_email',), 'msg': 'value is not a valid email address', 'type': 'value_error.email'},
+        {
+            'loc': ('str_email',),
+            'msg': (
+                'value is not a valid email address: '
+                'The email address contains invalid characters before the @-sign: <.'
+            ),
+            'type': 'value_error.email',
+            'ctx': {'reason': 'The email address contains invalid characters before the @-sign: <.'},
+        },
+        {
+            'loc': ('name_email',),
+            'msg': (
+                'value is not a valid email address: '
+                'The email address contains invalid characters before the @-sign:  .'
+            ),
+            'type': 'value_error.email',
+            'ctx': {'reason': 'The email address contains invalid characters before the @-sign:  .'},
+        },
     ]
 
 

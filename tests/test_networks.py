@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, HttpUrl, PostgresDsn, RedisDsn, ValidationError, stricturl
+from pydantic import AnyUrl, BaseModel, EmailError, HttpUrl, PostgresDsn, RedisDsn, ValidationError, stricturl
 from pydantic.networks import validate_email
 
 try:
@@ -350,34 +350,36 @@ def test_address_valid(value, name, email):
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 @pytest.mark.parametrize(
-    'value',
+    'value,reason',
     [
-        'f oo.bar@example.com ',
-        'foo.bar@exam\nple.com ',
-        'foobar',
-        'foobar <foobar@example.com',
-        '@example.com',
-        'foobar@.example.com',
-        'foobar@.com',
-        'foo bar@example.com',
-        'foo@bar@example.com',
-        '\n@example.com',
-        '\r@example.com',
-        '\f@example.com',
-        ' @example.com',
-        '\u0020@example.com',
-        '\u001f@example.com',
-        '"@example.com',
-        '\"@example.com',
-        ',@example.com',
-        'foobar <foobar<@example.com>',
-        'foobar <foobar@example.com>>',
-        'foobar <<foobar<@example.com>',
-        'foobar <>',
+        ('@example.com', 'There must be something before the @-sign.'),
+        ('f oo.bar@example.com', 'The email address contains invalid characters before the @-sign'),
+        ('foobar', 'The email address is not valid. It must have exactly one @-sign.'),
+        ('foobar@localhost', 'The domain name localhost is not valid. It should have a period.'),
+        ('foobar@127.0.0.1', 'The domain name 127.0.0.1 is not valid. It is not within a valid top-level domain.'),
+        ('foo.bar@exam\nple.com ', None),
+        ('foobar <foobar@example.com', None),
+        ('foobar@.example.com', None),
+        ('foobar@.com', None),
+        ('foo bar@example.com', None),
+        ('foo@bar@example.com', None),
+        ('\n@example.com', None),
+        ('\r@example.com', None),
+        ('\f@example.com', None),
+        (' @example.com', None),
+        ('\u0020@example.com', None),
+        ('\u001f@example.com', None),
+        ('"@example.com', None),
+        ('\"@example.com', None),
+        (',@example.com', None),
+        ('foobar <foobar<@example.com>', None),
+        ('foobar <foobar@example.com>>', None),
+        ('foobar <<foobar<@example.com>', None),
+        ('foobar <>', None),
     ],
 )
-def test_address_invalid(value):
-    with pytest.raises(ValueError):
+def test_address_invalid(value, reason):
+    with pytest.raises(EmailError, match='value is not a valid email address: ' + (reason or '')):
         validate_email(value)
 
 

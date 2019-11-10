@@ -152,7 +152,10 @@ class DictError(PydanticTypeError):
 
 
 class EmailError(PydanticValueError):
-    msg_template = 'value is not a valid email address'
+    msg_template = 'value is not a valid email address: {reason}'
+
+    def __init__(self, reason: str):
+        super().__init__(reason=reason)
 
 
 class UrlError(PydanticValueError):

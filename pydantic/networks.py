@@ -378,6 +378,6 @@ def validate_email(value: str) -> Tuple[str, str]:
     try:
         parts = email_validator.validate_email(email, check_deliverability=False)
     except email_validator.EmailNotValidError as e:
-        raise errors.EmailError() from e
+        raise errors.EmailError(*e.args) from e
 
     return name or parts['local'], parts['email']
