@@ -2,8 +2,9 @@ from typing import Dict, List, Mapping
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, parse_as_type
+from pydantic import BaseModel, ValidationError, parse_obj
 from pydantic.dataclasses import dataclass
+from pydantic.tools import parse_file
 
 
 class Model(BaseModel):
@@ -17,11 +18,11 @@ model = Model(**model_inputs)
 
 
 @pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1]), (model_inputs, Model, model)])
-def test_parse_as_type(obj, type_, parsed):
-    assert parse_as_type(type_, obj) == parsed
+def test_parse_obj(obj, type_, parsed):
+    assert parse_obj(type_, obj) == parsed
 
 
-def test_parse_as_type_preserves_subclasses():
+def test_parse_obj_preserves_subclasses():
     class ModelA(BaseModel):
         a: Mapping[int, str]
 
@@ -30,13 +31,13 @@ def test_parse_as_type_preserves_subclasses():
 
     model_b = ModelB(a={1: 'f'}, b=2)
 
-    parsed = parse_as_type(List[ModelA], [model_b])
+    parsed = parse_obj(List[ModelA], [model_b])
     assert parsed == [model_b]
 
 
-def test_parse_as_type_fails():
+def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type(int, 'a')
+        parse_obj(int, 'a')
     assert exc_info.value.errors() == [
         {'loc': ('obj',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
@@ -45,15 +46,15 @@ def test_parse_as_type_fails():
 
 def test_parsing_model_naming():
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type(int, 'a')
+        parse_obj(int, 'a')
     assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel[int]'
 
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type(int, 'a', type_name='ParsingModel')
+        parse_obj(int, 'a', type_name='ParsingModel')
     assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel'
 
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type(int, 'a', type_name=lambda type_: type_.__name__)
+        parse_obj(int, 'a', type_name=lambda type_: type_.__name__)
     assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
 
 
@@ -63,9 +64,15 @@ def test_parse_as_dataclass():
         x: int
 
     inputs = {'x': '1'}
-    assert parse_as_type(PydanticDataclass, inputs) == PydanticDataclass(1)
+    assert parse_obj(PydanticDataclass, inputs) == PydanticDataclass(1)
 
 
 def test_parse_as_mapping():
     inputs = {'1': '2'}
-    assert parse_as_type(Dict[int, int], inputs) == {1: 2}
+    assert parse_obj(Dict[int, int], inputs) == {1: 2}
+
+
+def test_parse_file(tmpdir):
+    p = tmpdir.join('test.json')
+    p.write('{"1": "2"}')
+    assert parse_file(Dict[int, int], str(p)) == {1: 2}
