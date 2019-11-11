@@ -44,13 +44,13 @@ def test_parse_as_type_fails():
 
 def test_parsing_model_naming():
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type("a", int)
+        parse_as_type('a', int)
     assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel[int]'
 
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type("a", int, type_name="ParsingModel")
-    assert str(exc_info.value).split('\n')[0] == "1 validation error for ParsingModel"
+        parse_as_type('a', int, type_name='ParsingModel')
+    assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel'
 
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type("a", int, type_name=lambda type_: type_.__name__)
-    assert str(exc_info.value).split('\n')[0] == "1 validation error for int"
+        parse_as_type('a', int, type_name=lambda type_: type_.__name__)
+    assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
