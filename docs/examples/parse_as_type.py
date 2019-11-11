@@ -10,5 +10,5 @@ class Item(BaseModel):
 # item_data = requests.get('https://my-api.com/items').json()
 item_data = [{'id': 1, 'name': 'My Item'}]
 
-items = parse_as_type(item_data, List[Item])
+items = parse_as_type(List[Item], item_data)
 print(items)

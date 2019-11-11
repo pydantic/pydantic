@@ -26,6 +26,6 @@ def _get_parsing_type(type_: Any, type_name: Union[str, NameGenerator] = None) -
 T = TypeVar('T')
 
 
-def parse_as_type(obj: Any, type_: Type[T], type_name: Union[str, NameGenerator] = None) -> T:
+def parse_as_type(type_: Type[T], obj: Any, type_name: Union[str, NameGenerator] = None) -> T:
     model_type = _get_parsing_type(type_, type_name=type_name)
     return model_type(obj=obj).obj

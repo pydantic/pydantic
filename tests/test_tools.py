@@ -1,8 +1,9 @@
-from typing import List, Mapping
+from typing import Dict, List, Mapping
 
 import pytest
 
 from pydantic import BaseModel, ValidationError, parse_as_type
+from pydantic.dataclasses import dataclass
 
 
 class Model(BaseModel):
@@ -17,7 +18,7 @@ model = Model(**model_inputs)
 
 @pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1]), (model_inputs, Model, model)])
 def test_parse_as_type(obj, type_, parsed):
-    assert parse_as_type(obj, type_) == parsed
+    assert parse_as_type(type_, obj) == parsed
 
 
 def test_parse_as_type_preserves_subclasses():
@@ -29,13 +30,13 @@ def test_parse_as_type_preserves_subclasses():
 
     model_b = ModelB(a={1: 'f'}, b=2)
 
-    parsed = parse_as_type([model_b], List[ModelA])
+    parsed = parse_as_type(List[ModelA], [model_b])
     assert parsed == [model_b]
 
 
 def test_parse_as_type_fails():
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type('a', int)
+        parse_as_type(int, 'a')
     assert exc_info.value.errors() == [
         {'loc': ('obj',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
@@ -44,13 +45,27 @@ def test_parse_as_type_fails():
 
 def test_parsing_model_naming():
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type('a', int)
+        parse_as_type(int, 'a')
     assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel[int]'
 
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type('a', int, type_name='ParsingModel')
+        parse_as_type(int, 'a', type_name='ParsingModel')
     assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel'
 
     with pytest.raises(ValidationError) as exc_info:
-        parse_as_type('a', int, type_name=lambda type_: type_.__name__)
+        parse_as_type(int, 'a', type_name=lambda type_: type_.__name__)
     assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
+
+
+def test_parse_as_dataclass():
+    @dataclass
+    class PydanticDataclass:
+        x: int
+
+    inputs = {'x': '1'}
+    assert parse_as_type(PydanticDataclass, inputs) == PydanticDataclass(1)
+
+
+def test_parse_as_mapping():
+    inputs = {'1': '2'}
+    assert parse_as_type(Dict[int, int], inputs) == {1: 2}
