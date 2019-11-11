@@ -5,7 +5,7 @@ from .typing import display_as_type
 
 __all__ = ('parse_as_type',)
 
-NameGenerator = Callable[[Any], str]
+NameGenerator = Callable[[Type[Any]], str]
 
 
 def _generate_parsing_type_name(type_: Any) -> str:
