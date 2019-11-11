@@ -324,8 +324,8 @@ extending a base model with extra fields.
 
 ## Custom Root Types
 
-Pydantic models which do not represent a `dict` ("object" in JSON parlance) can have a custom
-root type defined via the `__root__` field. The root type can be of any type: list, float, int, etc.
+Pydantic models can be defined with a custom root type by declaring the `__root__` field.
+The root type can be of any type: list, float, int, etc.
 
 The root type is defined via the type hint on the `__root__` field.
 The root value can be passed to model `__init__` via the `__root__` keyword argument or as

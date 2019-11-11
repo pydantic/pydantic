@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Ty
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import SHAPE_MAPPING, ModelField
+from .fields import ModelField
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
@@ -238,15 +238,7 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
-        cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
-        if _custom_root_type and cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING:
-            original_parse_obj = cls.parse_obj
-
-            def parse_obj(obj: Any) -> 'Model':
-                return original_parse_obj({ROOT_KEY: obj})
-
-            setattr(cls, 'parse_obj', staticmethod(parse_obj))
-        return cls
+        return super().__new__(mcs, name, bases, new_namespace, **kwargs)
 
 
 class BaseModel(metaclass=ModelMetaclass):
@@ -388,15 +380,14 @@ class BaseModel(metaclass=ModelMetaclass):
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+        if cls.__custom_root_type__ and not (isinstance(obj, dict) and obj.keys() == {'__root__'}):
+            obj = {ROOT_KEY: obj}
         if not isinstance(obj, dict):
-            if cls.__custom_root_type__:
-                obj = {ROOT_KEY: obj}
-            else:
-                try:
-                    obj = dict(obj)
-                except (TypeError, ValueError) as e:
-                    exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                    raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
+            try:
+                obj = dict(obj)
+            except (TypeError, ValueError) as e:
+                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
         return cls(**obj)
 
     @classmethod
