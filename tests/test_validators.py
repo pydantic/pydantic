@@ -236,7 +236,9 @@ def test_duplicates():
                 return v
 
     assert str(exc_info.value) == (
-        'duplicate validator function ' '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"'
+        'duplicate validator function '
+        '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"; '
+        'if this is intended, set `allow_reuse=True`'
     )
 
 
@@ -918,8 +920,8 @@ def test_reuse_global_validators():
         x: int
         y: int
 
-        double_x = validator('x')(reusable_validator)
-        double_y = validator('y')(reusable_validator)
+        double_x = validator('x', allow_reuse=True)(reusable_validator)
+        double_y = validator('y', allow_reuse=True)(reusable_validator)
 
     assert dict(Model(x=1, y=1)) == {'x': 2, 'y': 2}
 

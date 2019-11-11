@@ -123,10 +123,10 @@ def _check_validator_name(f: AnyCallable, allow_reuse: bool) -> None:
     """
     if in_ipython():  # pragma: no cover
         return
-    if not allow_reuse and '.' in f.__qualname__:
+    if not allow_reuse:
         ref = f.__module__ + '.' + f.__qualname__
         if ref in _FUNCS:
-            raise ConfigError(f'duplicate validator function "{ref}"')
+            raise ConfigError(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
 
 
