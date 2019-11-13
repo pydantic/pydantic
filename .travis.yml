@@ -31,12 +31,17 @@ after_success:
 - ls -lha
 - bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS
 
+stages:
+- name: test
+  if: type = pull_request OR branch = master
+- name: build
+  if: type = push  # AND (branch = master OR tag IS present)
+
 jobs:
   include:
   - stage: test
     python: 3.6
     name: 'Cython: 3.6'
-    if: type = pull_request OR branch = master
     script:
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
@@ -46,7 +51,6 @@ jobs:
   - stage: test
     python: 3.7
     name: 'Cython: 3.7'
-    if: type = pull_request OR branch = master
     script:
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
@@ -56,7 +60,6 @@ jobs:
   - stage: test
     python: 3.8
     name: 'Cython: 3.8'
-    if: type = pull_request OR branch = master
     script:
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
@@ -67,7 +70,6 @@ jobs:
   - stage: test
     python: 3.6
     name: 'Without Deps 3.6'
-    if: type = pull_request OR branch = master
     script:
     - pip uninstall -y cython email-validator typing-extensions devtools
     - make test
@@ -77,7 +79,6 @@ jobs:
   - stage: test
     python: 3.7
     name: 'Without Deps 3.7'
-    if: type = pull_request OR branch = master
     script:
     - pip uninstall -y cython email-validator typing-extensions devtools
     - make test
@@ -87,7 +88,6 @@ jobs:
   - stage: test
     python: 3.8
     name: 'Without Deps 3.8'
-    if: type = pull_request OR branch = master
     script:
       - pip uninstall -y cython email-validator typing-extensions devtools
       - make test
@@ -97,7 +97,6 @@ jobs:
   - stage: test
     python: 3.7
     name: 'Benchmarks'
-    if: type = pull_request OR branch = master
     script:
     - make build-cython
     - BENCHMARK_REPEATS=1 make benchmark-all
@@ -105,7 +104,6 @@ jobs:
 
   - stage: build
     name: 'PyPI Build and Upload'
-    if: type = push AND (branch = master OR tag IS present)
     python: 3.7
     services:
     - docker
