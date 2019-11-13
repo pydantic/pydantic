@@ -133,7 +133,6 @@ jobs:
 
   - stage: build
     name: 'Docs Build and Upload'
-    if: type = push AND (branch = master OR tag IS present)
     python: 3.7
     script: make docs
     env:
