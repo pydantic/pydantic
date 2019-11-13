@@ -36,6 +36,7 @@ jobs:
   - stage: test
     python: 3.6
     name: 'Cython: 3.6'
+    if: type = pull_request OR branch = master
     script:
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
@@ -45,6 +46,7 @@ jobs:
   - stage: test
     python: 3.7
     name: 'Cython: 3.7'
+    if: type = pull_request OR branch = master
     script:
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
@@ -54,6 +56,7 @@ jobs:
   - stage: test
     python: 3.8
     name: 'Cython: 3.8'
+    if: type = pull_request OR branch = master
     script:
     - make build-cython-trace
     - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
@@ -64,22 +67,27 @@ jobs:
   - stage: test
     python: 3.6
     name: 'Without Deps 3.6'
+    if: type = pull_request OR branch = master
     script:
     - pip uninstall -y cython email-validator typing-extensions devtools
     - make test
     env:
     - 'DEPS=no'
+
   - stage: test
     python: 3.7
     name: 'Without Deps 3.7'
+    if: type = pull_request OR branch = master
     script:
     - pip uninstall -y cython email-validator typing-extensions devtools
     - make test
     env:
     - 'DEPS=no'
+
   - stage: test
     python: 3.8
     name: 'Without Deps 3.8'
+    if: type = pull_request OR branch = master
     script:
       - pip uninstall -y cython email-validator typing-extensions devtools
       - make test
@@ -89,6 +97,7 @@ jobs:
   - stage: test
     python: 3.7
     name: 'Benchmarks'
+    if: type = pull_request OR branch = master
     script:
     - make build-cython
     - BENCHMARK_REPEATS=1 make benchmark-all
