@@ -109,7 +109,7 @@ jobs:
     - ls -lha dist
     env:
     - 'PIP=pip'
-    - 'CIBW_BUILD="cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686"'
+    - 'CIBW_BUILD="cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686 cp38-manylinux1_x86_64 cp38-manylinux1_i686"'
     - 'CIBW_BEFORE_BUILD="pip install -U cython"'
     deploy:
       provider: pypi
