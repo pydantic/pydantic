@@ -33,9 +33,9 @@ after_success:
 
 stages:
 - name: test
-  if: type = pull_request OR branch = master
+  if: type = pull_request OR branch = master OR tag IS present
 - name: build
-  if: type = push  # AND (branch = master OR tag IS present)
+  if: type = push AND (branch = master OR tag IS present)
 
 jobs:
   include:
