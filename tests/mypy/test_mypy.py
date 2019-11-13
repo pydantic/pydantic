@@ -3,7 +3,11 @@ import os
 from pathlib import Path
 
 import pytest
-from mypy import api
+
+try:
+    from mypy import api as mypy_api
+except ImportError:
+    mypy_api = None
 
 try:
     import typing_extensions
@@ -30,7 +34,7 @@ cases = [
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not (typing_extensions and mypy_api), reason='typing_extensions or mypy are not installed')
 @pytest.mark.parametrize('config_filename,python_filename,output_filename', cases)
 def test_mypy_results(config_filename, python_filename, output_filename):
     full_config_filename = f'tests/mypy/configs/{config_filename}'
@@ -47,7 +51,7 @@ def test_mypy_results(config_filename, python_filename, output_filename):
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = f'.mypy_cache/test-{config_filename[:-4]}'
-    actual_result = api.run(
+    actual_result = mypy_api.run(
         [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
     )
     actual_out, actual_err, actual_returncode = actual_result
