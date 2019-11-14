@@ -1871,11 +1871,11 @@ def test_bytesize_to():
     class Model(BaseModel):
         size: ByteSize
 
-    m = Model(size="1GiB")
+    m = Model(size='1GiB')
 
-    assert pytest.approx(m.size.to("MiB")) == 1024
-    assert pytest.approx(m.size.to("MB")) == 1073.741824
-    assert pytest.approx(m.size.to("TiB")) == 0.0009765625
+    assert pytest.approx(m.size.to('MiB')) == 1024
+    assert pytest.approx(m.size.to('MB')) == 1073.741824
+    assert pytest.approx(m.size.to('TiB')) == 0.0009765625
 
 
 def test_bytesize_raises():
@@ -1892,6 +1892,6 @@ def test_bytesize_raises():
     with pytest.raises(ValidationError, match='byte unit'):
         Model(size='1Gi')
 
-    m = Model(size="1MB")
+    m = Model(size='1MB')
     with pytest.raises(errors.InvalidByteSizeUnit, match='byte unit'):
-        m.size.to("bad_unit")
+        m.size.to('bad_unit')

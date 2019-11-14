@@ -10,4 +10,4 @@ m = MyModel(size='50 PB')
 print(m.size.human_readable())
 print(m.size.human_readable(decimal=True))
 
-print(m.size.to("TiB"))
+print(m.size.to('TiB'))
