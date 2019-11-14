@@ -43,6 +43,7 @@ from pydantic import (
     conlist,
     constr,
     create_model,
+    errors,
     validator,
 )
 
@@ -1866,6 +1867,17 @@ def test_bytesize_conversions(input_value, output, human_bin, human_dec):
     assert m.size.human_readable(decimal=True) == human_dec
 
 
+def test_bytesize_to():
+    class Model(BaseModel):
+        size: ByteSize
+
+    m = Model(size="1GiB")
+
+    assert pytest.approx(m.size.to("MiB")) == 1024
+    assert pytest.approx(m.size.to("MB")) == 1073.741824
+    assert pytest.approx(m.size.to("TiB")) == 0.0009765625
+
+
 def test_bytesize_raises():
     class Model(BaseModel):
         size: ByteSize
@@ -1879,3 +1891,7 @@ def test_bytesize_raises():
     # 1Gi is not a valid unit unlike 1G
     with pytest.raises(ValidationError, match='byte unit'):
         Model(size='1Gi')
+
+    m = Model(size="1MB")
+    with pytest.raises(errors.InvalidByteSizeUnit, match='byte unit'):
+        m.size.to("bad_unit")
