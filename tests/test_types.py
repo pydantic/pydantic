@@ -1874,7 +1874,7 @@ def test_bytesize_to():
     m = Model(size='1GiB')
 
     assert m.size.to('MiB') == pytest.approx(1024)
-    assert pytest.approx(m.size.to('MB')) == 1073.741824
+    assert m.size.to('MB') == pytest.approx(1073.741824)
     assert pytest.approx(m.size.to('TiB')) == 0.0009765625
 
 
