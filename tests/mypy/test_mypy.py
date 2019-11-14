@@ -1,5 +1,6 @@
 import importlib
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -29,7 +30,7 @@ cases = [
     ('mypy-default.ini', 'fail1.py', 'fail1.txt'),
     ('mypy-default.ini', 'fail2.py', 'fail2.txt'),
     ('mypy-default.ini', 'fail3.py', 'fail3.txt'),
-    ('mypy-default.ini', 'plugin_success.py', None),
+    ('mypy-default.ini', 'plugin_success.py', 'fail4.txt'),
 ]
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
@@ -56,7 +57,8 @@ def test_mypy_results(config_filename, python_filename, output_filename):
     )
     actual_out, actual_err, actual_returncode = actual_result
     # Need to strip filenames due to differences in formatting by OS
-    actual_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in actual_out.split('\n')]).strip()
+    actual_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in actual_out.split('\n') if line]).strip()
+    actual_out = re.sub(r'\n\s*\n', r'\n', actual_out)
 
     if GENERATE and output_filename is not None:
         with open(full_output_filename, 'w') as f:

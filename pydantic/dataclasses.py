@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, TypeVar, Union
 
 from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
@@ -9,7 +9,9 @@ from .main import create_model, validate_model
 from .typing import AnyType
 
 if TYPE_CHECKING:
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .main import BaseModel  # noqa: F401
+
+    DataclassT = TypeVar('DataclassT', bound='DataclassType')
 
     class DataclassType:
         __pydantic_model__: Type[BaseModel]
@@ -19,11 +21,14 @@ if TYPE_CHECKING:
             pass
 
         @classmethod
-        def __validate__(cls, v: Any) -> 'DataclassType':
+        def __validate__(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
+            pass
+
+        def __call__(self: 'DataclassT', *args: Any, **kwargs: Any) -> 'DataclassT':
             pass
 
 
-def _validate_dataclass(cls: Type['DataclassType'], v: Any) -> 'DataclassType':
+def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
     if isinstance(v, cls):
         return v
     elif isinstance(v, (list, tuple)):
@@ -34,7 +39,7 @@ def _validate_dataclass(cls: Type['DataclassType'], v: Any) -> 'DataclassType':
         raise DataclassTypeError(class_name=cls.__name__)
 
 
-def _get_validators(cls: Type['DataclassType']) -> Generator[Any, None, None]:
+def _get_validators(cls: Type['DataclassT']) -> Generator[Any, None, None]:
     yield cls.__validate__
 
 
@@ -59,7 +64,7 @@ def _process_class(
     order: bool,
     unsafe_hash: bool,
     frozen: bool,
-    config: Type['BaseConfig'],
+    config: Optional[Type[Any]],
 ) -> 'DataclassType':
     post_init_original = getattr(_cls, '__post_init__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
@@ -113,33 +118,28 @@ def _process_class(
     return cls
 
 
-if TYPE_CHECKING:
-    # see https://github.com/python/mypy/issues/6239 for explanation of why we do this
-    from dataclasses import dataclass as dataclass
-else:
+def dataclass(
+    _cls: Optional[AnyType] = None,
+    *,
+    init: bool = True,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
+    unsafe_hash: bool = False,
+    frozen: bool = False,
+    config: Type[Any] = None,
+) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
+    """
+    Like the python standard lib dataclasses but with type validation.
 
-    def dataclass(
-        _cls: Optional[AnyType] = None,
-        *,
-        init: bool = True,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool = False,
-        config: Type['BaseConfig'] = None,
-    ) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
-        """
-        Like the python standard lib dataclasses but with type validation.
+    Arguments are the same as for standard dataclasses, except for validate_assignment which has the same meaning
+    as Config.validate_assignment.
+    """
 
-        Arguments are the same as for standard dataclasses, except for validate_assignment which has the same meaning
-        as Config.validate_assignment.
-        """
+    def wrap(cls: AnyType) -> 'DataclassType':
+        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
 
-        def wrap(cls: AnyType) -> 'DataclassType':
-            return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
+    if _cls is None:
+        return wrap
 
-        if _cls is None:
-            return wrap
-
-        return wrap(_cls)
+    return wrap(_cls)

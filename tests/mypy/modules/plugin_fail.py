@@ -1,6 +1,7 @@
 from typing import Any, Generic, Optional, Set, TypeVar, Union
 
 from pydantic import BaseModel, BaseSettings, Extra, Field
+from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 
 
@@ -191,3 +192,13 @@ class CoverageTester(Missing):  # noqa F821
 
 
 CoverageTester().from_orm()
+
+
+@dataclass(config={})
+class AddProject:
+    name: str
+    slug: Optional[str]
+    description: Optional[str]
+
+
+p = AddProject(name='x', slug='y', description='z')

@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, NoneStr, StrictBool, root_validator, validator
-from pydantic.dataclasses import dataclass
 from pydantic.fields import Field
 from pydantic.generics import GenericModel
 
@@ -92,16 +91,6 @@ assert m_copy.age == m_from_obj.age
 assert m_copy.first_name == m_from_obj.first_name
 assert m_copy.last_name == m_from_obj.last_name
 assert m_copy.list_of_ints == m_from_obj.list_of_ints
-
-
-@dataclass
-class AddProject:
-    name: str
-    slug: Optional[str]
-    description: Optional[str]
-
-
-p = AddProject(name='x', slug='y', description='z')
 
 
 if sys.version_info >= (3, 7):
