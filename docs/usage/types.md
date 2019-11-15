@@ -46,7 +46,7 @@ with custom properties and validation.
 : allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a set;
   see `typing.Set` below for sub-type constraints
 
-`frozonset`
+`frozenset`
 : allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a frozen set;
   see `typing.FrozenSet` below for sub-type constraints
 
