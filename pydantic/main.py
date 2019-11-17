@@ -564,7 +564,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     include=include,
                     exclude=exclude,
-                    exclude_none=exclude_none
+                    exclude_none=exclude_none,
                 )
             else:
                 return v.copy(include=include, exclude=exclude)
