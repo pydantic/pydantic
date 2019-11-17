@@ -1303,3 +1303,89 @@ def test_dict_any():
 
     m = MyModel(foo={'x': 'a', 'y': None})
     assert m.foo == {'x': 'a', 'y': None}
+
+
+def test_exclude_none_dict():
+    class MyModel(BaseModel):
+        a: Optional[int] = None
+        b: int = 2
+
+    m = MyModel(a=5)
+    assert m.dict(exclude_none=True) == {'a': 5, 'b': 2}
+
+    m = MyModel(b=3)
+    assert m.dict(exclude_none=True) == {'b': 3}
+
+    m = MyModel()
+    assert m.dict(exclude_none=True) == {'b': 2}
+
+
+def test_exclude_none_recursive():
+    class ModelA(BaseModel):
+        a: Optional[int] = None
+        b: int = 1
+
+    class ModelB(BaseModel):
+        c: int
+        d: int = 2
+        e: ModelA
+        f: Optional[str] = None
+
+    m = ModelB(c=5, e={'a': 0})
+    assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
+    assert m.dict(exclude_none=True) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
+
+    m = ModelB(c=5, e={'b': 20}, f='test')
+    assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': None, 'b': 20}, 'f': 'test'}
+    assert m.dict(exclude_none=True) == {'c': 5, 'd': 2, 'e': {'b': 20}, 'f': 'test'}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': None, 'b': 20}, 'f': 'test'}
+
+
+def test_dict_exclude_none_populated_by_alias():
+    class MyModel(BaseModel):
+        a: str = Field('default', alias='alias_a')
+        b: Optional[str] = Field(None, alias='alias_b')
+
+        class Config:
+            allow_population_by_field_name = True
+
+    m = MyModel(alias_a='a')
+
+    assert m.dict(exclude_none=True) == {'a': 'a'}
+    assert m.dict(exclude_none=True, by_alias=True) == {'alias_a': 'a'}
+    assert m.dict(by_alias=True) == {'alias_a': 'a', 'alias_b': None}
+
+
+def test_dict_exclude_none_populated_by_alias_with_extra():
+    class MyModel(BaseModel):
+        a: str = Field('default', alias='alias_a')
+        b: Optional[str] = Field(None, alias='alias_b')
+
+        class Config:
+            extra = 'allow'
+
+    m = MyModel(alias_a='a', c='c')
+
+    assert m.dict(exclude_none=True) == {'a': 'a', 'c': 'c'}
+    assert m.dict(exclude_none=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
+    assert m.dict(by_alias=True) == {'alias_a': 'a', 'alias_b': None, 'c': 'c'}
+
+
+def test_dict_exclude_none_populated_with_extra():
+    class MyModel(BaseModel):
+        a: str = 'default'
+        b: Optional[str] = None
+
+        class Config:
+            extra = 'allow'
+
+    m = MyModel(a='a', c='c')
+
+    assert m.dict(exclude_none=True) == {'a': 'a', 'c': 'c'}
+    assert m.dict() == {'a': 'a', 'b': None, 'c': 'c'}
+
+    m = MyModel(a='a', b='b', c=None)
+
+    assert m.dict(exclude_none=True) == {'a': 'a', 'b': 'b'}
+    assert m.dict() == {'a': 'a', 'b': 'b', 'c': None}
