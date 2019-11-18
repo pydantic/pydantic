@@ -308,6 +308,7 @@ class BaseModel(metaclass=ModelMetaclass):
         skip_defaults: bool = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
+        exclude_none: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -332,6 +333,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 exclude=exclude,
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
             )
         }
 
@@ -350,6 +352,7 @@ class BaseModel(metaclass=ModelMetaclass):
         skip_defaults: bool = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
+        exclude_none: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -371,6 +374,7 @@ class BaseModel(metaclass=ModelMetaclass):
             by_alias=by_alias,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
         )
         if self.__custom_root_type__:
             data = data[ROOT_KEY]
@@ -549,6 +553,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
         exclude_unset: bool,
         exclude_defaults: bool,
+        exclude_none: bool,
     ) -> Any:
 
         if isinstance(v, BaseModel):
@@ -559,6 +564,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     include=include,
                     exclude=exclude,
+                    exclude_none=exclude_none,
                 )
             else:
                 return v.copy(include=include, exclude=exclude)
@@ -576,6 +582,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     include=value_include and value_include.for_element(k_),
                     exclude=value_exclude and value_exclude.for_element(k_),
+                    exclude_none=exclude_none,
                 )
                 for k_, v_ in v.items()
                 if (not value_exclude or not value_exclude.is_excluded(k_))
@@ -592,6 +599,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     include=value_include and value_include.for_element(i),
                     exclude=value_exclude and value_exclude.for_element(i),
+                    exclude_none=exclude_none,
                 )
                 for i, v_ in enumerate(v)
                 if (not value_exclude or not value_exclude.is_excluded(i))
@@ -626,6 +634,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
+        exclude_none: bool = False,
     ) -> 'TupleGenerator':
 
         value_exclude = ValueItems(self, exclude) if exclude else None
@@ -640,7 +649,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
         for k, v in self.__dict__.items():
             if allowed_keys is None or k in allowed_keys:
-                yield k, self._get_value(
+                value = self._get_value(
                     v,
                     to_dict=to_dict,
                     by_alias=by_alias,
@@ -648,7 +657,10 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude=value_exclude and value_exclude.for_element(k),
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
+                    exclude_none=exclude_none,
                 )
+                if not (exclude_none and value is None):
+                    yield k, value
 
     def _calculate_keys(
         self,

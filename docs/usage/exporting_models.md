@@ -15,6 +15,8 @@ Arguments:
   Prior to **v1.0**, `exclude_unset` was known as `skip_defaults`; use of `skip_defaults` is now deprecated
 * `exclude_defaults`: whether fields which are equal to their default values (whether set or otherwise) should
   be excluded from the returned dictionary; default `False`
+* `exclude_none`: whether fields which are equal to `None` should be excluded from the returned dictionary; default
+  `False`
 
 Example:
 
@@ -73,6 +75,8 @@ Arguments:
   Prior to **v1.0**, `exclude_unset` was known as `skip_defaults`; use of `skip_defaults` is now deprecated
 * `exclude_defaults`: whether fields which are equal to their default values (whether set or otherwise) should
   be excluded from the returned dictionary; default `False`
+* `exclude_none`: whether fields which are equal to `None` should be excluded from the returned dictionary; default
+  `False`
 * `encoder`: a custom encoder function passed to the `default` argument of `json.dumps()`; defaults to a custom
   encoder designed to take care of all common types
 * `**dumps_kwargs`: any other keyword arguments are passed to `json.dumps()`, e.g. `indent`.
