@@ -1305,7 +1305,7 @@ def test_dict_any():
     assert m.foo == {'x': 'a', 'y': None}
 
 
-def test_exclude_none_dict():
+def test_exclude_none():
     class MyModel(BaseModel):
         a: Optional[int] = None
         b: int = 2
@@ -1315,9 +1315,7 @@ def test_exclude_none_dict():
 
     m = MyModel(b=3)
     assert m.dict(exclude_none=True) == {'b': 3}
-
-    m = MyModel()
-    assert m.dict(exclude_none=True) == {'b': 2}
+    assert m.json(exclude_none=True) == '{"b": 3}'
 
 
 def test_exclude_none_recursive():
@@ -1342,37 +1340,7 @@ def test_exclude_none_recursive():
     assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': None, 'b': 20}, 'f': 'test'}
 
 
-def test_dict_exclude_none_populated_by_alias():
-    class MyModel(BaseModel):
-        a: str = Field('default', alias='alias_a')
-        b: Optional[str] = Field(None, alias='alias_b')
-
-        class Config:
-            allow_population_by_field_name = True
-
-    m = MyModel(alias_a='a')
-
-    assert m.dict(exclude_none=True) == {'a': 'a'}
-    assert m.dict(exclude_none=True, by_alias=True) == {'alias_a': 'a'}
-    assert m.dict(by_alias=True) == {'alias_a': 'a', 'alias_b': None}
-
-
-def test_dict_exclude_none_populated_by_alias_with_extra():
-    class MyModel(BaseModel):
-        a: str = Field('default', alias='alias_a')
-        b: Optional[str] = Field(None, alias='alias_b')
-
-        class Config:
-            extra = 'allow'
-
-    m = MyModel(alias_a='a', c='c')
-
-    assert m.dict(exclude_none=True) == {'a': 'a', 'c': 'c'}
-    assert m.dict(exclude_none=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
-    assert m.dict(by_alias=True) == {'alias_a': 'a', 'alias_b': None, 'c': 'c'}
-
-
-def test_dict_exclude_none_populated_with_extra():
+def test_exclude_none_with_extra():
     class MyModel(BaseModel):
         a: str = 'default'
         b: Optional[str] = None

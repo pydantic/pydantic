@@ -659,7 +659,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     exclude_none=exclude_none,
                 )
-                if (exclude_none and value is not None) or not exclude_none:
+                if not (exclude_none and value is None):
                     yield k, value
 
     def _calculate_keys(
