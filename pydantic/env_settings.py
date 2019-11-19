@@ -38,6 +38,10 @@ class BaseSettings(BaseModel):
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
+        env_file = self.__config__.env_file
+        if env_file is not None and os.path.isfile(env_file):
+            env_vars.update(self._read_from_env_file(env_file))
+
         for field in self.__fields__.values():
             env_val: Optional[str] = None
             for env_name in field.field_info.extra['env_names']:
@@ -56,8 +60,21 @@ class BaseSettings(BaseModel):
             d[field.alias] = env_val
         return d
 
+    def _read_from_env_file(self, file_path: str) -> Dict[str, str]:
+        file_vars = {}  # type: Dict[str, str]
+        with open(file_path) as env_file:
+            for line in env_file.readlines():
+                line = line.strip()
+                if '=' in line and not line.startswith('#'):
+                    key, value = line.split('=', 1)
+                    key = key.strip()
+                    value = value.strip().strip('\'"')
+                    file_vars[key if self.__config__.case_sensitive else key.lower()] = value
+        return file_vars
+
     class Config:
         env_prefix = ''
+        env_file = None
         validate_all = True
         extra = Extra.forbid
         arbitrary_types_allowed = True
