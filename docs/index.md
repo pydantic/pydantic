@@ -112,7 +112,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
 
 [The Molecular Sciences Software Institute](https://molssi.org)
 : are using *pydantic* in [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
-  for quantum chemsitry.
+  for quantum chemistry.
 
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
