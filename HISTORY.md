@@ -1,3 +1,7 @@
+## v1.1.1 (2019-11-20)
+
+* Fix bug where use of complex fields on sub-models could cause fields to be incorrectly configured, #1015 by @samuelcolvin
+
 ## v1.1 (2019-11-07)
 
 * Add a mypy plugin for type checking `BaseModel.__init__` and more, #722 by @dmontagu
