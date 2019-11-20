@@ -1303,3 +1303,20 @@ def test_dict_any():
 
     m = MyModel(foo={'x': 'a', 'y': None})
     assert m.foo == {'x': 'a', 'y': None}
+
+
+def test_modify_fields():
+    class Foo(BaseModel):
+        foo: List[List[int]]
+
+        @validator('foo')
+        def check_something(cls, value):
+            return value
+
+    class Bar(Foo):
+        pass
+
+    assert repr(Foo.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+    assert repr(Bar.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+    assert Foo(foo=[[0, 1]]).foo == [[0, 1]]
+    assert Bar(foo=[[0, 1]]).foo == [[0, 1]]

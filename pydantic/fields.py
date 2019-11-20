@@ -280,6 +280,12 @@ class ModelField(Representation):
         return self.name != self.alias
 
     def prepare(self) -> None:
+        """
+        Prepare the field but inspecting self.default, self.type_ etc.
+
+        Note: this method is **not** idempotent (because _type_analysis is not idempotent),
+        e.g. calling it it multiple times may modify the field and configure it incorrectly.
+        """
         if self.default is not None and self.type_ is None:
             self.type_ = type(self.default)
 
@@ -299,7 +305,7 @@ class ModelField(Representation):
             self.allow_none = True
 
         self._type_analysis()
-        self._populate_validators()
+        self.populate_validators()
 
     def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
@@ -403,7 +409,12 @@ class ModelField(Representation):
             model_config=self.model_config,
         )
 
-    def _populate_validators(self) -> None:
+    def populate_validators(self) -> None:
+        """
+        Prepare self.pre_validators, self.validators, and self.post_validators based on self.type_'s  __get_validators__
+        and class validators. This method should be idempotent, e.g. it should be safe to call multiple times
+        without mis-configuring the field.
+        """
         class_validators_ = self.class_validators.values()
         if not self.sub_fields:
             get_validators = getattr(self.type_, '__get_validators__', None)
