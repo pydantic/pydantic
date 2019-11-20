@@ -1,11 +1,15 @@
 import os
 import warnings
-from typing import Any, Dict, Iterable, Mapping, Optional
+from pathlib import Path
+from typing import Any, Dict, Iterable, Optional, Union
 
 from .fields import ModelField
 from .main import BaseModel, Extra
+from .read_env_file import read_env_file
 from .typing import display_as_type
 from .utils import deep_update
+
+env_file_sentinel: str = object()  # type: ignore
 
 
 class SettingsError(ValueError):
@@ -20,8 +24,9 @@ class BaseSettings(BaseModel):
     Heroku and any 12 factor app design.
     """
 
-    def __init__(__pydantic_self__, **values: Any) -> None:
+    def __init__(__pydantic_self__, _env_file: Union[None, str, Path] = env_file_sentinel, **values: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
+        object.__setattr__(__pydantic_self__, '_env_file', _env_file)
         super().__init__(**__pydantic_self__._build_values(values))
 
     def _build_values(self, init_kwargs: Dict[str, Any]) -> Dict[str, Any]:
@@ -33,14 +38,18 @@ class BaseSettings(BaseModel):
         """
         d: Dict[str, Optional[str]] = {}
 
+        env_vars: Dict[str, str]
         if self.__config__.case_sensitive:
-            env_vars: Mapping[str, str] = os.environ
+            env_vars = dict(os.environ)
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
-        env_file = self.__config__.env_file
-        if env_file is not None and os.path.isfile(env_file):
-            env_vars.update(self._read_from_env_file(env_file))
+        _env_file = getattr(self, '_env_file')
+        env_file = _env_file if _env_file != env_file_sentinel else self.__config__.env_file
+        if env_file is not None:
+            env_path = Path(env_file)
+            if env_path.exists() and env_path.is_file():
+                env_vars.update(read_env_file(env_path, self.__config__.case_sensitive))
 
         for field in self.__fields__.values():
             env_val: Optional[str] = None
@@ -59,18 +68,6 @@ class BaseSettings(BaseModel):
                     raise SettingsError(f'error parsing JSON for "{env_name}"') from e
             d[field.alias] = env_val
         return d
-
-    def _read_from_env_file(self, file_path: str) -> Dict[str, str]:
-        file_vars = {}  # type: Dict[str, str]
-        with open(file_path) as env_file:
-            for line in env_file.readlines():
-                line = line.strip()
-                if '=' in line and not line.startswith('#'):
-                    key, value = line.split('=', 1)
-                    key = key.strip()
-                    value = value.strip().strip('\'"')
-                    file_vars[key if self.__config__.case_sensitive else key.lower()] = value
-        return file_vars
 
     class Config:
         env_prefix = ''
