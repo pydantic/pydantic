@@ -1,18 +1,22 @@
 import os
+import re
 import warnings
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
 from .fields import ModelField
 from .main import BaseModel, Extra
-from .read_env_file import read_env_file
 from .typing import display_as_type
 from .utils import deep_update
 
-env_file_sentinel: str = object()  # type: ignore
+env_file_sentinel = str(object())
 
 
 class SettingsError(ValueError):
+    pass
+
+
+class EnvFileError(ValueError):
     pass
 
 
@@ -38,9 +42,8 @@ class BaseSettings(BaseModel):
         """
         d: Dict[str, Optional[str]] = {}
 
-        env_vars: Dict[str, str]
         if self.__config__.case_sensitive:
-            env_vars = dict(os.environ)
+            env_vars: Mapping[str, str] = os.environ
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
@@ -48,8 +51,8 @@ class BaseSettings(BaseModel):
         env_file = _env_file if _env_file != env_file_sentinel else self.__config__.env_file
         if env_file is not None:
             env_path = Path(env_file)
-            if env_path.exists() and env_path.is_file():
-                env_vars.update(read_env_file(env_path, self.__config__.case_sensitive))
+            if env_path.is_file():
+                env_vars = {**env_vars, **read_env_file(env_path, self.__config__.case_sensitive)}
 
         for field in self.__fields__.values():
             env_val: Optional[str] = None
@@ -102,3 +105,19 @@ class BaseSettings(BaseModel):
             field.field_info.extra['env_names'] = env_names
 
     __config__: Config  # type: ignore
+
+
+def read_env_file(file_path: Path, case_sensitive: bool = False) -> Dict[str, str]:
+    file_vars: Dict[str, str] = {}
+    for n, line in enumerate(re.split('[\r\n]+', file_path.read_text()), start=1):
+        line = line.strip()
+        if line and not line.startswith('#'):
+            m = re.match(r'^\s*(\w+)\s*=\s*(.+?)\s*$', line)
+            if m:
+                key, value = m.groups()
+                value = value.strip('\'"')
+                file_vars[key if case_sensitive else key.lower()] = value
+            else:
+                raise EnvFileError(f'invalid assignment in {file_path} on line {n}\n  {line}')
+
+    return file_vars
