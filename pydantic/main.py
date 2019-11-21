@@ -7,7 +7,22 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast, no_type_check
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    ItemsView,
+    KeysView,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    no_type_check,
+)
 
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -249,6 +264,9 @@ class ModelMetaclass(ABCMeta):
         return super().__new__(mcs, name, bases, new_namespace, **kwargs)
 
 
+_not_found = object()
+
+
 class BaseModel(metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
@@ -312,6 +330,7 @@ class BaseModel(metaclass=ModelMetaclass):
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
+
         """
         if skip_defaults is not None:
             warnings.warn(
@@ -319,29 +338,18 @@ class BaseModel(metaclass=ModelMetaclass):
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
-        get_key = self._get_key_factory(by_alias)
-        get_key = partial(get_key, self.__fields__)
 
-        allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
-        return {
-            get_key(k): v
-            for k, v in self._iter(
+        return dict(
+            self._iter(
                 to_dict=True,
                 by_alias=by_alias,
-                allowed_keys=allowed_keys,
                 include=include,
                 exclude=exclude,
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
             )
-        }
-
-    def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
-        if by_alias:
-            return lambda fields, key: fields[key].alias if key in fields else key
-
-        return lambda _, key: key
+        )
 
     def json(
         self,
@@ -473,27 +481,11 @@ class BaseModel(metaclass=ModelMetaclass):
         :param deep: set to `True` to make a deep copy of the model
         :return: new model instance
         """
-        if include is None and exclude is None and update is None:
-            # skip constructing values if no arguments are passed
-            v = self.__dict__
-        else:
-            allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=False, update=update)
-            if allowed_keys is None:
-                v = {**self.__dict__, **(update or {})}
-            else:
-                v = {
-                    **dict(
-                        self._iter(
-                            to_dict=False,
-                            by_alias=False,
-                            include=include,
-                            exclude=exclude,
-                            exclude_unset=False,
-                            allowed_keys=allowed_keys,
-                        )
-                    ),
-                    **(update or {}),
-                }
+
+        v = {
+            **dict(self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False)),
+            **(update or {}),
+        }
 
         if deep:
             v = deepcopy(v)
@@ -629,7 +621,6 @@ class BaseModel(metaclass=ModelMetaclass):
         self,
         to_dict: bool = False,
         by_alias: bool = False,
-        allowed_keys: Optional['SetStr'] = None,
         include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         exclude_unset: bool = False,
@@ -637,30 +628,45 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude_none: bool = False,
     ) -> 'TupleGenerator':
 
+        allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
+        if allowed_keys is None and not any((to_dict, by_alias, exclude_unset, exclude_defaults, exclude_none)):
+            # huge boost for plain _iter()
+            yield from self.__dict__.items()
+            return
+
         value_exclude = ValueItems(self, exclude) if exclude else None
         value_include = ValueItems(self, include) if include else None
 
+        iteritems: Union[ItemsView[str, Any], 'TupleGenerator'] = self.__dict__.items()
+        # adding only needed checks/conversions to generator
+        if allowed_keys is not None:
+            iteritems = ((k, v) for k, v in iteritems if k in allowed_keys)
+        if exclude_none:
+            iteritems = ((k, v) for k, v in iteritems if v is not None)
         if exclude_defaults:
-            if allowed_keys is None:
-                allowed_keys = set(self.__fields__)
-            for k, v in self.__field_defaults__.items():
-                if self.__dict__[k] == v:
-                    allowed_keys.discard(k)
-
-        for k, v in self.__dict__.items():
-            if allowed_keys is None or k in allowed_keys:
-                value = self._get_value(
-                    v,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    include=value_include and value_include.for_element(k),
-                    exclude=value_exclude and value_exclude.for_element(k),
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    exclude_none=exclude_none,
+            iteritems = ((k, v) for k, v in iteritems if self.__field_defaults__.get(k, _not_found) != v)
+        if by_alias:
+            fields = self.__fields__
+            iteritems = ((fields[k].alias if k in fields else k, v) for k, v in iteritems)
+        if to_dict or allowed_keys is not None:
+            iteritems = (
+                (
+                    k,
+                    self._get_value(
+                        v,
+                        to_dict=to_dict,
+                        by_alias=by_alias,
+                        include=value_include and value_include.for_element(k),
+                        exclude=value_exclude and value_exclude.for_element(k),
+                        exclude_unset=exclude_unset,
+                        exclude_defaults=exclude_defaults,
+                        exclude_none=exclude_none,
+                    ),
                 )
-                if not (exclude_none and value is None):
-                    yield k, value
+                for k, v in iteritems
+            )
+
+        yield from iteritems
 
     def _calculate_keys(
         self,
@@ -668,14 +674,15 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
         exclude_unset: bool,
         update: Optional['DictStrAny'] = None,
-    ) -> Optional['SetStr']:
+    ) -> Optional[Union['SetStr', KeysView[str]]]:
         if include is None and exclude is None and exclude_unset is False:
             return None
 
+        keys: Union['SetStr', KeysView[str]]
         if exclude_unset:
             keys = self.__fields_set__.copy()
         else:
-            keys = set(self.__dict__.keys())
+            keys = self.__dict__.keys()
 
         if include is not None:
             if isinstance(include, dict):
