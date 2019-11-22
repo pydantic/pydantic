@@ -4,7 +4,7 @@ from typing import Dict, List, Set
 import pytest
 
 from pydantic import BaseModel, BaseSettings, Field, NoneStr, ValidationError, dataclasses
-from pydantic.env_settings import SettingsError
+from pydantic.env_settings import EnvFileError, SettingsError
 
 
 class SimpleSettings(BaseSettings):
@@ -315,7 +315,7 @@ def test_env_takes_precedence(env):
         foo: int
         bar: str
 
-        def _build_values(self, init_kwargs):
+        def _build_values(self, init_kwargs, _env_file):
             return {**init_kwargs, **self._build_environ()}
 
     env.set('BAR', 'env setting')
@@ -335,7 +335,7 @@ def test_config_file_settings_nornir(env):
         b: str
         c: str
 
-        def _build_values(self, init_kwargs):
+        def _build_values(self, init_kwargs, _env_file):
             config_settings = init_kwargs.pop('__config_settings__')
             return {**config_settings, **init_kwargs, **self._build_environ()}
 
@@ -346,6 +346,65 @@ def test_config_file_settings_nornir(env):
     assert s.a == 'config a'
     assert s.b == 'argument b'
     assert s.c == 'env setting c'
+
+
+def test_env_file_config(env):
+    class Settings(BaseSettings):
+        a: str
+        b: str
+        c: str
+
+        class Config:
+            env_file = 'tests/env_files/test_settings_1.env'
+
+    env.set('A', 'overridden var')
+
+    s = Settings()
+    assert s.a == 'good string'
+    assert s.b == 'better string'
+    assert s.c == 'best string'
+
+
+def test_env_file_override(env):
+    class Settings(BaseSettings):
+        a: str
+
+        class Config:
+            env_file = 'tests/env_files/test_settings_1.env'
+
+    s = Settings(_env_file='tests/env_files/test_settings_2.env')
+    assert s.a == 'new string'
+
+
+def test_env_file_override_none(env):
+    class Settings(BaseSettings):
+        a: str = None
+
+        class Config:
+            env_file = 'tests/env_files/test_settings_1.env'
+
+    s = Settings(_env_file=None)
+    assert s.a is None
+
+
+def test_env_file_not_a_file(env):
+    class Settings(BaseSettings):
+        a: str = None
+
+    env.set('A', 'ignore non-file')
+    s = Settings(_env_file='tests/')
+    assert s.a == 'ignore non-file'
+
+
+def test_env_file_syntax(env):
+    class Settings(BaseSettings):
+        a: str
+
+    try:
+        s = Settings(_env_file='tests/env_files/test_settings_broken.env')
+        assert s.a == 'good string'
+    except EnvFileError:
+        assert True
 
 
 def test_alias_set(env):
