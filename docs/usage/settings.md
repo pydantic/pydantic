@@ -66,6 +66,33 @@ be if passed directly to the initialiser (as a string).
 Complex types like `list`, `set`, `dict`, and sub-models are populated from the environment
 by treating the environment variable's value as a JSON-encoded string.
 
+## Dotenv (.env) support
+
+Dotenv files (generally named `.env`) are a common pattern that make it easy to use environment variables in a platform-independent manner. Pydantic supports loading such a file in two ways:
+
+#### 1. passing `env_file` to the `Config` class
+
+```
+class Settings(BaseSettings):
+    ...
+
+    class Config:
+        env_file = '.env'
+```
+
+#### 2. instantiating a `BaseSettings` derived class with the `_env_file` keyword argument
+
+```
+settings = Settings(_env_file='env/prod.env')
+```
+
+In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the current working directory. From there, Pydantic will handle everything else for you, loading in your variables and validating them.
+
+Important: passing a file path via the `_env_file` keyword argument on instantiation (method 2) will override the value (if any) set on the `Config` class.
+
+!!! note
+    You can use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in the `Config` class) by passing `None` as the argument, e.g. `settings = Settings(_env_file=None)`
+
 ## Field value priority
 
 In the case where a value is specified for the same `Settings` field in multiple ways,
