@@ -1357,3 +1357,37 @@ def test_exclude_none_with_extra():
 
     assert m.dict(exclude_none=True) == {'a': 'a', 'b': 'b'}
     assert m.dict() == {'a': 'a', 'b': 'b', 'c': None}
+
+
+def test_str_method_inheritance():
+    import pydantic
+
+    class Foo(pydantic.BaseModel):
+        x: int = 3
+        y: int = 4
+
+        def __str__(self):
+            return str(self.y + self.x)
+
+    class Bar(Foo):
+        z: bool = False
+
+    assert str(Foo()) == '7'
+    assert str(Bar()) == '7'
+
+
+def test_repr_method_inheritance():
+    import pydantic
+
+    class Foo(pydantic.BaseModel):
+        x: int = 3
+        y: int = 4
+
+        def __repr__(self):
+            return repr(self.y + self.x)
+
+    class Bar(Foo):
+        z: bool = False
+
+    assert repr(Foo()) == '7'
+    assert repr(Bar()) == '7'
