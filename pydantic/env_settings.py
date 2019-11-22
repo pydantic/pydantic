@@ -28,15 +28,14 @@ class BaseSettings(BaseModel):
     Heroku and any 12 factor app design.
     """
 
-    def __init__(__pydantic_self__, _env_file: Union[None, str, Path] = env_file_sentinel, **values: Any) -> None:
+    def __init__(__pydantic_self__, _env_file: Union[Path, str, None] = env_file_sentinel, **values: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
-        object.__setattr__(__pydantic_self__, '_env_file', _env_file)
-        super().__init__(**__pydantic_self__._build_values(values))
+        super().__init__(**__pydantic_self__._build_values(values, _env_file=_env_file))
 
-    def _build_values(self, init_kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        return deep_update(self._build_environ(), init_kwargs)
+    def _build_values(self, init_kwargs: Dict[str, Any], _env_file: Union[Path, str, None] = None) -> Dict[str, Any]:
+        return deep_update(self._build_environ(_env_file), init_kwargs)
 
-    def _build_environ(self) -> Dict[str, Optional[str]]:
+    def _build_environ(self, _env_file: Union[Path, str, None] = None) -> Dict[str, Optional[str]]:
         """
         Build environment variables suitable for passing to the Model.
         """
@@ -47,7 +46,6 @@ class BaseSettings(BaseModel):
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
-        _env_file = getattr(self, '_env_file')
         env_file = _env_file if _env_file != env_file_sentinel else self.__config__.env_file
         if env_file is not None:
             env_path = Path(env_file)
