@@ -252,12 +252,6 @@ class ModelMetaclass(ABCMeta):
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
-            # equivalent of inheriting from Representation
-            '__repr_name__': Representation.__repr_name__,
-            '__repr_str__': Representation.__repr_str__,
-            '__pretty__': Representation.__pretty__,
-            '__str__': Representation.__str__,
-            '__repr__': Representation.__repr__,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace, **kwargs)
@@ -279,6 +273,12 @@ class BaseModel(metaclass=ModelMetaclass):
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
+    # equivalent of inheriting from Representation
+    __repr_name__ = Representation.__repr_name__
+    __repr_str__ = Representation.__repr_str__
+    __pretty__ = Representation.__pretty__
+    __str__ = Representation.__str__
+    __repr__ = Representation.__repr__
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
