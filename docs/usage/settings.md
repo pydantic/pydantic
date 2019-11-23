@@ -68,9 +68,21 @@ by treating the environment variable's value as a JSON-encoded string.
 
 ## Dotenv (.env) support
 
-Dotenv files (generally named `.env`) are a common pattern that make it easy to use environment variables in a platform-independent manner. Pydantic supports loading such a file in two ways:
+Dotenv files (generally named `.env`) are a common pattern that make it easy to use environment variables in a platform-independent manner. A dotenv file follows the same general principles of all environment variables, and looks something like this:
 
-#### 1. passing `env_file` to the `Config` class
+#### `.env`
+
+```
+# ignore comment
+ENVIRONMENT="production"
+REDIS_ADDRESS=localhost:6379
+MEANING_OF_LIFE=42
+MY_VAR='Hello world'
+```
+
+Once you have your `.env` file filled with variables, Pydantic supports loading it in two ways:
+
+#### 1. passing `env_file` to the `Config` in a `BaseSettings` class
 
 ```
 class Settings(BaseSettings):
@@ -86,12 +98,12 @@ class Settings(BaseSettings):
 settings = Settings(_env_file='env/prod.env')
 ```
 
-In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the current working directory. From there, Pydantic will handle everything else for you, loading in your variables and validating them.
+In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the current working directory. From there, Pydantic will handle everything for you by loading in your variables and validating them.
 
-Important: passing a file path via the `_env_file` keyword argument on instantiation (method 2) will override the value (if any) set on the `Config` class.
+Please be aware that passing a file path via the `_env_file` keyword argument on instantiation (method 2) will override the value (if any) set on the `Config` class. If the above snippets were used in conjunction, `prod.env` would be loaded while `.env` would be ignored.
 
 !!! note
-    You can use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in the `Config` class) by passing `None` as the argument, e.g. `settings = Settings(_env_file=None)`
+    You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in the `Config` class) by passing `None` as the instantiation keyword argument, e.g. `settings = Settings(_env_file=None)`
 
 ## Field value priority
 
