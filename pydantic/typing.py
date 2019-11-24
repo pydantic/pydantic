@@ -49,9 +49,16 @@ else:
     AnyCallable = TypingCallable[..., Any]
 
 try:
-    from typing_extensions import Literal
+    from typing import Literal as TypingLiteral
 except ImportError:
-    Literal = None  # type: ignore
+    TypingLiteral = None  # type: ignore
+
+try:
+    from typing_extensions import Literal as TypingExtensionsLiteral
+except ImportError:
+    TypingExtensionsLiteral = None  # type: ignore
+
+Literal = TypingLiteral or TypingExtensionsLiteral  # prefer TypingLiteral if possible
 
 
 if TYPE_CHECKING:
@@ -152,9 +159,10 @@ def is_callable_type(type_: AnyType) -> bool:
 
 
 if sys.version_info >= (3, 7):
+    literal_types = {type_ for type_ in (TypingLiteral, TypingExtensionsLiteral) if type_ is not None}
 
     def is_literal_type(type_: AnyType) -> bool:
-        return Literal is not None and getattr(type_, '__origin__', None) is Literal
+        return Literal is not None and getattr(type_, '__origin__', None) in literal_types
 
     def literal_values(type_: AnyType) -> Tuple[Any, ...]:
         return type_.__args__
