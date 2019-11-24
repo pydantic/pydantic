@@ -72,7 +72,7 @@ def test_parse_as_mapping():
     assert parse_obj(Dict[int, int], inputs) == {1: 2}
 
 
-def test_parse_file(tmpdir):
-    p = tmpdir.join('test.json')
-    p.write('{"1": "2"}')
+def test_parse_file(tmp_path):
+    p = tmp_path / 'test.json'
+    p.write_text('{"1": "2"}')
     assert parse_file(Dict[int, int], str(p)) == {1: 2}
