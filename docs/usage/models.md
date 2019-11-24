@@ -324,11 +324,10 @@ extending a base model with extra fields.
 
 ## Custom Root Types
 
-Pydantic models can be defined with a custom root type by declaring the `__root__` field.
-The root type can be of any type: dict, list, float, int, etc.
+Pydantic models can be defined with a custom root type by declaring the `__root__` field. 
 
-The root type is defined via the type hint on the `__root__` field.
-The root value can be passed to model `__init__` via the `__root__` keyword argument or as
+The root type can be any type supported by pydantic, and is specified by the type hint on the `__root__` field.
+The root value can be passed to the model `__init__` via the `__root__` keyword argument, or as
 the first and only argument to `parse_obj`.
 
 ```py

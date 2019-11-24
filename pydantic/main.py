@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Ty
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import ModelField
+from .fields import SHAPE_MAPPING, ModelField
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
@@ -380,7 +380,9 @@ class BaseModel(metaclass=ModelMetaclass):
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
-        if cls.__custom_root_type__ and not (isinstance(obj, dict) and obj.keys() == {'__root__'}):
+        if cls.__custom_root_type__ and (
+            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
+        ):
             obj = {ROOT_KEY: obj}
         if not isinstance(obj, dict):
             try:
