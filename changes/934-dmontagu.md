@@ -1,1 +1,1 @@
-Add `parse_obj` function for ad-hoc parsing of data into arbitrary pydantic-compatible types. 
+Add `parse_obj_as` and `parse_file_as` functions for ad-hoc parsing of data into arbitrary pydantic-compatible types. 

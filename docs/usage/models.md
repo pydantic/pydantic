@@ -408,7 +408,7 @@ with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
 
 ## Parsing data into a specified type
 
-Pydantic includes a standalone utility function `parse_obj` that can be used to apply the parsing
+Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing
 logic used to populate pydantic models in a more ad-hoc way. This function behaves similarly to
 `BaseModel.parse_obj`, but works with arbitrary pydantic-compatible types.
 
@@ -416,13 +416,14 @@ This is especially useful when you want to parse results into a type that is not
 For example: 
 
 ```py
-{!.tmp_examples/parse_obj.py!}
+{!.tmp_examples/parse_obj_as.py!}
 ```
 _(This script is complete, it should run "as is")_
 
 This function is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
 
-Pydantic also includes a similar standalone function called `parse_file`, which is analogous to `BaseModel.parse_file`.
+Pydantic also includes a similar standalone function called `parse_file_as`,
+which is analogous to `BaseModel.parse_file`.
 
 ## Data Conversion
 

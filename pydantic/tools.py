@@ -7,8 +7,8 @@ from pydantic.parse import Protocol, load_file
 from .typing import display_as_type
 
 __all__ = (
-    'parse_file',
-    'parse_obj',
+    'parse_file_as',
+    'parse_obj_as',
 )
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
@@ -19,7 +19,7 @@ def _generate_parsing_type_name(type_: Any) -> str:
 
 
 @lru_cache(maxsize=2048)
-def _get_parsing_type(type_: Any, type_name: Optional[NameFactory] = None) -> Any:
+def _get_parsing_type(type_: Any, *, type_name: Optional[NameFactory] = None) -> Any:
     from pydantic.main import create_model
 
     if type_name is None:
@@ -32,12 +32,12 @@ def _get_parsing_type(type_: Any, type_name: Optional[NameFactory] = None) -> An
 T = TypeVar('T')
 
 
-def parse_obj(type_: Type[T], obj: Any, type_name: Optional[NameFactory] = None) -> T:
+def parse_obj_as(type_: Type[T], obj: Any, *, type_name: Optional[NameFactory] = None) -> T:
     model_type = _get_parsing_type(type_, type_name=type_name)
     return model_type(obj=obj).obj
 
 
-def parse_file(
+def parse_file_as(
     type_: Type[T],
     path: Union[str, Path],
     *,
@@ -48,4 +48,4 @@ def parse_file(
     type_name: Optional[NameFactory] = None,
 ) -> T:
     obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
-    return parse_obj(type_, obj, type_name)
+    return parse_obj_as(type_, obj, type_name=type_name)

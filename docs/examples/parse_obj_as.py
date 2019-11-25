@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel, parse_obj
+from pydantic import BaseModel, parse_obj_as
 
 class Item(BaseModel):
     id: int
@@ -10,5 +10,5 @@ class Item(BaseModel):
 # item_data = requests.get('https://my-api.com/items').json()
 item_data = [{'id': 1, 'name': 'My Item'}]
 
-items = parse_obj(List[Item], item_data)
+items = parse_obj_as(List[Item], item_data)
 print(items)
