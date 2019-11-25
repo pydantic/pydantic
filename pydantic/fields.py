@@ -28,11 +28,6 @@ from .typing import AnyType, Callable, ForwardRef, NoneType, display_as_type, is
 from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
-try:
-    from typing_extensions import Literal
-except ImportError:
-    Literal = None  # type: ignore
-
 Required: Any = Ellipsis
 
 if TYPE_CHECKING:
