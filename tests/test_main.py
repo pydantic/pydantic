@@ -918,10 +918,16 @@ def test_parse_obj_non_mapping_root():
 
     assert MyModel.parse_obj(['a']).__root__ == ['a']
     assert MyModel.parse_obj({'__root__': ['a']}).__root__ == ['a']
-    with pytest.raises(ValidationError, match='...'):
+    with pytest.raises(ValidationError) as exc_info:
         MyModel.parse_obj({'__not_root__': ['a']})
-    with pytest.raises(ValidationError, match='...'):
+    assert exc_info.value.errors() == [
+        {'loc': ('__root__',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}
+    ]
+    with pytest.raises(ValidationError):
         MyModel.parse_obj({'__root__': ['a'], 'other': 1})
+    assert exc_info.value.errors() == [
+        {'loc': ('__root__',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}
+    ]
 
 
 def test_untouched_types():
