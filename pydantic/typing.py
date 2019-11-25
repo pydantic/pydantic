@@ -49,10 +49,13 @@ else:
     AnyCallable = TypingCallable[..., Any]
 
 if sys.version_info < (3, 8):
-    try:
+    if TYPE_CHECKING:
         from typing_extensions import Literal
-    except ImportError:
-        Literal = None  # type: ignore
+    else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
+        try:
+            from typing_extensions import Literal
+        except ImportError:
+            Literal = None
 else:
     from typing import Literal
 
