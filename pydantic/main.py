@@ -136,8 +136,6 @@ def is_valid_field(name: str) -> bool:
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
         raise ValueError('__root__ cannot be mixed with other fields')
-    if fields[ROOT_KEY].shape == SHAPE_MAPPING:
-        raise TypeError('custom root type cannot allow mapping')
 
 
 UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
@@ -382,15 +380,16 @@ class BaseModel(metaclass=ModelMetaclass):
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
-        if not isinstance(obj, dict):
-            if cls.__custom_root_type__:
-                obj = {ROOT_KEY: obj}
-            else:
-                try:
-                    obj = dict(obj)
-                except (TypeError, ValueError) as e:
-                    exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                    raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
+        if cls.__custom_root_type__ and (
+            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
+        ):
+            obj = {ROOT_KEY: obj}
+        elif not isinstance(obj, dict):
+            try:
+                obj = dict(obj)
+            except (TypeError, ValueError) as e:
+                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
         return cls(**obj)
 
     @classmethod
