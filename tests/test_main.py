@@ -908,7 +908,7 @@ def test_parse_root_as_mapping():
     with pytest.raises(ValidationError) as exc_info:
         MyModel.parse_obj({'__root__': {'1': '2'}})
     assert exc_info.value.errors() == [
-        {'loc': ('__root__', '__root__'), 'msg': 'str type expected', 'type': 'type_error.str',}
+        {'loc': ('__root__', '__root__'), 'msg': 'str type expected', 'type': 'type_error.str'}
     ]
 
 
