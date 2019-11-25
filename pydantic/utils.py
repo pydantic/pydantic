@@ -21,11 +21,6 @@ from typing import (
 
 from .typing import AnyType, display_as_type
 
-try:
-    from typing_extensions import Literal
-except ImportError:
-    Literal = None  # type: ignore
-
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
