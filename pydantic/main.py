@@ -384,7 +384,7 @@ class BaseModel(metaclass=ModelMetaclass):
             not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
         ):
             obj = {ROOT_KEY: obj}
-        if not isinstance(obj, dict):
+        elif not isinstance(obj, dict):
             try:
                 obj = dict(obj)
             except (TypeError, ValueError) as e:

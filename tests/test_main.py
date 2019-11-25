@@ -918,6 +918,10 @@ def test_parse_obj_non_mapping_root():
 
     assert MyModel.parse_obj(['a']).__root__ == ['a']
     assert MyModel.parse_obj({'__root__': ['a']}).__root__ == ['a']
+    with pytest.raises(ValidationError, match='...'):
+        MyModel.parse_obj({'__not_root__': ['a']})
+    with pytest.raises(ValidationError, match='...'):
+        MyModel.parse_obj({'__root__': ['a'], 'other': 1})
 
 
 def test_untouched_types():
