@@ -6,10 +6,7 @@ from pydantic.parse import Protocol, load_file
 
 from .typing import display_as_type
 
-__all__ = (
-    'parse_file_as',
-    'parse_obj_as',
-)
+__all__ = ('parse_file_as', 'parse_obj_as')
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
 
@@ -26,7 +23,7 @@ def _get_parsing_type(type_: Any, *, type_name: Optional[NameFactory] = None) ->
         type_name = _generate_parsing_type_name
     if not isinstance(type_name, str):
         type_name = type_name(type_)
-    return create_model(type_name, obj=(type_, ...))
+    return create_model(type_name, __root__=(type_, ...))
 
 
 T = TypeVar('T')
@@ -34,7 +31,7 @@ T = TypeVar('T')
 
 def parse_obj_as(type_: Type[T], obj: Any, *, type_name: Optional[NameFactory] = None) -> T:
     model_type = _get_parsing_type(type_, type_name=type_name)
-    return model_type(obj=obj).obj
+    return model_type(__root__=obj).__root__
 
 
 def parse_file_as(

@@ -7,19 +7,19 @@ from pydantic.dataclasses import dataclass
 from pydantic.tools import parse_file_as, parse_obj_as
 
 
-class Model(BaseModel):
-    x: int
-    y: bool
-    z: str
-
-
-model_inputs = {'x': '1', 'y': 'true', 'z': 'abc'}
-model = Model(**model_inputs)
-
-
-@pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1]), (model_inputs, Model, model)])
+@pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1])])
 def test_parse_obj(obj, type_, parsed):
     assert parse_obj_as(type_, obj) == parsed
+
+
+def test_parse_obj_as_model():
+    class Model(BaseModel):
+        x: int
+        y: bool
+        z: str
+
+    model_inputs = {'x': '1', 'y': 'true', 'z': 'abc'}
+    assert parse_obj_as(Model, model_inputs) == Model(**model_inputs)
 
 
 def test_parse_obj_preserves_subclasses():
@@ -39,7 +39,7 @@ def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
         parse_obj_as(int, 'a')
     assert exc_info.value.errors() == [
-        {'loc': ('obj',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {'loc': ('__root__',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
     assert exc_info.value.model.__name__ == 'ParsingModel[int]'
 
