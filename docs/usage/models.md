@@ -334,6 +334,25 @@ the first and only argument to `parse_obj`.
 {!.tmp_examples/models_custom_root_field.py!}
 ```
 
+If you call the `parse_obj` method for a model with a custom root type with a *dict* as the first argument,
+the following logic is used:
+
+* If the custom root type is a mapping type (eg., `Dict` or `Mapping`),
+  the argument itself is always validated against the custom root type.
+* For other custom root types, if the dict has precisely one key with the value `__root__`,
+  the corresponding value will be validated against the custom root type.
+* Otherwise, the dict itself is validated against the custom root type.    
+
+This is demonstrated in the following example:
+
+```py
+{!.tmp_examples/models_custom_root_field_parse_obj.py!}
+```
+
+!!! warning
+    Calling the `parse_obj` method on a dict with the single key `"__root__"` for non-mapping custom root types
+    is currently supported for backwards compatibility, but is not recommended and may be dropped in a future version.
+
 ## Faux Immutability
 
 Models can be configured to be immutable via `allow_mutation = False`. When this is set, attempting to change the

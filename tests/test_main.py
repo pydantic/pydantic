@@ -905,6 +905,20 @@ def test_parse_root_as_mapping():
 
     assert MyModel.parse_obj({1: 2}).__root__ == {'1': '2'}
 
+    with pytest.raises(ValidationError) as exc_info:
+        MyModel.parse_obj({'__root__': {'1': '2'}})
+    assert exc_info.value.errors() == [
+        {'loc': ('__root__', '__root__'), 'msg': 'str type expected', 'type': 'type_error.str',}
+    ]
+
+
+def test_parse_obj_non_mapping_root():
+    class MyModel(BaseModel):
+        __root__: List[str]
+
+    assert MyModel.parse_obj(['a']).__root__ == ['a']
+    assert MyModel.parse_obj({'__root__': ['a']}).__root__ == ['a']
+
 
 def test_untouched_types():
     from pydantic import BaseModel
