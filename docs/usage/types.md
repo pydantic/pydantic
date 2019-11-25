@@ -305,11 +305,11 @@ _(This script is complete, it should run "as is")_
 ## Literal Type
 
 !!! note
-    This is not strictly part of the python standard library; 
-    it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
+    This is a new feature of the python standard library as of python 3.8; 
+    prior to python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
 
-*pydantic* supports the use of `typing_extensions.Literal` as a lightweight way to specify that a field
-may accept only specific literal values:
+*pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to python 3.8)
+as a lightweight way to specify that a field may accept only specific literal values:
 
 ```py
 {!.tmp_examples/types_literal1.py!}
