@@ -12,7 +12,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    ItemsView,
     KeysView,
     List,
     Optional,
@@ -264,9 +263,6 @@ class ModelMetaclass(ABCMeta):
         return super().__new__(mcs, name, bases, new_namespace, **kwargs)
 
 
-_not_found = object()
-
-
 class BaseModel(metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
@@ -482,10 +478,10 @@ class BaseModel(metaclass=ModelMetaclass):
         :return: new model instance
         """
 
-        v = {
-            **dict(self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False)),
+        v = dict(
+            self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False),
             **(update or {}),
-        }
+        )
 
         if deep:
             v = deepcopy(v)
@@ -615,7 +611,7 @@ class BaseModel(metaclass=ModelMetaclass):
         """
         so `dict(model)` works
         """
-        yield from self._iter()
+        yield from self.__dict__.items()
 
     def _iter(
         self,
@@ -629,7 +625,7 @@ class BaseModel(metaclass=ModelMetaclass):
     ) -> 'TupleGenerator':
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
-        if allowed_keys is None and not any((to_dict, by_alias, exclude_unset, exclude_defaults, exclude_none)):
+        if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
             # huge boost for plain _iter()
             yield from self.__dict__.items()
             return
@@ -637,36 +633,27 @@ class BaseModel(metaclass=ModelMetaclass):
         value_exclude = ValueItems(self, exclude) if exclude else None
         value_include = ValueItems(self, include) if include else None
 
-        iteritems: Union[ItemsView[str, Any], 'TupleGenerator'] = self.__dict__.items()
-        # adding only needed checks/conversions to generator
-        if allowed_keys is not None:
-            iteritems = ((k, v) for k, v in iteritems if k in allowed_keys)
-        if exclude_none:
-            iteritems = ((k, v) for k, v in iteritems if v is not None)
-        if exclude_defaults:
-            iteritems = ((k, v) for k, v in iteritems if self.__field_defaults__.get(k, _not_found) != v)
-        if by_alias:
-            fields = self.__fields__
-            iteritems = ((fields[k].alias if k in fields else k, v) for k, v in iteritems)
-        if to_dict or allowed_keys is not None:
-            iteritems = (
-                (
-                    k,
-                    self._get_value(
-                        v,
-                        to_dict=to_dict,
-                        by_alias=by_alias,
-                        include=value_include and value_include.for_element(k),
-                        exclude=value_exclude and value_exclude.for_element(k),
-                        exclude_unset=exclude_unset,
-                        exclude_defaults=exclude_defaults,
-                        exclude_none=exclude_none,
-                    ),
+        for k, v in self.__iter__():
+            if (
+                (allowed_keys is not None and k not in allowed_keys)
+                or (exclude_none and v is None)
+                or (exclude_defaults and self.__field_defaults__.get(k, _missing) == v)
+            ):
+                continue
+            if by_alias:
+                k = self.__fields__[k].alias if k in self.__fields__ else k
+            if to_dict or value_include or value_exclude:
+                v = self._get_value(
+                    v,
+                    to_dict=to_dict,
+                    by_alias=by_alias,
+                    include=value_include and value_include.for_element(k),
+                    exclude=value_exclude and value_exclude.for_element(k),
+                    exclude_unset=exclude_unset,
+                    exclude_defaults=exclude_defaults,
+                    exclude_none=exclude_none,
                 )
-                for k, v in iteritems
-            )
-
-        yield from iteritems
+            yield k, v
 
     def _calculate_keys(
         self,
