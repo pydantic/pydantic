@@ -80,13 +80,14 @@ def validator(
         each_item = not whole
 
     def dec(f: AnyCallable) -> classmethod:
-        f_cls = classmethod(f) if not isinstance(f, classmethod) else f
-        f = f_cls.__func__
-        _check_validator_name(f, allow_reuse)
+        f_cls = _prepare_validator(f, allow_reuse)
         setattr(
             f_cls,
             VALIDATOR_CONFIG_KEY,
-            (fields, Validator(func=f, pre=pre, each_item=each_item, always=always, check_fields=check_fields)),
+            (
+                fields,
+                Validator(func=f_cls.__func__, pre=pre, each_item=each_item, always=always, check_fields=check_fields),
+            ),
         )
         return f_cls
 
@@ -97,37 +98,30 @@ def root_validator(
     _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False
 ) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
     if _func:
-        f_cls = classmethod(_func) if not isinstance(_func, classmethod) else _func
-        _func = f_cls.__func__
-        _check_validator_name(_func, allow_reuse)
-        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=_func, pre=pre))
+        f_cls = _prepare_validator(_func, allow_reuse)
+        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre))
         return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
-        f_cls = classmethod(f) if not isinstance(f, classmethod) else f
-        f = f_cls.__func__
-        _check_validator_name(f, allow_reuse)
-        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f, pre=pre))
+        f_cls = _prepare_validator(f, allow_reuse)
+        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre))
         return f_cls
 
     return dec
 
 
-def _check_validator_name(f: AnyCallable, allow_reuse: bool) -> None:
+def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> classmethod:
     """
-    avoid validators with duplicated names since without this, validators can be overwritten silently
-    which generally isn't the intended behaviour, don't run in ipython - see #312
-
-    does not check for duplicated names in functions defined at the module-global level
-    since such validators are likely intended for reuse
+    Avoid validators with duplicated names since without this, validators can be overwritten silently
+    which generally isn't the intended behaviour, don't run in ipython (see #312) or if allow_reuse is False.
     """
-    if in_ipython():  # pragma: no cover
-        return
-    if not allow_reuse:
-        ref = f.__module__ + '.' + f.__qualname__
+    f_cls = function if isinstance(function, classmethod) else classmethod(function)
+    if not in_ipython() and not allow_reuse:
+        ref = f_cls.__func__.__module__ + '.' + f_cls.__func__.__qualname__
         if ref in _FUNCS:
             raise ConfigError(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
+    return f_cls
 
 
 class ValidatorGroup:
