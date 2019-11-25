@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, Extra, ValidationError, errors, validator
+from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, errors, validator
 from pydantic.class_validators import make_generic_validator, root_validator
 
 
@@ -731,6 +731,18 @@ def test_optional_validator():
     assert Model(something=None).dict() == {'something': None}
     assert Model(something='hello').dict() == {'something': 'hello'}
     assert val_calls == [None, 'hello']
+
+
+def test_required_optional():
+    class Model(BaseModel):
+        nullable: Optional[int] = Field(...)
+
+    with pytest.raises(ValidationError):
+        Model()
+    assert Model(nullable=None).dict() == {'nullable': None}
+    assert Model(nullable=3).dict() == {'nullable': 3}
+    with pytest.raises(ValidationError):
+        Model(nullable='some text')
 
 
 def test_whole():
