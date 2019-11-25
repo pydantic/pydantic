@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import product
 from typing import Dict, List, Optional, Tuple
 
 import pytest
@@ -235,7 +236,9 @@ def test_duplicates():
                 return v
 
     assert str(exc_info.value) == (
-        'duplicate validator function ' '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"'
+        'duplicate validator function '
+        '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"; '
+        'if this is intended, set `allow_reuse=True`'
     )
 
 
@@ -756,7 +759,7 @@ def test_root_validator():
             return v * 2
 
         @root_validator
-        def root_validator(cls, values):
+        def example_root_validator(cls, values):
             root_val_values.append(values)
             if 'snap' in values.get('b', ''):
                 raise ValueError('foobar')
@@ -906,3 +909,99 @@ def test_root_validator_inheritance():
     assert len(Child.__pre_root_validators__) == 0
     assert Child(a=123).dict() == {'extra2': 2, 'extra1': 1, 'a': 123}
     assert calls == ["parent validator: {'a': 123}", "child validator: {'extra1': 1, 'a': 123}"]
+
+
+def reusable_validator(num):
+    return num * 2
+
+
+def test_reuse_global_validators():
+    class Model(BaseModel):
+        x: int
+        y: int
+
+        double_x = validator('x', allow_reuse=True)(reusable_validator)
+        double_y = validator('y', allow_reuse=True)(reusable_validator)
+
+    assert dict(Model(x=1, y=1)) == {'x': 2, 'y': 2}
+
+
+def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
+    class Model(BaseModel):
+        a: str
+        b: str
+
+        @validator('a', allow_reuse=allow_1)
+        def duplicate_name(cls, v):
+            return v
+
+        @validator('b', allow_reuse=allow_2)  # noqa F811
+        def duplicate_name(cls, v):  # noqa F811
+            return v
+
+        if include_root:
+
+            @root_validator(allow_reuse=allow_3)  # noqa F811
+            def duplicate_name(cls, values):  # noqa F811
+                return values
+
+
+@pytest.fixture
+def reset_tracked_validators():
+    from pydantic.class_validators import _FUNCS
+
+    original_tracked_validators = set(_FUNCS)
+    yield
+    _FUNCS.clear()
+    _FUNCS.update(original_tracked_validators)
+
+
+@pytest.mark.parametrize('include_root,allow_1,allow_2,allow_3', product(*[[True, False]] * 4))
+def test_allow_reuse(include_root, allow_1, allow_2, allow_3, reset_tracked_validators):
+    duplication_count = int(not allow_1) + int(not allow_2) + int(include_root and not allow_3)
+    if duplication_count > 1:
+        with pytest.raises(ConfigError) as exc_info:
+            declare_with_reused_validators(include_root, allow_1, allow_2, allow_3)
+        assert str(exc_info.value).startswith('duplicate validator function')
+    else:
+        declare_with_reused_validators(include_root, allow_1, allow_2, allow_3)
+
+
+@pytest.mark.parametrize('validator_classmethod,root_validator_classmethod', product(*[[True, False]] * 2))
+def test_root_validator_classmethod(validator_classmethod, root_validator_classmethod, reset_tracked_validators):
+    root_val_values = []
+
+    class Model(BaseModel):
+        a: int = 1
+        b: str
+
+        def repeat_b(cls, v):
+            return v * 2
+
+        if validator_classmethod:
+            repeat_b = classmethod(repeat_b)
+        repeat_b = validator('b')(repeat_b)
+
+        def example_root_validator(cls, values):
+            root_val_values.append(values)
+            if 'snap' in values.get('b', ''):
+                raise ValueError('foobar')
+            return dict(values, b='changed')
+
+        if root_validator_classmethod:
+            example_root_validator = classmethod(example_root_validator)
+        example_root_validator = root_validator(example_root_validator)
+
+    assert Model(a='123', b='bar').dict() == {'a': 123, 'b': 'changed'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(b='snap dragon')
+    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='broken', b='bar')
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+    assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}, {'b': 'barbar'}]
