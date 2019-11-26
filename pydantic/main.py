@@ -264,9 +264,12 @@ class ModelMetaclass(ABCMeta):
         def fake_init():
             ...
 
-        fields_names = tuple(fields)
         orig_posonlycount = orig_code.co_posonlyargcount if PY38 else 0
         orig_argnames = orig_code.co_varnames[: orig_code.co_argcount + orig_code.co_kwonlyargcount + orig_posonlycount]
+        orig_argnames_set = set(orig_argnames)
+        fields_names = tuple([name for name in fields if name not in orig_argnames_set])
+        del orig_argnames_set
+
         fake_init.__code__ = copy_code(
             fake_init.__code__,
             co_argcount=orig_code.co_argcount,

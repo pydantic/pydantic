@@ -1043,28 +1043,23 @@ def test_init_signature(capsys):
     assert self.default is self.empty
     assert self.kind is self.POSITIONAL_OR_KEYWORD
 
-    a: inspect.Parameter = sig.parameters['a']
-    b: inspect.Parameter = sig.parameters['b']
-    c: inspect.Parameter = sig.parameters['c']
-    assert a.default is a.empty
-    assert a.annotation is float
-    assert b.default == 10
-    assert b.annotation is int
-    assert c.annotation is SubModel
-    for param in a, b, c:
-        assert param.kind is param.KEYWORD_ONLY
+    params = sig.parameters
+    kw_only = inspect.Parameter.KEYWORD_ONLY
+    empty = inspect.Parameter.empty
+    for name, kind, annotation, default in (
+        ('a', kw_only, int, empty),
+        ('b', kw_only, float, 10),
+        ('c', kw_only, SubModel, empty),
+    ):
+        assert name in params
+        param: inspect.Parameter = params[name]
+        assert param.kind is kind
+        assert param.default == default
 
     assert Model.__init__.__name__ == '__init__'
-    expected_sig = (
-        '(__pydantic_self__, *, a: float, b: int = 10, ' 'c: tests.test_main.test_init_signature.<locals>.SubModel)'
-    )
-    assert expected_sig in str(sig)
-    help(Model.__init__)
-    captured = capsys.readouterr()
-    assert expected_sig in captured.out
 
 
-def test_custom_init_signature(capsys):
+def test_custom_init_signature():
     class CustomInit(BaseModel):
         id: int
         name: str = 'John Doe'
@@ -1072,23 +1067,28 @@ def test_custom_init_signature(capsys):
         class Config:
             extra = Extra.allow
 
-        def __init__(self, foo: int, bar=2, *, baz: Any, **data):
-            super().__init__(**data)
-            self.foo = foo
+        def __init__(self, id: int = 1, bar=2, *, baz: Any, **data):
+            super().__init__(id=id, **data)
             self.bar = bar
             self.baz = baz
 
     m = CustomInit(foo=2, id=1, baz='Ok!')
     assert m.id == 1
-    assert m.foo == 2
     assert m.bar == 2
     assert m.baz == 'Ok!'
     assert m.name == 'John Doe'
 
-    help(CustomInit.__init__)
-    sig = inspect.signature(CustomInit.__init__)
-
-    expected_sig = "(self, foo: int, bar=2, *, baz: Any, id: int, name: str = 'John Doe')"
-    captured = capsys.readouterr()
-    assert expected_sig in captured.out
-    assert expected_sig in str(sig)
+    params = inspect.signature(CustomInit.__init__).parameters
+    pos_or_kw = inspect.Parameter.POSITIONAL_OR_KEYWORD
+    kw_only = inspect.Parameter.KEYWORD_ONLY
+    empty = inspect.Parameter.empty
+    for name, kind, annotation, default in (
+        ('id', pos_or_kw, int, 1),
+        ('bar', pos_or_kw, empty, 2),
+        ('baz', kw_only, Any, empty),
+        ('name', kw_only, str, 'John Doe'),
+    ):
+        assert name in params
+        param: inspect.Parameter = params[name]
+        assert param.kind is kind
+        assert param.default == default
