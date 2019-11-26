@@ -1,6 +1,8 @@
 import inspect
+import sys
 import warnings
 from importlib import import_module
+from types import CodeType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -26,6 +28,25 @@ if TYPE_CHECKING:
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
 
 KeyType = TypeVar('KeyType')
+
+PY38 = sys.version_info >= (3, 8)
+
+CODE_ARGS: Tuple[str, ...] = (
+    'co_argcount',  # type: ignore
+    *(('co_posonlyargcount',) if PY38 else ()),
+    'co_kwonlyargcount',
+    'co_nlocals',
+    'co_stacksize',
+    'co_flags',
+    'co_code',
+    'co_consts',
+    'co_names',
+    'co_varnames',
+    'co_filename',
+    'co_name',
+    'co_firstlineno',
+    'co_lnotab',
+)
 
 
 def import_string(dotted_path: str) -> Any:
@@ -112,6 +133,12 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     Return True if two floats are almost equal
     """
     return abs(value_1 - value_2) <= delta
+
+
+def copy_code(code: CodeType, **update: Any) -> CodeType:
+    if PY38:  # pragma: no cover
+        return code.replace(**update)  # type: ignore
+    return CodeType(*[update.get(arg, getattr(code, arg)) for arg in CODE_ARGS])
 
 
 class PyObjectStr(str):

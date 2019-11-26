@@ -18,7 +18,7 @@ from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import GetterDict, Representation, ValueItems, lenient_issubclass, validate_field_name
+from .utils import PY38, GetterDict, Representation, ValueItems, copy_code, lenient_issubclass, validate_field_name
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
@@ -147,6 +147,9 @@ class ModelMetaclass(ABCMeta):
         fields: Dict[str, ModelField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
+        fields_annotations: Dict[str, Type[Any]] = {}
+        fields_defaults: Dict[str, Any] = {}
+
         pre_root_validators, post_root_validators = [], []
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
@@ -161,6 +164,10 @@ class ModelMetaclass(ABCMeta):
         vg = ValidatorGroup(validators)
 
         for f in fields.values():
+            fields_annotations[f.name] = f.type_
+            if not f.required:
+                fields_defaults[f.name] = f.default
+
             f.set_config(config)
             extra_validators = vg.get_validators(f.name)
             if extra_validators:
@@ -194,6 +201,9 @@ class ModelMetaclass(ABCMeta):
                         class_validators=vg.get_validators(ann_name),
                         config=config,
                     )
+                    fields_annotations[ann_name] = ann_type
+                    if value is not ...:
+                        fields_defaults[ann_name] = value
 
             for var_name, value in namespace.items():
                 if (
@@ -216,6 +226,7 @@ class ModelMetaclass(ABCMeta):
                             f'if you wish to change the type of this field, please use a type annotation'
                         )
                     fields[var_name] = inferred
+                    fields_defaults[var_name] = value
 
         _custom_root_type = ROOT_KEY in fields
         if _custom_root_type:
@@ -238,7 +249,39 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
-        return super().__new__(mcs, name, bases, new_namespace, **kwargs)
+
+        cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
+
+        # Generating right signature for __init__:
+        orig_init = cls.__init__
+        orig_code = orig_init.__code__
+        # cannot modify cls.__init__ directly,
+        # as it shared between children classes, so we copy it
+        cls.__init__ = new_init = FunctionType(
+            orig_code, orig_init.__globals__, closure=orig_init.__closure__, name=orig_init.__name__
+        )
+
+        def fake_init():
+            ...
+
+        fields_names = tuple(fields)
+        orig_posonlycount = orig_code.co_posonlyargcount if PY38 else 0
+        orig_argnames = orig_code.co_varnames[: orig_code.co_argcount + orig_code.co_kwonlyargcount + orig_posonlycount]
+        fake_init.__code__ = copy_code(
+            fake_init.__code__,
+            co_argcount=orig_code.co_argcount,
+            co_kwonlyargcount=orig_code.co_kwonlyargcount + len(fields_names),
+            co_names=orig_code.co_names + fields_names,
+            co_varnames=orig_argnames + fields_names,
+            co_name=orig_code.co_name,
+            **({'co_posonlyargcount': orig_posonlycount} if PY38 else {}),
+        )
+        fake_init.__doc__ = new_init.__doc__ = orig_init.__doc__
+        fake_init.__defaults__ = new_init.__defaults__ = orig_init.__defaults__
+        fake_init.__kwdefaults__ = new_init.__kwdefaults__ = {**(orig_init.__kwdefaults__ or {}), **fields_defaults}
+        fake_init.__annotations__ = new_init.__annotations__ = {**orig_init.__annotations__, **fields_annotations}
+        new_init.__wrapped__ = fake_init
+        return cls
 
 
 class BaseModel(metaclass=ModelMetaclass):

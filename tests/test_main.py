@@ -1,3 +1,4 @@
+import inspect
 from enum import Enum
 from typing import Any, ClassVar, List, Mapping, Type
 
@@ -1022,3 +1023,72 @@ def test_custom_init_subclass_params():
         something = 1
 
     assert NewModel.something == 2
+
+
+def test_init_signature(capsys):
+    class SubModel(BaseModel):
+        id: int
+
+    class Model(BaseModel):
+        a: float
+        b: int = 10
+        c: SubModel
+
+    assert SubModel.__init__ is not Model.__init__
+    sig = inspect.signature(Model.__init__)
+    assert sig != inspect.signature(SubModel.__init__)
+
+    self: inspect.Parameter = sig.parameters['__pydantic_self__']
+    assert self.annotation is self.empty
+    assert self.default is self.empty
+    assert self.kind is self.POSITIONAL_OR_KEYWORD
+
+    a: inspect.Parameter = sig.parameters['a']
+    b: inspect.Parameter = sig.parameters['b']
+    c: inspect.Parameter = sig.parameters['c']
+    assert a.default is a.empty
+    assert a.annotation is float
+    assert b.default == 10
+    assert b.annotation is int
+    assert c.annotation is SubModel
+    for param in a, b, c:
+        assert param.kind is param.KEYWORD_ONLY
+
+    assert Model.__init__.__name__ == '__init__'
+    expected_sig = (
+        '(__pydantic_self__, *, a: float, b: int = 10, ' 'c: tests.test_main.test_init_signature.<locals>.SubModel)'
+    )
+    assert expected_sig in str(sig)
+    help(Model.__init__)
+    captured = capsys.readouterr()
+    assert expected_sig in captured.out
+
+
+def test_custom_init_signature(capsys):
+    class CustomInit(BaseModel):
+        id: int
+        name: str = 'John Doe'
+
+        class Config:
+            extra = Extra.allow
+
+        def __init__(self, foo: int, bar=2, *, baz: Any, **data):
+            super().__init__(**data)
+            self.foo = foo
+            self.bar = bar
+            self.baz = baz
+
+    m = CustomInit(foo=2, id=1, baz='Ok!')
+    assert m.id == 1
+    assert m.foo == 2
+    assert m.bar == 2
+    assert m.baz == 'Ok!'
+    assert m.name == 'John Doe'
+
+    help(CustomInit.__init__)
+    sig = inspect.signature(CustomInit.__init__)
+
+    expected_sig = "(self, foo: int, bar=2, *, baz: Any, id: int, name: str = 'John Doe')"
+    captured = capsys.readouterr()
+    assert expected_sig in captured.out
+    assert expected_sig in str(sig)

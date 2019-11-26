@@ -8,7 +8,7 @@ import pytest
 from pydantic import BaseModel
 from pydantic.color import Color
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
-from pydantic.utils import ValueItems, deep_update, import_string, lenient_issubclass, truncate
+from pydantic.utils import ValueItems, copy_code, deep_update, import_string, lenient_issubclass, truncate
 
 try:
     import devtools
@@ -260,3 +260,14 @@ def test_deep_update_is_not_mutating():
     updated_mapping = deep_update(mapping, {'key': {'inner_key': {'other_deep_key': 1}}})
     assert updated_mapping == {'key': {'inner_key': {'deep_key': 1, 'other_deep_key': 1}}}
     assert mapping == {'key': {'inner_key': {'deep_key': 1}}}
+
+
+def test_replace_code():
+    def f():
+        return locals()['a']
+
+    f.__code__ = copy_code(f.__code__, co_varnames=('a',), co_argcount=1, co_nlocals=1)
+    assert f.__code__.co_varnames == ('a',)
+    assert f.__code__.co_nlocals == 1
+    assert f.__code__.co_argcount == 1
+    assert f(1) == 1
