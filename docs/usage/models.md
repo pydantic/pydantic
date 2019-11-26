@@ -439,6 +439,25 @@ _(This script is complete, it should run "as is")_
 
 In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required. `b` and `c` require a value, even if the value is `None`.
 
+## Parsing data into a specified type
+
+Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing
+logic used to populate pydantic models in a more ad-hoc way. This function behaves similarly to
+`BaseModel.parse_obj`, but works with arbitrary pydantic-compatible types.
+
+This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
+For example: 
+
+```py
+{!.tmp_examples/parse_obj_as.py!}
+```
+_(This script is complete, it should run "as is")_
+
+This function is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
+
+Pydantic also includes a similar standalone function called `parse_file_as`,
+which is analogous to `BaseModel.parse_file`.
+
 ## Data Conversion
 
 *pydantic* may cast input data to force it to conform to model field types,
