@@ -212,7 +212,7 @@ class ModelField(Representation):
         class_validators: Optional[Dict[str, Validator]],
         model_config: Type['BaseConfig'],
         default: Any = None,
-        required: Union[bool, object] = Undefined,
+        required: Union[bool, UndefinedClass] = Undefined,
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
@@ -223,7 +223,7 @@ class ModelField(Representation):
         self.type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
-        self.required: Union[bool, object] = required
+        self.required: Union[bool, UndefinedClass] = required
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
 
@@ -256,13 +256,12 @@ class ModelField(Representation):
             field_info = value
             value = field_info.default
         else:
-            field_info = FieldInfo(value if value is not Undefined else Required, **field_info_from_config)
-        required = Undefined
-        if value == Required:
+            field_info = FieldInfo(value, **field_info_from_config)
+        required: Union[bool, UndefinedClass] = Undefined
+        if value is Required:
             required = True
-        elif value == Undefined:
-            value = Required
-        else:
+            value = None
+        elif value is not Undefined:
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
         annotation = get_annotation_from_field_info(annotation, field_info, name)
@@ -271,7 +270,7 @@ class ModelField(Representation):
             type_=annotation,
             alias=field_info.alias,
             class_validators=class_validators,
-            default=None if required is True else value,
+            default=value,
             required=required,
             model_config=config,
             field_info=field_info,
@@ -310,7 +309,8 @@ class ModelField(Representation):
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
-        if self.default is Required:
+            self.field_info.default = Required
+        if self.default is Undefined:
             self.default = None
         self._populate_validators()
 
