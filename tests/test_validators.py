@@ -735,12 +735,23 @@ def test_optional_validator():
 
 def test_required_optional():
     class Model(BaseModel):
-        nullable: Optional[int] = Field(...)
+        nullable1: Optional[int] = ...
+        nullable2: Optional[int] = Field(...)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc_info:
         Model()
-    assert Model(nullable=None).dict() == {'nullable': None}
-    assert Model(nullable=3).dict() == {'nullable': 3}
+    assert exc_info.value.errors() == [
+        {'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(nullable1=1)
+    assert exc_info.value.errors() == [{'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(nullable2=2)
+    assert exc_info.value.errors() == [{'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert Model(nullable1=None, nullable2=None).dict() == {'nullable1': None, 'nullable2': None}
+    assert Model(nullable1=1, nullable2=2).dict() == {'nullable1': 1, 'nullable2': 2}
     with pytest.raises(ValidationError):
         Model(nullable='some text')
 
