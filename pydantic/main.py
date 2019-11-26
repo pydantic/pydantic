@@ -261,23 +261,27 @@ class ModelMetaclass(ABCMeta):
             orig_code, orig_init.__globals__, closure=orig_init.__closure__, name=orig_init.__name__
         )
 
-        def fake_init():
-            ...
-
         orig_posonlycount = orig_code.co_posonlyargcount if PY38 else 0
         orig_argnames = orig_code.co_varnames[: orig_code.co_argcount + orig_code.co_kwonlyargcount + orig_posonlycount]
         orig_argnames_set = set(orig_argnames)
         fields_names = tuple([name for name in fields if name not in orig_argnames_set])
         del orig_argnames_set
 
-        fake_init.__code__ = copy_code(
-            fake_init.__code__,
-            co_argcount=orig_code.co_argcount,
-            co_kwonlyargcount=orig_code.co_kwonlyargcount + len(fields_names),
-            co_names=orig_code.co_names + fields_names,
-            co_varnames=orig_argnames + fields_names,
-            co_name=orig_code.co_name,
-            **({'co_posonlyargcount': orig_posonlycount} if PY38 else {}),
+        def fake_init():
+            ...
+
+        fake_init = FunctionType(
+            copy_code(
+                fake_init.__code__,
+                co_argcount=orig_code.co_argcount,
+                co_kwonlyargcount=orig_code.co_kwonlyargcount + len(fields_names),
+                co_names=orig_code.co_names + fields_names,
+                co_varnames=orig_argnames + fields_names,
+                co_name=orig_code.co_name,
+                **({'co_posonlyargcount': orig_posonlycount} if PY38 else {}),
+            ),
+            orig_init.__globals__,
+            name=orig_init.__name__,
         )
         fake_init.__doc__ = new_init.__doc__ = orig_init.__doc__
         fake_init.__defaults__ = new_init.__defaults__ = orig_init.__defaults__
