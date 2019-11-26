@@ -213,7 +213,7 @@ class ModelField(Representation):
         class_validators: Optional[Dict[str, Validator]],
         model_config: Type['BaseConfig'],
         default: Any = None,
-        required: BoolUndefined = Undefined,
+        required: 'BoolUndefined' = Undefined,
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
@@ -224,7 +224,7 @@ class ModelField(Representation):
         self.type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
-        self.required: BoolUndefined = required
+        self.required: 'BoolUndefined' = required
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
 
@@ -258,7 +258,7 @@ class ModelField(Representation):
             value = field_info.default
         else:
             field_info = FieldInfo(value, **field_info_from_config)
-        required: BoolUndefined = Undefined
+        required: 'BoolUndefined' = Undefined
         if value is Required:
             required = True
             value = None
