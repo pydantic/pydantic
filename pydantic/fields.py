@@ -29,7 +29,14 @@ from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_lik
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
-Undefined = object()
+
+
+class UndefinedClass:
+    def __repr__(self) -> str:
+        return 'PydanticUndefined'
+
+
+Undefined = UndefinedClass()
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorsList  # noqa: F401
