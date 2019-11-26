@@ -31,12 +31,12 @@ from .validators import constant_validator, dict_validator, find_validators, val
 Required: Any = Ellipsis
 
 
-class UndefinedClass:
+class UndefinedType:
     def __repr__(self) -> str:
         return 'PydanticUndefined'
 
 
-Undefined = UndefinedClass()
+Undefined = UndefinedType()
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorsList  # noqa: F401
@@ -47,6 +47,7 @@ if TYPE_CHECKING:
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
+    BoolUndefined = Union[bool, UndefinedType]
 
 
 class FieldInfo(Representation):
@@ -212,7 +213,7 @@ class ModelField(Representation):
         class_validators: Optional[Dict[str, Validator]],
         model_config: Type['BaseConfig'],
         default: Any = None,
-        required: Union[bool, UndefinedClass] = Undefined,
+        required: BoolUndefined = Undefined,
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
@@ -223,7 +224,7 @@ class ModelField(Representation):
         self.type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
-        self.required: Union[bool, UndefinedClass] = required
+        self.required: BoolUndefined = required
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
 
@@ -257,7 +258,7 @@ class ModelField(Representation):
             value = field_info.default
         else:
             field_info = FieldInfo(value, **field_info_from_config)
-        required: Union[bool, UndefinedClass] = Undefined
+        required: BoolUndefined = Undefined
         if value is Required:
             required = True
             value = None
