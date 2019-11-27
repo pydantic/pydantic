@@ -138,7 +138,7 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
 
 
 def copy_code(code: CodeType, **update: Any) -> CodeType:
-    if PY38:  # pragma: no cover
+    if PY38:
         return code.replace(**update)  # type: ignore
     return CodeType(*[update.get(arg, getattr(code, arg)) for arg in CODE_ARGS])
 
