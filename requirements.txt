@@ -4,7 +4,7 @@
 
 docutils==0.15.2
 devtools==0.5.1
-pygments==2.4.2
+pygments==2.5.1
 email-validator==1.0.5
 dataclasses==0.6; python_version < '3.7'
 typing-extensions==3.7.4.1
