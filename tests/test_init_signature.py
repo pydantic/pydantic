@@ -19,15 +19,6 @@ def test_init_signature():
     sig = signature(Model.__init__)
     assert sig != signature(BaseModel.__init__)
 
-    expected_signature = '(__pydantic_self__, *, a: float, b: int = 10, **data: Any) -> None'
-    assert str(sig).replace(' ', '') == expected_signature.replace(' ', '')
-    assert Model.__init__.__doc__.replace(' ', '').replace('\n', '') == (
-        'Signature is generated based on model fields. Real signature:'
-        '(__pydantic_self__, **data: Any) -> None'
-        'Create a new model by parsing and validating input data from keyword arguments'
-        ':raises ValidationError if the input data cannot be parsed to for a valid model.'
-    ).replace(' ', '').replace('\n', '')
-
     params = sig.parameters
     params_iterator = iter(sig.parameters.values())  # checking order
     for name, kind, annotation, default in (
@@ -41,8 +32,17 @@ def test_init_signature():
         assert param.kind is kind
         assert param.default == default
 
-    assert Model.__init__.__qualname__ == 'BaseModel.__init__'
+    assert Model.__init__.__name__ == '__init__'
     assert Model.__init__.__module__ == 'pydantic.main'
+
+    expected_signature = '(__pydantic_self__, *, a: float, b: int = 10, **data: Any) -> None'
+    assert str(sig).replace(' ', '') == expected_signature.replace(' ', '')
+    assert Model.__init__.__doc__.replace(' ', '').replace('\n', '') == (
+        'Signature is generated based on model fields. Real signature:'
+        '(__pydantic_self__, **data: Any) -> None'
+        'Create a new model by parsing and validating input data from keyword arguments'
+        ':raises ValidationError if the input data cannot be parsed to for a valid model.'
+    ).replace(' ', '').replace('\n', '')
 
 
 def test_custom_init_signature():
@@ -77,6 +77,7 @@ def test_custom_init_signature():
         assert name in params
         param: Parameter = params[name]
         assert param is next(params_iterator)
+
         assert param.kind is kind
         assert param.default == default
 
@@ -86,7 +87,8 @@ def test_custom_init_signature():
         'Signature is generated based on model fields. Real signature:'
         '(self, id: int = 1, bar=2, *, baz: Any, **data)'
     ).replace(' ', '').replace('\n', '')
-    assert MyModel.__init__.__qualname__ == test_custom_init_signature.__name__ + '.<locals>.MyModel.__init__'
+
+    assert MyModel.__init__.__name__ == '__init__'
     assert MyModel.__init__.__module__ == test_custom_init_signature.__module__
 
 
