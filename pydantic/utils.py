@@ -1,8 +1,9 @@
 import inspect
 import sys
 import warnings
+from functools import wraps
 from importlib import import_module
-from types import CodeType
+from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -26,6 +27,7 @@ from .typing import AnyType, display_as_type
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+    from .fields import ModelField  # noqa: F401
 
 KeyType = TypeVar('KeyType')
 
@@ -139,6 +141,69 @@ def copy_code(code: CodeType, **update: Any) -> CodeType:
     if PY38:  # pragma: no cover
         return code.replace(**update)  # type: ignore
     return CodeType(*[update.get(arg, getattr(code, arg)) for arg in CODE_ARGS])
+
+
+def generate_typed_init(
+    current_init: FunctionType,
+    fields: Dict[str, 'ModelField'],
+    defaults: Dict[str, Any],
+    annotations: Dict[str, Any],
+    compiled: bool,
+) -> FunctionType:
+    """
+    Generate typed signature for init
+    """
+    if not compiled:
+        # can perform this in python, however in cython this will cause "unknown opcode" on call
+        orig_init = current_init
+        orig_code = orig_init.__code__
+        new_init = FunctionType(
+            orig_code, orig_init.__globals__, closure=orig_init.__closure__, name=orig_init.__name__
+        )
+    else:
+        orig_init = getattr(current_init, '__origin__', current_init)
+        orig_code = orig_init.__code__
+
+        @wraps(orig_init)
+        def __init__(*args, **kwargs):  # type: ignore
+            orig_init(*args, **kwargs)
+
+        new_init = __init__  # type: ignore
+        new_init.__origin__ = orig_init  # type: ignore
+
+    orig_posonlycount = orig_code.co_posonlyargcount if PY38 else 0  # type: ignore
+    orig_allargscount = orig_code.co_argcount + orig_code.co_kwonlyargcount + orig_posonlycount
+    orig_argnames = orig_code.co_varnames[:orig_allargscount]
+    orig_othernames = orig_code.co_varnames[orig_allargscount:]
+
+    orig_argnames_set = set(orig_argnames)  # just for fast lookups
+    valid_fields_args = tuple([name for name in fields if name not in orig_argnames_set and name.isidentifier()])
+    del orig_argnames_set
+
+    fake_init = FunctionType(
+        copy_code(
+            orig_code,
+            co_argcount=orig_code.co_argcount,
+            co_kwonlyargcount=orig_code.co_kwonlyargcount + len(valid_fields_args),
+            co_names=orig_code.co_names,
+            co_varnames=orig_argnames + valid_fields_args + orig_othernames,
+            co_name=orig_code.co_name,
+            **({'co_posonlyargcount': orig_posonlycount} if PY38 else {}),
+        ),
+        orig_init.__globals__,
+        name=orig_init.__name__,
+    )
+
+    real_signatire = inspect.signature(orig_init)
+    additional_doc = f'Signature is generated based on model fields. Real signature:\n    {real_signatire}\n'
+    fake_init.__doc__ = new_init.__doc__ = additional_doc + (orig_init.__doc__ or '')
+    fake_init.__defaults__ = new_init.__defaults__ = orig_init.__defaults__
+    fake_init.__kwdefaults__ = new_init.__kwdefaults__ = {**(orig_init.__kwdefaults__ or {}), **defaults}
+    fake_init.__annotations__ = new_init.__annotations__ = {**orig_init.__annotations__, **annotations}
+
+    new_init.__wrapped__ = fake_init  # type: ignore
+    new_init.__signature__ = inspect.signature(fake_init)  # type: ignore
+    return new_init
 
 
 class PyObjectStr(str):

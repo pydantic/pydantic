@@ -18,7 +18,7 @@ from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import PY38, GetterDict, Representation, ValueItems, copy_code, lenient_issubclass, validate_field_name
+from .utils import GetterDict, Representation, ValueItems, generate_typed_init, lenient_issubclass, validate_field_name
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
@@ -240,7 +240,7 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
-            '__field_defaults__': {n: f.default for n, f in fields.items() if not f.required},
+            '__field_defaults__': fields_defaults,
             '__validators__': vg.validators,
             '__pre_root_validators__': pre_root_validators + pre_rv_new,
             '__post_root_validators__': post_root_validators + post_rv_new,
@@ -251,43 +251,7 @@ class ModelMetaclass(ABCMeta):
         }
 
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
-
-        # Generating right signature for __init__:
-        orig_init = cls.__init__
-        orig_code = orig_init.__code__
-        # cannot modify cls.__init__ directly,
-        # as it shared between children classes, so we copy it
-        cls.__init__ = new_init = FunctionType(
-            orig_code, orig_init.__globals__, closure=orig_init.__closure__, name=orig_init.__name__
-        )
-
-        orig_posonlycount = orig_code.co_posonlyargcount if PY38 else 0
-        orig_argnames = orig_code.co_varnames[: orig_code.co_argcount + orig_code.co_kwonlyargcount + orig_posonlycount]
-        orig_argnames_set = set(orig_argnames)
-        fields_names = tuple([name for name in fields if name not in orig_argnames_set])
-        del orig_argnames_set
-
-        def fake_init():
-            ...
-
-        fake_init = FunctionType(
-            copy_code(
-                fake_init.__code__,
-                co_argcount=orig_code.co_argcount,
-                co_kwonlyargcount=orig_code.co_kwonlyargcount + len(fields_names),
-                co_names=orig_code.co_names + fields_names,
-                co_varnames=orig_argnames + fields_names,
-                co_name=orig_code.co_name,
-                **({'co_posonlyargcount': orig_posonlycount} if PY38 else {}),
-            ),
-            orig_init.__globals__,
-            name=orig_init.__name__,
-        )
-        fake_init.__doc__ = new_init.__doc__ = orig_init.__doc__
-        fake_init.__defaults__ = new_init.__defaults__ = orig_init.__defaults__
-        fake_init.__kwdefaults__ = new_init.__kwdefaults__ = {**(orig_init.__kwdefaults__ or {}), **fields_defaults}
-        fake_init.__annotations__ = new_init.__annotations__ = {**orig_init.__annotations__, **fields_annotations}
-        new_init.__wrapped__ = fake_init
+        cls.__init__ = generate_typed_init(cls.__init__, fields, fields_defaults, fields_annotations, compiled)
         return cls
 
 
@@ -315,6 +279,11 @@ class BaseModel(metaclass=ModelMetaclass):
     __repr__ = Representation.__repr__
 
     def __init__(__pydantic_self__, **data: Any) -> None:
+        """
+        Create a new model by parsing and validating input data from keyword arguments
+
+        :raises ValidationError if the input data cannot be parsed to for a valid model.
+        """
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
         if TYPE_CHECKING:
             __pydantic_self__.__dict__: Dict[str, Any] = {}

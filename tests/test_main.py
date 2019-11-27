@@ -1,4 +1,3 @@
-import inspect
 from enum import Enum
 from typing import Any, ClassVar, List, Mapping, Type
 
@@ -1023,72 +1022,3 @@ def test_custom_init_subclass_params():
         something = 1
 
     assert NewModel.something == 2
-
-
-def test_init_signature(capsys):
-    class SubModel(BaseModel):
-        id: int
-
-    class Model(BaseModel):
-        a: float
-        b: int = 10
-        c: SubModel
-
-    assert SubModel.__init__ is not Model.__init__
-    sig = inspect.signature(Model.__init__)
-    assert sig != inspect.signature(SubModel.__init__)
-
-    self: inspect.Parameter = sig.parameters['__pydantic_self__']
-    assert self.annotation is self.empty
-    assert self.default is self.empty
-    assert self.kind is self.POSITIONAL_OR_KEYWORD
-
-    params = sig.parameters
-    kw_only = inspect.Parameter.KEYWORD_ONLY
-    empty = inspect.Parameter.empty
-    for name, kind, annotation, default in (
-        ('a', kw_only, int, empty),
-        ('b', kw_only, float, 10),
-        ('c', kw_only, SubModel, empty),
-    ):
-        assert name in params
-        param: inspect.Parameter = params[name]
-        assert param.kind is kind
-        assert param.default == default
-
-    assert Model.__init__.__name__ == '__init__'
-
-
-def test_custom_init_signature():
-    class CustomInit(BaseModel):
-        id: int
-        name: str = 'John Doe'
-
-        class Config:
-            extra = Extra.allow
-
-        def __init__(self, id: int = 1, bar=2, *, baz: Any, **data):
-            super().__init__(id=id, **data)
-            self.bar = bar
-            self.baz = baz
-
-    m = CustomInit(foo=2, id=1, baz='Ok!')
-    assert m.id == 1
-    assert m.bar == 2
-    assert m.baz == 'Ok!'
-    assert m.name == 'John Doe'
-
-    params = inspect.signature(CustomInit.__init__).parameters
-    pos_or_kw = inspect.Parameter.POSITIONAL_OR_KEYWORD
-    kw_only = inspect.Parameter.KEYWORD_ONLY
-    empty = inspect.Parameter.empty
-    for name, kind, annotation, default in (
-        ('id', pos_or_kw, int, 1),
-        ('bar', pos_or_kw, empty, 2),
-        ('baz', kw_only, Any, empty),
-        ('name', kw_only, str, 'John Doe'),
-    ):
-        assert name in params
-        param: inspect.Parameter = params[name]
-        assert param.kind is kind
-        assert param.default == default
