@@ -24,6 +24,7 @@ from .typing import AnyType, display_as_type
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+    from .dataclasses import DataclassType  # noqa: F401
 
 KeyType = TypeVar('KeyType')
 
@@ -112,6 +113,19 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     Return True if two floats are almost equal
     """
     return abs(value_1 - value_2) <= delta
+
+
+def get_model(obj: Union[Type['BaseModel'], Type['DataclassType']]) -> Type['BaseModel']:
+    from .main import BaseModel  # noqa: F811
+
+    try:
+        model_cls = obj.__pydantic_model__  # type: ignore
+    except AttributeError:
+        model_cls = obj
+
+    if not issubclass(model_cls, BaseModel):
+        raise TypeError('Unsupported type, must be either BaseModel or dataclass')
+    return model_cls
 
 
 class PyObjectStr(str):
