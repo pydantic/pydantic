@@ -202,7 +202,7 @@ class ModelMetaclass(ABCMeta):
                         config=config,
                     )
                     fields_annotations[ann_name] = ann_type
-                    if value is not ...:
+                    if value is not Undefined:
                         fields_defaults[ann_name] = value
 
             for var_name, value in namespace.items():

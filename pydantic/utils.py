@@ -196,14 +196,9 @@ def generate_typed_init(
     )
 
     doc = orig_init.__doc__ or ''
-    real_signature = inspect.signature(orig_init)
-    new_doc = f'Signature is generated based on model fields. Real signature:\n    {real_signature}\n'
-    current_pos = doc.find('Signature is generated based on model fields')
-    if current_pos == -1:
-        doc = new_doc + doc
-    else:
-        old_doc = '\n'.join(doc[current_pos:].split('\n', maxsplit=2)[:2])
-        doc = doc.replace(old_doc + '\n', new_doc)
+    caption = '\n(signature auto generated from model fields)'
+    if caption not in doc:
+        doc += caption
 
     fake_init.__doc__ = new_init.__doc__ = doc
     fake_init.__defaults__ = new_init.__defaults__ = orig_init.__defaults__

@@ -26,12 +26,11 @@ def test_init_signature():
 
     expected_signature = '(__pydantic_self__, *, a: float, b: int = 10, **data: Any) -> None'
     assert str(sig).replace(' ', '') == expected_signature.replace(' ', '')
-    assert Model.__init__.__doc__.replace(' ', '').replace('\n', '') == (
-        'Signature is generated based on model fields. Real signature:'
-        '(__pydantic_self__, **data: Any) -> None'
-        'Create a new model by parsing and validating input data from keyword arguments'
-        ':raises ValidationError if the input data cannot be parsed to for a valid model.'
-    ).replace(' ', '').replace('\n', '')
+    assert Model.__init__.__doc__.replace('    ', '') == (
+        '\nCreate a new model by parsing and validating input data from keyword arguments'
+        '\n\n:raises ValidationError if the input data cannot be parsed to for a valid model.'
+        '\n\n(signature auto generated from model fields)'
+    )
 
 
 def test_custom_init_signature():
@@ -65,11 +64,7 @@ def test_custom_init_signature():
 
     expected_signature = "(self, id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', **data)"
     assert str(sig).replace(' ', '') == expected_signature.replace(' ', '')
-    assert MyModel.__init__.__doc__.replace(' ', '').replace('\n', '') == (
-        'Signature is generated based on model fields. Real signature:'
-        '(self, id: int = 1, bar=2, *, baz: Any, **data)'
-    ).replace(' ', '').replace('\n', '')
-
+    assert MyModel.__init__.__doc__ == '\n(signature auto generated from model fields)'
     assert MyModel.__init__.__name__ == '__init__'
     assert MyModel.__init__.__module__ == test_custom_init_signature.__module__
 
