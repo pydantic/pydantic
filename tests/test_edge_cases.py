@@ -1391,3 +1391,20 @@ def test_repr_method_inheritance():
 
     assert repr(Foo()) == '7'
     assert repr(Bar()) == '7'
+
+
+def test_optional_validator():
+    val_calls = []
+
+    class Model(BaseModel):
+        something: Optional[str]
+
+        @validator('something')
+        def check_something(cls, v):
+            val_calls.append(v)
+            return v
+
+    assert Model().dict() == {'something': None}
+    assert Model(something=None).dict() == {'something': None}
+    assert Model(something='hello').dict() == {'something': 'hello'}
+    assert val_calls == [None, 'hello']

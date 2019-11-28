@@ -427,13 +427,7 @@ with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
 If you want to specify a field that can take a `None` value while still being required, you can use `Optional` with `...`:
 
 ```py
-from typing import Optional
-from pydantic import BaseModel, Field
-
-class Model(BaseModel):
-    a: Optional[int]
-    b: Optional[int] = ...
-    c: Optional[int] = Field(...)
+{!.tmp_examples/models_required_field_optional.py!}
 ```
 _(This script is complete, it should run "as is")_
 
