@@ -276,3 +276,7 @@ def test_replace_code():
     assert f.__code__.co_nlocals == 1
     assert f.__code__.co_argcount == 1
     assert f(1) == 1
+
+
+def test_undefined_repr():
+    assert repr(Undefined) == 'PydanticUndefined'
