@@ -30,6 +30,14 @@ from .validators import constant_validator, dict_validator, find_validators, val
 
 Required: Any = Ellipsis
 
+
+class UndefinedType:
+    def __repr__(self) -> str:
+        return 'PydanticUndefined'
+
+
+Undefined = UndefinedType()
+
 if TYPE_CHECKING:
     from .class_validators import ValidatorsList  # noqa: F401
     from .error_wrappers import ErrorList
@@ -39,6 +47,7 @@ if TYPE_CHECKING:
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
+    BoolUndefined = Union[bool, UndefinedType]
 
 
 class FieldInfo(Representation):
@@ -204,7 +213,7 @@ class ModelField(Representation):
         class_validators: Optional[Dict[str, Validator]],
         model_config: Type['BaseConfig'],
         default: Any = None,
-        required: bool = True,
+        required: 'BoolUndefined' = Undefined,
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
@@ -215,7 +224,7 @@ class ModelField(Representation):
         self.type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
-        self.required: bool = required
+        self.required: 'BoolUndefined' = required
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
 
@@ -249,15 +258,20 @@ class ModelField(Representation):
             value = field_info.default
         else:
             field_info = FieldInfo(value, **field_info_from_config)
+        required: 'BoolUndefined' = Undefined
+        if value is Required:
+            required = True
+            value = None
+        elif value is not Undefined:
+            required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
-        required = value == Required
         annotation = get_annotation_from_field_info(annotation, field_info, name)
         return cls(
             name=name,
             type_=annotation,
             alias=field_info.alias,
             class_validators=class_validators,
-            default=None if required else value,
+            default=value,
             required=required,
             model_config=config,
             field_info=field_info,
@@ -290,10 +304,15 @@ class ModelField(Representation):
             v.always for v in self.class_validators.values()
         )
 
-        if not self.required and self.default is None:
+        if self.required is False and self.default is None:
             self.allow_none = True
 
         self._type_analysis()
+        if self.required is Undefined:
+            self.required = True
+            self.field_info.default = Required
+        if self.default is Undefined:
+            self.default = None
         self._populate_validators()
 
     def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
@@ -313,7 +332,8 @@ class ModelField(Representation):
                 self.type_ = Any
 
         if self.type_ is Any:
-            self.required = False
+            if self.required is Undefined:
+                self.required = False
             self.allow_none = True
             return
         elif self.type_ is Pattern:
@@ -332,7 +352,8 @@ class ModelField(Representation):
             types_ = []
             for type_ in self.type_.__args__:
                 if type_ is NoneType:  # type: ignore
-                    self.required = False
+                    if self.required is Undefined:
+                        self.required = False
                     self.allow_none = True
                     continue
                 types_.append(type_)

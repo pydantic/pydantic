@@ -424,6 +424,15 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
 with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
 
+If you want to specify a field that can take a `None` value while still being required, you can use `Optional` with `...`:
+
+```py
+{!.tmp_examples/models_required_field_optional.py!}
+```
+_(This script is complete, it should run "as is")_
+
+In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required. `b` and `c` require a value, even if the value is `None`.
+
 ## Parsing data into a specified type
 
 Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing
