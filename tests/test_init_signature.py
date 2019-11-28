@@ -19,7 +19,9 @@ def test_init_signature():
     sig = signature(Model.__init__)
     assert sig != signature(BaseModel.__init__)
 
-    assert [str(p) for p in sig.parameters.values()] == ['__pydantic_self__', 'a: float', 'b: int = 10', '**data: Any']
+    assert [str(p).replace(' ', '')for p in sig.parameters.values()] == [
+        arg.replace(' ', '') for arg in ('__pydantic_self__', 'a: float', 'b: int = 10', '**data: Any')
+    ]
 
     assert Model.__init__.__name__ == '__init__'
     assert Model.__init__.__module__ == 'pydantic.main'
@@ -53,13 +55,8 @@ def test_custom_init_signature():
     assert m.name == 'John Doe'
 
     sig = signature(MyModel.__init__)
-    assert [str(p) for p in sig.parameters.values()] == [
-        'self',
-        'id: int = 1',
-        'bar=2',
-        'baz: Any',
-        "name: str = 'John Doe'",
-        '**data',
+    assert [str(p).replace(' ', '') for p in sig.parameters.values()] == [
+        arg.replace(' ', '') for arg in ('self', 'id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", '**data')
     ]
 
     expected_signature = "(self, id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', **data)"
