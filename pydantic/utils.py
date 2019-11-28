@@ -192,7 +192,7 @@ def generate_typed_init(
         ),
         orig_init.__globals__,
         name=orig_init.__name__,
-        closure=None,
+        closure=(),
     )
 
     docs = orig_init.__doc__ or ''
