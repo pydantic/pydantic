@@ -166,7 +166,7 @@ class ModelMetaclass(ABCMeta):
             if extra_validators:
                 f.class_validators.update(extra_validators)
                 # re-run prepare to add extra validators
-                f.prepare()
+                f.populate_validators()
 
         prepare_config(config, name)
 

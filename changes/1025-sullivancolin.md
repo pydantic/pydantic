@@ -1,1 +1,0 @@
-add testimonials section to docs
