@@ -1,0 +1,1 @@
+Add `__init__` signature generation based on model fields
