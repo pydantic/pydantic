@@ -94,14 +94,14 @@ def test_custom_init_signature():
 
 @pytest.mark.skipif(not compiled, reason='if not compiled, __init__ is copied without need to reference to original')
 def test_original_init_compiled():
-    assert hasattr(BaseModel.__init__, '__origin__')
-    base_model_origin_init = BaseModel.__init__.__origin__
+    assert hasattr(BaseModel.__init__, '__origin_init__')
+    base_model_origin_init = BaseModel.__init__.__origin_init__
     assert base_model_origin_init is not BaseModel.__init__
 
     class Model(BaseModel):
         id: int
 
-    assert Model.__init__.__origin__ == base_model_origin_init
+    assert Model.__init__.__origin_init__ is base_model_origin_init
 
     class ModelTwo(BaseModel):
         def __init__(self, **kwargs):
@@ -110,8 +110,8 @@ def test_original_init_compiled():
         origin = __init__
 
     assert ModelTwo.__init__ is not ModelTwo.origin
-    assert ModelTwo.__init__.__origin__ is ModelTwo.origin
-    assert ModelTwo.__init__.__origin__ is not base_model_origin_init
+    assert ModelTwo.__init__.__origin_init__ is ModelTwo.origin
+    assert ModelTwo.__init__.__origin_init__ is not base_model_origin_init
 
 
 @pytest.mark.skipif(compiled, reason='for the reason above, this test cannot be runned when compiled')

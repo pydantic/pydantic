@@ -161,7 +161,7 @@ def generate_typed_init(
             orig_code, orig_init.__globals__, closure=orig_init.__closure__, name=orig_init.__name__
         )
     else:
-        orig_init = getattr(current_init, '__origin__', current_init)
+        orig_init = getattr(current_init, '__origin_init__', current_init)
         orig_code = orig_init.__code__
 
         @wraps(orig_init)
@@ -169,7 +169,7 @@ def generate_typed_init(
             orig_init(*args, **kwargs)
 
         new_init = __init__  # type: ignore
-        new_init.__origin__ = orig_init  # type: ignore
+        new_init.__origin_init__ = orig_init  # type: ignore
 
     orig_posonlycount = orig_code.co_posonlyargcount if PY38 else 0  # type: ignore
     orig_allargscount = orig_code.co_argcount + orig_code.co_kwonlyargcount + orig_posonlycount
@@ -192,15 +192,20 @@ def generate_typed_init(
         ),
         orig_init.__globals__,
         name=orig_init.__name__,
-        closure=(),
+        closure=orig_init.__closure__ or () if PY38 else (),
     )
 
-    docs = orig_init.__doc__ or ''
-    if 'Signature is generated based on model fields' not in docs:
-        real_signatire = inspect.signature(orig_init)
-        docs = f'Signature is generated based on model fields. Real signature:\n    {real_signatire}\n' + docs
+    doc = orig_init.__doc__ or ''
+    real_signature = inspect.signature(orig_init)
+    new_doc = f'Signature is generated based on model fields. Real signature:\n    {real_signature}\n'
+    current_pos = doc.find('Signature is generated based on model fields')
+    if current_pos == -1:
+        doc = new_doc + doc
+    else:
+        old_doc = '\n'.join(doc[current_pos:].split('\n', maxsplit=2)[:2])
+        doc = doc.replace(old_doc + '\n', new_doc)
 
-    fake_init.__doc__ = new_init.__doc__ = docs
+    fake_init.__doc__ = new_init.__doc__ = doc
     fake_init.__defaults__ = new_init.__defaults__ = orig_init.__defaults__
     fake_init.__kwdefaults__ = new_init.__kwdefaults__ = {**(orig_init.__kwdefaults__ or {}), **defaults}
     fake_init.__annotations__ = new_init.__annotations__ = {**orig_init.__annotations__, **annotations}
