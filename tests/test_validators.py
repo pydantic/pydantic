@@ -1,10 +1,10 @@
 from datetime import datetime
 from itertools import product
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, errors, validator
+from pydantic import BaseModel, ConfigError, Extra, ValidationError, errors, validator
 from pydantic.class_validators import make_generic_validator, root_validator
 
 
@@ -717,72 +717,6 @@ def test_assert_raises_validation_error():
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
     ]
-
-
-def test_required_optional():
-    class Model(BaseModel):
-        nullable1: Optional[int] = ...
-        nullable2: Optional[int] = Field(...)
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model()
-    assert exc_info.value.errors() == [
-        {'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
-    ]
-    with pytest.raises(ValidationError) as exc_info:
-        Model(nullable1=1)
-    assert exc_info.value.errors() == [{'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'}]
-    with pytest.raises(ValidationError) as exc_info:
-        Model(nullable2=2)
-    assert exc_info.value.errors() == [{'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'}]
-    assert Model(nullable1=None, nullable2=None).dict() == {'nullable1': None, 'nullable2': None}
-    assert Model(nullable1=1, nullable2=2).dict() == {'nullable1': 1, 'nullable2': 2}
-    with pytest.raises(ValidationError) as exc_info:
-        Model(nullable1='some text')
-    assert exc_info.value.errors() == [
-        {'loc': ('nullable1',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
-    ]
-
-
-def test_required_any():
-    class Model(BaseModel):
-        optional1: Any
-        optional2: Any = None
-        nullable1: Any = ...
-        nullable2: Any = Field(...)
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model()
-    assert exc_info.value.errors() == [
-        {'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
-    ]
-    with pytest.raises(ValidationError) as exc_info:
-        Model(nullable1='a')
-    assert exc_info.value.errors() == [{'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'}]
-    with pytest.raises(ValidationError) as exc_info:
-        Model(nullable2=False)
-    assert exc_info.value.errors() == [{'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'}]
-    assert Model(nullable1=None, nullable2=None).dict() == {
-        'optional1': None,
-        'optional2': None,
-        'nullable1': None,
-        'nullable2': None,
-    }
-    assert Model(nullable1=1, nullable2='two').dict() == {
-        'optional1': None,
-        'optional2': None,
-        'nullable1': 1,
-        'nullable2': 'two',
-    }
-    assert Model(optional1='op1', optional2=False, nullable1=1, nullable2='two').dict() == {
-        'optional1': 'op1',
-        'optional2': False,
-        'nullable1': 1,
-        'nullable2': 'two',
-    }
 
 
 def test_whole():
