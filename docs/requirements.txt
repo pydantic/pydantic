@@ -1,5 +1,6 @@
 ansi2html==1.5.2
 mkdocs==1.0.4
+pygments==2.5.1
 mkdocs-exclude==1.0.2
 mkdocs-material==4.5.0
 markdown-include==0.5.1

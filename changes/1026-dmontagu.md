@@ -1,1 +1,0 @@
-Add support for `typing.Literal` for Python 3.8.

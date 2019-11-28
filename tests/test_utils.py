@@ -7,6 +7,7 @@ import pytest
 
 from pydantic import BaseModel
 from pydantic.color import Color
+from pydantic.fields import Undefined
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
 from pydantic.utils import ValueItems, copy_code, deep_update, import_string, lenient_issubclass, truncate
 
@@ -262,7 +263,11 @@ def test_deep_update_is_not_mutating():
     assert mapping == {'key': {'inner_key': {'deep_key': 1}}}
 
 
+def test_undefined_repr():
+    assert repr(Undefined) == 'PydanticUndefined'
+
 def test_replace_code():
+  
     def f():
         return locals()['a']
 

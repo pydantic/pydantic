@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Ty
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import SHAPE_MAPPING, ModelField
+from .fields import SHAPE_MAPPING, ModelField, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
@@ -173,7 +173,7 @@ class ModelMetaclass(ABCMeta):
             if extra_validators:
                 f.class_validators.update(extra_validators)
                 # re-run prepare to add extra validators
-                f.prepare()
+                f.populate_validators()
 
         prepare_config(config, name)
 
@@ -187,7 +187,7 @@ class ModelMetaclass(ABCMeta):
                     class_vars.add(ann_name)
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
-                    value = namespace.get(ann_name, ...)
+                    value = namespace.get(ann_name, Undefined)
                     if (
                         isinstance(value, untouched_types)
                         and ann_type != PyObject
