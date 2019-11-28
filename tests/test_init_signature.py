@@ -19,18 +19,7 @@ def test_init_signature():
     sig = signature(Model.__init__)
     assert sig != signature(BaseModel.__init__)
 
-    params = sig.parameters
-    params_iterator = iter(sig.parameters.values())  # checking order
-    for name, kind, annotation, default in (
-        ('__pydantic_self__', pos_or_kw, empty, empty),
-        ('a', kw_only, int, empty),
-        ('b', kw_only, float, 10),
-    ):
-        assert name in params
-        param: Parameter = params[name]
-        assert next(params_iterator) is param
-        assert param.kind is kind
-        assert param.default == default
+    assert [str(p) for p in sig.parameters.values()] == ['__pydantic_self__', 'a: float', 'b: int = 10', '**data: Any']
 
     assert Model.__init__.__name__ == '__init__'
     assert Model.__init__.__module__ == 'pydantic.main'
@@ -65,21 +54,14 @@ def test_custom_init_signature():
     assert m.name == 'John Doe'
 
     sig = signature(MyModel.__init__)
-    params = sig.parameters
-    params_iterator = iter(params.values())
-    for name, kind, annotation, default in (
-        ('self', pos_or_kw, empty, empty),
-        ('id', pos_or_kw, int, 1),
-        ('bar', pos_or_kw, empty, 2),
-        ('baz', kw_only, Any, empty),
-        ('name', kw_only, str, 'John Doe'),
-    ):
-        assert name in params
-        param: Parameter = params[name]
-        assert param is next(params_iterator)
-
-        assert param.kind is kind
-        assert param.default == default
+    assert [str(p) for p in sig.parameters.values()] == [
+        'self',
+        'id: int = 1',
+        'bar=2',
+        'baz: Any',
+        "name: str = 'John Doe'",
+        '**data',
+    ]
 
     expected_signature = "(self, id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', **data)"
     assert str(sig).replace(' ', '') == expected_signature.replace(' ', '')
@@ -114,7 +96,7 @@ def test_original_init_compiled():
     assert ModelTwo.__init__.__origin_init__ is not base_model_origin_init
 
 
-@pytest.mark.skipif(compiled, reason='for the reason above, this test cannot be runned when compiled')
+@pytest.mark.skipif(compiled, reason='for the reason above, this test cannot be run when compiled')
 def test_original_init_not_compiled():
     assert not hasattr(BaseModel.__init__, '__origin__')
 
