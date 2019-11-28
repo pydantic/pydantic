@@ -19,7 +19,7 @@ def test_init_signature():
     sig = signature(Model.__init__)
     assert sig != signature(BaseModel.__init__)
 
-    assert [str(p).replace(' ', '')for p in sig.parameters.values()] == [
+    assert [str(p).replace(' ', '') for p in sig.parameters.values()] == [
         arg.replace(' ', '') for arg in ('__pydantic_self__', 'a: float', 'b: int = 10', '**data: Any')
     ]
 
