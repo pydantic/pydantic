@@ -5,6 +5,7 @@ site_url: https://pydantic-docs.helpmanual.io/
 
 theme:
   name: 'material'
+  custom_dir: 'docs/theme'
   palette:
     primary: pink
     accent: pink
@@ -19,8 +20,10 @@ google_analytics:
 
 extra_css:
 - 'extra/terminal.css'
+- 'extra/ad.css'
 extra_javascript:
 - 'extra/redirects.js'
+- 'extra/ad.js'
 
 nav:
 - Overview: index.md

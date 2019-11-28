@@ -15,23 +15,36 @@ from statistics import stdev as stdev_
 
 from test_pydantic import TestPydantic
 
-# trafaret currently (2018-07-02) fails on python 3.7
 try:
     from test_trafaret import TestTrafaret
 except Exception:
     TestTrafaret = None
+
 try:
     from test_drf import TestDRF
 except Exception:
     TestDRF = None
+
 try:
     from test_marshmallow import TestMarshmallow
 except Exception:
     TestMarshmallow = None
+
+
 try:
-    from test_toasted_marshmallow import TestToastedMarshmallow
+    from test_valideer import TestValideer
 except Exception:
-    TestToastedMarshmallow = None
+    TestValideer = None
+
+try:
+    from test_cattrs import TestCAttrs
+except Exception:
+    TestCAttr = None
+
+try:
+    from test_cerberus import TestCerberus
+except Exception:
+    TestCerberus = None
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
@@ -42,7 +55,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestToastedMarshmallow, TestMarshmallow, TestTrafaret, TestDRF]
+    [TestCAttrs, TestValideer, TestMarshmallow, TestTrafaret, TestDRF, TestCerberus]
     if t is not None
 ]
 

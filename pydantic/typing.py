@@ -48,11 +48,16 @@ else:
 
     AnyCallable = TypingCallable[..., Any]
 
-try:
-    from typing_extensions import Literal
-except ImportError:
-    Literal = None  # type: ignore
-
+if sys.version_info < (3, 8):
+    if TYPE_CHECKING:
+        from typing_extensions import Literal
+    else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
+        try:
+            from typing_extensions import Literal
+        except ImportError:
+            Literal = None
+else:
+    from typing import Literal
 
 if TYPE_CHECKING:
     from .fields import ModelField

@@ -6,10 +6,9 @@ Do a little skipping about with types to demonstrate its usage.
 import json
 import sys
 from datetime import datetime
-from typing import Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, NoneStr, StrictBool
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, NoneStr, StrictBool, root_validator, validator
 from pydantic.fields import Field
 from pydantic.generics import GenericModel
 
@@ -24,6 +23,19 @@ class Model(BaseModel):
     last_name: NoneStr = None
     signup_ts: Optional[datetime] = None
     list_of_ints: List[int]
+
+    @validator('age')
+    def check_age(cls, value: int) -> int:
+        assert value < 100, 'too old'
+        return value
+
+    @root_validator
+    def root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        return values
+
+    @root_validator(pre=True)
+    def pre_root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        return values
 
 
 def dog_years(age: int) -> int:
@@ -79,16 +91,6 @@ assert m_copy.age == m_from_obj.age
 assert m_copy.first_name == m_from_obj.first_name
 assert m_copy.last_name == m_from_obj.last_name
 assert m_copy.list_of_ints == m_from_obj.list_of_ints
-
-
-@dataclass
-class AddProject:
-    name: str
-    slug: Optional[str]
-    description: Optional[str]
-
-
-p = AddProject(name='x', slug='y', description='z')
 
 
 if sys.version_info >= (3, 7):

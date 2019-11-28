@@ -19,14 +19,19 @@ _(This script is complete, it should run "as is")_
 You can use all the standard pydantic field types, and the resulting dataclass will be identical to the one
 created by the standard library `dataclass` decorator.
 
+The underlying model and its schema can be accessed through `__pydantic_model__`.
+Also, fields that require a `default_factory` can be specified by a `dataclasses.field`.
+
+```py
+{!.tmp_examples/dataclasses_default_schema.py!}
+```
+_(This script is complete, it should run "as is")_
+
 `pydantic.dataclasses.dataclass`'s arguments are the same as the standard decorator, except one extra
 keyword argument `config` which has the same meaning as [Config](model_config.md).
 
-!!! note
-    As a side effect of getting pydantic dataclasses to play nicely with mypy, the `config` argument will show
-    as invalid in IDEs and mypy. Use `@dataclass(..., config=Config) # type: ignore` as a workaround. 
-
-    See [python/mypy#6239](https://github.com/python/mypy/issues/6239) for an explanation of this issue.
+!!! warning
+    After v1.2, [The Mypy plugin](/mypy_plugin.md) must be installed to type check pydantic dataclasses.
 
 For more information about combining validators with dataclasses, see 
 [dataclass validators](validators.md#dataclass-validators).

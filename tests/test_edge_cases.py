@@ -1322,3 +1322,174 @@ def test_modify_fields():
         assert repr(Bar.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
     assert Foo(foo=[[0, 1]]).foo == [[0, 1]]
     assert Bar(foo=[[0, 1]]).foo == [[0, 1]]
+
+
+def test_exclude_none():
+    class MyModel(BaseModel):
+        a: Optional[int] = None
+        b: int = 2
+
+    m = MyModel(a=5)
+    assert m.dict(exclude_none=True) == {'a': 5, 'b': 2}
+
+    m = MyModel(b=3)
+    assert m.dict(exclude_none=True) == {'b': 3}
+    assert m.json(exclude_none=True) == '{"b": 3}'
+
+
+def test_exclude_none_recursive():
+    class ModelA(BaseModel):
+        a: Optional[int] = None
+        b: int = 1
+
+    class ModelB(BaseModel):
+        c: int
+        d: int = 2
+        e: ModelA
+        f: Optional[str] = None
+
+    m = ModelB(c=5, e={'a': 0})
+    assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
+    assert m.dict(exclude_none=True) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
+
+    m = ModelB(c=5, e={'b': 20}, f='test')
+    assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': None, 'b': 20}, 'f': 'test'}
+    assert m.dict(exclude_none=True) == {'c': 5, 'd': 2, 'e': {'b': 20}, 'f': 'test'}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': None, 'b': 20}, 'f': 'test'}
+
+
+def test_exclude_none_with_extra():
+    class MyModel(BaseModel):
+        a: str = 'default'
+        b: Optional[str] = None
+
+        class Config:
+            extra = 'allow'
+
+    m = MyModel(a='a', c='c')
+
+    assert m.dict(exclude_none=True) == {'a': 'a', 'c': 'c'}
+    assert m.dict() == {'a': 'a', 'b': None, 'c': 'c'}
+
+    m = MyModel(a='a', b='b', c=None)
+
+    assert m.dict(exclude_none=True) == {'a': 'a', 'b': 'b'}
+    assert m.dict() == {'a': 'a', 'b': 'b', 'c': None}
+
+
+def test_str_method_inheritance():
+    import pydantic
+
+    class Foo(pydantic.BaseModel):
+        x: int = 3
+        y: int = 4
+
+        def __str__(self):
+            return str(self.y + self.x)
+
+    class Bar(Foo):
+        z: bool = False
+
+    assert str(Foo()) == '7'
+    assert str(Bar()) == '7'
+
+
+def test_repr_method_inheritance():
+    import pydantic
+
+    class Foo(pydantic.BaseModel):
+        x: int = 3
+        y: int = 4
+
+        def __repr__(self):
+            return repr(self.y + self.x)
+
+    class Bar(Foo):
+        z: bool = False
+
+    assert repr(Foo()) == '7'
+    assert repr(Bar()) == '7'
+
+
+def test_optional_validator():
+    val_calls = []
+
+    class Model(BaseModel):
+        something: Optional[str]
+
+        @validator('something')
+        def check_something(cls, v):
+            val_calls.append(v)
+            return v
+
+    assert Model().dict() == {'something': None}
+    assert Model(something=None).dict() == {'something': None}
+    assert Model(something='hello').dict() == {'something': 'hello'}
+    assert val_calls == [None, 'hello']
+
+
+def test_required_optional():
+    class Model(BaseModel):
+        nullable1: Optional[int] = ...
+        nullable2: Optional[int] = Field(...)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+    assert exc_info.value.errors() == [
+        {'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(nullable1=1)
+    assert exc_info.value.errors() == [{'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(nullable2=2)
+    assert exc_info.value.errors() == [{'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert Model(nullable1=None, nullable2=None).dict() == {'nullable1': None, 'nullable2': None}
+    assert Model(nullable1=1, nullable2=2).dict() == {'nullable1': 1, 'nullable2': 2}
+    with pytest.raises(ValidationError) as exc_info:
+        Model(nullable1='some text')
+    assert exc_info.value.errors() == [
+        {'loc': ('nullable1',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
+def test_required_any():
+    class Model(BaseModel):
+        optional1: Any
+        optional2: Any = None
+        nullable1: Any = ...
+        nullable2: Any = Field(...)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+    assert exc_info.value.errors() == [
+        {'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(nullable1='a')
+    assert exc_info.value.errors() == [{'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(nullable2=False)
+    assert exc_info.value.errors() == [{'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert Model(nullable1=None, nullable2=None).dict() == {
+        'optional1': None,
+        'optional2': None,
+        'nullable1': None,
+        'nullable2': None,
+    }
+    assert Model(nullable1=1, nullable2='two').dict() == {
+        'optional1': None,
+        'optional2': None,
+        'nullable1': 1,
+        'nullable2': 'two',
+    }
+    assert Model(optional1='op1', optional2=False, nullable1=1, nullable2='two').dict() == {
+        'optional1': 'op1',
+        'optional2': False,
+        'nullable1': 1,
+        'nullable2': 'two',
+    }

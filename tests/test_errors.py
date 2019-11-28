@@ -6,11 +6,7 @@ import pytest
 
 from pydantic import UUID1, BaseConfig, BaseModel, PydanticTypeError, ValidationError, conint, errors, validator
 from pydantic.error_wrappers import flatten_errors, get_exc_type
-
-try:
-    from typing_extensions import Literal
-except ImportError:
-    Literal = None
+from pydantic.typing import Literal
 
 
 def test_pydantic_error():

@@ -33,6 +33,7 @@ from mypy.nodes import (
 )
 from mypy.options import Options
 from mypy.plugin import CheckerPluginInterface, ClassDefContext, MethodContext, Plugin, SemanticAnalyzerPluginInterface
+from mypy.plugins import dataclasses
 from mypy.semanal import set_callable_name  # type: ignore
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.types import (
@@ -55,6 +56,7 @@ METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
 FIELD_FULLNAME = 'pydantic.fields.Field'
+DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
@@ -83,6 +85,11 @@ class PydanticPlugin(Plugin):
     def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
         if fullname.endswith('.from_orm'):
             return from_orm_callback
+        return None
+
+    def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
+        if fullname == DATACLASS_FULLNAME:
+            return dataclasses.dataclass_class_maker_callback
         return None
 
     def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:

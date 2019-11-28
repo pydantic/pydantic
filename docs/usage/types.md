@@ -46,7 +46,7 @@ with custom properties and validation.
 : allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a set;
   see `typing.Set` below for sub-type constraints
 
-`frozonset`
+`frozenset`
 : allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a frozen set;
   see `typing.FrozenSet` below for sub-type constraints
 
@@ -73,7 +73,7 @@ with custom properties and validation.
 
 `typing.Optional`
 : `Optional[x]` is simply short hand for `Union[x, None]`;
-  see [Unions](#unions) below for more detail on parsing and validation
+  see [Unions](#unions) below for more detail on parsing and validation and [Required Fields](models.md#required-fields) for details about required fields that can receive `None` as a value.
 
 `typing.List`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
@@ -145,6 +145,9 @@ with custom properties and validation.
 : strings and bytes (converted to strings) are passed to `UUID(v)`;
   see [Pydantic Types](#pydantic-types) for other stricter UUID types
 
+`ByteSize`
+: converts a bytes string with units to bytes
+
 ### Typing Iterables
 
 *pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
@@ -178,6 +181,13 @@ classes to preclude the unexpected representation as such:
 {!.tmp_examples/types_union_correct.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+!!! tip
+    The type `Optional[x]` is a shorthand for `Union[x, None]`.
+
+    `Optional[x]` can also be used to specify a required field that can take `None` as a value.
+
+    See more details in [Required Fields](models.md#required-fields).
 
 ### Enums and Choices
 
@@ -302,11 +312,11 @@ _(This script is complete, it should run "as is")_
 ## Literal Type
 
 !!! note
-    This is not strictly part of the python standard library; 
-    it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
+    This is a new feature of the python standard library as of python 3.8; 
+    prior to python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
 
-*pydantic* supports the use of `typing_extensions.Literal` as a lightweight way to specify that a field
-may accept only specific literal values:
+*pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to python 3.8)
+as a lightweight way to specify that a field may accept only specific literal values:
 
 ```py
 {!.tmp_examples/types_literal1.py!}
@@ -667,6 +677,21 @@ The following caveats apply:
 {!.tmp_examples/types_strict.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+## ByteSize
+
+You can use the `ByteSize` data type to convert byte string representation to
+raw bytes and print out human readable versions of the bytes as well.
+
+!!! info 
+    Note that `1b` will be parsed as "1 byte" and not "1 bit".
+
+```py
+{!.tmp_examples/types_bytesize.py!}
+```
+_(This script is complete, it should run "as is")_
+
+
 
 ## Custom Data Types
 

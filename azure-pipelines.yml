@@ -1,7 +1,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 pool:
-  vmImage: 'windows-2019'
+  vmImage: 'windows-latest'
 
 strategy:
   matrix:
@@ -9,9 +9,8 @@ strategy:
       python.version: '3.6'
     Python37:
       python.version: '3.7'
-# not supported as of 2019-10-16 :-(
-#    Python38:
-#      python.version: '3.8'
+    Python38:
+      python.version: '3.8'
 
 steps:
 - task: UsePythonVersion@0

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Ty
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import SHAPE_MAPPING, ModelField
+from .fields import SHAPE_MAPPING, ModelField, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
@@ -136,8 +136,6 @@ def is_valid_field(name: str) -> bool:
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
         raise ValueError('__root__ cannot be mixed with other fields')
-    if fields[ROOT_KEY].shape == SHAPE_MAPPING:
-        raise TypeError('custom root type cannot allow mapping')
 
 
 UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
@@ -182,7 +180,7 @@ class ModelMetaclass(ABCMeta):
                     class_vars.add(ann_name)
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
-                    value = namespace.get(ann_name, ...)
+                    value = namespace.get(ann_name, Undefined)
                     if (
                         isinstance(value, untouched_types)
                         and ann_type != PyObject
@@ -238,12 +236,6 @@ class ModelMetaclass(ABCMeta):
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
-            # equivalent of inheriting from Representation
-            '__repr_name__': Representation.__repr_name__,
-            '__repr_str__': Representation.__repr_str__,
-            '__pretty__': Representation.__pretty__,
-            '__str__': Representation.__str__,
-            '__repr__': Representation.__repr__,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace, **kwargs)
@@ -265,6 +257,12 @@ class BaseModel(metaclass=ModelMetaclass):
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
+    # equivalent of inheriting from Representation
+    __repr_name__ = Representation.__repr_name__
+    __repr_str__ = Representation.__repr_str__
+    __pretty__ = Representation.__pretty__
+    __str__ = Representation.__str__
+    __repr__ = Representation.__repr__
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
@@ -308,6 +306,7 @@ class BaseModel(metaclass=ModelMetaclass):
         skip_defaults: bool = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
+        exclude_none: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -332,6 +331,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 exclude=exclude,
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
             )
         }
 
@@ -350,6 +350,7 @@ class BaseModel(metaclass=ModelMetaclass):
         skip_defaults: bool = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
+        exclude_none: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -371,6 +372,7 @@ class BaseModel(metaclass=ModelMetaclass):
             by_alias=by_alias,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
         )
         if self.__custom_root_type__:
             data = data[ROOT_KEY]
@@ -378,15 +380,16 @@ class BaseModel(metaclass=ModelMetaclass):
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
-        if not isinstance(obj, dict):
-            if cls.__custom_root_type__:
-                obj = {ROOT_KEY: obj}
-            else:
-                try:
-                    obj = dict(obj)
-                except (TypeError, ValueError) as e:
-                    exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                    raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
+        if cls.__custom_root_type__ and (
+            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
+        ):
+            obj = {ROOT_KEY: obj}
+        elif not isinstance(obj, dict):
+            try:
+                obj = dict(obj)
+            except (TypeError, ValueError) as e:
+                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
         return cls(**obj)
 
     @classmethod
@@ -549,6 +552,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
         exclude_unset: bool,
         exclude_defaults: bool,
+        exclude_none: bool,
     ) -> Any:
 
         if isinstance(v, BaseModel):
@@ -559,6 +563,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     include=include,
                     exclude=exclude,
+                    exclude_none=exclude_none,
                 )
             else:
                 return v.copy(include=include, exclude=exclude)
@@ -576,6 +581,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     include=value_include and value_include.for_element(k_),
                     exclude=value_exclude and value_exclude.for_element(k_),
+                    exclude_none=exclude_none,
                 )
                 for k_, v_ in v.items()
                 if (not value_exclude or not value_exclude.is_excluded(k_))
@@ -592,6 +598,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     include=value_include and value_include.for_element(i),
                     exclude=value_exclude and value_exclude.for_element(i),
+                    exclude_none=exclude_none,
                 )
                 for i, v_ in enumerate(v)
                 if (not value_exclude or not value_exclude.is_excluded(i))
@@ -626,6 +633,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
+        exclude_none: bool = False,
     ) -> 'TupleGenerator':
 
         value_exclude = ValueItems(self, exclude) if exclude else None
@@ -640,7 +648,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
         for k, v in self.__dict__.items():
             if allowed_keys is None or k in allowed_keys:
-                yield k, self._get_value(
+                value = self._get_value(
                     v,
                     to_dict=to_dict,
                     by_alias=by_alias,
@@ -648,7 +656,10 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude=value_exclude and value_exclude.for_element(k),
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
+                    exclude_none=exclude_none,
                 )
+                if not (exclude_none and value is None):
+                    yield k, value
 
     def _calculate_keys(
         self,

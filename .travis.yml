@@ -31,6 +31,12 @@ after_success:
 - ls -lha
 - bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS
 
+stages:
+- name: test
+  if: type = pull_request OR branch = master OR tag IS present
+- name: build
+  if: type = push AND (branch = master OR tag IS present)
+
 jobs:
   include:
   - stage: test
@@ -69,6 +75,7 @@ jobs:
     - make test
     env:
     - 'DEPS=no'
+
   - stage: test
     python: 3.7
     name: 'Without Deps 3.7'
@@ -77,6 +84,7 @@ jobs:
     - make test
     env:
     - 'DEPS=no'
+
   - stage: test
     python: 3.8
     name: 'Without Deps 3.8'
@@ -96,21 +104,23 @@ jobs:
 
   - stage: build
     name: 'PyPI Build and Upload'
-    if: type = push AND (branch = master OR tag IS present)
     python: 3.7
     services:
     - docker
     install: skip
+    env:
+    - 'PIP=pip'
+    - 'CIBW_BUILD="cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686 cp38-manylinux1_x86_64 cp38-manylinux1_i686"'
+    - 'CIBW_BEFORE_BUILD="pip install -U cython"'
+    - 'CIBW_TEST_REQUIRES=pytest'
+    - 'CIBW_TEST_COMMAND="pytest {project}/tests"'
     script:
     - ./tests/check_tag.py
     - pip install -U cibuildwheel wheel
     - cibuildwheel --output-dir dist
     - SKIP_CYTHON=1 python setup.py sdist bdist_wheel
+    after_success:
     - ls -lha dist
-    env:
-    - 'PIP=pip'
-    - 'CIBW_BUILD="cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686"'
-    - 'CIBW_BEFORE_BUILD="pip install -U cython"'
     deploy:
       provider: pypi
       skip_cleanup: true
@@ -123,7 +133,6 @@ jobs:
 
   - stage: build
     name: 'Docs Build and Upload'
-    if: type = push AND (branch = master OR tag IS present)
     python: 3.7
     script: make docs
     env:

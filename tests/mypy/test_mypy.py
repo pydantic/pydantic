@@ -1,9 +1,14 @@
 import importlib
 import os
+import re
 from pathlib import Path
 
 import pytest
-from mypy import api
+
+try:
+    from mypy import api as mypy_api
+except ImportError:
+    mypy_api = None
 
 try:
     import typing_extensions
@@ -25,12 +30,12 @@ cases = [
     ('mypy-default.ini', 'fail1.py', 'fail1.txt'),
     ('mypy-default.ini', 'fail2.py', 'fail2.txt'),
     ('mypy-default.ini', 'fail3.py', 'fail3.txt'),
-    ('mypy-default.ini', 'plugin_success.py', None),
+    ('mypy-default.ini', 'plugin_success.py', 'fail4.txt'),
 ]
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not (typing_extensions and mypy_api), reason='typing_extensions or mypy are not installed')
 @pytest.mark.parametrize('config_filename,python_filename,output_filename', cases)
 def test_mypy_results(config_filename, python_filename, output_filename):
     full_config_filename = f'tests/mypy/configs/{config_filename}'
@@ -47,12 +52,13 @@ def test_mypy_results(config_filename, python_filename, output_filename):
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = f'.mypy_cache/test-{config_filename[:-4]}'
-    actual_result = api.run(
+    actual_result = mypy_api.run(
         [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
     )
     actual_out, actual_err, actual_returncode = actual_result
     # Need to strip filenames due to differences in formatting by OS
-    actual_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in actual_out.split('\n')]).strip()
+    actual_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in actual_out.split('\n') if line]).strip()
+    actual_out = re.sub(r'\n\s*\n', r'\n', actual_out)
 
     if GENERATE and output_filename is not None:
         with open(full_output_filename, 'w') as f:

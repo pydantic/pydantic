@@ -1,6 +1,11 @@
-python-dateutil      # pyup: ignore
-trafaret             # pyup: ignore
-django               # pyup: ignore
-djangorestframework  # pyup: ignore
-#marshmallow          # pyup: ignore
-toastedmarshmallow   # pyup: ignore
+# no versions since benchmarks should always run with the most recent version of each package
+
+python-dateutil
+trafaret
+django
+djangorestframework
+marshmallow
+valideer
+attr
+cattrs
+cerberus
