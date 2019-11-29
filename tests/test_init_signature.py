@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, Extra, compiled
+from pydantic import BaseModel, Extra, compiled, Field
 
 pos_or_kw = Parameter.POSITIONAL_OR_KEYWORD
 kw_only = Parameter.KEYWORD_ONLY
@@ -12,8 +12,8 @@ empty = Parameter.empty
 
 def test_init_signature():
     class Model(BaseModel):
-        a: float
-        b: int = 10
+        a: float = Field(..., title='A')
+        b = Field(10)
 
     assert BaseModel.__init__ is not Model.__init__
     sig = signature(Model.__init__)
@@ -29,8 +29,8 @@ def test_init_signature():
     expected_signature = '(__pydantic_self__, *, a: float, b: int = 10, **data: Any) -> None'
     assert str(sig).replace(' ', '') == expected_signature.replace(' ', '')
     assert Model.__init__.__doc__.replace('    ', '') == (
-        '\nCreate a new model by parsing and validating input data from keyword arguments'
-        '\n\n:raises ValidationError if the input data cannot be parsed to for a valid model.'
+        '\nCreate a new model by parsing and validating input data from keyword arguments.'
+        '\n\nRaises ValidationError if the input data cannot be parsed to form a valid model.'
         '\n\n(signature auto generated from model fields)'
     )
 

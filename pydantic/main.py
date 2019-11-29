@@ -194,16 +194,16 @@ class ModelMetaclass(ABCMeta):
                         and not lenient_issubclass(getattr(ann_type, '__origin__', None), Type)
                     ):
                         continue
-                    fields[ann_name] = ModelField.infer(
+                    fields[ann_name] = inferred = ModelField.infer(
                         name=ann_name,
                         value=value,
                         annotation=ann_type,
                         class_validators=vg.get_validators(ann_name),
                         config=config,
                     )
-                    fields_annotations[ann_name] = ann_type
-                    if value is not Undefined:
-                        fields_defaults[ann_name] = value
+                    fields_annotations[ann_name] = inferred.type_
+                    if not inferred.required:
+                        fields_defaults[ann_name] = inferred.default
 
             for var_name, value in namespace.items():
                 if (
@@ -226,7 +226,9 @@ class ModelMetaclass(ABCMeta):
                             f'if you wish to change the type of this field, please use a type annotation'
                         )
                     fields[var_name] = inferred
-                    fields_defaults[var_name] = value
+                    fields_annotations[var_name] = inferred.type_
+                    if not inferred.required:
+                        fields_defaults[var_name] = inferred.default
 
         _custom_root_type = ROOT_KEY in fields
         if _custom_root_type:
