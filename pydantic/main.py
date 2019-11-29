@@ -280,7 +280,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         """
-        Create a new model by parsing and validating input data from keyword arguments
+        Create a new model by parsing and validating input data from keyword arguments.
 
         :raises ValidationError if the input data cannot be parsed to for a valid model.
         """
