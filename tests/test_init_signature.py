@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, Extra, compiled, Field
+from pydantic import BaseModel, Extra, Field, compiled
 
 pos_or_kw = Parameter.POSITIONAL_OR_KEYWORD
 kw_only = Parameter.KEYWORD_ONLY
