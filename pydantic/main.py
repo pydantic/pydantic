@@ -9,7 +9,14 @@ from pathlib import Path
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast, no_type_check
 
-from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
+from .class_validators import (
+    ROOT_KEY,
+    Validator,
+    ValidatorGroup,
+    extract_root_validators,
+    extract_validators,
+    inherit_validators,
+)
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import SHAPE_MAPPING, ModelField, Undefined
@@ -853,6 +860,8 @@ def validate_model(  # noqa: C901 (ignore complexity)
                     errors.append(ErrorWrapper(ExtraError(), loc=f))
 
     for validator in model.__post_root_validators__:
+        if errors and getattr(validator, Validator.SKIP_ON_FAILURE_KEY, False):
+            continue
         try:
             values = validator(cls_, values)
         except (ValueError, TypeError, AssertionError) as exc:

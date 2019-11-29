@@ -12,6 +12,7 @@ from .utils import in_ipython
 
 
 class Validator:
+    SKIP_ON_FAILURE_KEY = '__validator_skip_on_failure__'  # Applies only to RootValidators
     __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields'
 
     def __init__(
@@ -105,7 +106,7 @@ def root_validator(*, pre: bool = False) -> Callable[[AnyCallable], classmethod]
 
 
 def root_validator(
-    _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False
+    _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
 ) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
     """
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
@@ -114,11 +115,13 @@ def root_validator(
     if _func:
         f_cls = _prepare_validator(_func, allow_reuse)
         setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre))
+        setattr(f_cls.__func__, Validator.SKIP_ON_FAILURE_KEY, skip_on_failure)
         return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
         f_cls = _prepare_validator(f, allow_reuse)
         setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre))
+        setattr(f_cls.__func__, Validator.SKIP_ON_FAILURE_KEY, skip_on_failure)
         return f_cls
 
     return dec

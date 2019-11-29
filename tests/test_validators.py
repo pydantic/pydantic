@@ -988,3 +988,32 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
     ]
 
     assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}, {'b': 'barbar'}]
+
+
+def test_root_validator_skip_on_failure():
+    a_called = False
+
+    class ModelA(BaseModel):
+        a: int
+
+        @root_validator
+        def example_root_validator(cls, values):
+            nonlocal a_called
+            a_called = True
+
+    with pytest.raises(ValidationError):
+        ModelA(a='a')
+    assert a_called
+    b_called = False
+
+    class ModelB(BaseModel):
+        a: int
+
+        @root_validator(skip_on_failure=True)
+        def example_root_validator(cls, values):
+            nonlocal b_called
+            b_called = True
+
+    with pytest.raises(ValidationError):
+        ModelB(a='a')
+    assert not b_called
