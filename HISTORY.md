@@ -1,5 +1,8 @@
 ## v1.2 (2019-11-28)
 
+* **Possible Breaking Change:** Add support for required `Optional` with `name: Optional[AnyType] = Field(...)` 
+  and refactor `ModelField` creation to preserve `required` parameter value, #1031 by @tiangolo;
+  see [here](https://pydantic-docs.helpmanual.io/usage/models/#required-optional-fields) for details
 * Add benchmarks for `cattrs`, #513 by @sebastianmika
 * Add `exclude_none` option to `dict()` and friends, #587 by @niknetniko
 * Add benchmarks for `valideer`, #670 by @gsakkis
@@ -15,7 +18,6 @@
 * Fix `__str__` and `__repr__` inheritance for models, #1022 by @samuelcolvin
 * add testimonials section to docs, #1025 by @sullivancolin
 * Add support for `typing.Literal` for Python 3.8, #1026 by @dmontagu
-* Add support for required `Optional` with `name: Optional[AnyType] = Field(...)` and refactor `ModelField` creation to preserve `required` parameter value, #1031 by @tiangolo
 
 ## v1.1.1 (2019-11-20)
 
