@@ -282,7 +282,7 @@ class BaseModel(metaclass=ModelMetaclass):
         """
         Create a new model by parsing and validating input data from keyword arguments.
 
-        :raises ValidationError if the input data cannot be parsed to for a valid model.
+        Raises ValidationError if the input data cannot be parsed to form a valid model.
         """
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
         if TYPE_CHECKING:
