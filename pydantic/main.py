@@ -66,7 +66,7 @@ class BaseConfig:
     getter_dict: Type[GetterDict] = GetterDict
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
-    schema_extra: Dict[str, Any] = {}
+    schema_extra: Union[Dict[str, Any], Callable[[Dict[str, Any]], None]] = {}
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
     json_encoders: Dict[AnyType, AnyCallable] = {}

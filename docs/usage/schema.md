@@ -146,3 +146,20 @@ Outputs:
 ```json
 {!.tmp_examples/schema_with_example.json!}
 ```
+
+For more fine-grained control, you can alternatively set `schema_extra` to a callable and post-process the generated schema.
+The callable is passed the schema dictionary as the first and only argument, and is expected to mutate it *in-place*; the return value is not used.
+
+For example, the `title` key can be removed from the model's `properties`:
+
+```py
+{!.tmp_examples/schema_extra_callable.py!}
+```
+
+_(This script is complete, it should run "as is")_
+
+Outputs:
+
+```json
+{!.tmp_examples/schema_extra_callable.json!}
+```
