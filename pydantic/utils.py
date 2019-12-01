@@ -153,6 +153,7 @@ def generate_typed_init(
     """
     Generate typed signature for init
     """
+    # making a copy of original init so we can modify it
     if not compiled:
         # can perform this in python, however in cython this will cause "unknown opcode" on call
         orig_init = current_init
@@ -171,6 +172,7 @@ def generate_typed_init(
         new_init = __init__  # type: ignore
         new_init.__origin_init__ = orig_init  # type: ignore
 
+    # creating fake init with model fields in signature
     orig_posonlycount = orig_code.co_posonlyargcount if PY38 else 0  # type: ignore
     orig_allargscount = orig_code.co_argcount + orig_code.co_kwonlyargcount + orig_posonlycount
     orig_argnames = orig_code.co_varnames[:orig_allargscount]
@@ -195,6 +197,7 @@ def generate_typed_init(
         closure=orig_init.__closure__ or () if PY38 else (),
     )
 
+    # setting signature of fake init to copied init
     doc = orig_init.__doc__ or ''
     caption = '\n(signature auto generated from model fields)'
     if caption not in doc:
