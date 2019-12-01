@@ -671,7 +671,7 @@ def get_fullname(x: Union[FuncBase, SymbolNode]) -> str:
     Used for compatibility with mypy 0.740; can be dropped once support for 0.740 is dropped.
     """
     fn = x.fullname
-    if callable(fn):
+    if callable(fn):  # pragma: no cover
         return fn()
     return fn
 
@@ -681,6 +681,6 @@ def get_name(x: Union[FuncBase, SymbolNode]) -> str:
     Used for compatibility with mypy 0.740; can be dropped once support for 0.740 is dropped.
     """
     fn = x.name
-    if callable(fn):
+    if callable(fn):  # pragma: no cover
         return fn()
     return fn
