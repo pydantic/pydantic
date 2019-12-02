@@ -7,9 +7,10 @@ import pytest
 
 from pydantic import BaseModel
 from pydantic.color import Color
+from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
-from pydantic.utils import ValueItems, deep_update, import_string, lenient_issubclass, truncate
+from pydantic.utils import ValueItems, deep_update, get_model, import_string, lenient_issubclass, truncate
 
 try:
     import devtools
@@ -265,3 +266,22 @@ def test_deep_update_is_not_mutating():
 
 def test_undefined_repr():
     assert repr(Undefined) == 'PydanticUndefined'
+
+
+def test_get_model():
+    class A(BaseModel):
+        a: str
+
+    assert get_model(A) == A
+
+    @dataclass
+    class B:
+        a: str
+
+    assert get_model(B) == B.__pydantic_model__
+
+    class C:
+        pass
+
+    with pytest.raises(TypeError):
+        get_model(C)
