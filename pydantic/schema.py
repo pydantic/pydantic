@@ -687,12 +687,15 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if issubclass(field_type, Enum):
         f_schema.update({'enum': [item.value for item in field_type]})
         # Don't return immediately, to allow adding specific types
-    for field_name, schema_name in validation_attribute_to_schema_keyword.items():
-        field_value = getattr(field_type, field_name, None)
-        if field_value is not None:
-            if field_name == 'regex':
-                field_value = field_value.pattern
-            f_schema[schema_name] = field_value
+
+    if getattr(field_type, '__schema_attributes__', False) is True:
+        for field_name, schema_name in validation_attribute_to_schema_keyword.items():
+            field_value = getattr(field_type, field_name, None)
+            if field_value is not None:
+                if field_name == 'regex':
+                    field_value = field_value.pattern
+                f_schema[schema_name] = field_value
+
     for type_, t_schema in field_class_to_schema_enum_enabled:
         if issubclass(field_type, type_):
             f_schema.update(t_schema)

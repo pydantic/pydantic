@@ -86,6 +86,7 @@ if TYPE_CHECKING:
 
 
 class ConstrainedBytes(bytes):
+    __schema_attributes__ = True
     strip_whitespace = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
@@ -108,6 +109,7 @@ T = TypeVar('T')
 
 # This types superclass should be List[T], but cython chokes on that...
 class ConstrainedList(list):  # type: ignore
+    __schema_attributes__ = True
     # Needed for pydantic to detect that this is a list
     __origin__ = list
     __args__: List[Type[T]]  # type: ignore
@@ -142,6 +144,7 @@ def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None)
 
 
 class ConstrainedStr(str):
+    __schema_attributes__ = True
     strip_whitespace = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
@@ -253,6 +256,7 @@ class ConstrainedNumberMeta(type):
 
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
+    __schema_attributes__ = True
     strict: bool = False
     gt: OptionalInt = None
     ge: OptionalInt = None
@@ -289,6 +293,7 @@ class StrictInt(ConstrainedInt):
 
 
 class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
+    __schema_attributes__ = True
     strict: bool = False
     gt: OptionalIntFloat = None
     ge: OptionalIntFloat = None
@@ -330,6 +335,7 @@ class StrictFloat(ConstrainedFloat):
 
 
 class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
+    __schema_attributes__ = True
     gt: OptionalIntFloatDecimal = None
     ge: OptionalIntFloatDecimal = None
     lt: OptionalIntFloatDecimal = None

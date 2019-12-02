@@ -68,6 +68,7 @@ int_domain_regex = re.compile(fr'(?:{_int_chunk}\.)*?{_int_chunk}{_domain_ending
 
 
 class AnyUrl(str):
+    __schema_attributes__ = True
     strip_whitespace = True
     min_length = 1
     max_length = 2 ** 16

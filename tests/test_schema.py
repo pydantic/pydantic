@@ -1664,3 +1664,24 @@ def test_dataclass():
         'properties': {'a': {'title': 'A', 'type': 'boolean'}},
         'required': ['a'],
     }
+
+
+def test_schema_attributes():
+    class ExampleEnum(Enum):
+        gt = 'GT'
+        lt = 'LT'
+        ge = 'GE'
+        le = 'LE'
+        max_length = 'ML'
+        multiple_of = 'MO'
+        regex = 'RE'
+
+    class Example(BaseModel):
+        example: ExampleEnum
+
+    assert Example.schema() == {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {'example': {'title': 'Example', 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE']}},
+        'required': ['example'],
+    }
