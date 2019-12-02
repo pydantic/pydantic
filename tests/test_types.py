@@ -948,6 +948,24 @@ def test_strict_str():
         Model(v=b'foobar')
 
 
+def test_strict_str_subclass():
+    class MyStrictStr(StrictStr):
+        pass
+
+    class Model(BaseModel):
+        v: MyStrictStr
+
+    m = Model(v=MyStrictStr('foobar'))
+    assert isinstance(m.v, MyStrictStr)
+    assert m.v == 'foobar'
+
+    with pytest.raises(ValidationError):
+        Model(v=123)
+
+    with pytest.raises(ValidationError):
+        Model(v=b'foobar')
+
+
 def test_strict_bool():
     class Model(BaseModel):
         v: StrictBool

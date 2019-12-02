@@ -55,7 +55,7 @@ def str_validator(v: Any) -> Optional[str]:
         raise errors.StrError()
 
 
-def strict_str_validator(v: Any) -> str:
+def strict_str_validator(v: Any) -> Union[str]:
     if isinstance(v, str):
         return v
     raise errors.StrError()
