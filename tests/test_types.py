@@ -959,12 +959,6 @@ def test_strict_str_subclass():
     assert isinstance(m.v, MyStrictStr)
     assert m.v == 'foobar'
 
-    with pytest.raises(ValidationError):
-        Model(v=123)
-
-    with pytest.raises(ValidationError):
-        Model(v=b'foobar')
-
 
 def test_strict_bool():
     class Model(BaseModel):
@@ -983,6 +977,18 @@ def test_strict_bool():
         Model(v=b'1')
 
 
+# def test_strict_bool_subclass():
+#     class MyStrictBool(StrictBool):
+#         pass
+#
+#     class Model(BaseModel):
+#         v: MyStrictBool
+#
+#     m = Model(v=MyStrictBool(False))
+#     assert isinstance(m.v, MyStrictBool)
+#     assert m.v is False
+
+
 def test_strict_int():
     class Model(BaseModel):
         v: StrictInt
@@ -996,6 +1002,18 @@ def test_strict_int():
         Model(v=3.14159)
 
 
+def test_strict_int_subclass():
+    class MyStrictInt(StrictInt):
+        pass
+
+    class Model(BaseModel):
+        v: MyStrictInt
+
+    m = Model(v=MyStrictInt(123456))
+    assert isinstance(m.v, MyStrictInt)
+    assert m.v == 123456
+
+
 def test_strict_float():
     class Model(BaseModel):
         v: StrictFloat
@@ -1007,6 +1025,18 @@ def test_strict_float():
 
     with pytest.raises(ValidationError, match='value is not a valid float'):
         Model(v=123456)
+
+
+def test_strict_float_subclass():
+    class MyStrictFloat(StrictFloat):
+        pass
+
+    class Model(BaseModel):
+        v: MyStrictFloat
+
+    m = Model(v=MyStrictFloat(3.14159))
+    assert isinstance(m.v, MyStrictFloat)
+    assert m.v == 3.14159
 
 
 def test_bool_unhashable_fails():
