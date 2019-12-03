@@ -426,11 +426,11 @@ class BaseModel(metaclass=ModelMetaclass):
         allow_pickle: bool = False,
     ) -> 'Model':
         obj = load_file(
-            path, 
-            proto=proto, 
-            content_type=content_type, 
-            encoding=encoding, 
-            allow_pickle=allow_pickle, 
+            path,
+            proto=proto,
+            content_type=content_type,
+            encoding=encoding,
+            allow_pickle=allow_pickle,
             json_loads=cls.__config__.json_loads,
         )
         return cls.parse_obj(obj)
