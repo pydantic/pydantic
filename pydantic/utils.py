@@ -1,6 +1,9 @@
 import inspect
+import platform
+import sys
 import warnings
 from importlib import import_module
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -330,15 +333,23 @@ class ValueItems(Representation):
 
 
 def version_info() -> str:
-    import platform
-    import sys
     from .main import compiled
     from .version import VERSION
 
+    optional_deps = []
+    for p in ('typing-extensions', 'email-validator', 'devtools'):
+        try:
+            import_module(p.replace('-', '_'))
+        except ImportError:
+            continue
+        optional_deps.append(p)
+
     info = {
-        'Pydantic Version': VERSION,
-        'Pydantic Compiled': compiled,
-        'Python Version': sys.version,
-        'Platform': platform.platform(),
+        'pydantic version': VERSION,
+        'pydantic compiled': compiled,
+        'install path': Path(__file__).resolve().parent,
+        'python version': sys.version,
+        'platform': platform.platform(),
+        'optional deps. installed': optional_deps,
     }
-    return '\n'.join('{:>20} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
+    return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())

@@ -1,4 +1,5 @@
 import os
+import re
 import string
 from enum import Enum
 from typing import NewType, Union
@@ -289,5 +290,5 @@ def test_get_model():
 
 def test_version_info():
     s = version_info()
-    assert s.startswith('   Pydantic Version: ')
-    assert s.count('\n') == 3
+    assert re.match(' *pydantic version: ', s)
+    assert s.count('\n') == 5
