@@ -977,18 +977,6 @@ def test_strict_bool():
         Model(v=b'1')
 
 
-# def test_strict_bool_subclass():
-#     class MyStrictBool(StrictBool):
-#         pass
-#
-#     class Model(BaseModel):
-#         v: MyStrictBool
-#
-#     m = Model(v=MyStrictBool(False))
-#     assert isinstance(m.v, MyStrictBool)
-#     assert m.v is False
-
-
 def test_strict_int():
     class Model(BaseModel):
         v: StrictInt
