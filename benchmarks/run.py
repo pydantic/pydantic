@@ -187,7 +187,7 @@ def main():
         avg = mean(times) / model_count * 1e6
         sd = stdev(times) / model_count * 1e6
         results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter '
-                       f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter')
+                       f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter version={test_class.version}')
         csv_results.append([p, test_class.version, avg])
         print()
 

@@ -10,7 +10,7 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
-from pydantic.utils import ValueItems, deep_update, get_model, import_string, lenient_issubclass, truncate
+from pydantic.utils import ValueItems, deep_update, get_model, import_string, lenient_issubclass, truncate, version_info
 
 try:
     import devtools
@@ -285,3 +285,9 @@ def test_get_model():
 
     with pytest.raises(TypeError):
         get_model(C)
+
+
+def test_version_info():
+    s = version_info()
+    assert s.startswith('   Pydantic Version: ')
+    assert s.count('\n') == 3

@@ -327,3 +327,18 @@ class ValueItems(Representation):
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]
+
+
+def version_info() -> str:
+    import platform
+    import sys
+    from .main import compiled
+    from .version import VERSION
+
+    info = {
+        'Pydantic Version': VERSION,
+        'Pydantic Compiled': compiled,
+        'Python Version': sys.version,
+        'Platform': platform.platform(),
+    }
+    return '\n'.join('{:>20} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
