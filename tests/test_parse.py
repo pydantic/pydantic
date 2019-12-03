@@ -107,7 +107,7 @@ def test_file_json_no_ext(tmpdir):
     assert Model.parse_file(str(p)) == Model(a=12, b=8)
 
 
-def test_file_json_loads(tmpdir):
+def test_file_json_loads(tmp_path):
     def custom_json_loads(*args, **kwargs):
         data = json.loads(*args, **kwargs)
         data['a'] = 99
@@ -119,10 +119,10 @@ def test_file_json_loads(tmpdir):
         class Config:
             json_loads = custom_json_loads
 
-    p = tmpdir.join('test_json_loads.json')
-    p.write('{"a": 12}')
+    p = tmp_path / 'test_json_loads.json'
+    p.write_text('{"a": 12}')
 
-    assert Example.parse_file(str(p)) == Example(a=99)
+    assert Example.parse_file(p) == Example(a=99)
 
 
 def test_file_pickle(tmpdir):
