@@ -688,7 +688,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema.update({'enum': [item.value for item in field_type]})
         # Don't return immediately, to allow adding specific types
 
-    if getattr(field_type, '__schema_attributes__', False) is True:
+    if getattr(field_type, '__schema_attributes__', False):
         for field_name, schema_name in validation_attribute_to_schema_keyword.items():
             field_value = getattr(field_type, field_name, None)
             if field_value is not None:
