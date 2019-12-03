@@ -1,3 +1,4 @@
+import json
 import pickle
 from typing import List, Union
 
@@ -104,6 +105,24 @@ def test_file_json_no_ext(tmpdir):
     p = tmpdir.join('test')
     p.write('{"a": 12, "b": 8}')
     assert Model.parse_file(str(p)) == Model(a=12, b=8)
+
+
+def test_file_json_loads(tmpdir):
+    def custom_json_loads(*args, **kwargs):
+        data = json.loads(*args, **kwargs)
+        data['a'] = 99
+        return data
+
+    class Example(BaseModel):
+        a: int
+
+        class Config:
+            json_loads = custom_json_loads
+
+    p = tmpdir.join('test_json_loads.json')
+    p.write('{"a": 12}')
+
+    assert Example.parse_file(str(p)) == Example(a=99)
 
 
 def test_file_pickle(tmpdir):
