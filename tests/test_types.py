@@ -1699,6 +1699,17 @@ def test_secretstr():
     with pytest.warns(DeprecationWarning, match=r'`secret_str.display\(\)` is deprecated'):
         assert f.empty_password.display() == ''
 
+    # Assert that SecretStr is equal to SecretStr if the secret is the same.
+    assert f == f.copy()
+    assert f != f.copy(update=dict(password='4321'))
+
+
+def test_secretstr_equality():
+    assert SecretStr('abc') == SecretStr('abc')
+    assert SecretStr('123') != SecretStr('321')
+    assert SecretStr('123') != '123'
+    assert SecretStr('123') is not SecretStr('123')
+
 
 def test_secretstr_error():
     class Foobar(BaseModel):
@@ -1735,6 +1746,17 @@ def test_secretbytes():
         assert f.password.display() == '**********'
     with pytest.warns(DeprecationWarning, match=r'`secret_bytes.display\(\)` is deprecated'):
         assert f.empty_password.display() == ''
+
+    # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
+    assert f == f.copy()
+    assert f != f.copy(update=dict(password=b'4321'))
+
+
+def test_secretbytes_equality():
+    assert SecretBytes(b'abc') == SecretBytes(b'abc')
+    assert SecretBytes(b'123') != SecretBytes(b'321')
+    assert SecretBytes(b'123') != b'123'
+    assert SecretBytes(b'123') is not SecretBytes(b'123')
 
 
 def test_secretbytes_error():

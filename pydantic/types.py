@@ -477,6 +477,9 @@ class SecretStr:
     def __str__(self) -> str:
         return '**********' if self._secret_value else ''
 
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, SecretStr) and self.get_secret_value() == other.get_secret_value()
+
     def display(self) -> str:
         warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)
         return str(self)
@@ -503,6 +506,9 @@ class SecretBytes:
 
     def __str__(self) -> str:
         return '**********' if self._secret_value else ''
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, SecretBytes) and self.get_secret_value() == other.get_secret_value()
 
     def display(self) -> str:
         warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning)
