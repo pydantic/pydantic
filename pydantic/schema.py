@@ -590,8 +590,7 @@ field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (bytes, {'type': 'string', 'format': 'binary'}),
     (StrictBool, {'type': 'boolean'}),
     (bool, {'type': 'boolean'}),
-    # TODO: fix this
-    (int, {'type': 'integerx'}),
+    (int, {'type': 'integer'}),
     (float, {'type': 'number'}),
     (Decimal, {'type': 'number'}),
     (UUID1, {'type': 'string', 'format': 'uuid1'}),
