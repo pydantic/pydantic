@@ -26,3 +26,4 @@ pydantic/*.c
 pydantic/*.so
 .auto-format
 /sandbox/
+/fastapi/
