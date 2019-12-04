@@ -17,8 +17,6 @@ script:
 - python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(1 if pydantic.compiled else 0)"
 - make test
 
-- make test-fastapi
-
 - python3 ./changes/make_history.py
 - make lint
 - make mypy
@@ -95,6 +93,12 @@ jobs:
       - make test
     env:
       - 'DEPS=no'
+  
+  - stage: test
+    python: 3.7
+    name: 'Test FastAPI'
+    script:
+      - make test-fastapi
 
   - stage: test
     python: 3.7
