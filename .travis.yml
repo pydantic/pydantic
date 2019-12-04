@@ -82,6 +82,7 @@ jobs:
     script:
     - pip uninstall -y cython email-validator typing-extensions devtools
     - make test
+    - make test-fastapi
     env:
     - 'DEPS=no'
 
