@@ -21,4 +21,4 @@ if [ -f ./test.db ]; then
     rm ./test.db
 fi
 
-PYTHONPATH=./docs/src pytest --cov=fastapi --cov=tests --cov=docs/src --cov-report=term-missing
+PYTHONPATH=./docs/src pytest
