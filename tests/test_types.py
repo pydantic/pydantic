@@ -6,7 +6,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Pattern, Sequence, Set, Tuple
+from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Optional, Pattern, Sequence, Set, Tuple
 from uuid import UUID
 
 import pytest
@@ -1647,6 +1647,42 @@ def test_json_pre_validator():
 
     assert JsonModel(json_obj='"foobar"').dict() == {'json_obj': 'foobar'}
     assert call_count == 1
+
+
+def test_json_optional_simple():
+    class JsonOptionalModel(BaseModel):
+        json_obj: Optional[Json]
+
+    JsonOptionalModel(json_obj=None)
+
+
+def test_json_optional_complex():
+    class JsonOptionalModel(BaseModel):
+        json_obj: Optional[Json[List[int]]]
+
+    JsonOptionalModel(json_obj=None)
+
+    good = JsonOptionalModel(json_obj='[1, 2, 3]')
+    assert good.json_obj == [1, 2, 3]
+
+    with pytest.raises(ValidationError):
+        JsonOptionalModel(json_obj='["i should fail"]')
+
+
+def test_json_explicitly_required():
+    class JsonRequired(BaseModel):
+        json_obj: Json = ...
+
+    with pytest.raises(ValidationError):
+        JsonRequired()
+
+
+def test_json_implicitly_required():
+    class JsonRequired(BaseModel):
+        json_obj: Json
+
+    with pytest.raises(ValidationError):
+        JsonRequired()
 
 
 def test_pattern():
