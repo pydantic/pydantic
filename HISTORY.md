@@ -1,3 +1,28 @@
+## v1.2 (2019-11-28)
+
+* **Possible Breaking Change:** Add support for required `Optional` with `name: Optional[AnyType] = Field(...)` 
+  and refactor `ModelField` creation to preserve `required` parameter value, #1031 by @tiangolo;
+  see [here](https://pydantic-docs.helpmanual.io/usage/models/#required-optional-fields) for details
+* Add benchmarks for `cattrs`, #513 by @sebastianmika
+* Add `exclude_none` option to `dict()` and friends, #587 by @niknetniko
+* Add benchmarks for `valideer`, #670 by @gsakkis
+* Add `parse_obj_as` and `parse_file_as` functions for ad-hoc parsing of data into arbitrary pydantic-compatible types, #934 by @dmontagu
+* Add `allow_reuse` argument to validators, thus allowing validator reuse, #940 by @dmontagu
+* Add support for mapping types for custom root models, #958 by @dmontagu
+* Mypy plugin support for dataclasses, #966 by @koxudaxi
+* Add support for dataclasses default factory, #968 by @ahirner
+* Add a `ByteSize` type for converting byte string (`1GB`) to plain bytes, #977 by @dgasmith
+* Fix mypy complaint about `@root_validator(pre=True)`, #984 by @samuelcolvin
+* Add manylinux binaries for python 3.8 to pypi, also support manylinux2010, #994 by @samuelcolvin
+* Adds ByteSize conversion to another unit, #995 by @dgasmith
+* Fix `__str__` and `__repr__` inheritance for models, #1022 by @samuelcolvin
+* add testimonials section to docs, #1025 by @sullivancolin
+* Add support for `typing.Literal` for Python 3.8, #1026 by @dmontagu
+
+## v1.1.1 (2019-11-20)
+
+* Fix bug where use of complex fields on sub-models could cause fields to be incorrectly configured, #1015 by @samuelcolvin
+
 ## v1.1 (2019-11-07)
 
 * Add a mypy plugin for type checking `BaseModel.__init__` and more, #722 by @dmontagu

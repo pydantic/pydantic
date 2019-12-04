@@ -1,6 +1,9 @@
 import inspect
+import platform
+import sys
 import warnings
 from importlib import import_module
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -24,6 +27,7 @@ from .typing import AnyType, display_as_type
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+    from .dataclasses import DataclassType  # noqa: F401
 
 KeyType = TypeVar('KeyType')
 
@@ -112,6 +116,19 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     Return True if two floats are almost equal
     """
     return abs(value_1 - value_2) <= delta
+
+
+def get_model(obj: Union[Type['BaseModel'], Type['DataclassType']]) -> Type['BaseModel']:
+    from .main import BaseModel  # noqa: F811
+
+    try:
+        model_cls = obj.__pydantic_model__  # type: ignore
+    except AttributeError:
+        model_cls = obj
+
+    if not issubclass(model_cls, BaseModel):
+        raise TypeError('Unsupported type, must be either BaseModel or dataclass')
+    return model_cls
 
 
 class PyObjectStr(str):
@@ -313,3 +330,26 @@ class ValueItems(Representation):
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]
+
+
+def version_info() -> str:
+    from .main import compiled
+    from .version import VERSION
+
+    optional_deps = []
+    for p in ('typing-extensions', 'email-validator', 'devtools'):
+        try:
+            import_module(p.replace('-', '_'))
+        except ImportError:
+            continue
+        optional_deps.append(p)
+
+    info = {
+        'pydantic version': VERSION,
+        'pydantic compiled': compiled,
+        'install path': Path(__file__).resolve().parent,
+        'python version': sys.version,
+        'platform': platform.platform(),
+        'optional deps. installed': optional_deps,
+    }
+    return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())

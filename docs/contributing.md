@@ -1,4 +1,21 @@
-We'd love you to contribute to *pydantic*! It should be extremely simple to get started and create a Pull Request.
+We'd love you to contribute to *pydantic*!
+
+## Issues
+
+Questions, feature requests and bug reports are all welcome as issues.
+
+To make it as simple as possible for us to help you please include the output of the following call in your issue:
+
+```bash
+python -c "import pydantic.utils; print(pydantic.utils.version_info())"
+```
+
+Please try to always include the above output unless you're unable to install *pydantic* or **know** it's not relevant
+to your question or feature request.
+
+## Pull Requests
+
+It should be extremely simple to get started and create a Pull Request.
 *pydantic* is released regularly so you should see your improvements release in a matter of days or weeks.
 
 !!! note

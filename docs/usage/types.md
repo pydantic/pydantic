@@ -73,7 +73,7 @@ with custom properties and validation.
 
 `typing.Optional`
 : `Optional[x]` is simply short hand for `Union[x, None]`;
-  see [Unions](#unions) below for more detail on parsing and validation
+  see [Unions](#unions) below for more detail on parsing and validation and [Required Fields](models.md#required-fields) for details about required fields that can receive `None` as a value.
 
 `typing.List`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
@@ -181,6 +181,13 @@ classes to preclude the unexpected representation as such:
 {!.tmp_examples/types_union_correct.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+!!! tip
+    The type `Optional[x]` is a shorthand for `Union[x, None]`.
+
+    `Optional[x]` can also be used to specify a required field that can take `None` as a value.
+
+    See more details in [Required Fields](models.md#required-fields).
 
 ### Enums and Choices
 
