@@ -14,7 +14,7 @@ latest_tag=$(git describe --tags "${latest_tag_commit}")
 git checkout "${latest_tag}"
 pip install flit
 flit install
-pip install -e ..
+SKIP_CYTHON=1 pip install -e ..
 
 # Remove temporary DB
 if [ -f ./test.db ]; then
