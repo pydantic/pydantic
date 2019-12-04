@@ -15,4 +15,10 @@ git checkout "${latest_tag}"
 pip install flit
 flit install
 pip install -e ..
-bash scripts/test.sh
+
+# Remove temporary DB
+if [ -f ./test.db ]; then
+    rm ./test.db
+fi
+
+PYTHONPATH=./docs/src pytest --cov=fastapi --cov=tests --cov=docs/src --cov-report=term-missing
