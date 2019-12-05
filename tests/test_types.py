@@ -1677,14 +1677,6 @@ def test_json_explicitly_required():
         JsonRequired()
 
 
-def test_json_implicitly_required():
-    class JsonRequired(BaseModel):
-        json_obj: Json
-
-    with pytest.raises(ValidationError):
-        JsonRequired()
-
-
 def test_pattern():
     class Foobar(BaseModel):
         pattern: Pattern
