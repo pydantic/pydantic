@@ -27,3 +27,4 @@ pydantic/*.so
 .auto-format
 /sandbox/
 /.ghtopdep_cache/
+/fastapi/
