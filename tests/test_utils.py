@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from pydantic.color import Color
 from pydantic.fields import Undefined
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
-from pydantic.utils import ValueItems, copy_code, deep_update, import_string, lenient_issubclass, truncate
+from pydantic.utils import ValueItems, deep_update, import_string, lenient_issubclass, truncate
 
 try:
     import devtools
@@ -265,14 +265,3 @@ def test_deep_update_is_not_mutating():
 
 def test_undefined_repr():
     assert repr(Undefined) == 'PydanticUndefined'
-
-
-def test_replace_code():
-    def f():
-        return locals()['a']
-
-    f.__code__ = copy_code(f.__code__, co_varnames=('a',), co_argcount=1, co_nlocals=1)
-    assert f.__code__.co_varnames == ('a',)
-    assert f.__code__.co_nlocals == 1
-    assert f.__code__.co_argcount == 1
-    assert f(1) == 1

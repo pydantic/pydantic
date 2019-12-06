@@ -1,9 +1,8 @@
-import inspect
-import sys
 import warnings
-from functools import wraps
+from collections import OrderedDict
 from importlib import import_module
-from types import CodeType, FunctionType
+from inspect import Parameter, Signature, isgenerator, signature
+from itertools import islice
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -25,30 +24,11 @@ from typing import (
 from .typing import AnyType, display_as_type
 
 if TYPE_CHECKING:
-    from .main import BaseModel  # noqa: F401
+    from .main import BaseModel, BaseConfig  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
     from .fields import ModelField  # noqa: F401
 
 KeyType = TypeVar('KeyType')
-
-PY38 = sys.version_info >= (3, 8)
-
-CODE_ARGS: Tuple[str, ...] = (
-    'co_argcount',  # type: ignore
-    *(('co_posonlyargcount',) if PY38 else ()),
-    'co_kwonlyargcount',
-    'co_nlocals',
-    'co_stacksize',
-    'co_flags',
-    'co_code',
-    'co_consts',
-    'co_names',
-    'co_varnames',
-    'co_filename',
-    'co_name',
-    'co_firstlineno',
-    'co_lnotab',
-)
 
 
 def import_string(dotted_path: str) -> Any:
@@ -89,7 +69,7 @@ ExcType = Type[Exception]
 
 
 def sequence_like(v: AnyType) -> bool:
-    return isinstance(v, (list, tuple, set, frozenset)) or inspect.isgenerator(v)
+    return isinstance(v, (list, tuple, set, frozenset)) or isgenerator(v)
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
@@ -137,80 +117,48 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     return abs(value_1 - value_2) <= delta
 
 
-def copy_code(code: CodeType, **update: Any) -> CodeType:
-    if PY38:
-        return code.replace(**update)  # type: ignore
-    return CodeType(*[update.get(arg, getattr(code, arg)) for arg in CODE_ARGS])
-
-
-def generate_typed_init(
-    current_init: FunctionType,
-    fields: Dict[str, 'ModelField'],
-    defaults: Dict[str, Any],
-    annotations: Dict[str, Any],
-    compiled: bool,
-) -> FunctionType:
+def generate_model_signature(
+    init: Callable[..., None], fields: Dict[str, 'ModelField'], config: Type['BaseConfig']
+) -> Signature:
     """
-    Generate typed signature for init
+    Generate signature for model based on its fields
     """
-    # making a copy of original init so we can modify it
-    if not compiled:
-        # can perform this in python, however in cython this will cause "unknown opcode" on call
-        orig_init = current_init
-        orig_code = orig_init.__code__
-        new_init = FunctionType(
-            orig_code, orig_init.__globals__, closure=orig_init.__closure__, name=orig_init.__name__
-        )
-    else:
-        orig_init = getattr(current_init, '__origin_init__', current_init)
-        orig_code = orig_init.__code__
 
-        @wraps(orig_init)
-        def __init__(*args, **kwargs):  # type: ignore
-            orig_init(*args, **kwargs)
+    present_params = signature(init).parameters.values()
+    merged_params: OrderedDict[str, Parameter] = OrderedDict()
+    var_kw = None
+    use_var_kw = False
 
-        new_init = __init__  # type: ignore
-        new_init.__origin_init__ = orig_init  # type: ignore
+    for param in islice(present_params, 1, len(present_params)):  # skip self arg
+        if param.kind is param.VAR_KEYWORD:
+            var_kw = param
+            continue
+        merged_params[param.name] = param
 
-    # creating fake init with model fields in signature
-    orig_posonlycount = orig_code.co_posonlyargcount if PY38 else 0  # type: ignore
-    orig_allargscount = orig_code.co_argcount + orig_code.co_kwonlyargcount + orig_posonlycount
-    orig_argnames = orig_code.co_varnames[:orig_allargscount]
-    orig_othernames = orig_code.co_varnames[orig_allargscount:]
+    allow_names = config.allow_population_by_field_name
+    for field_name, field in fields.items():
+        param_name = field.alias
+        if field_name in merged_params or param_name in merged_params:
+            continue
+        elif not param_name.isidentifier():
+            if allow_names and field_name.isidentifier():
+                param_name = field_name
+            else:
+                use_var_kw = True
+                continue
 
-    orig_argnames_set = set(orig_argnames)  # just for fast lookups
-    valid_fields_args = tuple([name for name in fields if name not in orig_argnames_set and name.isidentifier()])
-    del orig_argnames_set
+        # TODO: replace annotation with actual expected types once #1055 solved
+        kwargs = {'default': field.default} if not field.required else {}
+        merged_params[param_name] = Parameter(param_name, Parameter.KEYWORD_ONLY, annotation=field.type_, **kwargs)
 
-    fake_init = FunctionType(
-        copy_code(
-            orig_code,
-            co_argcount=orig_code.co_argcount,
-            co_kwonlyargcount=orig_code.co_kwonlyargcount + len(valid_fields_args),
-            co_names=orig_code.co_names,
-            co_varnames=orig_argnames + valid_fields_args + orig_othernames,
-            co_name=orig_code.co_name,
-            **({'co_posonlyargcount': orig_posonlycount} if PY38 else {}),
-        ),
-        orig_init.__globals__,
-        name=orig_init.__name__,
-        closure=orig_init.__closure__ or () if PY38 else (),
-    )
+    extra = config.extra
+    if extra is extra.allow:
+        use_var_kw = True
 
-    # setting signature of fake init to copied init
-    doc = orig_init.__doc__ or ''
-    caption = '\n(signature auto generated from model fields)'
-    if caption not in doc:
-        doc += caption
+    if use_var_kw and var_kw is not None:
+        merged_params[var_kw.name] = var_kw
 
-    fake_init.__doc__ = new_init.__doc__ = doc
-    fake_init.__defaults__ = new_init.__defaults__ = orig_init.__defaults__
-    fake_init.__kwdefaults__ = new_init.__kwdefaults__ = {**(orig_init.__kwdefaults__ or {}), **defaults}
-    fake_init.__annotations__ = new_init.__annotations__ = {**orig_init.__annotations__, **annotations}
-
-    new_init.__wrapped__ = fake_init  # type: ignore
-    new_init.__signature__ = inspect.signature(fake_init)  # type: ignore
-    return new_init
+    return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
 class PyObjectStr(str):

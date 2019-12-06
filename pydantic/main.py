@@ -1,3 +1,4 @@
+import inspect
 import json
 import sys
 import warnings
@@ -18,7 +19,14 @@ from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import GetterDict, Representation, ValueItems, generate_typed_init, lenient_issubclass, validate_field_name
+from .utils import (
+    GetterDict,
+    Representation,
+    ValueItems,
+    generate_model_signature,
+    lenient_issubclass,
+    validate_field_name,
+)
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
@@ -147,10 +155,10 @@ class ModelMetaclass(ABCMeta):
         fields: Dict[str, ModelField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
-        fields_annotations: Dict[str, Type[Any]] = {}
         fields_defaults: Dict[str, Any] = {}
 
         pre_root_validators, post_root_validators = [], []
+        init = namespace.get('__init__')
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(deepcopy(base.__fields__))
@@ -158,13 +166,14 @@ class ModelMetaclass(ABCMeta):
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
                 post_root_validators += base.__post_root_validators__
+            if init is None:
+                init = base.__init__
 
         config = inherit_config(namespace.get('Config'), config)
         validators = inherit_validators(extract_validators(namespace), validators)
         vg = ValidatorGroup(validators)
 
         for f in fields.values():
-            fields_annotations[f.name] = f.type_
             if not f.required:
                 fields_defaults[f.name] = f.default
 
@@ -201,7 +210,6 @@ class ModelMetaclass(ABCMeta):
                         class_validators=vg.get_validators(ann_name),
                         config=config,
                     )
-                    fields_annotations[ann_name] = inferred.type_
                     if not inferred.required:
                         fields_defaults[ann_name] = inferred.default
 
@@ -226,7 +234,6 @@ class ModelMetaclass(ABCMeta):
                             f'if you wish to change the type of this field, please use a type annotation'
                         )
                     fields[var_name] = inferred
-                    fields_annotations[var_name] = inferred.type_
                     if not inferred.required:
                         fields_defaults[var_name] = inferred.default
 
@@ -249,12 +256,11 @@ class ModelMetaclass(ABCMeta):
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
+            '__signature__': generate_model_signature(init, fields, config),
             **{n: v for n, v in namespace.items() if n not in fields},
         }
 
-        cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
-        cls.__init__ = generate_typed_init(cls.__init__, fields, fields_defaults, fields_annotations, compiled)
-        return cls
+        return super().__new__(mcs, name, bases, new_namespace, **kwargs)
 
 
 class BaseModel(metaclass=ModelMetaclass):
@@ -270,6 +276,7 @@ class BaseModel(metaclass=ModelMetaclass):
         __json_encoder__: Callable[[Any], Any] = lambda x: x
         __schema_cache__: 'DictAny' = {}
         __custom_root_type__: bool = False
+        __signature__: inspect.Signature
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
