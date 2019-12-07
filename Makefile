@@ -88,6 +88,7 @@ clean:
 	rm -rf site
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
+	rm -rf fastapi/test.db
 
 .PHONY: docs
 docs:
@@ -108,3 +109,10 @@ publish: docs
 	zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
 	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
+
+fastapi:
+	git clone https://github.com/tiangolo/fastapi.git
+
+.PHONY: test-fastapi
+test-fastapi: install fastapi
+	bash tests/test-fastapi.sh

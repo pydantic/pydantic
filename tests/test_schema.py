@@ -13,6 +13,7 @@ import pytest
 
 from pydantic import BaseModel, Extra, Field, ValidationError, conlist, validator
 from pydantic.color import Color
+from pydantic.dataclasses import dataclass
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
     get_flat_models_from_model,
@@ -1638,4 +1639,28 @@ def test_subfield_field_info():
             }
         },
         'required': ['entries'],
+    }
+
+
+def test_dataclass():
+    @dataclass
+    class Model:
+        a: bool
+
+    assert schema([Model]) == {
+        'definitions': {
+            'Model': {
+                'title': 'Model',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+                'required': ['a'],
+            }
+        }
+    }
+
+    assert model_schema(Model) == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+        'required': ['a'],
     }

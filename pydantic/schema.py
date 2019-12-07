@@ -72,16 +72,17 @@ from .typing import (
     literal_values,
     new_type_supertype,
 )
-from .utils import lenient_issubclass
+from .utils import get_model, lenient_issubclass
 
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
+    from .dataclasses import DataclassType  # noqa: F401
 
 default_prefix = '#/definitions/'
 
 
 def schema(
-    models: Sequence[Type['BaseModel']],
+    models: Sequence[Union[Type['BaseModel'], Type['DataclassType']]],
     *,
     by_alias: bool = True,
     title: Optional[str] = None,
@@ -104,8 +105,9 @@ def schema(
     :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for
       the models and sub-models passed in ``models``.
     """
+    clean_models = [get_model(model) for model in models]
     ref_prefix = ref_prefix or default_prefix
-    flat_models = get_flat_models_from_models(models)
+    flat_models = get_flat_models_from_models(clean_models)
     model_name_map = get_model_name_map(flat_models)
     definitions = {}
     output_schema: Dict[str, Any] = {}
@@ -113,7 +115,7 @@ def schema(
         output_schema['title'] = title
     if description:
         output_schema['description'] = description
-    for model in models:
+    for model in clean_models:
         m_schema, m_definitions, m_nested_models = model_process_schema(
             model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
@@ -125,7 +127,9 @@ def schema(
     return output_schema
 
 
-def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Optional[str] = None) -> Dict[str, Any]:
+def model_schema(
+    model: Union[Type['BaseModel'], Type['DataclassType']], by_alias: bool = True, ref_prefix: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Generate a JSON Schema for one model. With all the sub-models defined in the ``definitions`` top-level
     JSON key.
@@ -139,6 +143,7 @@ def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Op
       prefix.
     :return: dict with the JSON Schema for the passed ``model``
     """
+    model = get_model(model)
     ref_prefix = ref_prefix or default_prefix
     flat_models = get_flat_models_from_model(model)
     model_name_map = get_model_name_map(flat_models)

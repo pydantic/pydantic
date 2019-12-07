@@ -1,8 +1,12 @@
 import warnings
+import inspect
+import platform
+import sys
 from collections import OrderedDict
 from importlib import import_module
 from inspect import Parameter, Signature, isgenerator, signature
 from itertools import islice
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -27,6 +31,7 @@ if TYPE_CHECKING:
     from .main import BaseModel, BaseConfig  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
     from .fields import ModelField  # noqa: F401
+    from .dataclasses import DataclassType  # noqa: F401
 
 KeyType = TypeVar('KeyType')
 
@@ -159,6 +164,19 @@ def generate_model_signature(
         merged_params[var_kw.name] = var_kw
 
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
+
+
+def get_model(obj: Union[Type['BaseModel'], Type['DataclassType']]) -> Type['BaseModel']:
+    from .main import BaseModel  # noqa: F811
+
+    try:
+        model_cls = obj.__pydantic_model__  # type: ignore
+    except AttributeError:
+        model_cls = obj
+
+    if not issubclass(model_cls, BaseModel):
+        raise TypeError('Unsupported type, must be either BaseModel or dataclass')
+    return model_cls
 
 
 class PyObjectStr(str):
@@ -360,3 +378,26 @@ class ValueItems(Representation):
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]
+
+
+def version_info() -> str:
+    from .main import compiled
+    from .version import VERSION
+
+    optional_deps = []
+    for p in ('typing-extensions', 'email-validator', 'devtools'):
+        try:
+            import_module(p.replace('-', '_'))
+        except ImportError:
+            continue
+        optional_deps.append(p)
+
+    info = {
+        'pydantic version': VERSION,
+        'pydantic compiled': compiled,
+        'install path': Path(__file__).resolve().parent,
+        'python version': sys.version,
+        'platform': platform.platform(),
+        'optional deps. installed': optional_deps,
+    }
+    return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())

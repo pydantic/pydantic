@@ -26,7 +26,7 @@ except ImportError:
 try:
     from typing import ForwardRef  # type: ignore
 
-    def evaluate_forwardref(type_, globalns, localns):  # type: ignore
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Type[Any]:
         return type_._evaluate(globalns, localns)
 
 
@@ -34,7 +34,7 @@ except ImportError:
     # python 3.6
     from typing import _ForwardRef as ForwardRef  # type: ignore
 
-    def evaluate_forwardref(type_, globalns, localns):  # type: ignore
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Type[Any]:
         return type_._eval_type(globalns, localns)
 
 

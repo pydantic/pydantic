@@ -93,6 +93,12 @@ jobs:
       - make test
     env:
       - 'DEPS=no'
+  
+  - stage: test
+    python: 3.7
+    name: 'Test FastAPI'
+    script:
+      - make test-fastapi
 
   - stage: test
     python: 3.7
