@@ -1,7 +1,6 @@
-import warnings
-import inspect
 import platform
 import sys
+import warnings
 from collections import OrderedDict
 from importlib import import_module
 from inspect import Parameter, Signature, isgenerator, signature
