@@ -750,6 +750,8 @@ def encode_default(dft: Any) -> Any:
         return t(encode_default(v) for v in dft)
     elif isinstance(dft, dict):
         return {encode_default(k): encode_default(v) for k, v in dft.items()}
+    elif dft is None:
+        return None
     else:
         return pydantic_encoder(dft)
 

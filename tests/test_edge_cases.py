@@ -129,6 +129,17 @@ def test_dict_dict():
     assert Model(v={'foo': 1}).dict() == {'v': {'foo': 1}}
 
 
+def test_none_list():
+    class Model(BaseModel):
+        v = [None]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'default': [None], 'type': 'array', 'items': {}}},
+    }
+
+
 @pytest.mark.parametrize(
     'value,result',
     [
