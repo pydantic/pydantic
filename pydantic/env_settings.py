@@ -66,7 +66,7 @@ class BaseSettings(BaseModel):
         @classmethod
         def prepare_field(cls, field: ModelField) -> None:
             env_names: Iterable[str]
-            env = field.field_info.extra.pop('env', None)
+            env = field.field_info.extra.get('env')
             if env is None:
                 if field.has_alias:
                     warnings.warn(
