@@ -9,14 +9,7 @@ from pathlib import Path
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast, no_type_check
 
-from .class_validators import (
-    ROOT_KEY,
-    Validator,
-    ValidatorGroup,
-    extract_root_validators,
-    extract_validators,
-    inherit_validators,
-)
+from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import SHAPE_MAPPING, ModelField, Undefined
@@ -255,7 +248,7 @@ class BaseModel(metaclass=ModelMetaclass):
         __field_defaults__: Dict[str, Any] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
-        __post_root_validators__: List[AnyCallable]
+        __post_root_validators__: List[Tuple[bool, AnyCallable]]
         __config__: Type[BaseConfig] = BaseConfig
         __root__: Any = None
         __json_encoder__: Callable[[Any], Any] = lambda x: x
@@ -859,8 +852,8 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 for f in sorted(extra):
                     errors.append(ErrorWrapper(ExtraError(), loc=f))
 
-    for validator in model.__post_root_validators__:
-        if errors and getattr(validator, Validator.SKIP_ON_FAILURE_KEY, False):
+    for skip_on_failure, validator in model.__post_root_validators__:
+        if skip_on_failure and errors:
             continue
         try:
             values = validator(cls_, values)

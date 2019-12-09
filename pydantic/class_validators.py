@@ -12,8 +12,7 @@ from .utils import in_ipython
 
 
 class Validator:
-    SKIP_ON_FAILURE_KEY = '__validator_skip_on_failure__'  # Applies only to RootValidators
-    __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields'
+    __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields', 'skip_on_failure'
 
     def __init__(
         self,
@@ -22,12 +21,14 @@ class Validator:
         each_item: bool = False,
         always: bool = False,
         check_fields: bool = False,
+        skip_on_failure: bool = False,
     ):
         self.func = func
         self.pre = pre
         self.each_item = each_item
         self.always = always
         self.check_fields = check_fields
+        self.skip_on_failure = skip_on_failure
 
 
 if TYPE_CHECKING:
@@ -114,14 +115,16 @@ def root_validator(
     """
     if _func:
         f_cls = _prepare_validator(_func, allow_reuse)
-        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre))
-        setattr(f_cls.__func__, Validator.SKIP_ON_FAILURE_KEY, skip_on_failure)
+        setattr(
+            f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
+        )
         return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
         f_cls = _prepare_validator(f, allow_reuse)
-        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre))
-        setattr(f_cls.__func__, Validator.SKIP_ON_FAILURE_KEY, skip_on_failure)
+        setattr(
+            f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
+        )
         return f_cls
 
     return dec
@@ -187,9 +190,9 @@ def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
     return validators
 
 
-def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[AnyCallable]]:
+def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[Tuple[bool, AnyCallable]]]:
     pre_validators: List[AnyCallable] = []
-    post_validators: List[AnyCallable] = []
+    post_validators: List[Tuple[bool, AnyCallable]] = []
     for name, value in namespace.items():
         validator_config: Optional[Validator] = getattr(value, ROOT_VALIDATOR_CONFIG_KEY, None)
         if validator_config:
@@ -206,7 +209,7 @@ def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable
             if validator_config.pre:
                 pre_validators.append(validator_config.func)
             else:
-                post_validators.append(validator_config.func)
+                post_validators.append((validator_config.skip_on_failure, validator_config.func))
     return pre_validators, post_validators
 
 
