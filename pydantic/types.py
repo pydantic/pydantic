@@ -91,9 +91,9 @@ class ConstrainedBytes(bytes):
     max_length: OptionalInt = None
 
     @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         update_not_none(
-            schema, minLength=cls.min_length, maxLength=cls.max_length,
+            field_schema, minLength=cls.min_length, maxLength=cls.max_length,
         )
 
     @classmethod
@@ -128,9 +128,9 @@ class ConstrainedList(list):  # type: ignore
         yield cls.list_length_validator
 
     @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         update_not_none(
-            schema, minLength=cls.min_items, maxLength=cls.max_items,
+            field_schema, minLength=cls.min_items, maxLength=cls.max_items,
         )
 
     @classmethod
@@ -162,9 +162,9 @@ class ConstrainedStr(str):
     strict = False
 
     @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         update_not_none(
-            schema, minLength=cls.min_length, maxLength=cls.max_length, pattern=cls.regex and cls.regex.pattern
+            field_schema, minLength=cls.min_length, maxLength=cls.max_length, pattern=cls.regex and cls.regex.pattern
         )
 
     @classmethod
@@ -279,9 +279,9 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalInt = None
 
     @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         update_not_none(
-            schema,
+            field_schema,
             exclusiveMinimum=cls.gt,
             exclusiveMaximum=cls.lt,
             minimum=cls.ge,
@@ -326,9 +326,9 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalIntFloat = None
 
     @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         update_not_none(
-            schema,
+            field_schema,
             exclusiveMinimum=cls.gt,
             exclusiveMaximum=cls.lt,
             minimum=cls.ge,
@@ -379,9 +379,9 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalIntFloatDecimal = None
 
     @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         update_not_none(
-            schema,
+            field_schema,
             exclusiveMinimum=cls.gt,
             exclusiveMaximum=cls.lt,
             minimum=cls.ge,

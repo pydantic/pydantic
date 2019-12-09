@@ -73,7 +73,7 @@ to set all of the arguments above except `default`.
 
 ### Unenforced Field constraints
 
-If *pydantic* finds constraints which are not being enforced, an error will be raised. If you want to force the 
+If *pydantic* finds constraints which are not being enforced, an error will be raised. If you want to force the
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
 to `Field()` with the raw schema attribute name:
 
@@ -81,6 +81,11 @@ to `Field()` with the raw schema attribute name:
 {!.tmp_examples/schema_unenforced_constraints.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+## Modifying schema in custom fields
+
+Custom field types can customise the schema generate for them using the `__modify_schema__` class method,
+see [Custom Data Types](types.md#custom-data-types) for more details.
 
 ## JSON Schema Types
 

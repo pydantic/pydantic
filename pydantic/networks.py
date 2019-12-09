@@ -140,8 +140,8 @@ class AnyUrl(str):
         return url
 
     @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
-        update_not_none(schema, minLength=cls.min_length, maxLength=cls.max_length)
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length)
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
