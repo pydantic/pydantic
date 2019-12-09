@@ -569,17 +569,6 @@ def field_singleton_sub_fields_schema(
         return {'anyOf': sub_field_schemas}, definitions, nested_models
 
 
-validation_attribute_to_schema_keyword = {
-    'min_length': 'minLength',
-    'max_length': 'maxLength',
-    'regex': 'pattern',
-    'gt': 'exclusiveMinimum',
-    'lt': 'exclusiveMaximum',
-    'ge': 'minimum',
-    'le': 'maximum',
-    'multiple_of': 'multipleOf',
-}
-
 # Order is important, subclasses of str must go before str, etc
 field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (EmailStr, {'type': 'string', 'format': 'email'}),
@@ -688,21 +677,19 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema.update({'enum': [item.value for item in field_type]})
         # Don't return immediately, to allow adding specific types
 
-    if getattr(field_type, '__schema_attributes__', False):
-        for field_name, schema_name in validation_attribute_to_schema_keyword.items():
-            field_value = getattr(field_type, field_name, None)
-            if field_value is not None:
-                if field_name == 'regex':
-                    field_value = field_value.pattern
-                f_schema[schema_name] = field_value
-
     for type_, t_schema in field_class_to_schema_enum_enabled:
         if issubclass(field_type, type_):
             f_schema.update(t_schema)
             break
+
+    modify_schema = getattr(field_type, '__modify_schema__', None)
+    if modify_schema:
+        modify_schema(f_schema)
+
     # Return schema, with or without enum definitions
     if f_schema:
         return f_schema, definitions, nested_models
+
     for type_, t_schema in field_class_to_schema_enum_disabled:
         if issubclass(field_type, type_):
             return t_schema, definitions, nested_models

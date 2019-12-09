@@ -12,7 +12,7 @@ from ipaddress import (
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Set, Tuple, Type, Union, cast, no_type_check
 
 from . import errors
-from .utils import Representation
+from .utils import Representation, update_not_none
 from .validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:
@@ -68,7 +68,6 @@ int_domain_regex = re.compile(fr'(?:{_int_chunk}\.)*?{_int_chunk}{_domain_ending
 
 
 class AnyUrl(str):
-    __schema_attributes__ = True
     strip_whitespace = True
     min_length = 1
     max_length = 2 ** 16
@@ -139,6 +138,10 @@ class AnyUrl(str):
         if fragment:
             url += '#' + fragment
         return url
+
+    @classmethod
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        update_not_none(schema, minLength=cls.min_length, maxLength=cls.max_length)
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':

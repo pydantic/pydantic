@@ -108,6 +108,10 @@ def deep_update(mapping: Dict[KeyType, Any], updating_mapping: Dict[KeyType, Any
     return updated_mapping
 
 
+def update_not_none(mapping: Dict[Any, Any], **update: Any) -> None:
+    mapping.update({k: v for k, v in update.items() if v is not None})
+
+
 def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
     """
     Return True if two floats are almost equal

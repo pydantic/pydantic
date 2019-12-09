@@ -513,10 +513,13 @@ def test_str_constrained_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
+    model_schema = Model.schema()
+    assert model_schema['properties']['a'] == expected_schema
+
     base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
     base_schema['properties']['a'] = expected_schema
 
-    assert Model.schema() == base_schema
+    assert model_schema == base_schema
 
 
 @pytest.mark.parametrize(

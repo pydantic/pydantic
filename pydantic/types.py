@@ -9,7 +9,7 @@ from uuid import UUID
 
 from . import errors
 from .typing import AnyType
-from .utils import import_string
+from .utils import import_string, update_not_none
 from .validators import (
     bytes_validator,
     constr_length_validator,
@@ -86,10 +86,15 @@ if TYPE_CHECKING:
 
 
 class ConstrainedBytes(bytes):
-    __schema_attributes__ = True
     strip_whitespace = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
+
+    @classmethod
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        update_not_none(
+            schema, minLength=cls.min_length, maxLength=cls.max_length,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -109,7 +114,6 @@ T = TypeVar('T')
 
 # This types superclass should be List[T], but cython chokes on that...
 class ConstrainedList(list):  # type: ignore
-    __schema_attributes__ = True
     # Needed for pydantic to detect that this is a list
     __origin__ = list
     __args__: List[Type[T]]  # type: ignore
@@ -122,6 +126,12 @@ class ConstrainedList(list):  # type: ignore
     def __get_validators__(cls) -> 'CallableGenerator':
         yield list_validator
         yield cls.list_length_validator
+
+    @classmethod
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        update_not_none(
+            schema, minLength=cls.min_items, maxLength=cls.max_items,
+        )
 
     @classmethod
     def list_length_validator(cls, v: 'List[T]') -> 'List[T]':
@@ -144,13 +154,18 @@ def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None)
 
 
 class ConstrainedStr(str):
-    __schema_attributes__ = True
     strip_whitespace = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
     curtail_length: OptionalInt = None
     regex: Optional[Pattern[str]] = None
     strict = False
+
+    @classmethod
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        update_not_none(
+            schema, minLength=cls.min_length, maxLength=cls.max_length, pattern=cls.regex and cls.regex.pattern
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -256,13 +271,23 @@ class ConstrainedNumberMeta(type):
 
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
-    __schema_attributes__ = True
     strict: bool = False
     gt: OptionalInt = None
     ge: OptionalInt = None
     lt: OptionalInt = None
     le: OptionalInt = None
     multiple_of: OptionalInt = None
+
+    @classmethod
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        update_not_none(
+            schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le,
+            multipleOf=cls.multiple_of,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -293,13 +318,23 @@ class StrictInt(ConstrainedInt):
 
 
 class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
-    __schema_attributes__ = True
     strict: bool = False
     gt: OptionalIntFloat = None
     ge: OptionalIntFloat = None
     lt: OptionalIntFloat = None
     le: OptionalIntFloat = None
     multiple_of: OptionalIntFloat = None
+
+    @classmethod
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        update_not_none(
+            schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le,
+            multipleOf=cls.multiple_of,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -335,7 +370,6 @@ class StrictFloat(ConstrainedFloat):
 
 
 class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
-    __schema_attributes__ = True
     gt: OptionalIntFloatDecimal = None
     ge: OptionalIntFloatDecimal = None
     lt: OptionalIntFloatDecimal = None
@@ -343,6 +377,17 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     max_digits: OptionalInt = None
     decimal_places: OptionalInt = None
     multiple_of: OptionalIntFloatDecimal = None
+
+    @classmethod
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        update_not_none(
+            schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le,
+            multipleOf=cls.multiple_of,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
