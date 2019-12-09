@@ -1483,6 +1483,22 @@ def test_model_with_schema_extra():
     }
 
 
+def test_model_with_schema_extra_callable():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            @staticmethod
+            def schema_extra(schema):
+                schema.pop('properties')
+                schema['type'] = 'override'
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'override',
+    }
+
+
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         a: str

@@ -91,7 +91,6 @@ def exec_examples():
     errors = []
     all_md = all_md_contents()
     new_files = {}
-    os.environ.clear()
     os.environ.update({'my_auth_key': 'xxx', 'my_api_key': 'xxx'})
 
     sys.path.append(str(EXAMPLES_DIR))
@@ -113,7 +112,7 @@ def exec_examples():
         if f'{{!.tmp_examples/{file.name}!}}' not in all_md:
             error('file not used anywhere')
 
-        file_text = file.read_text()
+        file_text = file.read_text('utf-8')
         if '\n\n\n' in file_text:
             error('too many new lines')
         if not file_text.endswith('\n'):
@@ -184,7 +183,7 @@ def exec_examples():
     print(f'writing {len(new_files)} example files to {TMP_EXAMPLES_DIR}')
     TMP_EXAMPLES_DIR.mkdir()
     for file_name, content in new_files.items():
-        (TMP_EXAMPLES_DIR / file_name).write_text(content)
+        (TMP_EXAMPLES_DIR / file_name).write_text(content, 'utf-8')
     gen_ansi_output()
     return 0
 
