@@ -9,7 +9,7 @@ from uuid import UUID
 
 from . import errors
 from .typing import AnyType
-from .utils import import_string
+from .utils import import_string, update_not_none
 from .validators import (
     bytes_validator,
     constr_length_validator,
@@ -91,6 +91,12 @@ class ConstrainedBytes(bytes):
     max_length: OptionalInt = None
 
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema, minLength=cls.min_length, maxLength=cls.max_length,
+        )
+
+    @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield bytes_validator
         yield constr_strip_whitespace
@@ -122,6 +128,12 @@ class ConstrainedList(list):  # type: ignore
         yield cls.list_length_validator
 
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema, minLength=cls.min_items, maxLength=cls.max_items,
+        )
+
+    @classmethod
     def list_length_validator(cls, v: 'List[T]') -> 'List[T]':
         v_len = len(v)
 
@@ -148,6 +160,12 @@ class ConstrainedStr(str):
     curtail_length: OptionalInt = None
     regex: Optional[Pattern[str]] = None
     strict = False
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema, minLength=cls.min_length, maxLength=cls.max_length, pattern=cls.regex and cls.regex.pattern
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -261,6 +279,17 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalInt = None
 
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le,
+            multipleOf=cls.multiple_of,
+        )
+
+    @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
 
         yield strict_int_validator if cls.strict else int_validator
@@ -295,6 +324,17 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     lt: OptionalIntFloat = None
     le: OptionalIntFloat = None
     multiple_of: OptionalIntFloat = None
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le,
+            multipleOf=cls.multiple_of,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -337,6 +377,17 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     max_digits: OptionalInt = None
     decimal_places: OptionalInt = None
     multiple_of: OptionalIntFloatDecimal = None
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le,
+            multipleOf=cls.multiple_of,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':

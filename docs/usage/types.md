@@ -1,5 +1,5 @@
-Where possible *pydantic* uses [standard library types](#standard-library-types) to define fields, thus smoothing 
-the learning curve. For many useful applications, however, no standard library type exists, 
+Where possible *pydantic* uses [standard library types](#standard-library-types) to define fields, thus smoothing
+the learning curve. For many useful applications, however, no standard library type exists,
 so *pydantic* implements [many commonly used types](#pydantic-types).
 
 If no existing type suits your purpose you can also implement your [own pydantic-compatible types](#custom-data-types)
@@ -7,7 +7,7 @@ with custom properties and validation.
 
 ## Standard Library Types
 
-*pydantic* supports many common types from the python standard library. If you need stricter processing see 
+*pydantic* supports many common types from the python standard library. If you need stricter processing see
 [Strict Types](#strict-types); if you need to constrain the values allowed (e.g. to require a positive int) see
 [Constrained Types](#constrained-types).
 
@@ -18,12 +18,12 @@ with custom properties and validation.
 : *pydantic* uses `int(v)` to coerce types to an `int`;
   see [this](models.md#data-conversion) warning on loss of information during data conversion
 
-`float` 
+`float`
 : similarly, `float(v)` is used to coerce values to floats
 
 `str`
 : strings are accepted as-is, `int` `float` and `Decimal` are coerced using `str(v)`, `bytes` and `bytearray` are
-  converted using `v.decode()`, enums inheriting from `str` are converted using `v.value`, 
+  converted using `v.decode()`, enums inheriting from `str` are converted using `v.value`,
   and all other types cause an error
 
 `bytes`
@@ -103,23 +103,23 @@ with custom properties and validation.
 : will cause the input value to be passed to `re.compile(v)` to create a regex pattern
 
 `ipaddress.IPv4Address`
-: simply uses the type itself for validation by passing the value to `IPv4Address(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv4Address(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv4Interface`
-: simply uses the type itself for validation by passing the value to `IPv4Address(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv4Address(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv4Network`
-: simply uses the type itself for validation by passing the value to `IPv4Network(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv4Network(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv6Address`
-: simply uses the type itself for validation by passing the value to `IPv6Address(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv6Address(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv6Interface`
-: simply uses the type itself for validation by passing the value to `IPv6Interface(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv6Interface(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv6Network`
@@ -138,7 +138,7 @@ with custom properties and validation.
 : *pydantic* attempts to convert the value to a string, then passes the string to `Decimal(v)`
 
 `pathlib.Path`
-: simply uses the type itself for validation by passing the value to `Path(v)`; 
+: simply uses the type itself for validation by passing the value to `Path(v)`;
   see [Pydantic Types](#pydantic-types) for other more strict path types
 
 `uuid.UUID`
@@ -312,7 +312,7 @@ _(This script is complete, it should run "as is")_
 ## Literal Type
 
 !!! note
-    This is a new feature of the python standard library as of python 3.8; 
+    This is a new feature of the python standard library as of python 3.8;
     prior to python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
 
 *pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to python 3.8)
@@ -351,8 +351,8 @@ _(This script is complete, it should run "as is")_
 `EmailStr`
 : requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
   the input string must be a valid email address, and the output is a simple string
-  
-  
+
+
 
 `NameEmail`
 : requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
@@ -360,7 +360,7 @@ _(This script is complete, it should run "as is")_
   and the output is a `NameEmail` object which has two properties: `name` and `email`.
   For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`;
   for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
-  
+
 
 `PyObject`
 : expects a string and loads the python object importable at that dotted path;
@@ -406,7 +406,7 @@ _(This script is complete, it should run "as is")_
 : requires a valid UUID of type 5; see `UUID` [above](#standard-library-types)
 
 `SecretBytes`
-: bytes where the value is kept partially secret; see [Secrets](#secret-types) 
+: bytes where the value is kept partially secret; see [Secrets](#secret-types)
 
 `SecretStr`
 : string where the value is kept partially secret; see [Secrets](#secret-types)
@@ -616,7 +616,7 @@ _(This script is complete, it should run "as is")_
 ### Json Type
 
 You can use `Json` data type to make *pydantic* first load a raw JSON string.
-It can also optionally be used to parse the loaded object into another type base on 
+It can also optionally be used to parse the loaded object into another type base on
 the type `Json` is parameterised with:
 
 ```py
@@ -683,7 +683,7 @@ _(This script is complete, it should run "as is")_
 You can use the `ByteSize` data type to convert byte string representation to
 raw bytes and print out human readable versions of the bytes as well.
 
-!!! info 
+!!! info
     Note that `1b` will be parsed as "1 byte" and not "1 bit".
 
 ```py
@@ -702,3 +702,8 @@ to get validators to parse and validate the input data.
 {!.tmp_examples/types_custom_type.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
+formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
+
+See [Schema](schema.md) for more details on how the model's schema is generated.
