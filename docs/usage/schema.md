@@ -84,7 +84,7 @@ _(This script is complete, it should run "as is")_
 
 ## Modifying schema in custom fields
 
-Custom field types can customise the schema generate for them using the `__modify_schema__` class method,
+Custom field types can customise the schema generated for them using the `__modify_schema__` class method;
 see [Custom Data Types](types.md#custom-data-types) for more details.
 
 ## JSON Schema Types
