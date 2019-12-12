@@ -114,6 +114,10 @@ Hundreds of organisations and packages are using *pydantic*, including:
 : are using *pydantic* in [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
   for quantum chemistry.
 
+[Reach](https://www.reach.vote)
+: trusts *pydantic* (via FastAPI) and [*arq*](https://github.com/samuelcolvin/arq) (Samuel's excellent
+  asynchronous task queue) to reliably power multiple mission-critical microservices.
+
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
 
