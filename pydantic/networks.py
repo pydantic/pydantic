@@ -141,7 +141,7 @@ class AnyUrl(str):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length)
+        update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length, format='uri')
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -265,6 +265,10 @@ def stricturl(
 
 class EmailStr(str):
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format='email')
+
+    @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         # included here and below so the error happens straight away
         if email_validator is None:
@@ -286,6 +290,10 @@ class NameEmail(Representation):
         self.email = email
 
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format='name-email')
+
+    @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
@@ -302,6 +310,10 @@ class NameEmail(Representation):
 
 
 class IPvAnyAddress(_BaseAddress):
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format='ipvanyaddress')
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
@@ -321,6 +333,10 @@ class IPvAnyAddress(_BaseAddress):
 
 class IPvAnyInterface(_BaseAddress):
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format='ipvanyinterface')
+
+    @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
 
@@ -338,6 +354,10 @@ class IPvAnyInterface(_BaseAddress):
 
 
 class IPvAnyNetwork(_BaseNetwork):  # type: ignore
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format='ipvanynetwork')
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate

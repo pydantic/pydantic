@@ -25,7 +25,6 @@ from typing import (
 from uuid import UUID
 
 from .class_validators import ROOT_KEY
-from .color import Color
 from .fields import (
     SHAPE_FROZENSET,
     SHAPE_LIST,
@@ -39,23 +38,13 @@ from .fields import (
     ModelField,
 )
 from .json import pydantic_encoder
-from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
+from .networks import AnyUrl, EmailStr
 from .types import (
-    UUID1,
-    UUID3,
-    UUID4,
-    UUID5,
     ConstrainedDecimal,
     ConstrainedFloat,
     ConstrainedInt,
     ConstrainedList,
     ConstrainedStr,
-    DirectoryPath,
-    FilePath,
-    Json,
-    SecretBytes,
-    SecretStr,
-    StrictBool,
     conbytes,
     condecimal,
     confloat,
@@ -573,54 +562,34 @@ def field_singleton_sub_fields_schema(
         return {'anyOf': sub_field_schemas}, definitions, nested_models
 
 
-# Order is important, subclasses of str must go before str, etc
-field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
-    (EmailStr, {'type': 'string', 'format': 'email'}),
-    (AnyUrl, {'type': 'string', 'format': 'uri'}),
-    (SecretStr, {'type': 'string', 'writeOnly': True}),
-    (str, {'type': 'string'}),
-    (SecretBytes, {'type': 'string', 'writeOnly': True}),
-    (bytes, {'type': 'string', 'format': 'binary'}),
-    (StrictBool, {'type': 'boolean'}),
-    (bool, {'type': 'boolean'}),
-    (int, {'type': 'integer'}),
-    (float, {'type': 'number'}),
-    (Decimal, {'type': 'number'}),
-    (UUID1, {'type': 'string', 'format': 'uuid1'}),
-    (UUID3, {'type': 'string', 'format': 'uuid3'}),
-    (UUID4, {'type': 'string', 'format': 'uuid4'}),
-    (UUID5, {'type': 'string', 'format': 'uuid5'}),
-    (UUID, {'type': 'string', 'format': 'uuid'}),
-    (NameEmail, {'type': 'string', 'format': 'name-email'}),
-    (dict, {'type': 'object'}),
-    (list, {'type': 'array', 'items': {}}),
-    (tuple, {'type': 'array', 'items': {}}),
-    (set, {'type': 'array', 'items': {}, 'uniqueItems': True}),
-    (Color, {'type': 'string', 'format': 'color'}),
-)
-
-json_scheme = {'type': 'string', 'format': 'json-string'}
-
-# Order is important, subclasses of Path must go before Path, etc
-field_class_to_schema_enum_disabled = (
-    (FilePath, {'type': 'string', 'format': 'file-path'}),
-    (DirectoryPath, {'type': 'string', 'format': 'directory-path'}),
+# Order is important, e.g. subclasses of str must go before str
+# this is used only for standard library types, custom types should use __modify_schema__ instead
+field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (Path, {'type': 'string', 'format': 'path'}),
     (datetime, {'type': 'string', 'format': 'date-time'}),
     (date, {'type': 'string', 'format': 'date'}),
     (time, {'type': 'string', 'format': 'time'}),
     (timedelta, {'type': 'number', 'format': 'time-delta'}),
-    (Json, json_scheme),
     (IPv4Network, {'type': 'string', 'format': 'ipv4network'}),
     (IPv6Network, {'type': 'string', 'format': 'ipv6network'}),
-    (IPvAnyNetwork, {'type': 'string', 'format': 'ipvanynetwork'}),
     (IPv4Interface, {'type': 'string', 'format': 'ipv4interface'}),
     (IPv6Interface, {'type': 'string', 'format': 'ipv6interface'}),
-    (IPvAnyInterface, {'type': 'string', 'format': 'ipvanyinterface'}),
     (IPv4Address, {'type': 'string', 'format': 'ipv4'}),
     (IPv6Address, {'type': 'string', 'format': 'ipv6'}),
-    (IPvAnyAddress, {'type': 'string', 'format': 'ipvanyaddress'}),
+    (str, {'type': 'string'}),
+    (bytes, {'type': 'string', 'format': 'binary'}),
+    (bool, {'type': 'boolean'}),
+    (int, {'type': 'integer'}),
+    (float, {'type': 'number'}),
+    (Decimal, {'type': 'number'}),
+    (UUID, {'type': 'string', 'format': 'uuid'}),
+    (dict, {'type': 'object'}),
+    (list, {'type': 'array', 'items': {}}),
+    (tuple, {'type': 'array', 'items': {}}),
+    (set, {'type': 'array', 'items': {}, 'uniqueItems': True}),
 )
+
+json_scheme = {'type': 'string', 'format': 'json-string'}
 
 
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
@@ -677,11 +646,12 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         literal_value = values[0]
         field_type = type(literal_value)
         f_schema['const'] = literal_value
+
     if issubclass(field_type, Enum):
         f_schema.update({'enum': [item.value for item in field_type]})
         # Don't return immediately, to allow adding specific types
 
-    for type_, t_schema in field_class_to_schema_enum_enabled:
+    for type_, t_schema in field_class_to_schema:
         if issubclass(field_type, type_):
             f_schema.update(t_schema)
             break
@@ -690,16 +660,13 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if modify_schema:
         modify_schema(f_schema)
 
-    # Return schema, with or without enum definitions
     if f_schema:
         return f_schema, definitions, nested_models
 
-    for type_, t_schema in field_class_to_schema_enum_disabled:
-        if issubclass(field_type, type_):
-            return t_schema, definitions, nested_models
     # Handle dataclass-based models
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
+
     if issubclass(field_type, BaseModel):
         model_name = model_name_map[field_type]
         if field_type not in known_models:
@@ -720,6 +687,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             return schema_ref, definitions, nested_models
         else:
             return {'allOf': [schema_ref]}, definitions, nested_models
+
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
 

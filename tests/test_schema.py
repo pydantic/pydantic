@@ -1704,3 +1704,16 @@ def test_schema_attributes():
         'properties': {'example': {'title': 'Example', 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE']}},
         'required': ['example'],
     }
+
+
+def test_path_modify_schema():
+    class MyPath(Path):
+        @classmethod
+        def __modify_schema__(cls, schema: dict):
+            schema.update(schema, foobar=123)
+
+    class Model(BaseModel):
+        path1: Path
+        path2: MyPath
+
+    debug(Model.schema())
