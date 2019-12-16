@@ -1,0 +1,1 @@
+Added optional for `root_validator` to be skipped if values validation fails using keyword `skip_on_failure=True`

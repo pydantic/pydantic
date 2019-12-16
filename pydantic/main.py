@@ -248,7 +248,7 @@ class BaseModel(metaclass=ModelMetaclass):
         __field_defaults__: Dict[str, Any] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
-        __post_root_validators__: List[AnyCallable]
+        __post_root_validators__: List[Tuple[bool, AnyCallable]]
         __config__: Type[BaseConfig] = BaseConfig
         __root__: Any = None
         __json_encoder__: Callable[[Any], Any] = lambda x: x
@@ -859,7 +859,9 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 for f in sorted(extra):
                     errors.append(ErrorWrapper(ExtraError(), loc=f))
 
-    for validator in model.__post_root_validators__:
+    for skip_on_failure, validator in model.__post_root_validators__:
+        if skip_on_failure and errors:
+            continue
         try:
             values = validator(cls_, values)
         except (ValueError, TypeError, AssertionError) as exc:
