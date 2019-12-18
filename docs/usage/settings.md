@@ -52,7 +52,7 @@ Case-sensitivity can be turned on through the `Config`:
 
 When `case_sensitive` is `True`, the environment variable must be exactly the same as attribute, so in this example
 `redis_host` could only be modified via `export redis_host`. And if you want to name environment variables
-all upper-case, you should name attribute all upper-case too. I can still name environment variable anything
+all upper-case, you should name attribute all upper-case too. You can still name environment variables anything
 you like through `Field(..., env=...)`.
 
 !!! note
