@@ -50,7 +50,8 @@ Case-sensitivity can be turned on through the `Config`:
 {!.tmp_examples/settings_case_sensitive.py!}
 ```
 
-When `case_sensitive` is `True`, the environment variable must be exactly the same as attribute, so in this example
+When `case_sensitive` is `True`, the environment variable names must match field names (optionally with a prefix),
+so in this example
 `redis_host` could only be modified via `export redis_host`. And if you want to name environment variables
 all upper-case, you should name attribute all upper-case too. You can still name environment variables anything
 you like through `Field(..., env=...)`.
