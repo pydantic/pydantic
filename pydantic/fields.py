@@ -640,7 +640,7 @@ class ModelField(Representation):
 
         return (
             self.shape != SHAPE_SINGLETON
-            or lenient_issubclass(self.type_, (BaseModel, list, set, dict))
+            or lenient_issubclass(self.type_, (BaseModel, list, set, frozenset, dict))
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
