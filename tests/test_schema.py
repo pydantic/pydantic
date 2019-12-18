@@ -1496,10 +1496,7 @@ def test_model_with_schema_extra_callable():
                 schema.pop('properties')
                 schema['type'] = 'override'
 
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'override',
-    }
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
 def test_model_with_extra_forbidden():
@@ -1709,11 +1706,19 @@ def test_schema_attributes():
 def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
-        def __modify_schema__(cls, schema: dict):
+        def __modify_schema__(cls, schema):
             schema.update(schema, foobar=123)
 
     class Model(BaseModel):
         path1: Path
         path2: MyPath
 
-    debug(Model.schema())
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'path1': {'title': 'Path1', 'type': 'string', 'format': 'path'},
+            'path2': {'title': 'Path2', 'type': 'string', 'format': 'path', 'foobar': 123},
+        },
+        'required': ['path1', 'path2'],
+    }
