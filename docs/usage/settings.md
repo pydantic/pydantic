@@ -50,8 +50,10 @@ Case-sensitivity can be turned on through the `Config`:
 {!.tmp_examples/settings_case_sensitive.py!}
 ```
 
-When `case_sensitive` is `True`, the environment variable must be in all-caps,
-so in this example `redis_host` could only be modified via `export REDIS_HOST`.
+When `case_sensitive` is `True`, the environment variable must be exactly the same as attribute, so in this example
+`redis_host` could only be modified via `export redis_host`. And if you want to name environment variables
+all upper-case, you should name attribute all upper-case too. I can still name environment variable anything
+you like through `Field(..., env=...)`.
 
 !!! note
     On Windows, python's `os` module always treats environment variables as case-insensitive, so the
