@@ -47,7 +47,7 @@ __all__ = [
 host_part_names = ('domain', 'ipv4', 'ipv6')
 url_regex = re.compile(
     r'(?:(?P<scheme>[a-z0-9]+?)://)?'  # scheme
-    r'(?:(?P<user>[^\s:]+)(?::(?P<password>\S*))?@)?'  # user info
+    r'(?:(?P<user>[^\s:/]+)(?::(?P<password>[^\s/]*))?@)?'  # user info
     r'(?:'
     r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})|'  # ipv4
     r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])|'  # ipv6
