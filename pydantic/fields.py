@@ -186,6 +186,7 @@ SHAPE_NAME_LOOKUP = {
 class ModelField(Representation):
     __slots__ = (
         'type_',
+        'outer_type_',
         'sub_fields',
         'key_field',
         'validators',
@@ -222,6 +223,7 @@ class ModelField(Representation):
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
         self.type_: Any = type_
+        self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
         self.required: 'BoolUndefined' = required
@@ -366,7 +368,10 @@ class ModelField(Representation):
                 types_.append(type_)
 
             if len(types_) == 1:
+                # Optional[]
                 self.type_ = types_[0]
+                # this is the one case where the "outer type" isn't just the original type
+                self.outer_type_ = self.type_
                 # re-run to correctly interpret the new self.type_
                 self._type_analysis()
             else:

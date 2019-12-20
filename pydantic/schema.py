@@ -374,38 +374,34 @@ def field_type_schema(
     """
     definitions = {}
     nested_models: Set[str] = set()
+    f_schema: Dict[str, Any]
     ref_prefix = ref_prefix or default_prefix
     if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET}:
-        f_schema, f_definitions, f_nested_models = field_singleton_schema(
+        items_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
-        s: Dict[str, Any] = {'type': 'array', 'items': f_schema}
+        f_schema = {'type': 'array', 'items': items_schema}
         if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
-            s['uniqueItems'] = True
-        if field.field_info.min_items is not None:
-            s['minItems'] = field.field_info.min_items
-        if field.field_info.max_items is not None:
-            s['maxItems'] = field.field_info.max_items
-        return s, definitions, nested_models
+            f_schema['uniqueItems'] = True
+
     elif field.shape == SHAPE_MAPPING:
-        dict_schema: Dict[str, Any] = {'type': 'object'}
+        f_schema = {'type': 'object'}
         key_field = cast(ModelField, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
-        f_schema, f_definitions, f_nested_models = field_singleton_schema(
+        items_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
         if regex:
             # Dict keys have a regex pattern
-            # f_schema might be a schema or empty dict, add it either way
-            dict_schema['patternProperties'] = {regex.pattern: f_schema}
-        elif f_schema:
+            # items_schema might be a schema or empty dict, add it either way
+            f_schema['patternProperties'] = {regex.pattern: items_schema}
+        elif items_schema:
             # The dict values are not simply Any, so they need a schema
-            dict_schema['additionalProperties'] = f_schema
-        return dict_schema, definitions, nested_models
+            f_schema['additionalProperties'] = items_schema
     elif field.shape == SHAPE_TUPLE:
         sub_schema = []
         sub_fields = cast(List[ModelField], field.sub_fields)
@@ -418,7 +414,7 @@ def field_type_schema(
             sub_schema.append(sf_schema)
         if len(sub_schema) == 1:
             sub_schema = sub_schema[0]  # type: ignore
-        return {'type': 'array', 'items': sub_schema}, definitions, nested_models
+        f_schema = {'type': 'array', 'items': sub_schema}
     else:
         assert field.shape == SHAPE_SINGLETON, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
@@ -431,7 +427,13 @@ def field_type_schema(
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
-        return f_schema, definitions, nested_models
+
+    # check field type to avoid repeated calls to the same __modify_schema__ method
+    if field.type_ != field.outer_type_:
+        modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
+        if modify_schema:
+            modify_schema(f_schema)
+    return f_schema, definitions, nested_models
 
 
 def model_process_schema(
@@ -621,10 +623,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             known_models=known_models,
         )
     if field.type_ is Any or type(field.type_) == TypeVar:
-        if field.parse_json:
-            return json_scheme, definitions, nested_models
-        else:
-            return {}, definitions, nested_models  # no restrictions
+        return {}, definitions, nested_models  # no restrictions
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}

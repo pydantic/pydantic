@@ -92,9 +92,7 @@ class ConstrainedBytes(bytes):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
-            field_schema, minLength=cls.min_length, maxLength=cls.max_length,
-        )
+        update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length)
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -129,9 +127,7 @@ class ConstrainedList(list):  # type: ignore
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
-            field_schema, minLength=cls.min_items, maxLength=cls.max_items,
-        )
+        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
 
     @classmethod
     def list_length_validator(cls, v: 'List[T]') -> 'List[T]':
