@@ -424,6 +424,9 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseCon
 
 
 def validate_json(v: Any, config: 'BaseConfig') -> Any:
+    if v is None:
+        # pass None through to other validators
+        return v
     try:
         return config.json_loads(v)  # type: ignore
     except ValueError:
