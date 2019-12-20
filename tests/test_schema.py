@@ -671,7 +671,6 @@ def test_json_type():
         a: Json
         b: Json[int]
 
-    debug(Model.schema())
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
@@ -1624,7 +1623,6 @@ def test_conlist():
     with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
         Model(foo=list(range(5)))
 
-    debug(Model.schema())
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
