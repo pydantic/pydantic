@@ -174,6 +174,13 @@ SHAPE_TUPLE = 5
 SHAPE_TUPLE_ELLIPSIS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
+SHAPE_NAME_LOOKUP = {
+    SHAPE_LIST: 'List[{}]',
+    SHAPE_SET: 'Set[{}]',
+    SHAPE_TUPLE_ELLIPSIS: 'Tuple[{}, ...]',
+    SHAPE_SEQUENCE: 'Sequence[{}]',
+    SHAPE_FROZENSET: 'FrozenSet[{}]',
+}
 
 
 class ModelField(Representation):
@@ -644,7 +651,16 @@ class ModelField(Representation):
         )
 
     def _type_display(self) -> PyObjectStr:
-        t = display_as_type(self.outer_type_)
+        t = display_as_type(self.type_)
+
+        # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
+        if self.shape == SHAPE_MAPPING:
+            t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
+        elif self.shape == SHAPE_TUPLE:
+            t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
+        elif self.shape != SHAPE_SINGLETON:
+            t = SHAPE_NAME_LOOKUP[self.shape].format(t)
+
         if self.allow_none and (self.shape != SHAPE_SINGLETON or not self.sub_fields):
             t = f'Optional[{t}]'
         return PyObjectStr(t)

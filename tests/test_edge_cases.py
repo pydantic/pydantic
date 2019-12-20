@@ -1221,7 +1221,7 @@ def test_field_str_shape():
         (Tuple[int, str, bytes], 'Tuple[int, str, bytes]'),
         (Union[List[int], Set[bytes]], 'Union[List[int], Set[bytes]]'),
         (List[Tuple[int, int]], 'List[Tuple[int, int]]'),
-        (Dict[int, str], 'Dict[int, str]'),
+        (Dict[int, str], 'Mapping[int, str]'),
         (FrozenSet[int], 'FrozenSet[int]'),
         (Tuple[int, ...], 'Tuple[int, ...]'),
         (Optional[List[int]], 'Optional[List[int]]'),
