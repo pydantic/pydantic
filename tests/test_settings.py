@@ -391,3 +391,17 @@ def test_prefix_on_parent(env):
     env.set('PREFIX_VAR', 'new')
     assert MyBaseSettings().dict() == {'var': 'old'}
     assert MySubSettings().dict() == {'var': 'new'}
+
+
+def test_frozenset(env):
+    class Settings(BaseSettings):
+        foo: str = 'default foo'
+
+        class Config:
+            fields = {'foo': {'env': frozenset(['foo_a', 'foo_b'])}}
+
+    assert Settings.__fields__['foo'].field_info.extra['env_names'] == frozenset({'foo_a', 'foo_b'})
+
+    assert Settings().dict() == {'foo': 'default foo'}
+    env.set('foo_a', 'x')
+    assert Settings().dict() == {'foo': 'x'}

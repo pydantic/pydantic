@@ -6,7 +6,7 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NewType, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, FrozenSet, List, NewType, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
@@ -1703,4 +1703,23 @@ def test_schema_attributes():
         'type': 'object',
         'properties': {'example': {'title': 'Example', 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE']}},
         'required': ['example'],
+    }
+
+
+def test_frozen_set():
+    class Model(BaseModel):
+        a: FrozenSet[int] = frozenset({1, 2, 3})
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {
+                'title': 'A',
+                'default': frozenset({1, 2, 3}),
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'uniqueItems': True,
+            },
+        },
     }
