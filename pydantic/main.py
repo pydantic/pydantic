@@ -18,7 +18,7 @@ from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import GetterDict, Representation, ValueItems, lenient_issubclass, validate_field_name
+from .utils import GetterDict, Representation, ValueItems, lenient_issubclass, sequence_like, validate_field_name
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
@@ -595,7 +595,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 and (not value_include or value_include.is_included(k_))
             }
 
-        elif isinstance(v, (list, set, tuple)):
+        elif sequence_like(v):
             return type(v)(
                 cls._get_value(
                     v_,

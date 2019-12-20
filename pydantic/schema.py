@@ -61,7 +61,7 @@ from .typing import (
     literal_values,
     new_type_supertype,
 )
-from .utils import get_model, lenient_issubclass
+from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
@@ -706,7 +706,7 @@ def multivalue_literal_field_for_schema(values: Tuple[Any, ...], field: ModelFie
 def encode_default(dft: Any) -> Any:
     if isinstance(dft, (int, float, str)):
         return dft
-    elif isinstance(dft, (tuple, list, set)):
+    elif sequence_like(dft):
         t = type(dft)
         return t(encode_default(v) for v in dft)
     elif isinstance(dft, dict):
