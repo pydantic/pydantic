@@ -174,13 +174,6 @@ SHAPE_TUPLE = 5
 SHAPE_TUPLE_ELLIPSIS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
-SHAPE_NAME_LOOKUP = {
-    SHAPE_LIST: 'List[{}]',
-    SHAPE_SET: 'Set[{}]',
-    SHAPE_TUPLE_ELLIPSIS: 'Tuple[{}, ...]',
-    SHAPE_SEQUENCE: 'Sequence[{}]',
-    SHAPE_FROZENSET: 'FrozenSet[{}]',
-}
 
 
 class ModelField(Representation):
@@ -300,6 +293,7 @@ class ModelField(Representation):
         """
         if self.default is not None and self.type_ is None:
             self.type_ = type(self.default)
+            self.outer_type_ = self.type_
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
@@ -650,15 +644,7 @@ class ModelField(Representation):
         )
 
     def _type_display(self) -> PyObjectStr:
-        t = display_as_type(self.type_)
-
-        if self.shape == SHAPE_MAPPING:
-            t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
-        elif self.shape == SHAPE_TUPLE:
-            t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
-        elif self.shape != SHAPE_SINGLETON:
-            t = SHAPE_NAME_LOOKUP[self.shape].format(t)
-
+        t = display_as_type(self.outer_type_)
         if self.allow_none and (self.shape != SHAPE_SINGLETON or not self.sub_fields):
             t = f'Optional[{t}]'
         return PyObjectStr(t)
