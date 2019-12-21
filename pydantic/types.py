@@ -92,9 +92,7 @@ class ConstrainedBytes(bytes):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
-            field_schema, minLength=cls.min_length, maxLength=cls.max_length,
-        )
+        update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length)
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -129,9 +127,7 @@ class ConstrainedList(list):  # type: ignore
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
-            field_schema, minLength=cls.min_items, maxLength=cls.max_items,
-        )
+        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
 
     @classmethod
     def list_length_validator(cls, v: 'List[T]') -> 'List[T]':
@@ -219,6 +215,10 @@ else:
         """
         StrictBool to allow for bools which are not type-coerced.
         """
+
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            field_schema.update(type='boolean')
 
         @classmethod
         def __get_validators__(cls) -> 'CallableGenerator':
@@ -453,20 +453,28 @@ def condecimal(
 class UUID1(UUID):
     _required_version = 1
 
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format=f'uuid{cls._required_version}')
 
-class UUID3(UUID):
+
+class UUID3(UUID1):
     _required_version = 3
 
 
-class UUID4(UUID):
+class UUID4(UUID1):
     _required_version = 4
 
 
-class UUID5(UUID):
+class UUID5(UUID1):
     _required_version = 5
 
 
 class FilePath(Path):
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(format='file-path')
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield path_validator
@@ -482,6 +490,10 @@ class FilePath(Path):
 
 
 class DirectoryPath(Path):
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(format='directory-path')
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield path_validator
@@ -506,10 +518,16 @@ class JsonMeta(type):
 
 
 class Json(metaclass=JsonMeta):
-    pass
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format='json-string')
 
 
 class SecretStr:
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', writeOnly=True)
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator
@@ -540,6 +558,10 @@ class SecretStr:
 
 
 class SecretBytes:
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', writeOnly=True)
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield bytes_validator

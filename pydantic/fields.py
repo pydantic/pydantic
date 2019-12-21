@@ -186,6 +186,7 @@ SHAPE_NAME_LOOKUP = {
 class ModelField(Representation):
     __slots__ = (
         'type_',
+        'outer_type_',
         'sub_fields',
         'key_field',
         'validators',
@@ -222,6 +223,7 @@ class ModelField(Representation):
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
         self.type_: Any = type_
+        self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
         self.required: 'BoolUndefined' = required
@@ -298,6 +300,7 @@ class ModelField(Representation):
         """
         if self.default is not None and self.type_ is None:
             self.type_ = type(self.default)
+            self.outer_type_ = self.type_
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
@@ -366,7 +369,10 @@ class ModelField(Representation):
                 types_.append(type_)
 
             if len(types_) == 1:
+                # Optional[]
                 self.type_ = types_[0]
+                # this is the one case where the "outer type" isn't just the original type
+                self.outer_type_ = self.type_
                 # re-run to correctly interpret the new self.type_
                 self._type_analysis()
             else:
@@ -647,6 +653,7 @@ class ModelField(Representation):
     def _type_display(self) -> PyObjectStr:
         t = display_as_type(self.type_)
 
+        # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
         if self.shape == SHAPE_MAPPING:
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:

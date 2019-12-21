@@ -516,8 +516,7 @@ def test_str_constrained_types(field_type, expected_schema):
     model_schema = Model.schema()
     assert model_schema['properties']['a'] == expected_schema
 
-    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
-    base_schema['properties']['a'] = expected_schema
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': expected_schema}, 'required': ['a']}
 
     assert model_schema == base_schema
 
@@ -670,12 +669,16 @@ def test_path_types(field_type, expected_schema):
 def test_json_type():
     class Model(BaseModel):
         a: Json
+        b: Json[int]
 
-    model_schema = Model.schema()
-    assert model_schema == {
+    assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
+        'properties': {
+            'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
+            'b': {'title': 'B', 'type': 'integer'},
+        },
+        'required': ['b'],
     }
 
 
@@ -1496,10 +1499,7 @@ def test_model_with_schema_extra_callable():
                 schema.pop('properties')
                 schema['type'] = 'override'
 
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'override',
-    }
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
 def test_model_with_extra_forbidden():
@@ -1613,8 +1613,9 @@ def test_real_vs_phony_constraints():
 def test_conlist():
     class Model(BaseModel):
         foo: List[int] = Field(..., min_items=2, max_items=4)
+        bar: conlist(str, min_items=1, max_items=4) = None
 
-    assert Model(foo=[1, 2]).dict() == {'foo': [1, 2]}
+    assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
 
     with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
         Model(foo=[1])
@@ -1626,7 +1627,8 @@ def test_conlist():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4}
+            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4},
+            'bar': {'title': 'Bar', 'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4},
         },
         'required': ['foo'],
     }
@@ -1703,6 +1705,27 @@ def test_schema_attributes():
         'type': 'object',
         'properties': {'example': {'title': 'Example', 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE']}},
         'required': ['example'],
+    }
+
+
+def test_path_modify_schema():
+    class MyPath(Path):
+        @classmethod
+        def __modify_schema__(cls, schema):
+            schema.update(foobar=123)
+
+    class Model(BaseModel):
+        path1: Path
+        path2: MyPath
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'path1': {'title': 'Path1', 'type': 'string', 'format': 'path'},
+            'path2': {'title': 'Path2', 'type': 'string', 'format': 'path', 'foobar': 123},
+        },
+        'required': ['path1', 'path2'],
     }
 
 

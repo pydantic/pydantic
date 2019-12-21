@@ -2,7 +2,7 @@ import re
 import sys
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -1222,8 +1222,10 @@ def test_field_str_shape():
         (Union[List[int], Set[bytes]], 'Union[List[int], Set[bytes]]'),
         (List[Tuple[int, int]], 'List[Tuple[int, int]]'),
         (Dict[int, str], 'Mapping[int, str]'),
+        (FrozenSet[int], 'FrozenSet[int]'),
         (Tuple[int, ...], 'Tuple[int, ...]'),
         (Optional[List[int]], 'Optional[List[int]]'),
+        (dict, 'dict'),
     ],
 )
 def test_field_type_display(type_, expected):
