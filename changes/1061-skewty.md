@@ -1,1 +1,0 @@
-Trick Cython into allowing str subclassing.

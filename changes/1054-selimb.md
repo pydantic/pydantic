@@ -1,1 +1,0 @@
-Allow `Config.schema_extra` to be a callable so that the generated schema can be post-processed.

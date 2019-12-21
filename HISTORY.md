@@ -1,6 +1,28 @@
+## v1.3 (2019-12-21)
+
+* Change `schema` and `schema_model` to handle dataclasses by using their `__pydantic_model__` feature, #792 by @aviramha
+* Added option for `root_validator` to be skipped if values validation fails using keyword `skip_on_failure=True`, #1049 by @aviramha
+* Allow `Config.schema_extra` to be a callable so that the generated schema can be post-processed, #1054 by @selimb
+* Update mypy to version 0.750, #1057 by @dmontagu
+* Trick Cython into allowing str subclassing, #1061 by @skewty
+* Prevent type attributes being added to schema unless the attribute `__schema_attributes__` is `True`, #1064 by @samuelcolvin
+* Change `BaseModel.parse_file` to use `Config.json_loads`, #1067 by @kierandarcy
+* Fix for optional `Json` fields, #1073 by @volker48
+* Change the default number of threads used when compiling with cython to one,
+  allow override via the `CYTHON_NTHREADS` environment variable, #1074 by @samuelcolvin
+* Run FastAPI tests during Pydantic's CI tests, #1075 by @tiangolo
+* My mypy strictness constraints, and associated tweaks to type annotations, #1077 by @samuelcolvin
+* Add `__eq__` to SecretStr and SecretBytes to allow "value equals", #1079 by @sbv-trueenergy
+* Fix schema generation for nested None case, #1088 by @lutostag
+* Consistent checks for sequence like objects, #1090 by @samuelcolvin
+* Fix `Config` inheritance on `BaseSettings` when used with `env_prefix`, #1091 by @samuelcolvin
+* Fix for `__modify_schema__` when it conflicted with `field_class_to_schema*`, #1102 by @samuelcolvin
+* docs: Fix explanation of case sensitive environment variable names when populating `BaseSettings` subclass attributes, #1105 by @tribals
+* Rename django-rest-framework benchmark in documentation, #1119 by @frankie567
+
 ## v1.2 (2019-11-28)
 
-* **Possible Breaking Change:** Add support for required `Optional` with `name: Optional[AnyType] = Field(...)` 
+* **Possible Breaking Change:** Add support for required `Optional` with `name: Optional[AnyType] = Field(...)`
   and refactor `ModelField` creation to preserve `required` parameter value, #1031 by @tiangolo;
   see [here](https://pydantic-docs.helpmanual.io/usage/models/#required-optional-fields) for details
 * Add benchmarks for `cattrs`, #513 by @sebastianmika
@@ -34,10 +56,10 @@
 ## v1.0 (2019-10-23)
 
 * **Breaking Change:** deprecate the `Model.fields` property, use `Model.__fields__` instead, #883 by @samuelcolvin
-* **Breaking Change:** Change the precedence of aliases so child model aliases override parent aliases, 
+* **Breaking Change:** Change the precedence of aliases so child model aliases override parent aliases,
   including using `alias_generator`, #904 by @samuelcolvin
 * **Breaking change:** Rename `skip_defaults` to `exclude_unset`, and add ability to exclude actual defaults, #915 by @dmontagu
-* Add `**kwargs` to `pydantic.main.ModelMetaclass.__new__` so `__init_subclass__` can take custom parameters on extended 
+* Add `**kwargs` to `pydantic.main.ModelMetaclass.__new__` so `__init_subclass__` can take custom parameters on extended
   `BaseModel` classes, #867 by @retnikt
 * Fix field of a type that has a default value, #880 by @koxudaxi
 * Use `FutureWarning` instead of `DeprecationWarning` when `alias` instead of `env` is used for settings models, #881 by @samuelcolvin
