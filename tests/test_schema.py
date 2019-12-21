@@ -1712,7 +1712,7 @@ def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
         def __modify_schema__(cls, schema):
-            schema.update(schema, foobar=123)
+            schema.update(foobar=123)
 
     class Model(BaseModel):
         path1: Path
