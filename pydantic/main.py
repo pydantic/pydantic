@@ -158,7 +158,6 @@ class ModelMetaclass(ABCMeta):
         fields_defaults: Dict[str, Any] = {}
 
         pre_root_validators, post_root_validators = [], []
-        init = namespace.get('__init__')
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(deepcopy(base.__fields__))
@@ -166,8 +165,6 @@ class ModelMetaclass(ABCMeta):
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
                 post_root_validators += base.__post_root_validators__
-            if init is None:
-                init = base.__init__
 
         config = inherit_config(namespace.get('Config'), config)
         validators = inherit_validators(extract_validators(namespace), validators)
@@ -256,11 +253,12 @@ class ModelMetaclass(ABCMeta):
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
-            '__signature__': generate_model_signature(init, fields, config),
             **{n: v for n, v in namespace.items() if n not in fields},
         }
 
-        return super().__new__(mcs, name, bases, new_namespace, **kwargs)
+        cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
+        cls.__signature__ = generate_model_signature(cls.__init__, fields, config)
+        return cls
 
 
 class BaseModel(metaclass=ModelMetaclass):

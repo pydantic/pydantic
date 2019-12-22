@@ -129,7 +129,7 @@ def generate_model_signature(
     """
 
     present_params = signature(init).parameters.values()
-    merged_params: OrderedDict[str, Parameter] = OrderedDict()
+    merged_params: Dict[str, Parameter] = {}
     var_kw = None
     use_var_kw = False
 
@@ -155,8 +155,7 @@ def generate_model_signature(
         kwargs = {'default': field.default} if not field.required else {}
         merged_params[param_name] = Parameter(param_name, Parameter.KEYWORD_ONLY, annotation=field.type_, **kwargs)
 
-    extra = config.extra
-    if extra is extra.allow:
+    if config.extra is config.extra.allow:
         use_var_kw = True
 
     if use_var_kw and var_kw is not None:
