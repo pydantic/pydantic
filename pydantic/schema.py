@@ -5,6 +5,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -465,7 +466,11 @@ def model_process_schema(
     s.update(m_schema)
     schema_extra = model.__config__.schema_extra
     if callable(schema_extra):
-        schema_extra(s)
+        assert isinstance(schema_extra, FunctionType), 'Config.schema_extra callable is expected to be a staticmethod'
+        if len(inspect.signature(schema_extra).parameters) == 1:
+            schema_extra(s)
+        else:
+            schema_extra(s, model)
     else:
         s.update(schema_extra)
     return s, m_definitions, nested_models
