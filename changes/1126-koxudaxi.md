@@ -1,0 +1,1 @@
+Fix EmailStr for Cython with when used in Linux.
