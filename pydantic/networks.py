@@ -278,7 +278,7 @@ class EmailStr(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> str:
+    def validate(cls, value: Union[str]) -> Union[str]:
         return validate_email(value)[1]
 
 
@@ -380,7 +380,7 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
 pretty_email_regex = re.compile(r'([\w ]*?) *<(.*)> *')
 
 
-def validate_email(value: str) -> Tuple[str, str]:
+def validate_email(value: Union[str]) -> Tuple[Union[str], Union[str]]:
     """
     Brutally simple email address validation. Note unlike most email address validation
     * raw ip address (literal) domain parts are not allowed.
