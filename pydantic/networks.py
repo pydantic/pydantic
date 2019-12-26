@@ -382,7 +382,7 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
 pretty_email_regex = re.compile(r'([\w ]*?) *<(.*)> *')
 
 
-def validate_email(value: Union[str]) -> Tuple[Union[str], Union[str]]:
+def validate_email(value: Union[str]) -> Tuple[str, str]:
     """
     Brutally simple email address validation. Note unlike most email address validation
     * raw ip address (literal) domain parts are not allowed.
