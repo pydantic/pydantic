@@ -1,12 +1,13 @@
 import os
 import re
 import string
+from distutils.version import StrictVersion
 from enum import Enum
 from typing import NewType, Union
 
 import pytest
 
-from pydantic import BaseModel
+from pydantic import VERSION, BaseModel
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
@@ -292,3 +293,7 @@ def test_version_info():
     s = version_info()
     assert re.match(' *pydantic version: ', s)
     assert s.count('\n') == 5
+
+
+def test_version_strict():
+    assert str(StrictVersion(VERSION)) == VERSION

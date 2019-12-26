@@ -1,6 +1,4 @@
 import inspect
-import platform
-import sys
 import warnings
 from importlib import import_module
 from pathlib import Path
@@ -337,6 +335,8 @@ class ValueItems(Representation):
 
 
 def version_info() -> str:
+    import platform
+    import sys
     from .main import compiled
     from .version import VERSION
 
