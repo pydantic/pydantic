@@ -1,6 +1,5 @@
 import inspect
 import warnings
-from importlib import import_module
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -35,6 +34,8 @@ def import_string(dotted_path: str) -> Any:
     Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
     last name in the path. Raise ImportError if the import fails.
     """
+    from importlib import import_module
+
     try:
         module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
     except ValueError as e:
@@ -335,6 +336,7 @@ class ValueItems(Representation):
 
 
 def version_info() -> str:
+    from importlib import import_module
     import platform
     import sys
     from .main import compiled
