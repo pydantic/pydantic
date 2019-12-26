@@ -278,7 +278,7 @@ class EmailStr(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> str:
+    def validate(cls, value: Union[str]) -> str:
         return validate_email(value)[1]
 
 
@@ -298,11 +298,13 @@ class NameEmail(Representation):
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
-        yield str_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> 'NameEmail':
+    def validate(cls, value: Any) -> 'NameEmail':
+        if type(value) == cls:
+            return value
+        value = str_validator(value)
         return cls(*validate_email(value))
 
     def __str__(self) -> str:
@@ -380,7 +382,7 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
 pretty_email_regex = re.compile(r'([\w ]*?) *<(.*)> *')
 
 
-def validate_email(value: str) -> Tuple[str, str]:
+def validate_email(value: Union[str]) -> Tuple[str, str]:
     """
     Brutally simple email address validation. Note unlike most email address validation
     * raw ip address (literal) domain parts are not allowed.

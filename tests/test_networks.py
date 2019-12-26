@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, HttpUrl, PostgresDsn, RedisDsn, ValidationError, stricturl
+from pydantic import AnyUrl, BaseModel, EmailStr, HttpUrl, NameEmail, PostgresDsn, RedisDsn, ValidationError, stricturl
 from pydantic.networks import validate_email
 
 try:
@@ -374,3 +374,21 @@ def test_address_invalid(value):
 def test_email_validator_not_installed():
     with pytest.raises(ImportError):
         validate_email('s@muelcolvin.com')
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_email_str():
+    class Model(BaseModel):
+        v: EmailStr
+
+    assert Model(v=EmailStr('foo@example.org')).v == 'foo@example.org'
+    assert Model(v='foo@example.org').v == 'foo@example.org'
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_name_email():
+    class Model(BaseModel):
+        v: NameEmail
+
+    assert str(Model(v=NameEmail('foo bar', 'foobaR@example.com')).v) == 'foo bar <foobaR@example.com>'
+    assert str(Model(v='foo bar  <foobaR@example.com>').v) == 'foo bar <foobaR@example.com>'
