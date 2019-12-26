@@ -298,11 +298,13 @@ class NameEmail(Representation):
         if email_validator is None:
             raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
 
-        yield str_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> 'NameEmail':
+    def validate(cls, value: Any) -> 'NameEmail':
+        if type(value) == cls:
+            return value
+        value = str_validator(value)
         return cls(*validate_email(value))
 
     def __str__(self) -> str:
