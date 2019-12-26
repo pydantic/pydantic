@@ -1,1 +1,1 @@
-Fix EmailStr for Cython with when used in Linux.
+Fix `EmailStr` for Cython when used in Linux to accept instances of `EmailStr`
