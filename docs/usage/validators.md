@@ -64,6 +64,27 @@ _(This script is complete, it should run "as is")_
 You'll often want to use this together with `pre`, since otherwise with `always=True`
 *pydantic* would try to validate the default `None` which would cause an error.
 
+## Reuse validators
+
+Occasionally, you will want to use the same validator on multiple fields/models (e.g. to
+normalize some input data). The "naive" approach would be to write a separate function,
+then call it from multiple decorators.  Obviously, this entails a lot of repetition and
+boiler plate code. To circumvent this, the `allow_reuse` parameter has been added to
+`pydantic.validator` in **v1.2** (`False` by default):
+
+```py
+{!.tmp_examples/validators_allow_reuse.py!}
+```
+_(This script is complete, it should run "as is")_
+
+As it is obvious, repetition has been reduced and the models become again almost
+declarative.
+
+!!! tip
+    If you have a lot of fields that you want to validate, it usually makes sense to
+    define a help function with which you will avoid setting `allow_reuse=True` over and
+    over again.
+
 ## Root Validators
 
 Validation can also be performed on the entire model's data.
