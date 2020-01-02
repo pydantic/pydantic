@@ -1,7 +1,6 @@
 import warnings
 from collections import ChainMap
 from functools import wraps
-from inspect import Signature, signature
 from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
@@ -32,6 +31,8 @@ class Validator:
 
 
 if TYPE_CHECKING:
+    from inspect import Signature
+
     from .main import BaseConfig
     from .fields import ModelField
     from .types import ModelOrDc
@@ -191,6 +192,8 @@ def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
 
 
 def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[Tuple[bool, AnyCallable]]]:
+    from inspect import signature
+
     pre_validators: List[AnyCallable] = []
     post_validators: List[Tuple[bool, AnyCallable]] = []
     for name, value in namespace.items():
@@ -231,6 +234,8 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
     It's done like this so validators don't all need **kwargs in their signature, eg. any combination of
     the arguments "values", "fields" and/or "config" are permitted.
     """
+    from inspect import signature
+
     sig = signature(validator)
     args = list(sig.parameters.keys())
     first_arg = args.pop(0)
@@ -254,7 +259,7 @@ def prep_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
 all_kwargs = {'values', 'field', 'config'}
 
 
-def _generic_validator_cls(validator: AnyCallable, sig: Signature, args: Set[str]) -> 'ValidatorCallable':
+def _generic_validator_cls(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
     # assume the first argument is value
     has_kwargs = False
     if 'kwargs' in args:
@@ -288,7 +293,7 @@ def _generic_validator_cls(validator: AnyCallable, sig: Signature, args: Set[str
         return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field, config=config)
 
 
-def _generic_validator_basic(validator: AnyCallable, sig: Signature, args: Set[str]) -> 'ValidatorCallable':
+def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
     has_kwargs = False
     if 'kwargs' in args:
         has_kwargs = True
