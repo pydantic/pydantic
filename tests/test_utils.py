@@ -12,7 +12,8 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
-from pydantic.utils import ValueItems, deep_update, get_model, import_string, lenient_issubclass, truncate, version_info
+from pydantic.utils import ValueItems, deep_update, get_model, import_string, lenient_issubclass, truncate
+from pydantic.version import version_info
 
 try:
     import devtools
