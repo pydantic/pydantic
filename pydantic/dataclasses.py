@@ -1,4 +1,3 @@
-import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, TypeVar, Union
 
 from .class_validators import gather_all_validators
@@ -66,6 +65,8 @@ def _process_class(
     frozen: bool,
     config: Optional[Type[Any]],
 ) -> 'DataclassType':
+    import dataclasses
+
     post_init_original = getattr(_cls, '__post_init__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None

@@ -1,5 +1,4 @@
 import datetime
-from dataclasses import asdict, is_dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -42,6 +41,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
 
 
 def pydantic_encoder(obj: Any) -> Any:
+    from dataclasses import asdict, is_dataclass
     from .main import BaseModel
 
     if isinstance(obj, BaseModel):

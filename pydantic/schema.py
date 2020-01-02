@@ -1,4 +1,3 @@
-import inspect
 import re
 import warnings
 from datetime import date, datetime, time, timedelta
@@ -451,10 +450,12 @@ def model_process_schema(
     sub-models of the returned schema will be referenced, but their definitions will not be included in the schema. All
     the definitions are returned as the second value.
     """
+    from inspect import getdoc
+
     ref_prefix = ref_prefix or default_prefix
     known_models = known_models or set()
     s = {'title': model.__config__.title or model.__name__}
-    doc = inspect.getdoc(model)
+    doc = getdoc(model)
     if doc:
         s['description'] = doc
     known_models.add(model)

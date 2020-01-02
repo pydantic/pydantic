@@ -1743,6 +1743,6 @@ def test_frozen_set():
                 'type': 'array',
                 'items': {'type': 'integer'},
                 'uniqueItems': True,
-            },
+            }
         },
     }

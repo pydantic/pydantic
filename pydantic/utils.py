@@ -1,9 +1,5 @@
-import inspect
-import platform
-import sys
 import warnings
-from importlib import import_module
-from pathlib import Path
+from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -37,6 +33,8 @@ def import_string(dotted_path: str) -> Any:
     Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
     last name in the path. Raise ImportError if the import fails.
     """
+    from importlib import import_module
+
     try:
         module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
     except ValueError as e:
@@ -70,7 +68,7 @@ ExcType = Type[Exception]
 
 
 def sequence_like(v: AnyType) -> bool:
-    return isinstance(v, (list, tuple, set, frozenset)) or inspect.isgenerator(v)
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
@@ -337,6 +335,11 @@ class ValueItems(Representation):
 
 
 def version_info() -> str:
+    import platform
+    import sys
+    from importlib import import_module
+    from pathlib import Path
+
     from .main import compiled
     from .version import VERSION
 

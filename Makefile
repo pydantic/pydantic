@@ -58,7 +58,7 @@ test-examples:
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
 
 .PHONY: all
-all: testcov lint mypy
+all: lint mypy testcov
 
 .PHONY: benchmark-all
 benchmark-all:
