@@ -1,6 +1,5 @@
-import inspect
 import warnings
-from pathlib import Path
+from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -69,7 +68,7 @@ ExcType = Type[Exception]
 
 
 def sequence_like(v: AnyType) -> bool:
-    return isinstance(v, (list, tuple, set, frozenset)) or inspect.isgenerator(v)
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
@@ -336,9 +335,11 @@ class ValueItems(Representation):
 
 
 def version_info() -> str:
-    from importlib import import_module
     import platform
     import sys
+    from importlib import import_module
+    from pathlib import Path
+
     from .main import compiled
     from .version import VERSION
 
