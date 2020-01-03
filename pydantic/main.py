@@ -277,7 +277,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
     @no_type_check
     def __setattr__(self, name, value):
-        if self.__config__.extra is not Extra.allow and name not in self.__fields__:
+        if self.__config__.extra is Extra.forbid and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
@@ -307,6 +307,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_private: bool = True,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -332,6 +333,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
+                exclude_private=exclude_private
             )
         }
 
@@ -351,6 +353,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_private: bool = True,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -373,6 +376,7 @@ class BaseModel(metaclass=ModelMetaclass):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_private=exclude_private,
         )
         if self.__custom_root_type__:
             data = data[ROOT_KEY]
@@ -641,6 +645,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_private: bool = True,
     ) -> 'TupleGenerator':
 
         value_exclude = ValueItems(self, exclude) if exclude else None
@@ -654,6 +659,8 @@ class BaseModel(metaclass=ModelMetaclass):
                     allowed_keys.discard(k)
 
         for k, v in self.__dict__.items():
+            if exclude_private and k.startswith('_'):
+                continue
             if allowed_keys is None or k in allowed_keys:
                 value = self._get_value(
                     v,
@@ -663,7 +670,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude=value_exclude and value_exclude.for_element(k),
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
-                    exclude_none=exclude_none,
+                    exclude_none=exclude_none
                 )
                 if not (exclude_none and value is None):
                     yield k, value
