@@ -466,7 +466,8 @@ def model_process_schema(
     s.update(m_schema)
     schema_extra = model.__config__.schema_extra
     if callable(schema_extra):
-        assert isinstance(schema_extra, FunctionType), 'Config.schema_extra callable is expected to be a staticmethod'
+        if not isinstance(schema_extra, FunctionType):
+            raise TypeError(f'{model.__name__}.Config.schema_extra callable is expected to be a staticmethod')
         if len(inspect.signature(schema_extra).parameters) == 1:
             schema_extra(s)
         else:

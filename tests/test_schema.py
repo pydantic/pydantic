@@ -1526,7 +1526,7 @@ def test_model_with_schema_extra_callable_classmethod_asserts():
                 schema.pop('properties')
                 schema['type'] = 'override'
 
-    with pytest.raises(AssertionError, match='Config.schema_extra callable is expected to be a staticmethod'):
+    with pytest.raises(TypeError, match='Model.Config.schema_extra callable is expected to be a staticmethod'):
         Model.schema()
 
 
