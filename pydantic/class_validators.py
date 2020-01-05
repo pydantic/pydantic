@@ -256,7 +256,7 @@ def prep_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
     return [make_generic_validator(f) for f in v_funcs if f]
 
 
-all_kwargs = {'values', 'field', 'config'}
+all_kwargs = {'values', 'field', 'config', 'loc'}
 
 
 def _generic_validator_cls(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
@@ -273,24 +273,42 @@ def _generic_validator_cls(validator: AnyCallable, sig: 'Signature', args: Set[s
         )
 
     if has_kwargs:
-        return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field, config=config)
+        return lambda cls, v, values, field, config, loc: validator(cls, v, values=values, field=field, config=config,
+                                                                    loc=loc)
     elif args == set():
-        return lambda cls, v, values, field, config: validator(cls, v)
+        return lambda cls, v, values, field, config, loc: validator(cls, v)
     elif args == {'values'}:
-        return lambda cls, v, values, field, config: validator(cls, v, values=values)
+        return lambda cls, v, values, field, config, loc: validator(cls, v, values=values)
     elif args == {'field'}:
-        return lambda cls, v, values, field, config: validator(cls, v, field=field)
+        return lambda cls, v, values, field, config, loc: validator(cls, v, field=field)
     elif args == {'config'}:
-        return lambda cls, v, values, field, config: validator(cls, v, config=config)
+        return lambda cls, v, values, field, config, loc: validator(cls, v, config=config)
+    elif args == {'loc'}:
+        return lambda cls, v, values, field, config, loc: validator(cls, v, loc=loc)
     elif args == {'values', 'field'}:
-        return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field)
+        return lambda cls, v, values, field, config, loc: validator(cls, v, values=values, field=field)
     elif args == {'values', 'config'}:
-        return lambda cls, v, values, field, config: validator(cls, v, values=values, config=config)
-    elif args == {'field', 'config'}:
-        return lambda cls, v, values, field, config: validator(cls, v, field=field, config=config)
+        return lambda cls, v, values, field, config, loc: validator(cls, v, values=values, config=config)
+    elif args == {'loc', 'values'}:
+        return lambda cls, v, values, field, config, loc: validator(cls, v, loc=loc, values=values)
+    elif args == {'config', 'field'}:
+        return lambda cls, v, values, field, config, loc: validator(cls, v, config=config, field=field)
+    elif args == {'loc', 'field'}:
+        return lambda cls, v, values, field, config, loc: validator(cls, v, loc=loc, field=field)
+    elif args == {'loc', 'config'}:
+        return lambda cls, v, values, field, config, loc: validator(cls, v, loc=loc, config=config)
+    elif args == {'values', 'field', 'config'}:
+        return lambda cls, v, values, field, config, loc: validator(cls, v, values=values, field=field, config=config)
+    elif args == {'loc', 'values', 'field'}:
+        return lambda cls, v, values, field, config, loc: validator(cls, v, loc=loc, values=values, field=field)
+    elif args == {'loc', 'values', 'config'}:
+        return lambda cls, v, values, field, config, loc: validator(cls, v, loc=loc, values=values, config=config)
+    elif args == {'loc', 'config', 'field'}:
+        return lambda cls, v, values, field, config, loc: validator(cls, v, loc=loc, config=config, field=field)
     else:
-        # args == {'values', 'field', 'config'}
-        return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field, config=config)
+        # args == {'loc', 'values', 'field', 'config'}
+        return lambda cls, v, values, field, config, loc: validator(cls, v, loc=loc, values=values, field=field,
+                                                                    config=config)
 
 
 def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
@@ -306,24 +324,42 @@ def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set
         )
 
     if has_kwargs:
-        return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
+        return lambda cls, v, values, field, config, loc: validator(v, values=values, field=field, config=config,
+                                                                    loc=loc)
     elif args == set():
-        return lambda cls, v, values, field, config: validator(v)
+        return lambda cls, v, values, field, config, loc: validator(v)
     elif args == {'values'}:
-        return lambda cls, v, values, field, config: validator(v, values=values)
+        return lambda cls, v, values, field, config, loc: validator(v, values=values)
     elif args == {'field'}:
-        return lambda cls, v, values, field, config: validator(v, field=field)
+        return lambda cls, v, values, field, config, loc: validator(v, field=field)
     elif args == {'config'}:
-        return lambda cls, v, values, field, config: validator(v, config=config)
+        return lambda cls, v, values, field, config, loc: validator(v, config=config)
+    elif args == {'loc'}:
+        return lambda cls, v, values, field, config, loc: validator(v, loc=loc)
     elif args == {'values', 'field'}:
-        return lambda cls, v, values, field, config: validator(v, values=values, field=field)
+        return lambda cls, v, values, field, config, loc: validator(v, values=values, field=field)
     elif args == {'values', 'config'}:
-        return lambda cls, v, values, field, config: validator(v, values=values, config=config)
-    elif args == {'field', 'config'}:
-        return lambda cls, v, values, field, config: validator(v, field=field, config=config)
+        return lambda cls, v, values, field, config, loc: validator(v, values=values, config=config)
+    elif args == {'loc', 'values'}:
+        return lambda cls, v, values, field, config, loc: validator(v, loc=loc, values=values)
+    elif args == {'config', 'field'}:
+        return lambda cls, v, values, field, config, loc: validator(v, config=config, field=field)
+    elif args == {'loc', 'field'}:
+        return lambda cls, v, values, field, config, loc: validator(v, loc=loc, field=field)
+    elif args == {'loc', 'config'}:
+        return lambda cls, v, values, field, config, loc: validator(v, loc=loc, config=config)
+    elif args == {'values', 'field', 'config'}:
+        return lambda cls, v, values, field, config, loc: validator(v, values=values, field=field, config=config)
+    elif args == {'loc', 'values', 'field'}:
+        return lambda cls, v, values, field, config, loc: validator(v, loc=loc, values=values, field=field)
+    elif args == {'loc', 'values', 'config'}:
+        return lambda cls, v, values, field, config, loc: validator(v, loc=loc, values=values, config=config)
+    elif args == {'loc', 'config', 'field'}:
+        return lambda cls, v, values, field, config, loc: validator(v, loc=loc, config=config, field=field)
     else:
-        # args == {'values', 'field', 'config'}
-        return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
+        # args == {'loc', 'values', 'field', 'config'}
+        return lambda cls, v, values, field, config, loc: validator(v, loc=loc, values=values, field=field,
+                                                                    config=config)
 
 
 def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:

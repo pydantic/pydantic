@@ -627,7 +627,7 @@ class ModelField(Representation):
     ) -> 'ValidateReturn':
         for validator in validators:
             try:
-                v = validator(cls, v, values, self, self.model_config)
+                v = validator(cls, v, values, self, self.model_config, loc)
             except (ValueError, TypeError, AssertionError) as exc:
                 return v, ErrorWrapper(exc, loc)
         return v, None
