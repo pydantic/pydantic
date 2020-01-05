@@ -8,9 +8,7 @@ class Person(BaseModel):
 
     class Config:
         @staticmethod
-        def schema_extra(
-            schema: Dict[str, Any], model_class: Type['Person']
-        ) -> None:
+        def schema_extra(schema: Dict[str, Any], model: Type['Person']) -> None:
             for prop in schema.get('properties', {}).values():
                 prop.pop('title', None)
 
