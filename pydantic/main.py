@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
     from .typing import AbstractSetIntStr, DictIntStrAny, ReprArgs  # noqa: F401
+    from .fields import LocStr
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
@@ -266,14 +267,21 @@ class BaseModel(metaclass=ModelMetaclass):
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
+        __pydantic_self__.__class__.__from_dict__(data, __pydantic_self__)
+
+    @classmethod
+    def __from_dict__(cls, data: Dict[str, Any], __pydantic_self__ = None, loc: 'LocStr' = None):
+        if not __pydantic_self__:
+            __pydantic_self__ = cls.__new__(cls)
         if TYPE_CHECKING:
             __pydantic_self__.__dict__: Dict[str, Any] = {}
             __pydantic_self__.__fields_set__: 'SetStr' = set()
-        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)
+        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data, loc=loc)
         if validation_error:
             raise validation_error
         object.__setattr__(__pydantic_self__, '__dict__', values)
         object.__setattr__(__pydantic_self__, '__fields_set__', fields_set)
+        return __pydantic_self__
 
     @no_type_check
     def __setattr__(self, name, value):
@@ -530,9 +538,9 @@ class BaseModel(metaclass=ModelMetaclass):
         yield cls.validate
 
     @classmethod
-    def validate(cls: Type['Model'], value: Any) -> 'Model':
+    def validate(cls: Type['Model'], value: Any, loc: 'LocStr' = None) -> 'Model':
         if isinstance(value, dict):
-            return cls(**value)
+            return cls.__from_dict__(value, None, loc)
         elif isinstance(value, cls):
             return value.copy()
         elif cls.__config__.orm_mode:
@@ -542,7 +550,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 value_as_dict = dict(value)
             except (TypeError, ValueError) as e:
                 raise DictError() from e
-            return cls(**value_as_dict)
+            return cls.__from_dict__(value_as_dict, None, loc)
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
@@ -784,7 +792,7 @@ _missing = object()
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Type[BaseModel], input_data: 'DictStrAny', cls: 'ModelOrDc' = None
+    model: Type[BaseModel], input_data: 'DictStrAny', cls: 'ModelOrDc' = None, loc: 'LocStr' = None
 ) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
     """
     validate data against a model.
@@ -799,11 +807,16 @@ def validate_model(  # noqa: C901 (ignore complexity)
     check_extra = config.extra is not Extra.ignore
     cls_ = cls or model
 
+    if loc is None:
+        loc = tuple()
+    elif not isinstance(loc, tuple):
+        loc = (loc, )
+
     for validator in model.__pre_root_validators__:
         try:
             input_data = validator(cls_, input_data)
         except (ValueError, TypeError, AssertionError) as exc:
-            return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_)
+            return {}, set(), ValidationError([ErrorWrapper(exc, loc=loc + (ROOT_KEY,))], cls_)
 
     for name, field in model.__fields__.items():
         if type(field.type_) == ForwardRef:
@@ -820,7 +833,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
 
         if value is _missing:
             if field.required:
-                errors.append(ErrorWrapper(MissingError(), loc=field.alias))
+                errors.append(ErrorWrapper(MissingError(), loc=loc + (field.alias,)))
                 continue
 
             if field.default is None:
@@ -837,7 +850,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
             if check_extra:
                 names_used.add(field.name if using_name else field.alias)
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls_)
+        v_, errors_ = field.validate(value, values, loc=loc + (field.alias,), cls=cls_)
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):
@@ -857,7 +870,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
                     values[f] = input_data[f]
             else:
                 for f in sorted(extra):
-                    errors.append(ErrorWrapper(ExtraError(), loc=f))
+                    errors.append(ErrorWrapper(ExtraError(), loc=loc + (f,)))
 
     for skip_on_failure, validator in model.__post_root_validators__:
         if skip_on_failure and errors:
@@ -865,7 +878,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
         try:
             values = validator(cls_, values)
         except (ValueError, TypeError, AssertionError) as exc:
-            errors.append(ErrorWrapper(exc, loc=ROOT_KEY))
+            errors.append(ErrorWrapper(exc, loc=loc + (ROOT_KEY,)))
             break
 
     if errors:
