@@ -1498,6 +1498,7 @@ def test_model_with_schema_extra_callable():
             def schema_extra(schema, model_class):
                 schema.pop('properties')
                 schema['type'] = 'override'
+                assert isinstance(model_class, Model)
 
     assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
