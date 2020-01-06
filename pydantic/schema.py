@@ -5,6 +5,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -450,7 +451,7 @@ def model_process_schema(
     sub-models of the returned schema will be referenced, but their definitions will not be included in the schema. All
     the definitions are returned as the second value.
     """
-    from inspect import getdoc
+    from inspect import getdoc, signature
 
     ref_prefix = ref_prefix or default_prefix
     known_models = known_models or set()
@@ -465,7 +466,12 @@ def model_process_schema(
     s.update(m_schema)
     schema_extra = model.__config__.schema_extra
     if callable(schema_extra):
-        schema_extra(s)
+        if not isinstance(schema_extra, FunctionType):
+            raise TypeError(f'{model.__name__}.Config.schema_extra callable is expected to be a staticmethod')
+        if len(signature(schema_extra).parameters) == 1:
+            schema_extra(s)
+        else:
+            schema_extra(s, model)
     else:
         s.update(schema_extra)
     return s, m_definitions, nested_models

@@ -1,5 +1,5 @@
 # output-json
-from typing import Dict, Any
+from typing import Dict, Any, Type
 from pydantic import BaseModel
 
 class Person(BaseModel):
@@ -8,7 +8,7 @@ class Person(BaseModel):
 
     class Config:
         @staticmethod
-        def schema_extra(schema: Dict[str, Any]) -> None:
+        def schema_extra(schema: Dict[str, Any], model: Type['Person']) -> None:
             for prop in schema.get('properties', {}).values():
                 prop.pop('title', None)
 
