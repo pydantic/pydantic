@@ -6,7 +6,7 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, List, NewType, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NewType, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
@@ -1745,4 +1745,16 @@ def test_frozen_set():
                 'uniqueItems': True,
             }
         },
+    }
+
+
+def test_iterable():
+    class Model(BaseModel):
+        a: Iterable[int]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'},}},
+        'required': ['a'],
     }
