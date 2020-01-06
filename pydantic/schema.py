@@ -451,12 +451,12 @@ def model_process_schema(
     sub-models of the returned schema will be referenced, but their definitions will not be included in the schema. All
     the definitions are returned as the second value.
     """
-    import inspect
+    from inspect import getdoc, signature
 
     ref_prefix = ref_prefix or default_prefix
     known_models = known_models or set()
     s = {'title': model.__config__.title or model.__name__}
-    doc = inspect.getdoc(model)
+    doc = getdoc(model)
     if doc:
         s['description'] = doc
     known_models.add(model)
@@ -468,7 +468,7 @@ def model_process_schema(
     if callable(schema_extra):
         if not isinstance(schema_extra, FunctionType):
             raise TypeError(f'{model.__name__}.Config.schema_extra callable is expected to be a staticmethod')
-        if len(inspect.signature(schema_extra).parameters) == 1:
+        if len(signature(schema_extra).parameters) == 1:
             schema_extra(s)
         else:
             schema_extra(s, model)
