@@ -1,10 +1,12 @@
 import warnings
+from collections import abc
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
     FrozenSet,
     Generator,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -174,12 +176,14 @@ SHAPE_TUPLE = 5
 SHAPE_TUPLE_ELLIPSIS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
+SHAPE_ITERABLE = 9
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
     SHAPE_TUPLE_ELLIPSIS: 'Tuple[{}, ...]',
     SHAPE_SEQUENCE: 'Sequence[{}]',
     SHAPE_FROZENSET: 'FrozenSet[{}]',
+    SHAPE_ITERABLE: 'Iterable[{}]',
 }
 
 
@@ -416,6 +420,11 @@ class ModelField(Representation):
             self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name, for_keys=True)
             self.type_ = self.type_.__args__[1]
             self.shape = SHAPE_MAPPING
+        # Equality check as almost everything inherit form Iterable, including str
+        # check for typing.Iterable and abc.Iterable, as it could receive one even when declared with the other
+        elif origin == Iterable or origin == abc.Iterable:
+            self.type_ = self.type_.__args__[0]
+            self.shape = SHAPE_ITERABLE
         elif issubclass(origin, Type):  # type: ignore
             return
         else:
@@ -489,6 +498,8 @@ class ModelField(Representation):
             v, errors = self._validate_mapping(v, values, loc, cls)
         elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
+        elif self.shape == SHAPE_ITERABLE:
+            v, errors = self._validate_iterable(v, values, loc, cls)
         else:
             #  sequence, list, set, generator, tuple with ellipsis, frozen set
             v, errors = self._validate_sequence_like(v, values, loc, cls)
@@ -547,6 +558,23 @@ class ModelField(Representation):
             elif isinstance(v, Generator):
                 converted = iter(result)
         return converted, None
+
+    def _validate_iterable(
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+    ) -> 'ValidateReturn':
+        """
+        Validate Iterables.
+
+        This intentionally doesn't validate values to allow infinite generators.
+        """
+
+        e: Optional[Exception] = None
+        try:
+            iterable = iter(v)
+        except TypeError:
+            e = errors_.IterableError()
+            return v, ErrorWrapper(e, loc)
+        return iterable, None
 
     def _validate_tuple(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
