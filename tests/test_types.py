@@ -816,7 +816,7 @@ def test_invalid_iterable():
         b: int
 
     with pytest.raises(ValidationError) as exc_info:
-        m = Model(it=3, b=3)
+        Model(it=3, b=3)
     assert exc_info.value.errors() == [
         {'loc': ('it',), 'msg': 'value is not a valid iterable', 'type': 'type_error.iterable'}
     ]

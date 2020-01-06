@@ -1755,6 +1755,6 @@ def test_iterable():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'},}},
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}},
         'required': ['a'],
     }
