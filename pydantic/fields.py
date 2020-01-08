@@ -181,6 +181,12 @@ SHAPE_NAME_LOOKUP = {
     SHAPE_SEQUENCE: 'Sequence[{}]',
     SHAPE_FROZENSET: 'FrozenSet[{}]',
 }
+TYPES_TO_SHAPE = {
+    tuple: SHAPE_TUPLE,
+    list: SHAPE_LIST,
+    set: SHAPE_SET,
+    frozenset: SHAPE_FROZENSET,
+}
 
 
 class ModelField(Representation):
@@ -355,18 +361,7 @@ class ModelField(Representation):
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
-            if self.type_ is tuple:
-                self.shape = SHAPE_TUPLE
-                return
-            if self.type_ is list:
-                self.shape = SHAPE_LIST
-                return
-            if self.type_ is set:
-                self.shape = SHAPE_SET
-                return
-            if self.type_ is frozenset:
-                self.shape = SHAPE_FROZENSET
-                return
+            self.shape = TYPES_TO_SHAPE.get(self.type_)
             return
         if origin is Callable:
             return
