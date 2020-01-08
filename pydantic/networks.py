@@ -53,7 +53,7 @@ def url_regex() -> Pattern[str]:
     global _url_regex_cache
     if _url_regex_cache is None:
         _url_regex_cache = re.compile(
-            r'(?:(?P<scheme>[a-z0-9]+?)://)?'  # scheme
+            r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
             r'(?:(?P<user>[^\s:]+)(?::(?P<password>\S*))?@)?'  # user info
             r'(?:'
             r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})|'  # ipv4
