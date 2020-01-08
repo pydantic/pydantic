@@ -361,7 +361,7 @@ class ModelField(Representation):
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
-            self.shape = TYPES_TO_SHAPE.get(self.type_)
+            self.shape = TYPES_TO_SHAPE.get(self.type_, self.shape)
             return
         if origin is Callable:
             return
