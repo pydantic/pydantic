@@ -257,7 +257,7 @@ class BaseModel(metaclass=ModelMetaclass):
         __custom_root_type__: bool = False
 
     Config = BaseConfig
-    __slots__ = ('__dict__', '__fields_set__')
+    __slots__ = ('__dict__', '__fields_set__', '__loc__')
     # equivalent of inheriting from Representation
     __repr_name__ = Representation.__repr_name__
     __repr_str__ = Representation.__repr_str__
@@ -267,21 +267,28 @@ class BaseModel(metaclass=ModelMetaclass):
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
-        __pydantic_self__.__class__.__from_dict__(data, __pydantic_self__)
-
-    @classmethod
-    def __from_dict__(cls, data: Dict[str, Any], __pydantic_self__ = None, loc: 'LocStr' = None):
-        if not __pydantic_self__:
-            __pydantic_self__ = cls.__new__(cls)
         if TYPE_CHECKING:
             __pydantic_self__.__dict__: Dict[str, Any] = {}
             __pydantic_self__.__fields_set__: 'SetStr' = set()
-        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data, loc=loc)
+
+        loc = __pydantic_self__.__loc__ if hasattr(__pydantic_self__, '__loc__') else None
+        values, fields_set, validation_error = validate_model(
+            __pydantic_self__.__class__,
+            data,
+            loc=loc
+        )
         if validation_error:
             raise validation_error
         object.__setattr__(__pydantic_self__, '__dict__', values)
         object.__setattr__(__pydantic_self__, '__fields_set__', fields_set)
-        return __pydantic_self__
+        object.__setattr__(__pydantic_self__, '__loc__', loc)
+
+    @classmethod
+    def __from_dict__(cls, data: Dict[str, Any], loc: 'LocStr' = None) -> 'BaseModel':
+        __pydantic_self__ = cls.__new__(cls)
+        object.__setattr__(__pydantic_self__, '__loc__', loc)
+
+        return cls.__init__(__pydantic_self__, **data)
 
     @no_type_check
     def __setattr__(self, name, value):
@@ -516,7 +523,11 @@ class BaseModel(metaclass=ModelMetaclass):
         m = cls.__new__(cls)
         object.__setattr__(m, '__dict__', v)
         object.__setattr__(m, '__fields_set__', self.__fields_set__.copy())
+        object.__setattr__(m, '__loc__', self.loc())
         return m
+
+    def loc(self) -> Optional['LocStr']:
+        return self.__loc__
 
     @classmethod
     def schema(cls, by_alias: bool = True) -> 'DictStrAny':
@@ -540,7 +551,7 @@ class BaseModel(metaclass=ModelMetaclass):
     @classmethod
     def validate(cls: Type['Model'], value: Any, loc: 'LocStr' = None) -> 'Model':
         if isinstance(value, dict):
-            return cls.__from_dict__(value, None, loc)
+            return cls.__from_dict__(value, loc)
         elif isinstance(value, cls):
             return value.copy()
         elif cls.__config__.orm_mode:
@@ -550,7 +561,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 value_as_dict = dict(value)
             except (TypeError, ValueError) as e:
                 raise DictError() from e
-            return cls.__from_dict__(value_as_dict, None, loc)
+            return cls.__from_dict__(value_as_dict, loc)
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
