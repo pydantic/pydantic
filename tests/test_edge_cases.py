@@ -2,7 +2,7 @@ import re
 import sys
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -1506,3 +1506,42 @@ def test_required_any():
         'nullable1': 1,
         'nullable2': 'two',
     }
+
+
+def test_custom_generic():
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+
+    class MyGen(Generic[T1, T2]):
+        def __init__(self, t1: T1, t2: T2):
+            self.t1 = t1
+            self.t2 = t2
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v):
+            if not isinstance(v, cls):
+                raise ValueError('Invalid value')
+            return v
+
+    class Model(BaseModel):
+        a: str
+        gen: MyGen[str, bool]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='foo', gen='invalid')
+    assert exc_info.value.errors() == [{'loc': ('gen',), 'msg': 'Invalid value', 'type': 'value_error'}]
+
+    m = Model(a='foo', gen=MyGen(t1='bar', t2=True))
+    assert m.a == 'foo'
+    assert m.gen.t1 == 'bar'
+    assert m.gen.t2 is True
+
+    # Validation isn't handled/enforced by Pydantic
+    m = Model(a='foo', gen=MyGen(t1='bar', t2='baz'))  # t2 would be "invalid", but passes
+    assert m.a == 'foo'
+    assert m.gen.t1 == 'bar'
+    assert m.gen.t2 == 'baz'
