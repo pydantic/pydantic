@@ -272,11 +272,8 @@ class BaseModel(metaclass=ModelMetaclass):
             __pydantic_self__.__fields_set__: 'SetStr' = set()
 
         loc = __pydantic_self__.__loc__ if hasattr(__pydantic_self__, '__loc__') else None
-        values, fields_set, validation_error = validate_model(
-            __pydantic_self__.__class__,
-            data,
-            loc=loc
-        )
+        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data, loc=loc)
+
         if validation_error:
             raise validation_error
         object.__setattr__(__pydantic_self__, '__dict__', values)
@@ -821,7 +818,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
     if loc is None:
         loc = tuple()
     elif not isinstance(loc, tuple):
-        loc = (loc, )
+        loc = (loc,)
 
     for validator in model.__pre_root_validators__:
         try:
