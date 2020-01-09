@@ -418,6 +418,10 @@ class ModelField(Representation):
             self.shape = SHAPE_MAPPING
         elif issubclass(origin, Type):  # type: ignore
             return
+        elif hasattr(origin, '__get_validators__'):
+            # Is a Pydantic-compatible generic that handles itself
+            self.type_ = origin
+            return
         else:
             raise TypeError(f'Fields of type "{origin}" are not supported.')
 
