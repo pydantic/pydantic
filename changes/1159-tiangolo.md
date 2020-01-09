@@ -1,0 +1,1 @@
+add basic support for generics that implement `__get_validators__` like a custom data type.
