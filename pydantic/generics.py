@@ -20,12 +20,6 @@ class GenericModel(BaseModel):
         # `GenericModel` to also inherit from `Generic`, which would require changes to the use of `create_model` below.
         __parameters__: ClassVar[Tuple[TypeVarType, ...]]
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
-        if cls.__concrete__:
-            return super().__new__(cls)
-        else:
-            raise TypeError(f'Type {cls.__name__} cannot be used without generic parameters, e.g. {cls.__name__}[T]')
-
     # Setting the return type as Type[Any] instead of Type[BaseModel] prevents PyCharm warnings
     def __class_getitem__(cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]) -> Type[Any]:
         cached = _generic_types_cache.get((cls, params))
@@ -63,7 +57,7 @@ class GenericModel(BaseModel):
             ),
         )
         created_model.Config = cls.Config
-        concrete = all(not isinstance(v, TypeVar) for v in concrete_type_hints.values())  # type: ignore
+        concrete = all(not _is_typevar(v) for v in concrete_type_hints.values())
         created_model.__concrete__ = concrete
         if not concrete:
             parameters = tuple(v for v in concrete_type_hints.values() if _is_typevar(v))

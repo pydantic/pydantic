@@ -249,25 +249,6 @@ def test_generic_config():
 
 
 @skip_36
-def test_generic_instantiation_error():
-    with pytest.raises(TypeError) as exc_info:
-        GenericModel()
-    assert str(exc_info.value) == 'Type GenericModel cannot be used without generic parameters, e.g. GenericModel[T]'
-
-
-@skip_36
-def test_parameterized_generic_instantiation_error():
-    data_type = TypeVar('data_type')
-
-    class Result(GenericModel, Generic[data_type]):
-        data: data_type
-
-    with pytest.raises(TypeError) as exc_info:
-        Result(data=1)
-    assert str(exc_info.value) == 'Type Result cannot be used without generic parameters, e.g. Result[T]'
-
-
-@skip_36
 def test_deep_generic():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -496,6 +477,34 @@ def test_partial_specification():
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
         {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
+
+
+@skip_36
+def test_partial_specification_name():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT')
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    partial_model = Model[int, BT]
+    assert partial_model.__name__ == 'Model[int, BT]'
+    concrete_model = partial_model[str]
+    assert concrete_model.__name__ == 'Model[int, BT][str]'
+
+
+@skip_36
+def test_partial_specification_instantiation():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT')
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    partial_model = Model[int, BT]
+    partial_model(a=1, b=2)
 
 
 @skip_36
