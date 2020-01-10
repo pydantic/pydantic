@@ -1,3 +1,4 @@
+import itertools
 import os
 import sys
 import uuid
@@ -819,6 +820,49 @@ def test_invalid_iterable():
         Model(it=3, b=3)
     assert exc_info.value.errors() == [
         {'loc': ('it',), 'msg': 'value is not a valid iterable', 'type': 'type_error.iterable'}
+    ]
+
+
+def test_infinite_iterable_validate_first():
+    class Model(BaseModel):
+        it: Iterable[int]
+        b: int
+
+        @validator('it')
+        def infinite_first_int(cls, it, field):
+            first_value = next(it)
+            if field.sub_fields:
+                sub_field = field.sub_fields[0]
+                v, error = sub_field.validate(first_value, {}, loc='first_value')
+                if error:
+                    raise ValidationError([error], cls)
+            return itertools.chain([first_value], it)
+
+    def int_iterable():
+        i = 0
+        while True:
+            i += 1
+            yield i
+
+    m = Model(it=int_iterable(), b=3)
+
+    assert m.b == 3
+    assert m.it
+
+    for i in m.it:
+        assert i
+        if i == 10:
+            break
+
+    def str_iterable():
+        while True:
+            for c in 'foobarbaz':
+                yield c
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(it=str_iterable(), b=3)
+    assert exc_info.value.errors() == [
+        {'loc': ('it', 'first_value'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
