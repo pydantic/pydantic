@@ -181,6 +181,15 @@ _(This script is complete, it should run "as is")_
 
     pydantic can't validate the values automatically for you because it would require consuming the infinite generator.
 
+#### Infinite Generators with Validation for First Value
+
+You can create a [Validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
+
+```py
+{!.tmp_examples/types_infinite_generator_validate_first.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ### Unions
 
 The `Union` type allows a model attribute to accept different types, e.g.:
