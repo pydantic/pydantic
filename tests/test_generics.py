@@ -506,6 +506,59 @@ def test_partial_specification_instantiation():
     partial_model = Model[int, BT]
     partial_model(a=1, b=2)
 
+    partial_model(a=1, b='a')
+
+    with pytest.raises(ValidationError) as exc_info:
+        partial_model(a='a', b=2)
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+@skip_36
+def test_partial_specification_instantiation_bounded():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT', bound=int)
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    Model(a=1, b=1)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=1, b='a')
+    assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+    partial_model = Model[int, BT]
+    partial_model(a=1, b=1)
+    with pytest.raises(ValidationError) as exc_info:
+        partial_model(a=1, b='a')
+    assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+@skip_36
+def test_typevar_parametrization():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT')
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    CT = TypeVar('CT', bound=int)
+    DT = TypeVar('DT', bound=int)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model[CT, DT](a='a', b='b')
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+    ]
+
 
 @skip_36
 def test_multiple_specification():
