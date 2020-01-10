@@ -425,6 +425,7 @@ class ModelField(Representation):
         elif origin == Iterable or origin == abc.Iterable:
             self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_ITERABLE
+            self.sub_fields = [self._create_sub_type(self.type_, f'{self.name}_type')]
         elif issubclass(origin, Type):  # type: ignore
             return
         else:
