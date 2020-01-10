@@ -691,12 +691,13 @@ raw bytes and print out human readable versions of the bytes as well.
 ```
 _(This script is complete, it should run "as is")_
 
-
-
 ## Custom Data Types
 
 You can also define your own custom data types. The classmethod `__get_validators__` will be called
 to get validators to parse and validate the input data.
+
+!!! tip
+    These validators have the same semantics as in [Validators](validators.md), you can declare a parameter `config`, `field`, etc.
 
 ```py
 {!.tmp_examples/types_custom_type.py!}
@@ -707,3 +708,28 @@ Similar validation could be achieved using [`constr(regex=...)`](#constrained-ty
 formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
 
 See [Schema](schema.md) for more details on how the model's schema is generated.
+
+## Allow Arbitrary Types
+
+You can allow arbitrary types using the `arbitrary_types_allowed` config in the [Model Config](model_config.md).
+
+```py
+{!.tmp_examples/types_arbitrary_allowed.py!}
+```
+_(This script is complete, it should run "as is")_
+
+## Generic Classes as Types
+
+!!! warning
+    This is an advanced technique that you might not need in the beginning. In most of the cases you will probably be fine with standard *pydantic* models.
+
+You can use [Generic Classes](https://mypy.readthedocs.io/en/latest/generics.html) as field types and perform custom validation based on the "type parameters" (or sub-types) with `__get_validators__`.
+
+If the Generic class that you are using as a sub-type has a classmethod `__get_validators__`, you don't need to use `arbitrary_types_allowed` for it to work.
+
+Because you can declare validators that receive the current `field`, you can extract the `sub_fields` (from the generic class type parameters) and validate data with them.
+
+```py
+{!.tmp_examples/types_generics.py!}
+```
+_(This script is complete, it should run "as is")_
