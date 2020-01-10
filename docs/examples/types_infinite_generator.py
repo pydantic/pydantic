@@ -1,4 +1,4 @@
-from typing import Iterable, Sequence
+from typing import Iterable
 from pydantic import BaseModel
 
 class Model(BaseModel):
