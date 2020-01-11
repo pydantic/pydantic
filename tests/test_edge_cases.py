@@ -1542,13 +1542,18 @@ def test_custom_generic_validators():
         @classmethod
         def validate(cls, v, field):
             if not isinstance(v, cls):
-                raise ValueError('Invalid value')
+                raise TypeError('Invalid value')
+            if not field.sub_fields:
+                return v
+            t1_f = field.sub_fields[0]
+            t2_f = field.sub_fields[1]
             errors = []
-            for f, name in zip(field.sub_fields, ['t1', 't2']):
-                current_value = getattr(v, name)
-                value, error = f.validate(current_value, {}, loc=name)
-                if error:
-                    errors.append(error)
+            _, error = t1_f.validate(v.t1, {}, loc='t1')
+            if error:
+                errors.append(error)
+            _, error = t2_f.validate(v.t2, {}, loc='t2')
+            if error:
+                errors.append(error)
             if errors:
                 raise ValidationError(errors, cls)
             return v
@@ -1556,21 +1561,27 @@ def test_custom_generic_validators():
     class Model(BaseModel):
         a: str
         gen: MyGen[str, bool]
+        gen2: MyGen
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='foo', gen='invalid')
-    assert exc_info.value.errors() == [{'loc': ('gen',), 'msg': 'Invalid value', 'type': 'value_error'}]
+        Model(a='foo', gen='invalid', gen2='invalid')
+    assert exc_info.value.errors() == [
+        {'loc': ('gen',), 'msg': 'Invalid value', 'type': 'type_error'},
+        {'loc': ('gen2',), 'msg': 'Invalid value', 'type': 'type_error'},
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='foo', gen=MyGen(t1='bar', t2='baz'))
+        Model(a='foo', gen=MyGen(t1='bar', t2='baz'), gen2=MyGen(t1='bar', t2='baz'))
     assert exc_info.value.errors() == [
         {'loc': ('gen', 't2'), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
     ]
 
-    m = Model(a='foo', gen=MyGen(t1='bar', t2=True))
+    m = Model(a='foo', gen=MyGen(t1='bar', t2=True), gen2=MyGen(t1=1, t2=2))
     assert m.a == 'foo'
     assert m.gen.t1 == 'bar'
     assert m.gen.t2 is True
+    assert m.gen2.t1 == 1
+    assert m.gen2.t2 == 2
 
 
 def test_custom_generic_arbitrary_allowed():
@@ -1621,11 +1632,9 @@ def test_custom_generic_disallowed():
             self.t1 = t1
             self.t2 = t2
 
-    with pytest.raises(TypeError) as exc_info:
+    match = r'Fields of type(.*)are not supported.'
+    with pytest.raises(TypeError, match=match):
 
         class Model(BaseModel):
             a: str
             gen: MyGen[str, bool]
-
-    assert 'Fields of type' in str(exc_info.value)
-    assert 'are not supported.' in str(exc_info.value)
