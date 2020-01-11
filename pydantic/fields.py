@@ -1,5 +1,5 @@
 import warnings
-from collections import abc
+from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -420,9 +420,9 @@ class ModelField(Representation):
             self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name, for_keys=True)
             self.type_ = self.type_.__args__[1]
             self.shape = SHAPE_MAPPING
-        # Equality check as almost everything inherit form Iterable, including str
-        # check for typing.Iterable and abc.Iterable, as it could receive one even when declared with the other
-        elif origin == Iterable or origin == abc.Iterable:
+        # Equality check as almost everything inherits form Iterable, including str
+        # check for Iterable and CollectionsIterable, as it could receive one even when declared with the other
+        elif origin in {Iterable, CollectionsIterable}:
             self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_ITERABLE
             self.sub_fields = [self._create_sub_type(self.type_, f'{self.name}_type')]
@@ -569,12 +569,10 @@ class ModelField(Representation):
         This intentionally doesn't validate values to allow infinite generators.
         """
 
-        e: Optional[Exception] = None
         try:
             iterable = iter(v)
         except TypeError:
-            e = errors_.IterableError()
-            return v, ErrorWrapper(e, loc)
+            return v, ErrorWrapper(errors_.IterableError(), loc)
         return iterable, None
 
     def _validate_tuple(
