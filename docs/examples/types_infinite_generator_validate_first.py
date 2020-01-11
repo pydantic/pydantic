@@ -31,11 +31,6 @@ def infinite_ints():
 m = Model(infinite=infinite_ints())
 print(m)
 
-for i in m.infinite:
-    print(i)
-    if i == 10:
-        break
-
 def infinite_strs():
     while True:
         for letter in 'allthesingleladies':
