@@ -421,10 +421,9 @@ class ModelField(Representation):
             return
         elif hasattr(origin, '__get_validators__') or self.model_config.arbitrary_types_allowed:
             # Is a Pydantic-compatible generic that handles itself
+            # or we have arbitrary_types_allowed = True
             self.shape = SHAPE_GENERIC
-            self.sub_fields = []
-            for i, t in enumerate(self.type_.__args__):
-                self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
+            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)]
             self.type_ = origin
             return
         else:
@@ -448,7 +447,7 @@ class ModelField(Representation):
         without mis-configuring the field.
         """
         class_validators_ = self.class_validators.values()
-        if not self.sub_fields or (self.shape == SHAPE_GENERIC):
+        if not self.sub_fields or self.shape == SHAPE_GENERIC:
             get_validators = getattr(self.type_, '__get_validators__', None)
             v_funcs = (
                 *[v.func for v in class_validators_ if v.each_item and v.pre],
