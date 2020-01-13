@@ -27,6 +27,7 @@ from uuid import UUID
 from .class_validators import ROOT_KEY
 from .fields import (
     SHAPE_FROZENSET,
+    SHAPE_ITERABLE,
     SHAPE_LIST,
     SHAPE_MAPPING,
     SHAPE_SEQUENCE,
@@ -376,7 +377,7 @@ def field_type_schema(
     nested_models: Set[str] = set()
     f_schema: Dict[str, Any]
     ref_prefix = ref_prefix or default_prefix
-    if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET}:
+    if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET, SHAPE_ITERABLE}:
         items_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
