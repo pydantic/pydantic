@@ -58,7 +58,7 @@ model = Model(
     cheese=TastingModel(name='Gouda', aged=True, quality='Good'),
     # This Python thing has aged "Not much" and has a quality "Awesome"
     thing=TastingModel(name='Python', aged='Not much', quality='Awesome')
-    )
+)
 print(model)
 print(model.wine.aged)
 print(model.wine.quality)
@@ -75,6 +75,6 @@ try:
         # For thing, no type parameters are declared, and we skipped validation
         # in those cases in the Assessment.validate() function
         thing=TastingModel(name='Python', aged='Not much', quality='Awesome')
-)
+    )
 except ValidationError as e:
     print(e)
