@@ -238,6 +238,10 @@ class SequenceError(PydanticTypeError):
     msg_template = 'value is not a valid sequence'
 
 
+class IterableError(PydanticTypeError):
+    msg_template = 'value is not a valid iterable'
+
+
 class ListError(PydanticTypeError):
     msg_template = 'value is not a valid list'
 

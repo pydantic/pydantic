@@ -1,3 +1,4 @@
+import itertools
 import os
 import sys
 import uuid
@@ -6,7 +7,20 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Optional, Pattern, Sequence, Set, Tuple
+from typing import (
+    Dict,
+    FrozenSet,
+    Iterable,
+    Iterator,
+    List,
+    MutableSet,
+    NewType,
+    Optional,
+    Pattern,
+    Sequence,
+    Set,
+    Tuple,
+)
 from uuid import UUID
 
 import pytest
@@ -773,6 +787,83 @@ def test_sequence_generator_success(cls, value, result):
     validated = Model(v=value).v
     assert isinstance(validated, Iterator)
     assert list(validated) == list(result)
+
+
+def test_infinite_iterable():
+    class Model(BaseModel):
+        it: Iterable[int]
+        b: int
+
+    def iterable():
+        i = 0
+        while True:
+            i += 1
+            yield i
+
+    m = Model(it=iterable(), b=3)
+
+    assert m.b == 3
+    assert m.it
+
+    for i in m.it:
+        assert i
+        if i == 10:
+            break
+
+
+def test_invalid_iterable():
+    class Model(BaseModel):
+        it: Iterable[int]
+        b: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(it=3, b=3)
+    assert exc_info.value.errors() == [
+        {'loc': ('it',), 'msg': 'value is not a valid iterable', 'type': 'type_error.iterable'}
+    ]
+
+
+def test_infinite_iterable_validate_first():
+    class Model(BaseModel):
+        it: Iterable[int]
+        b: int
+
+        @validator('it')
+        def infinite_first_int(cls, it, field):
+            first_value = next(it)
+            if field.sub_fields:
+                sub_field = field.sub_fields[0]
+                v, error = sub_field.validate(first_value, {}, loc='first_value')
+                if error:
+                    raise ValidationError([error], cls)
+            return itertools.chain([first_value], it)
+
+    def int_iterable():
+        i = 0
+        while True:
+            i += 1
+            yield i
+
+    m = Model(it=int_iterable(), b=3)
+
+    assert m.b == 3
+    assert m.it
+
+    for i in m.it:
+        assert i
+        if i == 10:
+            break
+
+    def str_iterable():
+        while True:
+            for c in 'foobarbaz':
+                yield c
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(it=str_iterable(), b=3)
+    assert exc_info.value.errors() == [
+        {'loc': ('it', 'first_value'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
 
 
 @pytest.mark.parametrize(
