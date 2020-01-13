@@ -50,7 +50,7 @@ class BaseSettings(BaseModel):
         if env_file is not None:
             env_path = Path(env_file)
             if env_path.is_file():
-                env_vars = {**env_vars, **read_env_file(env_path, self.__config__.case_sensitive)}
+                env_vars = {**read_env_file(env_path, self.__config__.case_sensitive), **env_vars}
 
         for field in self.__fields__.values():
             env_val: Optional[str] = None
@@ -110,7 +110,7 @@ def read_env_file(file_path: Path, case_sensitive: bool = False) -> Dict[str, st
     for n, line in enumerate(re.split('[\r\n]+', file_path.read_text()), start=1):
         line = line.strip()
         if line and not line.startswith('#'):
-            m = re.match(r'^\s*(\w+)\s*=\s*(.+?)\s*$', line)
+            m = re.match(r'^(?:export )?\s*(\w+)\s*=\s*(.+?)\s*$', line)
             if m:
                 key, value = m.groups()
                 value = value.strip('\'"')

@@ -82,7 +82,7 @@ MY_VAR='Hello world'
 
 Once you have your `.env` file filled with variables, Pydantic supports loading it in two ways:
 
-#### 1. passing `env_file` to the `Config` in a `BaseSettings` class
+1. setting `env_file` on `Config` in a `BaseSettings` class
 
 ```
 class Settings(BaseSettings):
@@ -92,13 +92,13 @@ class Settings(BaseSettings):
         env_file = '.env'
 ```
 
-#### 2. instantiating a `BaseSettings` derived class with the `_env_file` keyword argument
+2. instantiating a `BaseSettings` derived class with the `_env_file` keyword argument
 
 ```
 settings = Settings(_env_file='env/prod.env')
 ```
 
-In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the current working directory. From there, Pydantic will handle everything for you by loading in your variables and validating them.
+In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the current working directory. From there, *pydantic* will handle everything for you by loading in your variables and validating them.
 
 Please be aware that passing a file path via the `_env_file` keyword argument on instantiation (method 2) will override the value (if any) set on the `Config` class. If the above snippets were used in conjunction, `prod.env` would be loaded while `.env` would be ignored.
 
