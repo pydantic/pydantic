@@ -9,7 +9,7 @@ from pydantic.types import PaymentCardBrand, PaymentCardNumber
 
 VALID_AMEX = '370000000000002'
 VALID_MC = '5100000000000003'
-VALID_VISA = '4000000000000002'
+VALID_VISA = '4050000000000001'
 VALID_OTHER = '2000000000000000008'
 LUHN_INVALID = '4000000000000000'
 LEN_INVALID = '40000000000000006'
@@ -71,7 +71,7 @@ def test_get_brand(card_number: str, brand: PaymentCardBrand):
 def test_valid():
     card = PaymentCard(card_number=VALID_VISA)
     assert str(card.card_number) == VALID_VISA
-    assert card.card_number.masked == '400000******0002'
+    assert card.card_number.masked == '405000******0001'
 
 
 @pytest.mark.parametrize(
