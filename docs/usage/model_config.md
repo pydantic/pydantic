@@ -48,8 +48,10 @@ Options:
   Pass in a dictionary with keys matching the error messages you want to override (default: `{}`)
 
 **`arbitrary_types_allowed`**
-: whether to allow arbitrary user types for fields (they are validated simply by checking if the
-  value is an instance of the type). If `False`, `RuntimeError` will be raised on model declaration (default: `False`)
+: whether to allow arbitrary user types for fields (they are validated simply by
+  checking if the value is an instance of the type). If `False`, `RuntimeError` will be
+  raised on model declaration (default: `False`). See an example in
+  [Field Types](types.md#arbitrary-types-allowed).
 
 **`orm_mode`**
 : whether to allow usage of [ORM mode](models.md#orm-mode)

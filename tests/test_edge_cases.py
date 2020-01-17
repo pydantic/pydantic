@@ -2,7 +2,7 @@ import re
 import sys
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -1209,6 +1209,23 @@ def test_field_str_shape():
     assert str(Model.__fields__['a']) == "name='a' type=List[int] required=True"
 
 
+T1 = TypeVar('T1')
+T2 = TypeVar('T2')
+
+
+class DisplayGen(Generic[T1, T2]):
+    def __init__(self, t1: T1, t2: T2):
+        self.t1 = t1
+        self.t2 = t2
+
+    @classmethod
+    def __get_validators__(cls):
+        def validator(v):
+            return v
+
+        yield validator
+
+
 @pytest.mark.skipif(sys.version_info < (3, 7), reason='output slightly different for 3.6')
 @pytest.mark.parametrize(
     'type_,expected',
@@ -1226,6 +1243,7 @@ def test_field_str_shape():
         (Tuple[int, ...], 'Tuple[int, ...]'),
         (Optional[List[int]], 'Optional[List[int]]'),
         (dict, 'dict'),
+        (DisplayGen[bool, str], 'DisplayGen[bool, str]'),
     ],
 )
 def test_field_type_display(type_, expected):
@@ -1506,3 +1524,117 @@ def test_required_any():
         'nullable1': 1,
         'nullable2': 'two',
     }
+
+
+def test_custom_generic_validators():
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+
+    class MyGen(Generic[T1, T2]):
+        def __init__(self, t1: T1, t2: T2):
+            self.t1 = t1
+            self.t2 = t2
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v, field):
+            if not isinstance(v, cls):
+                raise TypeError('Invalid value')
+            if not field.sub_fields:
+                return v
+            t1_f = field.sub_fields[0]
+            t2_f = field.sub_fields[1]
+            errors = []
+            _, error = t1_f.validate(v.t1, {}, loc='t1')
+            if error:
+                errors.append(error)
+            _, error = t2_f.validate(v.t2, {}, loc='t2')
+            if error:
+                errors.append(error)
+            if errors:
+                raise ValidationError(errors, cls)
+            return v
+
+    class Model(BaseModel):
+        a: str
+        gen: MyGen[str, bool]
+        gen2: MyGen
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='foo', gen='invalid', gen2='invalid')
+    assert exc_info.value.errors() == [
+        {'loc': ('gen',), 'msg': 'Invalid value', 'type': 'type_error'},
+        {'loc': ('gen2',), 'msg': 'Invalid value', 'type': 'type_error'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='foo', gen=MyGen(t1='bar', t2='baz'), gen2=MyGen(t1='bar', t2='baz'))
+    assert exc_info.value.errors() == [
+        {'loc': ('gen', 't2'), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
+    ]
+
+    m = Model(a='foo', gen=MyGen(t1='bar', t2=True), gen2=MyGen(t1=1, t2=2))
+    assert m.a == 'foo'
+    assert m.gen.t1 == 'bar'
+    assert m.gen.t2 is True
+    assert m.gen2.t1 == 1
+    assert m.gen2.t2 == 2
+
+
+def test_custom_generic_arbitrary_allowed():
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+
+    class MyGen(Generic[T1, T2]):
+        def __init__(self, t1: T1, t2: T2):
+            self.t1 = t1
+            self.t2 = t2
+
+    class Model(BaseModel):
+        a: str
+        gen: MyGen[str, bool]
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='foo', gen='invalid')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('gen',),
+            'msg': 'instance of MyGen expected',
+            'type': 'type_error.arbitrary_type',
+            'ctx': {'expected_arbitrary_type': 'MyGen'},
+        }
+    ]
+
+    # No validation, no exception
+    m = Model(a='foo', gen=MyGen(t1='bar', t2='baz'))
+    assert m.a == 'foo'
+    assert m.gen.t1 == 'bar'
+    assert m.gen.t2 == 'baz'
+
+    m = Model(a='foo', gen=MyGen(t1='bar', t2=True))
+    assert m.a == 'foo'
+    assert m.gen.t1 == 'bar'
+    assert m.gen.t2 is True
+
+
+def test_custom_generic_disallowed():
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+
+    class MyGen(Generic[T1, T2]):
+        def __init__(self, t1: T1, t2: T2):
+            self.t1 = t1
+            self.t2 = t2
+
+    match = r'Fields of type(.*)are not supported.'
+    with pytest.raises(TypeError, match=match):
+
+        class Model(BaseModel):
+            a: str
+            gen: MyGen[str, bool]

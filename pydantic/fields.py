@@ -177,6 +177,7 @@ SHAPE_TUPLE_ELLIPSIS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
 SHAPE_ITERABLE = 9
+SHAPE_GENERIC = 10
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -428,6 +429,13 @@ class ModelField(Representation):
             self.sub_fields = [self._create_sub_type(self.type_, f'{self.name}_type')]
         elif issubclass(origin, Type):  # type: ignore
             return
+        elif hasattr(origin, '__get_validators__') or self.model_config.arbitrary_types_allowed:
+            # Is a Pydantic-compatible generic that handles itself
+            # or we have arbitrary_types_allowed = True
+            self.shape = SHAPE_GENERIC
+            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)]
+            self.type_ = origin
+            return
         else:
             raise TypeError(f'Fields of type "{origin}" are not supported.')
 
@@ -449,7 +457,7 @@ class ModelField(Representation):
         without mis-configuring the field.
         """
         class_validators_ = self.class_validators.values()
-        if not self.sub_fields:
+        if not self.sub_fields or self.shape == SHAPE_GENERIC:
             get_validators = getattr(self.type_, '__get_validators__', None)
             v_funcs = (
                 *[v.func for v in class_validators_ if v.each_item and v.pre],
@@ -501,6 +509,8 @@ class ModelField(Representation):
             v, errors = self._validate_tuple(v, values, loc, cls)
         elif self.shape == SHAPE_ITERABLE:
             v, errors = self._validate_iterable(v, values, loc, cls)
+        elif self.shape == SHAPE_GENERIC:
+            v, errors = self._apply_validators(v, values, loc, cls, self.validators)
         else:
             #  sequence, list, set, generator, tuple with ellipsis, frozen set
             v, errors = self._validate_sequence_like(v, values, loc, cls)
@@ -685,6 +695,11 @@ class ModelField(Representation):
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:
             t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
+        elif self.shape == SHAPE_GENERIC:
+            assert self.sub_fields
+            t = '{}[{}]'.format(
+                display_as_type(self.type_), ', '.join(display_as_type(f.type_) for f in self.sub_fields)
+            )
         elif self.shape != SHAPE_SINGLETON:
             t = SHAPE_NAME_LOOKUP[self.shape].format(t)
 
