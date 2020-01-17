@@ -1017,3 +1017,24 @@ def test_root_validator_skip_on_failure():
     with pytest.raises(ValidationError):
         ModelB(a='a')
     assert not b_called
+
+
+def test_assignment_validator_cls():
+    validator_calls = 0
+
+    class Model(BaseModel):
+        name: str
+
+        class Config:
+            validate_assignment = True
+
+        @validator('name')
+        def check_foo(cls, value):
+            nonlocal validator_calls
+            validator_calls += 1
+            assert cls == Model
+            return value
+
+    m = Model(name='hello')
+    m.name = 'goodbye'
+    assert validator_calls == 2
