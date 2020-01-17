@@ -1,1 +1,1 @@
-completing Luhn algorithm for ``PaymentCardNumber``.
+completing Luhn algorithm for `PaymentCardNumber`.
