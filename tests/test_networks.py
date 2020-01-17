@@ -1,6 +1,17 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, EmailStr, HttpUrl, NameEmail, PostgresDsn, RedisDsn, ValidationError, stricturl
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    EmailStr,
+    HttpUrl,
+    NameEmail,
+    PostgresDsn,
+    RedisDsn,
+    ValidationError,
+    create_model,
+    stricturl,
+)
 from pydantic.networks import validate_email
 
 try:
@@ -50,6 +61,7 @@ except ImportError:
         'http://андрей@example.com',
         AnyUrl('https://example.com', scheme='https', host='example.com'),
         'https://exam_ple.com/',
+        'http://twitter.com/@handle/',
     ],
 )
 def test_any_url_success(value):
@@ -109,11 +121,15 @@ def test_any_url_invalid(value, err_type, err_msg, err_ctx):
     assert error.get('ctx') == err_ctx, value
 
 
-def test_any_url_obj():
+def validate_url(s):
     class Model(BaseModel):
         v: AnyUrl
 
-    url = Model(v='http://example.org').v
+    return Model(v=s).v
+
+
+def test_any_url_parts():
+    url = validate_url('http://example.org')
     assert str(url) == 'http://example.org'
     assert repr(url) == "AnyUrl('http://example.org', scheme='http', host='example.org', tld='org', host_type='domain')"
     assert url.scheme == 'http'
@@ -123,53 +139,74 @@ def test_any_url_obj():
     assert url.port is None
     assert url == AnyUrl('http://example.org', scheme='https', host='example.org')
 
-    url2 = Model(v='http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit').v
-    assert str(url2) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
-    assert repr(url2) == (
+
+def test_url_repr():
+    url = validate_url('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit')
+    assert str(url) == 'http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit'
+    assert repr(url) == (
         "AnyUrl('http://user:password@example.org:1234/the/path/?query=here#fragment=is;this=bit', "
         "scheme='http', user='user', password='password', host='example.org', tld='org', host_type='domain', "
         "port='1234', path='/the/path/', query='query=here', fragment='fragment=is;this=bit')"
     )
-    assert url2.scheme == 'http'
-    assert url2.user == 'user'
-    assert url2.password == 'password'
-    assert url2.host == 'example.org'
+    assert url.scheme == 'http'
+    assert url.user == 'user'
+    assert url.password == 'password'
+    assert url.host == 'example.org'
     assert url.host_type == 'domain'
-    assert url2.port == '1234'
-    assert url2.path == '/the/path/'
-    assert url2.query == 'query=here'
-    assert url2.fragment == 'fragment=is;this=bit'
+    assert url.port == '1234'
+    assert url.path == '/the/path/'
+    assert url.query == 'query=here'
+    assert url.fragment == 'fragment=is;this=bit'
 
-    url3 = Model(v='ftp://123.45.67.8:8329/').v
-    assert url3.scheme == 'ftp'
-    assert url3.host == '123.45.67.8'
-    assert url3.host_type == 'ipv4'
-    assert url3.port == '8329'
-    assert url3.user is None
-    assert url3.password is None
 
-    url4 = Model(v='wss://[2001:db8::ff00:42]:8329').v
-    assert url4.scheme == 'wss'
-    assert url4.host == '[2001:db8::ff00:42]'
-    assert url4.host_type == 'ipv6'
-    assert url4.port == '8329'
+def test_ipv4_port():
+    url = validate_url('ftp://123.45.67.8:8329/')
+    assert url.scheme == 'ftp'
+    assert url.host == '123.45.67.8'
+    assert url.host_type == 'ipv4'
+    assert url.port == '8329'
+    assert url.user is None
+    assert url.password is None
 
-    url5 = Model(v='https://£££.org').v
-    assert url5.host == 'xn--9aaa.org'
-    assert url5.host_type == 'int_domain'
-    assert str(url5) == 'https://xn--9aaa.org'
 
-    url6 = Model(v='http://example.co.uk').v
-    assert str(url6) == 'http://example.co.uk'
-    assert url6.scheme == 'http'
-    assert url6.host == 'example.co.uk'
-    assert url6.tld == 'uk'  # wrong but no better solution
-    assert url6.host_type == 'domain'
+def test_ipv6_port():
+    url = validate_url('wss://[2001:db8::ff00:42]:8329')
+    assert url.scheme == 'wss'
+    assert url.host == '[2001:db8::ff00:42]'
+    assert url.host_type == 'ipv6'
+    assert url.port == '8329'
 
-    url7 = Model(v='http://user:@example.org').v
-    assert url7.user == 'user'
-    assert url7.password == ''
-    assert url7.host == 'example.org'
+
+def test_int_domain():
+    url = validate_url('https://£££.org')
+    assert url.host == 'xn--9aaa.org'
+    assert url.host_type == 'int_domain'
+    assert str(url) == 'https://xn--9aaa.org'
+
+
+def test_co_uk():
+    url = validate_url('http://example.co.uk')
+    assert str(url) == 'http://example.co.uk'
+    assert url.scheme == 'http'
+    assert url.host == 'example.co.uk'
+    assert url.tld == 'uk'  # wrong but no better solution
+    assert url.host_type == 'domain'
+
+
+def test_user_no_password():
+    url = validate_url('http://user:@example.org')
+    assert url.user == 'user'
+    assert url.password == ''
+    assert url.host == 'example.org'
+
+
+def test_at_in_path():
+    url = validate_url('https://twitter.com/@handle')
+    assert url.scheme == 'https'
+    assert url.host == 'twitter.com'
+    assert url.user is None
+    assert url.password is None
+    assert url.path == '/@handle'
 
 
 @pytest.mark.parametrize(
