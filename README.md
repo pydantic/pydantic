@@ -20,7 +20,7 @@ See [documentation](https://pydantic-docs.helpmanual.io/) for more details.
 ## Installation
 
 Install using `pip install -U pydantic` or `conda install pydantic -c conda-forge`.
-For more installation options to make *pydantic* even faster, 
+For more installation options to make *pydantic* even faster,
 see the [Install](https://pydantic-docs.helpmanual.io/install/) section in the documentation.
 
 ## A Simple Example
@@ -47,5 +47,9 @@ print(user.id)
 ## Contributing
 
 For guidance on setting up a development environment and how to make a
-contribution to *pydantic*, see 
+contribution to *pydantic*, see
 [Contributing to Pydantic](https://pydantic-docs.helpmanual.io/contributing/).
+
+## Reporting a Security Vulnerability
+
+See our [security policy](https://github.com/samuelcolvin/pydantic/security/policy).
