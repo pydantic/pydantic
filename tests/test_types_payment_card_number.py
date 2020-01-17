@@ -14,6 +14,35 @@ VALID_OTHER = '2000000000000000008'
 LUHN_INVALID = '4000000000000000'
 LEN_INVALID = '40000000000000006'
 
+luhn_tests = [
+    ("0", True),
+    ("00", True),
+    ("18", True),
+    ("0000000000000000", True),
+    ("4242424242424240", False),
+    ("4242424242424241", False),
+    ("4242424242424242", True),
+    ("4242424242424243", False),
+    ("4242424242424244", False),
+    ("4242424242424245", False),
+    ("4242424242424246", False),
+    ("4242424242424247", False),
+    ("4242424242424248", False),
+    ("4242424242424249", False),
+    ("42424242424242426", True),
+    ("424242424242424267", True),
+    ("4242424242424242675", True),
+    ("5164581347216566", True),
+    ("4345351087414150", True),
+    ("343728738009846", True),
+    ("5164581347216567", False),
+    ("4345351087414151", False),
+    ("343728738009847", False),
+    ("000000018", True),
+    ("99999999999999999999", True),
+    ("99999999999999999999999999999999999999999999999999999999999999999997", True),
+]
+
 # Mock PaymentCardNumber
 PCN = namedtuple('PaymentCardNumber', ['card_number', 'brand'])
 PCN.__len__ = lambda v: len(v.card_number)
@@ -30,10 +59,15 @@ def test_validate_digits():
         PaymentCardNumber.validate_digits('hello')
 
 
-def test_validate_luhn_check_digit():
-    assert PaymentCardNumber.validate_luhn_check_digit(VALID_VISA) == VALID_VISA
-    with pytest.raises(LuhnValidationError):
-        PaymentCardNumber.validate_luhn_check_digit(LUHN_INVALID)
+@pytest.mark.parametrize('card_number, valid', luhn_tests)
+def test_validate_luhn_check_digit(card_number: str, valid: bool):
+    if valid:
+        assert PaymentCardNumber.validate_luhn_check_digit(card_number) == card_number
+        assert valid
+    else:
+        with pytest.raises(LuhnValidationError):
+            PaymentCardNumber.validate_luhn_check_digit(card_number)
+            assert not valid
 
 
 @pytest.mark.parametrize(
