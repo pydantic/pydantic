@@ -169,9 +169,7 @@ class ModelMetaclass(ABCMeta):
         vg = ValidatorGroup(validators)
 
         for f in fields.values():
-            # debug(name, f)
             f.set_config(config)
-            # debug(name, f)
             extra_validators = vg.get_validators(f.name)
             if extra_validators:
                 f.class_validators.update(extra_validators)
