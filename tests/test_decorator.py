@@ -4,7 +4,7 @@ import pytest
 
 from pydantic import ValidationError, validate_arguments
 
-skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
+skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
 
 def test_args():
