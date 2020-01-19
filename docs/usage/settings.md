@@ -89,7 +89,7 @@ Once you have your `.env` file filled with variables, Pydantic supports loading 
 
 1. setting `env_file` on `Config` in a `BaseSettings` class
 
-```
+```py
 class Settings(BaseSettings):
     ...
 
@@ -99,7 +99,7 @@ class Settings(BaseSettings):
 
 2. instantiating a `BaseSettings` derived class with the `_env_file` keyword argument
 
-```
+```py
 settings = Settings(_env_file='env/prod.env')
 ```
 
@@ -126,4 +126,5 @@ the selected value is determined as follows (in descending order of priority):
 
 1. Arguments passed to the `Settings` class initialiser.
 2. Environment variables, e.g. `my_prefix_special_function` as described above.
-3. The default field values for the `Settings` model.
+3. variables loaded from dotenv (`.env`) files
+4. The default field values for the `Settings` model.

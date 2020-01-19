@@ -348,14 +348,27 @@ def test_config_file_settings_nornir(env):
     assert s.c == 'env setting c'
 
 
-def test_env_file_config(env):
+test_env_file = """\
+# this is a comment
+A=good string
+# another one, followed by whitespace
+
+B='better string'
+C="best string"
+"""
+
+
+def test_env_file_config(env, tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(test_env_file)
+
     class Settings(BaseSettings):
         a: str
         b: str
         c: str
 
         class Config:
-            env_file = 'tests/env_files/test_settings_1.env'
+            env_file = p
 
     env.set('A', 'overridden var')
 
@@ -365,23 +378,57 @@ def test_env_file_config(env):
     assert s.c == 'best string'
 
 
-def test_env_file_override(env):
+def test_env_file_export(env, tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(
+        """\
+export A='good string'
+export B=better-string
+export C="best string"
+"""
+    )
+
+    class Settings(BaseSettings):
+        a: str
+        b: str
+        c: str
+
+        class Config:
+            env_file = p
+
+    env.set('A', 'overridden var')
+
+    s = Settings()
+    assert s.a == 'overridden var'
+    assert s.b == 'better-string'
+    assert s.c == 'best string'
+
+
+def test_env_file_override_file(tmp_path):
+    p1 = tmp_path / '.env'
+    p1.write_text(test_env_file)
+    p2 = tmp_path / '.env.prod'
+    p2.write_text('A="new string"')
+
     class Settings(BaseSettings):
         a: str
 
         class Config:
-            env_file = 'tests/env_files/test_settings_1.env'
+            env_file = str(p1)
 
-    s = Settings(_env_file='tests/env_files/test_settings_2.env')
+    s = Settings(_env_file=p2)
     assert s.a == 'new string'
 
 
-def test_env_file_override_none(env):
+def test_env_file_override_none(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(test_env_file)
+
     class Settings(BaseSettings):
         a: str = None
 
         class Config:
-            env_file = 'tests/env_files/test_settings_1.env'
+            env_file = p
 
     s = Settings(_env_file=None)
     assert s.a is None
@@ -396,15 +443,16 @@ def test_env_file_not_a_file(env):
     assert s.a == 'ignore non-file'
 
 
-def test_env_file_syntax(env):
+def test_env_file_syntax(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('NOT_AN_ASSIGNMENT')
+
     class Settings(BaseSettings):
         a: str
 
-    try:
-        s = Settings(_env_file='tests/env_files/test_settings_broken.env')
-        assert s.a == 'good string'
-    except EnvFileError:
-        assert True
+    with pytest.raises(EnvFileError) as exc_info:
+        Settings(_env_file=p)
+    assert str(exc_info.value) == f"invalid assignment in {tmp_path}/.env on line 1: 'NOT_AN_ASSIGNMENT'"
 
 
 def test_alias_set(env):
@@ -435,32 +483,3 @@ def test_alias_set(env):
     assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'spam default'}
     env.set('spam', 'sss')
     assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'sss'}
-
-
-def test_prefix_on_parent(env):
-    class MyBaseSettings(BaseSettings):
-        var: str = 'old'
-
-    class MySubSettings(MyBaseSettings):
-        class Config:
-            env_prefix = 'PREFIX_'
-
-    assert MyBaseSettings().dict() == {'var': 'old'}
-    assert MySubSettings().dict() == {'var': 'old'}
-    env.set('PREFIX_VAR', 'new')
-    assert MyBaseSettings().dict() == {'var': 'old'}
-    assert MySubSettings().dict() == {'var': 'new'}
-
-
-def test_frozenset(env):
-    class Settings(BaseSettings):
-        foo: str = 'default foo'
-
-        class Config:
-            fields = {'foo': {'env': frozenset(['foo_a', 'foo_b'])}}
-
-    assert Settings.__fields__['foo'].field_info.extra['env_names'] == frozenset({'foo_a', 'foo_b'})
-
-    assert Settings().dict() == {'foo': 'default foo'}
-    env.set('foo_a', 'x')
-    assert Settings().dict() == {'foo': 'x'}

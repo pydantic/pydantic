@@ -118,6 +118,6 @@ def read_env_file(file_path: Path, case_sensitive: bool = False) -> Dict[str, st
                 value = value.strip('\'"')
                 file_vars[key if case_sensitive else key.lower()] = value
             else:
-                raise EnvFileError(f'invalid assignment in {file_path} on line {n}\n  {line}')
+                raise EnvFileError(f'invalid assignment in {file_path} on line {n}: {line!r}')
 
     return file_vars
