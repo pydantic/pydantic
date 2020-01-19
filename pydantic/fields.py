@@ -18,7 +18,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from . import errors as errors_
@@ -60,6 +59,7 @@ class FieldInfo(Representation):
     __slots__ = (
         'default',
         'alias',
+        'alias_priority',
         'title',
         'description',
         'const',
@@ -79,6 +79,7 @@ class FieldInfo(Representation):
     def __init__(self, default: Any, **kwargs: Any) -> None:
         self.default = default
         self.alias = kwargs.pop('alias', None)
+        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
         self.const = kwargs.pop('const', None)
@@ -288,9 +289,12 @@ class ModelField(Representation):
         self.model_config = config
         info_from_config = config.get_field_info(self.name)
         config.prepare_field(self)
-        if info_from_config:
-            self.field_info.alias = info_from_config.get('alias') or self.field_info.alias or self.name
-            self.alias = cast(str, self.field_info.alias)
+        new_alias = info_from_config.get('alias')
+        new_alias_priority = info_from_config.get('alias_priority') or 0
+        if new_alias and new_alias_priority >= (self.field_info.alias_priority or 0):
+            self.field_info.alias = new_alias
+            self.field_info.alias_priority = new_alias_priority
+            self.alias = new_alias
 
     @property
     def alt_alias(self) -> bool:

@@ -73,14 +73,22 @@ class BaseConfig:
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
-        field_info = cls.fields.get(name) or {}
-        if isinstance(field_info, str):
-            field_info = {'alias': field_info}
-        elif cls.alias_generator and 'alias' not in field_info:
+        fields_value = cls.fields.get(name)
+
+        if isinstance(fields_value, str):
+            field_info: Dict[str, Any] = {'alias': fields_value, 'alias_priority': 0}
+        elif isinstance(fields_value, dict):
+            field_info = fields_value
+        else:
+            field_info = {}
+
+        if 'alias' in field_info:
+            field_info['alias_priority'] = 2
+        elif cls.alias_generator:
             alias = cls.alias_generator(name)
             if not isinstance(alias, str):
                 raise TypeError(f'Config.alias_generator must return str, not {type(alias)}')
-            field_info['alias'] = alias
+            field_info.update(alias=alias, alias_priority=1)
         return field_info
 
     @classmethod
@@ -161,7 +169,9 @@ class ModelMetaclass(ABCMeta):
         vg = ValidatorGroup(validators)
 
         for f in fields.values():
+            # debug(name, f)
             f.set_config(config)
+            # debug(name, f)
             extra_validators = vg.get_validators(f.name)
             if extra_validators:
                 f.class_validators.update(extra_validators)
