@@ -360,7 +360,7 @@ def test_env_file_config(env):
     env.set('A', 'overridden var')
 
     s = Settings()
-    assert s.a == 'good string'
+    assert s.a == 'overridden var'
     assert s.b == 'better string'
     assert s.c == 'best string'
 

@@ -2,7 +2,7 @@ import os
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, Optional, Union
+from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 
 from .fields import ModelField
 from .main import BaseModel, Extra
