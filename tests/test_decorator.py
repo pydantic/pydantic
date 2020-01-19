@@ -3,6 +3,7 @@ import sys
 import pytest
 
 from pydantic import ValidationError, validate_arguments
+from pydantic.decorator import DecoratorSetupError
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
@@ -12,6 +13,7 @@ def test_args():
     def foo(a: int, b: int):
         return f'{a}, {b}'
 
+    assert foo.validation_decorator.model.__fields__.keys() == {'a', 'b'}
     assert foo(1, 2) == '1, 2'
     assert foo(*[1, 2]) == '1, 2'
     assert foo(*[1], 2) == '1, 2'
@@ -31,12 +33,20 @@ def test_args():
         {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        foo(1, 2, apple=3)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('kwargs',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+    ]
+
 
 def test_kwargs():
     @validate_arguments
     def foo(*, a: int, b: int):
         return a + b
 
+    assert foo.validation_decorator.model.__fields__.keys() == {'a', 'b'}
     assert foo(a=1, b=3) == 4
 
     with pytest.raises(ValidationError) as exc_info:
@@ -83,10 +93,43 @@ def test_position_only(create_module):
 from pydantic import validate_arguments
 
 @validate_arguments
-def foo(a, b, /):
-    return f'{a}, {b}'
+def foo(a, b, /, c=None):
+    return f'{a}, {b}, {c}'
 """
     )
-    assert module.foo(1, 2) == '1, 2'
+    assert module.foo(1, 2) == '1, 2, None'
+    assert module.foo(1, 2, 44) == '1, 2, 44'
+    assert module.foo(1, 2, c=44) == '1, 2, 44'
     with pytest.raises(NotImplementedError):
         module.foo(1, b=2)
+
+
+def test_args_name():
+    @validate_arguments
+    def foo(args: int, kwargs: int):
+        return f'args={args!r}, kwargs={kwargs!r}'
+
+    assert foo.validation_decorator.model.__fields__.keys() == {'args', 'kwargs'}
+    assert foo.validation_decorator._args_field_name == 'var__args'
+    assert foo.validation_decorator._kwargs_field_name == 'var__kwargs'
+    assert foo(1, 2) == 'args=1, kwargs=2'
+
+    with pytest.raises(ValidationError) as exc_info:
+        foo(1, 2, apple=4)
+    assert exc_info.value.errors() == [
+        {'loc': ('var__kwargs',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        foo(1, 2, 3)
+    assert exc_info.value.errors() == [
+        {'loc': ('var__args',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+    ]
+
+
+def test_var__args():
+    with pytest.raises(DecoratorSetupError, match='"var__args" and "var__kwargs" are not permitted as an argument'):
+
+        @validate_arguments
+        def foo(var__args: int):
+            pass

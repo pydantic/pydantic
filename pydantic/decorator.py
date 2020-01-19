@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast
 
 from .main import BaseConfig, Extra, create_model
 from .utils import to_camel
@@ -30,7 +30,13 @@ def validate_arguments(function: 'Callable') -> 'Callable':
         m = vd.model(**values)
         return vd.execute(m, has_var_args, has_var_kwargs)
 
+    # for testing and introspection purposes allow assess to the ValidationDecorator from outside this function
+    validated_function.validation_decorator = vd  # type: ignore
     return cast('Callable', validated_function)
+
+
+ALT_VAR_ARGS = 'var__args'
+ALT_VAR_KWARGS = 'var__kwargs'
 
 
 class ValidationDecorator:
@@ -47,15 +53,23 @@ class ValidationDecorator:
         from inspect import signature, Parameter
 
         self._function = function
-        sig = signature(function)
-        self._arg_mapping = {}
+        self._arg_mapping: Dict[int, str] = {}
         self._args_field_name = 'args'
         self._kwargs_field_name = 'kwargs'
-        fields: Dict[str, Any] = {}
         self._positional_only_args = set()
 
-        for i, (name, p_) in enumerate(sig.parameters.items()):
-            p: Parameter = p_
+        parameters: Mapping[str, Parameter] = signature(function).parameters
+
+        if parameters.keys() & {ALT_VAR_ARGS, ALT_VAR_KWARGS}:
+            raise DecoratorSetupError(
+                f'"{ALT_VAR_ARGS}" and "{ALT_VAR_KWARGS}" are not permitted as an argument names when '
+                f'using the "validate_arguments" decorator'
+            )
+
+        allows_var_args = False
+        allows_var_kwargs = False
+        fields: Dict[str, Any] = {}
+        for i, (name, p) in enumerate(parameters.items()):
             if p.annotation == p.empty:
                 annotation = Any
             else:
@@ -74,27 +88,21 @@ class ValidationDecorator:
                 fields[name] = annotation, default
             elif p.kind == Parameter.VAR_POSITIONAL:
                 self._args_field_name = name
+                allows_var_args = True
                 fields[name] = Tuple[annotation, ...], None
             else:
                 assert p.kind == Parameter.VAR_KEYWORD, p.kind
                 self._kwargs_field_name = name
+                allows_var_kwargs = True
                 fields[name] = Dict[str, annotation], None  # type: ignore
 
         # these checks avoid a clash between "args" and a field with that name
-        if self._args_field_name in self._arg_mapping:
-            self._args_field_name = 'var__args'
-            if self._args_field_name in self._arg_mapping:
-                raise DecoratorSetupError(
-                    '"var__args" is not permitted as an argument name when using the "validate" decorator'
-                )
-            assert self._args_field_name not in self._arg_mapping
+        if not allows_var_args and self._args_field_name in fields:
+            self._args_field_name = ALT_VAR_ARGS
 
-        if self._kwargs_field_name in self._arg_mapping:
-            self._kwargs_field_name = 'var__kwargs'
-            if self._kwargs_field_name in self._arg_mapping:
-                raise DecoratorSetupError(
-                    '"var__kwargs" is not permitted as an argument name when using the "validate" decorator'
-                )
+        # same with "kwargs"
+        if not allows_var_kwargs and self._kwargs_field_name in fields:
+            self._kwargs_field_name = ALT_VAR_KWARGS
 
         self.model = create_model(to_camel(function.__name__), __config__=DecoratorModelConfig, **fields)
 
@@ -130,7 +138,7 @@ class ValidationDecorator:
             has_var_kwargs = True
         return values, has_var_args, has_var_kwargs
 
-    def execute(self, m: 'BaseModel', has_var_args: bool, has_var_kwargs: bool):
+    def execute(self, m: 'BaseModel', has_var_args: bool, has_var_kwargs: bool) -> Any:
         d = {k: v for k, v in m._iter() if k in m.__fields_set__}
         if has_var_kwargs:
             d.update(d.pop(self._kwargs_field_name))
