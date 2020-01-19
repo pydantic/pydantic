@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Ty
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import SHAPE_MAPPING, ModelField
+from .fields import SHAPE_MAPPING, ModelField, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import GetterDict, Representation, ValueItems, lenient_issubclass, validate_field_name
+from .utils import GetterDict, Representation, ValueItems, lenient_issubclass, sequence_like, validate_field_name
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
@@ -66,7 +66,7 @@ class BaseConfig:
     getter_dict: Type[GetterDict] = GetterDict
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
-    schema_extra: Dict[str, Any] = {}
+    schema_extra: Union[Dict[str, Any], Callable[[Dict[str, Any]], None]] = {}
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
     json_encoders: Dict[AnyType, AnyCallable] = {}
@@ -136,8 +136,6 @@ def is_valid_field(name: str) -> bool:
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
         raise ValueError('__root__ cannot be mixed with other fields')
-    if fields[ROOT_KEY].shape == SHAPE_MAPPING:
-        raise TypeError('custom root type cannot allow mapping')
 
 
 UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
@@ -168,7 +166,7 @@ class ModelMetaclass(ABCMeta):
             if extra_validators:
                 f.class_validators.update(extra_validators)
                 # re-run prepare to add extra validators
-                f.prepare()
+                f.populate_validators()
 
         prepare_config(config, name)
 
@@ -182,7 +180,7 @@ class ModelMetaclass(ABCMeta):
                     class_vars.add(ann_name)
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
-                    value = namespace.get(ann_name, ...)
+                    value = namespace.get(ann_name, Undefined)
                     if (
                         isinstance(value, untouched_types)
                         and ann_type != PyObject
@@ -238,12 +236,6 @@ class ModelMetaclass(ABCMeta):
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
-            # equivalent of inheriting from Representation
-            '__repr_name__': Representation.__repr_name__,
-            '__repr_str__': Representation.__repr_str__,
-            '__pretty__': Representation.__pretty__,
-            '__str__': Representation.__str__,
-            '__repr__': Representation.__repr__,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
         return super().__new__(mcs, name, bases, new_namespace, **kwargs)
@@ -256,7 +248,7 @@ class BaseModel(metaclass=ModelMetaclass):
         __field_defaults__: Dict[str, Any] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
-        __post_root_validators__: List[AnyCallable]
+        __post_root_validators__: List[Tuple[bool, AnyCallable]]
         __config__: Type[BaseConfig] = BaseConfig
         __root__: Any = None
         __json_encoder__: Callable[[Any], Any] = lambda x: x
@@ -265,6 +257,12 @@ class BaseModel(metaclass=ModelMetaclass):
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
+    # equivalent of inheriting from Representation
+    __repr_name__ = Representation.__repr_name__
+    __repr_str__ = Representation.__repr_str__
+    __pretty__ = Representation.__pretty__
+    __str__ = Representation.__str__
+    __repr__ = Representation.__repr__
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
@@ -286,7 +284,7 @@ class BaseModel(metaclass=ModelMetaclass):
         elif self.__config__.validate_assignment:
             known_field = self.__fields__.get(name, None)
             if known_field:
-                value, error_ = known_field.validate(value, self.dict(exclude={name}), loc=name)
+                value, error_ = known_field.validate(value, self.dict(exclude={name}), loc=name, cls=self.__class__)
                 if error_:
                     raise ValidationError([error_], type(self))
         self.__dict__[name] = value
@@ -382,15 +380,16 @@ class BaseModel(metaclass=ModelMetaclass):
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
-        if not isinstance(obj, dict):
-            if cls.__custom_root_type__:
-                obj = {ROOT_KEY: obj}
-            else:
-                try:
-                    obj = dict(obj)
-                except (TypeError, ValueError) as e:
-                    exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
-                    raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
+        if cls.__custom_root_type__ and (
+            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
+        ):
+            obj = {ROOT_KEY: obj}
+        elif not isinstance(obj, dict):
+            try:
+                obj = dict(obj)
+            except (TypeError, ValueError) as e:
+                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
         return cls(**obj)
 
     @classmethod
@@ -426,7 +425,14 @@ class BaseModel(metaclass=ModelMetaclass):
         proto: Protocol = None,
         allow_pickle: bool = False,
     ) -> 'Model':
-        obj = load_file(path, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
+        obj = load_file(
+            path,
+            proto=proto,
+            content_type=content_type,
+            encoding=encoding,
+            allow_pickle=allow_pickle,
+            json_loads=cls.__config__.json_loads,
+        )
         return cls.parse_obj(obj)
 
     @classmethod
@@ -589,7 +595,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 and (not value_include or value_include.is_included(k_))
             }
 
-        elif isinstance(v, (list, set, tuple)):
+        elif sequence_like(v):
             return type(v)(
                 cls._get_value(
                     v_,
@@ -853,7 +859,9 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 for f in sorted(extra):
                     errors.append(ErrorWrapper(ExtraError(), loc=f))
 
-    for validator in model.__post_root_validators__:
+    for skip_on_failure, validator in model.__post_root_validators__:
+        if skip_on_failure and errors:
+            continue
         try:
             values = validator(cls_, values)
         except (ValueError, TypeError, AssertionError) as exc:

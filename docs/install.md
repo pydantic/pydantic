@@ -28,7 +28,7 @@ print('compiled:', pydantic.compiled)
 ```
 
 If you require email validation you can add [email-validator](https://github.com/JoshData/python-email-validator)
-as an optional dependency. Similarly, use of `Literal` relies on
+as an optional dependency. Similarly, use of `Literal` prior to python 3.8 relies on
 [typing-extensions](https://pypi.org/project/typing-extensions/):
 
 ```bash

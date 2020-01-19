@@ -26,7 +26,7 @@ except ImportError:
 try:
     from typing import ForwardRef  # type: ignore
 
-    def evaluate_forwardref(type_, globalns, localns):  # type: ignore
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Type[Any]:
         return type_._evaluate(globalns, localns)
 
 
@@ -34,7 +34,7 @@ except ImportError:
     # python 3.6
     from typing import _ForwardRef as ForwardRef  # type: ignore
 
-    def evaluate_forwardref(type_, globalns, localns):  # type: ignore
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Type[Any]:
         return type_._eval_type(globalns, localns)
 
 
@@ -48,11 +48,16 @@ else:
 
     AnyCallable = TypingCallable[..., Any]
 
-try:
-    from typing_extensions import Literal
-except ImportError:
-    Literal = None  # type: ignore
-
+if sys.version_info < (3, 8):
+    if TYPE_CHECKING:
+        from typing_extensions import Literal
+    else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
+        try:
+            from typing_extensions import Literal
+        except ImportError:
+            Literal = None
+else:
+    from typing import Literal
 
 if TYPE_CHECKING:
     from .fields import ModelField

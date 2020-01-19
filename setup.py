@@ -55,7 +55,7 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not 
         ext_modules = cythonize(
             'pydantic/*.py',
             exclude=['pydantic/generics.py'],
-            nthreads=4,
+            nthreads=int(os.getenv('CYTHON_NTHREADS', 0)),
             language_level=3,
             compiler_directives=compiler_directives,
         )

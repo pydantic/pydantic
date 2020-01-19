@@ -11,10 +11,10 @@ A few things to note on validators:
   of `UserModel`.
 * the second argument is always the field value to validate; it can be named as you please
 * you can also add any subset of the following arguments to the signature (the names **must** match):
-    * `values`: a dict containing the name-to-value mapping of any previously-validated fields 
+    * `values`: a dict containing the name-to-value mapping of any previously-validated fields
     * `config`: the model config
     * `field`: the field being validated
-    * `**kwargs`: if provided, this will include the arguments above not explicitly listed in the signature  
+    * `**kwargs`: if provided, this will include the arguments above not explicitly listed in the signature
 * validators should either return the parsed value or raise a `ValueError`, `TypeError`, or `AssertionError`
   (``assert`` statements may be used).
 
@@ -64,6 +64,27 @@ _(This script is complete, it should run "as is")_
 You'll often want to use this together with `pre`, since otherwise with `always=True`
 *pydantic* would try to validate the default `None` which would cause an error.
 
+## Reuse validators
+
+Occasionally, you will want to use the same validator on multiple fields/models (e.g. to
+normalize some input data). The "naive" approach would be to write a separate function,
+then call it from multiple decorators.  Obviously, this entails a lot of repetition and
+boiler plate code. To circumvent this, the `allow_reuse` parameter has been added to
+`pydantic.validator` in **v1.2** (`False` by default):
+
+```py
+{!.tmp_examples/validators_allow_reuse.py!}
+```
+_(This script is complete, it should run "as is")_
+
+As it is obvious, repetition has been reduced and the models become again almost
+declarative.
+
+!!! tip
+    If you have a lot of fields that you want to validate, it usually makes sense to
+    define a help function with which you will avoid setting `allow_reuse=True` over and
+    over again.
+
 ## Root Validators
 
 Validation can also be performed on the entire model's data.
@@ -78,8 +99,10 @@ validation occurs (and are provided with the raw input data), or `pre=False` (th
 they're called after field validation.
 
 Field validation will not occur if `pre=True` root validators raise an error. As with field validators,
-"post" (i.e. `pre=False`) root validators will be called even if field validation fails; the `values` argument will
-be a dict containing the values which passed field validation and field defaults where applicable.
+"post" (i.e. `pre=False`) root validators by default will be called even if field validation fails; this
+behaviour can be changed by setting the `skip_on_failure=True` keyword argument to the validator.
+The `values` argument will be a dict containing the values which passed field validation and
+field defaults where applicable.
 
 ## Field Checks
 

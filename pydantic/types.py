@@ -9,7 +9,7 @@ from uuid import UUID
 
 from . import errors
 from .typing import AnyType
-from .utils import import_string
+from .utils import import_string, update_not_none
 from .validators import (
     bytes_validator,
     constr_length_validator,
@@ -91,6 +91,10 @@ class ConstrainedBytes(bytes):
     max_length: OptionalInt = None
 
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length)
+
+    @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield bytes_validator
         yield constr_strip_whitespace
@@ -122,6 +126,10 @@ class ConstrainedList(list):  # type: ignore
         yield cls.list_length_validator
 
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
+
+    @classmethod
     def list_length_validator(cls, v: 'List[T]') -> 'List[T]':
         v_len = len(v)
 
@@ -150,6 +158,12 @@ class ConstrainedStr(str):
     strict = False
 
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema, minLength=cls.min_length, maxLength=cls.max_length, pattern=cls.regex and cls.regex.pattern
+        )
+
+    @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
@@ -157,7 +171,7 @@ class ConstrainedStr(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> str:
+    def validate(cls, value: Union[str]) -> Union[str]:
         if cls.curtail_length and len(value) > cls.curtail_length:
             value = value[: cls.curtail_length]
 
@@ -201,6 +215,10 @@ else:
         """
         StrictBool to allow for bools which are not type-coerced.
         """
+
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            field_schema.update(type='boolean')
 
         @classmethod
         def __get_validators__(cls) -> 'CallableGenerator':
@@ -261,6 +279,17 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     multiple_of: OptionalInt = None
 
     @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le,
+            multipleOf=cls.multiple_of,
+        )
+
+    @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
 
         yield strict_int_validator if cls.strict else int_validator
@@ -295,6 +324,17 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     lt: OptionalIntFloat = None
     le: OptionalIntFloat = None
     multiple_of: OptionalIntFloat = None
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le,
+            multipleOf=cls.multiple_of,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -337,6 +377,17 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
     max_digits: OptionalInt = None
     decimal_places: OptionalInt = None
     multiple_of: OptionalIntFloatDecimal = None
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le,
+            multipleOf=cls.multiple_of,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -402,20 +453,28 @@ def condecimal(
 class UUID1(UUID):
     _required_version = 1
 
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format=f'uuid{cls._required_version}')
 
-class UUID3(UUID):
+
+class UUID3(UUID1):
     _required_version = 3
 
 
-class UUID4(UUID):
+class UUID4(UUID1):
     _required_version = 4
 
 
-class UUID5(UUID):
+class UUID5(UUID1):
     _required_version = 5
 
 
 class FilePath(Path):
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(format='file-path')
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield path_validator
@@ -431,6 +490,10 @@ class FilePath(Path):
 
 
 class DirectoryPath(Path):
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(format='directory-path')
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield path_validator
@@ -455,10 +518,16 @@ class JsonMeta(type):
 
 
 class Json(metaclass=JsonMeta):
-    pass
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format='json-string')
 
 
 class SecretStr:
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', writeOnly=True)
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield str_validator
@@ -477,6 +546,9 @@ class SecretStr:
     def __str__(self) -> str:
         return '**********' if self._secret_value else ''
 
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, SecretStr) and self.get_secret_value() == other.get_secret_value()
+
     def display(self) -> str:
         warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)
         return str(self)
@@ -486,6 +558,10 @@ class SecretStr:
 
 
 class SecretBytes:
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', writeOnly=True)
+
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield bytes_validator
@@ -503,6 +579,9 @@ class SecretBytes:
 
     def __str__(self) -> str:
         return '**********' if self._secret_value else ''
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, SecretBytes) and self.get_secret_value() == other.get_secret_value()
 
     def display(self) -> str:
         warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning)

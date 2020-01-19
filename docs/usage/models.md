@@ -303,6 +303,26 @@ If the name of the concrete subclasses is important, you can also override the d
 ```
 _(This script is complete, it should run "as is")_
 
+Using the same TypeVar in nested models allows you to enforce typing relationships at different points in your model:
+
+```py
+{!.tmp_examples/models_generics_nested.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Pydantic also treats `GenericModel` similarly to how it treats built-in generic types like `List` and `Dict` when it
+comes to leaving them unparameterized, or using bounded `TypeVar` instances:    
+
+* If you don't specify parameters before instantiating the generic model, they will be treated as `Any`
+* You can parametrize models with one or more *bounded* parameters to add subclass checks
+
+Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
+
+```py
+{!.tmp_examples/models_generics_typevars.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Dynamic model creation
 
 There are some occasions where the shape of a model is not known until runtime. For this *pydantic* provides
@@ -314,6 +334,11 @@ the `create_model` method to allow models to be created on the fly.
 
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 
+!!! warning
+    See the note in [Required Optional Fields](#required-optional-fields) for the distinct between an ellipsis as a
+    field default and annotation only fields. 
+    See [samuelcolvin/pydantic#1047](https://github.com/samuelcolvin/pydantic/issues/1047) for more details.
+
 Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The
 special key word arguments `__config__` and `__base__` can be used to customise the new model. This includes
 extending a base model with extra fields.
@@ -324,16 +349,34 @@ extending a base model with extra fields.
 
 ## Custom Root Types
 
-Pydantic models which do not represent a `dict` ("object" in JSON parlance) can have a custom
-root type defined via the `__root__` field. The root type can be of any type: list, float, int, etc.
+Pydantic models can be defined with a custom root type by declaring the `__root__` field. 
 
-The root type is defined via the type hint on the `__root__` field.
-The root value can be passed to model `__init__` via the `__root__` keyword argument or as
+The root type can be any type supported by pydantic, and is specified by the type hint on the `__root__` field.
+The root value can be passed to the model `__init__` via the `__root__` keyword argument, or as
 the first and only argument to `parse_obj`.
 
 ```py
 {!.tmp_examples/models_custom_root_field.py!}
 ```
+
+If you call the `parse_obj` method for a model with a custom root type with a *dict* as the first argument,
+the following logic is used:
+
+* If the custom root type is a mapping type (eg., `Dict` or `Mapping`),
+  the argument itself is always validated against the custom root type.
+* For other custom root types, if the dict has precisely one key with the value `__root__`,
+  the corresponding value will be validated against the custom root type.
+* Otherwise, the dict itself is validated against the custom root type.    
+
+This is demonstrated in the following example:
+
+```py
+{!.tmp_examples/models_custom_root_field_parse_obj.py!}
+```
+
+!!! warning
+    Calling the `parse_obj` method on a dict with the single key `"__root__"` for non-mapping custom root types
+    is currently supported for backwards compatibility, but is not recommended and may be dropped in a future version.
 
 ## Faux Immutability
 
@@ -392,12 +435,7 @@ To declare a field as required, you may declare it using just an annotation, or 
 as the value:
 
 ```py
-from pydantic import BaseModel, Field
-
-class Model(BaseModel):
-    a: int
-    b: int = ...
-    c: int = Field(...)
+{!.tmp_examples/models_required_fields.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -405,6 +443,44 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
 with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
+
+### Required Optional fields
+
+!!! warning
+    Since version **v1.2** annotation only nullable (`Optional[...]`, `Union[None, ...]` and `Any`) fields and nullable
+    fields with an ellipsis (`...`) as the default value, no longer mean the same thing.
+
+    In some situations this may cause **v1.2** to not be entirely backwards compatible with earlier **v1.*** releases.
+
+If you want to specify a field that can take a `None` value while still being required,
+you can use `Optional` with `...`:
+
+```py
+{!.tmp_examples/models_required_field_optional.py!}
+```
+_(This script is complete, it should run "as is")_
+
+In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required.
+`b` and `c` require a value, even if the value is `None`.
+
+## Parsing data into a specified type
+
+Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing
+logic used to populate pydantic models in a more ad-hoc way. This function behaves similarly to
+`BaseModel.parse_obj`, but works with arbitrary pydantic-compatible types.
+
+This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
+For example: 
+
+```py
+{!.tmp_examples/parse_obj_as.py!}
+```
+_(This script is complete, it should run "as is")_
+
+This function is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
+
+Pydantic also includes a similar standalone function called `parse_file_as`,
+which is analogous to `BaseModel.parse_file`.
 
 ## Data Conversion
 

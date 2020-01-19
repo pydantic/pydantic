@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterable, Mapping, Optional, Union
 from .fields import ModelField
 from .main import BaseModel, Extra
 from .typing import display_as_type
-from .utils import deep_update
+from .utils import deep_update, sequence_like
 
 env_file_sentinel = str(object())
 
@@ -80,8 +80,8 @@ class BaseSettings(BaseModel):
 
         @classmethod
         def prepare_field(cls, field: ModelField) -> None:
-            env_names: Iterable[str]
-            env = field.field_info.extra.pop('env', None)
+            env_names: Union[List[str], AbstractSet[str]]
+            env = field.field_info.extra.get('env')
             if env is None:
                 if field.has_alias:
                     warnings.warn(
@@ -90,11 +90,13 @@ class BaseSettings(BaseModel):
                         'See https://pydantic-docs.helpmanual.io/usage/settings/#environment-variable-names',
                         FutureWarning,
                     )
-                env_names = [cls.env_prefix + field.name]
+                env_names = {cls.env_prefix + field.name}
             elif isinstance(env, str):
                 env_names = {env}
-            elif isinstance(env, (list, set, tuple)):
+            elif isinstance(env, (set, frozenset)):
                 env_names = env
+            elif sequence_like(env):
+                env_names = list(env)
             else:
                 raise TypeError(f'invalid field env: {env!r} ({display_as_type(env)}); should be string, list or set')
 

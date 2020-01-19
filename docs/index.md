@@ -112,7 +112,16 @@ Hundreds of organisations and packages are using *pydantic*, including:
 
 [The Molecular Sciences Software Institute](https://molssi.org)
 : are using *pydantic* in [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
-  for quantum chemsitry.
+  for quantum chemistry.
+
+[Reach](https://www.reach.vote)
+: trusts *pydantic* (via FastAPI) and [*arq*](https://github.com/samuelcolvin/arq) (Samuel's excellent
+  asynchronous task queue) to reliably power multiple mission-critical microservices.
 
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
+
+## Testimonials
+
+[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand)
+: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management using python type annotations, and it's the python type annotations that makes me really extra happy... It works automatically with all the IDE's you already have.*" --Michael Kennedy

@@ -435,3 +435,32 @@ def test_alias_set(env):
     assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'spam default'}
     env.set('spam', 'sss')
     assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'sss'}
+
+
+def test_prefix_on_parent(env):
+    class MyBaseSettings(BaseSettings):
+        var: str = 'old'
+
+    class MySubSettings(MyBaseSettings):
+        class Config:
+            env_prefix = 'PREFIX_'
+
+    assert MyBaseSettings().dict() == {'var': 'old'}
+    assert MySubSettings().dict() == {'var': 'old'}
+    env.set('PREFIX_VAR', 'new')
+    assert MyBaseSettings().dict() == {'var': 'old'}
+    assert MySubSettings().dict() == {'var': 'new'}
+
+
+def test_frozenset(env):
+    class Settings(BaseSettings):
+        foo: str = 'default foo'
+
+        class Config:
+            fields = {'foo': {'env': frozenset(['foo_a', 'foo_b'])}}
+
+    assert Settings.__fields__['foo'].field_info.extra['env_names'] == frozenset({'foo_a', 'foo_b'})
+
+    assert Settings().dict() == {'foo': 'default foo'}
+    env.set('foo_a', 'x')
+    assert Settings().dict() == {'foo': 'x'}

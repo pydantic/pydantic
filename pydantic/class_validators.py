@@ -1,7 +1,6 @@
 import warnings
 from collections import ChainMap
 from functools import wraps
-from inspect import Signature, signature
 from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
@@ -12,7 +11,7 @@ from .utils import in_ipython
 
 
 class Validator:
-    __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields'
+    __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields', 'skip_on_failure'
 
     def __init__(
         self,
@@ -21,15 +20,19 @@ class Validator:
         each_item: bool = False,
         always: bool = False,
         check_fields: bool = False,
+        skip_on_failure: bool = False,
     ):
         self.func = func
         self.pre = pre
         self.each_item = each_item
         self.always = always
         self.check_fields = check_fields
+        self.skip_on_failure = skip_on_failure
 
 
 if TYPE_CHECKING:
+    from inspect import Signature
+
     from .main import BaseConfig
     from .fields import ModelField
     from .types import ModelOrDc
@@ -51,6 +54,7 @@ def validator(
     always: bool = False,
     check_fields: bool = True,
     whole: bool = None,
+    allow_reuse: bool = False,
 ) -> Callable[[AnyCallable], classmethod]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
@@ -60,6 +64,7 @@ def validator(
       whole object
     :param always: whether this method and other validators should be called even if the value is missing
     :param check_fields: whether to check that the fields actually exist on the model
+    :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
     if not fields:
         raise ConfigError('validator with no fields specified')
@@ -78,12 +83,14 @@ def validator(
         each_item = not whole
 
     def dec(f: AnyCallable) -> classmethod:
-        _check_validator_name(f)
-        f_cls = classmethod(f)
+        f_cls = _prepare_validator(f, allow_reuse)
         setattr(
             f_cls,
             VALIDATOR_CONFIG_KEY,
-            (fields, Validator(func=f, pre=pre, each_item=each_item, always=always, check_fields=check_fields)),
+            (
+                fields,
+                Validator(func=f_cls.__func__, pre=pre, each_item=each_item, always=always, check_fields=check_fields),
+            ),
         )
         return f_cls
 
@@ -101,37 +108,41 @@ def root_validator(*, pre: bool = False) -> Callable[[AnyCallable], classmethod]
 
 
 def root_validator(
-    _func: Optional[AnyCallable] = None, *, pre: bool = False
+    _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
 ) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
     """
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
     before or after standard model parsing/validation is performed.
     """
     if _func:
-        _check_validator_name(_func)
-        f_cls = classmethod(_func)
-        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=_func, pre=pre))
+        f_cls = _prepare_validator(_func, allow_reuse)
+        setattr(
+            f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
+        )
         return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
-        _check_validator_name(f)
-        f_cls = classmethod(f)
-        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f, pre=pre))
+        f_cls = _prepare_validator(f, allow_reuse)
+        setattr(
+            f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
+        )
         return f_cls
 
     return dec
 
 
-def _check_validator_name(f: AnyCallable) -> None:
+def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> classmethod:
     """
-    avoid validators with duplicated names since without this, validators can be overwritten silently
-    which generally isn't the intended behaviour, don't run in ipython - see #312
+    Avoid validators with duplicated names since without this, validators can be overwritten silently
+    which generally isn't the intended behaviour, don't run in ipython (see #312) or if allow_reuse is False.
     """
-    if not in_ipython():  # pragma: no branch
-        ref = f.__module__ + '.' + f.__qualname__
+    f_cls = function if isinstance(function, classmethod) else classmethod(function)
+    if not in_ipython() and not allow_reuse:
+        ref = f_cls.__func__.__module__ + '.' + f_cls.__func__.__qualname__
         if ref in _FUNCS:
-            raise ConfigError(f'duplicate validator function "{ref}"')
+            raise ConfigError(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
+    return f_cls
 
 
 class ValidatorGroup:
@@ -180,9 +191,11 @@ def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
     return validators
 
 
-def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[AnyCallable]]:
+def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[Tuple[bool, AnyCallable]]]:
+    from inspect import signature
+
     pre_validators: List[AnyCallable] = []
-    post_validators: List[AnyCallable] = []
+    post_validators: List[Tuple[bool, AnyCallable]] = []
     for name, value in namespace.items():
         validator_config: Optional[Validator] = getattr(value, ROOT_VALIDATOR_CONFIG_KEY, None)
         if validator_config:
@@ -199,7 +212,7 @@ def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable
             if validator_config.pre:
                 pre_validators.append(validator_config.func)
             else:
-                post_validators.append(validator_config.func)
+                post_validators.append((validator_config.skip_on_failure, validator_config.func))
     return pre_validators, post_validators
 
 
@@ -221,6 +234,8 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
     It's done like this so validators don't all need **kwargs in their signature, eg. any combination of
     the arguments "values", "fields" and/or "config" are permitted.
     """
+    from inspect import signature
+
     sig = signature(validator)
     args = list(sig.parameters.keys())
     first_arg = args.pop(0)
@@ -244,7 +259,7 @@ def prep_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
 all_kwargs = {'values', 'field', 'config'}
 
 
-def _generic_validator_cls(validator: AnyCallable, sig: Signature, args: Set[str]) -> 'ValidatorCallable':
+def _generic_validator_cls(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
     # assume the first argument is value
     has_kwargs = False
     if 'kwargs' in args:
@@ -278,7 +293,7 @@ def _generic_validator_cls(validator: AnyCallable, sig: Signature, args: Set[str
         return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field, config=config)
 
 
-def _generic_validator_basic(validator: AnyCallable, sig: Signature, args: Set[str]) -> 'ValidatorCallable':
+def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
     has_kwargs = False
     if 'kwargs' in args:
         has_kwargs = True

@@ -249,25 +249,6 @@ def test_generic_config():
 
 
 @skip_36
-def test_generic_instantiation_error():
-    with pytest.raises(TypeError) as exc_info:
-        GenericModel()
-    assert str(exc_info.value) == 'Type GenericModel cannot be used without generic parameters, e.g. GenericModel[T]'
-
-
-@skip_36
-def test_parameterized_generic_instantiation_error():
-    data_type = TypeVar('data_type')
-
-    class Result(GenericModel, Generic[data_type]):
-        data: data_type
-
-    with pytest.raises(TypeError) as exc_info:
-        Result(data=1)
-    assert str(exc_info.value) == 'Type Result cannot be used without generic parameters, e.g. Result[T]'
-
-
-@skip_36
 def test_deep_generic():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -444,3 +425,157 @@ def test_custom_generic_naming():
 
     assert repr(MyModel[int](value=1)) == 'OptionalIntWrapper(value=1)'
     assert repr(MyModel[str](value=None)) == 'OptionalStrWrapper(value=None)'
+
+
+@skip_36
+def test_nested():
+    AT = TypeVar('AT')
+
+    class InnerT(GenericModel, Generic[AT]):
+        a: AT
+
+    inner_int = InnerT[int](a=8)
+    inner_str = InnerT[str](a='ate')
+    inner_dict_any = InnerT[Any](a={})
+    inner_int_any = InnerT[Any](a=7)
+
+    class OuterT_SameType(GenericModel, Generic[AT]):
+        i: InnerT[AT]
+
+    OuterT_SameType[int](i=inner_int)
+    OuterT_SameType[str](i=inner_str)
+    OuterT_SameType[int](i=inner_int_any)  # ensure parsing the broader inner type works
+
+    with pytest.raises(ValidationError) as exc_info:
+        OuterT_SameType[int](i=inner_str)
+    assert exc_info.value.errors() == [
+        {'loc': ('i', 'a'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        OuterT_SameType[int](i=inner_dict_any)
+    assert exc_info.value.errors() == [
+        {'loc': ('i', 'a'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+@skip_36
+def test_partial_specification():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT')
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    partial_model = Model[int, BT]
+    concrete_model = partial_model[str]
+    concrete_model(a=1, b='abc')
+    with pytest.raises(ValidationError) as exc_info:
+        concrete_model(a='abc', b=None)
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
+    ]
+
+
+@skip_36
+def test_partial_specification_name():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT')
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    partial_model = Model[int, BT]
+    assert partial_model.__name__ == 'Model[int, BT]'
+    concrete_model = partial_model[str]
+    assert concrete_model.__name__ == 'Model[int, BT][str]'
+
+
+@skip_36
+def test_partial_specification_instantiation():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT')
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    partial_model = Model[int, BT]
+    partial_model(a=1, b=2)
+
+    partial_model(a=1, b='a')
+
+    with pytest.raises(ValidationError) as exc_info:
+        partial_model(a='a', b=2)
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+@skip_36
+def test_partial_specification_instantiation_bounded():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT', bound=int)
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    Model(a=1, b=1)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=1, b='a')
+    assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+    partial_model = Model[int, BT]
+    partial_model(a=1, b=1)
+    with pytest.raises(ValidationError) as exc_info:
+        partial_model(a=1, b='a')
+    assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+@skip_36
+def test_typevar_parametrization():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT')
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    CT = TypeVar('CT', bound=int)
+    DT = TypeVar('DT', bound=int)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model[CT, DT](a='a', b='b')
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+    ]
+
+
+@skip_36
+def test_multiple_specification():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT')
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: AT
+        b: BT
+
+    CT = TypeVar('CT')
+    partial_model = Model[CT, CT]
+    concrete_model = partial_model[str]
+
+    with pytest.raises(ValidationError) as exc_info:
+        concrete_model(a=None, b=None)
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
+    ]
