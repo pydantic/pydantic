@@ -71,6 +71,10 @@ by treating the environment variable's value as a JSON-encoded string.
 
 ## Dotenv (.env) support
 
+!!! note
+    dotenv file parsing requires [python-dotenv](https://pypi.org/project/python-dotenv/) to be installed.
+    This can be done with either `pip install python-dotenv` or `pip install pydantic[dotenv]`.
+
 Dotenv files (generally named `.env`) are a common pattern that make it easy to use environment variables in a
 platform-independent manner.
 

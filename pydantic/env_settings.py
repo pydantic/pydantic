@@ -1,5 +1,4 @@
 import os
-import re
 import warnings
 from pathlib import Path
 from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
@@ -13,10 +12,6 @@ env_file_sentinel = str(object())
 
 
 class SettingsError(ValueError):
-    pass
-
-
-class EnvFileError(ValueError):
     pass
 
 
@@ -42,7 +37,7 @@ class BaseSettings(BaseModel):
         d: Dict[str, Optional[str]] = {}
 
         if self.__config__.case_sensitive:
-            env_vars: Mapping[str, str] = os.environ
+            env_vars: Mapping[str, Optional[str]] = os.environ
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
@@ -107,17 +102,14 @@ class BaseSettings(BaseModel):
     __config__: Config  # type: ignore
 
 
-def read_env_file(file_path: Path, case_sensitive: bool = False) -> Dict[str, str]:
-    file_vars: Dict[str, str] = {}
-    for n, line in enumerate(re.split('[\r\n]+', file_path.read_text()), start=1):
-        line = line.strip()
-        if line and not line.startswith('#'):
-            m = re.match(r'^(?:export )?\s*(\w+)\s*=\s*(.+?)\s*$', line)
-            if m:
-                key, value = m.groups()
-                value = value.strip('\'"')
-                file_vars[key if case_sensitive else key.lower()] = value
-            else:
-                raise EnvFileError(f'invalid assignment in {file_path} on line {n}: {line!r}')
+def read_env_file(file_path: Path, case_sensitive: bool = False) -> Dict[str, Optional[str]]:
+    try:
+        from dotenv import dotenv_values
+    except ImportError as e:
+        raise ImportError('python-dotenv is not installed, run `pip install pydantic[dotenv]`') from e
 
-    return file_vars
+    file_vars: Dict[str, Optional[str]] = dotenv_values(file_path)
+    if not case_sensitive:
+        return {k.lower(): v for k, v in file_vars.items()}
+    else:
+        return file_vars

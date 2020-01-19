@@ -4,7 +4,12 @@ from typing import Dict, List, Set
 import pytest
 
 from pydantic import BaseModel, BaseSettings, Field, NoneStr, ValidationError, dataclasses
-from pydantic.env_settings import EnvFileError, SettingsError
+from pydantic.env_settings import SettingsError, read_env_file
+
+try:
+    import dotenv
+except ImportError:
+    dotenv = None
 
 
 class SimpleSettings(BaseSettings):
@@ -353,11 +358,12 @@ test_env_file = """\
 A=good string
 # another one, followed by whitespace
 
-B='better string'
-C="best string"
+b='better string'
+c="best string"
 """
 
 
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
 def test_env_file_config(env, tmp_path):
     p = tmp_path / '.env'
     p.write_text(test_env_file)
@@ -378,6 +384,26 @@ def test_env_file_config(env, tmp_path):
     assert s.c == 'best string'
 
 
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_config_case_sensitive(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(test_env_file)
+
+    class Settings(BaseSettings):
+        a: str
+        b: str
+        c: str
+
+        class Config:
+            env_file = p
+            case_sensitive = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        Settings()
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
 def test_env_file_export(env, tmp_path):
     p = tmp_path / '.env'
     p.write_text(
@@ -404,6 +430,19 @@ export C="best string"
     assert s.c == 'best string'
 
 
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_none(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('a')
+
+    class Settings(BaseSettings):
+        a: str = 'xxx'
+
+    s = Settings(_env_file=p)
+    assert s.a == 'xxx'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
 def test_env_file_override_file(tmp_path):
     p1 = tmp_path / '.env'
     p1.write_text(test_env_file)
@@ -420,6 +459,7 @@ def test_env_file_override_file(tmp_path):
     assert s.a == 'new string'
 
 
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
 def test_env_file_override_none(tmp_path):
     p = tmp_path / '.env'
     p.write_text(test_env_file)
@@ -434,6 +474,7 @@ def test_env_file_override_none(tmp_path):
     assert s.a is None
 
 
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
 def test_env_file_not_a_file(env):
     class Settings(BaseSettings):
         a: str = None
@@ -443,16 +484,33 @@ def test_env_file_not_a_file(env):
     assert s.a == 'ignore non-file'
 
 
-def test_env_file_syntax(tmp_path):
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_env_file_cast_sensitive(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('a="test"\nB=123')
+
+    assert read_env_file(p) == {'a': 'test', 'b': '123'}
+    assert read_env_file(p, case_sensitive=True) == {'a': 'test', 'B': '123'}
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_env_file_syntax_wrong(tmp_path):
     p = tmp_path / '.env'
     p.write_text('NOT_AN_ASSIGNMENT')
+
+    assert read_env_file(p, case_sensitive=True) == {'NOT_AN_ASSIGNMENT': None}
+
+
+@pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
+def test_dotenv_not_installed(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('a=b')
 
     class Settings(BaseSettings):
         a: str
 
-    with pytest.raises(EnvFileError) as exc_info:
+    with pytest.raises(ImportError, match=r'^python-dotenv is not installed, run `pip install pydantic\[dotenv\]`$'):
         Settings(_env_file=p)
-    assert str(exc_info.value) == f"invalid assignment in {tmp_path}/.env on line 1: 'NOT_AN_ASSIGNMENT'"
 
 
 def test_alias_set(env):
