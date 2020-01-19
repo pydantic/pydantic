@@ -501,6 +501,34 @@ def test_read_env_file_syntax_wrong(tmp_path):
     assert read_env_file(p, case_sensitive=True) == {'NOT_AN_ASSIGNMENT': None}
 
 
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_example(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(
+        """\
+# ignore comment
+ENVIRONMENT="production"
+REDIS_ADDRESS=localhost:6379
+MEANING_OF_LIFE=42
+MY_VAR='Hello world'
+"""
+    )
+
+    class Settings(BaseSettings):
+        environment: str
+        redis_address: str
+        meaning_of_life: int
+        my_var: str
+
+    s = Settings(_env_file=str(p))
+    assert s.dict() == {
+        'environment': 'production',
+        'redis_address': 'localhost:6379',
+        'meaning_of_life': 42,
+        'my_var': 'Hello world',
+    }
+
+
 @pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
 def test_dotenv_not_installed(tmp_path):
     p = tmp_path / '.env'
@@ -541,3 +569,32 @@ def test_alias_set(env):
     assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'spam default'}
     env.set('spam', 'sss')
     assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'sss'}
+
+
+def test_prefix_on_parent(env):
+    class MyBaseSettings(BaseSettings):
+        var: str = 'old'
+
+    class MySubSettings(MyBaseSettings):
+        class Config:
+            env_prefix = 'PREFIX_'
+
+    assert MyBaseSettings().dict() == {'var': 'old'}
+    assert MySubSettings().dict() == {'var': 'old'}
+    env.set('PREFIX_VAR', 'new')
+    assert MyBaseSettings().dict() == {'var': 'old'}
+    assert MySubSettings().dict() == {'var': 'new'}
+
+
+def test_frozenset(env):
+    class Settings(BaseSettings):
+        foo: str = 'default foo'
+
+        class Config:
+            fields = {'foo': {'env': frozenset(['foo_a', 'foo_b'])}}
+
+    assert Settings.__fields__['foo'].field_info.extra['env_names'] == frozenset({'foo_a', 'foo_b'})
+
+    assert Settings().dict() == {'foo': 'default foo'}
+    env.set('foo_a', 'x')
+    assert Settings().dict() == {'foo': 'x'}

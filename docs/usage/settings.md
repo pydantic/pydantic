@@ -79,7 +79,7 @@ Dotenv files (generally named `.env`) are a common pattern that make it easy to 
 platform-independent manner.
 
 A dotenv file follows the same general principles of all environment variables,
-and looks something like this:
+and looks something like:
 
 ```
 # ignore comment
@@ -118,10 +118,8 @@ Passing a file path via the `_env_file` keyword argument on instantiation (metho
 the value (if any) set on the `Config` class. If the above snippets were used in conjunction, `prod.env` would be loaded
 while `.env` would be ignored.
 
-!!! note
-    You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
-    the `Config` class) by passing `None` as the instantiation keyword argument,
-    e.g. `settings = Settings(_env_file=None)`
+You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
+the `Config` class) by passing `None` as the instantiation keyword argument, e.g. `settings = Settings(_env_file=None)`.
 
 ## Field value priority
 
@@ -130,5 +128,5 @@ the selected value is determined as follows (in descending order of priority):
 
 1. Arguments passed to the `Settings` class initialiser.
 2. Environment variables, e.g. `my_prefix_special_function` as described above.
-3. variables loaded from dotenv (`.env`) files
+3. Variables loaded from a dotenv (`.env`) file.
 4. The default field values for the `Settings` model.

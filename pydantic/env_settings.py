@@ -45,7 +45,7 @@ class BaseSettings(BaseModel):
         if env_file is not None:
             env_path = Path(env_file)
             if env_path.is_file():
-                env_vars = {**read_env_file(env_path, self.__config__.case_sensitive), **env_vars}
+                env_vars = {**read_env_file(env_path, case_sensitive=self.__config__.case_sensitive), **env_vars}
 
         for field in self.__fields__.values():
             env_val: Optional[str] = None
@@ -102,7 +102,7 @@ class BaseSettings(BaseModel):
     __config__: Config  # type: ignore
 
 
-def read_env_file(file_path: Path, case_sensitive: bool = False) -> Dict[str, Optional[str]]:
+def read_env_file(file_path: Path, *, case_sensitive: bool = False) -> Dict[str, Optional[str]]:
     try:
         from dotenv import dotenv_values
     except ImportError as e:
