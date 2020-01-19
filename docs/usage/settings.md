@@ -81,7 +81,7 @@ platform-independent manner.
 A dotenv file follows the same general principles of all environment variables,
 and looks something like:
 
-```
+```bash
 # ignore comment
 ENVIRONMENT="production"
 REDIS_ADDRESS=localhost:6379
@@ -89,9 +89,9 @@ MEANING_OF_LIFE=42
 MY_VAR='Hello world'
 ```
 
-Once you have your `.env` file filled with variables, Pydantic supports loading it in two ways:
+Once you have your `.env` file filled with variables, *pydantic* supports loading it in two ways:
 
-1. setting `env_file` on `Config` in a `BaseSettings` class
+**1.** setting `env_file` on `Config` in a `BaseSettings` class:
 
 ```py
 class Settings(BaseSettings):
@@ -101,10 +101,10 @@ class Settings(BaseSettings):
         env_file = '.env'
 ```
 
-2. instantiating a `BaseSettings` derived class with the `_env_file` keyword argument
+**2.** instantiating a `BaseSettings` derived class with the `_env_file` keyword argument:
 
 ```py
-settings = Settings(_env_file='env/prod.env')
+settings = Settings(_env_file='prod.env')
 ```
 
 In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
@@ -120,6 +120,10 @@ while `.env` would be ignored.
 
 You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
 the `Config` class) by passing `None` as the instantiation keyword argument, e.g. `settings = Settings(_env_file=None)`.
+
+because python-dotenv is used to parse the file, bash-like semantics such as `export` can be used which
+(depending on your OS and environment) may allow your dotenv file to also be used with `source`,
+see [python-dotenv's documentation](https://saurabh-kumar.com/python-dotenv/#usages) for more details.
 
 ## Field value priority
 
