@@ -165,7 +165,7 @@ def test_alias_generator_parent():
     assert Child.__fields__['x'].alias == 'x2'
 
 
-def test_alias_generator_alias1():
+def test_alias_generator_on_parent():
     class Parent(BaseModel):
         x: bool = Field(..., alias='a_b_c')
         y: str
@@ -186,7 +186,7 @@ def test_alias_generator_alias1():
     assert Child.__fields__['z'].alias == 'Z'
 
 
-def test_alias_generator_alias2():
+def test_alias_generator_on_child():
     class Parent(BaseModel):
         x: bool = Field(..., alias='abc')
         y: str
