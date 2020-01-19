@@ -23,9 +23,9 @@ The following rules are used to determine which environment variable(s) are read
 
 * By default, the environment variable name is built by concatenating the prefix and field name.
     * For example, to override `special_function` above, you could use:
-    
+
             export my_prefix_special_function='foo.bar'
-    
+
     * Note 1: The default prefix is an empty string.
     * Note 2: Field aliases are ignored when building the environment variable name.
 
@@ -68,7 +68,9 @@ by treating the environment variable's value as a JSON-encoded string.
 
 ## Dotenv (.env) support
 
-Dotenv files (generally named `.env`) are a common pattern that make it easy to use environment variables in a platform-independent manner. A dotenv file follows the same general principles of all environment variables, and looks something like this:
+Dotenv files (generally named `.env`) are a common pattern that make it easy to use environment variables in a
+platform-independent manner. A dotenv file follows the same general principles of all environment variables,
+and looks something like this:
 
 #### `.env`
 
@@ -98,12 +100,18 @@ class Settings(BaseSettings):
 settings = Settings(_env_file='env/prod.env')
 ```
 
-In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the current working directory. From there, *pydantic* will handle everything for you by loading in your variables and validating them.
+In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
+current working directory. From there, *pydantic* will handle everything for you by loading in your variables and
+validating them.
 
-Please be aware that passing a file path via the `_env_file` keyword argument on instantiation (method 2) will override the value (if any) set on the `Config` class. If the above snippets were used in conjunction, `prod.env` would be loaded while `.env` would be ignored.
+Passing a file path via the `_env_file` keyword argument on instantiation (method 2) will override
+the value (if any) set on the `Config` class. If the above snippets were used in conjunction, `prod.env` would be loaded
+while `.env` would be ignored.
 
 !!! note
-    You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in the `Config` class) by passing `None` as the instantiation keyword argument, e.g. `settings = Settings(_env_file=None)`
+    You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
+    the `Config` class) by passing `None` as the instantiation keyword argument,
+    e.g. `settings = Settings(_env_file=None)`
 
 ## Field value priority
 
