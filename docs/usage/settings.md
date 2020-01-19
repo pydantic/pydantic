@@ -69,10 +69,10 @@ by treating the environment variable's value as a JSON-encoded string.
 ## Dotenv (.env) support
 
 Dotenv files (generally named `.env`) are a common pattern that make it easy to use environment variables in a
-platform-independent manner. A dotenv file follows the same general principles of all environment variables,
-and looks something like this:
+platform-independent manner.
 
-#### `.env`
+A dotenv file follows the same general principles of all environment variables,
+and looks something like this:
 
 ```
 # ignore comment
@@ -103,6 +103,9 @@ settings = Settings(_env_file='env/prod.env')
 In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
 current working directory. From there, *pydantic* will handle everything for you by loading in your variables and
 validating them.
+
+Even when using a dotenv file, *pydantic* will still read environment variables as well as the dotenv file,
+**environment variables will always take priority over values loaded from a dotenv file**.
 
 Passing a file path via the `_env_file` keyword argument on instantiation (method 2) will override
 the value (if any) set on the `Config` class. If the above snippets were used in conjunction, `prod.env` would be loaded
