@@ -71,7 +71,7 @@ jobs:
     python: 3.6
     name: 'Without Deps 3.6'
     script:
-    - pip uninstall -y cython email-validator typing-extensions devtools
+    - pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
     - make test
     env:
     - 'DEPS=no'
@@ -80,7 +80,7 @@ jobs:
     python: 3.7
     name: 'Without Deps 3.7'
     script:
-    - pip uninstall -y cython email-validator typing-extensions devtools
+    - pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
     - make test
     env:
     - 'DEPS=no'
@@ -89,7 +89,7 @@ jobs:
     python: 3.8
     name: 'Without Deps 3.8'
     script:
-    - pip uninstall -y cython email-validator typing-extensions devtools
+    - pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
     - make test
     env:
     - 'DEPS=no'

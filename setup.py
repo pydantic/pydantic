@@ -98,7 +98,8 @@ setup(
     ],
     extras_require={
         'email': ['email-validator>=1.0.3'],
-        'typing_extensions': ['typing-extensions>=3.7.2']
+        'typing_extensions': ['typing-extensions>=3.7.2'],
+        'dotenv': ['python-dotenv>=0.10.4'],
     },
     ext_modules=ext_modules,
 )
