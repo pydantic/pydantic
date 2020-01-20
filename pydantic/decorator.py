@@ -2,10 +2,11 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast
 
 from . import validator
+from .errors import ConfigError
 from .main import BaseModel, Extra, create_model
 from .utils import to_camel
 
-__all__ = 'validate_arguments', 'DecoratorSetupError'
+__all__ = ('validate_arguments',)
 
 if TYPE_CHECKING:
     from .typing import AnyCallable
@@ -22,13 +23,9 @@ def validate_arguments(function: 'Callable') -> 'Callable':
     return cast('Callable', vd)
 
 
-class DecoratorSetupError(TypeError):
-    pass
-
-
-V_ARGS = 'v_args'
-V_KWARGS = 'v_kwargs'
-V_POSITIONAL_ONLY = 'v_positional_only'
+ALT_V_ARGS = 'v__args'
+ALT_V_KWARGS = 'v__kwargs'
+V_POSITIONAL_ONLY_NAME = 'v__positional_only'
 
 
 class ValidatedFunction:
@@ -38,15 +35,19 @@ class ValidatedFunction:
         self.raw_function = function
         self.arg_mapping: Dict[int, str] = {}
         self.positional_only_args = set()
+        self.v_args_name = 'args'
+        self.v_kwargs_name = 'kwargs'
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
 
-        if parameters.keys() & {V_ARGS, V_KWARGS, V_POSITIONAL_ONLY}:
-            raise DecoratorSetupError(
-                f'"{V_ARGS}", "{V_KWARGS}" and "{V_POSITIONAL_ONLY}" are not permitted as argument names when '
-                f'using the "validate_arguments" decorator'
+        if parameters.keys() & {ALT_V_ARGS, ALT_V_KWARGS, V_POSITIONAL_ONLY_NAME}:
+            raise ConfigError(
+                f'"{ALT_V_ARGS}", "{ALT_V_KWARGS}" and "{V_POSITIONAL_ONLY_NAME}" are not permitted as argument '
+                f'names when using the "{validate_arguments.__name__}" decorator'
             )
 
+        takes_args = False
+        takes_kwargs = False
         fields: Dict[str, Any] = {}
         for i, (name, p) in enumerate(parameters.items()):
             if p.annotation == p.empty:
@@ -59,7 +60,7 @@ class ValidatedFunction:
             if p.kind == Parameter.POSITIONAL_ONLY:
                 self.arg_mapping[i] = name
                 fields[name] = annotation, default
-                fields[V_POSITIONAL_ONLY] = List[str], None
+                fields[V_POSITIONAL_ONLY_NAME] = List[str], None
                 self.positional_only_args.add(name)
             elif p.kind == Parameter.POSITIONAL_OR_KEYWORD:
                 self.arg_mapping[i] = name
@@ -67,12 +68,32 @@ class ValidatedFunction:
             elif p.kind == Parameter.KEYWORD_ONLY:
                 fields[name] = annotation, default
             elif p.kind == Parameter.VAR_POSITIONAL:
-                fields[V_ARGS] = Tuple[annotation, ...], None
+                self.v_args_name = name
+                fields[name] = Tuple[annotation, ...], None
+                takes_args = True
             else:
                 assert p.kind == Parameter.VAR_KEYWORD, p.kind
-                fields[V_KWARGS] = Dict[str, annotation], None  # type: ignore
+                self.v_kwargs_name = name
+                fields[name] = Dict[str, annotation], None  # type: ignore
+                takes_kwargs = True
 
-        self.create_model(fields)
+        # these checks avoid a clash between "args" and a field with that name
+        if not takes_args and self.v_args_name in fields:
+            self.v_args_name = ALT_V_ARGS
+
+        # same with "kwargs"
+        if not takes_kwargs and self.v_kwargs_name in fields:
+            self.v_kwargs_name = ALT_V_KWARGS
+
+        if not takes_args:
+            # we add the field so validation below can raise the correct exception
+            fields[self.v_args_name] = List[Any], None
+
+        if not takes_kwargs:
+            # same with kwargs
+            fields[self.v_kwargs_name] = Dict[Any, Any], None
+
+        self.create_model(fields, takes_args, takes_kwargs)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         values = self.build_values(args, kwargs)
@@ -92,7 +113,7 @@ class ValidatedFunction:
                 if arg_name is not None:
                     values[arg_name] = a
                 else:
-                    values[V_ARGS] = [a] + [a for _, a in arg_iter]
+                    values[self.v_args_name] = [a] + [a for _, a in arg_iter]
                     break
 
         var_kwargs = {}
@@ -106,25 +127,25 @@ class ValidatedFunction:
                 var_kwargs[k] = v
 
         if var_kwargs:
-            values[V_KWARGS] = var_kwargs
+            values[self.v_kwargs_name] = var_kwargs
         if wrong_positional_args:
-            values[V_POSITIONAL_ONLY] = wrong_positional_args
+            values[V_POSITIONAL_ONLY_NAME] = wrong_positional_args
         return values
 
     def execute(self, m: BaseModel) -> Any:
         d = {k: v for k, v in m._iter() if k in m.__fields_set__}
-        kwargs = d.pop(V_KWARGS, None)
+        kwargs = d.pop(self.v_kwargs_name, None)
         if kwargs:
             d.update(kwargs)
 
-        if V_ARGS in d:
+        if self.v_args_name in d:
             args_: List[Any] = []
             in_kwargs = False
             kwargs = {}
             for name, value in d.items():
                 if in_kwargs:
                     kwargs[name] = value
-                elif name == V_ARGS:
+                elif name == self.v_args_name:
                     args_ += value
                     in_kwargs = True
                 else:
@@ -142,27 +163,18 @@ class ValidatedFunction:
         else:
             return self.raw_function(**d)
 
-    def create_model(self, fields: Dict[str, Any]) -> None:
-        takes_args = V_ARGS in fields
-        if not takes_args:
-            # we add the field so validation below can raise the correct exception
-            fields[V_ARGS] = List[Any], None
-        takes_kwargs = V_KWARGS in fields
-        if not takes_kwargs:
-            # we add the field so validation below can raise the correct exception
-            fields[V_KWARGS] = Dict[Any, Any], None
-
+    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool) -> None:
         pos_args = len(self.arg_mapping)
 
         class DecoratorBaseModel(BaseModel):
-            @validator(V_ARGS, check_fields=False, allow_reuse=True)
+            @validator(self.v_args_name, check_fields=False, allow_reuse=True)
             def check_args(cls, v: List[Any]) -> List[Any]:
                 if takes_args:
                     return v
 
-                raise TypeError(f'{pos_args} positional arguments taken but {pos_args + len(v)} given')
+                raise TypeError(f'{pos_args} positional arguments expected but {pos_args + len(v)} given')
 
-            @validator(V_KWARGS, check_fields=False, allow_reuse=True)
+            @validator(self.v_kwargs_name, check_fields=False, allow_reuse=True)
             def check_kwargs(cls, v: Dict[str, Any]) -> Dict[str, Any]:
                 if takes_kwargs:
                     return v
@@ -171,7 +183,7 @@ class ValidatedFunction:
                 keys = ', '.join(map(repr, v.keys()))
                 raise TypeError(f'unexpected keyword argument{plural}: {keys}')
 
-            @validator(V_POSITIONAL_ONLY, check_fields=False, allow_reuse=True)
+            @validator(V_POSITIONAL_ONLY_NAME, check_fields=False, allow_reuse=True)
             def check_positional_only(cls, v: List[str]) -> None:
                 plural = '' if len(v) == 1 else 's'
                 keys = ', '.join(map(repr, v))
