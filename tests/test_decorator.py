@@ -61,7 +61,7 @@ def test_wrap():
     assert issubclass(foo.model, BaseModel)
     assert foo.model.__fields__.keys() == {'a', 'b'}
     # signature is slightly different on 3.6
-    if sys.version_info < (3, 7):
+    if sys.version_info >= (3, 7):
         assert repr(inspect.signature(foo)) == '<Signature (a: int, b: int)>'
 
 
