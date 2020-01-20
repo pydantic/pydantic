@@ -1,9 +1,10 @@
+import inspect
 import sys
 
 import pytest
 
-from pydantic import ValidationError, validate_arguments
-from pydantic.decorator import DecoratorSetupError
+from pydantic import BaseModel, ValidationError, validate_arguments
+from pydantic.decorator import DecoratorSetupError, ValidatedFunction
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
@@ -13,9 +14,9 @@ def test_args():
     def foo(a: int, b: int):
         return f'{a}, {b}'
 
-    assert foo.validation_decorator.model.__fields__.keys() == {'a', 'b'}
     assert foo(1, 2) == '1, 2'
     assert foo(*[1, 2]) == '1, 2'
+    assert foo(*(1, 2)) == '1, 2'
     assert foo(*[1], 2) == '1, 2'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -41,12 +42,33 @@ def test_args():
     ]
 
 
+def test_wrap():
+    @validate_arguments
+    def foo(a: int, b: int):
+        """This is the foo method."""
+        return f'{a}, {b}'
+
+    assert foo.__doc__ == 'This is the foo method.'
+    assert foo.__name__ == 'foo'
+    assert foo.__module__ == 'tests.test_decorator'
+    assert foo.__qualname__ == 'test_wrap.<locals>.foo'
+    assert repr(inspect.signature(foo)) == '<Signature (a: int, b: int)>'
+    assert isinstance(foo, ValidatedFunction)
+    assert callable(foo.raw_function)
+    assert foo.arg_mapping == {0: 'a', 1: 'b'}
+    assert foo.args_field_name == 'args'
+    assert foo.kwargs_field_name == 'kwargs'
+    assert foo.positional_only_args == set()
+    assert issubclass(foo.model, BaseModel)
+    assert foo.model.__fields__.keys() == {'a', 'b'}
+
+
 def test_kwargs():
     @validate_arguments
     def foo(*, a: int, b: int):
         return a + b
 
-    assert foo.validation_decorator.model.__fields__.keys() == {'a', 'b'}
+    assert foo.model.__fields__.keys() == {'a', 'b'}
     assert foo(a=1, b=3) == 4
 
     with pytest.raises(ValidationError) as exc_info:
@@ -109,9 +131,9 @@ def test_args_name():
     def foo(args: int, kwargs: int):
         return f'args={args!r}, kwargs={kwargs!r}'
 
-    assert foo.validation_decorator.model.__fields__.keys() == {'args', 'kwargs'}
-    assert foo.validation_decorator._args_field_name == 'var__args'
-    assert foo.validation_decorator._kwargs_field_name == 'var__kwargs'
+    assert foo.model.__fields__.keys() == {'args', 'kwargs'}
+    assert foo.args_field_name == 'var__args'
+    assert foo.kwargs_field_name == 'var__kwargs'
     assert foo(1, 2) == 'args=1, kwargs=2'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -128,7 +150,7 @@ def test_args_name():
 
 
 def test_var__args():
-    with pytest.raises(DecoratorSetupError, match='"var__args" and "var__kwargs" are not permitted as an argument'):
+    with pytest.raises(DecoratorSetupError, match='"var__args" and "var__kwargs" are not permitted as argument names'):
 
         @validate_arguments
         def foo(var__args: int):

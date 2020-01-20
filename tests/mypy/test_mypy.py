@@ -18,9 +18,6 @@ except ImportError:
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
 
-# You can change the following variable to True during development to overwrite expected output with generated output
-GENERATE = False
-
 cases = [
     ('mypy-plugin.ini', 'plugin_success.py', None),
     ('mypy-plugin.ini', 'plugin_fail.py', 'plugin-fail.txt'),
@@ -30,7 +27,8 @@ cases = [
     ('mypy-default.ini', 'fail1.py', 'fail1.txt'),
     ('mypy-default.ini', 'fail2.py', 'fail2.txt'),
     ('mypy-default.ini', 'fail3.py', 'fail3.txt'),
-    ('mypy-default.ini', 'plugin_success.py', 'fail4.txt'),
+    ('mypy-default.ini', 'fail4.py', 'fail4.txt'),
+    ('mypy-default.ini', 'plugin_success.py', 'plugin_success.txt'),
 ]
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
@@ -40,14 +38,7 @@ executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fn
 def test_mypy_results(config_filename, python_filename, output_filename):
     full_config_filename = f'tests/mypy/configs/{config_filename}'
     full_filename = f'tests/mypy/modules/{python_filename}'
-    full_output_filename = None if output_filename is None else f'tests/mypy/outputs/{output_filename}'
-
-    expected_out = ''
-    expected_err = ''
-    expected_returncode = 0 if output_filename is None else 1
-    if full_output_filename is not None:
-        with open(full_output_filename, 'r') as f:
-            expected_out = f.read()
+    output_path = None if output_filename is None else Path(f'tests/mypy/outputs/{output_filename}')
 
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
@@ -60,14 +51,19 @@ def test_mypy_results(config_filename, python_filename, output_filename):
     actual_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in actual_out.split('\n') if line]).strip()
     actual_out = re.sub(r'\n\s*\n', r'\n', actual_out)
 
-    if GENERATE and output_filename is not None:
-        with open(full_output_filename, 'w') as f:
-            f.write(actual_out)
-    else:
-        assert actual_out == expected_out, actual_out
+    if actual_out:
+        print('{0}\n{1:^100}\n{0}\n{2}\n{0}'.format('=' * 100, 'mypy output', actual_out))
 
-    assert actual_err == expected_err
+    assert actual_err == ''
+    expected_returncode = 0 if output_filename is None else 1
     assert actual_returncode == expected_returncode
+
+    if output_path and not output_path.exists():
+        output_path.write_text(actual_out)
+        raise RuntimeError(f'wrote actual output to {output_path} since file did not exist')
+
+    expected_out = Path(output_path).read_text() if output_path else ''
+    assert actual_out == expected_out, actual_out
 
 
 @pytest.mark.parametrize('module', executable_modules)
@@ -76,13 +72,6 @@ def test_success_cases_run(module):
     Ensure the "success" files can actually be executed
     """
     importlib.import_module(f'tests.mypy.modules.{module}')
-
-
-def test_generation_is_disabled():
-    """
-    Makes sure we don't accidentally leave generation on
-    """
-    assert not GENERATE
 
 
 def test_explicit_reexports():
