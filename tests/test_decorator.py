@@ -52,7 +52,6 @@ def test_wrap():
     assert foo.__name__ == 'foo'
     assert foo.__module__ == 'tests.test_decorator'
     assert foo.__qualname__ == 'test_wrap.<locals>.foo'
-    assert repr(inspect.signature(foo)) == '<Signature (a: int, b: int)>'
     assert isinstance(foo, ValidatedFunction)
     assert callable(foo.raw_function)
     assert foo.arg_mapping == {0: 'a', 1: 'b'}
@@ -61,6 +60,9 @@ def test_wrap():
     assert foo.positional_only_args == set()
     assert issubclass(foo.model, BaseModel)
     assert foo.model.__fields__.keys() == {'a', 'b'}
+    # signature is slightly different on 3.6
+    if sys.version_info < (3, 7):
+        assert repr(inspect.signature(foo)) == '<Signature (a: int, b: int)>'
 
 
 def test_kwargs():
