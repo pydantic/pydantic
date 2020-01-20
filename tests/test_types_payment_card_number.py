@@ -65,11 +65,9 @@ def test_validate_digits():
 def test_validate_luhn_check_digit(card_number: str, valid: bool):
     if valid:
         assert PaymentCardNumber.validate_luhn_check_digit(card_number) == card_number
-        assert valid
     else:
         with pytest.raises(LuhnValidationError):
             PaymentCardNumber.validate_luhn_check_digit(card_number)
-            assert not valid
 
 
 @pytest.mark.parametrize(
