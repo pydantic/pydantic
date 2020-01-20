@@ -35,10 +35,17 @@ def test_args():
     ]
 
     with pytest.raises(ValidationError) as exc_info:
+        foo(1, 2, 3)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('v_args',), 'msg': '2 positional arguments taken but 3 given', 'type': 'type_error'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, apple=3)
 
     assert exc_info.value.errors() == [
-        {'loc': ('kwargs',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+        {'loc': ('v_kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'},
     ]
 
 
@@ -55,11 +62,9 @@ def test_wrap():
     assert isinstance(foo, ValidatedFunction)
     assert callable(foo.raw_function)
     assert foo.arg_mapping == {0: 'a', 1: 'b'}
-    assert foo.args_field_name == 'args'
-    assert foo.kwargs_field_name == 'kwargs'
     assert foo.positional_only_args == set()
     assert issubclass(foo.model, BaseModel)
-    assert foo.model.__fields__.keys() == {'a', 'b'}
+    assert foo.model.__fields__.keys() == {'a', 'b', 'v_args', 'v_kwargs'}
     # signature is slightly different on 3.6
     if sys.version_info >= (3, 7):
         assert repr(inspect.signature(foo)) == '<Signature (a: int, b: int)>'
@@ -70,7 +75,7 @@ def test_kwargs():
     def foo(*, a: int, b: int):
         return a + b
 
-    assert foo.model.__fields__.keys() == {'a', 'b'}
+    assert foo.model.__fields__.keys() == {'a', 'b', 'v_args', 'v_kwargs'}
     assert foo(a=1, b=3) == 4
 
     with pytest.raises(ValidationError) as exc_info:
@@ -86,7 +91,7 @@ def test_kwargs():
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
         {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('args',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+        {'loc': ('v_args',), 'msg': '0 positional arguments taken but 2 given', 'type': 'type_error'},
     ]
 
 
@@ -111,7 +116,7 @@ def test_var_args_kwargs():
 
 
 @skip_pre_38
-def test_position_only(create_module):
+def test_positional_only(create_module):
     module = create_module(
         """
 from pydantic import validate_arguments
@@ -124,8 +129,24 @@ def foo(a, b, /, c=None):
     assert module.foo(1, 2) == '1, 2, None'
     assert module.foo(1, 2, 44) == '1, 2, 44'
     assert module.foo(1, 2, c=44) == '1, 2, 44'
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValidationError) as exc_info:
         module.foo(1, b=2)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v_positional_only',),
+            'msg': "positional-only argument passed as keyword argument: 'b'",
+            'type': 'type_error',
+        },
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        module.foo(a=1, b=2)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v_positional_only',),
+            'msg': "positional-only arguments passed as keyword arguments: 'a', 'b'",
+            'type': 'type_error',
+        },
+    ]
 
 
 def test_args_name():
@@ -133,27 +154,31 @@ def test_args_name():
     def foo(args: int, kwargs: int):
         return f'args={args!r}, kwargs={kwargs!r}'
 
-    assert foo.model.__fields__.keys() == {'args', 'kwargs'}
-    assert foo.args_field_name == 'var__args'
-    assert foo.kwargs_field_name == 'var__kwargs'
+    assert foo.model.__fields__.keys() == {'args', 'kwargs', 'v_args', 'v_kwargs'}
     assert foo(1, 2) == 'args=1, kwargs=2'
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, apple=4)
     assert exc_info.value.errors() == [
-        {'loc': ('var__kwargs',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+        {'loc': ('v_kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        foo(1, 2, apple=4, banana=5)
+    assert exc_info.value.errors() == [
+        {'loc': ('v_kwargs',), 'msg': "unexpected keyword arguments: 'apple', 'banana'", 'type': 'type_error'},
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, 3)
     assert exc_info.value.errors() == [
-        {'loc': ('var__args',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+        {'loc': ('v_args',), 'msg': '2 positional arguments taken but 3 given', 'type': 'type_error'},
     ]
 
 
-def test_var__args():
-    with pytest.raises(DecoratorSetupError, match='"var__args" and "var__kwargs" are not permitted as argument names'):
+def test_v_args():
+    with pytest.raises(DecoratorSetupError, match='"v_args", "v_kwargs" and "v_positional_only" are not permitted as'):
 
         @validate_arguments
-        def foo(var__args: int):
+        def foo(v_args: int):
             pass
