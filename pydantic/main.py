@@ -76,14 +76,14 @@ class BaseConfig:
         fields_value = cls.fields.get(name)
 
         if isinstance(fields_value, str):
-            field_info: Dict[str, Any] = {'alias': fields_value, 'alias_priority': 0}
+            field_info: Dict[str, Any] = {'alias': fields_value}
         elif isinstance(fields_value, dict):
             field_info = fields_value
         else:
             field_info = {}
 
         if 'alias' in field_info:
-            field_info['alias_priority'] = 2
+            field_info.setdefault('alias_priority', 2)
         elif cls.alias_generator:
             alias = cls.alias_generator(name)
             if not isinstance(alias, str):
