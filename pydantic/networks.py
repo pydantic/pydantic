@@ -46,7 +46,7 @@ __all__ = [
 _url_regex_cache = None
 _ascii_domain_regex_cache = None
 _int_domain_regex_cache = None
-_domain_ending = r'(?P<tld>\.[a-z]{2,63})?\.?'
+_domain_ending = r'(?P<tld>(\.[^\W\d_]{2,63})|(\.(?:xn--)[_0-9a-z-]{2,63}))?\.?'
 
 
 def url_regex() -> Pattern[str]:
@@ -227,11 +227,16 @@ class AnyUrl(str):
                     raise errors.UrlHostError()
                 host_type = 'int_domain'
                 rebuild = True
-                host = host.encode('idna').decode('ascii')
+            host = host.encode('idna').decode('ascii')
 
             tld = d.group('tld')
             if tld is not None:
                 tld = tld[1:]
+                encoded_tld = tld.encode('idna').decode('ascii')
+                if encoded_tld != tld:
+                    tld = encoded_tld
+                    rebuild = True
+                    host_type = 'int_domain'
             elif cls.tld_required:
                 raise errors.UrlHostTldError()
         return host, tld, host_type, rebuild  # type: ignore

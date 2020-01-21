@@ -560,7 +560,7 @@ _(This script is complete, it should run "as is")_
 
 #### International Domains
 
-"International domains" (e.g. a URL where the host includes non-ascii characters) will be encoded via
+"International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
 [this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
 
