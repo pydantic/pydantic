@@ -1,10 +1,62 @@
 import re
-from typing import Optional
+from typing import Any, List, Optional
 
 import pytest
 
 from pydantic import BaseConfig, BaseModel, Extra, ValidationError
 from pydantic.fields import Field
+
+
+def test_alias_generator():
+    def to_camel(string: str):
+        return ''.join(x.capitalize() for x in string.split('_'))
+
+    class MyModel(BaseModel):
+        a: List[str] = None
+        foo_bar: str
+
+        class Config:
+            alias_generator = to_camel
+
+    data = {'A': ['foo', 'bar'], 'FooBar': 'foobar'}
+    v = MyModel(**data)
+    assert v.a == ['foo', 'bar']
+    assert v.foo_bar == 'foobar'
+    assert v.dict(by_alias=True) == data
+
+
+def test_alias_generator_with_field_schema():
+    def to_upper_case(string: str):
+        return string.upper()
+
+    class MyModel(BaseModel):
+        my_shiny_field: Any  # Alias from Config.fields will be used
+        foo_bar: str  # Alias from Config.fields will be used
+        baz_bar: str  # Alias will be generated
+        another_field: str  # Alias will be generated
+
+        class Config:
+            alias_generator = to_upper_case
+            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}, 'another_field': {'not_alias': 'a'}}
+
+    data = {'MY_FIELD': ['a'], 'FOO': 'bar', 'BAZ_BAR': 'ok', 'ANOTHER_FIELD': '...'}
+    m = MyModel(**data)
+    assert m.dict(by_alias=True) == data
+
+
+def test_alias_generator_wrong_type_error():
+    def return_bytes(string):
+        return b'not a string'
+
+    with pytest.raises(TypeError) as e:
+
+        class MyModel(BaseModel):
+            bar: Any
+
+            class Config:
+                alias_generator = return_bytes
+
+    assert str(e.value) == "Config.alias_generator must return str, not <class 'bytes'>"
 
 
 def test_infer_alias():
@@ -202,3 +254,42 @@ def test_alias_generator_on_child():
 
     assert [f.alias for f in Parent.__fields__.values()] == ['abc', 'y']
     assert [f.alias for f in Child.__fields__.values()] == ['abc', 'Y', 'Z']
+
+
+def test_low_priority_alias():
+    class Parent(BaseModel):
+        x: bool = Field(..., alias='abc', alias_priority=1)
+        y: str
+
+    class Child(Parent):
+        y: str
+        z: str
+
+        class Config:
+            @staticmethod
+            def alias_generator(x):
+                return x.upper()
+
+    assert [f.alias for f in Parent.__fields__.values()] == ['abc', 'y']
+    assert [f.alias for f in Child.__fields__.values()] == ['X', 'Y', 'Z']
+
+
+def test_low_priority_alias_config():
+    class Parent(BaseModel):
+        x: bool
+        y: str
+
+        class Config:
+            fields = {'x': dict(alias='abc', alias_priority=1)}
+
+    class Child(Parent):
+        y: str
+        z: str
+
+        class Config:
+            @staticmethod
+            def alias_generator(x):
+                return x.upper()
+
+    assert [f.alias for f in Parent.__fields__.values()] == ['abc', 'y']
+    assert [f.alias for f in Child.__fields__.values()] == ['X', 'Y', 'Z']

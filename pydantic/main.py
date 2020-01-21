@@ -84,7 +84,8 @@ class BaseConfig:
 
         if 'alias' in field_info:
             field_info.setdefault('alias_priority', 2)
-        elif cls.alias_generator:
+
+        if field_info.get('alias_priority', 0) <= 1 and cls.alias_generator:
             alias = cls.alias_generator(name)
             if not isinstance(alias, str):
                 raise TypeError(f'Config.alias_generator must return str, not {type(alias)}')
