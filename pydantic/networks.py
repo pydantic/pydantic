@@ -46,7 +46,6 @@ __all__ = [
 _url_regex_cache = None
 _ascii_domain_regex_cache = None
 _int_domain_regex_cache = None
-_domain_ending = r'(?P<tld>(\.[^\W\d_]{2,63})|(\.(?:xn--)[_0-9a-z-]{2,63}))?\.?'
 
 
 def url_regex() -> Pattern[str]:
@@ -73,7 +72,10 @@ def ascii_domain_regex() -> Pattern[str]:
     global _ascii_domain_regex_cache
     if _ascii_domain_regex_cache is None:
         ascii_chunk = r'[_0-9a-z](?:[-_0-9a-z]{0,61}[_0-9a-z])?'
-        _ascii_domain_regex_cache = re.compile(fr'(?:{ascii_chunk}\.)*?{ascii_chunk}{_domain_ending}', re.IGNORECASE)
+        ascii_domain_ending = r'(?P<tld>\.[a-z]{2,63})?\.?'
+        _ascii_domain_regex_cache = re.compile(
+            fr'(?:{ascii_chunk}\.)*?{ascii_chunk}{ascii_domain_ending}', re.IGNORECASE
+        )
     return _ascii_domain_regex_cache
 
 
@@ -81,7 +83,8 @@ def int_domain_regex() -> Pattern[str]:
     global _int_domain_regex_cache
     if _int_domain_regex_cache is None:
         int_chunk = r'[_0-9a-\U00040000](?:[-_0-9a-\U00040000]{0,61}[_0-9a-\U00040000])?'
-        _int_domain_regex_cache = re.compile(fr'(?:{int_chunk}\.)*?{int_chunk}{_domain_ending}', re.IGNORECASE)
+        int_domain_ending = r'(?P<tld>(\.[^\W\d_]{2,63})|(\.(?:xn--)[_0-9a-z-]{2,63}))?\.?'
+        _int_domain_regex_cache = re.compile(fr'(?:{int_chunk}\.)*?{int_chunk}{int_domain_ending}', re.IGNORECASE)
     return _int_domain_regex_cache
 
 
@@ -220,25 +223,32 @@ class AnyUrl(str):
         if host is None:
             raise errors.UrlHostError()
         elif host_type == 'domain':
+            is_international = False
             d = ascii_domain_regex().fullmatch(host)
             if d is None:
                 d = int_domain_regex().fullmatch(host)
-                if not d:
+                if d is None:
                     raise errors.UrlHostError()
-                host_type = 'int_domain'
-                rebuild = True
-            host = host.encode('idna').decode('ascii')
+                is_international = True
 
             tld = d.group('tld')
+            if tld is None and not is_international:
+                d = int_domain_regex().fullmatch(host)
+                tld = d.group('tld')
+                is_international = True
+
             if tld is not None:
                 tld = tld[1:]
-                encoded_tld = tld.encode('idna').decode('ascii')
-                if encoded_tld != tld:
-                    tld = encoded_tld
-                    rebuild = True
-                    host_type = 'int_domain'
             elif cls.tld_required:
                 raise errors.UrlHostTldError()
+
+            if is_international:
+                host_type = 'int_domain'
+                rebuild = True
+                host = host.encode('idna').decode('ascii')
+                if tld is not None:
+                    tld = tld.encode('idna').decode('ascii')
+
         return host, tld, host_type, rebuild  # type: ignore
 
     def __repr__(self) -> str:

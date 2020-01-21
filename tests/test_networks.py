@@ -278,6 +278,26 @@ def test_coerse_url(input, output):
     assert Model(v=input).v == output
 
 
+@pytest.mark.parametrize(
+    'input,output',
+    [
+        ('  https://www.example.com \n', 'com'),
+        (b'https://www.example.com', 'com'),
+        ('https://www.example.com?param=value', 'com'),
+        ('https://example.珠宝', 'xn--pbt977c'),
+        ('https://exampl£e.珠宝', 'xn--pbt977c'),
+        ('https://example.vermögensberatung', 'xn--vermgensberatung-pwb'),
+        ('https://example.рф', 'xn--p1ai'),
+        ('https://example.рф?param=value', 'xn--p1ai'),
+    ],
+)
+def test_parses_tld(input, output):
+    class Model(BaseModel):
+        v: HttpUrl
+
+    assert Model(v=input).v.tld == output
+
+
 def test_postgres_dsns():
     class Model(BaseModel):
         a: PostgresDsn
