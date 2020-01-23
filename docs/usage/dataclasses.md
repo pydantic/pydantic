@@ -10,7 +10,7 @@ _(This script is complete, it should run "as is")_
 
 !!! note
     Keep in mind that `pydantic.dataclasses.dataclass` is a drop-in replacement for `dataclasses.dataclass`
-    with validation, **not** a replacement for `pydantic.BaseModel`. There are cases where subclassing
+    with validation, **not** a replacement for `pydantic.BaseModel` (with a small difference in how [initialization hooks](#initialize-hooks) work). There are cases where subclassing
     `pydantic.BaseModel` is the better choice. 
     
     For more information and discussion see
@@ -65,3 +65,9 @@ Since version **v1.0**, any fields annotated with `dataclasses.InitVar` are pass
 {!.tmp_examples/dataclasses_initvars.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+### Difference with stdlib dataclasses
+
+Note that the `dataclasses.dataclass` from python stdlib implements only the `__post_init__` method since it doesn't run a validation step.
+
+When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.dataclass`, it is recommended to move the code executed in the `__post_init__` method to the `__post_init_post_parse__` method, and only leave behind part of code which needs to be executed before validation. 
