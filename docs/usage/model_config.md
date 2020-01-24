@@ -110,9 +110,7 @@ it should be trivial to modify the `to_camel` function above.
 !!! warning
     Alias priority logic changed in **v1.4** to resolve buggy and unexpected behaviour in previous versions.
     In some circumstances this may represent a **breaking change**,
-    see [#1178](https://github.com/samuelcolvin/pydantic/issues/1177) and the precedence order below for details.
-
-A field alias's is chosen based on the following
+    see [#1178](https://github.com/samuelcolvin/pydantic/issues/1178) and the precedence order below for details.
 
 In the case where a field's alias may be defined in multiple places,
 the selected value is determined as follows (in descending order of priority):
