@@ -100,7 +100,7 @@ def test_by_alias():
             title = 'Apple Pie'
             fields = {'a': 'Snap', 'b': 'Crackle'}
 
-    s = {
+    assert ApplePie.schema() == {
         'type': 'object',
         'title': 'Apple Pie',
         'properties': {
@@ -109,9 +109,27 @@ def test_by_alias():
         },
         'required': ['Snap'],
     }
-    assert ApplePie.schema() == s
     assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
+
+
+def test_by_alias_generator():
+    class ApplePie(BaseModel):
+        a: float
+        b: int = 10
+
+        class Config:
+            @staticmethod
+            def alias_generator(x):
+                return x.upper()
+
+    assert ApplePie.schema() == {
+        'title': 'ApplePie',
+        'type': 'object',
+        'properties': {'A': {'title': 'A', 'type': 'number'}, 'B': {'title': 'B', 'default': 10, 'type': 'integer'}},
+        'required': ['A'],
+    }
+    assert ApplePie.schema(by_alias=False)['properties'].keys() == {'a', 'b'}
 
 
 def test_sub_model():
