@@ -544,7 +544,15 @@ class ModelField(Representation):
             return v, ErrorWrapper(e, loc)
 
         loc = loc if isinstance(loc, tuple) else (loc,)
-        result = []
+        try:
+            result = self.outer_type_()
+            try:
+                result.append
+            except AttributeError:
+                result = []
+        except TypeError:
+            result = []
+
         errors: List[ErrorList] = []
         for i, v_ in enumerate(v):
             v_loc = *loc, i
@@ -572,8 +580,6 @@ class ModelField(Representation):
                 converted = set(result)
             elif isinstance(v, Generator):
                 converted = iter(result)
-        else:
-            converted = self.outer_type_.__origin__(converted) if hasattr(self.outer_type_, '__origin__') else converted
         return converted, None
 
     def _validate_iterable(
