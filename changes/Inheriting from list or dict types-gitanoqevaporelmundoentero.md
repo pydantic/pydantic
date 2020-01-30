@@ -1,0 +1,1 @@
+Attributes of classes inheriting from List or Dict are not yielded as instances of the derived class when validating. They are instead created as regular dict or list instances. This change aims to solve this, so that inherit types can be properly used with pydantic.
