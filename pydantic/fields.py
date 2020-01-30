@@ -572,6 +572,7 @@ class ModelField(Representation):
                 converted = set(result)
             elif isinstance(v, Generator):
                 converted = iter(result)
+        converted = self.outer_type_.__origin__(converted)
         return converted, None
 
     def _validate_iterable(

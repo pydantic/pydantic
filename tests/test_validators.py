@@ -1,6 +1,6 @@
 from datetime import datetime
 from itertools import product
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, TypeVar
 
 import pytest
 
@@ -1038,3 +1038,28 @@ def test_assignment_validator_cls():
     m = Model(name='hello')
     m.name = 'goodbye'
     assert validator_calls == 2
+
+
+def test_validation_of_inherited_field_class():
+    Relative = TypeVar('Relative')
+
+    class Relatives(List[Relative]):
+        def list(self, name):
+            """
+            Method for listing an attribute from all Relative instances in Relatives list
+            :param name: name of the attribute to list
+            :return: list of attributes from all elements in Relatives list
+            """
+            return list(map(lambda x: getattr(x, name, None), self))
+
+    class B(BaseModel):
+        foo: str = None
+        bar: int = None
+
+    class A(BaseModel):
+        b: Relatives[B] = Relatives()
+
+    assert isinstance(A().b, Relatives)
+    a = A(b=[{'foo': 'b1', 'bar': 1}, {'foo': 'b2', 'bar': 2}])
+    assert isinstance(a.b, Relatives)
+    assert a.b.list('foo')[0] == 'b1'
