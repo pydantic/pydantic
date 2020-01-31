@@ -22,7 +22,7 @@ from typing import (
 
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
-from .error_wrappers import ErrorWrapper
+from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import AnyType, Callable, ForwardRef, NoneType, display_as_type, is_literal_type
@@ -550,7 +550,7 @@ class ModelField(Representation):
                 result.append
             except AttributeError:
                 result = []
-        except TypeError:
+        except (TypeError, ValidationError):
             result = []
 
         errors: List[ErrorList] = []
