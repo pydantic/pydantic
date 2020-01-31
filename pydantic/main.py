@@ -278,11 +278,14 @@ class BaseModel(metaclass=ModelMetaclass):
         if TYPE_CHECKING:
             __pydantic_self__.__dict__: Dict[str, Any] = {}
             __pydantic_self__.__fields_set__: 'SetStr' = set()
-        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)
+        __pydantic_self__._initialize(data)
+
+    def _initialize(self, data: Any) -> None:
+        values, fields_set, validation_error = validate_model(self.__class__, data)
         if validation_error:
             raise validation_error
-        object.__setattr__(__pydantic_self__, '__dict__', values)
-        object.__setattr__(__pydantic_self__, '__fields_set__', fields_set)
+        object.__setattr__(self, '__dict__', values)
+        object.__setattr__(self, '__fields_set__', fields_set)
 
     @no_type_check
     def __setattr__(self, name, value):
@@ -450,11 +453,7 @@ class BaseModel(metaclass=ModelMetaclass):
             raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
         obj = cls._decompose_class(obj)
         m = cls.__new__(cls)
-        values, fields_set, validation_error = validate_model(cls, obj)
-        if validation_error:
-            raise validation_error
-        object.__setattr__(m, '__dict__', values)
-        object.__setattr__(m, '__fields_set__', fields_set)
+        m._initialize(obj)
         return m
 
     @classmethod

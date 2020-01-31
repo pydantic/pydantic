@@ -36,7 +36,7 @@ def test_parse_obj_preserves_subclasses():
     assert parsed == [model_b]
 
 
-def test_parse_obj_fails():
+def test_parse_obj_as_fails():
     with pytest.raises(ValidationError) as exc_info:
         parse_obj_as(int, 'a')
     assert exc_info.value.errors() == [
