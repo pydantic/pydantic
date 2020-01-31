@@ -166,10 +166,10 @@ def test_parse_nested_custom_root_mapping():
 
 def test_parse_nested_custom_root_tuple():
     class NestedRootTuple(BaseModel):
-        __root__: Tuple[int, Optional["NestedRootTuple"]]
+        __root__: Tuple[int, Optional['NestedRootTuple']]
 
     NestedRootTuple.update_forward_refs()
 
     obj = NestedRootTuple.parse_obj(('1', ('2', ('3', None))))
     assert obj.dict() == {'__root__': (1, {'__root__': (2, {'__root__': (3, None)})})}
-    assert obj.json() == "[1, [2, [3, null]]]"
+    assert obj.json() == '[1, [2, [3, null]]]'

@@ -559,7 +559,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 value_as_dict = dict(value)
             except (TypeError, ValueError) as e:
                 if cls.__custom_root_type__:
-                    value_as_dict = {"__root__": value}
+                    value_as_dict = {'__root__': value}
                 else:
                     raise DictError() from e
             return cls(**value_as_dict)
