@@ -278,14 +278,15 @@ class BaseModel(metaclass=ModelMetaclass):
         if TYPE_CHECKING:
             __pydantic_self__.__dict__: Dict[str, Any] = {}
             __pydantic_self__.__fields_set__: 'SetStr' = set()
-        __pydantic_self__._initialize(data)
-
-    def _initialize(self, data: Any) -> None:
-        values, fields_set, validation_error = validate_model(self.__class__, data)
+        if __pydantic_self__.__class__.__custom_root_type__ and (
+            not isinstance(data, dict) or data.keys() != {ROOT_KEY}
+        ):
+            data = {ROOT_KEY: data}
+        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)
         if validation_error:
             raise validation_error
-        object.__setattr__(self, '__dict__', values)
-        object.__setattr__(self, '__fields_set__', fields_set)
+        object.__setattr__(__pydantic_self__, '__dict__', values)
+        object.__setattr__(__pydantic_self__, '__fields_set__', fields_set)
 
     @no_type_check
     def __setattr__(self, name, value):
@@ -319,6 +320,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        unpack_custom_root: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -333,7 +335,7 @@ class BaseModel(metaclass=ModelMetaclass):
         get_key = partial(get_key, self.__fields__)
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
-        return {
+        data = {
             get_key(k): v
             for k, v in self._iter(
                 to_dict=True,
@@ -344,8 +346,12 @@ class BaseModel(metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
+                unpack_custom_root=unpack_custom_root,
             )
         }
+        if self.__custom_root_type__ and unpack_custom_root:
+            data = data[ROOT_KEY]
+        return data
 
     def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
         if by_alias:
@@ -385,16 +391,13 @@ class BaseModel(metaclass=ModelMetaclass):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            unpack_custom_root=True,
         )
-        if self.__custom_root_type__:
-            data = data[ROOT_KEY]
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
-        if cls.__custom_root_type__ and (
-            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
-        ):
+        if cls.__custom_root_type__ and (not isinstance(obj, dict) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING):
             obj = {ROOT_KEY: obj}
         elif not isinstance(obj, dict):
             try:
@@ -453,7 +456,13 @@ class BaseModel(metaclass=ModelMetaclass):
             raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
         obj = cls._decompose_class(obj)
         m = cls.__new__(cls)
-        m._initialize(obj)
+        if m.__class__.__custom_root_type__ and (not isinstance(obj, dict) or obj.keys() != {ROOT_KEY}):
+            obj = {ROOT_KEY: obj}
+        values, fields_set, validation_error = validate_model(m.__class__, obj)
+        if validation_error:
+            raise validation_error
+        object.__setattr__(m, '__dict__', values)
+        object.__setattr__(m, '__fields_set__', fields_set)
         return m
 
     @classmethod
@@ -549,7 +558,10 @@ class BaseModel(metaclass=ModelMetaclass):
             try:
                 value_as_dict = dict(value)
             except (TypeError, ValueError) as e:
-                raise DictError() from e
+                if cls.__custom_root_type__:
+                    value_as_dict = {"__root__": value}
+                else:
+                    raise DictError() from e
             return cls(**value_as_dict)
 
     @classmethod
@@ -568,6 +580,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        unpack_custom_root: bool,
     ) -> Any:
 
         if isinstance(v, BaseModel):
@@ -579,6 +592,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     include=include,
                     exclude=exclude,
                     exclude_none=exclude_none,
+                    unpack_custom_root=unpack_custom_root,
                 )
             else:
                 return v.copy(include=include, exclude=exclude)
@@ -597,6 +611,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     include=value_include and value_include.for_element(k_),
                     exclude=value_exclude and value_exclude.for_element(k_),
                     exclude_none=exclude_none,
+                    unpack_custom_root=unpack_custom_root,
                 )
                 for k_, v_ in v.items()
                 if (not value_exclude or not value_exclude.is_excluded(k_))
@@ -614,6 +629,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     include=value_include and value_include.for_element(i),
                     exclude=value_exclude and value_exclude.for_element(i),
                     exclude_none=exclude_none,
+                    unpack_custom_root=unpack_custom_root,
                 )
                 for i, v_ in enumerate(v)
                 if (not value_exclude or not value_exclude.is_excluded(i))
@@ -649,6 +665,7 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        unpack_custom_root: bool = False,
     ) -> 'TupleGenerator':
 
         value_exclude = ValueItems(self, exclude) if exclude else None
@@ -672,6 +689,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
                     exclude_none=exclude_none,
+                    unpack_custom_root=unpack_custom_root,
                 )
                 if not (exclude_none and value is None):
                     yield k, value

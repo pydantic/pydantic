@@ -1,6 +1,6 @@
 import json
 import pickle
-from typing import List, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import pytest
 
@@ -151,3 +151,25 @@ def test_const_differentiates_union():
 
     m = Model.parse_obj({'a': {'key': 'B', 'foo': 3}})
     assert isinstance(m.a, SubModelB)
+
+
+def test_parse_nested_custom_root_mapping():
+    class NestedRootMapping(BaseModel):
+        __root__: Dict[int, 'NestedRootMapping']
+
+    NestedRootMapping.update_forward_refs()
+
+    obj = NestedRootMapping.parse_obj({'1': {'2': {}}})
+    assert obj.dict() == {'__root__': {1: {'__root__': {2: {'__root__': {}}}}}}
+    assert obj.json() == '{"1": {"2": {}}}'
+
+
+def test_parse_nested_custom_root_tuple():
+    class NestedRootTuple(BaseModel):
+        __root__: Tuple[int, Optional["NestedRootTuple"]]
+
+    NestedRootTuple.update_forward_refs()
+
+    obj = NestedRootTuple.parse_obj(('1', ('2', ('3', None))))
+    assert obj.dict() == {'__root__': (1, {'__root__': (2, {'__root__': (3, None)})})}
+    assert obj.json() == "[1, [2, [3, null]]]"
