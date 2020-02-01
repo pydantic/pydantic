@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 def validate_arguments(function: 'Callable') -> 'Callable':
     """
-    Decorator to validate the arguments to a function.
+    Decorator to validate the arguments passed to a function.
     """
     vd = ValidatedFunction(function)
     vd = update_wrapper(vd, function)  # type: ignore
@@ -32,12 +32,6 @@ class ValidatedFunction:
     def __init__(self, function: 'Callable'):
         from inspect import signature, Parameter
 
-        self.raw_function = function
-        self.arg_mapping: Dict[int, str] = {}
-        self.positional_only_args = set()
-        self.v_args_name = 'args'
-        self.v_kwargs_name = 'kwargs'
-
         parameters: Mapping[str, Parameter] = signature(function).parameters
 
         if parameters.keys() & {ALT_V_ARGS, ALT_V_KWARGS, V_POSITIONAL_ONLY_NAME}:
@@ -46,9 +40,15 @@ class ValidatedFunction:
                 f'names when using the "{validate_arguments.__name__}" decorator'
             )
 
+        self.raw_function = function
+        self.arg_mapping: Dict[int, str] = {}
+        self.positional_only_args = set()
+        self.v_args_name = 'args'
+        self.v_kwargs_name = 'kwargs'
+
         takes_args = False
         takes_kwargs = False
-        fields: Dict[str, Any] = {}
+        fields: Dict[str, Tuple[Any, Any]] = {}
         for i, (name, p) in enumerate(parameters.items()):
             if p.annotation == p.empty:
                 annotation = Any
