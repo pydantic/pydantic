@@ -103,7 +103,9 @@ def root_validator(_func: AnyCallable) -> classmethod:
 
 
 @overload
-def root_validator(*, pre: bool = False) -> Callable[[AnyCallable], classmethod]:
+def root_validator(
+    *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
+) -> Callable[[AnyCallable], classmethod]:
     ...
 
 
