@@ -1,4 +1,3 @@
-import inspect
 import re
 import warnings
 from datetime import date, datetime, time, timedelta
@@ -6,6 +5,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -25,9 +25,9 @@ from typing import (
 from uuid import UUID
 
 from .class_validators import ROOT_KEY
-from .color import Color
 from .fields import (
     SHAPE_FROZENSET,
+    SHAPE_ITERABLE,
     SHAPE_LIST,
     SHAPE_MAPPING,
     SHAPE_SEQUENCE,
@@ -39,23 +39,13 @@ from .fields import (
     ModelField,
 )
 from .json import pydantic_encoder
-from .networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
+from .networks import AnyUrl, EmailStr
 from .types import (
-    UUID1,
-    UUID3,
-    UUID4,
-    UUID5,
     ConstrainedDecimal,
     ConstrainedFloat,
     ConstrainedInt,
     ConstrainedList,
     ConstrainedStr,
-    DirectoryPath,
-    FilePath,
-    Json,
-    SecretBytes,
-    SecretStr,
-    StrictBool,
     conbytes,
     condecimal,
     confloat,
@@ -72,16 +62,17 @@ from .typing import (
     literal_values,
     new_type_supertype,
 )
-from .utils import lenient_issubclass
+from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
+    from .dataclasses import DataclassType  # noqa: F401
 
 default_prefix = '#/definitions/'
 
 
 def schema(
-    models: Sequence[Type['BaseModel']],
+    models: Sequence[Union[Type['BaseModel'], Type['DataclassType']]],
     *,
     by_alias: bool = True,
     title: Optional[str] = None,
@@ -104,8 +95,9 @@ def schema(
     :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for
       the models and sub-models passed in ``models``.
     """
+    clean_models = [get_model(model) for model in models]
     ref_prefix = ref_prefix or default_prefix
-    flat_models = get_flat_models_from_models(models)
+    flat_models = get_flat_models_from_models(clean_models)
     model_name_map = get_model_name_map(flat_models)
     definitions = {}
     output_schema: Dict[str, Any] = {}
@@ -113,7 +105,7 @@ def schema(
         output_schema['title'] = title
     if description:
         output_schema['description'] = description
-    for model in models:
+    for model in clean_models:
         m_schema, m_definitions, m_nested_models = model_process_schema(
             model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
         )
@@ -125,7 +117,9 @@ def schema(
     return output_schema
 
 
-def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Optional[str] = None) -> Dict[str, Any]:
+def model_schema(
+    model: Union[Type['BaseModel'], Type['DataclassType']], by_alias: bool = True, ref_prefix: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Generate a JSON Schema for one model. With all the sub-models defined in the ``definitions`` top-level
     JSON key.
@@ -139,6 +133,7 @@ def model_schema(model: Type['BaseModel'], by_alias: bool = True, ref_prefix: Op
       prefix.
     :return: dict with the JSON Schema for the passed ``model``
     """
+    model = get_model(model)
     ref_prefix = ref_prefix or default_prefix
     flat_models = get_flat_models_from_model(model)
     model_name_map = get_model_name_map(flat_models)
@@ -380,38 +375,34 @@ def field_type_schema(
     """
     definitions = {}
     nested_models: Set[str] = set()
+    f_schema: Dict[str, Any]
     ref_prefix = ref_prefix or default_prefix
-    if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET}:
-        f_schema, f_definitions, f_nested_models = field_singleton_schema(
+    if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET, SHAPE_ITERABLE}:
+        items_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
-        s: Dict[str, Any] = {'type': 'array', 'items': f_schema}
+        f_schema = {'type': 'array', 'items': items_schema}
         if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
-            s['uniqueItems'] = True
-        if field.field_info.min_items is not None:
-            s['minItems'] = field.field_info.min_items
-        if field.field_info.max_items is not None:
-            s['maxItems'] = field.field_info.max_items
-        return s, definitions, nested_models
+            f_schema['uniqueItems'] = True
+
     elif field.shape == SHAPE_MAPPING:
-        dict_schema: Dict[str, Any] = {'type': 'object'}
+        f_schema = {'type': 'object'}
         key_field = cast(ModelField, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
-        f_schema, f_definitions, f_nested_models = field_singleton_schema(
+        items_schema, f_definitions, f_nested_models = field_singleton_schema(
             field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
         if regex:
             # Dict keys have a regex pattern
-            # f_schema might be a schema or empty dict, add it either way
-            dict_schema['patternProperties'] = {regex.pattern: f_schema}
-        elif f_schema:
+            # items_schema might be a schema or empty dict, add it either way
+            f_schema['patternProperties'] = {regex.pattern: items_schema}
+        elif items_schema:
             # The dict values are not simply Any, so they need a schema
-            dict_schema['additionalProperties'] = f_schema
-        return dict_schema, definitions, nested_models
+            f_schema['additionalProperties'] = items_schema
     elif field.shape == SHAPE_TUPLE:
         sub_schema = []
         sub_fields = cast(List[ModelField], field.sub_fields)
@@ -424,7 +415,7 @@ def field_type_schema(
             sub_schema.append(sf_schema)
         if len(sub_schema) == 1:
             sub_schema = sub_schema[0]  # type: ignore
-        return {'type': 'array', 'items': sub_schema}, definitions, nested_models
+        f_schema = {'type': 'array', 'items': sub_schema}
     else:
         assert field.shape == SHAPE_SINGLETON, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
@@ -437,7 +428,13 @@ def field_type_schema(
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
-        return f_schema, definitions, nested_models
+
+    # check field type to avoid repeated calls to the same __modify_schema__ method
+    if field.type_ != field.outer_type_:
+        modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
+        if modify_schema:
+            modify_schema(f_schema)
+    return f_schema, definitions, nested_models
 
 
 def model_process_schema(
@@ -455,10 +452,12 @@ def model_process_schema(
     sub-models of the returned schema will be referenced, but their definitions will not be included in the schema. All
     the definitions are returned as the second value.
     """
+    from inspect import getdoc, signature
+
     ref_prefix = ref_prefix or default_prefix
     known_models = known_models or set()
     s = {'title': model.__config__.title or model.__name__}
-    doc = inspect.getdoc(model)
+    doc = getdoc(model)
     if doc:
         s['description'] = doc
     known_models.add(model)
@@ -466,7 +465,16 @@ def model_process_schema(
         model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
     )
     s.update(m_schema)
-    s.update(model.__config__.schema_extra)
+    schema_extra = model.__config__.schema_extra
+    if callable(schema_extra):
+        if not isinstance(schema_extra, FunctionType):
+            raise TypeError(f'{model.__name__}.Config.schema_extra callable is expected to be a staticmethod')
+        if len(signature(schema_extra).parameters) == 1:
+            schema_extra(s)
+        else:
+            schema_extra(s, model)
+    else:
+        s.update(schema_extra)
     return s, m_definitions, nested_models
 
 
@@ -564,65 +572,34 @@ def field_singleton_sub_fields_schema(
         return {'anyOf': sub_field_schemas}, definitions, nested_models
 
 
-validation_attribute_to_schema_keyword = {
-    'min_length': 'minLength',
-    'max_length': 'maxLength',
-    'regex': 'pattern',
-    'gt': 'exclusiveMinimum',
-    'lt': 'exclusiveMaximum',
-    'ge': 'minimum',
-    'le': 'maximum',
-    'multiple_of': 'multipleOf',
-}
-
-# Order is important, subclasses of str must go before str, etc
-field_class_to_schema_enum_enabled: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
-    (EmailStr, {'type': 'string', 'format': 'email'}),
-    (AnyUrl, {'type': 'string', 'format': 'uri'}),
-    (SecretStr, {'type': 'string', 'writeOnly': True}),
-    (str, {'type': 'string'}),
-    (SecretBytes, {'type': 'string', 'writeOnly': True}),
-    (bytes, {'type': 'string', 'format': 'binary'}),
-    (StrictBool, {'type': 'boolean'}),
-    (bool, {'type': 'boolean'}),
-    (int, {'type': 'integer'}),
-    (float, {'type': 'number'}),
-    (Decimal, {'type': 'number'}),
-    (UUID1, {'type': 'string', 'format': 'uuid1'}),
-    (UUID3, {'type': 'string', 'format': 'uuid3'}),
-    (UUID4, {'type': 'string', 'format': 'uuid4'}),
-    (UUID5, {'type': 'string', 'format': 'uuid5'}),
-    (UUID, {'type': 'string', 'format': 'uuid'}),
-    (NameEmail, {'type': 'string', 'format': 'name-email'}),
-    (dict, {'type': 'object'}),
-    (list, {'type': 'array', 'items': {}}),
-    (tuple, {'type': 'array', 'items': {}}),
-    (set, {'type': 'array', 'items': {}, 'uniqueItems': True}),
-    (Color, {'type': 'string', 'format': 'color'}),
-)
-
-json_scheme = {'type': 'string', 'format': 'json-string'}
-
-# Order is important, subclasses of Path must go before Path, etc
-field_class_to_schema_enum_disabled = (
-    (FilePath, {'type': 'string', 'format': 'file-path'}),
-    (DirectoryPath, {'type': 'string', 'format': 'directory-path'}),
+# Order is important, e.g. subclasses of str must go before str
+# this is used only for standard library types, custom types should use __modify_schema__ instead
+field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (Path, {'type': 'string', 'format': 'path'}),
     (datetime, {'type': 'string', 'format': 'date-time'}),
     (date, {'type': 'string', 'format': 'date'}),
     (time, {'type': 'string', 'format': 'time'}),
     (timedelta, {'type': 'number', 'format': 'time-delta'}),
-    (Json, json_scheme),
     (IPv4Network, {'type': 'string', 'format': 'ipv4network'}),
     (IPv6Network, {'type': 'string', 'format': 'ipv6network'}),
-    (IPvAnyNetwork, {'type': 'string', 'format': 'ipvanynetwork'}),
     (IPv4Interface, {'type': 'string', 'format': 'ipv4interface'}),
     (IPv6Interface, {'type': 'string', 'format': 'ipv6interface'}),
-    (IPvAnyInterface, {'type': 'string', 'format': 'ipvanyinterface'}),
     (IPv4Address, {'type': 'string', 'format': 'ipv4'}),
     (IPv6Address, {'type': 'string', 'format': 'ipv6'}),
-    (IPvAnyAddress, {'type': 'string', 'format': 'ipvanyaddress'}),
+    (str, {'type': 'string'}),
+    (bytes, {'type': 'string', 'format': 'binary'}),
+    (bool, {'type': 'boolean'}),
+    (int, {'type': 'integer'}),
+    (float, {'type': 'number'}),
+    (Decimal, {'type': 'number'}),
+    (UUID, {'type': 'string', 'format': 'uuid'}),
+    (dict, {'type': 'object'}),
+    (list, {'type': 'array', 'items': {}}),
+    (tuple, {'type': 'array', 'items': {}}),
+    (set, {'type': 'array', 'items': {}, 'uniqueItems': True}),
 )
+
+json_scheme = {'type': 'string', 'format': 'json-string'}
 
 
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
@@ -654,10 +631,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             known_models=known_models,
         )
     if field.type_ is Any or type(field.type_) == TypeVar:
-        if field.parse_json:
-            return json_scheme, definitions, nested_models
-        else:
-            return {}, definitions, nested_models  # no restrictions
+        return {}, definitions, nested_models  # no restrictions
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}
@@ -679,28 +653,27 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         literal_value = values[0]
         field_type = type(literal_value)
         f_schema['const'] = literal_value
+
     if issubclass(field_type, Enum):
         f_schema.update({'enum': [item.value for item in field_type]})
         # Don't return immediately, to allow adding specific types
-    for field_name, schema_name in validation_attribute_to_schema_keyword.items():
-        field_value = getattr(field_type, field_name, None)
-        if field_value is not None:
-            if field_name == 'regex':
-                field_value = field_value.pattern
-            f_schema[schema_name] = field_value
-    for type_, t_schema in field_class_to_schema_enum_enabled:
+
+    for type_, t_schema in field_class_to_schema:
         if issubclass(field_type, type_):
             f_schema.update(t_schema)
             break
-    # Return schema, with or without enum definitions
+
+    modify_schema = getattr(field_type, '__modify_schema__', None)
+    if modify_schema:
+        modify_schema(f_schema)
+
     if f_schema:
         return f_schema, definitions, nested_models
-    for type_, t_schema in field_class_to_schema_enum_disabled:
-        if issubclass(field_type, type_):
-            return t_schema, definitions, nested_models
+
     # Handle dataclass-based models
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
+
     if issubclass(field_type, BaseModel):
         model_name = model_name_map[field_type]
         if field_type not in known_models:
@@ -721,6 +694,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             return schema_ref, definitions, nested_models
         else:
             return {'allOf': [schema_ref]}, definitions, nested_models
+
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
 
@@ -740,11 +714,13 @@ def multivalue_literal_field_for_schema(values: Tuple[Any, ...], field: ModelFie
 def encode_default(dft: Any) -> Any:
     if isinstance(dft, (int, float, str)):
         return dft
-    elif isinstance(dft, (tuple, list, set)):
+    elif sequence_like(dft):
         t = type(dft)
         return t(encode_default(v) for v in dft)
     elif isinstance(dft, dict):
         return {encode_default(k): encode_default(v) for k, v in dft.items()}
+    elif dft is None:
+        return None
     else:
         return pydantic_encoder(dft)
 

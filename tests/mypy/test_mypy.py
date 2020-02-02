@@ -52,9 +52,9 @@ def test_mypy_results(config_filename, python_filename, output_filename):
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = f'.mypy_cache/test-{config_filename[:-4]}'
-    actual_result = mypy_api.run(
-        [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
-    )
+    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
+    print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
+    actual_result = mypy_api.run(command)
     actual_out, actual_err, actual_returncode = actual_result
     # Need to strip filenames due to differences in formatting by OS
     actual_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in actual_out.split('\n') if line]).strip()
@@ -83,3 +83,15 @@ def test_generation_is_disabled():
     Makes sure we don't accidentally leave generation on
     """
     assert not GENERATE
+
+
+def test_explicit_reexports():
+    from pydantic import __all__ as root_all
+    from pydantic.main import __all__ as main
+    from pydantic.networks import __all__ as networks
+    from pydantic.tools import __all__ as tools
+    from pydantic.types import __all__ as types
+
+    for name, export_all in [('main', main), ('network', networks), ('tools', tools), ('types', types)]:
+        for export in export_all:
+            assert export in root_all, f'{export} is in {name}.__all__ but missing from re-export in __init__.py'

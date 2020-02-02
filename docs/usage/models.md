@@ -303,6 +303,26 @@ If the name of the concrete subclasses is important, you can also override the d
 ```
 _(This script is complete, it should run "as is")_
 
+Using the same TypeVar in nested models allows you to enforce typing relationships at different points in your model:
+
+```py
+{!.tmp_examples/models_generics_nested.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Pydantic also treats `GenericModel` similarly to how it treats built-in generic types like `List` and `Dict` when it
+comes to leaving them unparameterized, or using bounded `TypeVar` instances:    
+
+* If you don't specify parameters before instantiating the generic model, they will be treated as `Any`
+* You can parametrize models with one or more *bounded* parameters to add subclass checks
+
+Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
+
+```py
+{!.tmp_examples/models_generics_typevars.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Dynamic model creation
 
 There are some occasions where the shape of a model is not known until runtime. For this *pydantic* provides
@@ -313,6 +333,11 @@ the `create_model` method to allow models to be created on the fly.
 ```
 
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
+
+!!! warning
+    See the note in [Required Optional Fields](#required-optional-fields) for the distinct between an ellipsis as a
+    field default and annotation only fields. 
+    See [samuelcolvin/pydantic#1047](https://github.com/samuelcolvin/pydantic/issues/1047) for more details.
 
 Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The
 special key word arguments `__config__` and `__base__` can be used to customise the new model. This includes
@@ -410,12 +435,7 @@ To declare a field as required, you may declare it using just an annotation, or 
 as the value:
 
 ```py
-from pydantic import BaseModel, Field
-
-class Model(BaseModel):
-    a: int
-    b: int = ...
-    c: int = Field(...)
+{!.tmp_examples/models_required_fields.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -423,6 +443,25 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
 with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
+
+### Required Optional fields
+
+!!! warning
+    Since version **v1.2** annotation only nullable (`Optional[...]`, `Union[None, ...]` and `Any`) fields and nullable
+    fields with an ellipsis (`...`) as the default value, no longer mean the same thing.
+
+    In some situations this may cause **v1.2** to not be entirely backwards compatible with earlier **v1.*** releases.
+
+If you want to specify a field that can take a `None` value while still being required,
+you can use `Optional` with `...`:
+
+```py
+{!.tmp_examples/models_required_field_optional.py!}
+```
+_(This script is complete, it should run "as is")_
+
+In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required.
+`b` and `c` require a value, even if the value is `None`.
 
 ## Parsing data into a specified type
 

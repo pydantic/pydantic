@@ -719,23 +719,6 @@ def test_assert_raises_validation_error():
     ]
 
 
-def test_optional_validator():
-    val_calls = []
-
-    class Model(BaseModel):
-        something: Optional[str]
-
-        @validator('something')
-        def check_something(cls, v):
-            val_calls.append(v)
-            return v
-
-    assert Model().dict() == {'something': None}
-    assert Model(something=None).dict() == {'something': None}
-    assert Model(something='hello').dict() == {'something': 'hello'}
-    assert val_calls == [None, 'hello']
-
-
 def test_whole():
     with pytest.warns(DeprecationWarning, match='The "whole" keyword argument is deprecated'):
 
@@ -1005,3 +988,53 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
     ]
 
     assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}, {'b': 'barbar'}]
+
+
+def test_root_validator_skip_on_failure():
+    a_called = False
+
+    class ModelA(BaseModel):
+        a: int
+
+        @root_validator
+        def example_root_validator(cls, values):
+            nonlocal a_called
+            a_called = True
+
+    with pytest.raises(ValidationError):
+        ModelA(a='a')
+    assert a_called
+    b_called = False
+
+    class ModelB(BaseModel):
+        a: int
+
+        @root_validator(skip_on_failure=True)
+        def example_root_validator(cls, values):
+            nonlocal b_called
+            b_called = True
+
+    with pytest.raises(ValidationError):
+        ModelB(a='a')
+    assert not b_called
+
+
+def test_assignment_validator_cls():
+    validator_calls = 0
+
+    class Model(BaseModel):
+        name: str
+
+        class Config:
+            validate_assignment = True
+
+        @validator('name')
+        def check_foo(cls, value):
+            nonlocal validator_calls
+            validator_calls += 1
+            assert cls == Model
+            return value
+
+    m = Model(name='hello')
+    m.name = 'goodbye'
+    assert validator_calls == 2

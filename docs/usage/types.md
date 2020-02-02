@@ -1,5 +1,5 @@
-Where possible *pydantic* uses [standard library types](#standard-library-types) to define fields, thus smoothing 
-the learning curve. For many useful applications, however, no standard library type exists, 
+Where possible *pydantic* uses [standard library types](#standard-library-types) to define fields, thus smoothing
+the learning curve. For many useful applications, however, no standard library type exists,
 so *pydantic* implements [many commonly used types](#pydantic-types).
 
 If no existing type suits your purpose you can also implement your [own pydantic-compatible types](#custom-data-types)
@@ -7,7 +7,7 @@ with custom properties and validation.
 
 ## Standard Library Types
 
-*pydantic* supports many common types from the python standard library. If you need stricter processing see 
+*pydantic* supports many common types from the python standard library. If you need stricter processing see
 [Strict Types](#strict-types); if you need to constrain the values allowed (e.g. to require a positive int) see
 [Constrained Types](#constrained-types).
 
@@ -18,12 +18,12 @@ with custom properties and validation.
 : *pydantic* uses `int(v)` to coerce types to an `int`;
   see [this](models.md#data-conversion) warning on loss of information during data conversion
 
-`float` 
+`float`
 : similarly, `float(v)` is used to coerce values to floats
 
 `str`
 : strings are accepted as-is, `int` `float` and `Decimal` are coerced using `str(v)`, `bytes` and `bytearray` are
-  converted using `v.decode()`, enums inheriting from `str` are converted using `v.value`, 
+  converted using `v.decode()`, enums inheriting from `str` are converted using `v.value`,
   and all other types cause an error
 
 `bytes`
@@ -73,7 +73,7 @@ with custom properties and validation.
 
 `typing.Optional`
 : `Optional[x]` is simply short hand for `Union[x, None]`;
-  see [Unions](#unions) below for more detail on parsing and validation
+  see [Unions](#unions) below for more detail on parsing and validation and [Required Fields](models.md#required-fields) for details about required fields that can receive `None` as a value.
 
 `typing.List`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
@@ -93,6 +93,9 @@ with custom properties and validation.
 `typing.Sequence`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
+`typing.Iterable`
+: this is reserved for iterables that shouldn't be consumed. See [Infinite Generators](#infinite-generators) below for more detail on parsing and validation
+
 `typing.Type`
 : see [Type](#type) below for more detail on parsing and validation
 
@@ -103,23 +106,23 @@ with custom properties and validation.
 : will cause the input value to be passed to `re.compile(v)` to create a regex pattern
 
 `ipaddress.IPv4Address`
-: simply uses the type itself for validation by passing the value to `IPv4Address(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv4Address(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv4Interface`
-: simply uses the type itself for validation by passing the value to `IPv4Address(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv4Address(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv4Network`
-: simply uses the type itself for validation by passing the value to `IPv4Network(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv4Network(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv6Address`
-: simply uses the type itself for validation by passing the value to `IPv6Address(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv6Address(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv6Interface`
-: simply uses the type itself for validation by passing the value to `IPv6Interface(v)`; 
+: simply uses the type itself for validation by passing the value to `IPv6Interface(v)`;
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `ipaddress.IPv6Network`
@@ -138,7 +141,7 @@ with custom properties and validation.
 : *pydantic* attempts to convert the value to a string, then passes the string to `Decimal(v)`
 
 `pathlib.Path`
-: simply uses the type itself for validation by passing the value to `Path(v)`; 
+: simply uses the type itself for validation by passing the value to `Path(v)`;
   see [Pydantic Types](#pydantic-types) for other more strict path types
 
 `uuid.UUID`
@@ -154,6 +157,44 @@ with custom properties and validation.
 
 ```py
 {!.tmp_examples/types_iterables.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### Infinite Generators
+
+If you have a generator you can use `Sequence` as described above. In that case, the
+generator will be consumed and stored on the model as a list and its values will be
+validated with the sub-type of `Sequence` (e.g. `int` in `Sequence[int]`).
+
+But if you have a generator that you don't want to be consumed, e.g. an infinite
+generator or a remote data loader, you can define its type with `Iterable`:
+
+```py
+{!.tmp_examples/types_infinite_generator.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! warning
+    `Iterable` fields only perform a simple check that the argument is iterable and
+    won't be consumed.
+
+    No validation of their values is performed as it cannot be done without consuming
+    the iterable.
+
+!!! tip
+    If you want to validate the values of an infinite generator you can create a
+    separate model and use it while consuming the generator, reporting the validation
+    errors as appropriate.
+
+    pydantic can't validate the values automatically for you because it would require
+    consuming the infinite generator.
+
+## Validating the first value
+
+You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
+
+```py
+{!.tmp_examples/types_infinite_generator_validate_first.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -181,6 +222,13 @@ classes to preclude the unexpected representation as such:
 {!.tmp_examples/types_union_correct.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+!!! tip
+    The type `Optional[x]` is a shorthand for `Union[x, None]`.
+
+    `Optional[x]` can also be used to specify a required field that can take `None` as a value.
+
+    See more details in [Required Fields](models.md#required-fields).
 
 ### Enums and Choices
 
@@ -305,7 +353,7 @@ _(This script is complete, it should run "as is")_
 ## Literal Type
 
 !!! note
-    This is a new feature of the python standard library as of python 3.8; 
+    This is a new feature of the python standard library as of python 3.8;
     prior to python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
 
 *pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to python 3.8)
@@ -344,8 +392,8 @@ _(This script is complete, it should run "as is")_
 `EmailStr`
 : requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
   the input string must be a valid email address, and the output is a simple string
-  
-  
+
+
 
 `NameEmail`
 : requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
@@ -353,7 +401,7 @@ _(This script is complete, it should run "as is")_
   and the output is a `NameEmail` object which has two properties: `name` and `email`.
   For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`;
   for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
-  
+
 
 `PyObject`
 : expects a string and loads the python object importable at that dotted path;
@@ -399,7 +447,7 @@ _(This script is complete, it should run "as is")_
 : requires a valid UUID of type 5; see `UUID` [above](#standard-library-types)
 
 `SecretBytes`
-: bytes where the value is kept partially secret; see [Secrets](#secret-types) 
+: bytes where the value is kept partially secret; see [Secrets](#secret-types)
 
 `SecretStr`
 : string where the value is kept partially secret; see [Secrets](#secret-types)
@@ -512,7 +560,7 @@ _(This script is complete, it should run "as is")_
 
 #### International Domains
 
-"International domains" (e.g. a URL where the host includes non-ascii characters) will be encoded via
+"International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
 [this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
 
@@ -609,7 +657,7 @@ _(This script is complete, it should run "as is")_
 ### Json Type
 
 You can use `Json` data type to make *pydantic* first load a raw JSON string.
-It can also optionally be used to parse the loaded object into another type base on 
+It can also optionally be used to parse the loaded object into another type base on
 the type `Json` is parameterised with:
 
 ```py
@@ -676,7 +724,7 @@ _(This script is complete, it should run "as is")_
 You can use the `ByteSize` data type to convert byte string representation to
 raw bytes and print out human readable versions of the bytes as well.
 
-!!! info 
+!!! info
     Note that `1b` will be parsed as "1 byte" and not "1 bit".
 
 ```py
@@ -684,14 +732,57 @@ raw bytes and print out human readable versions of the bytes as well.
 ```
 _(This script is complete, it should run "as is")_
 
-
-
 ## Custom Data Types
 
-You can also define your own custom data types. The classmethod `__get_validators__` will be called
+You can also define your own custom data types. There are several ways to achieve it.
+
+### Classes with `__get_validators__`
+
+You use a custom class with a classmethod `__get_validators__`. It will be called
 to get validators to parse and validate the input data.
+
+!!! tip
+    These validators have the same semantics as in [Validators](validators.md), you can
+    declare a parameter `config`, `field`, etc.
 
 ```py
 {!.tmp_examples/types_custom_type.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
+formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
+
+See [Schema](schema.md) for more details on how the model's schema is generated.
+
+### Arbitrary Types Allowed
+
+You can allow arbitrary types using the `arbitrary_types_allowed` config in the
+[Model Config](model_config.md).
+
+```py
+{!.tmp_examples/types_arbitrary_allowed.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### Generic Classes as Types
+
+!!! warning
+    This is an advanced technique that you might not need in the beginning. In most of
+    the cases you will probably be fine with standard *pydantic* models.
+
+You can use
+[Generic Classes](https://docs.python.org/3/library/typing.html#typing.Generic) as
+field types and perform custom validation based on the "type parameters" (or sub-types)
+with `__get_validators__`.
+
+If the Generic class that you are using as a sub-type has a classmethod
+`__get_validators__` you don't need to use `arbitrary_types_allowed` for it to work.
+
+Because you can declare validators that receive the current `field`, you can extract
+the `sub_fields` (from the generic class type parameters) and validate data with them.
+
+```py
+{!.tmp_examples/types_generics.py!}
 ```
 _(This script is complete, it should run "as is")_

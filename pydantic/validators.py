@@ -55,7 +55,7 @@ def str_validator(v: Any) -> Optional[str]:
         raise errors.StrError()
 
 
-def strict_str_validator(v: Any) -> str:
+def strict_str_validator(v: Any) -> Union[str]:
     if isinstance(v, str):
         return v
     raise errors.StrError()
@@ -424,6 +424,9 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseCon
 
 
 def validate_json(v: Any, config: 'BaseConfig') -> Any:
+    if v is None:
+        # pass None through to other validators
+        return v
     try:
         return config.json_loads(v)  # type: ignore
     except ValueError:

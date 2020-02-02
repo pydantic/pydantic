@@ -1,1 +1,0 @@
-Mypy plugin support for dataclasses
