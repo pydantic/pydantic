@@ -66,6 +66,16 @@ arguments and want to call the function in the most performant way (see [notes o
 ```
 _(This script is complete, it should run "as is")_
 
+## Async Functions
+
+`validate_assignment` can also be used on async functions:
+
+```py
+{!.tmp_examples/validation_decorator_async.py!}
+```
+_(This script is complete, it should run "as is")_
+
+
 ## Limitations
 
 `validate_assignment` has been released on a provisional basis without all the bells and whistles, which may

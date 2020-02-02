@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 import sys
 
@@ -184,3 +185,21 @@ def test_v_args():
         @validate_arguments
         def foo(v__args: int):
             pass
+
+
+def test_async():
+    @validate_arguments
+    async def foo(a, b):
+        return f'a={a} b={b}'
+
+    async def run():
+        v = await foo(1, 2)
+        assert v == 'a=1 b=2'
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run())
+    with pytest.raises(ValidationError) as exc_info:
+        loop.run_until_complete(foo('x'))
+    assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]

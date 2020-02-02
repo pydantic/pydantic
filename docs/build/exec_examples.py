@@ -10,7 +10,7 @@ import sys
 import textwrap
 import traceback
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 from unittest.mock import patch
 
 from ansi2html import Ansi2HTMLConverter
@@ -57,13 +57,34 @@ class MockPrint:
             return
         s = ' '.join(map(to_string, args))
 
-        lines = []
-        for line in s.split('\n'):
-            if len(line) > MAX_LINE_LENGTH - 3:
-                lines += textwrap.wrap(line, width=MAX_LINE_LENGTH - 3)
-            else:
-                lines.append(line)
-        self.statements.append((frame.f_lineno, lines))
+        self.statements.append((frame.f_lineno, s))
+
+
+def build_print_lines(s: str, max_len_reduction: int = 0):
+    print_lines = []
+    max_len = MAX_LINE_LENGTH - 3 - max_len_reduction
+    for line in s.split('\n'):
+        if len(line) > max_len:
+            print_lines += textwrap.wrap(line, width=max_len)
+        else:
+            print_lines.append(line)
+    return print_lines
+
+
+def build_print_statement(line_no: int, s: str, lines: List[str]) -> None:
+    indent = ''
+    for back in range(1, 100):
+        m = re.search(r'^( *)print\(', lines[line_no - back])
+        if m:
+            indent = m.group(1)
+            break
+    print_lines = build_print_lines(s, len(indent))
+
+    if len(print_lines) > 2:
+        text = textwrap.indent('"""\n{}\n"""'.format('\n'.join(print_lines)), indent)
+    else:
+        text = '\n'.join(f'{indent}#> {line}' for line in print_lines)
+    lines.insert(line_no, text)
 
 
 def all_md_contents() -> str:
@@ -150,15 +171,11 @@ def exec_examples():
                 lines = [line for line in lines if line != to_json_line]
                 if len(mp.statements) != 1:
                     error('should only have one print statement')
-                new_files[file.stem + '.json'] = '\n'.join(mp.statements[0][1]) + '\n'
-
+                print_lines = build_print_lines(mp.statements[0][1])
+                new_files[file.stem + '.json'] = '\n'.join(print_lines) + '\n'
             else:
-                for line_no, print_lines in reversed(mp.statements):
-                    if len(print_lines) > 2:
-                        text = '"""\n{}\n"""'.format('\n'.join(print_lines))
-                    else:
-                        text = '\n'.join('#> ' + l for l in print_lines)
-                    lines.insert(line_no, text)
+                for line_no, print_string in reversed(mp.statements):
+                    build_print_statement(line_no, print_string, lines)
 
         try:
             ignore_above = lines.index('# ignore-above')
