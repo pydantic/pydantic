@@ -19,7 +19,9 @@ Options:
 
 **`extra`**
 : whether to ignore, allow, or forbid extra attributes during model initialization. Accepts the string values of
-  `'ignore'`, `'allow'`, or `'forbid'`, or values of the `Extra` enum (default: `Extra.ignore`)
+  `'ignore'`, `'allow'`, or `'forbid'`, or values of the `Extra` enum (default: `Extra.ignore`).
+  `'forbid'` will cause validation to fail if extra attributes are included, `'ignore'` will silently ignore any extra attributes,
+  and `'allow'` will assign the attributes to the model.
 
 **`allow_mutation`**
 : whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed (default: `True`)
