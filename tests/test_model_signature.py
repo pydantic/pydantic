@@ -1,5 +1,5 @@
 from inspect import signature
-from typing import Any, Union, Iterable
+from typing import Any, Iterable, Union
 
 from pydantic import BaseModel, Extra, Field, create_model
 
@@ -44,25 +44,16 @@ def test_custom_init_signature():
     sig = signature(MyModel)
     assert _equals(
         map(str, sig.parameters.values()),
-        ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", 'foo: str', '**data')
+        ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", 'foo: str', '**data'),
     )
 
-    assert _equals(
-        str(sig),
-        "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **data) -> None"
-    )
+    assert _equals(str(sig), "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **data) -> None")
 
 
 def test_invalid_identifiers_signature():
     model = create_model(
         'Model', **{'123 invalid identifier!': Field(123, alias='valid_identifier'), '!': Field(0, alias='yeah')}
     )
-    assert _equals(
-        str(signature(model)),
-        '(*, valid_identifier: int = 123, yeah: int = 0) -> None'
-    )
+    assert _equals(str(signature(model)), '(*, valid_identifier: int = 123, yeah: int = 0) -> None')
     model = create_model('Model', **{'123 invalid identifier!': 123, '!': Field(0, alias='yeah')})
-    assert _equals(
-        str(signature(model)),
-        '(*, yeah: int = 0, **data: Any) -> None'
-    )
+    assert _equals(str(signature(model)), '(*, yeah: int = 0, **data: Any) -> None')
