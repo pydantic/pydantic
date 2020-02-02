@@ -1,6 +1,7 @@
 import platform
 import sys
 import warnings
+from types import GeneratorType
 from collections import OrderedDict
 from importlib import import_module
 from inspect import Parameter, Signature, isgenerator, signature
@@ -25,6 +26,7 @@ from typing import (
 )
 
 from .typing import AnyType, display_as_type
+from .version import version_info
 
 if TYPE_CHECKING:
     from .main import BaseModel, BaseConfig  # noqa: F401
@@ -32,7 +34,22 @@ if TYPE_CHECKING:
     from .fields import ModelField  # noqa: F401
     from .dataclasses import DataclassType  # noqa: F401
 
-KeyType = TypeVar('KeyType')
+__all__ = (
+    'import_string',
+    'sequence_like',
+    'validate_field_name',
+    'lenient_issubclass',
+    'in_ipython',
+    'deep_update',
+    'update_not_none',
+    'almost_equal_floats',
+    'get_model',
+    'PyObjectStr',
+    'Representation',
+    'GetterDict',
+    'ValueItems',
+    'version_info',  # required here to match behaviour in v1.3
+)
 
 
 def import_string(dotted_path: str) -> Any:
@@ -40,6 +57,8 @@ def import_string(dotted_path: str) -> Any:
     Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
     last name in the path. Raise ImportError if the import fails.
     """
+    from importlib import import_module
+
     try:
         module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
     except ValueError as e:
@@ -69,11 +88,8 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     return v
 
 
-ExcType = Type[Exception]
-
-
 def sequence_like(v: AnyType) -> bool:
-    return isinstance(v, (list, tuple, set, frozenset)) or isgenerator(v)
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
@@ -104,6 +120,9 @@ def in_ipython() -> bool:
         return True
 
 
+KeyType = TypeVar('KeyType')
+
+
 def deep_update(mapping: Dict[KeyType, Any], updating_mapping: Dict[KeyType, Any]) -> Dict[KeyType, Any]:
     updated_mapping = mapping.copy()
     for k, v in updating_mapping.items():
@@ -112,6 +131,10 @@ def deep_update(mapping: Dict[KeyType, Any], updating_mapping: Dict[KeyType, Any
         else:
             updated_mapping[k] = v
     return updated_mapping
+
+
+def update_not_none(mapping: Dict[Any, Any], **update: Any) -> None:
+    mapping.update({k: v for k, v in update.items() if v is not None})
 
 
 def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
@@ -376,26 +399,3 @@ class ValueItems(Representation):
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]
-
-
-def version_info() -> str:
-    from .main import compiled
-    from .version import VERSION
-
-    optional_deps = []
-    for p in ('typing-extensions', 'email-validator', 'devtools'):
-        try:
-            import_module(p.replace('-', '_'))
-        except ImportError:
-            continue
-        optional_deps.append(p)
-
-    info = {
-        'pydantic version': VERSION,
-        'pydantic compiled': compiled,
-        'install path': Path(__file__).resolve().parent,
-        'python version': sys.version,
-        'platform': platform.platform(),
-        'optional deps. installed': optional_deps,
-    }
-    return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())

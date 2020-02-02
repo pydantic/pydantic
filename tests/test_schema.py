@@ -6,7 +6,7 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NewType, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NewType, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
@@ -100,7 +100,7 @@ def test_by_alias():
             title = 'Apple Pie'
             fields = {'a': 'Snap', 'b': 'Crackle'}
 
-    s = {
+    assert ApplePie.schema() == {
         'type': 'object',
         'title': 'Apple Pie',
         'properties': {
@@ -109,9 +109,27 @@ def test_by_alias():
         },
         'required': ['Snap'],
     }
-    assert ApplePie.schema() == s
     assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
+
+
+def test_by_alias_generator():
+    class ApplePie(BaseModel):
+        a: float
+        b: int = 10
+
+        class Config:
+            @staticmethod
+            def alias_generator(x):
+                return x.upper()
+
+    assert ApplePie.schema() == {
+        'title': 'ApplePie',
+        'type': 'object',
+        'properties': {'A': {'title': 'A', 'type': 'number'}, 'B': {'title': 'B', 'default': 10, 'type': 'integer'}},
+        'required': ['A'],
+    }
+    assert ApplePie.schema(by_alias=False)['properties'].keys() == {'a', 'b'}
 
 
 def test_sub_model():
@@ -513,10 +531,12 @@ def test_str_constrained_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
-    base_schema['properties']['a'] = expected_schema
+    model_schema = Model.schema()
+    assert model_schema['properties']['a'] == expected_schema
 
-    assert Model.schema() == base_schema
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': expected_schema}, 'required': ['a']}
+
+    assert model_schema == base_schema
 
 
 @pytest.mark.parametrize(
@@ -667,12 +687,16 @@ def test_path_types(field_type, expected_schema):
 def test_json_type():
     class Model(BaseModel):
         a: Json
+        b: Json[int]
 
-    model_schema = Model.schema()
-    assert model_schema == {
+    assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
+        'properties': {
+            'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
+            'b': {'title': 'B', 'type': 'integer'},
+        },
+        'required': ['b'],
     }
 
 
@@ -1483,6 +1507,47 @@ def test_model_with_schema_extra():
     }
 
 
+def test_model_with_schema_extra_callable():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            @staticmethod
+            def schema_extra(schema, model_class):
+                schema.pop('properties')
+                schema['type'] = 'override'
+                assert model_class is Model
+
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_model_with_schema_extra_callable_no_model_class():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            @staticmethod
+            def schema_extra(schema):
+                schema.pop('properties')
+                schema['type'] = 'override'
+
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_model_with_schema_extra_callable_classmethod_asserts():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            @classmethod
+            def schema_extra(cls, schema, model_class):
+                schema.pop('properties')
+                schema['type'] = 'override'
+
+    with pytest.raises(TypeError, match='Model.Config.schema_extra callable is expected to be a staticmethod'):
+        Model.schema()
+
+
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         a: str
@@ -1594,8 +1659,9 @@ def test_real_vs_phony_constraints():
 def test_conlist():
     class Model(BaseModel):
         foo: List[int] = Field(..., min_items=2, max_items=4)
+        bar: conlist(str, min_items=1, max_items=4) = None
 
-    assert Model(foo=[1, 2]).dict() == {'foo': [1, 2]}
+    assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
 
     with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
         Model(foo=[1])
@@ -1607,7 +1673,8 @@ def test_conlist():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4}
+            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4},
+            'bar': {'title': 'Bar', 'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4},
         },
         'required': ['foo'],
     }
@@ -1662,5 +1729,78 @@ def test_dataclass():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+        'required': ['a'],
+    }
+
+
+def test_schema_attributes():
+    class ExampleEnum(Enum):
+        gt = 'GT'
+        lt = 'LT'
+        ge = 'GE'
+        le = 'LE'
+        max_length = 'ML'
+        multiple_of = 'MO'
+        regex = 'RE'
+
+    class Example(BaseModel):
+        example: ExampleEnum
+
+    assert Example.schema() == {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {'example': {'title': 'Example', 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE']}},
+        'required': ['example'],
+    }
+
+
+def test_path_modify_schema():
+    class MyPath(Path):
+        @classmethod
+        def __modify_schema__(cls, schema):
+            schema.update(foobar=123)
+
+    class Model(BaseModel):
+        path1: Path
+        path2: MyPath
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'path1': {'title': 'Path1', 'type': 'string', 'format': 'path'},
+            'path2': {'title': 'Path2', 'type': 'string', 'format': 'path', 'foobar': 123},
+        },
+        'required': ['path1', 'path2'],
+    }
+
+
+def test_frozen_set():
+    class Model(BaseModel):
+        a: FrozenSet[int] = frozenset({1, 2, 3})
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {
+                'title': 'A',
+                'default': frozenset({1, 2, 3}),
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'uniqueItems': True,
+            }
+        },
+    }
+
+
+def test_iterable():
+    class Model(BaseModel):
+        a: Iterable[int]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}},
         'required': ['a'],
     }

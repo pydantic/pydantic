@@ -83,3 +83,15 @@ def test_generation_is_disabled():
     Makes sure we don't accidentally leave generation on
     """
     assert not GENERATE
+
+
+def test_explicit_reexports():
+    from pydantic import __all__ as root_all
+    from pydantic.main import __all__ as main
+    from pydantic.networks import __all__ as networks
+    from pydantic.tools import __all__ as tools
+    from pydantic.types import __all__ as types
+
+    for name, export_all in [('main', main), ('network', networks), ('tools', tools), ('types', types)]:
+        for export in export_all:
+            assert export in root_all, f'{export} is in {name}.__all__ but missing from re-export in __init__.py'

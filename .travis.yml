@@ -29,7 +29,7 @@ env:
 
 after_success:
 - ls -lha
-- bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS
+- bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS,TRAVIS_JOB_NAME
 
 stages:
 - name: test
@@ -71,7 +71,7 @@ jobs:
     python: 3.6
     name: 'Without Deps 3.6'
     script:
-    - pip uninstall -y cython email-validator typing-extensions devtools
+    - pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
     - make test
     env:
     - 'DEPS=no'
@@ -80,7 +80,7 @@ jobs:
     python: 3.7
     name: 'Without Deps 3.7'
     script:
-    - pip uninstall -y cython email-validator typing-extensions devtools
+    - pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
     - make test
     env:
     - 'DEPS=no'
@@ -89,16 +89,17 @@ jobs:
     python: 3.8
     name: 'Without Deps 3.8'
     script:
-      - pip uninstall -y cython email-validator typing-extensions devtools
-      - make test
+    - pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+    - make test
     env:
-      - 'DEPS=no'
-  
+    - 'DEPS=no'
+
   - stage: test
     python: 3.7
     name: 'Test FastAPI'
     script:
-      - make test-fastapi
+    - make test-fastapi
+    after_success: skip
 
   - stage: test
     python: 3.7

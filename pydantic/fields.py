@@ -1,10 +1,12 @@
 import warnings
+from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
     FrozenSet,
     Generator,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -16,7 +18,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from . import errors as errors_
@@ -58,6 +59,7 @@ class FieldInfo(Representation):
     __slots__ = (
         'default',
         'alias',
+        'alias_priority',
         'title',
         'description',
         'const',
@@ -77,6 +79,7 @@ class FieldInfo(Representation):
     def __init__(self, default: Any, **kwargs: Any) -> None:
         self.default = default
         self.alias = kwargs.pop('alias', None)
+        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
         self.const = kwargs.pop('const', None)
@@ -174,18 +177,22 @@ SHAPE_TUPLE = 5
 SHAPE_TUPLE_ELLIPSIS = 6
 SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
+SHAPE_ITERABLE = 9
+SHAPE_GENERIC = 10
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
     SHAPE_TUPLE_ELLIPSIS: 'Tuple[{}, ...]',
     SHAPE_SEQUENCE: 'Sequence[{}]',
     SHAPE_FROZENSET: 'FrozenSet[{}]',
+    SHAPE_ITERABLE: 'Iterable[{}]',
 }
 
 
 class ModelField(Representation):
     __slots__ = (
         'type_',
+        'outer_type_',
         'sub_fields',
         'key_field',
         'validators',
@@ -222,6 +229,7 @@ class ModelField(Representation):
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
         self.type_: Any = type_
+        self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
         self.required: 'BoolUndefined' = required
@@ -280,9 +288,13 @@ class ModelField(Representation):
     def set_config(self, config: Type['BaseConfig']) -> None:
         self.model_config = config
         info_from_config = config.get_field_info(self.name)
-        if info_from_config:
-            self.field_info.alias = info_from_config.get('alias') or self.field_info.alias or self.name
-            self.alias = cast(str, self.field_info.alias)
+        config.prepare_field(self)
+        new_alias = info_from_config.get('alias')
+        new_alias_priority = info_from_config.get('alias_priority') or 0
+        if new_alias and new_alias_priority >= (self.field_info.alias_priority or 0):
+            self.field_info.alias = new_alias
+            self.field_info.alias_priority = new_alias_priority
+            self.alias = new_alias
 
     @property
     def alt_alias(self) -> bool:
@@ -297,6 +309,7 @@ class ModelField(Representation):
         """
         if self.default is not None and self.type_ is None:
             self.type_ = type(self.default)
+            self.outer_type_ = self.type_
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
@@ -365,7 +378,10 @@ class ModelField(Representation):
                 types_.append(type_)
 
             if len(types_) == 1:
+                # Optional[]
                 self.type_ = types_[0]
+                # this is the one case where the "outer type" isn't just the original type
+                self.outer_type_ = self.type_
                 # re-run to correctly interpret the new self.type_
                 self._type_analysis()
             else:
@@ -409,7 +425,20 @@ class ModelField(Representation):
             self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name, for_keys=True)
             self.type_ = self.type_.__args__[1]
             self.shape = SHAPE_MAPPING
+        # Equality check as almost everything inherits form Iterable, including str
+        # check for Iterable and CollectionsIterable, as it could receive one even when declared with the other
+        elif origin in {Iterable, CollectionsIterable}:
+            self.type_ = self.type_.__args__[0]
+            self.shape = SHAPE_ITERABLE
+            self.sub_fields = [self._create_sub_type(self.type_, f'{self.name}_type')]
         elif issubclass(origin, Type):  # type: ignore
+            return
+        elif hasattr(origin, '__get_validators__') or self.model_config.arbitrary_types_allowed:
+            # Is a Pydantic-compatible generic that handles itself
+            # or we have arbitrary_types_allowed = True
+            self.shape = SHAPE_GENERIC
+            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)]
+            self.type_ = origin
             return
         else:
             raise TypeError(f'Fields of type "{origin}" are not supported.')
@@ -432,7 +461,7 @@ class ModelField(Representation):
         without mis-configuring the field.
         """
         class_validators_ = self.class_validators.values()
-        if not self.sub_fields:
+        if not self.sub_fields or self.shape == SHAPE_GENERIC:
             get_validators = getattr(self.type_, '__get_validators__', None)
             v_funcs = (
                 *[v.func for v in class_validators_ if v.each_item and v.pre],
@@ -482,6 +511,10 @@ class ModelField(Representation):
             v, errors = self._validate_mapping(v, values, loc, cls)
         elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
+        elif self.shape == SHAPE_ITERABLE:
+            v, errors = self._validate_iterable(v, values, loc, cls)
+        elif self.shape == SHAPE_GENERIC:
+            v, errors = self._apply_validators(v, values, loc, cls, self.validators)
         else:
             #  sequence, list, set, generator, tuple with ellipsis, frozen set
             v, errors = self._validate_sequence_like(v, values, loc, cls)
@@ -540,6 +573,21 @@ class ModelField(Representation):
             elif isinstance(v, Generator):
                 converted = iter(result)
         return converted, None
+
+    def _validate_iterable(
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+    ) -> 'ValidateReturn':
+        """
+        Validate Iterables.
+
+        This intentionally doesn't validate values to allow infinite generators.
+        """
+
+        try:
+            iterable = iter(v)
+        except TypeError:
+            return v, ErrorWrapper(errors_.IterableError(), loc)
+        return iterable, None
 
     def _validate_tuple(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
@@ -639,17 +687,23 @@ class ModelField(Representation):
 
         return (
             self.shape != SHAPE_SINGLETON
-            or lenient_issubclass(self.type_, (BaseModel, list, set, dict))
+            or lenient_issubclass(self.type_, (BaseModel, list, set, frozenset, dict))
             or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
     def _type_display(self) -> PyObjectStr:
         t = display_as_type(self.type_)
 
+        # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
         if self.shape == SHAPE_MAPPING:
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:
             t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
+        elif self.shape == SHAPE_GENERIC:
+            assert self.sub_fields
+            t = '{}[{}]'.format(
+                display_as_type(self.type_), ', '.join(display_as_type(f.type_) for f in self.sub_fields)
+            )
         elif self.shape != SHAPE_SINGLETON:
             t = SHAPE_NAME_LOOKUP[self.shape].format(t)
 

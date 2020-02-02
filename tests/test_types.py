@@ -1,3 +1,4 @@
+import itertools
 import os
 import sys
 import uuid
@@ -6,7 +7,20 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Pattern, Sequence, Set, Tuple
+from typing import (
+    Dict,
+    FrozenSet,
+    Iterable,
+    Iterator,
+    List,
+    MutableSet,
+    NewType,
+    Optional,
+    Pattern,
+    Sequence,
+    Set,
+    Tuple,
+)
 from uuid import UUID
 
 import pytest
@@ -775,6 +789,83 @@ def test_sequence_generator_success(cls, value, result):
     assert list(validated) == list(result)
 
 
+def test_infinite_iterable():
+    class Model(BaseModel):
+        it: Iterable[int]
+        b: int
+
+    def iterable():
+        i = 0
+        while True:
+            i += 1
+            yield i
+
+    m = Model(it=iterable(), b=3)
+
+    assert m.b == 3
+    assert m.it
+
+    for i in m.it:
+        assert i
+        if i == 10:
+            break
+
+
+def test_invalid_iterable():
+    class Model(BaseModel):
+        it: Iterable[int]
+        b: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(it=3, b=3)
+    assert exc_info.value.errors() == [
+        {'loc': ('it',), 'msg': 'value is not a valid iterable', 'type': 'type_error.iterable'}
+    ]
+
+
+def test_infinite_iterable_validate_first():
+    class Model(BaseModel):
+        it: Iterable[int]
+        b: int
+
+        @validator('it')
+        def infinite_first_int(cls, it, field):
+            first_value = next(it)
+            if field.sub_fields:
+                sub_field = field.sub_fields[0]
+                v, error = sub_field.validate(first_value, {}, loc='first_value')
+                if error:
+                    raise ValidationError([error], cls)
+            return itertools.chain([first_value], it)
+
+    def int_iterable():
+        i = 0
+        while True:
+            i += 1
+            yield i
+
+    m = Model(it=int_iterable(), b=3)
+
+    assert m.b == 3
+    assert m.it
+
+    for i in m.it:
+        assert i
+        if i == 10:
+            break
+
+    def str_iterable():
+        while True:
+            for c in 'foobarbaz':
+                yield c
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(it=str_iterable(), b=3)
+    assert exc_info.value.errors() == [
+        {'loc': ('it', 'first_value'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
 @pytest.mark.parametrize(
     'cls,value,errors',
     (
@@ -948,6 +1039,18 @@ def test_strict_str():
         Model(v=b'foobar')
 
 
+def test_strict_str_subclass():
+    class MyStrictStr(StrictStr):
+        pass
+
+    class Model(BaseModel):
+        v: MyStrictStr
+
+    m = Model(v=MyStrictStr('foobar'))
+    assert isinstance(m.v, MyStrictStr)
+    assert m.v == 'foobar'
+
+
 def test_strict_bool():
     class Model(BaseModel):
         v: StrictBool
@@ -978,6 +1081,18 @@ def test_strict_int():
         Model(v=3.14159)
 
 
+def test_strict_int_subclass():
+    class MyStrictInt(StrictInt):
+        pass
+
+    class Model(BaseModel):
+        v: MyStrictInt
+
+    m = Model(v=MyStrictInt(123456))
+    assert isinstance(m.v, MyStrictInt)
+    assert m.v == 123456
+
+
 def test_strict_float():
     class Model(BaseModel):
         v: StrictFloat
@@ -989,6 +1104,18 @@ def test_strict_float():
 
     with pytest.raises(ValidationError, match='value is not a valid float'):
         Model(v=123456)
+
+
+def test_strict_float_subclass():
+    class MyStrictFloat(StrictFloat):
+        pass
+
+    class Model(BaseModel):
+        v: MyStrictFloat
+
+    m = Model(v=MyStrictFloat(3.14159))
+    assert isinstance(m.v, MyStrictFloat)
+    assert m.v == 3.14159
 
 
 def test_bool_unhashable_fails():
@@ -1649,6 +1776,50 @@ def test_json_pre_validator():
     assert call_count == 1
 
 
+def test_json_optional_simple():
+    class JsonOptionalModel(BaseModel):
+        json_obj: Optional[Json]
+
+    assert JsonOptionalModel(json_obj=None).dict() == {'json_obj': None}
+    assert JsonOptionalModel(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
+
+
+def test_json_optional_complex():
+    class JsonOptionalModel(BaseModel):
+        json_obj: Optional[Json[List[int]]]
+
+    JsonOptionalModel(json_obj=None)
+
+    good = JsonOptionalModel(json_obj='[1, 2, 3]')
+    assert good.json_obj == [1, 2, 3]
+
+    with pytest.raises(ValidationError) as exc_info:
+        JsonOptionalModel(json_obj='["i should fail"]')
+    assert exc_info.value.errors() == [
+        {'loc': ('json_obj', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
+def test_json_explicitly_required():
+    class JsonRequired(BaseModel):
+        json_obj: Json = ...
+
+    assert JsonRequired(json_obj=None).dict() == {'json_obj': None}
+    assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
+    with pytest.raises(ValidationError) as exc_info:
+        JsonRequired()
+    assert exc_info.value.errors() == [{'loc': ('json_obj',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+def test_json_no_default():
+    class JsonRequired(BaseModel):
+        json_obj: Json
+
+    assert JsonRequired(json_obj=None).dict() == {'json_obj': None}
+    assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
+    assert JsonRequired().dict() == {'json_obj': None}
+
+
 def test_pattern():
     class Foobar(BaseModel):
         pattern: Pattern
@@ -1699,6 +1870,17 @@ def test_secretstr():
     with pytest.warns(DeprecationWarning, match=r'`secret_str.display\(\)` is deprecated'):
         assert f.empty_password.display() == ''
 
+    # Assert that SecretStr is equal to SecretStr if the secret is the same.
+    assert f == f.copy()
+    assert f != f.copy(update=dict(password='4321'))
+
+
+def test_secretstr_equality():
+    assert SecretStr('abc') == SecretStr('abc')
+    assert SecretStr('123') != SecretStr('321')
+    assert SecretStr('123') != '123'
+    assert SecretStr('123') is not SecretStr('123')
+
 
 def test_secretstr_error():
     class Foobar(BaseModel):
@@ -1735,6 +1917,17 @@ def test_secretbytes():
         assert f.password.display() == '**********'
     with pytest.warns(DeprecationWarning, match=r'`secret_bytes.display\(\)` is deprecated'):
         assert f.empty_password.display() == ''
+
+    # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
+    assert f == f.copy()
+    assert f != f.copy(update=dict(password=b'4321'))
+
+
+def test_secretbytes_equality():
+    assert SecretBytes(b'abc') == SecretBytes(b'abc')
+    assert SecretBytes(b'123') != SecretBytes(b'321')
+    assert SecretBytes(b'123') != b'123'
+    assert SecretBytes(b'123') is not SecretBytes(b'123')
 
 
 def test_secretbytes_error():

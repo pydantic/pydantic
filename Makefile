@@ -4,7 +4,7 @@ black = black -S -l 120 --target-version py36 pydantic tests
 
 .PHONY: install
 install:
-	pip install -U setuptools pip
+	python -m pip install -U setuptools pip
 	pip install -U -r requirements.txt
 	SKIP_CYTHON=1 pip install -e .
 
@@ -58,7 +58,7 @@ test-examples:
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
 
 .PHONY: all
-all: testcov lint mypy
+all: lint mypy testcov
 
 .PHONY: benchmark-all
 benchmark-all:
@@ -92,7 +92,7 @@ clean:
 
 .PHONY: docs
 docs:
-	./docs/build/main.py
+	python docs/build/main.py
 	mkdocs build
 	@# to work with the old sphinx build and deploy:
 	@rm -rf docs/_build/
@@ -101,7 +101,7 @@ docs:
 
 .PHONY: docs-serve
 docs-serve:
-	./docs/build/main.py
+	python docs/build/main.py
 	mkdocs serve
 
 .PHONY: publish

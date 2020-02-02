@@ -62,5 +62,5 @@ def load_file(
             proto = Protocol.pickle
 
     return load_str_bytes(
-        b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle, json_loads=json_loads,
+        b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle, json_loads=json_loads
     )

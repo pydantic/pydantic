@@ -2,15 +2,18 @@ We'd love you to contribute to *pydantic*!
 
 ## Issues
 
-Questions, feature requests and bug reports are all welcome as issues.
+Questions, feature requests and bug reports are all welcome as issues. **However, to report a security
+vulnerability, please see our [security policy](https://github.com/samuelcolvin/pydantic/security/policy).**
 
-To make it as simple as possible for us to help you please include the output of the following call in your issue:
+To make it as simple as possible for us to help you, please include the output of the following call in your issue:
 
 ```bash
 python -c "import pydantic.utils; print(pydantic.utils.version_info())"
 ```
+If you're using *pydantic* prior to **v1.3** (when `version_info()` was added), please manually include OS, python
+version and pydantic version.
 
-Please try to always include the above output unless you're unable to install *pydantic* or **know** it's not relevant
+Please try to always include the above unless you're unable to install *pydantic* or **know** it's not relevant
 to your question or feature request.
 
 ## Pull Requests

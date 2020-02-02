@@ -27,16 +27,22 @@ import pydantic
 print('compiled:', pydantic.compiled)
 ```
 
-If you require email validation you can add [email-validator](https://github.com/JoshData/python-email-validator)
-as an optional dependency. Similarly, use of `Literal` prior to python 3.8 relies on
-[typing-extensions](https://pypi.org/project/typing-extensions/):
+*pydantic* has three optional dependencies:
 
+* If you require email validation you can add [email-validator](https://github.com/JoshData/python-email-validator)
+* use of `Literal` prior to python 3.8 relies on [typing-extensions](https://pypi.org/project/typing-extensions/)
+* [dotenv file support](usage/settings.md#dotenv-env-support) with `Settings` requires
+  [python-dotenv](https://pypi.org/project/python-dotenv)
+
+To install these along with *pydantic*:
 ```bash
 pip install pydantic[email]
 # or
 pip install pydantic[typing_extensions]
+# or
+pip install pydantic[dotenv]
 # or just
-pip install pydantic[email,typing_extensions]
+pip install pydantic[email,typing_extensions,dotenv]
 ```
 
 Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install typing_extensions`.

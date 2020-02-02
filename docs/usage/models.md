@@ -303,6 +303,26 @@ If the name of the concrete subclasses is important, you can also override the d
 ```
 _(This script is complete, it should run "as is")_
 
+Using the same TypeVar in nested models allows you to enforce typing relationships at different points in your model:
+
+```py
+{!.tmp_examples/models_generics_nested.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Pydantic also treats `GenericModel` similarly to how it treats built-in generic types like `List` and `Dict` when it
+comes to leaving them unparameterized, or using bounded `TypeVar` instances:    
+
+* If you don't specify parameters before instantiating the generic model, they will be treated as `Any`
+* You can parametrize models with one or more *bounded* parameters to add subclass checks
+
+Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
+
+```py
+{!.tmp_examples/models_generics_typevars.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Dynamic model creation
 
 There are some occasions where the shape of a model is not known until runtime. For this *pydantic* provides
