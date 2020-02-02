@@ -1,12 +1,7 @@
-import platform
-import sys
 import warnings
-from types import GeneratorType
-from collections import OrderedDict
-from importlib import import_module
-from inspect import Parameter, Signature, isgenerator, signature
+from inspect import Parameter, Signature, signature
 from itertools import islice
-from pathlib import Path
+from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
