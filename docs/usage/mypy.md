@@ -1,4 +1,4 @@
-Pydantic works with [mypy](http://mypy-lang.org/) provided you use the annotation-only version of
+Pydantic models work with [mypy](http://mypy-lang.org/) provided you use the annotation-only version of
 required fields:
 
 ```py
@@ -20,7 +20,6 @@ If you call mypy on the example code above, you should see mypy detect the attri
 13: error: "Model" has no attribute "middle_name"
 ```
 
-
 ## Strict Optional
 
 For your code to pass with `--strict-optional`, you need to to use `Optional[]` or an alias of `Optional[]`
@@ -39,5 +38,11 @@ If these aren't sufficient you can of course define your own.
 
 Pydantic ships with a mypy plugin that adds a number of important pydantic-specific
 features to mypy that improve its ability to type-check your code.
- 
-See the [pydantic mypy plugin docs](../mypy_plugin.md) for more details. 
+
+See the [pydantic mypy plugin docs](../mypy_plugin.md) for more details.
+
+
+## Other pydantic interfaces
+
+Pydantic [dataclasses](dataclasses.md) and the [`validate_assignment` decorator](validation_decorator.md)
+should also work well with mypy.

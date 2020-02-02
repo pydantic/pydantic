@@ -1,4 +1,4 @@
-from pydantic import validate_arguments, ValidationError
+from pydantic import validate_arguments
 
 @validate_arguments
 def repeat(s: str, count: int, *, separator: bytes = b'') -> bytes:
@@ -8,10 +8,5 @@ def repeat(s: str, count: int, *, separator: bytes = b'') -> bytes:
 a = repeat('hello', 3)
 print(a)
 
-b = repeat('x', '4', separator=' ')
+b = repeat.raw_function('good bye', 2, separator=b', ')
 print(b)
-
-try:
-    c = repeat('hello', 'wrong')
-except ValidationError as exc:
-    print(exc)

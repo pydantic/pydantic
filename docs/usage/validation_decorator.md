@@ -3,7 +3,7 @@ the function's annotations before the function is called. While under the hood t
 creation and initialisation; it provides an extremely easy way to apply validation to your code with minimal
 boilerplate.
 
-!!! warning
+!!! info "In Beta"
     The `validate_assignment` decorator is in **beta**, it has been added to *pydantic* in **v1.5** on a
     **provisional basis**. It may change significantly in future releases and its interface will not be concrete
     until **v2**. Feedback from the community while it's still provisional would be extremely useful; either comment
@@ -16,15 +16,31 @@ Example of usage:
 ```
 _(This script is complete, it should run "as is")_
 
-## Argument Configuration
+## Argument Types
 
-The decorator is designed to work with functions using all possible parameter configurations:
+Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
+as `Any`. Since `validate_assignment` internally uses a standard `BaseModel`, all types listed in
+[types](types.md) can be validated, including *pydantic* models and [custom types](types.md#custom-data-types).
+As with the rest of *pydantic*, types can be coerced by the decorator before they're passed to the actual function:
 
-* positional or keyword arguments with or without defaults (e.g. `s` or `count` in the above example)
+```py
+{!.tmp_examples/validation_decorator_types.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Type coercion like this can be extremely helpful but also confusing or not desired,
+see [below](#coercion-and-stictness) for a discussion of `validate_assignment`'s limitations in this regard.
+
+## Function Signatures
+
+The decorator is designed to work with functions using all possible parameter configurations and all possible
+combinations of these:
+
+* positional or keyword arguments with or without defaults
 * variable positional arguments defined via `*` (often `*args`)
-* variable key word arguments defined via `**` (often `**kwargs`)
+* variable keyword arguments defined via `**` (often `**kwargs`)
 * keyword only arguments - arguments after `*,`
-* positional only arguments - arguments before `/,` (new in python 3.8)
+* positional only arguments - arguments before `, /` (new in python 3.8)
 
 To demonstrate all the above parameter types:
 
@@ -33,25 +49,81 @@ To demonstrate all the above parameter types:
 ```
 _(This script is complete, it should run "as is")_
 
-## Argument Types
+## Usage with mypy
 
-all should work, see [types](types.md), custom types should work
+The `validate_assignment` decorator should work "out of the box" with [mypy](http://mypy-lang.org/) since it's
+defined to return a function with the same signature as the function it decorates. The only limitation is that
+since we trick mypy into thinking the function returned by the decorator is the same as the function being
+decorated; access to the [raw function](#raw-function) or other attributes will require `type: ignore`.
 
-Include example or path and PositiveInt
+## Raw function
+
+The raw function which was decorated is accessible, this is useful if in some scenarios you trust your input
+arguments and want to call the function in the most performant way (see [notes on performance](#performance) below):
+
+```py
+{!.tmp_examples/validation_decorator_raw_function.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ## Limitations
 
-Will be extended in future, please comment or consider implementing one of these features
+`validate_assignment` has been released on a provisional basis without all the bells and whistles, which may
+be added later, see [#1205](https://github.com/samuelcolvin/pydantic/issues/1205) for some more discussion of this.
 
-* raises `ValidationError`
-* coercion
-* performance
-* return type is not validated
+In particular:
 
-## Usage with mypy
+### Validation Exception
 
-effort has been made, should work
+Currently upon validation failure, a standard *pydantic* `ValidationError` is raised,
+see [model error handling](models.md#error-handling).
 
-## Advanced Usage
+This is helpful since it's `str()` method provides useful details of the error which occurred and methods like
+`.errors()` and `.json()` can be useful when exposing the errors to end users, however `ValidationError` inherits
+from `ValueError` **not** `TypeError` which may be unexpected since python would raise a `TypeError` upon invalid
+or missing arguments. This may be addressed in future by either allow a custom error or raising a different
+exception by default, or both.
 
-accessing the underlying model.
+### Coercion and Stictness
+
+*pydantic* currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
+see [model data conversion](models.md#data-conversion) and `validate_assignment` is no different.
+
+See [#1098](https://github.com/samuelcolvin/pydantic/issues/1098) and other issues with the "strictness" label
+for a discussion of this. If *pydantic* get's a "strict" mode in future, `validate_assignment` will have an option
+to use this, it may even become the default for the decorator.
+
+### Performance
+
+We've made a big effort to make *pydantic* as performant as possible (see [the benchmarks](../benchmarks.md))
+and argument inspect and model creation is only performed once when the function is defined, however
+there will still be a performance impact to using the `validate_assignment` decorator compared to
+calling the raw function.
+
+In many situations this will have little or no noticeable effect, however be aware that
+`validate_assignment` is not an equivalent or alternative to function definitions in strongly typed languages,
+it never will be.
+
+### Return Value
+
+The return value of the function is not validated against its return type annotation, this may be added as an option
+in future.
+
+### Config and Validators
+
+Custom [`Config`](model_config.md) and [validators](validators.md) are not yet supported.
+
+### Model fields and reserved arguments
+
+The following names may not be used by arguments since they can be used internally to store information about
+the function's signature:
+
+* `v__args`
+* `v__kwargs`
+* `v__positional_only`
+
+These names (together with `"args"` and `"kwargs"`) may or may not (depending on the function's signature) appear as
+fields on the internal *pydantic* model accessible via `.model` thus this model isn't especially useful
+(e.g. for generating a schema) at the moment.
+
+This should be fixable in future as the way error are raised is changed.
