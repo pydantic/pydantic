@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast, get_type_hints
 
 from . import validator
 from .errors import ConfigError
@@ -46,6 +46,7 @@ class ValidatedFunction:
         self.v_args_name = 'args'
         self.v_kwargs_name = 'kwargs'
 
+        type_hints = get_type_hints(function)
         takes_args = False
         takes_kwargs = False
         fields: Dict[str, Tuple[Any, Any]] = {}
@@ -53,8 +54,7 @@ class ValidatedFunction:
             if p.annotation == p.empty:
                 annotation = Any
             else:
-                # TODO if str update forward ref
-                annotation = p.annotation
+                annotation = type_hints[name]
 
             default = ... if p.default == p.empty else p.default
             if p.kind == Parameter.POSITIONAL_ONLY:

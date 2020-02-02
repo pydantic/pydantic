@@ -1,6 +1,8 @@
 import asyncio
 import inspect
 import sys
+from pathlib import Path
+from typing import List
 
 import pytest
 
@@ -201,5 +203,20 @@ def test_async():
     with pytest.raises(ValidationError) as exc_info:
         loop.run_until_complete(foo('x'))
     assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
+def test_string_annotation():
+    @validate_arguments
+    def foo(a: 'List[int]', b: 'Path'):
+        return f'a={a!r} b={b!r}'
+
+    assert foo([1, 2, 3], '/')
+
+    with pytest.raises(ValidationError) as exc_info:
+        foo(['x'])
+    assert exc_info.value.errors() == [
+        {'loc': ('a', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
         {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
     ]

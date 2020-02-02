@@ -28,6 +28,11 @@ As with the rest of *pydantic*, types can be coerced by the decorator before the
 ```
 _(This script is complete, it should run "as is")_
 
+A few notes:
+* through they're passed as strings `path` and `regex` are converted to a `Path` object and regex respectively,
+  by the decorator
+* `max` has no type annotation, so will be considered as `Any` by the decorator
+
 Type coercion like this can be extremely helpful but also confusing or not desired,
 see [below](#coercion-and-stictness) for a discussion of `validate_assignment`'s limitations in this regard.
 
