@@ -94,10 +94,6 @@ clean:
 docs:
 	python docs/build/main.py
 	mkdocs build
-	@# to work with the old sphinx build and deploy:
-	@rm -rf docs/_build/
-	@mkdir docs/_build/
-	@cp -r site docs/_build/html
 
 .PHONY: docs-serve
 docs-serve:
