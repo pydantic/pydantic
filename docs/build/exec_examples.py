@@ -11,7 +11,7 @@ import textwrap
 import traceback
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from ansi2html import Ansi2HTMLConverter
 from devtools import PrettyFormat
@@ -52,6 +52,8 @@ class MockPrint:
 
     def __call__(self, *args, file=None, flush=None):
         frame = inspect.currentframe().f_back.f_back.f_back
+        if sys.version_info >= (3, 8):
+            frame = frame.f_back
         if not self.file.samefile(frame.f_code.co_filename):
             # happens when index_error.py imports index_main.py
             return
@@ -149,7 +151,7 @@ def exec_examples():
             if to_json_line in lines:
                 lines = [line for line in lines if line != to_json_line]
                 if len(mp.statements) != 1:
-                    error('should only have one print statement')
+                    error('should have exactly one print statement')
                 new_files[file.stem + '.json'] = '\n'.join(mp.statements[0][1]) + '\n'
 
             else:
