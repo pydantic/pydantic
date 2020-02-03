@@ -127,14 +127,16 @@ def exec_examples():
             lines = dont_execute_re.sub('', file_text).split('\n')
         else:
             no_print_intercept_re = re.compile(r'^# no-print-intercept\n', flags=re.M)
-            no_print_intercept = bool(no_print_intercept_re.search(file_text))
-            if no_print_intercept:
+            print_intercept = not bool(no_print_intercept_re.search(file_text))
+            if not print_intercept:
                 file_text = no_print_intercept_re.sub('', file_text)
 
+            if file.stem in sys.modules:
+                del sys.modules[file.stem]
             mp = MockPrint(file)
             mod = None
             with patch('builtins.print') as mock_print:
-                if not no_print_intercept:
+                if print_intercept:
                     mock_print.side_effect = mp
                 try:
                     mod = importlib.import_module(file.stem)
