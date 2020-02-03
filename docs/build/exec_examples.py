@@ -11,7 +11,7 @@ import textwrap
 import traceback
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 from ansi2html import Ansi2HTMLConverter
 from devtools import PrettyFormat
