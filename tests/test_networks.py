@@ -211,6 +211,9 @@ def test_at_in_path():
         'https://example.org#a=3;b=3',
         'https://foo_bar.example.com/',
         'https://exam_ple.com/',  # should perhaps fail? I think it's contrary to the RFC but chrome allows it
+        'https://example.xn--p1ai',
+        'https://example.xn--vermgensberatung-pwb',
+        'https://example.xn--zfr164b',
     ],
 )
 def test_http_url_success(value):
@@ -231,6 +234,8 @@ def test_http_url_success(value):
         ),
         ('http://foobar/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
         ('http://localhost/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
+        ('https://example.123', 'value_error.url.host', 'URL host invalid, top level domain required', None),
+        ('https://example.ab123', 'value_error.url.host', 'URL host invalid, top level domain required', None),
         (
             'x' * 2084,
             'value_error.any_str.max_length',
@@ -260,6 +265,10 @@ def test_http_url_invalid(value, err_type, err_msg, err_ctx):
         # https://www.xudongz.com/blog/2017/idn-phishing/ accepted but converted
         ('https://www.аррӏе.com/', 'https://www.xn--80ak6aa92e.com/'),
         ('https://exampl£e.org', 'https://xn--example-gia.org'),
+        ('https://example.珠宝', 'https://example.xn--pbt977c'),
+        ('https://example.vermögensberatung', 'https://example.xn--vermgensberatung-pwb'),
+        ('https://example.рф', 'https://example.xn--p1ai'),
+        ('https://exampl£e.珠宝', 'https://xn--example-gia.xn--pbt977c'),
     ],
 )
 def test_coerse_url(input, output):
@@ -267,6 +276,26 @@ def test_coerse_url(input, output):
         v: HttpUrl
 
     assert Model(v=input).v == output
+
+
+@pytest.mark.parametrize(
+    'input,output',
+    [
+        ('  https://www.example.com \n', 'com'),
+        (b'https://www.example.com', 'com'),
+        ('https://www.example.com?param=value', 'com'),
+        ('https://example.珠宝', 'xn--pbt977c'),
+        ('https://exampl£e.珠宝', 'xn--pbt977c'),
+        ('https://example.vermögensberatung', 'xn--vermgensberatung-pwb'),
+        ('https://example.рф', 'xn--p1ai'),
+        ('https://example.рф?param=value', 'xn--p1ai'),
+    ],
+)
+def test_parses_tld(input, output):
+    class Model(BaseModel):
+        v: HttpUrl
+
+    assert Model(v=input).v.tld == output
 
 
 def test_postgres_dsns():

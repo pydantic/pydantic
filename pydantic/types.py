@@ -651,6 +651,8 @@ class PaymentCardNumber(str):
             digit = int(card_number[i])
             if i % 2 == parity:
                 digit *= 2
+            if digit > 9:
+                digit -= 9
             sum_ += digit
         valid = sum_ % 10 == 0
         if not valid:

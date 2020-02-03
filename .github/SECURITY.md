@@ -13,4 +13,4 @@ We will endeavour to support:
 
 If you find what you think might be a security vulnerability with pydantic,
 please do not create an issue on github. Instead please email s@muelcolvin.com
-I'll reply to your email prompted and try to get a patch out ASAP.
+I'll reply to your email promptly and try to get a patch out ASAP.

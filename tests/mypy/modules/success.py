@@ -33,7 +33,7 @@ class Model(BaseModel):
     def root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
-    @root_validator(pre=True)
+    @root_validator(pre=True, allow_reuse=False, skip_on_failure=False)
     def pre_root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 

@@ -1,3 +1,23 @@
+## v1.4 (2020-01-24)
+
+* **Breaking Change:** alias precedence logic changed so aliases on a field always take priority over
+  an alias from `alias_generator` to avoid buggy/unexpected behaviour,
+  see [here](https://pydantic-docs.helpmanual.io/usage/model_config/#alias-precedence) for details, #1178 by @samuelcolvin
+* Add support for unicode and punycode in TLDs, #1182 by @jamescurtin
+* Fix `cls` argument in validators during assignment, #1172 by @samuelcolvin
+* completing Luhn algorithm for `PaymentCardNumber`, #1166 by @cuencandres
+* add support for generics that implement `__get_validators__` like a custom data type, #1159 by @tiangolo
+* add support for infinite generators with `Iterable`, #1152 by @tiangolo
+* fix `url_regex` to accept schemas with `+`, `-` and `.` after the first character, #1142 by @samuelcolvin
+* move `version_info()` to `version.py`, suggest its use in issues, #1138 by @samuelcolvin
+* Improve pydantic import time by roughly 50% by deferring some module loading and regex compilation, #1127 by @samuelcolvin
+* Fix `EmailStr` and `NameEmail` to accept instances of themselves in cython, #1126 by @koxudaxi
+* Pass model class to the `Config.schema_extra` callable, #1125 by @therefromhere
+* Fix regex for username and password in URLs, #1115 by @samuelcolvin
+* Add support for nested generic models, #1104 by @dmontagu
+* add `__all__` to `__init__.py` to prevent "implicit reexport" errors from mypy, #1072 by @samuelcolvin
+* Add support for using "dotenv" files with `BaseSettings`, #1011 by @acnebs
+
 ## v1.3 (2019-12-21)
 
 * Change `schema` and `schema_model` to handle dataclasses by using their `__pydantic_model__` feature, #792 by @aviramha
