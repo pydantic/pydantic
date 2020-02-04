@@ -551,10 +551,6 @@ def find_validators(  # noqa: C901 (ignore complexity)
             yield any_class_validator
         return
 
-    supertype = _find_supertype(type_)
-    if supertype is not None:
-        type_ = supertype
-
     for val_type, validators in _VALIDATORS:
         try:
             if issubclass(type_, val_type):
@@ -572,18 +568,3 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield make_arbitrary_type_validator(type_)
     else:
         raise RuntimeError(f'no validator found for {type_}, see `arbitrary_types_allowed` in Config')
-
-
-def _find_supertype(type_: AnyType) -> Optional[AnyType]:
-    if not _is_new_type(type_):
-        return None
-
-    supertype = type_.__supertype__
-    if _is_new_type(supertype):
-        supertype = _find_supertype(supertype)
-
-    return supertype
-
-
-def _is_new_type(type_: AnyType) -> bool:
-    return hasattr(type_, '__name__') and hasattr(type_, '__supertype__')
