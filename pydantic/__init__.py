@@ -1,6 +1,7 @@
 # flake8: noqa
 from . import dataclasses
 from .class_validators import root_validator, validator
+from .decorator import validate_arguments
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
 from .errors import *
@@ -17,8 +18,11 @@ from .version import VERSION
 __all__ = [
     # dataclasses
     'dataclasses',
+    # class_validators
     'root_validator',
     'validator',
+    # decorator
+    'validate_arguments',
     # env_settings
     'BaseSettings',
     # error_wrappers

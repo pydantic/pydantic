@@ -37,6 +37,7 @@ nav:
   - usage/schema.md
   - usage/exporting_models.md
   - usage/dataclasses.md
+  - usage/validation_decorator.md
   - 'Settings management': usage/settings.md
   - usage/postponed_annotations.md
   - 'Usage with mypy': usage/mypy.md

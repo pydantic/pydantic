@@ -36,6 +36,7 @@ __all__ = (
     'update_not_none',
     'almost_equal_floats',
     'get_model',
+    'to_camel',
     'PyObjectStr',
     'Representation',
     'GetterDict',
@@ -147,6 +148,10 @@ def get_model(obj: Union[Type['BaseModel'], Type['DataclassType']]) -> Type['Bas
     if not issubclass(model_cls, BaseModel):
         raise TypeError('Unsupported type, must be either BaseModel or dataclass')
     return model_cls
+
+
+def to_camel(string: str) -> str:
+    return ''.join(word.capitalize() for word in string.split('_'))
 
 
 class PyObjectStr(str):

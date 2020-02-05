@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, NoneStr, StrictBool, root_validator, validator
+from pydantic import BaseModel, NoneStr, StrictBool, root_validator, validate_arguments, validator
 from pydantic.fields import Field
 from pydantic.generics import GenericModel
 
@@ -115,3 +115,12 @@ if sys.version_info >= (3, 7):
 class WithField(BaseModel):
     age: int
     first_name: str = Field('John', const=True)
+
+
+@validate_arguments
+def foo(a: int, *, c: str = 'x') -> str:
+    return c * a
+
+
+foo(1, c='thing')
+foo(1)
