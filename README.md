@@ -1,4 +1,4 @@
-# pydantic 1
+# pydantic
 
 [![BuildStatus](https://travis-ci.org/samuelcolvin/pydantic.svg?branch=master)](https://travis-ci.org/samuelcolvin/pydantic)
 [![Coverage](https://codecov.io/gh/samuelcolvin/pydantic/branch/master/graph/badge.svg)](https://codecov.io/gh/samuelcolvin/pydantic)
