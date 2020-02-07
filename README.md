@@ -17,6 +17,8 @@ Define how data should be in pure, canonical Python 3.6+; validate it with *pyda
 
 See [documentation](https://pydantic-docs.helpmanual.io/) for more details.
 
+modify.
+
 ## Installation
 
 Install using `pip install -U pydantic` or `conda install pydantic -c conda-forge`.
