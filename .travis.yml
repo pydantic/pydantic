@@ -105,6 +105,7 @@ jobs:
     python: 3.7
     name: 'Benchmarks'
     script:
+    - pip install -r benchmarks/requirements.txt
     - make build-cython
     - BENCHMARK_REPEATS=1 make benchmark-all
     after_success: skip
