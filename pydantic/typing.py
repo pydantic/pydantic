@@ -42,11 +42,13 @@ if sys.version_info < (3, 7):
     from typing import Callable as Callable
 
     AnyCallable = Callable[..., Any]
+    NoArgAnyCallable = Callable[[], Any]
 else:
     from collections.abc import Callable as Callable
     from typing import Callable as TypingCallable
 
     AnyCallable = TypingCallable[..., Any]
+    NoArgAnyCallable = TypingCallable[[], Any]
 
 if sys.version_info < (3, 8):
     if TYPE_CHECKING:
@@ -77,6 +79,7 @@ __all__ = (
     'ForwardRef',
     'Callable',
     'AnyCallable',
+    'NoArgAnyCallable',
     'AnyType',
     'NoneType',
     'display_as_type',

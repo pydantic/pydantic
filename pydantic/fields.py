@@ -25,7 +25,7 @@ from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
-from .typing import AnyType, Callable, ForwardRef, NoneType, display_as_type, is_literal_type
+from .typing import AnyType, Callable, ForwardRef, NoArgAnyCallable, NoneType, display_as_type, is_literal_type
 from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
@@ -58,6 +58,7 @@ class FieldInfo(Representation):
 
     __slots__ = (
         'default',
+        'default_factory',
         'alias',
         'alias_priority',
         'title',
@@ -76,8 +77,9 @@ class FieldInfo(Representation):
         'extra',
     )
 
-    def __init__(self, default: Any, **kwargs: Any) -> None:
+    def __init__(self, default: Any = Undefined, **kwargs: Any) -> None:
         self.default = default
+        self.default_factory = kwargs.pop('default_factory', None)
         self.alias = kwargs.pop('alias', None)
         self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
         self.title = kwargs.pop('title', None)
@@ -97,8 +99,9 @@ class FieldInfo(Representation):
 
 
 def Field(
-    default: Any,
+    default: Any = Undefined,
     *,
+    default_factory: Optional[NoArgAnyCallable] = None,
     alias: str = None,
     title: str = None,
     description: str = None,
@@ -121,6 +124,8 @@ def Field(
 
     :param default: since this is replacing the field’s default, its first argument is used
       to set the default, use ellipsis (``...``) to indicate the field is required
+    :param default_factory: callable that will be called when a default value is needed for this field
+      If both `default` and `default_factory` are set, an error is raised.
     :param alias: the public name of the field
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
@@ -143,8 +148,12 @@ def Field(
       pattern string. The schema will have a ``pattern`` validation keyword
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
+    if default is not Undefined and default_factory is not None:
+        raise ValueError('cannot specify both default and default_factory')
+
     return FieldInfo(
         default,
+        default_factory=default_factory,
         alias=alias,
         title=title,
         description=description,
@@ -199,6 +208,7 @@ class ModelField(Representation):
         'pre_validators',
         'post_validators',
         'default',
+        'default_factory',
         'required',
         'model_config',
         'name',
@@ -220,6 +230,7 @@ class ModelField(Representation):
         class_validators: Optional[Dict[str, Validator]],
         model_config: Type['BaseConfig'],
         default: Any = None,
+        default_factory: Optional[NoArgAnyCallable] = None,
         required: 'BoolUndefined' = Undefined,
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
@@ -232,6 +243,7 @@ class ModelField(Representation):
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
+        self.default_factory: Optional[NoArgAnyCallable] = default_factory
         self.required: 'BoolUndefined' = required
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
@@ -263,13 +275,13 @@ class ModelField(Representation):
 
         if isinstance(value, FieldInfo):
             field_info = value
-            value = field_info.default
+            value = field_info.default_factory if field_info.default_factory is not None else field_info.default
         else:
             field_info = FieldInfo(value, **field_info_from_config)
         required: 'BoolUndefined' = Undefined
         if value is Required:
             required = True
-            value = None
+            field_info.default = None
         elif value is not Undefined:
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
@@ -279,7 +291,8 @@ class ModelField(Representation):
             type_=annotation,
             alias=field_info.alias,
             class_validators=class_validators,
-            default=value,
+            default=field_info.default,
+            default_factory=field_info.default_factory,
             required=required,
             model_config=config,
             field_info=field_info,
@@ -307,8 +320,9 @@ class ModelField(Representation):
         Note: this method is **not** idempotent (because _type_analysis is not idempotent),
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
-        if self.default is not None and self.type_ is None:
-            self.type_ = type(self.default)
+        default_value = self.default_factory() if self.default_factory is not None else self.default
+        if default_value is not None and self.type_ is None:
+            self.type_ = type(default_value)
             self.outer_type_ = self.type_
 
         if self.type_ is None:
@@ -323,14 +337,14 @@ class ModelField(Representation):
             v.always for v in self.class_validators.values()
         )
 
-        if self.required is False and self.default is None:
+        if self.required is False and default_value is None:
             self.allow_none = True
 
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
             self.field_info.default = Required
-        if self.default is Undefined:
+        if self.default is Undefined and self.default_factory is None:
             self.default = None
         self.populate_validators()
 
@@ -715,7 +729,10 @@ class ModelField(Representation):
         args = [('name', self.name), ('type', self._type_display()), ('required', self.required)]
 
         if not self.required:
-            args.append(('default', self.default))
+            if self.default_factory is not None:
+                args.append(('default_factory', f'<function {self.default_factory.__name__}>'))
+            else:
+                args.append(('default', self.default))
 
         if self.alt_alias:
             args.append(('alias', self.alias))
