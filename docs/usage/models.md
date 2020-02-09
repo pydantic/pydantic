@@ -463,6 +463,26 @@ _(This script is complete, it should run "as is")_
 In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required.
 `b` and `c` require a value, even if the value is `None`.
 
+## Field with dynamic default value
+
+When declaring a field with a default value, you may want it to be dynamic (i.e. different for each model).
+To do this, you may want to use a `default_factory`.
+
+!!! info "In Beta"
+    The `default_factory` argument is in **beta**, it has been added to *pydantic* in **v1.5** on a
+    **provisional basis**. It may change significantly in future releases and its signature or behaviour will not
+    be concrete until **v2**. Feedback from the community while it's still provisional would be extremely useful;
+    either comment on [#866](https://github.com/samuelcolvin/pydantic/issues/866) or create a new issue.
+
+Example of usage:
+
+```py
+{!.tmp_examples/models_default_factory.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Where `Field` refers to the [field function](schema.md#field-customisation).
+
 ## Parsing data into a specified type
 
 Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing
