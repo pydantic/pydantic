@@ -832,13 +832,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 errors.append(ErrorWrapper(MissingError(), loc=field.alias))
                 continue
 
-            if field.default_factory is not None:
-                value = field.default_factory()
-            elif field.default is None:
-                # deepcopy is quite slow on None
-                value = None
-            else:
-                value = deepcopy(field.default)
+            value = field.get_default()
 
             if not config.validate_all and not field.validate_always:
                 values[name] = value

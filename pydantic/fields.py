@@ -1,5 +1,6 @@
 import warnings
 from collections.abc import Iterable as CollectionsIterable
+from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -260,6 +261,16 @@ class ModelField(Representation):
         self.model_config.prepare_field(self)
         self.prepare()
 
+    def get_default(self) -> Any:
+        if self.default_factory is not None:
+            value = self.default_factory()
+        elif self.default is None:
+            # deepcopy is quite slow on None
+            value = None
+        else:
+            value = deepcopy(self.default)
+        return value
+
     @classmethod
     def infer(
         cls,
@@ -320,7 +331,7 @@ class ModelField(Representation):
         Note: this method is **not** idempotent (because _type_analysis is not idempotent),
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
-        default_value = self.default_factory() if self.default_factory is not None else self.default
+        default_value = self.get_default()
         if default_value is not None and self.type_ is None:
             self.type_ = type(default_value)
             self.outer_type_ = self.type_
