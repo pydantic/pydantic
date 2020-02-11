@@ -655,7 +655,8 @@ class BaseModel(metaclass=ModelMetaclass):
                 or (exclude_defaults and self.__field_defaults__.get(k, _missing) == v)
             ):
                 continue
-            if by_alias:
+            if by_alias and k in self.__fields__:
+                k = self.__fields__[k].alias
                 k = self.__fields__[k].alias if k in self.__fields__ else k
             if to_dict or value_include or value_exclude:
                 v = self._get_value(
