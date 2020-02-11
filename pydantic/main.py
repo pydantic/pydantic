@@ -648,7 +648,7 @@ class BaseModel(metaclass=ModelMetaclass):
         value_exclude = ValueItems(self, exclude) if exclude else None
         value_include = ValueItems(self, include) if include else None
 
-        for k, v in self.__iter__():
+        for k, v in self.__dict__.items():
             if (
                 (allowed_keys is not None and k not in allowed_keys)
                 or (exclude_none and v is None)
