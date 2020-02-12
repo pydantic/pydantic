@@ -513,9 +513,7 @@ It also respects your custom defined `__init__` and its arguments:
 {!.tmp_examples/models_signature_custom_init.py!}
 ```
 
-!!! note
-    To be included in signature, field alias or name must be a valid python identifier. *pydantic* prefer aliases over names, but may use field name if alias is not suitable. 
-    If any field's alias and name are both invalid identifiers, `**data` argument will be added.
-   
-!!! note
-    `**data` argument is always present in signature if `Config.extra` is `Extra.allow`
+To be included in signature, field alias or name must be a valid python identifier. *pydantic* prefer aliases over names, but may use field name if alias is not suitable. 
+If any field's alias and name are both invalid identifiers, `**data` argument will be added.
+
+Also, `**data` argument is always present in signature if `Config.extra` is `Extra.allow`
