@@ -1,4 +1,3 @@
-import inspect
 import json
 import sys
 import warnings
@@ -30,6 +29,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
+    from inspect import Signature
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
@@ -284,7 +284,7 @@ class BaseModel(metaclass=ModelMetaclass):
         __json_encoder__: Callable[[Any], Any] = lambda x: x
         __schema_cache__: 'DictAny' = {}
         __custom_root_type__: bool = False
-        __signature__: inspect.Signature
+        __signature__: 'Signature'
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')

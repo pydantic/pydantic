@@ -1,5 +1,4 @@
 import warnings
-from inspect import Parameter, Signature, signature
 from itertools import islice
 from types import GeneratorType
 from typing import (
@@ -24,6 +23,7 @@ from .typing import AnyType, display_as_type
 from .version import version_info
 
 if TYPE_CHECKING:
+    from inspect import Signature
     from .main import BaseModel, BaseConfig  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
     from .fields import ModelField  # noqa: F401
@@ -141,10 +141,11 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
 
 def generate_model_signature(
     init: Callable[..., None], fields: Dict[str, 'ModelField'], config: Type['BaseConfig']
-) -> Signature:
+) -> 'Signature':
     """
     Generate signature for model based on its fields
     """
+    from inspect import Parameter, Signature, signature
 
     present_params = signature(init).parameters.values()
     merged_params: Dict[str, Parameter] = {}
