@@ -152,7 +152,7 @@ def generate_model_signature(
     var_kw = None
     use_var_kw = False
 
-    for param in islice(present_params, 1, len(present_params)):  # skip self arg
+    for param in islice(present_params, 1, None):  # skip self arg
         if param.kind is param.VAR_KEYWORD:
             var_kw = param
             continue
