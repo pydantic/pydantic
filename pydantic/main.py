@@ -9,10 +9,10 @@ from pathlib import Path
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
-    KeysView,
     List,
     Optional,
     Tuple,
@@ -677,11 +677,11 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
         exclude_unset: bool,
         update: Optional['DictStrAny'] = None,
-    ) -> Optional[Union['SetStr', KeysView[str]]]:
+    ) -> Optional[AbstractSet[str]]:
         if include is None and exclude is None and exclude_unset is False:
             return None
 
-        keys: Union['SetStr', KeysView[str]]
+        keys: AbstractSet[str]
         if exclude_unset:
             keys = self.__fields_set__.copy()
         else:
