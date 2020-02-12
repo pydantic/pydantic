@@ -1,5 +1,5 @@
 import inspect
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class FooModel(BaseModel):
     id: int
