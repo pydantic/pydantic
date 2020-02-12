@@ -505,7 +505,7 @@ Any *pydantic* model have its own signature generated based on its fields:
 {!.tmp_examples/models_signature.py!}
 ```
 
-Accurate signature is useful for introspection purposes and libraries like `FastAPI` or `hypothesis-auto`.
+Accurate signature is useful for introspection purposes and libraries like `FastAPI` or `hypothesis`.
 
 It also respects your custom defined `__init__` and its arguments:
 
