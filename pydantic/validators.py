@@ -14,7 +14,6 @@ from typing import (
     FrozenSet,
     Generator,
     List,
-    Optional,
     Pattern,
     Set,
     Tuple,
@@ -40,7 +39,7 @@ if TYPE_CHECKING:
     StrBytes = Union[str, bytes]
 
 
-def str_validator(v: Any) -> Optional[str]:
+def str_validator(v: Any) -> str:
     if isinstance(v, str):
         if isinstance(v, Enum):
             return v.value
