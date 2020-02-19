@@ -1,0 +1,34 @@
+name: Docs Preview
+
+on: [pull_request]
+
+jobs:
+  site-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: install
+      run: make install
+
+    - name: build site
+      run: |
+        make docs
+        zip -r site.zip site
+        ls -lh
+
+    - name: upload
+      run: >
+        wget
+        https://site-deploy-opivr5adlq-ue.a.run.app/upload/?run_id=$GITHUB_RUN_ID
+        -O-
+        -q
+        --content-on-error
+        --post-file=site.zip
+      env:
+        GITHUB_RUN_ID: ${{ github.run_id }}

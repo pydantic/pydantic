@@ -1,0 +1,69 @@
+site_name: pydantic
+site_description: Data validation and settings management using python 3.6 type hinting
+strict: true
+site_url: https://pydantic-docs.helpmanual.io/
+
+theme:
+  name: 'material'
+  custom_dir: 'docs/theme'
+  palette:
+    primary: pink
+    accent: pink
+  logo: 'logo-white.svg'
+  favicon: 'favicon.png'
+
+repo_name: samuelcolvin/pydantic
+repo_url: https://github.com/samuelcolvin/pydantic
+google_analytics:
+- 'UA-62733018-4'
+- 'auto'
+
+extra_css:
+- 'extra/terminal.css'
+- 'extra/ad.css'
+extra_javascript:
+- 'extra/redirects.js'
+- 'extra/ad.js'
+
+nav:
+- Overview: index.md
+- install.md
+- 'Version 1 release notes': version_1_release_notes.md
+- Usage:
+  - usage/models.md
+  - 'Field Types': usage/types.md
+  - usage/validators.md
+  - 'Model Config': usage/model_config.md
+  - usage/schema.md
+  - usage/exporting_models.md
+  - usage/dataclasses.md
+  - usage/validation_decorator.md
+  - 'Settings management': usage/settings.md
+  - usage/postponed_annotations.md
+  - 'Usage with mypy': usage/mypy.md
+  - 'Usage with devtools': usage/devtools.md
+- Contributing to pydantic: contributing.md
+- benchmarks.md
+- 'Mypy plugin': mypy_plugin.md
+- 'PyCharm plugin': pycharm_plugin.md
+- changelog.md
+
+markdown_extensions:
+- markdown.extensions.codehilite:
+    guess_lang: false
+- markdown_include.include:
+    base_path: docs
+- toc:
+    permalink: 🔗
+- admonition
+- codehilite
+- extra
+
+plugins:
+- search
+- exclude:
+    glob:
+    - _build/*
+    - build/*
+    - examples/*
+    - requirements.txt

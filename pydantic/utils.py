@@ -1,119 +1,48 @@
-import inspect
-import re
-import sys
-from contextlib import contextmanager
-from enum import Enum
-from functools import lru_cache
-from importlib import import_module
-from textwrap import dedent
-from typing import _eval_type  # type: ignore
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generator, List, Optional, Pattern, Tuple, Type, Union
+import warnings
+from types import GeneratorType
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    no_type_check,
+)
 
-from . import errors
+from .typing import AnyType, display_as_type
+from .version import version_info
 
-try:
-    import email_validator
-except ImportError:
-    email_validator = None
-
-try:
-    from typing import _TypingBase as typing_base  # type: ignore
-except ImportError:
-    from typing import _Final as typing_base  # type: ignore
-
-try:
-    from typing import ForwardRef  # type: ignore
-except ImportError:
-    # python 3.6
-    ForwardRef = None
-
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+    from .dataclasses import DataclassType  # noqa: F401
 
-if sys.version_info < (3, 7):
-    from typing import Callable
-
-    AnyCallable = Callable[..., Any]
-else:
-    from collections.abc import Callable
-    from typing import Callable as TypingCallable
-
-    AnyCallable = TypingCallable[..., Any]
-
-
-PRETTY_REGEX = re.compile(r'([\w ]*?) *<(.*)> *')
-AnyType = Type[Any]
-
-
-def validate_email(value: str) -> Tuple[str, str]:
-    """
-    Brutally simple email address validation. Note unlike most email address validation
-    * raw ip address (literal) domain parts are not allowed.
-    * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed
-    * the local part check is extremely basic. This raises the possibility of unicode spoofing, but no better
-        solution is really possible.
-    * spaces are striped from the beginning and end of addresses but no error is raised
-
-    See RFC 5322 but treat it with suspicion, there seems to exist no universally acknowledged test for a valid email!
-    """
-    if email_validator is None:
-        raise ImportError('email-validator is not installed, run `pip install pydantic[email]`')
-
-    m = PRETTY_REGEX.fullmatch(value)
-    name: Optional[str] = None
-    if m:
-        name, value = m.groups()
-
-    email = value.strip()
-
-    try:
-        email_validator.validate_email(email, check_deliverability=False)
-    except email_validator.EmailNotValidError as e:
-        raise errors.EmailError() from e
-
-    return name or email[: email.index('@')], email.lower()
-
-
-def _rfc_1738_quote(text: str) -> str:
-    return re.sub(r'[:@/]', lambda m: '%{:X}'.format(ord(m.group(0))), text)
-
-
-def make_dsn(
-    *,
-    driver: str,
-    user: str = None,
-    password: str = None,
-    host: str = None,
-    port: str = None,
-    name: str = None,
-    query: Dict[str, Any] = None,
-) -> str:
-    """
-    Create a DSN from from connection settings.
-
-    Stolen approximately from sqlalchemy/engine/url.py:URL.
-    """
-    s = driver + '://'
-    if user is not None:
-        s += _rfc_1738_quote(user)
-        if password is not None:
-            s += ':' + _rfc_1738_quote(password)
-        s += '@'
-    if host is not None:
-        if ':' in host:
-            s += '[{}]'.format(host)
-        else:
-            s += host
-    if port is not None:
-        s += ':{}'.format(int(port))
-    if name is not None:
-        s += '/' + name
-    query = query or {}
-    if query:
-        keys = list(query)
-        keys.sort()
-        s += '?' + '&'.join('{}={}'.format(k, query[k]) for k in keys)
-    return s
+__all__ = (
+    'import_string',
+    'sequence_like',
+    'validate_field_name',
+    'lenient_issubclass',
+    'in_ipython',
+    'deep_update',
+    'update_not_none',
+    'almost_equal_floats',
+    'get_model',
+    'to_camel',
+    'PyObjectStr',
+    'Representation',
+    'GetterDict',
+    'ValueItems',
+    'version_info',  # required here to match behaviour in v1.3
+)
 
 
 def import_string(dotted_path: str) -> Any:
@@ -121,6 +50,8 @@ def import_string(dotted_path: str) -> Any:
     Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
     last name in the path. Raise ImportError if the import fails.
     """
+    from importlib import import_module
+
     try:
         module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
     except ValueError as e:
@@ -133,55 +64,25 @@ def import_string(dotted_path: str) -> Any:
         raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
 
 
-def truncate(v: str, *, max_len: int = 80) -> str:
+def truncate(v: Union[str], *, max_len: int = 80) -> str:
     """
     Truncate a value and add a unicode ellipsis (three dots) to the end if it was too long
     """
+    warnings.warn('`truncate` is no-longer used by pydantic and is deprecated', DeprecationWarning)
     if isinstance(v, str) and len(v) > (max_len - 2):
         # -3 so quote + string + … + quote has correct length
-        return repr(v[: (max_len - 3)] + '…')
-    v = repr(v)
+        return (v[: (max_len - 3)] + '…').__repr__()
+    try:
+        v = v.__repr__()
+    except TypeError:
+        v = type(v).__repr__(v)  # in case v is a type
     if len(v) > max_len:
         v = v[: max_len - 1] + '…'
     return v
 
 
-def display_as_type(v: AnyType) -> str:
-    if not isinstance(v, typing_base) and not isinstance(v, type):
-        v = type(v)
-
-    if lenient_issubclass(v, Enum):
-        if issubclass(v, int):
-            return 'int'
-        elif issubclass(v, str):
-            return 'str'
-        else:
-            return 'enum'
-
-    try:
-        return v.__name__
-    except AttributeError:
-        # happens with unions
-        return str(v)
-
-
-ExcType = Type[Exception]
-
-
-@contextmanager
-def change_exception(raise_exc: ExcType, *except_types: ExcType) -> Generator[None, None, None]:
-    try:
-        yield
-    except except_types as e:
-        raise raise_exc from e
-
-
-def clean_docstring(d: str) -> str:
-    return dedent(d).strip(' \r\n\t')
-
-
 def sequence_like(v: AnyType) -> bool:
-    return isinstance(v, (list, tuple, set)) or inspect.isgenerator(v)
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
@@ -196,37 +97,6 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-@lru_cache(maxsize=None)
-def url_regex_generator(*, relative: bool, require_tld: bool) -> Pattern[str]:
-    """
-    Url regex generator taken from Marshmallow library,
-    for details please follow library source code:
-        https://github.com/marshmallow-code/marshmallow/blob/298870ef6c089fb4d91efae9ca4168453ffe00d2/marshmallow/validate.py#L37
-    """
-    return re.compile(
-        r''.join(
-            (
-                r'^',
-                r'(' if relative else r'',
-                r'(?:[a-z0-9\.\-\+]*)://',  # scheme is validated separately
-                r'(?:[^:@]+?:[^:@]*?@|)',  # basic auth
-                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+',
-                r'(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|',  # domain...
-                r'localhost|',  # localhost...
-                (
-                    r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)|' if not require_tld else r''
-                ),  # allow dotless hostnames
-                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|',  # ...or ipv4
-                r'\[[A-F0-9]*:[A-F0-9:]+\])',  # ...or ipv6
-                r'(?::\d+)?',  # optional port
-                r')?' if relative else r'',  # host is optional, allow for relative URLs
-                r'(?:/?|[/?]\S+)$',
-            )
-        ),
-        re.IGNORECASE,
-    )
-
-
 def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
     return isinstance(cls, type) and issubclass(cls, class_or_tuple)
 
@@ -236,43 +106,250 @@ def in_ipython() -> bool:
     Check whether we're in an ipython environment, including jupyter notebooks.
     """
     try:
-        __IPYTHON__  # type: ignore
+        eval('__IPYTHON__')
     except NameError:
         return False
     else:  # pragma: no cover
         return True
 
 
-def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Optional[str]) -> Dict[str, AnyType]:
-    """
-    Partially taken from typing.get_type_hints.
+KeyType = TypeVar('KeyType')
 
-    Resolve string or ForwardRef annotations into type objects if possible.
+
+def deep_update(mapping: Dict[KeyType, Any], updating_mapping: Dict[KeyType, Any]) -> Dict[KeyType, Any]:
+    updated_mapping = mapping.copy()
+    for k, v in updating_mapping.items():
+        if k in mapping and isinstance(mapping[k], dict) and isinstance(v, dict):
+            updated_mapping[k] = deep_update(mapping[k], v)
+        else:
+            updated_mapping[k] = v
+    return updated_mapping
+
+
+def update_not_none(mapping: Dict[Any, Any], **update: Any) -> None:
+    mapping.update({k: v for k, v in update.items() if v is not None})
+
+
+def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
     """
-    if module_name:
-        base_globals: Optional[Dict[str, Any]] = sys.modules[module_name].__dict__
-    else:
-        base_globals = None
-    annotations = {}
-    for name, value in raw_annotations.items():
-        if isinstance(value, str):
-            value = ForwardRef(value, is_argument=False)
+    Return True if two floats are almost equal
+    """
+    return abs(value_1 - value_2) <= delta
+
+
+def get_model(obj: Union[Type['BaseModel'], Type['DataclassType']]) -> Type['BaseModel']:
+    from .main import BaseModel  # noqa: F811
+
+    try:
+        model_cls = obj.__pydantic_model__  # type: ignore
+    except AttributeError:
+        model_cls = obj
+
+    if not issubclass(model_cls, BaseModel):
+        raise TypeError('Unsupported type, must be either BaseModel or dataclass')
+    return model_cls
+
+
+def to_camel(string: str) -> str:
+    return ''.join(word.capitalize() for word in string.split('_'))
+
+
+class PyObjectStr(str):
+    """
+    String class where repr doesn't include quotes. Useful with Representation when you want to return a string
+    representation of something that valid (or pseudo-valid) python.
+    """
+
+    def __repr__(self) -> str:
+        return str(self)
+
+
+class Representation:
+    """
+    Mixin to provide __str__, __repr__, and __pretty__ methods. See #884 for more details.
+
+    __pretty__ is used by [devtools](https://python-devtools.helpmanual.io/) to provide human readable representations
+    of objects.
+    """
+
+    def __repr_args__(self) -> 'ReprArgs':
+        """
+        Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
+
+        Can either return:
+        * name - value pairs, e.g.: `[('foo_name', 'foo'), ('bar_name', ['b', 'a', 'r'])]`
+        * or, just values, e.g.: `[(None, 'foo'), (None, ['b', 'a', 'r'])]`
+        """
+        attrs = ((s, getattr(self, s)) for s in self.__slots__)
+        return [(a, v) for a, v in attrs if v is not None]
+
+    def __repr_name__(self) -> str:
+        """
+        Name of the instance's class, used in __repr__.
+        """
+        return self.__class__.__name__
+
+    def __repr_str__(self, join_str: str) -> str:
+        return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
+
+    def __pretty__(self, fmt: Callable[[Any], Any], **kwargs: Any) -> Generator[Any, None, None]:
+        """
+        Used by devtools (https://python-devtools.helpmanual.io/) to provide a human readable representations of objects
+        """
+        yield self.__repr_name__() + '('
+        yield 1
+        for name, value in self.__repr_args__():
+            if name is not None:
+                yield name + '='
+            yield fmt(value)
+            yield ','
+            yield 0
+        yield -1
+        yield ')'
+
+    def __str__(self) -> str:
+        return self.__repr_str__(' ')
+
+    def __repr__(self) -> str:
+        return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
+
+
+class GetterDict(Representation):
+    """
+    Hack to make object's smell just enough like dicts for validate_model.
+
+    We can't inherit from Mapping[str, Any] because it upsets cython so we have to implement all methods ourselves.
+    """
+
+    __slots__ = ('_obj',)
+
+    def __init__(self, obj: Any):
+        self._obj = obj
+
+    def __getitem__(self, key: str) -> Any:
         try:
-            value = _eval_type(value, base_globals, None)
-        except NameError:
-            # this is ok, it can be fixed with update_forward_refs
-            pass
-        annotations[name] = value
-    return annotations
+            return getattr(self._obj, key)
+        except AttributeError as e:
+            raise KeyError(key) from e
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        return getattr(self._obj, key, default)
+
+    def extra_keys(self) -> Set[Any]:
+        """
+        We don't want to get any other attributes of obj if the model didn't explicitly ask for them
+        """
+        return set()
+
+    def keys(self) -> List[Any]:
+        """
+        Keys of the pseudo dictionary, uses a list not set so order information can be maintained like python
+        dictionaries.
+        """
+        return list(self)
+
+    def values(self) -> List[Any]:
+        return [self[k] for k in self]
+
+    def items(self) -> Iterator[Tuple[str, Any]]:
+        for k in self:
+            yield k, self.get(k)
+
+    def __iter__(self) -> Iterator[str]:
+        for name in dir(self._obj):
+            if not name.startswith('_'):
+                yield name
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
+
+    def __contains__(self, item: Any) -> bool:
+        return item in self.keys()
+
+    def __eq__(self, other: Any) -> bool:
+        return dict(self) == dict(other.items())  # type: ignore
+
+    def __repr_args__(self) -> 'ReprArgs':
+        return [(None, dict(self))]  # type: ignore
+
+    def __repr_name__(self) -> str:
+        return f'GetterDict[{display_as_type(self._obj)}]'
 
 
-def is_callable_type(type_: AnyType) -> bool:
-    return type_ is Callable or getattr(type_, '__origin__', None) is Callable
+class ValueItems(Representation):
+    """
+    Class for more convenient calculation of excluded or included fields on values.
+    """
 
+    __slots__ = ('_items', '_type')
 
-def _check_classvar(v: AnyType) -> bool:
-    return type(v) == type(ClassVar) and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
+    def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'DictIntStrAny']) -> None:
+        if TYPE_CHECKING:
+            self._items: Union['AbstractSetIntStr', 'DictIntStrAny']
+            self._type: Type[Union[set, dict]]  # type: ignore
 
+        # For further type checks speed-up
+        if isinstance(items, dict):
+            self._type = dict
+        elif isinstance(items, AbstractSet):
+            self._type = set
+        else:
+            raise TypeError(f'Unexpected type of exclude value {type(items)}')
 
-def is_classvar(ann_type: AnyType) -> bool:
-    return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
+        if isinstance(value, (list, tuple)):
+            items = self._normalize_indexes(items, len(value))
+
+        self._items = items
+
+    @no_type_check
+    def is_excluded(self, item: Any) -> bool:
+        """
+        Check if item is fully excluded
+        (value considered excluded if self._type is set and item contained in self._items
+         or self._type is dict and self._items.get(item) is ...
+
+        :param item: key or index of a value
+        """
+        if self._type is set:
+            return item in self._items
+        return self._items.get(item) is ...
+
+    @no_type_check
+    def is_included(self, item: Any) -> bool:
+        """
+        Check if value is contained in self._items
+
+        :param item: key or index of value
+        """
+        return item in self._items
+
+    @no_type_check
+    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'DictIntStrAny']]:
+        """
+        :param e: key or index of element on value
+        :return: raw values for elemet if self._items is dict and contain needed element
+        """
+
+        if self._type is dict:
+            item = self._items.get(e)
+            return item if item is not ... else None
+        return None
+
+    @no_type_check
+    def _normalize_indexes(
+        self, items: Union['AbstractSetIntStr', 'DictIntStrAny'], v_length: int
+    ) -> Union['AbstractSetIntStr', 'DictIntStrAny']:
+        """
+        :param items: dict or set of indexes which will be normalized
+        :param v_length: length of sequence indexes of which will be
+
+        >>> self._normalize_indexes({0, -2, -1}, 4)
+        {0, 2, 3}
+        """
+        if self._type is set:
+            return {v_length + i if i < 0 else i for i in items}
+        else:
+            return {v_length + i if i < 0 else i: v for i, v in items.items()}
+
+    def __repr_args__(self) -> 'ReprArgs':
+        return [(None, self._items)]

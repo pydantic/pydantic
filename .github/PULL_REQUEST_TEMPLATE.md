@@ -1,6 +1,6 @@
 <!-- Thank you for your contribution! -->
-<!-- See https://pydantic-docs.helpmanual.io/#contributing-to-pydantic for help on Contributing -->
-<!-- Don't worry about making lots of commits on a pull request, they'll be squashed on merge anyway -->
+<!-- Unless your change is trivial, please create an issue to discuss the change before creating a PR -->
+<!-- See https://pydantic-docs.helpmanual.io/contributing/ for help on Contributing -->
 
 ## Change Summary
 
@@ -15,7 +15,5 @@
 * [ ] Unit tests for the changes exist
 * [ ] Tests pass on CI and coverage remains at 100%
 * [ ] Documentation reflects the changes where applicable
-* [ ] `HISTORY.rst` has been updated
-  * if this is the first change since a release, please add a new section
-  * include the issue number or this pull request number `#<number>`
-  * include your github username `@<whomever>`
+* [ ] `changes/<pull request or issue id>-<github username>.md` file added describing change
+  (see [changes/README.md](https://github.com/samuelcolvin/pydantic/blob/master/changes/README.md) for details)

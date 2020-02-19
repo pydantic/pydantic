@@ -1,8 +1,14 @@
-import json
 import os
-from typing import Any, Dict, Optional, cast
+import warnings
+from pathlib import Path
+from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 
+from .fields import ModelField
 from .main import BaseModel, Extra
+from .typing import display_as_type
+from .utils import deep_update, sequence_like
+
+env_file_sentinel = str(object())
 
 
 class SettingsError(ValueError):
@@ -13,53 +19,97 @@ class BaseSettings(BaseModel):
     """
     Base class for settings, allowing values to be overridden by environment variables.
 
-    By default environment variables must be upper case and prefixed by APP_ by default. Eg. to override foobar,
-    `export APP_FOOBAR="whatever"`. To change this behaviour set Config options case_insensitive and env_prefix.
-
     This is useful in production for secrets you do not wish to save in code, it plays nicely with docker(-compose),
     Heroku and any 12 factor app design.
     """
 
-    def __init__(self, **values: Any) -> None:
-        super().__init__(**self._build_values(values))
+    def __init__(__pydantic_self__, _env_file: Union[Path, str, None] = env_file_sentinel, **values: Any) -> None:
+        # Uses something other than `self` the first arg to allow "self" as a settable attribute
+        super().__init__(**__pydantic_self__._build_values(values, _env_file=_env_file))
 
-    def _build_values(self, init_kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        return {**self._build_environ(), **init_kwargs}
+    def _build_values(self, init_kwargs: Dict[str, Any], _env_file: Union[Path, str, None] = None) -> Dict[str, Any]:
+        return deep_update(self._build_environ(_env_file), init_kwargs)
 
-    def _build_environ(self) -> Dict[str, Optional[str]]:
+    def _build_environ(self, _env_file: Union[Path, str, None] = None) -> Dict[str, Optional[str]]:
         """
         Build environment variables suitable for passing to the Model.
         """
         d: Dict[str, Optional[str]] = {}
 
-        if self.__config__.case_insensitive:
-            env_vars = {k.lower(): v for k, v in os.environ.items()}
+        if self.__config__.case_sensitive:
+            env_vars: Mapping[str, Optional[str]] = os.environ
         else:
-            env_vars = cast(Dict[str, str], os.environ)
+            env_vars = {k.lower(): v for k, v in os.environ.items()}
+
+        env_file = _env_file if _env_file != env_file_sentinel else self.__config__.env_file
+        if env_file is not None:
+            env_path = Path(env_file)
+            if env_path.is_file():
+                env_vars = {**read_env_file(env_path, case_sensitive=self.__config__.case_sensitive), **env_vars}
 
         for field in self.__fields__.values():
-            if field.has_alias:
-                env_name = field.alias
-            else:
-                env_name = self.__config__.env_prefix + field.name.upper()
+            env_val: Optional[str] = None
+            for env_name in field.field_info.extra['env_names']:
+                env_val = env_vars.get(env_name)
+                if env_val is not None:
+                    break
 
-            env_name_ = env_name.lower() if self.__config__.case_insensitive else env_name
-            env_val = env_vars.get(env_name_, None)
+            if env_val is None:
+                continue
 
-            if env_val:
-                if field.is_complex():
-                    try:
-                        env_val = json.loads(env_val)
-                    except ValueError as e:
-                        raise SettingsError(f'error parsing JSON for "{env_name}"') from e
-                d[field.alias] = env_val
+            if field.is_complex():
+                try:
+                    env_val = self.__config__.json_loads(env_val)  # type: ignore
+                except ValueError as e:
+                    raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+            d[field.alias] = env_val
         return d
 
     class Config:
-        env_prefix = 'APP_'
+        env_prefix = ''
+        env_file = None
         validate_all = True
         extra = Extra.forbid
         arbitrary_types_allowed = True
-        case_insensitive = False
+        case_sensitive = False
+
+        @classmethod
+        def prepare_field(cls, field: ModelField) -> None:
+            env_names: Union[List[str], AbstractSet[str]]
+            env = field.field_info.extra.get('env')
+            if env is None:
+                if field.has_alias:
+                    warnings.warn(
+                        'aliases are no longer used by BaseSettings to define which environment variables to read. '
+                        'Instead use the "env" field setting. '
+                        'See https://pydantic-docs.helpmanual.io/usage/settings/#environment-variable-names',
+                        FutureWarning,
+                    )
+                env_names = {cls.env_prefix + field.name}
+            elif isinstance(env, str):
+                env_names = {env}
+            elif isinstance(env, (set, frozenset)):
+                env_names = env
+            elif sequence_like(env):
+                env_names = list(env)
+            else:
+                raise TypeError(f'invalid field env: {env!r} ({display_as_type(env)}); should be string, list or set')
+
+            if not cls.case_sensitive:
+                env_names = type(env_names)(n.lower() for n in env_names)
+            field.field_info.extra['env_names'] = env_names
 
     __config__: Config  # type: ignore
+
+
+def read_env_file(file_path: Path, *, case_sensitive: bool = False) -> Dict[str, Optional[str]]:
+    try:
+        from dotenv import dotenv_values
+    except ImportError as e:
+        raise ImportError('python-dotenv is not installed, run `pip install pydantic[dotenv]`') from e
+
+    file_vars: Dict[str, Optional[str]] = dotenv_values(file_path)
+    if not case_sensitive:
+        return {k.lower(): v for k, v in file_vars.items()}
+    else:
+        return file_vars

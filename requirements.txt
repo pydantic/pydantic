@@ -1,7 +1,10 @@
--r benchmarks/requirements.txt
+# benchmark requirements are skipped here since they're rarely required
+# -r benchmarks/requirements.txt
 -r docs/requirements.txt
 -r tests/requirements.txt
 
-ujson==1.35
-email-validator==1.0.3
+devtools==0.5.1
+email-validator==1.0.5
 dataclasses==0.6; python_version < '3.7'
+typing-extensions==3.7.4.1
+python-dotenv==0.11.0

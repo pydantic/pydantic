@@ -1,14 +1,21 @@
 import datetime
 import json
+import sys
+from dataclasses import dataclass as vanilla_dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from pathlib import Path
+from typing import List
 from uuid import UUID
 
 import pytest
 
 from pydantic import BaseModel, create_model
+from pydantic.color import Color
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
+from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
 
 
 class MyEnum(Enum):
@@ -21,6 +28,12 @@ class MyEnum(Enum):
     [
         (UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
         (IPv4Address('192.168.0.1'), '"192.168.0.1"'),
+        (Color('#000'), '"black"'),
+        (Color((1, 12, 123)), '"#010c7b"'),
+        (SecretStr('abcd'), '"**********"'),
+        (SecretStr(''), '""'),
+        (SecretBytes(b'xyz'), '"**********"'),
+        (SecretBytes(b''), '""'),
         (IPv6Address('::1:0:1'), '"::1:0:1"'),
         (IPv4Interface('192.168.0.0/24'), '"192.168.0.0/24"'),
         (IPv6Interface('2001:db00::/120'), '"2001:db00::/120"'),
@@ -42,6 +55,23 @@ class MyEnum(Enum):
 )
 def test_encoding(input, output):
     assert output == json.dumps(input, default=pydantic_encoder)
+
+
+@pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
+def test_path_encoding(tmpdir):
+    class PathModel(BaseModel):
+        path: Path
+        file_path: FilePath
+        dir_path: DirectoryPath
+
+    tmpdir = Path(tmpdir)
+    file_path = tmpdir / 'bar'
+    file_path.touch()
+    dir_path = tmpdir / 'baz'
+    dir_path.mkdir()
+    model = PathModel(path=Path('/path/test/example/'), file_path=file_path, dir_path=dir_path)
+    expected = '{{"path": "/path/test/example", "file_path": "{}", "dir_path": "{}"}}'.format(file_path, dir_path)
+    assert json.dumps(model, default=pydantic_encoder) == expected
 
 
 def test_model_encoding():
@@ -110,3 +140,56 @@ def test_custom_encoder_arg():
     m = Model(x=123)
     assert m.json() == '{"x": 123.0}'
     assert m.json(encoder=lambda v: '__default__') == '{"x": "__default__"}'
+
+
+def test_encode_dataclass():
+    @vanilla_dataclass
+    class Foo:
+        bar: int
+        spam: str
+
+    f = Foo(bar=123, spam='apple pie')
+    assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
+
+
+def test_encode_pydantic_dataclass():
+    @pydantic_dataclass
+    class Foo:
+        bar: int
+        spam: str
+
+    f = Foo(bar=123, spam='apple pie')
+    assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
+
+
+def test_encode_custom_root():
+    class Model(BaseModel):
+        __root__: List[str]
+
+    assert Model(__root__=['a', 'b']).json() == '["a", "b"]'
+
+
+def test_custom_decode_encode():
+    load_calls, dump_calls = 0, 0
+
+    def custom_loads(s):
+        nonlocal load_calls
+        load_calls += 1
+        return json.loads(s.strip('$'))
+
+    def custom_dumps(s, default=None, **kwargs):
+        nonlocal dump_calls
+        dump_calls += 1
+        return json.dumps(s, default=default, indent=2)
+
+    class Model(BaseModel):
+        a: int
+        b: str
+
+        class Config:
+            json_loads = custom_loads
+            json_dumps = custom_dumps
+
+    m = Model.parse_raw('${"a": 1, "b": "foo"}$$')
+    assert m.dict() == {'a': 1, 'b': 'foo'}
+    assert m.json() == '{\n  "a": 1,\n  "b": "foo"\n}'
