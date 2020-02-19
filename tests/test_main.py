@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Any, ClassVar, List, Mapping, Type, Optional
+from typing import Any, ClassVar, List, Mapping, Optional, Type
 
 import pytest
 
@@ -975,7 +975,8 @@ def test_custom_init_subclass_params():
 
 def test_update_forward_refs_does_not_modify_module_dict():
     class MyModel(BaseModel):
-        field: Optional["MyModel"]
+        field: Optional['MyModel']
+
     MyModel.update_forward_refs()
 
-    assert "MyModel" not in sys.modules[MyModel.__module__].__dict__
+    assert 'MyModel' not in sys.modules[MyModel.__module__].__dict__
