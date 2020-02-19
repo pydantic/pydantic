@@ -1,0 +1,1 @@
+22: error: Argument 1 to "append" of "list" has incompatible type "str"; expected "int"  [arg-type]

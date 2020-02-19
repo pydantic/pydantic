@@ -1,0 +1,6 @@
+coverage:
+  precision: 2
+  range: [95, 100]
+
+comment:
+  layout: 'header, diff, flags, files, footer'

@@ -1,0 +1,16 @@
+#bsa-cpc {
+  border-radius: .1rem;;
+  padding: 0.525rem 0.6rem;
+  min-height: 80px;
+}
+@media screen and (max-width: 799px) {
+  #bsa-cpc {
+    display: none;
+  }
+}
+#bsa-cpc.loaded {
+  background: hsla(0, 0%, 92.5%, 0.5);
+}
+#_default_ a._default_, #_default_ .default-text {
+  width: 100% !important;
+}

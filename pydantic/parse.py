@@ -1,14 +1,10 @@
+import json
 import pickle
 from enum import Enum
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Callable, Union
 
 from .types import StrBytes
-
-try:
-    import ujson as json
-except ImportError:
-    import json  # type: ignore
 
 
 class Protocol(str, Enum):
@@ -17,7 +13,13 @@ class Protocol(str, Enum):
 
 
 def load_str_bytes(
-    b: StrBytes, *, content_type: str = None, encoding: str = 'utf8', proto: Protocol = None, allow_pickle: bool = False
+    b: StrBytes,
+    *,
+    content_type: str = None,
+    encoding: str = 'utf8',
+    proto: Protocol = None,
+    allow_pickle: bool = False,
+    json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
     if proto is None and content_type:
         if content_type.endswith(('json', 'javascript')):
@@ -32,7 +34,7 @@ def load_str_bytes(
     if proto == Protocol.json:
         if isinstance(b, bytes):
             b = b.decode(encoding)
-        return json.loads(b)
+        return json_loads(b)
     elif proto == Protocol.pickle:
         if not allow_pickle:
             raise RuntimeError('Trying to decode with pickle with allow_pickle=False')
@@ -49,6 +51,7 @@ def load_file(
     encoding: str = 'utf8',
     proto: Protocol = None,
     allow_pickle: bool = False,
+    json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
     path = Path(path)
     b = path.read_bytes()
@@ -58,4 +61,6 @@ def load_file(
         elif path.suffix == '.pkl':
             proto = Protocol.pickle
 
-    return load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
+    return load_str_bytes(
+        b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle, json_loads=json_loads
+    )
