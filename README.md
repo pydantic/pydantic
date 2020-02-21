@@ -27,13 +27,13 @@ see the [Install](https://pydantic-docs.helpmanual.io/install/) section in the d
 
 ```py
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
     name = 'John Doe'
-    signup_ts: datetime = None
+    signup_ts: Optional[datetime]
     friends: List[int] = []
 
 external_data = {'id': '123', 'signup_ts': '2017-06-01 12:22', 'friends': [1, '2', b'3']}
