@@ -70,11 +70,13 @@ class Color(Representation):
             self._rgba = parse_tuple(value)
         elif isinstance(value, str):
             self._rgba = parse_str(value)
+        elif isinstance(value, Color):
+            self._rgba = value._rgba
         else:
-            raise ColorError(reason='value must be a tuple, list or string')
+            raise ColorError(reason='value must be a tuple, list, string or pydantic.color.Color')
 
         # if we've got here value must be a valid color
-        self._original = value
+        self._original = value if not isinstance(value, Color) else value._original
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
