@@ -1,0 +1,1 @@
+Add pydantic.color.Color objects as available input for Color fields
