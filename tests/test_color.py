@@ -102,7 +102,7 @@ def test_model_validation():
         color: Color
 
     assert Model(color='red').color.as_hex() == '#f00'
-    assert Model(color=Color('red')).color.as_hex() == 'red'
+    assert Model(color=Color('red')).color.as_hex() == '#f00'
     with pytest.raises(ValidationError) as exc_info:
         Model(color='snot')
     assert exc_info.value.errors() == [
