@@ -74,7 +74,7 @@ class Color(Representation):
             self._rgba = value._rgba
             value = value._original
         else:
-            raise ColorError(reason='value must be a tuple, list, or string')
+            raise ColorError(reason='value must be a tuple, list or string')
 
         # if we've got here value must be a valid color
         self._original = value
