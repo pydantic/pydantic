@@ -25,7 +25,16 @@ from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
-from .typing import AnyType, Callable, ForwardRef, NoneType, display_as_type, is_literal_type
+from .typing import (
+    AnyType,
+    Callable,
+    ForwardRef,
+    NoneType,
+    display_as_type,
+    is_literal_type,
+    is_new_type,
+    new_type_supertype,
+)
 from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
@@ -349,6 +358,8 @@ class ModelField(Representation):
                 self.type_ = Union[self.type_.__constraints__]
             else:
                 self.type_ = Any
+        elif is_new_type(self.type_):
+            self.type_ = new_type_supertype(self.type_)
 
         if self.type_ is Any:
             if self.required is Undefined:
