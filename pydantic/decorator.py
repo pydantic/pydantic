@@ -1,195 +1,107 @@
-from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast, get_type_hints
+from functools import wraps
+from inspect import Parameter, signature
+from itertools import filterfalse, groupby, tee
+from operator import itemgetter
+from typing import Any, Callable, Container, Dict, Iterable, Protocol, Tuple, TypeVar
 
-from . import validator
-from .errors import ConfigError
-from .main import BaseModel, Extra, create_model
+from .main import create_model
 from .utils import to_camel
 
 __all__ = ('validate_arguments',)
 
-if TYPE_CHECKING:
-    from .typing import AnyCallable
+T = TypeVar('T')
 
-    Callable = TypeVar('Callable', bound=AnyCallable)
-
-
-def validate_arguments(function: 'Callable') -> 'Callable':
-    """
-    Decorator to validate the arguments passed to a function.
-    """
-    vd = ValidatedFunction(function)
-    vd = update_wrapper(vd, function)  # type: ignore
-    return cast('Callable', vd)
+# based on itertools recipe `partition` from https://docs.python.org/3.8/library/itertools.html
+def partition_dict(pred: Callable[..., bool], iterable: Dict[str, T]) -> Tuple[Dict[str, T], Dict[str, T]]:
+    t1, t2 = tee(iterable.items())
+    return dict(filterfalse(pred, t1)), dict(filter(pred, t2))
 
 
-ALT_V_ARGS = 'v__args'
-ALT_V_KWARGS = 'v__kwargs'
-V_POSITIONAL_ONLY_NAME = 'v__positional_only'
+def coalesce(param: Parameter, default: Any) -> Any:
+    return param if param != Parameter.empty else default
 
 
-class ValidatedFunction:
-    def __init__(self, function: 'Callable'):
-        from inspect import signature, Parameter
+def make_field(arg: Parameter) -> Dict[str, Any]:
+    return {'name': arg.name, 'kind': arg.kind, 'field': (coalesce(arg.annotation, Any), coalesce(arg.default, ...))}
 
-        parameters: Mapping[str, Parameter] = signature(function).parameters
 
-        if parameters.keys() & {ALT_V_ARGS, ALT_V_KWARGS, V_POSITIONAL_ONLY_NAME}:
-            raise ConfigError(
-                f'"{ALT_V_ARGS}", "{ALT_V_KWARGS}" and "{V_POSITIONAL_ONLY_NAME}" are not permitted as argument '
-                f'names when using the "{validate_arguments.__name__}" decorator'
-            )
+def contained(mapping: Container[T]) -> Callable[[Tuple[str, T]], bool]:
+    def inner(entry: Tuple[str, T]) -> bool:
+        return entry[0] in mapping
 
-        self.raw_function = function
-        self.arg_mapping: Dict[int, str] = {}
-        self.positional_only_args = set()
-        self.v_args_name = 'args'
-        self.v_kwargs_name = 'kwargs'
+    return inner
 
-        type_hints = get_type_hints(function)
-        takes_args = False
-        takes_kwargs = False
-        fields: Dict[str, Tuple[Any, Any]] = {}
-        for i, (name, p) in enumerate(parameters.items()):
-            if p.annotation == p.empty:
-                annotation = Any
-            else:
-                annotation = type_hints[name]
 
-            default = ... if p.default == p.empty else p.default
-            if p.kind == Parameter.POSITIONAL_ONLY:
-                self.arg_mapping[i] = name
-                fields[name] = annotation, default
-                fields[V_POSITIONAL_ONLY_NAME] = List[str], None
-                self.positional_only_args.add(name)
-            elif p.kind == Parameter.POSITIONAL_OR_KEYWORD:
-                self.arg_mapping[i] = name
-                fields[name] = annotation, default
-            elif p.kind == Parameter.KEYWORD_ONLY:
-                fields[name] = annotation, default
-            elif p.kind == Parameter.VAR_POSITIONAL:
-                self.v_args_name = name
-                fields[name] = Tuple[annotation, ...], None
-                takes_args = True
-            else:
-                assert p.kind == Parameter.VAR_KEYWORD, p.kind
-                self.v_kwargs_name = name
-                fields[name] = Dict[str, annotation], None  # type: ignore
-                takes_kwargs = True
+def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
+    sig = signature(func).parameters
+    fields = [make_field(p) for p in sig.values()]
 
-        # these checks avoid a clash between "args" and a field with that name
-        if not takes_args and self.v_args_name in fields:
-            self.v_args_name = ALT_V_ARGS
+    # Python syntax should already enforce fields to be ordered by kind
+    grouped = groupby(fields, key=itemgetter('kind'))
+    params = {kind: {field['name']: field['field'] for field in val} for kind, val in grouped}
 
-        # same with "kwargs"
-        if not takes_kwargs and self.v_kwargs_name in fields:
-            self.v_kwargs_name = ALT_V_KWARGS
+    # Arguments descriptions by kind
+    # note that VAR_POSITIONAL and VAR_KEYWORD are ignored here
+    # otherwise, the model will expect them on function call.
+    positional_only = params.get(Parameter.POSITIONAL_ONLY, {})
+    positional_or_keyword = params.get(Parameter.POSITIONAL_OR_KEYWORD, {})
+    var_positional = params.get(Parameter.VAR_POSITIONAL, {})
+    keyword_only = params.get(Parameter.KEYWORD_ONLY, {})
+    var_keyword = params.get(Parameter.VAR_KEYWORD, {})
 
-        if not takes_args:
-            # we add the field so validation below can raise the correct exception
-            fields[self.v_args_name] = List[Any], None
+    var_positional = {name: (Tuple[annotation, ...], ...) for name, (annotation, _) in var_positional.items()}
+    var_keyword = {
+        name: (Dict[str, annotation], ...)  # type: ignore
+        for name, (annotation, _) in var_keyword.items()
+    }
 
-        if not takes_kwargs:
-            # same with kwargs
-            fields[self.v_kwargs_name] = Dict[Any, Any], None
+    assert len(var_positional) <= 1
+    assert len(var_keyword) <= 1
 
-        self.create_model(fields, takes_args, takes_kwargs)
+    vp_name = next(iter(var_positional.keys()), None)
+    vk_name = next(iter(var_keyword.keys()), None)
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        values = self.build_values(args, kwargs)
-        m = self.model(**values)
-        return self.execute(m)
+    model = create_model(
+        to_camel(func.__name__),
+        **positional_only,
+        **positional_or_keyword,
+        **var_positional,
+        **keyword_only,
+        **var_keyword,
+    )
+    sig_pos = tuple(positional_only) + tuple(positional_or_keyword)
+    sig_kw = set(positional_or_keyword) | set(keyword_only)
 
-    def build_values(self, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        values: Dict[str, Any] = {}
-        if args:
-            arg_iter = enumerate(args)
-            while True:
-                try:
-                    i, a = next(arg_iter)
-                except StopIteration:
-                    break
-                arg_name = self.arg_mapping.get(i)
-                if arg_name is not None:
-                    values[arg_name] = a
-                else:
-                    values[self.v_args_name] = [a] + [a for _, a in arg_iter]
-                    break
+    @wraps(func)
+    def apply(*args: Any, **kwargs: Any) -> T:
 
-        var_kwargs = {}
-        wrong_positional_args = []
-        for k, v in kwargs.items():
-            if k in self.model.__fields__:
-                if k in self.positional_only_args:
-                    wrong_positional_args.append(k)
-                values[k] = v
-            else:
-                var_kwargs[k] = v
+        # Consume used positional arguments
+        iargs = iter(args)
+        given_pos = dict(zip(sig_pos, iargs))
+        rest_pos = {vp_name: tuple(iargs)} if vp_name else {}
 
-        if var_kwargs:
-            values[self.v_kwargs_name] = var_kwargs
-        if wrong_positional_args:
-            values[V_POSITIONAL_ONLY_NAME] = wrong_positional_args
-        return values
+        ikwargs, given_kw = partition_dict(contained(sig_kw), kwargs)
+        rest_kw = {vk_name: ikwargs} if vk_name else {}
 
-    def execute(self, m: BaseModel) -> Any:
-        d = {k: v for k, v in m._iter() if k in m.__fields_set__}
-        kwargs = d.pop(self.v_kwargs_name, None)
-        if kwargs:
-            d.update(kwargs)
+        # use dict(model) instead of model.dict() so values stay cast as intended
+        instance = dict(model(**given_pos, **rest_pos, **given_kw, **rest_kw))
 
-        if self.v_args_name in d:
-            args_: List[Any] = []
-            in_kwargs = False
-            kwargs = {}
-            for name, value in d.items():
-                if in_kwargs:
-                    kwargs[name] = value
-                elif name == self.v_args_name:
-                    args_ += value
-                    in_kwargs = True
-                else:
-                    args_.append(value)
-            return self.raw_function(*args_, **kwargs)
-        elif self.positional_only_args:
-            args_ = []
-            kwargs = {}
-            for name, value in d.items():
-                if name in self.positional_only_args:
-                    args_.append(value)
-                else:
-                    kwargs[name] = value
-            return self.raw_function(*args_, **kwargs)
-        else:
-            return self.raw_function(**d)
+        as_kw, as_pos = partition_dict(contained(given_pos), instance)
 
-    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool) -> None:
-        pos_args = len(self.arg_mapping)
+        as_rest_pos = tuple(as_kw[vp_name]) if vp_name else tuple(iargs)
+        as_rest_kw = as_kw[vk_name] if vk_name else ikwargs
 
-        class DecoratorBaseModel(BaseModel):
-            @validator(self.v_args_name, check_fields=False, allow_reuse=True)
-            def check_args(cls, v: List[Any]) -> List[Any]:
-                if takes_args:
-                    return v
+        as_kw = {k: v for k, v in as_kw.items() if k not in {vp_name, vk_name}}
 
-                raise TypeError(f'{pos_args} positional arguments expected but {pos_args + len(v)} given')
+        # Preserve original keyword ordering - not sure if this is necessary
+        kw_order = {k: idx for idx, (k, v) in enumerate(kwargs.items())}
+        sorted_all_kw = dict(
+            sorted({**as_kw, **as_rest_kw}.items(), key=lambda val: kw_order.get(val[0], len(given_kw)))
+        )
 
-            @validator(self.v_kwargs_name, check_fields=False, allow_reuse=True)
-            def check_kwargs(cls, v: Dict[str, Any]) -> Dict[str, Any]:
-                if takes_kwargs:
-                    return v
+        return func(*as_pos.values(), *as_rest_pos, **sorted_all_kw)
 
-                plural = '' if len(v) == 1 else 's'
-                keys = ', '.join(map(repr, v.keys()))
-                raise TypeError(f'unexpected keyword argument{plural}: {keys}')
+        # # Without preserving original keyword ordering
+        # return func(*as_pos.values(), *as_rest_pos, **as_kw, **as_rest_kw)
 
-            @validator(V_POSITIONAL_ONLY_NAME, check_fields=False, allow_reuse=True)
-            def check_positional_only(cls, v: List[str]) -> None:
-                plural = '' if len(v) == 1 else 's'
-                keys = ', '.join(map(repr, v))
-                raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
-
-            class Config:
-                extra = Extra.forbid
-
-        self.model = create_model(to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
+    return apply
