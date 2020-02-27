@@ -149,7 +149,7 @@ def generate_model_signature(
 
     present_params = signature(init).parameters.values()
     merged_params: Dict[str, Parameter] = {}
-    var_kw = None
+    var_kw = Parameter('data', Parameter.VAR_KEYWORD, annotation=Any)
     use_var_kw = False
 
     for param in islice(present_params, 1, None):  # skip self arg
@@ -177,7 +177,7 @@ def generate_model_signature(
     if config.extra is config.extra.allow:
         use_var_kw = True
 
-    if use_var_kw and var_kw is not None:
+    if use_var_kw:
         merged_params[var_kw.name] = var_kw
 
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
