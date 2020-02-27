@@ -33,6 +33,9 @@ def contained(mapping: Container[T]) -> Callable[[Tuple[str, T]], bool]:
 
 
 def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
+    """
+    Decorator to validate the arguments passed to a function.
+    """
     sig = signature(func).parameters
     fields = [make_field(p) for p in sig.values()]
 
