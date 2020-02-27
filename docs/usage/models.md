@@ -496,24 +496,29 @@ _(This script is complete, it should run "as is")_
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
 [here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.
 
-
 ## Model signature
 
-Any *pydantic* model have its own signature generated based on its fields:
+All *pydantic* models will have their signature generated based on their fields:
 
 ```py
 {!.tmp_examples/models_signature.py!}
 ```
 
-Accurate signature is useful for introspection purposes and libraries like `FastAPI` or `hypothesis`.
+An accurate signature is useful for introspection purposes and libraries like `FastAPI` or `hypothesis`.
 
-It also respects your custom defined `__init__` and its arguments:
+The generated signature will also respect custom `__init__` functions:
 
 ```py
 {!.tmp_examples/models_signature_custom_init.py!}
 ```
 
-To be included in signature, field alias or name must be a valid python identifier. *pydantic* prefer aliases over names, but may use field name if alias is not suitable. 
-If any field's alias and name are both invalid identifiers, `**data` argument will be added.
+To be included in the signature, a field's alias or name must be a valid python identifier. 
+*pydantic* prefers aliases over names, but may use field names if the alias is not a valid python identifier. 
 
-Also, `**data` argument is always present in signature if `Config.extra` is `Extra.allow`
+If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
+In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
+
+!!! note
+    Types in the model signature are the same as declared in model annotations, 
+    not necessarily all the types that can actually be provided to that field.
+    This may be fixed one day once [#1055](https://github.com/samuelcolvin/pydantic/issues/1055) is solved.
