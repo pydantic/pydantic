@@ -657,7 +657,6 @@ class BaseModel(metaclass=ModelMetaclass):
                 continue
             if by_alias and k in self.__fields__:
                 k = self.__fields__[k].alias
-                k = self.__fields__[k].alias if k in self.__fields__ else k
             if to_dict or value_include or value_exclude:
                 v = self._get_value(
                     v,
