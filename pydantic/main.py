@@ -32,9 +32,18 @@ from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import GetterDict, Representation, ValueItems, lenient_issubclass, sequence_like, validate_field_name
+from .utils import (
+    GetterDict,
+    Representation,
+    ValueItems,
+    generate_model_signature,
+    lenient_issubclass,
+    sequence_like,
+    validate_field_name,
+)
 
 if TYPE_CHECKING:
+    from inspect import Signature
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
@@ -170,6 +179,8 @@ class ModelMetaclass(ABCMeta):
         fields: Dict[str, ModelField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
+        fields_defaults: Dict[str, Any] = {}
+
         pre_root_validators, post_root_validators = [], []
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
@@ -184,6 +195,9 @@ class ModelMetaclass(ABCMeta):
         vg = ValidatorGroup(validators)
 
         for f in fields.values():
+            if not f.required:
+                fields_defaults[f.name] = f.default
+
             f.set_config(config)
             extra_validators = vg.get_validators(f.name)
             if extra_validators:
@@ -210,13 +224,15 @@ class ModelMetaclass(ABCMeta):
                         and not lenient_issubclass(getattr(ann_type, '__origin__', None), Type)
                     ):
                         continue
-                    fields[ann_name] = ModelField.infer(
+                    fields[ann_name] = inferred = ModelField.infer(
                         name=ann_name,
                         value=value,
                         annotation=ann_type,
                         class_validators=vg.get_validators(ann_name),
                         config=config,
                     )
+                    if not inferred.required:
+                        fields_defaults[ann_name] = inferred.default
 
             for var_name, value in namespace.items():
                 if (
@@ -239,6 +255,8 @@ class ModelMetaclass(ABCMeta):
                             f'if you wish to change the type of this field, please use a type annotation'
                         )
                     fields[var_name] = inferred
+                    if not inferred.required:
+                        fields_defaults[var_name] = inferred.default
 
         _custom_root_type = ROOT_KEY in fields
         if _custom_root_type:
@@ -252,7 +270,7 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
-            '__field_defaults__': {n: f.default for n, f in fields.items() if not f.required},
+            '__field_defaults__': fields_defaults,
             '__validators__': vg.validators,
             '__pre_root_validators__': pre_root_validators + pre_rv_new,
             '__post_root_validators__': post_root_validators + post_rv_new,
@@ -261,7 +279,10 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
-        return super().__new__(mcs, name, bases, new_namespace, **kwargs)
+
+        cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
+        cls.__signature__ = generate_model_signature(cls.__init__, fields, config)
+        return cls
 
 
 class BaseModel(metaclass=ModelMetaclass):
@@ -277,6 +298,7 @@ class BaseModel(metaclass=ModelMetaclass):
         __json_encoder__: Callable[[Any], Any] = lambda x: x
         __schema_cache__: 'DictAny' = {}
         __custom_root_type__: bool = False
+        __signature__: 'Signature'
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
@@ -288,6 +310,11 @@ class BaseModel(metaclass=ModelMetaclass):
     __repr__ = Representation.__repr__
 
     def __init__(__pydantic_self__, **data: Any) -> None:
+        """
+        Create a new model by parsing and validating input data from keyword arguments.
+
+        Raises ValidationError if the input data cannot be parsed to form a valid model.
+        """
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
         if TYPE_CHECKING:
             __pydantic_self__.__dict__: Dict[str, Any] = {}
