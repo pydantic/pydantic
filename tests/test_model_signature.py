@@ -50,6 +50,21 @@ def test_custom_init_signature():
     assert _equals(str(sig), "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **data) -> None")
 
 
+def test_custom_init_signature_with_no_var_kw():
+    class Model(BaseModel):
+        a: float
+        b: int = 2
+        c: int
+
+        def __init__(self, a: float, b: int):
+            super().__init__(a=a, b=b, c=1)
+
+        class Config:
+            extra = Extra.allow
+
+    assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
+
+
 def test_invalid_identifiers_signature():
     model = create_model(
         'Model', **{'123 invalid identifier!': Field(123, alias='valid_identifier'), '!': Field(0, alias='yeah')}
@@ -57,14 +72,3 @@ def test_invalid_identifiers_signature():
     assert _equals(str(signature(model)), '(*, valid_identifier: int = 123, yeah: int = 0) -> None')
     model = create_model('Model', **{'123 invalid identifier!': 123, '!': Field(0, alias='yeah')})
     assert _equals(str(signature(model)), '(*, yeah: int = 0, **data: Any) -> None')
-
-
-def test_kwargs():
-    class Model(BaseModel):
-        a: float
-        b: int = 2
-
-        class Config:
-            extra = 'allow'
-
-    assert _equals(str(signature(Model)), '(*, a: float, b: int = 2, **data: Any) -> None')
