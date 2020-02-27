@@ -44,8 +44,6 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
     params = {kind: {field['name']: field['field'] for field in val} for kind, val in grouped}
 
     # Arguments descriptions by kind
-    # note that VAR_POSITIONAL and VAR_KEYWORD are ignored here
-    # otherwise, the model will expect them on function call.
     positional_only = params.get(Parameter.POSITIONAL_ONLY, {})
     positional_or_keyword = params.get(Parameter.POSITIONAL_OR_KEYWORD, {})
     var_positional = params.get(Parameter.VAR_POSITIONAL, {})
