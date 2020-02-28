@@ -8,13 +8,13 @@ def foo(a: int, *, c: str = 'x') -> str:
 
 # ok
 x: str = foo(1, c='hello')
-# fails
+# also ok - because pydantic converts Any to the annotated type
 foo('x')
 foo(1, c=1)
 foo(1, 2)
 foo(1, d=2)
 # mypy assumes foo is just a function
-callable(foo.raw_function)
+callable(foo)
 
 
 @validate_arguments
