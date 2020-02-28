@@ -2,7 +2,7 @@ from functools import wraps
 from inspect import Parameter, signature
 from itertools import groupby
 from operator import itemgetter
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar, get_type_hints
 
 from . import validator
 from .main import BaseConfig, BaseModel, Extra, create_model
@@ -11,7 +11,7 @@ from .utils import to_camel
 __all__ = ('validate_arguments',)
 
 T = TypeVar('T')
-
+ArgMap = Dict[str, Any]
 
 class Config(BaseConfig):
     extra = Extra.forbid
@@ -75,20 +75,20 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
     sig_kw = set(positional_or_keyword) | set(keyword_only)
 
     class SignatureCheck(BaseModel):
-        args: Dict[str, Any]
-        kwargs: Dict[str, Any]
-        positional_only: Optional[Dict[str, Any]] = None
-        arguments: Optional[Dict[str, Any]] = None
+        args: ArgMap
+        kwargs: ArgMap
+        positional_only: Optional[ArgMap] = None
+        arguments: Optional[ArgMap] = None
 
         @validator('args', pre=True, allow_reuse=True)
-        def validate_positional(cls, args: Tuple[Any, ...]) -> Dict[str, Any]:
+        def validate_positional(cls, args: Tuple[Any, ...]) -> ArgMap:
             try:
                 return sig.bind_partial(*args).arguments
             except TypeError:
                 raise TypeError(f'{len(sig_pos)} positional arguments expected but {len(args)} given')
 
         @validator('kwargs', pre=True, allow_reuse=True)
-        def validate_keyword(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        def validate_keyword(cls, kwargs: ArgMap) -> ArgMap:
             try:
                 return sig.bind_partial(**kwargs).arguments
             except TypeError:
@@ -100,7 +100,7 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
                 return kwargs
 
         @validator('positional_only', pre=True, always=True, allow_reuse=True)
-        def validate_positional_only(cls, v: Any, values: Dict[str, Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
+        def validate_positional_only(cls, v: Any, values: Dict[str, ArgMap], **kwargs: Any) -> ArgMap:
             kwargs = values.get('kwargs', {})
             try:
                 return sig.bind_partial(**kwargs).arguments
@@ -113,7 +113,7 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
                 return kwargs
 
         @validator('arguments', pre=True, always=True, allow_reuse=True)
-        def validate_multi(cls, v: Any, values: Dict[str, Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
+        def validate_multi(cls, v: Any, values: Dict[str, ArgMap], **kwargs: Any) -> ArgMap:
             args = values.get('args', {})
             kwargs = values.get('kwargs', {})
             try:
