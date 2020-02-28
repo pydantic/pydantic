@@ -401,6 +401,9 @@ class ModelField(Representation):
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
+            # allow None for virtual superclasses of NoneType, e.g. Hashable
+            if isinstance(self.type_, type) and isinstance(None, self.type_):
+                self.allow_none = True
             return
         if origin is Callable:
             return
