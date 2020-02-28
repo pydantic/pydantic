@@ -52,6 +52,9 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
     assert len(var_positional) <= 1
     assert len(var_keyword) <= 1
 
+    vp_name = next(iter(var_positional.keys()), None)
+    vk_name = next(iter(var_keyword.keys()), None)
+
     model = create_model(
         to_camel(func.__name__),
         __config__=Config,
@@ -108,9 +111,14 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
         # use dict(model) instead of model.dict() so values stay cast as intended
         instance = dict(model(**sigcheck.args, **sigcheck.kwargs))
 
-        upd_arg = {k: instance.get(k, v) for k, v in sigcheck.args.items()}
-        upd_kw = {k: instance.get(k, v) for k, v in sigcheck.kwargs.items()}
+        upd_arg = {k: instance.get(k, v) for k, v in sigcheck.args.items() if k != vp_name}
+        upd_kw = {k: instance.get(k, v) for k, v in sigcheck.kwargs.items() if k != vk_name}
 
-        return func(*upd_arg.values(), **upd_kw)
+        return func(
+            *upd_arg.values(),
+            *sigcheck.args.get(vp_name, ()),  # type: ignore
+            **upd_kw,
+            **sigcheck.kwargs.get(vk_name, {})  # type: ignore
+        )
 
     return apply
