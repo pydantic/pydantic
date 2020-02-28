@@ -74,33 +74,35 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
         positional_only: Dict[str, Any]
 
         @validator('args', pre=True, allow_reuse=True)
-        def validate_positional(cls, args: Any) -> Dict[str, Any]:
+        def validate_positional(cls, args: Tuple[Any, ...]) -> Dict[str, Any]:
             try:
                 return sig.bind_partial(*args).arguments
             except TypeError:
                 raise TypeError(f'{len(sig_pos)} positional arguments expected but {len(args)} given')
 
         @validator('positional_only', pre=True, allow_reuse=True)
-        def validate_positional_only(cls, kwargs: Any) -> Any:
+        def validate_positional_only(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
             try:
                 return sig.bind_partial(**kwargs).arguments
             except TypeError as e:
                 pos_only = set(kwargs) & set(positional_only)
                 if pos_only:
                     plural = '' if len(pos_only) == 1 else 's'
-                    keys = ', '.join(map(repr, pos_only))
+                    # TODO: use definition order
+                    keys = ', '.join(sorted(map(repr, pos_only)))
                     raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
                 return kwargs
 
         @validator('kwargs', pre=True, allow_reuse=True)
-        def validate_keyword(cls, kwargs: Any) -> Any:
+        def validate_keyword(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
             try:
                 return sig.bind_partial(**kwargs).arguments
             except TypeError as e:
                 unexpected = set(kwargs) - sig_kw - set(positional_only)
                 if unexpected:
                     plural = '' if len(unexpected) == 1 else 's'
-                    keys = ', '.join(map(repr, unexpected))
+                    # TODO: use definition order
+                    keys = ', '.join(sorted(map(repr, unexpected)))
                     raise TypeError(f'unexpected keyword argument{plural}: {keys}')
                 return kwargs
 
