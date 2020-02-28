@@ -120,7 +120,7 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
             *upd_arg.values(),
             *sigcheck.args.get(vp_name, ()),  # type: ignore
             **upd_kw,
-            **sigcheck.kwargs.get(vk_name, {})  # type: ignore
+            **sigcheck.kwargs.get(vk_name, {}),  # type: ignore
         )
 
     return apply

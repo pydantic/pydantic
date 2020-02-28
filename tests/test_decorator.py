@@ -7,6 +7,7 @@ from typing import List
 import pytest
 
 from pydantic import ValidationError, validate_arguments
+
 # not available anymore
 # from pydantic.decorator import ValidatedFunction
 # unused
