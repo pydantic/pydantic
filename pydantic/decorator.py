@@ -2,7 +2,7 @@ from functools import wraps
 from inspect import Parameter, signature
 from itertools import groupby
 from operator import itemgetter
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, Tuple, TypeVar
 
 from . import validator
 from .main import BaseConfig, BaseModel, Extra, create_model
@@ -84,7 +84,7 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
         def validate_positional_only(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
             try:
                 return sig.bind_partial(**kwargs).arguments
-            except TypeError as e:
+            except TypeError:
                 pos_only = set(kwargs) & set(positional_only)
                 if pos_only:
                     plural = '' if len(pos_only) == 1 else 's'
@@ -97,7 +97,7 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
         def validate_keyword(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
             try:
                 return sig.bind_partial(**kwargs).arguments
-            except TypeError as e:
+            except TypeError:
                 unexpected = set(kwargs) - sig_kw - set(positional_only)
                 if unexpected:
                     plural = '' if len(unexpected) == 1 else 's'
