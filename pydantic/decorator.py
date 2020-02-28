@@ -2,7 +2,7 @@ from functools import wraps
 from inspect import Parameter, signature
 from itertools import groupby
 from operator import itemgetter
-from typing import Any, Callable, Dict, Tuple, TypeVar
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
 
 from . import validator
 from .main import BaseConfig, BaseModel, Extra, create_model
@@ -71,7 +71,8 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
     class SignatureCheck(BaseModel):
         args: Dict[str, Any]
         kwargs: Dict[str, Any]
-        positional_only: Dict[str, Any]
+        positional_only: Optional[Dict[str, Any]] = None
+        arguments: Optional[Dict[str, Any]] = None
 
         @validator('args', pre=True, allow_reuse=True)
         def validate_positional(cls, args: Tuple[Any, ...]) -> Dict[str, Any]:
@@ -79,19 +80,6 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
                 return sig.bind_partial(*args).arguments
             except TypeError:
                 raise TypeError(f'{len(sig_pos)} positional arguments expected but {len(args)} given')
-
-        @validator('positional_only', pre=True, allow_reuse=True)
-        def validate_positional_only(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-            try:
-                return sig.bind_partial(**kwargs).arguments
-            except TypeError:
-                pos_only = set(kwargs) & set(positional_only)
-                if pos_only:
-                    plural = '' if len(pos_only) == 1 else 's'
-                    # TODO: use definition order
-                    keys = ', '.join(sorted(map(repr, pos_only)))
-                    raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
-                return kwargs
 
         @validator('kwargs', pre=True, allow_reuse=True)
         def validate_keyword(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
@@ -106,10 +94,39 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
                     raise TypeError(f'unexpected keyword argument{plural}: {keys}')
                 return kwargs
 
+        @validator('positional_only', pre=True, always=True, allow_reuse=True)
+        def validate_positional_only(cls, v: Any, values: Dict[str, Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
+            kwargs = values.get('kwargs', {})
+            try:
+                return sig.bind_partial(**kwargs).arguments
+            except TypeError:
+                pos_only = set(kwargs) & set(positional_only)
+                if pos_only:
+                    plural = '' if len(pos_only) == 1 else 's'
+                    # TODO: use definition order
+                    keys = ', '.join(sorted(map(repr, pos_only)))
+                    raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
+                return kwargs
+
+        @validator('arguments', pre=True, always=True, allow_reuse=True)
+        def validate_multi(cls, v: Any, values: Dict[str, Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
+            args = values.get('args', {})
+            kwargs = values.get('kwargs', {})
+            try:
+                return sig.bind(*args.values(), **kwargs).arguments
+            except TypeError:
+                multi = set(args) & set(kwargs)
+                if multi:
+                    plural = '' if len(multi) == 1 else 's'
+                    # TODO: use definition order
+                    keys = ', '.join(sorted(map(repr, multi)))
+                    raise TypeError(f'multiple values for argument{plural}: {keys}')
+                return {**args, **kwargs}
+
     @wraps(func)
     def apply(*args: Any, **kwargs: Any) -> T:
 
-        sigcheck = SignatureCheck(args=args, kwargs=kwargs, positional_only=kwargs)
+        sigcheck = SignatureCheck(args=args, kwargs=kwargs)
         # use dict(model) instead of model.dict() so values stay cast as intended
         instance = dict(model(**sigcheck.args, **sigcheck.kwargs))
 
