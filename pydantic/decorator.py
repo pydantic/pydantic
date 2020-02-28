@@ -62,17 +62,31 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
         **var_keyword,
     )
 
+    sig_pos = tuple(positional_only) + tuple(positional_or_keyword)
+    sig_kw = set(positional_or_keyword) | set(keyword_only)
+
     class SignatureCheck(BaseModel):
         args: Dict[str, Any]
         kwargs: Dict[str, Any]
 
         @validator('args', pre=True, allow_reuse=True)
         def validate_positional(cls, args: Any) -> Dict[str, Any]:
-            return sig.bind_partial(*args).arguments
+            try:
+                return sig.bind_partial(*args).arguments
+            except TypeError:
+                raise TypeError(f'{len(sig_pos)} positional arguments expected but {len(args)} given')
 
         @validator('kwargs', pre=True, allow_reuse=True)
         def validate_keyword(cls, kwargs: Any) -> Any:
-            return sig.bind_partial(**kwargs).arguments
+            try:
+                return sig.bind_partial(**kwargs).arguments
+            except TypeError as e:
+                unexpected = set(kwargs) - sig_kw
+                if unexpected:
+                    plural = '' if len(unexpected) == 1 else 's'
+                    keys = ', '.join(map(repr, unexpected))
+                    raise TypeError(f'unexpected keyword argument{plural}: {keys}')
+                raise e
 
     @wraps(func)
     def apply(*args: Any, **kwargs: Any) -> T:
