@@ -2,7 +2,7 @@ from functools import wraps
 from inspect import Parameter, signature
 from itertools import groupby
 from operator import itemgetter
-from typing import Any, Callable, Dict, Tuple, TypeVar
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
 
 from . import validator
 from .main import BaseConfig, BaseModel, Extra, create_model
@@ -68,6 +68,7 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
     class SignatureCheck(BaseModel):
         args: Dict[str, Any]
         kwargs: Dict[str, Any]
+        positional_only: Dict[str, Any]
 
         @validator('args', pre=True, allow_reuse=True)
         def validate_positional(cls, args: Any) -> Dict[str, Any]:
@@ -76,12 +77,24 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
             except TypeError:
                 raise TypeError(f'{len(sig_pos)} positional arguments expected but {len(args)} given')
 
+        @validator('positional_only', pre=True, allow_reuse=True)
+        def validate_positional_only(cls, kwargs: Any) -> Any:
+            try:
+                return sig.bind_partial(**kwargs).arguments
+            except TypeError as e:
+                pos_only = set(kwargs) & set(positional_only)
+                if pos_only:
+                    plural = '' if len(pos_only) == 1 else 's'
+                    keys = ', '.join(map(repr, pos_only))
+                    raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
+                return kwargs
+
         @validator('kwargs', pre=True, allow_reuse=True)
         def validate_keyword(cls, kwargs: Any) -> Any:
             try:
                 return sig.bind_partial(**kwargs).arguments
             except TypeError as e:
-                unexpected = set(kwargs) - sig_kw
+                unexpected = set(kwargs) - sig_kw - set(positional_only)
                 if unexpected:
                     plural = '' if len(unexpected) == 1 else 's'
                     keys = ', '.join(map(repr, unexpected))
@@ -91,7 +104,7 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
     @wraps(func)
     def apply(*args: Any, **kwargs: Any) -> T:
 
-        sigcheck = SignatureCheck(args=args, kwargs=kwargs)
+        sigcheck = SignatureCheck(args=args, kwargs=kwargs, positional_only=kwargs)
         # use dict(model) instead of model.dict() so values stay cast as intended
         instance = dict(model(**sigcheck.args, **sigcheck.kwargs))
 
