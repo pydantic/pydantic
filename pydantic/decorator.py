@@ -102,7 +102,7 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
                     plural = '' if len(unexpected) == 1 else 's'
                     keys = ', '.join(map(repr, unexpected))
                     raise TypeError(f'unexpected keyword argument{plural}: {keys}')
-                raise e
+                return kwargs
 
     @wraps(func)
     def apply(*args: Any, **kwargs: Any) -> T:
