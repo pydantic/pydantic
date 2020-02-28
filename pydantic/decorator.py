@@ -2,7 +2,7 @@ from functools import wraps
 from inspect import Parameter, signature
 from itertools import groupby
 from operator import itemgetter
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar
 
 from . import validator
 from .main import BaseConfig, BaseModel, Extra, create_model
@@ -23,6 +23,12 @@ def coalesce(param: Parameter, default: Any) -> Any:
 
 def make_field(arg: Parameter) -> Dict[str, Any]:
     return {'name': arg.name, 'kind': arg.kind, 'field': (coalesce(arg.annotation, Any), coalesce(arg.default, ...))}
+
+
+def build_message_helper(keys: Sequence[str]) -> Tuple[str, str]:
+    plural = '' if len(keys) == 1 else 's'
+    joined = ', '.join(map(repr, keys))
+    return plural, joined
 
 
 def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
@@ -88,9 +94,8 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
             except TypeError:
                 unexpected = set(kwargs) - sig_kw - set(positional_only)
                 if unexpected:
-                    plural = '' if len(unexpected) == 1 else 's'
                     # TODO: use definition order
-                    keys = ', '.join(sorted(map(repr, unexpected)))
+                    plural, keys = build_message_helper(sorted(unexpected))
                     raise TypeError(f'unexpected keyword argument{plural}: {keys}')
                 return kwargs
 
@@ -102,9 +107,8 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
             except TypeError:
                 pos_only = set(kwargs) & set(positional_only)
                 if pos_only:
-                    plural = '' if len(pos_only) == 1 else 's'
                     # TODO: use definition order
-                    keys = ', '.join(sorted(map(repr, pos_only)))
+                    plural, keys = build_message_helper(sorted(pos_only))
                     raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
                 return kwargs
 
@@ -117,9 +121,8 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
             except TypeError:
                 multi = set(args) & set(kwargs)
                 if multi:
-                    plural = '' if len(multi) == 1 else 's'
                     # TODO: use definition order
-                    keys = ', '.join(sorted(map(repr, multi)))
+                    plural, keys = build_message_helper(sorted(multi))
                     raise TypeError(f'multiple values for argument{plural}: {keys}')
                 return {**args, **kwargs}
 
