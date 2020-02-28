@@ -4,7 +4,8 @@ from itertools import groupby
 from operator import itemgetter
 from typing import Any, Callable, Dict, Tuple, TypeVar
 
-from .main import BaseConfig, Extra, create_model
+from . import validator
+from .main import BaseConfig, BaseModel, Extra, create_model
 from .utils import to_camel
 
 __all__ = ('validate_arguments',)
@@ -42,9 +43,9 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
     keyword_only = params.get(Parameter.KEYWORD_ONLY, {})
     var_keyword = params.get(Parameter.VAR_KEYWORD, {})
 
-    var_positional = {name: (Tuple[annotation, ...], ...) for name, (annotation, _) in var_positional.items()}
+    var_positional = {name: (Tuple[annotation, ...], ()) for name, (annotation, _) in var_positional.items()}
     var_keyword = {
-        name: (Dict[str, annotation], ...)  # type: ignore
+        name: (Dict[str, annotation], {})  # type: ignore
         for name, (annotation, _) in var_keyword.items()
     }
 
@@ -61,18 +62,27 @@ def validate_arguments(func: Callable[..., T]) -> Callable[..., T]:
         **var_keyword,
     )
 
+    class SignatureCheck(BaseModel):
+        args: Dict[str, Any]
+        kwargs: Dict[str, Any]
+
+        @validator('args', pre=True, allow_reuse=True)
+        def validate_positional(cls, args: Any) -> Dict[str, Any]:
+            return sig.bind_partial(*args).arguments
+
+        @validator('kwargs', pre=True, allow_reuse=True)
+        def validate_keyword(cls, kwargs: Any) -> Any:
+            return sig.bind_partial(**kwargs).arguments
+
     @wraps(func)
     def apply(*args: Any, **kwargs: Any) -> T:
 
-        # NOTE: this throws TypeError if does not match signature
-        given_pos = sig.bind_partial(*args).arguments
-        given_kw = sig.bind_partial(**kwargs).arguments
-
+        sigcheck = SignatureCheck(args=args, kwargs=kwargs)
         # use dict(model) instead of model.dict() so values stay cast as intended
-        instance = dict(model(**given_pos, **given_kw))
+        instance = dict(model(**sigcheck.args, **sigcheck.kwargs))
 
-        upd_arg = {k: instance.get(k, v) for k, v in given_pos.items()}
-        upd_kw = {k: instance.get(k, v) for k, v in given_kw.items()}
+        upd_arg = {k: instance.get(k, v) for k, v in sigcheck.args.items()}
+        upd_kw = {k: instance.get(k, v) for k, v in sigcheck.kwargs.items()}
 
         return func(*upd_arg.values(), **upd_kw)
 
