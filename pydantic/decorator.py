@@ -1,4 +1,4 @@
-from functools import update_wrapper
+from functools import wraps
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast, get_type_hints
 
 from . import validator
@@ -19,8 +19,15 @@ def validate_arguments(function: 'Callable') -> 'Callable':
     Decorator to validate the arguments passed to a function.
     """
     vd = ValidatedFunction(function)
-    vd = update_wrapper(vd, function)  # type: ignore
-    return cast('Callable', vd)
+
+    @wraps(function)
+    def wrapper_function(*args: Any, **kwargs: Any) -> Any:
+        return vd.call(*args, **kwargs)
+
+    wrapper_function.vd = vd  # type: ignore
+    wrapper_function.raw_function = vd.raw_function  # type: ignore
+    wrapper_function.model = vd.model  # type: ignore
+    return cast('Callable', wrapper_function)
 
 
 ALT_V_ARGS = 'v__args'
@@ -95,7 +102,7 @@ class ValidatedFunction:
 
         self.create_model(fields, takes_args, takes_kwargs)
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def call(self, *args: Any, **kwargs: Any) -> Any:
         values = self.build_values(args, kwargs)
         m = self.model(**values)
         return self.execute(m)
