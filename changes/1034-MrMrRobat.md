@@ -1,0 +1,1 @@
+Add `__signature__` to models

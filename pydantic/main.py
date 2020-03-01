@@ -7,7 +7,21 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast, no_type_check
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    no_type_check,
+)
 
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -18,9 +32,18 @@ from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
-from .utils import GetterDict, Representation, ValueItems, lenient_issubclass, sequence_like, validate_field_name
+from .utils import (
+    GetterDict,
+    Representation,
+    ValueItems,
+    generate_model_signature,
+    lenient_issubclass,
+    sequence_like,
+    validate_field_name,
+)
 
 if TYPE_CHECKING:
+    from inspect import Signature
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
@@ -156,6 +179,8 @@ class ModelMetaclass(ABCMeta):
         fields: Dict[str, ModelField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
+        fields_defaults: Dict[str, Any] = {}
+
         pre_root_validators, post_root_validators = [], []
         for base in reversed(bases):
             if issubclass(base, BaseModel) and base != BaseModel:
@@ -170,6 +195,9 @@ class ModelMetaclass(ABCMeta):
         vg = ValidatorGroup(validators)
 
         for f in fields.values():
+            if not f.required:
+                fields_defaults[f.name] = f.default
+
             f.set_config(config)
             extra_validators = vg.get_validators(f.name)
             if extra_validators:
@@ -196,13 +224,15 @@ class ModelMetaclass(ABCMeta):
                         and not lenient_issubclass(getattr(ann_type, '__origin__', None), Type)
                     ):
                         continue
-                    fields[ann_name] = ModelField.infer(
+                    fields[ann_name] = inferred = ModelField.infer(
                         name=ann_name,
                         value=value,
                         annotation=ann_type,
                         class_validators=vg.get_validators(ann_name),
                         config=config,
                     )
+                    if not inferred.required:
+                        fields_defaults[ann_name] = inferred.default
 
             for var_name, value in namespace.items():
                 if (
@@ -225,6 +255,8 @@ class ModelMetaclass(ABCMeta):
                             f'if you wish to change the type of this field, please use a type annotation'
                         )
                     fields[var_name] = inferred
+                    if not inferred.required:
+                        fields_defaults[var_name] = inferred.default
 
         _custom_root_type = ROOT_KEY in fields
         if _custom_root_type:
@@ -238,7 +270,7 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
-            '__field_defaults__': {n: f.default for n, f in fields.items() if not f.required},
+            '__field_defaults__': fields_defaults,
             '__validators__': vg.validators,
             '__pre_root_validators__': pre_root_validators + pre_rv_new,
             '__post_root_validators__': post_root_validators + post_rv_new,
@@ -247,7 +279,10 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             **{n: v for n, v in namespace.items() if n not in fields},
         }
-        return super().__new__(mcs, name, bases, new_namespace, **kwargs)
+
+        cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
+        cls.__signature__ = generate_model_signature(cls.__init__, fields, config)
+        return cls
 
 
 class BaseModel(metaclass=ModelMetaclass):
@@ -263,6 +298,7 @@ class BaseModel(metaclass=ModelMetaclass):
         __json_encoder__: Callable[[Any], Any] = lambda x: x
         __schema_cache__: 'DictAny' = {}
         __custom_root_type__: bool = False
+        __signature__: 'Signature'
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
@@ -274,6 +310,11 @@ class BaseModel(metaclass=ModelMetaclass):
     __repr__ = Representation.__repr__
 
     def __init__(__pydantic_self__, **data: Any) -> None:
+        """
+        Create a new model by parsing and validating input data from keyword arguments.
+
+        Raises ValidationError if the input data cannot be parsed to form a valid model.
+        """
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
         if TYPE_CHECKING:
             __pydantic_self__.__dict__: Dict[str, Any] = {}
@@ -319,6 +360,7 @@ class BaseModel(metaclass=ModelMetaclass):
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
+
         """
         if skip_defaults is not None:
             warnings.warn(
@@ -326,29 +368,18 @@ class BaseModel(metaclass=ModelMetaclass):
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
-        get_key = self._get_key_factory(by_alias)
-        get_key = partial(get_key, self.__fields__)
 
-        allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
-        return {
-            get_key(k): v
-            for k, v in self._iter(
+        return dict(
+            self._iter(
                 to_dict=True,
                 by_alias=by_alias,
-                allowed_keys=allowed_keys,
                 include=include,
                 exclude=exclude,
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
             )
-        }
-
-    def _get_key_factory(self, by_alias: bool) -> Callable[..., str]:
-        if by_alias:
-            return lambda fields, key: fields[key].alias if key in fields else key
-
-        return lambda _, key: key
+        )
 
     def json(
         self,
@@ -488,27 +519,11 @@ class BaseModel(metaclass=ModelMetaclass):
         :param deep: set to `True` to make a deep copy of the model
         :return: new model instance
         """
-        if include is None and exclude is None and update is None:
-            # skip constructing values if no arguments are passed
-            v = self.__dict__
-        else:
-            allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=False, update=update)
-            if allowed_keys is None:
-                v = {**self.__dict__, **(update or {})}
-            else:
-                v = {
-                    **dict(
-                        self._iter(
-                            to_dict=False,
-                            by_alias=False,
-                            include=include,
-                            exclude=exclude,
-                            exclude_unset=False,
-                            allowed_keys=allowed_keys,
-                        )
-                    ),
-                    **(update or {}),
-                }
+
+        v = dict(
+            self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False),
+            **(update or {}),
+        )
 
         if deep:
             v = deepcopy(v)
@@ -638,13 +653,12 @@ class BaseModel(metaclass=ModelMetaclass):
         """
         so `dict(model)` works
         """
-        yield from self._iter()
+        yield from self.__dict__.items()
 
     def _iter(
         self,
         to_dict: bool = False,
         by_alias: bool = False,
-        allowed_keys: Optional['SetStr'] = None,
         include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
         exclude_unset: bool = False,
@@ -652,19 +666,26 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude_none: bool = False,
     ) -> 'TupleGenerator':
 
+        allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
+        if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
+            # huge boost for plain _iter()
+            yield from self.__dict__.items()
+            return
+
         value_exclude = ValueItems(self, exclude) if exclude else None
         value_include = ValueItems(self, include) if include else None
 
-        if exclude_defaults:
-            if allowed_keys is None:
-                allowed_keys = set(self.__fields__)
-            for k, v in self.__field_defaults__.items():
-                if self.__dict__[k] == v:
-                    allowed_keys.discard(k)
-
         for k, v in self.__dict__.items():
-            if allowed_keys is None or k in allowed_keys:
-                value = self._get_value(
+            if (
+                (allowed_keys is not None and k not in allowed_keys)
+                or (exclude_none and v is None)
+                or (exclude_defaults and self.__field_defaults__.get(k, _missing) == v)
+            ):
+                continue
+            if by_alias and k in self.__fields__:
+                k = self.__fields__[k].alias
+            if to_dict or value_include or value_exclude:
+                v = self._get_value(
                     v,
                     to_dict=to_dict,
                     by_alias=by_alias,
@@ -674,8 +695,7 @@ class BaseModel(metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     exclude_none=exclude_none,
                 )
-                if not (exclude_none and value is None):
-                    yield k, value
+            yield k, v
 
     def _calculate_keys(
         self,
@@ -683,14 +703,15 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
         exclude_unset: bool,
         update: Optional['DictStrAny'] = None,
-    ) -> Optional['SetStr']:
+    ) -> Optional[AbstractSet[str]]:
         if include is None and exclude is None and exclude_unset is False:
             return None
 
+        keys: AbstractSet[str]
         if exclude_unset:
             keys = self.__fields_set__.copy()
         else:
-            keys = set(self.__dict__.keys())
+            keys = self.__dict__.keys()
 
         if include is not None:
             if isinstance(include, dict):
