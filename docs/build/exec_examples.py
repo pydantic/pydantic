@@ -10,7 +10,7 @@ import sys
 import textwrap
 import traceback
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Tuple
 from unittest.mock import patch
 
 from ansi2html import Ansi2HTMLConverter
@@ -110,6 +110,25 @@ def gen_ansi_output():
     print(f'generated ansi output to {path}')
 
 
+dont_execute_re = re.compile(r'^# dont-execute\n', flags=re.M | re.I)
+required_py_re = re.compile(r'^# *requires *python *(\d+).(\d+)', flags=re.M)
+
+
+def should_execute(file_name: str, file_text: str) -> Tuple[str, bool]:
+    if dont_execute_re.search(file_text):
+        return dont_execute_re.sub('', file_text), False
+    m = required_py_re.search(file_text)
+    if m:
+        if sys.version_info >= tuple(int(v) for v in m.groups()):
+            return required_py_re.sub('', file_text), True
+        else:
+            v = '.'.join(m.groups())
+            print(f'WARNING: {file_name} requires python {v}, not running')
+            return required_py_re.sub(f'# requires python {v}, NOT EXECUTED!', file_text), False
+    else:
+        return file_text, True
+
+
 def exec_examples():
     errors = []
     all_md = all_md_contents()
@@ -143,10 +162,8 @@ def exec_examples():
         if re.search('^ *# *>', file_text, flags=re.M):
             error('contains comments with print output, please remove')
 
-        dont_execute_re = re.compile(r'^# dont-execute\n', flags=re.M)
-        if dont_execute_re.search(file_text):
-            lines = dont_execute_re.sub('', file_text).split('\n')
-        else:
+        file_text, execute = should_execute(file.name, file_text)
+        if execute:
             no_print_intercept_re = re.compile(r'^# no-print-intercept\n', flags=re.M)
             print_intercept = not bool(no_print_intercept_re.search(file_text))
             if not print_intercept:
@@ -180,6 +197,8 @@ def exec_examples():
             else:
                 for line_no, print_string in reversed(mp.statements):
                     build_print_statement(line_no, print_string, lines)
+        else:
+            lines = file_text.split('\n')
 
         try:
             ignore_above = lines.index('# ignore-above')
