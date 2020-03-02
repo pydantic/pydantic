@@ -296,7 +296,7 @@ class ModelField(Representation):
 
         if isinstance(value, FieldInfo):
             field_info = value
-            value = field_info.default_factory if field_info.default_factory is not None else field_info.default
+            value = field_info.default_factory() if field_info.default_factory is not None else field_info.default
         else:
             field_info = FieldInfo(value, **field_info_from_config)
         required: 'BoolUndefined' = Undefined
