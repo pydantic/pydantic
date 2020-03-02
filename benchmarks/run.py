@@ -39,7 +39,7 @@ except Exception:
 try:
     from test_cattrs import TestCAttrs
 except Exception:
-    TestCAttr = None
+    TestCAttrs = None
 
 try:
     from test_cerberus import TestCerberus
