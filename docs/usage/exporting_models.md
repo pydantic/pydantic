@@ -124,9 +124,6 @@ Special care must be taken when including or excluding fields from a list or tup
 The same holds for the `json` and `copy` methods.
 
 
-```py
-{!.tmp_examples/exporting_models_exclude3
-
 ## Custom JSON (de)serialisation
 
 To improve the performance of encoding and decoding JSON, alternative JSON implementations
