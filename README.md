@@ -33,7 +33,7 @@ from pydantic import BaseModel
 class User(BaseModel):
     id: int
     name = 'John Doe'
-    signup_ts: Optional[datetime]
+    signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
 external_data = {'id': '123', 'signup_ts': '2017-06-01 12:22', 'friends': [1, '2', b'3']}
