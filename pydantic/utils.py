@@ -345,6 +345,11 @@ class ValueItems(Representation):
             raise TypeError(f'Unexpected type of exclude value {items.__class__}')
 
         if isinstance(value, (list, tuple)):
+            if any(not isinstance(item, int) for item in items):
+                raise TypeError(
+                    f'Excluding fields from a list or tuple of sub-models must be performed index-wise: '
+                    f'expected integer keys'
+                )
             items = self._normalize_indexes(items, len(value))
 
         self._items = items

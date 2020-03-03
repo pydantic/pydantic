@@ -980,6 +980,24 @@ def test_model_iteration():
     assert dict(m) == {'c': 3, 'd': Foo()}
 
 
+def test_model_export_nested_list():
+    class Foo(BaseModel):
+        a: int = 1
+        b: int = 2
+
+    class Bar(BaseModel):
+        c: int
+        foos: List[Foo]
+
+    m = Bar(c=3, foos=[Foo(), Foo()])
+    exclusion = {idx: {'a'} for idx in range(len(m.foos))}
+    assert m.dict(exclude={'foos': exclusion}) == {'c': 3, 'foos': [{'b': 2}, {'b': 2}]}
+
+    with pytest.raises(TypeError) as e:
+        m.dict(exclude={'foos': {'a'}})
+    assert 'expected integer keys' in str(e.value)
+
+
 def test_custom_init_subclass_params():
     class DerivedModel(BaseModel):
         def __init_subclass__(cls, something):
