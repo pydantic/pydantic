@@ -104,6 +104,28 @@ def test_subclass_encoding():
     assert m.json() == '{"a": "2032-01-01T01:01:00", "b": "2020-02-29T12:30:00"}'
 
 
+def test_subclass_custom_encoding():
+    class SubDate(datetime.datetime):
+        pass
+
+    class SubDelta(datetime.timedelta):
+        pass
+
+    class Model(BaseModel):
+        a: SubDate
+        b: SubDelta
+
+        class Config:
+            json_encoders = {
+                datetime.datetime: lambda v: v.strftime('%a, %d %b %C %H:%M:%S'),
+                datetime.timedelta: timedelta_isoformat,
+            }
+
+    m = Model(a=SubDate(2032, 1, 1, 1, 1), b=SubDelta(hours=100))
+    assert m.dict() == {'a': SubDate(2032, 1, 1, 1, 1), 'b': SubDelta(days=4, seconds=14400)}
+    assert m.json() == '{"a": "Thu, 01 Jan 20 01:01:00", "b": "P4DT4H0M0.000000S"}'
+
+
 def test_invalid_model():
     class Foo:
         pass

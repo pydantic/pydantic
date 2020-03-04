@@ -61,9 +61,9 @@ def pydantic_encoder(obj: Any) -> Any:
 
 
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
-    encoder = type_encoders.get(obj.__class__)
-    if encoder:
-        return encoder(obj)
+    for base in obj.__class__.__mro__:
+        if base in type_encoders:
+            return type_encoders[base](obj)
     else:
         return pydantic_encoder(obj)
 

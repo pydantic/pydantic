@@ -5,6 +5,7 @@ mkdocs-exclude==1.0.2
 mkdocs-material==4.6.3
 markdown-include==0.5.1
 pygments==2.6.1
+pendulum     # pyup: ignore
 sqlalchemy   # pyup: ignore
 orjson       # pyup: ignore
 ujson        # pyup: ignore
