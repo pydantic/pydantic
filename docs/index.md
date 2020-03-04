@@ -125,3 +125,5 @@ For a more comprehensive list of open-source projects using *pydantic* see the
 
 [Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand)
 : "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management using python type annotations, and it's the python type annotations that makes me really extra happy... It works automatically with all the IDE's you already have.*" --Michael Kennedy
+
+testing new docs deploy logic
