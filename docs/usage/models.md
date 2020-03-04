@@ -296,6 +296,14 @@ you would expect mypy to provide if you were to declare the type without using `
     Internally, pydantic uses `create_model` to generate a (cached) concrete `BaseModel` at runtime,
     so there is essentially zero overhead introduced by making use of `GenericModel`.
 
+To inherit from a GenericModel without replacing the `TypeVar` instance, a class must also inherit from 
+`typing.Generic`:
+
+```py
+{!.tmp_examples/models_generics_inheritance.py!}
+```
+_(This script is complete, it should run "as is")_
+
 If the name of the concrete subclasses is important, you can also override the default behavior:
 
 ```py
