@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     StrBytes = Union[str, bytes]
 
 
-def str_validator(v: Any) -> str:
+def str_validator(v: Any) -> Union[str]:
     if isinstance(v, str):
         if isinstance(v, Enum):
             return v.value
