@@ -102,12 +102,19 @@ jobs:
     after_success: skip
 
   - stage: test
-    python: 3.7
+    python: 3.8
     name: 'Benchmarks'
     script:
     - pip install -r benchmarks/requirements.txt
     - make build-cython
     - BENCHMARK_REPEATS=1 make benchmark-all
+    after_success: skip
+
+  - stage: test
+    python: 3.8
+    name: 'Pydantic-Only Benchmarks'
+    script:
+    - BENCHMARK_REPEATS=1 make benchmark-pydantic
     after_success: skip
 
   - stage: build
