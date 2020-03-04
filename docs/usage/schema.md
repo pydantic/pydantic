@@ -41,6 +41,9 @@ It has the following arguments:
 * `default`: (a positional argument) the default value of the field.
     Since the `Field` replaces the field's default, this first argument can be used to set the default.
     Use ellipsis (`...`) to indicate the field is required.
+* `default_factory`: a zero-argument callable that will be called when a default value is needed for this field.
+    Among other purposes, this can be used to set dynamic default values.
+    It is forbidden to set both `default` and `default_factory`.
 * `alias`: the public name of the field
 * `title`: if omitted, `field_name.title()` is used
 * `description`: if omitted and the annotation is a sub-model,
