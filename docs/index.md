@@ -7,6 +7,8 @@
 
 {!.version.md!}
 
+testing new docs deploy logic 3
+
 Data validation and settings management using python type annotations.
 
 *pydantic* enforces type hints at runtime, and provides user friendly errors when data is invalid.
