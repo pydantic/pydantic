@@ -1,5 +1,6 @@
 import itertools
 import os
+import re
 import sys
 import uuid
 from collections import OrderedDict
@@ -1836,6 +1837,11 @@ def test_pattern():
     # check it's really a proper pattern
     assert f.pattern.match('whatever1')
     assert not f.pattern.match(' whatever1')
+
+    # Check that pre-compiled patterns are accepted unchanged
+    p = re.compile(r'^whatev.r\d$')
+    f2 = Foobar(pattern=p)
+    assert f2.pattern is p
 
 
 def test_pattern_error():

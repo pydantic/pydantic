@@ -14,7 +14,6 @@ from typing import (
     FrozenSet,
     Generator,
     List,
-    Optional,
     Pattern,
     Set,
     Tuple,
@@ -40,7 +39,7 @@ if TYPE_CHECKING:
     StrBytes = Union[str, bytes]
 
 
-def str_validator(v: Any) -> Optional[str]:
+def str_validator(v: Any) -> Union[str]:
     if isinstance(v, str):
         if isinstance(v, Enum):
             return v.value
@@ -463,8 +462,13 @@ def any_class_validator(v: Any) -> Type[T]:
 
 
 def pattern_validator(v: Any) -> Pattern[str]:
+    if isinstance(v, Pattern):
+        return v
+
+    str_value = str_validator(v)
+
     try:
-        return re.compile(v)
+        return re.compile(str_value)
     except re.error:
         raise errors.PatternError()
 
@@ -478,7 +482,6 @@ class IfConfig:
         return any(getattr(config, name) not in {None, False} for name in self.config_attr_names)
 
 
-pattern_validators = [str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
@@ -534,7 +537,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if type_type == ForwardRef or type_type == TypeVar:
         return
     if type_ is Pattern:
-        yield from pattern_validators
+        yield pattern_validator
         return
     if is_callable_type(type_):
         yield callable_validator
