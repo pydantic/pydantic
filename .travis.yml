@@ -118,7 +118,7 @@ jobs:
     after_success: skip
 
   - stage: build
-    name: 'PyPI Build and Upload'
+    name: 'Build and deploy Linux wheels'
     python: 3.7
     services:
     - docker
@@ -139,6 +139,54 @@ jobs:
     deploy:
       provider: pypi
       skip_cleanup: true
+      skip_existing: true
+      user: samuelcolvin
+      password:
+        secure: 'QbXFF2puEWjhFUpD0yu2R+wP4QI1IKIomBkMizsiCyMutlexERElranyYB8bsakvjPaJ+zU14ufffh2u7UA7Zhep/iE4skRHq4XWxnnRLHGu5nyGf3+zSM3F9MOzV32eZ4CDLJtFb6I0ensjTpodJH2EsIYHYxTgndIZn56Qbh6CStj7Xg1zm0Ujxdzm4ZLgcS28SOF/tpjsDW9+GXwc6L1mAZWYiS98gVgzL1vBd9tL9uFbbuFwGz9uhFMzFJko7vXSl8urWB4qeCspKXa9iKH7/AOYSwXTCwcg8U2hhC9UsOapnga2BubZKlU5HRfSs9fQcpnzcP2lwhSmkrEFa8VOw83hX6+bL564xK1Q4kanfGZ1fLU4FYge3iOnqjH7ajO7xEcUrcOEYUPfxM4EfdiDw0xnAzE1ITGH1/pZikF+wjlu+ez7RmmnejgK7quT1WU7keo7pSlRSfQtNgNl6xu818x0xZ1TScfN6e9npNy4TYyIooMOOeI4tMdfcR4JClkjGKhAtBk81DH7isZgPv3uwocGnKZ2S7La97CE3ADzU3MTA9xVIOSOjzwuvAe72uS2nwzqXkS9KATdATkC9QCvheJ9jIBB4UcqnHbD8L1gkqdmZwXZqHZldq8wcqNYZb+81lumy5EZ6xSoEzlLDpXHe80EjMUOBkb5fz3D44s='
+      true:
+        tags: true
+        all_branches: true
+  - stage: build
+    name: 'Build and deploy macOS wheels'
+    os: osx
+    language: shell
+    env:
+    - 'PIP=pip'
+    - 'CIBW_BEFORE_BUILD="pip install -U cython"'
+    - 'CIBW_TEST_REQUIRES=pytest'
+    - 'CIBW_TEST_COMMAND="pytest {project}/tests"'
+    install: python3 -m pip install -U cibuildwheel wheel
+    script: python3 -m cibuildwheel --output-dir dist
+    after_success:
+    - ls -lha dist
+    deploy:
+      provider: pypi
+      skip_cleanup: true
+      skip_existing: true
+      user: samuelcolvin
+      password:
+        secure: 'QbXFF2puEWjhFUpD0yu2R+wP4QI1IKIomBkMizsiCyMutlexERElranyYB8bsakvjPaJ+zU14ufffh2u7UA7Zhep/iE4skRHq4XWxnnRLHGu5nyGf3+zSM3F9MOzV32eZ4CDLJtFb6I0ensjTpodJH2EsIYHYxTgndIZn56Qbh6CStj7Xg1zm0Ujxdzm4ZLgcS28SOF/tpjsDW9+GXwc6L1mAZWYiS98gVgzL1vBd9tL9uFbbuFwGz9uhFMzFJko7vXSl8urWB4qeCspKXa9iKH7/AOYSwXTCwcg8U2hhC9UsOapnga2BubZKlU5HRfSs9fQcpnzcP2lwhSmkrEFa8VOw83hX6+bL564xK1Q4kanfGZ1fLU4FYge3iOnqjH7ajO7xEcUrcOEYUPfxM4EfdiDw0xnAzE1ITGH1/pZikF+wjlu+ez7RmmnejgK7quT1WU7keo7pSlRSfQtNgNl6xu818x0xZ1TScfN6e9npNy4TYyIooMOOeI4tMdfcR4JClkjGKhAtBk81DH7isZgPv3uwocGnKZ2S7La97CE3ADzU3MTA9xVIOSOjzwuvAe72uS2nwzqXkS9KATdATkC9QCvheJ9jIBB4UcqnHbD8L1gkqdmZwXZqHZldq8wcqNYZb+81lumy5EZ6xSoEzlLDpXHe80EjMUOBkb5fz3D44s='
+      true:
+        tags: true
+        all_branches: true
+  - stage: build
+    name: 'Build and deploy Windows wheels'
+    os: windows
+    language: shell
+    before_install: |
+      choco install python3 --params "/InstallDir:C:\\Python3"
+      export PATH="/c/Python3:/c/Python3/Scripts:$PATH"
+      export CIBW_BEFORE_BUILD="pip install -U cython"
+      export CIBW_TEST_REQUIRES=pytest
+      export CIBW_TEST_COMMAND="pytest {project}/tests"
+    install: python3 -m pip install -U cibuildwheel wheel
+    script: python3 -m cibuildwheel --output-dir dist
+    after_success:
+    - dir /n dist
+    deploy:
+      provider: pypi
+      skip_cleanup: true
+      skip_existing: true
       user: samuelcolvin
       password:
         secure: 'QbXFF2puEWjhFUpD0yu2R+wP4QI1IKIomBkMizsiCyMutlexERElranyYB8bsakvjPaJ+zU14ufffh2u7UA7Zhep/iE4skRHq4XWxnnRLHGu5nyGf3+zSM3F9MOzV32eZ4CDLJtFb6I0ensjTpodJH2EsIYHYxTgndIZn56Qbh6CStj7Xg1zm0Ujxdzm4ZLgcS28SOF/tpjsDW9+GXwc6L1mAZWYiS98gVgzL1vBd9tL9uFbbuFwGz9uhFMzFJko7vXSl8urWB4qeCspKXa9iKH7/AOYSwXTCwcg8U2hhC9UsOapnga2BubZKlU5HRfSs9fQcpnzcP2lwhSmkrEFa8VOw83hX6+bL564xK1Q4kanfGZ1fLU4FYge3iOnqjH7ajO7xEcUrcOEYUPfxM4EfdiDw0xnAzE1ITGH1/pZikF+wjlu+ez7RmmnejgK7quT1WU7keo7pSlRSfQtNgNl6xu818x0xZ1TScfN6e9npNy4TYyIooMOOeI4tMdfcR4JClkjGKhAtBk81DH7isZgPv3uwocGnKZ2S7La97CE3ADzU3MTA9xVIOSOjzwuvAe72uS2nwzqXkS9KATdATkC9QCvheJ9jIBB4UcqnHbD8L1gkqdmZwXZqHZldq8wcqNYZb+81lumy5EZ6xSoEzlLDpXHe80EjMUOBkb5fz3D44s='
