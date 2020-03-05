@@ -153,6 +153,7 @@ jobs:
     language: shell
     env:
     - 'PIP="python3 -m pip"'
+    - 'CIBW_BUILD="cp36-macosx_x86_64 cp37-macosx_x86_64 cp38-macosx_x86_64 pp36-macosx_x86_64"'
     - 'CIBW_BEFORE_BUILD="python3 -m pip install -U cython"'
     - 'CIBW_TEST_REQUIRES=pytest'
     - 'CIBW_TEST_COMMAND="pytest {project}/tests"'
@@ -179,6 +180,7 @@ jobs:
       powershell -Command Update-SessionEnvironment
       echo $env:PATH
       echo %PATH%
+      export CIBW_BUILD="cp36-win32 cp36-win_amd64 cp37-win32 cp37-win_amd64 cp38-win32 cp38-win_amd64 pp36-win32"
       export CIBW_BEFORE_BUILD="pip install -U cython"
       export CIBW_TEST_REQUIRES=pytest
       export CIBW_TEST_COMMAND="pytest {project}/tests"
