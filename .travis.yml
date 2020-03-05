@@ -179,7 +179,7 @@ jobs:
     - choco install python --version 3.8.2
     env:
     - 'PATH=/c/Python38:/c/Python38/Scripts:$PATH'
-    - 'CIBW_BUILD="cp36-win32 cp36-win_amd64 cp37-win32 cp37-win_amd64 cp38-win32 cp38-win_amd64 pp36-win32"'
+    - 'CIBW_BUILD="cp36-win_amd64 cp37-win_amd64 cp38-win_amd64"'
     - 'CIBW_BEFORE_BUILD="pip3 install --user -U cython"'
     - 'CIBW_TEST_REQUIRES=pytest'
     - 'CIBW_TEST_COMMAND="pytest {project}/tests"'
