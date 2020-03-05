@@ -152,8 +152,8 @@ jobs:
     os: osx
     language: shell
     env:
-    - 'PIP=pip'
-    - 'CIBW_BEFORE_BUILD="pip install -U cython"'
+    - 'PIP="python3 -m pip"'
+    - 'CIBW_BEFORE_BUILD="python3 -m pip install -U cython"'
     - 'CIBW_TEST_REQUIRES=pytest'
     - 'CIBW_TEST_COMMAND="pytest {project}/tests"'
     install: python3 -m pip install -U cibuildwheel wheel
@@ -175,8 +175,9 @@ jobs:
     os: windows
     language: shell
     before_install: |
-      choco install python3 --params "/InstallDir:C:\\Python3"
-      export PATH="/c/Python3:/c/Python3/Scripts:$PATH"
+      choco install python3
+      refreshenv
+      echo %PATH:;=&echo.%
       export CIBW_BEFORE_BUILD="pip install -U cython"
       export CIBW_TEST_REQUIRES=pytest
       export CIBW_TEST_COMMAND="pytest {project}/tests"
