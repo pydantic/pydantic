@@ -177,14 +177,13 @@ jobs:
     language: shell
     before_install:
     - choco install python --version 3.8.2
-    - pip3 install --upgrade pip
     env:
     - 'PATH=/c/Python38:/c/Python38/Scripts:$PATH'
     - 'CIBW_BUILD="cp36-win32 cp36-win_amd64 cp37-win32 cp37-win_amd64 cp38-win32 cp38-win_amd64 pp36-win32"'
-    - 'CIBW_BEFORE_BUILD="pip3 install -U cython"'
+    - 'CIBW_BEFORE_BUILD="pip3 install --user -U cython"'
     - 'CIBW_TEST_REQUIRES=pytest'
     - 'CIBW_TEST_COMMAND="pytest {project}/tests"'
-    install: pip3 install -U cibuildwheel wheel
+    install: pip3 install --user -U cibuildwheel wheel
     script: python -m cibuildwheel --output-dir dist
     after_success:
     - dir /n dist
