@@ -998,6 +998,26 @@ def test_model_export_nested_list():
     assert 'expected integer keys' in str(e.value)
 
 
+def test_model_export_nested_list_with_all():
+    class Foo(BaseModel):
+        a: int = 1
+        b: int = 2
+
+    class Bar(BaseModel):
+        c: int
+        foos: List[Foo]
+
+    m = Bar(c=3, foos=[Foo(), Foo()])
+
+    exclusion = {0: {'b'}, '__all__': {'a'}}
+    assert m.dict(exclude={'foos': exclusion}) == {'c': 3, 'foos': [{}, {'b': 2}]}
+
+    exclusion = {'__all__': {'a'}}
+    assert m.dict(exclude={'foos': exclusion}) == {'c': 3, 'foos': [{'b': 2}, {'b': 2}]}
+
+    assert m.dict(exclude={'foos': {'__all__'}}) == {'c': 3, 'foos': []}
+
+
 def test_custom_init_subclass_params():
     class DerivedModel(BaseModel):
         def __init_subclass__(cls, something):

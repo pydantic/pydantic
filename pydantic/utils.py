@@ -345,12 +345,13 @@ class ValueItems(Representation):
             raise TypeError(f'Unexpected type of exclude value {items.__class__}')
 
         if isinstance(value, (list, tuple)):
-            if any(not isinstance(item, int) for item in items):
+            try:
+                items = self._normalize_indexes(items, len(value))
+            except TypeError as e:
                 raise TypeError(
                     f'Excluding fields from a list or tuple of sub-models must be performed index-wise: '
-                    f'expected integer keys'
-                )
-            items = self._normalize_indexes(items, len(value))
+                    f'expected integer keys or keyword __all__'
+                ) from e
 
         self._items = items
 
@@ -398,10 +399,19 @@ class ValueItems(Representation):
 
         >>> self._normalize_indexes({0, -2, -1}, 4)
         {0, 2, 3}
+        >>> self._normalize_indexes({'__all__'}, 4)
+        {0, 1, 2, 3}
         """
         if self._type is set:
+            if '__all__' in items:
+                return {i for i in range(v_length)}
             return {v_length + i if i < 0 else i for i in items}
         else:
+            if '__all__' in items:
+                all_set = items.pop('__all__')
+                for i in range(v_length):
+                    iset = items.setdefault(i, set())
+                    iset.update(all_set)
             return {v_length + i if i < 0 else i: v for i, v in items.items()}
 
     def __repr_args__(self) -> 'ReprArgs':
