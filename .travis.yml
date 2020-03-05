@@ -32,8 +32,8 @@ after_success:
 - bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS,TRAVIS_JOB_NAME
 
 stages:
-- name: test
-  if: type = pull_request OR branch = master OR tag IS present
+# - name: test
+#   if: type = pull_request OR branch = master OR tag IS present
 - name: build
   if: type = pull_request
   #if: type = push AND (branch = master OR tag IS present)
