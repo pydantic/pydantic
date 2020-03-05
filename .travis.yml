@@ -176,8 +176,9 @@ jobs:
     language: shell
     before_install: |
       choco install python3
-      refreshenv
-      echo %PATH:;=&echo.%
+      powershell -Command Update-SessionEnvironment
+      echo $env:PATH
+      echo %PATH%
       export CIBW_BEFORE_BUILD="pip install -U cython"
       export CIBW_TEST_REQUIRES=pytest
       export CIBW_TEST_COMMAND="pytest {project}/tests"
