@@ -46,6 +46,11 @@ try:
 except Exception:
     TestCerberus = None
 
+try:
+    from test_voluptuous import TestVoluptuous
+except Exception as e:
+    TestVoluptuous = None
+
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
 UNICODE = '\xa0\xad¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
@@ -55,7 +60,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     t for t in
-    [TestCAttrs, TestValideer, TestMarshmallow, TestTrafaret, TestDRF, TestCerberus]
+    [TestCAttrs, TestValideer, TestMarshmallow, TestVoluptuous, TestTrafaret, TestDRF, TestCerberus]
     if t is not None
 ]
 
