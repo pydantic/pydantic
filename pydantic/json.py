@@ -53,18 +53,22 @@ def pydantic_encoder(obj: Any) -> Any:
     elif is_dataclass(obj):
         return asdict(obj)
 
-    for base in obj.__class__.__mro__:
-        if base in ENCODERS_BY_TYPE:
-            return ENCODERS_BY_TYPE[base](obj)
-    else:
+    # Check the class type and its superclasses for a matching encoder
+    for base in obj.__class__.__mro__[:-1]:
+        encoder = ENCODERS_BY_TYPE.get(base)
+        if encoder:
+            return encoder(obj)
+    else:  # We have exited the for loop without finding a suitable encoder
         raise TypeError(f"Object of type '{obj.__class__.__name__}' is not JSON serializable")
 
 
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
-    for base in obj.__class__.__mro__:
-        if base in type_encoders:
-            return type_encoders[base](obj)
-    else:
+    # Check the class type and its superclasses for a matching encoder
+    for base in obj.__class__.__mro__[:-1]:
+        encoder = type_encoders.get(base)
+        if encoder:
+            return encoder(obj)
+    else:  # We have exited the for loop without finding a suitable encoder
         return pydantic_encoder(obj)
 
 
