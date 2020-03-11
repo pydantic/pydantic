@@ -146,8 +146,9 @@ class AnyUrl(str):
         url = scheme + '://'
         if user:
             url += user
-            if password:
-                url += ':' + password
+        if password:
+            url += ':' + password
+        if user or password:
             url += '@'
         url += host
         if port:
