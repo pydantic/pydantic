@@ -9,8 +9,65 @@ on:
   pull_request: {}
 
 jobs:
-  windows-test:
-    runs-on: windows-latest
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7', '3.8']
+        cython: ['no', 'yes']
+        deps: ['yes', 'no']
+    env:
+      CYTHON: ${{ matrix.cython }}
+      DEPS: ${{ matrix.deps }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: install python dependencies
+      run: |
+        make install
+        pip freeze
+
+    - name: lint
+      run: make lint
+
+    - name: mypy
+      run: make mypy
+
+    - name: compile
+      if: matrix.cython == 'yes'
+      run: |
+        make build-cython-trace
+        python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(1 if pydantic.compiled else 0)"
+
+    - name: uninstall deps
+      if: matrix.deps == 'no'
+      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+
+    - name: test
+      run: |
+        make test
+        coverage xml
+        ls -alh
+
+    - name: make history
+      run: python3 ./changes/make_history.py
+
+    - name: check dist
+      run: make check-dist
+
+    - uses: codecov/codecov-action@v1.0.5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+
+  windows-mac-test:
+    runs-on: ['windows-latest', 'macos-latest']
     strategy:
       max-parallel: 4
       matrix:
@@ -35,3 +92,120 @@ jobs:
 
     - name: mypy
       run: make mypy
+
+  test_fastapi:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+
+    - name: 'Test FastAPI'
+      run: make test-fastapi
+
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+
+    - name: benchmark all
+      run: |
+        pip install -r benchmarks/requirements.txt
+        make build-cython
+        BENCHMARK_REPEATS=1 make benchmark-all
+
+    - name: benchmark pydantic only
+      run: |
+        BENCHMARK_REPEATS=1 make benchmark-pydantic
+
+  build:
+    name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - ubuntu
+        - macos
+        - windows
+        python-version:
+        - '6'
+        - '7'
+        - '8'
+        include:
+        - os: ubuntu
+          platform: linux
+        - os: windows
+          ls: dir
+
+    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+
+    - name: install python dependencies
+      run: |
+        pip install -U setuptools wheel
+        pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head'
+
+    - name: build ${{ matrix.platform || matrix.os }} binaries
+      run:
+        cibuildwheel --output-dir dist
+        SKIP_CYTHON=1 python setup.py sdist bdist_wheel
+      env:
+        CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
+        CIBW_SKIP: '*-win32'
+        CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
+        CIBW_BEFORE_BUILD: 'pip install -U cython'
+        CIBW_TEST_REQUIRES: 'pytest'
+        CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
+        CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
+        CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
+
+    - name: build windows 32bit binaries
+      if: matrix.os == 'windows'
+      run:
+        cibuildwheel --output-dir dist
+        SKIP_CYTHON=1 python setup.py sdist bdist_wheel
+      env:
+        CIBW_BUILD: 'cp3${{ matrix.python-version }}-win32'
+        CIBW_PLATFORM: windows
+        CIBW_TEST_REQUIRES: 'pytest'
+        CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
+        CIBW_ENVIRONMENT: 'PATH="$UserProfile\.cargo\bin;$PATH"'
+        CIBW_BEFORE_BUILD: 'pip install -U cython'
+
+    - name: list dist files
+      run: ${{ matrix.ls || 'ls -lh' }} dist/
+
+    - name: twine check
+      run: |
+        pip install -U twine
+        twine check dist/*
+
+    - name: upload to pypi
+      if: startsWith(github.ref, 'refs/tags/')
+      run: twine upload dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.pypi_token }}
+
+    - name: build docs
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        secure: "vpTd8bkwPBP0CV3EJBAwSMNMnNK3m/71dvTvBd1T4YGuefyJvYhtA7wauA5xRL9jpK2mu5QR5eo0owTUJhKi4DjpafMMd1bc4PnXlrdZFzkn3VsGmlKt74D/aJgiuiNyhd/Qvq4OxMHrMhf4f6lKWoMM1vh6yT0yp3+51SexSh2Me0Q+npxbjXwoxX5XUHRcoSLtFk4GbYI88a2I+08XWI6v+Awo/giQ5QurUJhjAklbosrrQVr1FCOkU0em5jeyZvEbZSLmaMtbX1JlRdKoJm6WMU+y9I7zj35w6ue/vgfcLz7b/HDZrBx7/L9g1LxRo80briueX/IbHvN7DOVFKvaXVmnEa6lIDdCeOLOyESpIbmjqmDKi8JeexdPNxKq4Tvo2VEA9dL2w2aw+aALNtU2OF5iEMfPTUQyosu/CNu2PKtiuZkSOdvpYbSy1WUNHJRvomdR4Olzg8ZIScNsxU3IIPdrlG/LUA8auXcE9juFeZfD6D2hQZATqWeEe/C2J7amNSD+mLLaTf6nMQw8oNtKYOvYK17M7xyvi7HXDy711Bi18U3x6Ye0xGx8CDbFwl0ICNzIk9rrSAh9hEHTvfdUUkk35pxifvO0Hrh4SArCA20ozcH/hHWBhyqGdxoIQ6KoDgNbIFIGQ6/vugxL/pt8z1sJwPfJnq8tRDAyWZvE="
+      run: |
+        make docs
+        make publish
