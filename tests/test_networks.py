@@ -321,7 +321,7 @@ def test_redis_dsns():
     assert m.a.password == 'pass'
 
     m = Model(a='redis://:pass@localhost:5432')
-    assert  m.a == 'redis://:pass@localhost:5432'
+    assert m.a == 'redis://:pass@localhost:5432'
     assert m.a.password == 'pass'
 
     with pytest.raises(ValidationError) as exc_info:
