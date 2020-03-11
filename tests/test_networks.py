@@ -320,14 +320,13 @@ def test_redis_dsns():
     assert m.a.user == 'user'
     assert m.a.password == 'pass'
 
+    m = Model(a='redis://:pass@localhost:5432')
+    assert  m.a == 'redis://:pass@localhost:5432'
+    assert m.a.password == 'pass'
+
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a='redis://localhost:5432/app')
-    error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
 
 
 def test_custom_schemes():

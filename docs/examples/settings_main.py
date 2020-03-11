@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     auth_key: str
     api_key: str = Field(..., env='my_api_key')
 
-    redis_dsn: RedisDsn = 'redis://user:pass@localhost:6379/1'
+    redis_dsn: RedisDsn = 'redis://:pass@localhost:6379/1'
     pg_dsn: PostgresDsn = 'postgres://user:pass@localhost:5432/foobar'
 
     special_function: PyObject = 'math.cos'

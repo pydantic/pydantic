@@ -509,7 +509,7 @@ For URI/URL validation the following types are available:
 - `AnyHttpUrl`: schema `http` or `https`, TLD not required
 - `HttpUrl`: schema `http` or `https`, TLD required, max length 2083
 - `PostgresDsn`: schema `postgres` or `postgresql`, userinfo required, TLD not required
-- `RedisDsn`: schema `redis`, userinfo required, tld not required
+- `RedisDsn`: schema `redis`, userinfo not required, tld not required
 - `stricturl`, method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`
