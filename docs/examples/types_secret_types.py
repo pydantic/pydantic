@@ -9,6 +9,9 @@ sm = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
 # Standard access methods will not display the secret
 print(sm)
 print(sm.password)
+print(sm.dict())
+
+# json() will however display the secret:
 print(sm.json())
 
 # Use get_secret_value method to see the secret's content.

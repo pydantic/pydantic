@@ -30,9 +30,9 @@ class MyEnum(Enum):
         (IPv4Address('192.168.0.1'), '"192.168.0.1"'),
         (Color('#000'), '"black"'),
         (Color((1, 12, 123)), '"#010c7b"'),
-        (SecretStr('abcd'), '"**********"'),
+        (SecretStr('abcd'), '"abcd"'),
         (SecretStr(''), '""'),
-        (SecretBytes(b'xyz'), '"**********"'),
+        (SecretBytes(b'xyz'), '"xyz"'),
         (SecretBytes(b''), '""'),
         (IPv6Address('::1:0:1'), '"::1:0:1"'),
         (IPv4Interface('192.168.0.0/24'), '"192.168.0.0/24"'),
@@ -115,11 +115,19 @@ def test_custom_encoder():
         x: datetime.timedelta
         y: Decimal
         z: datetime.date
+        i: SecretStr
 
         class Config:
-            json_encoders = {datetime.timedelta: lambda v: f'{v.total_seconds():0.3f}s', Decimal: lambda v: 'a decimal'}
+            json_encoders = {
+                datetime.timedelta: lambda v: f'{v.total_seconds():0.3f}s',
+                Decimal: lambda v: 'a decimal',
+                SecretStr: lambda v: v.get_secret_value() if v else None,
+            }
 
-    assert Model(x=123, y=5, z='2032-06-01').json() == '{"x": "123.000s", "y": "a decimal", "z": "2032-06-01"}'
+    assert (
+        Model(x=123, y=5, z='2032-06-01', i='abc').json()
+        == '{"x": "123.000s", "y": "a decimal", "z": "2032-06-01", "i": "abc"}'
+    )
 
 
 def test_custom_iso_timedelta():

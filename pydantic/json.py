@@ -50,6 +50,10 @@ def pydantic_encoder(obj: Any) -> Any:
         return obj.value
     elif isinstance(obj, Path):
         return str(obj)
+    elif isinstance(obj, SecretStr):
+        return obj.get_secret_value() if obj else None
+    elif isinstance(obj, SecretBytes):
+        return obj.get_secret_value() if obj else None
     elif is_dataclass(obj):
         return asdict(obj)
 

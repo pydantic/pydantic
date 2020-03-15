@@ -1,0 +1,1 @@
+add SecretStr and SecretBytes to the default json encoder.
