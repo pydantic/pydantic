@@ -621,19 +621,21 @@ class BaseModel(metaclass=ModelMetaclass):
 
         elif sequence_like(v):
             return type(v)(
-                cls._get_value(
-                    v_,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=value_include and value_include.for_element(i),
-                    exclude=value_exclude and value_exclude.for_element(i),
-                    exclude_none=exclude_none,
+                tuple(
+                    cls._get_value(
+                        v_,
+                        to_dict=to_dict,
+                        by_alias=by_alias,
+                        exclude_unset=exclude_unset,
+                        exclude_defaults=exclude_defaults,
+                        include=value_include and value_include.for_element(i),
+                        exclude=value_exclude and value_exclude.for_element(i),
+                        exclude_none=exclude_none,
+                    )
+                    for i, v_ in enumerate(v)
+                    if (not value_exclude or not value_exclude.is_excluded(i))
+                    and (not value_include or value_include.is_included(i))
                 )
-                for i, v_ in enumerate(v)
-                if (not value_exclude or not value_exclude.is_excluded(i))
-                and (not value_include or value_include.is_included(i))
             )
 
         else:

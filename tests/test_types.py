@@ -15,6 +15,7 @@ from typing import (
     Iterator,
     List,
     MutableSet,
+    NamedTuple,
     NewType,
     Optional,
     Pattern,
@@ -2100,3 +2101,20 @@ def test_bytesize_raises():
     m = Model(size='1MB')
     with pytest.raises(errors.InvalidByteSizeUnit, match='byte unit'):
         m.size.to('bad_unit')
+
+
+def test_export_namedtuple_enum():
+    class Province(NamedTuple):
+        name: str
+        code: int
+
+    class ProvinceEnum(Province, Enum):
+        P_1 = Province(name='Hà Nội', code=1)
+        P_77 = Province(name='Bà Rịa - Vũng Tàu', code=77)
+
+    class Address(BaseModel):
+        province: ProvinceEnum
+
+    a = Address(province=ProvinceEnum.P_77)
+    export = a.dict()
+    assert export == {'province': ProvinceEnum.P_77}
