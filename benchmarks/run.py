@@ -168,7 +168,9 @@ def main():
     if 'pydantic-only' not in sys.argv:
         tests += other_tests
 
+    lpad = max([len(t.package) for t in tests]) + 4
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
+    print(f'testing {", ".join([t.package for t in tests])}, {repeats} times each')
     results = []
     csv_results = []
     for test_class in tests:
@@ -178,20 +180,20 @@ def main():
             count, pass_count = 0, 0
             start = datetime.now()
             test = test_class(True)
-            for i in range(3):
+            for j in range(3):
                 for case in cases:
                     passed, result = test.validate(case)
                     count += 1
                     pass_count += passed
             time = (datetime.now() - start).total_seconds()
             success = pass_count / count * 100
-            print(f'{p:>40} time={time:0.3f}s, success={success:0.2f}%')
+            print(f'{p:>{lpad}} ({i+1:>{len(str(repeats))}}/{repeats}) time={time:0.3f}s, success={success:0.2f}%')
             times.append(time)
-        print(f'{p:>40} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
+        print(f'{p:>{lpad}} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
         model_count = 3 * len(cases)
         avg = mean(times) / model_count * 1e6
         sd = stdev(times) / model_count * 1e6
-        results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter '
+        results.append(f'{p:>{lpad}} best={min(times) / model_count * 1e6:0.3f}μs/iter '
                        f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter version={test_class.version}')
         csv_results.append([p, test_class.version, avg])
         print()
