@@ -1,5 +1,6 @@
+import sys
 from enum import Enum
-from typing import Any, Callable, ClassVar, List, Mapping, Type
+from typing import Any, Callable, ClassVar, List, Mapping, Optional, Type
 from uuid import UUID, uuid4
 
 import pytest
@@ -993,6 +994,15 @@ def test_custom_init_subclass_params():
         something = 1
 
     assert NewModel.something == 2
+
+
+def test_update_forward_refs_does_not_modify_module_dict():
+    class MyModel(BaseModel):
+        field: Optional['MyModel']
+
+    MyModel.update_forward_refs()
+
+    assert 'MyModel' not in sys.modules[MyModel.__module__].__dict__
 
 
 def test_two_defaults():
