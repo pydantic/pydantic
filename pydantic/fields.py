@@ -407,7 +407,7 @@ class ModelField(Representation):
         if origin is Union:
             types_ = []
             for type_ in self.type_.__args__:
-                if type_ is NoneType:  # type: ignore
+                if type_ is NoneType:
                     if self.required is Undefined:
                         self.required = False
                     self.allow_none = True
@@ -714,7 +714,7 @@ class ModelField(Representation):
         """
         False if this is a simple field just allowing None as used in Unions/Optional.
         """
-        return self.type_ != NoneType  # type: ignore
+        return self.type_ != NoneType
 
     def is_complex(self) -> bool:
         """
