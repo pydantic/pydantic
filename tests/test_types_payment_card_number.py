@@ -128,6 +128,7 @@ def test_error_types(card_number: Any, error_message: str):
 
 def test_payment_card_brand():
     b = PaymentCardBrand.visa
+    assert str(b) == 'Visa'
     assert b is PaymentCardBrand.visa
     assert b == PaymentCardBrand.visa
     assert b in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}
