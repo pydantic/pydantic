@@ -343,7 +343,7 @@ class ModelField(Representation):
         """
         default_value = self.get_default()
         if default_value is not None and self.type_ is None:
-            self.type_ = self.default.__class__
+            self.type_ = default_value.__class__
             self.outer_type_ = self.type_
 
         if self.type_ is None:
