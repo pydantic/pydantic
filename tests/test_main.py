@@ -989,32 +989,16 @@ def test_model_export_nested_list():
         c: int
         foos: List[Foo]
 
-    m = Bar(c=3, foos=[Foo(), Foo()])
-    exclusion = {idx: {'a'} for idx in range(len(m.foos))}
-    assert m.dict(exclude={'foos': exclusion}) == {'c': 3, 'foos': [{'b': 2}, {'b': 2}]}
+    m = Bar(c=3, foos=[Foo(a=1, b=2), Foo(a=3, b=4)])
+
+    assert m.dict(exclude={'foos': {0: {'a'}, 1: {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
 
     with pytest.raises(TypeError) as e:
         m.dict(exclude={'foos': {'a'}})
     assert 'expected integer keys' in str(e.value)
 
-
-def test_model_export_nested_list_with_all():
-    class Foo(BaseModel):
-        a: int = 1
-        b: int = 2
-
-    class Bar(BaseModel):
-        c: int
-        foos: List[Foo]
-
-    m = Bar(c=3, foos=[Foo(), Foo()])
-
-    exclusion = {0: {'b'}, '__all__': {'a'}}
-    assert m.dict(exclude={'foos': exclusion}) == {'c': 3, 'foos': [{}, {'b': 2}]}
-
-    exclusion = {'__all__': {'a'}}
-    assert m.dict(exclude={'foos': exclusion}) == {'c': 3, 'foos': [{'b': 2}, {'b': 2}]}
-
+    assert m.dict(exclude={'foos': {0: {'b'}, '__all__': {'a'}}}) == {'c': 3, 'foos': [{}, {'b': 4}]}
+    assert m.dict(exclude={'foos': {'__all__': {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
     assert m.dict(exclude={'foos': {'__all__'}}) == {'c': 3, 'foos': []}
 
 

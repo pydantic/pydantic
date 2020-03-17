@@ -350,7 +350,7 @@ class ValueItems(Representation):
             except TypeError as e:
                 raise TypeError(
                     f'Excluding fields from a list or tuple of sub-models must be performed index-wise: '
-                    f'expected integer keys or keyword __all__'
+                    f'expected integer keys or keyword "__all__"'
                 ) from e
 
         self._items = items
