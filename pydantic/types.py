@@ -666,16 +666,17 @@ class PaymentCardNumber(str):
         https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
         """
         required_length: Optional[int] = None
-        if card_number.brand is (PaymentCardBrand.visa or PaymentCardBrand.mastercard):
+        brand = card_number.brand
+        if brand is PaymentCardBrand.visa or brand is PaymentCardBrand.mastercard:
             required_length = 16
             valid = len(card_number) == required_length
-        elif card_number.brand is PaymentCardBrand.amex:
+        elif brand is PaymentCardBrand.amex:
             required_length = 15
             valid = len(card_number) == required_length
         else:
             valid = True
         if not valid:
-            raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
+            raise errors.InvalidLengthForBrand(brand=brand, required_length=required_length)
         return card_number
 
     @staticmethod
