@@ -307,7 +307,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __signature__: 'Signature'
 
     Config = BaseConfig
-    __slots__ = ('__fields_set__',)
+    __slots__ = ('__dict__', '__fields_set__')
     __doc__ = ''  # Null out the Representation docstring
 
     def __init__(__pydantic_self__, **data: Any) -> None:
