@@ -74,10 +74,18 @@ def test_validate_luhn_check_digit(card_number: str, valid: bool):
     'card_number, brand, valid',
     [
         (VALID_VISA, PaymentCardBrand.visa, True),
+        (VALID_VISA + "0", PaymentCardBrand.visa, False),
+        (VALID_VISA[:-1], PaymentCardBrand.visa, False),
         (VALID_MC, PaymentCardBrand.mastercard, True),
+        (VALID_MC + "0", PaymentCardBrand.mastercard, False),
+        (VALID_MC[:-1], PaymentCardBrand.mastercard, False),
         (VALID_AMEX, PaymentCardBrand.amex, True),
+        (VALID_AMEX + "0", PaymentCardBrand.amex, False),
+        (VALID_AMEX[:-1], PaymentCardBrand.amex, False),
+        ("", PaymentCardBrand.other, True),
         (VALID_OTHER, PaymentCardBrand.other, True),
-        (LEN_INVALID, PaymentCardBrand.visa, False),
+        ('99999999999999999999999999999999999999999999999999999999999999999997',
+         PaymentCardBrand.other, True),
     ],
 )
 def test_length_for_brand(card_number: str, brand: PaymentCardBrand, valid: bool):
