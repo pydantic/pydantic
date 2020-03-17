@@ -202,9 +202,7 @@ def test_async():
     loop.run_until_complete(run())
     with pytest.raises(ValidationError) as exc_info:
         loop.run_until_complete(foo('x'))
-    assert exc_info.value.errors() == [
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'}
-    ]
+    assert exc_info.value.errors() == [{'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 def test_string_annotation():

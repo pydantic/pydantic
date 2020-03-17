@@ -330,10 +330,7 @@ def test_alias_priority():
         a: str = Field(..., alias='a_field_child')
 
         class Config:
-            fields = {
-                'a': dict(alias='a_config_child'),
-                'b': dict(alias='b_config_child')
-            }
+            fields = {'a': dict(alias='a_config_child'), 'b': dict(alias='b_config_child')}
 
             @staticmethod
             def alias_generator(x):
