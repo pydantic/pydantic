@@ -120,7 +120,7 @@ jobs:
     - 'PIP=pip'
     - 'CIBW_BUILD="cp36-manylinux1_x86_64 cp36-manylinux1_i686 cp37-manylinux1_x86_64 cp37-manylinux1_i686 cp38-manylinux1_x86_64 cp38-manylinux1_i686"'
     - 'CIBW_BEFORE_BUILD="pip install -U cython"'
-    - 'CIBW_TEST_REQUIRES=pytest'
+    - 'CIBW_TEST_REQUIRES=pytest==5.3.5'
     - 'CIBW_TEST_COMMAND="pytest {project}/tests"'
     script:
     - ./tests/check_tag.py
