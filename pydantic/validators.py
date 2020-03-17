@@ -14,7 +14,6 @@ from typing import (
     FrozenSet,
     Generator,
     List,
-    Optional,
     Pattern,
     Set,
     Tuple,
@@ -40,7 +39,7 @@ if TYPE_CHECKING:
     StrBytes = Union[str, bytes]
 
 
-def str_validator(v: Any) -> Optional[str]:
+def str_validator(v: Any) -> Union[str]:
     if isinstance(v, str):
         if isinstance(v, Enum):
             return v.value
@@ -463,8 +462,13 @@ def any_class_validator(v: Any) -> Type[T]:
 
 
 def pattern_validator(v: Any) -> Pattern[str]:
+    if isinstance(v, Pattern):
+        return v
+
+    str_value = str_validator(v)
+
     try:
-        return re.compile(v)
+        return re.compile(str_value)
     except re.error:
         raise errors.PatternError()
 
@@ -478,7 +482,6 @@ class IfConfig:
         return any(getattr(config, name) not in {None, False} for name in self.config_attr_names)
 
 
-pattern_validators = [str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
@@ -534,7 +537,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if type_type == ForwardRef or type_type == TypeVar:
         return
     if type_ is Pattern:
-        yield from pattern_validators
+        yield pattern_validator
         return
     if is_callable_type(type_):
         yield callable_validator
@@ -550,10 +553,6 @@ def find_validators(  # noqa: C901 (ignore complexity)
         else:
             yield any_class_validator
         return
-
-    supertype = _find_supertype(type_)
-    if supertype is not None:
-        type_ = supertype
 
     for val_type, validators in _VALIDATORS:
         try:
@@ -572,18 +571,3 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield make_arbitrary_type_validator(type_)
     else:
         raise RuntimeError(f'no validator found for {type_}, see `arbitrary_types_allowed` in Config')
-
-
-def _find_supertype(type_: AnyType) -> Optional[AnyType]:
-    if not _is_new_type(type_):
-        return None
-
-    supertype = type_.__supertype__
-    if _is_new_type(supertype):
-        supertype = _find_supertype(supertype)
-
-    return supertype
-
-
-def _is_new_type(type_: AnyType) -> bool:
-    return hasattr(type_, '__name__') and hasattr(type_, '__supertype__')

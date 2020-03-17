@@ -1,5 +1,6 @@
 import itertools
 import os
+import re
 import sys
 import uuid
 from collections import OrderedDict
@@ -1654,28 +1655,34 @@ def test_bounds_config_exceptions(fn):
 def test_new_type_success():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
+    c_type = NewType('c_type', List[int])
 
     class Model(BaseModel):
         a: a_type
         b: b_type
+        c: c_type
 
-    m = Model(a=42, b=24)
-    assert m.dict() == {'a': 42, 'b': 24}
+    m = Model(a=42, b=24, c=[1, 2, 3])
+    assert m.dict() == {'a': 42, 'b': 24, 'c': [1, 2, 3]}
+    assert repr(Model.__fields__['c']) == "ModelField(name='c', type=List[int], required=True)"
 
 
 def test_new_type_fails():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
+    c_type = NewType('c_type', List[int])
 
     class Model(BaseModel):
         a: a_type
         b: b_type
+        c: c_type
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='foo', b='bar')
+        Model(a='foo', b='bar', c=['foo'])
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
         {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('c', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
     ]
 
 
@@ -1830,6 +1837,11 @@ def test_pattern():
     # check it's really a proper pattern
     assert f.pattern.match('whatever1')
     assert not f.pattern.match(' whatever1')
+
+    # Check that pre-compiled patterns are accepted unchanged
+    p = re.compile(r'^whatev.r\d$')
+    f2 = Foobar(pattern=p)
+    assert f2.pattern is p
 
 
 def test_pattern_error():

@@ -1,3 +1,4 @@
+# requires python3.8
 from pydantic import validate_arguments
 
 @validate_arguments

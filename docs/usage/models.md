@@ -296,6 +296,14 @@ you would expect mypy to provide if you were to declare the type without using `
     Internally, pydantic uses `create_model` to generate a (cached) concrete `BaseModel` at runtime,
     so there is essentially zero overhead introduced by making use of `GenericModel`.
 
+To inherit from a GenericModel without replacing the `TypeVar` instance, a class must also inherit from 
+`typing.Generic`:
+
+```py
+{!.tmp_examples/models_generics_inheritance.py!}
+```
+_(This script is complete, it should run "as is")_
+
 If the name of the concrete subclasses is important, you can also override the default behavior:
 
 ```py
@@ -463,6 +471,26 @@ _(This script is complete, it should run "as is")_
 In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required.
 `b` and `c` require a value, even if the value is `None`.
 
+## Field with dynamic default value
+
+When declaring a field with a default value, you may want it to be dynamic (i.e. different for each model).
+To do this, you may want to use a `default_factory`.
+
+!!! info "In Beta"
+    The `default_factory` argument is in **beta**, it has been added to *pydantic* in **v1.5** on a
+    **provisional basis**. It may change significantly in future releases and its signature or behaviour will not
+    be concrete until **v2**. Feedback from the community while it's still provisional would be extremely useful;
+    either comment on [#866](https://github.com/samuelcolvin/pydantic/issues/866) or create a new issue.
+
+Example of usage:
+
+```py
+{!.tmp_examples/models_default_factory.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Where `Field` refers to the [field function](schema.md#field-customisation).
+
 ## Parsing data into a specified type
 
 Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing
@@ -495,3 +523,30 @@ _(This script is complete, it should run "as is")_
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
 [here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.
+
+## Model signature
+
+All *pydantic* models will have their signature generated based on their fields:
+
+```py
+{!.tmp_examples/models_signature.py!}
+```
+
+An accurate signature is useful for introspection purposes and libraries like `FastAPI` or `hypothesis`.
+
+The generated signature will also respect custom `__init__` functions:
+
+```py
+{!.tmp_examples/models_signature_custom_init.py!}
+```
+
+To be included in the signature, a field's alias or name must be a valid python identifier. 
+*pydantic* prefers aliases over names, but may use field names if the alias is not a valid python identifier. 
+
+If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
+In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
+
+!!! note
+    Types in the model signature are the same as declared in model annotations, 
+    not necessarily all the types that can actually be provided to that field.
+    This may be fixed one day once [#1055](https://github.com/samuelcolvin/pydantic/issues/1055) is solved.

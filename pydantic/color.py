@@ -70,6 +70,9 @@ class Color(Representation):
             self._rgba = parse_tuple(value)
         elif isinstance(value, str):
             self._rgba = parse_str(value)
+        elif isinstance(value, Color):
+            self._rgba = value._rgba
+            value = value._original
         else:
             raise ColorError(reason='value must be a tuple, list or string')
 

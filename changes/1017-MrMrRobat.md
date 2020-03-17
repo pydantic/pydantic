@@ -1,0 +1,1 @@
+Refactor `._iter()` method, 10x speed boost for `dict(model)`

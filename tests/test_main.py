@@ -1,6 +1,7 @@
 import sys
 from enum import Enum
-from typing import Any, ClassVar, List, Mapping, Optional, Type
+from typing import Any, Callable, ClassVar, List, Mapping, Optional, Type
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -49,6 +50,28 @@ def test_ultra_simple_repr():
     assert m.json() == '{"a": 10.2, "b": 10}'
     with pytest.raises(DeprecationWarning, match=r'`model.to_string\(\)` method is deprecated'):
         assert m.to_string() == 'a=10.2 b=10'
+
+
+def test_default_dict_repr():
+    def myfunc():
+        return 1
+
+    class Model(BaseModel):
+        a: int = Field(default_factory=myfunc)
+        b = Field(default_factory=myfunc)
+
+    m = Model()
+    assert str(m) == 'a=1 b=1'
+    assert repr(m) == 'Model(a=1, b=1)'
+    assert (
+        repr(m.__fields__['a']) == "ModelField(name='a', type=int, required=False, default_factory='<function myfunc>')"
+    )
+    assert (
+        repr(m.__fields__['b']) == "ModelField(name='b', type=int, required=False, default_factory='<function myfunc>')"
+    )
+    assert dict(m) == {'a': 1, 'b': 1}
+    assert m.dict() == {'a': 1, 'b': 1}
+    assert m.json() == '{"a": 1, "b": 1}'
 
 
 def test_comparing():
@@ -980,3 +1003,35 @@ def test_update_forward_refs_does_not_modify_module_dict():
     MyModel.update_forward_refs()
 
     assert 'MyModel' not in sys.modules[MyModel.__module__].__dict__
+
+
+def test_two_defaults():
+    with pytest.raises(ValueError, match='^cannot specify both default and default_factory$'):
+
+        class Model(BaseModel):
+            a: int = Field(default=3, default_factory=lambda: 3)
+
+
+def test_default_factory():
+    class ValueModel(BaseModel):
+        uid: UUID = uuid4()
+
+    m1 = ValueModel()
+    m2 = ValueModel()
+    assert m1.uid == m2.uid
+
+    class DynamicValueModel(BaseModel):
+        uid: UUID = Field(default_factory=uuid4)
+
+    m1 = DynamicValueModel()
+    m2 = DynamicValueModel()
+    assert isinstance(m1.uid, UUID)
+    assert m1.uid != m2.uid
+
+    # With a callable: we still should be able to set callables as defaults
+    class FunctionModel(BaseModel):
+        a: int = 1
+        uid: Callable[[], UUID] = Field(uuid4)
+
+    m = FunctionModel()
+    assert m.uid is uuid4

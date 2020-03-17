@@ -1,0 +1,1 @@
+Document how to manage Generics and inheritance.
