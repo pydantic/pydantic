@@ -591,7 +591,7 @@ class SecretBytes:
         return self._secret_value
 
 
-class PaymentCardBrand(Enum):
+class PaymentCardBrand(str, Enum):
     amex = 'American Express'
     mastercard = 'Mastercard'
     visa = 'Visa'
@@ -666,7 +666,7 @@ class PaymentCardNumber(str):
         https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
         """
         required_length: Optional[int] = None
-        if card_number.brand is (PaymentCardBrand.visa or PaymentCardBrand.mastercard):
+        if card_number.brand in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}:
             required_length = 16
             valid = len(card_number) == required_length
         elif card_number.brand is PaymentCardBrand.amex:

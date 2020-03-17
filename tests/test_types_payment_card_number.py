@@ -78,6 +78,7 @@ def test_validate_luhn_check_digit(card_number: str, valid: bool):
         (VALID_AMEX, PaymentCardBrand.amex, True),
         (VALID_OTHER, PaymentCardBrand.other, True),
         (LEN_INVALID, PaymentCardBrand.visa, False),
+        (VALID_AMEX, PaymentCardBrand.mastercard, False),
     ],
 )
 def test_length_for_brand(card_number: str, brand: PaymentCardBrand, valid: bool):
@@ -123,3 +124,20 @@ def test_error_types(card_number: Any, error_message: str):
     with pytest.raises(ValidationError, match=error_message) as exc_info:
         PaymentCard(card_number=card_number)
     assert exc_info.value.json().startswith('[')
+
+
+def test_payment_card_brand():
+    b = PaymentCardBrand.visa
+    assert b is PaymentCardBrand.visa
+    assert b == PaymentCardBrand.visa
+    assert b in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}
+
+    b = 'Visa'
+    assert b is not PaymentCardBrand.visa
+    assert b == PaymentCardBrand.visa
+    assert b in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}
+
+    b = PaymentCardBrand.amex
+    assert b is not PaymentCardBrand.visa
+    assert b != PaymentCardBrand.visa
+    assert b not in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}
