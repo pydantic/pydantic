@@ -561,6 +561,8 @@ class BaseModel(metaclass=ModelMetaclass):
             return value.copy()
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
+        elif cls.__custom_root_type__:
+            return cls.parse_obj(value)
         else:
             try:
                 value_as_dict = dict(value)
