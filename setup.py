@@ -20,7 +20,6 @@ if os.name == 'nt':
         """
         # Patch from: https://bugs.python.org/issue35893
         parts = ext.name.split('.')
-        print('parts', parts)
         if parts[-1] == '__init__':
             suffix = parts[-2]
         else:
@@ -33,9 +32,7 @@ if os.name == 'nt':
         except UnicodeEncodeError:
             suffix = 'U' + suffix.encode('punycode').replace(b'-', b'_').decode('ascii')
 
-        print('ext.export_symbols', ext.export_symbols)
         initfunc_name = "PyInit_" + suffix
-        print('initfunc_name', initfunc_name)
         if initfunc_name not in ext.export_symbols:
             ext.export_symbols.append(initfunc_name)
         return ext.export_symbols
