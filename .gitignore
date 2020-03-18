@@ -5,6 +5,7 @@ env37/
 env38/
 *.py[cod]
 *.egg-info/
+.python-version
 /build/
 dist/
 .cache/
