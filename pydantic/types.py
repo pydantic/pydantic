@@ -122,7 +122,6 @@ class ConstrainedList(list):  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield list_validator
         yield cls.list_length_validator
 
     @classmethod
@@ -130,7 +129,11 @@ class ConstrainedList(list):  # type: ignore
         update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
 
     @classmethod
-    def list_length_validator(cls, v: 'List[T]') -> 'List[T]':
+    def list_length_validator(cls, v: 'Optional[List[T]]', field: 'ModelField') -> 'Optional[List[T]]':  # type: ignore[name-defined] # noqa: E501,F821
+        if v is None and not field.required:
+            return None
+
+        v = list_validator(v)
         v_len = len(v)
 
         if cls.min_items is not None and v_len < cls.min_items:
