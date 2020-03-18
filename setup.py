@@ -1,19 +1,46 @@
 import os
 import re
 import sys
-from distutils.command import build_ext
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from setuptools import setup
 
 if os.name == 'nt':
+    from distutils.command import build_ext
 
-    def pass_ges(self, ext):
-        pass
+    def get_export_symbols(self, ext):
+        """Return the list of symbols that a shared extension has to
+        export.  This either uses 'ext.export_symbols' or, if it's not
+        provided, "PyInit_" + module_name.  Only relevant on Windows, where
+        the .pyd file (DLL) must export the module "PyInit_" function.
 
-    build_ext.get_export_symbols = pass_ges
+        Source: https://github.com/python/cpython/blob/8849e5962ba481d5d414b3467a256aba2134b4da\
+                /Lib/distutils/command/build_ext.py#L686-L703
+        """
+        # Patch from: https://bugs.python.org/issue35893
+        parts = ext.name.split('.')
+        print('parts', parts)
+        if parts[-1] == '__init__':
+            suffix = parts[-2]
+        else:
+            suffix = parts[-1]
 
+        try:
+            # Unicode module name support as defined in PEP-489
+            # https://www.python.org/dev/peps/pep-0489/#export-hook-name
+            suffix.encode('ascii')
+        except UnicodeEncodeError:
+            suffix = 'U' + suffix.encode('punycode').replace(b'-', b'_').decode('ascii')
+
+        print('ext.export_symbols', ext.export_symbols)
+        initfunc_name = "PyInit_" + suffix
+        print('initfunc_name', initfunc_name)
+        if initfunc_name not in ext.export_symbols:
+            ext.export_symbols.append(initfunc_name)
+        return ext.export_symbols
+
+    build_ext.build_ext.get_export_symbols = get_export_symbols
 
 class ReplaceLinks:
     def __init__(self):
