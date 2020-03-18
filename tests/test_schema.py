@@ -1550,6 +1550,19 @@ def test_model_with_schema_extra_callable_classmethod():
     assert Model.schema() == {'title': 'Model', 'type': 'foo'}
 
 
+def test_model_with_schema_extra_callable_instance_method():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            def schema_extra(schema, model_class):
+                schema.pop('properties')
+                schema['type'] = 'override'
+                assert model_class is Model
+
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
+
+
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         a: str
