@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Any, Callable, ClassVar, List, Mapping, Optional, Type
+from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type
 from uuid import UUID, uuid4
 
 import pytest
@@ -1000,6 +1000,22 @@ def test_model_export_nested_list():
     assert m.dict(exclude={'foos': {0: {'b'}, '__all__': {'a'}}}) == {'c': 3, 'foos': [{}, {'b': 4}]}
     assert m.dict(exclude={'foos': {'__all__': {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
     assert m.dict(exclude={'foos': {'__all__'}}) == {'c': 3, 'foos': []}
+
+    with pytest.raises(ValueError) as e:
+        m.dict(exclude={'foos': {'a', '__all__'}})
+    assert 'set with keyword "__all__" must not contain other elements' in str(e.value)
+
+
+def test_model_export_dict_exclusion():
+    class Foo(BaseModel):
+        a: int = 1
+        bars: List[Dict[str, int]]
+
+    m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
+
+    assert m.dict(exclude={'bars': {0}}) == {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]}
+    assert m.dict(exclude={'bars': {'__all__'}}) == {'a': 1, 'bars': []}
+    assert m.dict(exclude={'bars': {'__all__': {'w'}}}) == {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]}
 
 
 def test_custom_init_subclass_params():
