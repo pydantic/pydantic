@@ -21,6 +21,7 @@ from typing import (
     Union,
     cast,
     no_type_check,
+    overload,
 )
 
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
@@ -44,6 +45,7 @@ from .utils import (
 
 if TYPE_CHECKING:
     from inspect import Signature
+    import typing_extensions
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
@@ -51,6 +53,19 @@ if TYPE_CHECKING:
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
+
+    class SchemaExtraCallable(typing_extensions.Protocol):
+        @overload
+        def __call__(self, schema: Dict[str, Any]) -> None:
+            pass
+
+        @overload
+        def __call__(self, schema: Dict[str, Any], model: Type['Model']) -> None:
+            pass
+
+        def __call__(self, schema: Dict[str, Any], model: Type['Model'] = None) -> None:
+            pass
+
 
 try:
     import cython  # type: ignore
@@ -89,7 +104,7 @@ class BaseConfig:
     getter_dict: Type[GetterDict] = GetterDict
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
-    schema_extra: Union[Dict[str, Any], Callable[[Dict[str, Any]], None]] = {}
+    schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
     json_encoders: Dict[AnyType, AnyCallable] = {}
