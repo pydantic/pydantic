@@ -186,7 +186,7 @@ jobs:
     install: pip3 install --user -U cibuildwheel wheel
     script: python -m cibuildwheel --output-dir dist
     after_success:
-    - dir /n dist
+    - dir dist
     # deploy:
     #   provider: pypi
     #   skip_cleanup: true
