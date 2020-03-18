@@ -32,7 +32,7 @@ if os.name == 'nt':
         except UnicodeEncodeError:
             suffix = 'U' + suffix.encode('punycode').replace(b'-', b'_').decode('ascii')
 
-        initfunc_name = "PyInit_" + suffix
+        initfunc_name = 'PyInit_' + suffix
         if initfunc_name not in ext.export_symbols:
             ext.export_symbols.append(initfunc_name)
         return ext.export_symbols
