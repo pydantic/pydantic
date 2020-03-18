@@ -403,9 +403,9 @@ class ValueItems(Representation):
         {0, 1, 2, 3}
         """
         if self._type is set:
-            if '__all__' in items and items != {'__all__'}:
-                raise ValueError('set with keyword "__all__" must not contain other elements')
             if '__all__' in items:
+                if items != {'__all__'}:
+                    raise ValueError('set with keyword "__all__" must not contain other elements')
                 return {i for i in range(v_length)}
             return {v_length + i if i < 0 else i for i in items}
         else:

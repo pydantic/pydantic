@@ -993,17 +993,15 @@ def test_model_export_nested_list():
 
     assert m.dict(exclude={'foos': {0: {'a'}, 1: {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
 
-    with pytest.raises(TypeError) as e:
+    with pytest.raises(TypeError, match='expected integer keys'):
         m.dict(exclude={'foos': {'a'}})
-    assert 'expected integer keys' in str(e.value)
 
     assert m.dict(exclude={'foos': {0: {'b'}, '__all__': {'a'}}}) == {'c': 3, 'foos': [{}, {'b': 4}]}
     assert m.dict(exclude={'foos': {'__all__': {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
     assert m.dict(exclude={'foos': {'__all__'}}) == {'c': 3, 'foos': []}
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match='set with keyword "__all__" must not contain other elements'):
         m.dict(exclude={'foos': {'a', '__all__'}})
-    assert 'set with keyword "__all__" must not contain other elements' in str(e.value)
 
 
 def test_model_export_dict_exclusion():
