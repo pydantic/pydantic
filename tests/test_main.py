@@ -1,3 +1,4 @@
+import sys
 from enum import Enum
 from typing import Any, Callable, ClassVar, List, Mapping, Type
 from uuid import UUID, uuid4
@@ -1027,6 +1028,7 @@ def test_default_factory():
     assert m.uid is uuid4
 
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
 def test_none_min_max_items():
     # None default
     class Foo(BaseModel):
