@@ -533,7 +533,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
 ) -> Generator[AnyCallable, None, None]:
     if type_ is Any:
         return
-    type_type = type(type_)
+    type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
         return
     if type_ is Pattern:

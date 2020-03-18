@@ -96,7 +96,7 @@ class BaseSettings(BaseModel):
                 raise TypeError(f'invalid field env: {env!r} ({display_as_type(env)}); should be string, list or set')
 
             if not cls.case_sensitive:
-                env_names = type(env_names)(n.lower() for n in env_names)
+                env_names = env_names.__class__(n.lower() for n in env_names)
             field.field_info.extra['env_names'] = env_names
 
     __config__: Config  # type: ignore

@@ -111,7 +111,7 @@ class BaseConfig:
         if field_info.get('alias_priority', 0) <= 1 and cls.alias_generator:
             alias = cls.alias_generator(name)
             if not isinstance(alias, str):
-                raise TypeError(f'Config.alias_generator must return str, not {type(alias)}')
+                raise TypeError(f'Config.alias_generator must return str, not {alias.__class__}')
             field_info.update(alias=alias, alias_priority=1)
         return field_info
 
@@ -336,7 +336,7 @@ class BaseModel(metaclass=ModelMetaclass):
             if known_field:
                 value, error_ = known_field.validate(value, self.dict(exclude={name}), loc=name, cls=self.__class__)
                 if error_:
-                    raise ValidationError([error_], type(self))
+                    raise ValidationError([error_], self.__class__)
         self.__dict__[name] = value
         self.__fields_set__.add(name)
 
@@ -428,7 +428,7 @@ class BaseModel(metaclass=ModelMetaclass):
             try:
                 obj = dict(obj)
             except (TypeError, ValueError) as e:
-                exc = TypeError(f'{cls.__name__} expected dict not {type(obj).__name__}')
+                exc = TypeError(f'{cls.__name__} expected dict not {obj.__class__.__name__}')
                 raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
         return cls(**obj)
 
@@ -622,7 +622,7 @@ class BaseModel(metaclass=ModelMetaclass):
             }
 
         elif sequence_like(v):
-            return type(v)(
+            return v.__class__(
                 cls._get_value(
                     v_,
                     to_dict=to_dict,
@@ -838,7 +838,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
             return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_)
 
     for name, field in model.__fields__.items():
-        if type(field.type_) == ForwardRef:
+        if field.type_.__class__ == ForwardRef:
             raise ConfigError(
                 f'field "{field.name}" not yet prepared so type is still a ForwardRef, '
                 f'you might need to call {cls_.__name__}.update_forward_refs().'

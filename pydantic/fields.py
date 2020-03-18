@@ -343,13 +343,13 @@ class ModelField(Representation):
         """
         default_value = self.get_default()
         if default_value is not None and self.type_ is None:
-            self.type_ = type(default_value)
+            self.type_ = default_value.__class__
             self.outer_type_ = self.type_
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
-        if type(self.type_) == ForwardRef:
+        if self.type_.__class__ == ForwardRef:
             # self.type_ is currently a ForwardRef and there's nothing we can do now,
             # user will need to call model.update_forward_refs()
             return
@@ -407,7 +407,7 @@ class ModelField(Representation):
         if origin is Union:
             types_ = []
             for type_ in self.type_.__args__:
-                if type_ is NoneType:  # type: ignore
+                if type_ is NoneType:
                     if self.required is Undefined:
                         self.required = False
                     self.allow_none = True
@@ -714,7 +714,7 @@ class ModelField(Representation):
         """
         False if this is a simple field just allowing None as used in Unions/Optional.
         """
-        return self.type_ != NoneType  # type: ignore
+        return self.type_ != NoneType
 
     def is_complex(self) -> bool:
         """

@@ -630,7 +630,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_prefix=ref_prefix,
             known_models=known_models,
         )
-    if field.type_ is Any or type(field.type_) == TypeVar:
+    if field.type_ is Any or field.type_.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
@@ -651,7 +651,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
                 known_models=known_models,
             )
         literal_value = values[0]
-        field_type = type(literal_value)
+        field_type = literal_value.__class__
         f_schema['const'] = literal_value
 
     if issubclass(field_type, Enum):
@@ -715,7 +715,7 @@ def encode_default(dft: Any) -> Any:
     if isinstance(dft, (int, float, str)):
         return dft
     elif sequence_like(dft):
-        t = type(dft)
+        t = dft.__class__
         return t(encode_default(v) for v in dft)
     elif isinstance(dft, dict):
         return {encode_default(k): encode_default(v) for k, v in dft.items()}
