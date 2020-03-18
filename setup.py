@@ -1,10 +1,18 @@
 import os
 import re
 import sys
+from distutils.command import build_ext
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from setuptools import setup
+
+if os.name == 'nt':
+
+    def pass_ges(self, ext):
+        pass
+
+    build_ext.get_export_symbols = pass_ges
 
 
 class ReplaceLinks:
