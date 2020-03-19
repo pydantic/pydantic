@@ -83,6 +83,11 @@ jobs:
       matrix:
         os: [macos, windows]
         python-version: [3.6, 3.7, 3.8]
+    env:
+      PYTHON: ${{ matrix.python-version }}
+      OS: ${{ matrix.os }}
+      COMPILED: 'no'
+      DEPS: 'yes'
 
     runs-on: ${{ format('{0}-latest', matrix.os) }}
     steps:
@@ -106,9 +111,8 @@ jobs:
       run: |
         make test
         coverage xml
-        ls -alh
 
-    - uses: codecov/codecov-action@v1
+    - uses: samuelcolvin/codecov-action@env-vars
       with:
-        flags: ${{ format('COMPILED=no,DEPS=yes,PYTHON={0},OS={1}', matrix.python-version, matrix.os) }}
         file: ./coverage.xml
+        env_vars: [COMPILED, DEPS, PYTHON, OS]
