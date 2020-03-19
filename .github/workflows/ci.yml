@@ -9,8 +9,8 @@ on:
   pull_request: {}
 
 jobs:
-  name: test py${{ matrix.python-version }} on linux
   test:
+    name: test py${{ matrix.python-version }} on linux
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
