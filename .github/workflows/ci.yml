@@ -115,4 +115,4 @@ jobs:
     - uses: samuelcolvin/codecov-action@env-vars
       with:
         file: ./coverage.xml
-        env_vars: [COMPILED, DEPS, PYTHON, OS]
+        env_vars: COMPILED,DEPS,PYTHON,OS
