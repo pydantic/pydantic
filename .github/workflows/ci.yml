@@ -9,13 +9,71 @@ on:
   pull_request: {}
 
 jobs:
-  windows-test:
-    runs-on: windows-latest
+  name: test py${{ matrix.python-version }} on linux
+  test:
+    runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
+      fail-fast: false
       matrix:
         python-version: [3.6, 3.7, 3.8]
 
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: install dependencies
+      run: |
+        make install
+        pip freeze
+
+    - name: lint
+      run: make lint
+
+    - name: mypy
+      run: make mypy
+
+    - name: make history
+      run: python3 ./changes/make_history.py
+
+    - name: check dist
+      run: make check-dist
+
+    - name: test with
+      run: |
+        make test
+        CYTHON=no DEPS=yes bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS
+
+    - name: compile
+      run: |
+        make build-cython-trace
+        python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+
+    - name: test with
+      run: |
+        make test
+        CYTHON=yes DEPS=yes bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS
+
+    - name: uninstall deps
+      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+
+    - name: test with
+      run: |
+        make test
+        CYTHON=yes DEPS=no bash <(curl -s https://codecov.io/bash) -e CYTHON,DEPS
+
+  windows-mac-test:
+    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos, windows]
+        python-version: [3.6, 3.7, 3.8]
+
+    runs-on: ${{ format('{0}-latest', matrix.os) }}
     steps:
     - uses: actions/checkout@v2
 
