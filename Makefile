@@ -57,6 +57,13 @@ test-examples:
 	@echo "running examples"
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
 
+
+.PHONY: test-codecov
+test-codecov: test
+	ls -lha
+	bash <(curl -s https://codecov.io/bash) -e COMPILED,DEPS,PYTHON,OS
+	rm .coverage coverage.xml
+
 .PHONY: all
 all: lint mypy testcov
 

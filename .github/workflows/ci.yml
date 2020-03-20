@@ -53,34 +53,31 @@ jobs:
         ls -alh pydantic/
 
     - name: test compiled and deps
-      run: |
-        make test
-        ls -lha
-        COMPILED=yes DEPS=yes bash <(curl -s https://codecov.io/bash) -e COMPILED,DEPS,PYTHON,OS
-        rm .coverage coverage.xml
+      run: make test-codecov
+      env:
+        COMPILED: yes
+        DEPS: yes
 
     - name: uninstall deps
       run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
 
     - name: test compiled without deps
-      run: |
-        make test
-        ls -lha
-        COMPILED=yes DEPS=no bash <(curl -s https://codecov.io/bash) -e COMPILED,DEPS,PYTHON,OS
-        rm .coverage coverage.xml
+      run: make test-codecov
+      env:
+        COMPILED: yes
+        DEPS: no
 
     - name: remove compiled binaries
       run: |
-        rm pydantic/*.so pydantic/*.c
+        rm -r pydantic/*.so pydantic/*.c pydantic/__pycache__
         ls -alh
         ls -alh pydantic/
 
     - name: test uncompiled without deps
-      run: |
-        make test
-        ls -lha
-        COMPILED=no DEPS=no bash <(curl -s https://codecov.io/bash) -e COMPILED,DEPS,PYTHON,OS
-        rm .coverage coverage.xml
+      run: make test-codecov
+      env:
+        COMPILED: no
+        DEPS: no
 
   windows-mac-test:
     name: test py${{ matrix.python-version }} on ${{ matrix.os }}
