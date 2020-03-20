@@ -60,8 +60,11 @@ test-examples:
 
 .PHONY: test-codecov
 test-codecov: test
-	ls -lha
-	bash <(curl -s https://codecov.io/bash) -e COMPILED,DEPS,PYTHON,OS
+ifeq (,$(wildcard ./codecov.sh))
+	curl https://codecov.io/bash -o codecov.sh
+	chmod +x codecov.sh
+endif
+	./codecov.sh -e COMPILED,DEPS,PYTHON,OS
 	rm .coverage coverage.xml
 
 .PHONY: all
@@ -96,6 +99,7 @@ clean:
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
 	rm -rf fastapi/test.db
+	rm -rf codecov.sh
 
 .PHONY: docs
 docs:
