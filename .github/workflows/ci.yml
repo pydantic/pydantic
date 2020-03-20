@@ -119,3 +119,108 @@ jobs:
       with:
         file: ./coverage.xml
         env_vars: COMPILED,DEPS,PYTHON,OS
+
+  test_fastapi:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+
+    - name: 'Test FastAPI'
+      run: make test-fastapi
+
+  benchmark:
+    runs-on: ubuntu-latest
+    env:
+      BENCHMARK_REPEATS: 1
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+
+    - name: install and build
+      run: |
+        pip install -r requirements.txt
+        pip install -r benchmarks/requirements.txt
+        make build-cython
+
+    - name: benchmark pydantic only
+      run: make benchmark-pydantic
+
+    - name: benchmark-all
+      run: make benchmark-all
+
+  build:
+    name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
+    needs: [test, test_fastapi]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - ubuntu
+        - macos
+        - windows
+        python-version:
+        - '6'
+        - '7'
+        - '8'
+        include:
+        - os: ubuntu
+          platform: linux
+        - os: windows
+          ls: dir
+
+    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+
+    - name: install
+      run: |
+        make install
+        pip install -U cibuildwheel wheel
+
+    - name: build sdist
+      if: matrix.os == 'ubuntu' && matrix.python-version == '8'
+      run: python setup.py sdist bdist_wheel
+      env:
+        SKIP_CYTHON: 1
+
+    - name: build ${{ matrix.platform || matrix.os }} binaries
+      run: cibuildwheel --output-dir dist
+      env:
+        PIP: pip
+        CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
+        CIBW_SKIP: '*-win32'
+        CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
+        CIBW_TEST_REQUIRES: 'pytest==5.3.5 cython'
+        CIBW_TEST_COMMAND: 'pytest {project}/tests'
+
+    # TODO build windows 32bit binaries
+
+    - name: list dist files
+      run: ${{ matrix.ls || 'ls -lh' }} dist/
+
+    - name: twine check
+      run: |
+        pip install -U twine
+        twine check dist/*
+
+#    - name: upload to pypi
+#      if: startsWith(github.ref, 'refs/tags/')
+#      run: twine upload dist/*
+#      env:
+#        TWINE_USERNAME: __token__
+#        TWINE_PASSWORD: ${{ secrets.pypi_token }}

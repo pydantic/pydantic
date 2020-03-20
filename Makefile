@@ -57,7 +57,6 @@ test-examples:
 	@echo "running examples"
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
 
-
 .PHONY: test-codecov
 test-codecov: test
 ifeq (,$(wildcard ./codecov.sh))
@@ -100,6 +99,7 @@ clean:
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
 	rm -rf fastapi/test.db
 	rm -rf codecov.sh
+	rm -rf coverage.xml
 
 .PHONY: docs
 docs:
@@ -122,4 +122,4 @@ fastapi:
 
 .PHONY: test-fastapi
 test-fastapi: install fastapi
-	bash tests/test-fastapi.sh
+	./tests/test_fastapi.sh
