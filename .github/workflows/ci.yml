@@ -128,7 +128,7 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v1
       with:
-        python-version: '3.8'
+        python-version: '3.7'
 
     - name: 'Test FastAPI'
       run: make test-fastapi
@@ -144,13 +144,13 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v1
       with:
-        python-version: '3.8'
+        python-version: '3.7'
 
     - name: install and build
       run: |
-        pip install -r requirements.txt
-        pip install -r benchmarks/requirements.txt
+        make install
         make build-cython
+        pip install -r benchmarks/requirements.txt
 
     - name: benchmark pydantic only
       run: make benchmark-pydantic
@@ -213,14 +213,38 @@ jobs:
     - name: list dist files
       run: ${{ matrix.ls || 'ls -lh' }} dist/
 
-    - name: twine check
-      run: |
-        pip install -U twine
-        twine check dist/*
+    - name: Store dist artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: dist
+        path: dist/*
 
-#    - name: upload to pypi
-#      if: startsWith(github.ref, 'refs/tags/')
-#      run: twine upload dist/*
-#      env:
-#        TWINE_USERNAME: __token__
-#        TWINE_PASSWORD: ${{ secrets.pypi_token }}
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.8'
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v1
+        with:
+          name: dist
+
+      - name: twine check
+        run: |
+          pip install -U twine
+          ls -lha
+          ls -lha dist/
+          twine check dist/*
+
+      - name: upload to pypi
+        if: startsWith(github.ref, 'refs/tags/')
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}
