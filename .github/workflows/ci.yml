@@ -55,7 +55,9 @@ jobs:
     - name: test compiled and deps
       run: |
         make test
+        ls -lha
         COMPILED=yes DEPS=yes bash <(curl -s https://codecov.io/bash) -e COMPILED,DEPS,PYTHON,OS
+        rm .coverage
 
     - name: uninstall deps
       run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
@@ -63,7 +65,9 @@ jobs:
     - name: test compiled without deps
       run: |
         make test
+        ls -lha
         COMPILED=yes DEPS=no bash <(curl -s https://codecov.io/bash) -e COMPILED,DEPS,PYTHON,OS
+        rm .coverage
 
     - name: remove compiled binaries
       run: |
@@ -74,7 +78,9 @@ jobs:
     - name: test uncompiled without deps
       run: |
         make test
+        ls -lha
         COMPILED=no DEPS=no bash <(curl -s https://codecov.io/bash) -e COMPILED,DEPS,PYTHON,OS
+        rm .coverage
 
   windows-mac-test:
     name: test py${{ matrix.python-version }} on ${{ matrix.os }}
