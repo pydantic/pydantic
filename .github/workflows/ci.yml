@@ -9,7 +9,7 @@ on:
   pull_request: {}
 
 jobs:
-#  test:
+#  test-linux:
 #    name: test py${{ matrix.python-version }} on ubuntu
 #    runs-on: ubuntu-latest
 #    strategy:
@@ -79,7 +79,7 @@ jobs:
 #        COMPILED: no
 #        DEPS: no
 #
-#  windows-mac-test:
+#  test-windows-mac:
 #    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
 #    strategy:
 #      fail-fast: false
@@ -120,7 +120,7 @@ jobs:
 #        file: ./coverage.xml
 #        env_vars: COMPILED,DEPS,PYTHON,OS
 #
-#  test_fastapi:
+#  test-fastapi:
 #    name: test FastAPI
 #    runs-on: ubuntu-latest
 #    steps:
@@ -158,7 +158,7 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-#    needs: [test, test_fastapi] TODO un-comment
+#    needs: [test-linux, test-windows-mac, test-fastapi] TODO un-comment
     strategy:
       fail-fast: false
       matrix:
