@@ -188,7 +188,10 @@ jobs:
     - name: install
       run: |
         make install
-        pip install -U cibuildwheel wheel
+        pip install -U setuptools wheel cibuildwheel
+
+    - name: check tag
+      run: ./tests/check_tag.py
 
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.python-version == '8'
