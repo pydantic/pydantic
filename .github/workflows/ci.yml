@@ -9,158 +9,158 @@ on:
   pull_request: {}
 
 jobs:
-#  test-linux:
-#    name: test py${{ matrix.python-version }} on ubuntu
-#    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        python-version: [3.6, 3.7, 3.8]
-#    env:
-#      PYTHON: ${{ matrix.python-version }}
-#      OS: ubuntu
-#
-#    steps:
-#    - uses: actions/checkout@v2
-#
-#    - name: set up python
-#      uses: actions/setup-python@v1
-#      with:
-#        python-version: ${{ matrix.python-version }}
-#
-#    - name: install dependencies
-#      run: |
-#        make install
-#        pip freeze
-#
-#    - name: lint
-#      run: make lint
-#
-#    - name: mypy
-#      run: make mypy
-#
-#    - name: make history
-#      run: python3 ./changes/make_history.py
-#
-#    - name: check dist
-#      run: make check-dist
-#
-#    - name: compile
-#      run: |
-#        make build-cython-trace
-#        python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
-#        ls -alh
-#        ls -alh pydantic/
-#
-#    - name: test compiled and deps
-#      run: make test-codecov
-#      env:
-#        COMPILED: yes
-#        DEPS: yes
-#
-#    - name: uninstall deps
-#      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
-#
-#    - name: test compiled without deps
-#      run: make test-codecov
-#      env:
-#        COMPILED: yes
-#        DEPS: no
-#
-#    - name: remove compiled binaries
-#      run: |
-#        rm -r pydantic/*.so pydantic/*.c pydantic/__pycache__
-#        ls -alh
-#        ls -alh pydantic/
-#
-#    - name: test uncompiled without deps
-#      run: make test-codecov
-#      env:
-#        COMPILED: no
-#        DEPS: no
-#
-#  test-windows-mac:
-#    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        os: [macos, windows]
-#        python-version: [3.6, 3.7, 3.8]
-#    env:
-#      PYTHON: ${{ matrix.python-version }}
-#      OS: ${{ matrix.os }}
-#      COMPILED: 'no'
-#      DEPS: 'yes'
-#
-#    runs-on: ${{ format('{0}-latest', matrix.os) }}
-#    steps:
-#    - uses: actions/checkout@v2
-#
-#    - name: set up python
-#      uses: actions/setup-python@v1
-#      with:
-#        python-version: ${{ matrix.python-version }}
-#
-#    - name: install
-#      run: make install
-#
-#    - name: lint
-#      run: make lint
-#
-#    - name: mypy
-#      run: make mypy
-#
-#    - name: test
-#      run: |
-#        make test
-#        coverage xml
-#
-#    - uses: samuelcolvin/codecov-action@env-vars
-#      with:
-#        file: ./coverage.xml
-#        env_vars: COMPILED,DEPS,PYTHON,OS
-#
-#  test-fastapi:
-#    name: test FastAPI
-#    runs-on: ubuntu-latest
-#    steps:
-#    - uses: actions/checkout@v2
-#
-#    - name: set up python
-#      uses: actions/setup-python@v1
-#      with:
-#        python-version: '3.7'
-#
-#    - run: make test-fastapi
-#
-#  benchmark:
-#    run: run benchmarks
-#    runs-on: ubuntu-latest
-#    env:
-#      BENCHMARK_REPEATS: 1
-#
-#    steps:
-#    - uses: actions/checkout@v2
-#
-#    - name: set up python
-#      uses: actions/setup-python@v1
-#      with:
-#        python-version: '3.7'
-#
-#    - name: install and build
-#      run: |
-#        make install
-#        make build-cython
-#        pip install -r benchmarks/requirements.txt
-#
-#    - run: make benchmark-pydantic
-#    - run: make benchmark-all
+  test-linux:
+    name: test py${{ matrix.python-version }} on ubuntu
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.6', '3.7', '3.8']
+    env:
+      PYTHON: ${{ matrix.python-version }}
+      OS: ubuntu
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: install dependencies
+      run: |
+        make install
+        pip freeze
+
+    - name: lint
+      run: make lint
+
+    - name: mypy
+      run: make mypy
+
+    - name: make history
+      run: python3 ./changes/make_history.py
+
+    - name: check dist
+      run: make check-dist
+
+    - name: compile
+      run: |
+        make build-cython-trace
+        python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+        ls -alh
+        ls -alh pydantic/
+
+    - name: test compiled and deps
+      run: make test-codecov
+      env:
+        COMPILED: yes
+        DEPS: yes
+
+    - name: uninstall deps
+      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+
+    - name: test compiled without deps
+      run: make test-codecov
+      env:
+        COMPILED: yes
+        DEPS: no
+
+    - name: remove compiled binaries
+      run: |
+        rm -r pydantic/*.so pydantic/*.c pydantic/__pycache__
+        ls -alh
+        ls -alh pydantic/
+
+    - name: test uncompiled without deps
+      run: make test-codecov
+      env:
+        COMPILED: no
+        DEPS: no
+
+  test-windows-mac:
+    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos, windows]
+        python-version: [3.6, 3.7, 3.8]
+    env:
+      PYTHON: ${{ matrix.python-version }}
+      OS: ${{ matrix.os }}
+      COMPILED: 'no'
+      DEPS: 'yes'
+
+    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: install
+      run: make install
+
+    - name: lint
+      run: make lint
+
+    - name: mypy
+      run: make mypy
+
+    - name: test
+      run: |
+        make test
+        coverage xml
+
+    - uses: samuelcolvin/codecov-action@env-vars
+      with:
+        file: ./coverage.xml
+        env_vars: COMPILED,DEPS,PYTHON,OS
+
+  test-fastapi:
+    name: test fastAPI
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.7'
+
+    - run: make test-fastapi
+
+  benchmark:
+    name: run benchmarks
+    runs-on: ubuntu-latest
+    env:
+      BENCHMARK_REPEATS: 1
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.7'
+
+    - name: install and build
+      run: |
+        make install
+        make build-cython
+        pip install -r benchmarks/requirements.txt
+
+    - run: make benchmark-pydantic
+    - run: make benchmark-all
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
     # TODO un-comment:
-#    needs: [test-linux, test-windows-mac, test-fastapi]
-#    if: success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+    needs: [test-linux, test-windows-mac, test-fastapi]
+    if: success()  # && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
     strategy:
       fail-fast: false
       matrix:
