@@ -158,7 +158,9 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-#    needs: [test-linux, test-windows-mac, test-fastapi] TODO un-comment
+    # TODO un-comment:
+#    needs: [test-linux, test-windows-mac, test-fastapi]
+#    if: success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
     strategy:
       fail-fast: false
       matrix:
@@ -224,6 +226,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
+    if: success()
     runs-on: ubuntu-latest
 
     steps:
