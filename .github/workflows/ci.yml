@@ -9,17 +9,94 @@ on:
   pull_request: {}
 
 jobs:
-  windows-test:
-    runs-on: windows-latest
+  test-linux:
+    name: test py${{ matrix.python-version }} on ubuntu
+    runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
+      fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: ['3.6', '3.7', '3.8']
+    env:
+      PYTHON: ${{ matrix.python-version }}
+      OS: ubuntu
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: install dependencies
+      run: |
+        make install
+        pip freeze
+
+    - name: lint
+      run: make lint
+
+    - name: mypy
+      run: make mypy
+
+    - name: make history
+      run: python3 ./changes/make_history.py
+
+    - name: check dist
+      run: make check-dist
+
+    - name: compile
+      run: |
+        make build-cython-trace
+        python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+        ls -alh
+        ls -alh pydantic/
+
+    - name: test compiled and deps
+      run: make test-codecov
+      env:
+        COMPILED: yes
+        DEPS: yes
+
+    - name: uninstall deps
+      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+
+    - name: test compiled without deps
+      run: make test-codecov
+      env:
+        COMPILED: yes
+        DEPS: no
+
+    - name: remove compiled binaries
+      run: |
+        rm -r pydantic/*.so pydantic/*.c pydantic/__pycache__
+        ls -alh
+        ls -alh pydantic/
+
+    - name: test uncompiled without deps
+      run: make test-codecov
+      env:
+        COMPILED: no
+        DEPS: no
+
+  test-windows-mac:
+    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos, windows]
+        python-version: [3.6, 3.7, 3.8]
+    env:
+      PYTHON: ${{ matrix.python-version }}
+      OS: ${{ matrix.os }}
+      COMPILED: 'no'
+      DEPS: 'yes'
+
+    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
@@ -30,8 +107,156 @@ jobs:
     - name: lint
       run: make lint
 
-    - name: test
-      run: make test
-
     - name: mypy
       run: make mypy
+
+    - name: test
+      run: |
+        make test
+        coverage xml
+
+    - uses: samuelcolvin/codecov-action@env-vars
+      with:
+        file: ./coverage.xml
+        env_vars: COMPILED,DEPS,PYTHON,OS
+
+  test-fastapi:
+    name: test fastAPI
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.7'
+
+    - run: make test-fastapi
+
+  benchmark:
+    name: run benchmarks
+    runs-on: ubuntu-latest
+    env:
+      BENCHMARK_REPEATS: 1
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.7'
+
+    - name: install and build
+      run: |
+        make install
+        make build-cython
+        pip install -r benchmarks/requirements.txt
+
+    - run: make benchmark-pydantic
+    - run: make benchmark-all
+
+  build:
+    name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
+    needs: [test-linux, test-windows-mac, test-fastapi]
+    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - ubuntu
+        - macos
+        - windows
+        python-version:
+        - '6'
+        - '7'
+        - '8'
+        include:
+        - os: ubuntu
+          platform: linux
+        - os: windows
+          ls: dir
+
+    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+
+    - name: install
+      run: |
+        make install
+        pip install -U setuptools wheel cibuildwheel
+
+    - name: check tag
+      run: ./tests/check_tag.py
+
+    - name: build sdist
+      if: matrix.os == 'ubuntu' && matrix.python-version == '8'
+      run: python setup.py sdist bdist_wheel
+      env:
+        SKIP_CYTHON: 1
+
+    - name: build ${{ matrix.platform || matrix.os }} binaries
+      run: cibuildwheel --output-dir dist
+      env:
+        PIP: 'pip'
+        CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
+        CIBW_SKIP: '*-win32'
+        CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
+        CIBW_BEFORE_BUILD: 'pip install -U cython'
+        CIBW_TEST_REQUIRES: 'pytest==5.3.5'
+        CIBW_TEST_COMMAND: 'pytest {project}/tests'
+        CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
+        CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
+
+    # TODO build windows 32bit binaries
+
+    - name: list dist files
+      run: |
+        ${{ matrix.ls || 'ls -lh' }} dist/
+        twine check dist/*
+
+    - name: Store dist artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: dist
+        path: dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    if: "success() && startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.8'
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v1
+        with:
+          name: dist
+
+      - name: install
+        run: make install
+
+      - run: twine check dist/*
+
+      - name: upload to pypi
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+
+      - name: publish docs
+        run: make publish-docs
+        env:
+          NETLIFY: ${{ secrets.netlify_token }}

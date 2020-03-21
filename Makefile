@@ -57,6 +57,15 @@ test-examples:
 	@echo "running examples"
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
 
+.PHONY: test-codecov
+test-codecov: test
+ifeq (,$(wildcard ./codecov.sh))
+	curl https://codecov.io/bash -o codecov.sh
+	chmod +x codecov.sh
+endif
+	./codecov.sh -e COMPILED,DEPS,PYTHON,OS
+	rm .coverage coverage.xml
+
 .PHONY: all
 all: lint mypy testcov
 
@@ -89,6 +98,8 @@ clean:
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
 	rm -rf fastapi/test.db
+	rm -rf codecov.sh
+	rm -rf coverage.xml
 
 .PHONY: docs
 docs:
@@ -100,8 +111,8 @@ docs-serve:
 	python docs/build/main.py
 	mkdocs serve
 
-.PHONY: publish
-publish: docs
+.PHONY: publish-docs
+publish-docs: docs
 	zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
 	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
@@ -111,4 +122,4 @@ fastapi:
 
 .PHONY: test-fastapi
 test-fastapi: install fastapi
-	bash tests/test-fastapi.sh
+	./tests/test_fastapi.sh

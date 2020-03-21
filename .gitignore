@@ -28,3 +28,4 @@ pydantic/*.so
 /sandbox/
 /.ghtopdep_cache/
 /fastapi/
+/codecov.sh
