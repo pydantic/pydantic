@@ -1888,6 +1888,14 @@ def test_secretstr_equality():
     assert SecretStr('123') is not SecretStr('123')
 
 
+def test_secretstr_idempotent():
+    class Foobar(BaseModel):
+        password: SecretStr
+
+    # Should not raise an exception
+    _ = Foobar(password=SecretStr('1234'))
+
+
 def test_secretstr_error():
     class Foobar(BaseModel):
         password: SecretStr
@@ -1934,6 +1942,14 @@ def test_secretbytes_equality():
     assert SecretBytes(b'123') != SecretBytes(b'321')
     assert SecretBytes(b'123') != b'123'
     assert SecretBytes(b'123') is not SecretBytes(b'123')
+
+
+def test_secretbytes_idempotent():
+    class Foobar(BaseModel):
+        password: SecretBytes
+
+    # Should not raise an exception.
+    _ = Foobar(password=SecretBytes(b'1234'))
 
 
 def test_secretbytes_error():

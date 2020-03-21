@@ -530,11 +530,13 @@ class SecretStr:
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> 'SecretStr':
+    def validate(cls, value: Any) -> 'SecretStr':
+        if value.__class__ == cls:
+            return value
+        value = str_validator(value)
         return cls(value)
 
     def __init__(self, value: str):
@@ -564,11 +566,13 @@ class SecretBytes:
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield bytes_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: bytes) -> 'SecretBytes':
+    def validate(cls, value: Any) -> 'SecretBytes':
+        if value.__class__ == cls:
+            return value
+        value = bytes_validator(value)
         return cls(value)
 
     def __init__(self, value: bytes):
