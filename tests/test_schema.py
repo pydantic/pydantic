@@ -1804,3 +1804,17 @@ def test_iterable():
         'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}},
         'required': ['a'],
     }
+
+
+def test_new_type():
+    new_type = NewType('NewStr', str)
+
+    class Model(BaseModel):
+        a: new_type
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }

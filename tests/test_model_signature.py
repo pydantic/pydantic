@@ -72,3 +72,13 @@ def test_invalid_identifiers_signature():
     assert _equals(str(signature(model)), '(*, valid_identifier: int = 123, yeah: int = 0) -> None')
     model = create_model('Model', **{'123 invalid identifier!': 123, '!': Field(0, alias='yeah')})
     assert _equals(str(signature(model)), '(*, yeah: int = 0, **data: Any) -> None')
+
+
+def test_use_field_name():
+    class Foo(BaseModel):
+        foo: str = Field(..., alias='this is invalid')
+
+        class Config:
+            allow_population_by_field_name = True
+
+    assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
