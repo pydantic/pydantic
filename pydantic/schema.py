@@ -53,15 +53,7 @@ from .types import (
     conlist,
     constr,
 )
-from .typing import (
-    ForwardRef,
-    Literal,
-    is_callable_type,
-    is_literal_type,
-    is_new_type,
-    literal_values,
-    new_type_supertype,
-)
+from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, literal_values
 from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
@@ -638,8 +630,6 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
     field_type = field.type_
-    if is_new_type(field_type):
-        field_type = new_type_supertype(field_type)
     if is_literal_type(field_type):
         values = literal_values(field_type)
         if len(values) > 1:
