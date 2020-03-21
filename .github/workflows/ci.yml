@@ -211,6 +211,8 @@ jobs:
         CIBW_BEFORE_BUILD: 'pip install -U cython'
         CIBW_TEST_REQUIRES: 'pytest==5.3.5'
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
+        CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
+        CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
 
     # TODO build windows 32bit binaries
 
@@ -230,6 +232,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v2
+
       - name: set up python
         uses: actions/setup-python@v1
         with:
@@ -240,16 +244,24 @@ jobs:
         with:
           name: dist
 
-      - name: twine check
+      - name: install
         run: |
+          make install
           pip install -U twine
-          ls -lha
-          ls -lha dist/
-          twine check dist/*
+
+      - run: twine check dist/*
+
+      - name: publish docs
+#        if: startsWith(github.ref, 'refs/tags/')
+#        run: make publish-docs
+        run: make docs
+        env:
+          NETLIFY: ${{ secrets.netlify_token }}
 
       - name: upload to pypi
-        if: startsWith(github.ref, 'refs/tags/')
+#        if: startsWith(github.ref, 'refs/tags/')
         run: twine upload dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/

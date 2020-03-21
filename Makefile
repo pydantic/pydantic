@@ -111,8 +111,8 @@ docs-serve:
 	python docs/build/main.py
 	mkdocs serve
 
-.PHONY: publish
-publish: docs
+.PHONY: publish-docs
+publish-docs: docs
 	zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
 	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
