@@ -158,9 +158,8 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    # TODO un-comment:
     needs: [test-linux, test-windows-mac, test-fastapi]
-    if: success()  # && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+    if: success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
     strategy:
       fail-fast: false
       matrix:
@@ -217,7 +216,9 @@ jobs:
     # TODO build windows 32bit binaries
 
     - name: list dist files
-      run: ${{ matrix.ls || 'ls -lh' }} dist/
+      run: |
+        ${{ matrix.ls || 'ls -lh' }} dist/
+        twine check dist/*
 
     - name: Store dist artifacts
       uses: actions/upload-artifact@v1
@@ -228,7 +229,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-    if: success()
+    if: success() && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     steps:
@@ -245,23 +246,17 @@ jobs:
           name: dist
 
       - name: install
-        run: |
-          make install
-          pip install -U twine
+        run: make install
 
       - run: twine check dist/*
 
-      - name: publish docs
-#        if: startsWith(github.ref, 'refs/tags/')
-#        run: make publish-docs
-        run: make docs
-        env:
-          NETLIFY: ${{ secrets.netlify_token }}
-
       - name: upload to pypi
-#        if: startsWith(github.ref, 'refs/tags/')
         run: twine upload dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
-          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+
+      - name: publish docs
+        run: make publish-docs
+        env:
+          NETLIFY: ${{ secrets.netlify_token }}
