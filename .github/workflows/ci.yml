@@ -85,12 +85,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos, windows]
-        python-version: [3.6, 3.7, 3.8]
+        python-version: ['3.6', '3.7', '3.8']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
-      COMPILED: 'no'
-      DEPS: 'yes'
+      COMPILED: no
+      DEPS: yes
 
     runs-on: ${{ format('{0}-latest', matrix.os) }}
     steps:
@@ -191,9 +191,6 @@ jobs:
         make install
         pip install -U setuptools wheel cibuildwheel
 
-    - name: check tag
-      run: ./tests/check_tag.py
-
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.python-version == '8'
       run: python setup.py sdist bdist_wheel
@@ -223,7 +220,7 @@ jobs:
     - name: Store dist artifacts
       uses: actions/upload-artifact@v1
       with:
-        name: dist
+        name: pypi_files
         path: dist
 
   deploy:
@@ -243,12 +240,15 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@v1
         with:
-          name: dist
+          name: pypi_files
 
       - name: install
         run: make install
 
       - run: twine check dist/*
+
+      - name: check tag
+        run: ./tests/check_tag.py
 
       - name: upload to pypi
         run: twine upload dist/*
