@@ -669,7 +669,7 @@ class PaymentCardNumber(str):
         if card_number.brand in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}:
             required_length = 16
             valid = len(card_number) == required_length
-        elif card_number.brand is PaymentCardBrand.amex:
+        elif card_number.brand == PaymentCardBrand.amex:
             required_length = 15
             valid = len(card_number) == required_length
         else:
