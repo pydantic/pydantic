@@ -44,8 +44,8 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from inspect import Signature
     import typing_extensions
+    from inspect import Signature
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
@@ -59,11 +59,11 @@ if TYPE_CHECKING:
         def __call__(self, schema: Dict[str, Any]) -> None:
             pass
 
-        @overload
+        @overload  # noqa: F811
         def __call__(self, schema: Dict[str, Any], model: Type['Model']) -> None:
             pass
 
-        def __call__(self, schema: Dict[str, Any], model: Type['Model'] = None) -> None:
+        def __call__(self, schema: Dict[str, Any], model: Type['Model'] = None) -> None:  # noqa: F811
             pass
 
 
