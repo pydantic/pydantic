@@ -17,11 +17,21 @@ def test_obj():
     assert str(m) == 'a=10.2 b=10'
 
 
+def test_obj_many():
+    m1 = {'a': 1.1}
+    m2 = {'a': 1.2, 'b': 3}
+    assert Model.parse_obj([m1, m2], many=True) == [Model(a=1.1, b=10), Model(a=1.2, b=3)]
+
+
 def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj([1, 2, 3])
     assert exc_info.value.errors() == [
-        {'loc': ('__root__',), 'msg': 'Model expected dict not list', 'type': 'type_error'}
+        {
+            'loc': ('__root__',),
+            'msg': 'Model expected dict not list (did you want to parse multiple objects with `many=True` ?)',
+            'type': 'type_error',
+        }
     ]
 
 
@@ -114,9 +124,24 @@ def test_json_ct():
     assert Model.parse_raw('{"a": 12, "b": 8}', content_type='application/json') == Model(a=12, b=8)
 
 
+def test_json_many():
+    assert Model.parse_raw('[{"a": 12, "b": 8},{"a": 11, "b": 7}]', content_type='application/json', many=True) == [
+        Model(a=12, b=8),
+        Model(a=11, b=7),
+    ]
+
+
 def test_pickle_ct():
     data = pickle.dumps(dict(a=12, b=8))
     assert Model.parse_raw(data, content_type='application/pickle', allow_pickle=True) == Model(a=12, b=8)
+
+
+def test_pickle_many():
+    data = pickle.dumps([dict(a=12, b=8), dict(a=11, b=7)])
+    assert Model.parse_raw(data, content_type='application/pickle', allow_pickle=True, many=True) == [
+        Model(a=12, b=8),
+        Model(a=11, b=7),
+    ]
 
 
 def test_pickle_proto():

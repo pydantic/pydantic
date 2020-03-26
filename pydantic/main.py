@@ -419,7 +419,7 @@ class BaseModel(metaclass=ModelMetaclass):
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+    def _parse_single_obj(cls: Type['Model'], obj: Any) -> 'Model':
         if cls.__custom_root_type__ and (
             not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
         ):
@@ -428,9 +428,18 @@ class BaseModel(metaclass=ModelMetaclass):
             try:
                 obj = dict(obj)
             except (TypeError, ValueError) as e:
-                exc = TypeError(f'{cls.__name__} expected dict not {obj.__class__.__name__}')
-                raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
+                exc_msg = f'{cls.__name__} expected dict not {obj.__class__.__name__}'
+                if isinstance(obj, list):
+                    exc_msg += ' (did you want to parse multiple objects with `many=True` ?)'
+                raise ValidationError([ErrorWrapper(TypeError(exc_msg), loc=ROOT_KEY)], cls) from e
         return cls(**obj)
+
+    @classmethod
+    def parse_obj(cls: Type['Model'], obj: Any, *, many: bool = False) -> Union['Model', List['Model']]:
+        if many:
+            return [cls._parse_single_obj(x) for x in obj]
+        else:
+            return cls._parse_single_obj(obj)
 
     @classmethod
     def parse_raw(
@@ -441,7 +450,8 @@ class BaseModel(metaclass=ModelMetaclass):
         encoding: str = 'utf8',
         proto: Protocol = None,
         allow_pickle: bool = False,
-    ) -> 'Model':
+        many: bool = False,
+    ) -> Union['Model', List['Model']]:
         try:
             obj = load_str_bytes(
                 b,
@@ -453,7 +463,7 @@ class BaseModel(metaclass=ModelMetaclass):
             )
         except (ValueError, TypeError, UnicodeDecodeError) as e:
             raise ValidationError([ErrorWrapper(e, loc=ROOT_KEY)], cls)
-        return cls.parse_obj(obj)
+        return cls.parse_obj(obj, many=many)
 
     @classmethod
     def parse_file(
@@ -464,7 +474,8 @@ class BaseModel(metaclass=ModelMetaclass):
         encoding: str = 'utf8',
         proto: Protocol = None,
         allow_pickle: bool = False,
-    ) -> 'Model':
+        many: bool = False,
+    ) -> Union['Model', List['Model']]:
         obj = load_file(
             path,
             proto=proto,
@@ -473,7 +484,7 @@ class BaseModel(metaclass=ModelMetaclass):
             allow_pickle=allow_pickle,
             json_loads=cls.__config__.json_loads,
         )
-        return cls.parse_obj(obj)
+        return cls.parse_obj(obj, many=many)
 
     @classmethod
     def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
@@ -562,7 +573,7 @@ class BaseModel(metaclass=ModelMetaclass):
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
         elif cls.__custom_root_type__:
-            return cls.parse_obj(value)
+            return cls._parse_single_obj(value)
         else:
             try:
                 value_as_dict = dict(value)
