@@ -77,6 +77,10 @@ benchmark-all:
 benchmark-pydantic:
 	python benchmarks/run.py pydantic-only
 
+.PHONY: benchmark-json
+benchmark-json:
+	TEST_JSON=1 python benchmarks/run.py
+
 .PHONY: clean
 clean:
 	rm -rf `find . -name __pycache__`

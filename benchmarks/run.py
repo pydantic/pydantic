@@ -152,6 +152,43 @@ def stdev(d):
     except StatisticsError:
         return 0
 
+def run_tests(classes, cases, repeats, json=False):
+    if json:
+        classes = [c for c in classes if hasattr(c, 'to_json')]
+    lpad = max([len(t.package) for t in classes]) + 4
+    print(f'testing {", ".join([t.package for t in classes])}, {repeats} times each')
+    results = []
+    csv_results = []
+
+    for test_class in classes:
+        times = []
+        p = test_class.package
+        for i in range(repeats):
+            count, pass_count = 0, 0
+            start = datetime.now()
+            test = test_class(True)
+            for j in range(3):
+                for case in cases:
+                    if json:
+                        passed, result = test.to_json(case)
+                    else:
+                        passed, result = test.validate(case)
+                    count += 1
+                    pass_count += passed
+            time = (datetime.now() - start).total_seconds()
+            success = pass_count / count * 100
+            print(f'{p:>{lpad}} ({i+1:>{len(str(repeats))}}/{repeats}) time={time:0.3f}s, success={success:0.2f}%')
+            times.append(time)
+        print(f'{p:>{lpad}} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
+        model_count = 3 * len(cases)
+        avg = mean(times) / model_count * 1e6
+        sd = stdev(times) / model_count * 1e6
+        results.append(f'{p:>{lpad}} best={min(times) / model_count * 1e6:0.3f}μs/iter '
+                       f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter version={test_class.version}')
+        csv_results.append([p, test_class.version, avg])
+        print()
+
+    return results, csv_results
 
 def main():
     json_path = THIS_DIR / 'cases.json'
@@ -168,35 +205,9 @@ def main():
     if 'pydantic-only' not in sys.argv:
         tests += other_tests
 
-    lpad = max([len(t.package) for t in tests]) + 4
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
-    print(f'testing {", ".join([t.package for t in tests])}, {repeats} times each')
-    results = []
-    csv_results = []
-    for test_class in tests:
-        times = []
-        p = test_class.package
-        for i in range(repeats):
-            count, pass_count = 0, 0
-            start = datetime.now()
-            test = test_class(True)
-            for j in range(3):
-                for case in cases:
-                    passed, result = test.validate(case)
-                    count += 1
-                    pass_count += passed
-            time = (datetime.now() - start).total_seconds()
-            success = pass_count / count * 100
-            print(f'{p:>{lpad}} ({i+1:>{len(str(repeats))}}/{repeats}) time={time:0.3f}s, success={success:0.2f}%')
-            times.append(time)
-        print(f'{p:>{lpad}} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
-        model_count = 3 * len(cases)
-        avg = mean(times) / model_count * 1e6
-        sd = stdev(times) / model_count * 1e6
-        results.append(f'{p:>{lpad}} best={min(times) / model_count * 1e6:0.3f}μs/iter '
-                       f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter version={test_class.version}')
-        csv_results.append([p, test_class.version, avg])
-        print()
+    test_json = 'TEST_JSON' in os.environ
+    results, csv_results = run_tests(tests, cases, repeats, test_json)
 
     for r in results:
         print(r)
