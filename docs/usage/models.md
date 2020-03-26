@@ -225,6 +225,8 @@ _(This script is complete, it should run "as is")_
 * **`parse_file`**: this reads a file and passes the contents to `parse_raw`. If `content_type` is omitted,
   it is inferred from the file's extension.
 
+If you want to parse a list of objects, just set `many=True`.
+
 ```py
 {!.tmp_examples/models_parse.py!}
 ```

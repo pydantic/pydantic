@@ -10,6 +10,13 @@ class User(BaseModel):
 m = User.parse_obj({'id': 123, 'name': 'James'})
 print(m)
 
+users = [
+    {'id': 123, 'name': 'James'},
+    {'id': 17, 'name': 'Bob'}
+]
+m = User.parse_obj(users, many=True)
+print(m[1])
+
 try:
     User.parse_obj(['not', 'a', 'dict'])
 except ValidationError as e:
