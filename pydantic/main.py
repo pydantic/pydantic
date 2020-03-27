@@ -63,9 +63,6 @@ if TYPE_CHECKING:
         def __call__(self, schema: Dict[str, Any], model_class: Type['Model']) -> None:
             pass
 
-        def __call__(self, schema: Dict[str, Any], model_class: Type['Model'] = None) -> None:  # noqa: F811
-            pass
-
 
 try:
     import cython  # type: ignore
