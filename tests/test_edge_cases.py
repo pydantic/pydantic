@@ -1485,17 +1485,12 @@ def test_hashable_required():
     class Model(BaseModel):
         v: Hashable
 
-        class Config:
-            arbitrary_types_allowed = True
-
     Model(v=None)
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[])
-    assert exc_info.value.errors() == [{
-        'loc': ('v',), 'msg': 'instance of Hashable expected',
-        'type': 'type_error.arbitrary_type',
-        'ctx': {'expected_arbitrary_type': 'Hashable'},
-    }]
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value is not a valid hashable', 'type': 'type_error.hashable'}
+    ]
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'field required', 'type': 'value_error.missing'}]
@@ -1505,9 +1500,6 @@ def test_hashable_required():
 def test_hashable_optional(default):
     class Model(BaseModel):
         v: Hashable = default
-
-        class Config:
-            arbitrary_types_allowed = True
 
     Model(v=None)
     Model()

@@ -582,21 +582,16 @@ def test_inheritance_post_init():
 
 
 def test_hashable_required():
-    class Config:
-        arbitrary_types_allowed = True
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass
     class MyDataclass:
         v: Hashable
 
     MyDataclass(v=None)
     with pytest.raises(ValidationError) as exc_info:
         MyDataclass(v=[])
-    assert exc_info.value.errors() == [{
-        'loc': ('v',), 'msg': 'instance of Hashable expected',
-        'type': 'type_error.arbitrary_type',
-        'ctx': {'expected_arbitrary_type': 'Hashable'},
-    }]
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value is not a valid hashable', 'type': 'type_error.hashable'}
+    ]
     with pytest.raises(TypeError) as exc_info:
         MyDataclass()
     assert str(exc_info.value) == "__init__() missing 1 required positional argument: 'v'"
@@ -604,10 +599,7 @@ def test_hashable_required():
 
 @pytest.mark.parametrize('default', [1, None, ...])
 def test_hashable_optional(default):
-    class Config:
-        arbitrary_types_allowed = True
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass
     class MyDataclass:
         v: Hashable = default
 

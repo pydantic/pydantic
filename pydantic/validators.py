@@ -1,6 +1,7 @@
 import re
 import sys
 from collections import OrderedDict
+from collections.abc import Hashable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum, IntEnum
@@ -284,6 +285,13 @@ def decimal_validator(v: Any) -> Decimal:
     return v
 
 
+def hashable_validator(v: Any) -> Hashable:
+    if isinstance(v, Hashable):
+        return v
+
+    raise errors.HashableError()
+
+
 def ip_v4_address_validator(v: Any) -> IPv4Address:
     if isinstance(v, IPv4Address):
         return v
@@ -538,6 +546,9 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if type_ is Pattern:
         yield pattern_validator
+        return
+    if type_ is Hashable:
+        yield hashable_validator
         return
     if is_callable_type(type_):
         yield callable_validator
