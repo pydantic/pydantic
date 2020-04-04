@@ -1,5 +1,4 @@
 import re
-import sys
 from collections import OrderedDict
 from collections.abc import Hashable
 from datetime import date, datetime, time, timedelta
@@ -26,7 +25,16 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, get_class, is_callable_type, is_literal_type
+from .typing import (
+    AnyCallable,
+    AnyType,
+    ForwardRef,
+    display_as_type,
+    get_class,
+    is_callable_type,
+    is_literal_type,
+    literal_values,
+)
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
@@ -393,11 +401,18 @@ def callable_validator(v: Any) -> AnyCallable:
     raise errors.CallableError(value=v)
 
 
+def flatten_literal(s: Any) -> List[Any]:
+    if is_literal_type(s):
+        s = list(literal_values(s))
+    if s == []:
+        return s
+    if is_literal_type(s[0]):
+        return flatten_literal(s[0]) + flatten_literal(s[1:])
+    return s[:1] + flatten_literal(s[1:])
+
+
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
-    if sys.version_info >= (3, 7):
-        permitted_choices = type_.__args__
-    else:
-        permitted_choices = type_.__values__
+    permitted_choices: Tuple[Any, ...] = tuple(flatten_literal(type_))
     allowed_choices_set = set(permitted_choices)
 
     def literal_validator(v: Any) -> Any:
