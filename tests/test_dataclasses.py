@@ -28,10 +28,10 @@ def test_model_name():
     class MyDataClass:
         model_name: str
 
-    d = MyDataClass("foo")
-    assert d.model_name == "foo"
-    d = MyDataClass(model_name="foo")
-    assert d.model_name == "foo"
+    d = MyDataClass('foo')
+    assert d.model_name == 'foo'
+    d = MyDataClass(model_name='foo')
+    assert d.model_name == 'foo'
 
 
 def test_value_error():
