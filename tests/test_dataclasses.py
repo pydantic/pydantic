@@ -23,6 +23,17 @@ def test_simple():
     assert d.b == 10
 
 
+def test_model_name():
+    @pydantic.dataclasses.dataclass
+    class MyDataClass:
+        model_name: str
+
+    d = MyDataClass("foo")
+    assert d.model_name == "foo"
+    d = MyDataClass(model_name="foo")
+    assert d.model_name == "foo"
+
+
 def test_value_error():
     @pydantic.dataclasses.dataclass
     class MyDataclass:

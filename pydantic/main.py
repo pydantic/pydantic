@@ -757,7 +757,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
 
 def create_model(
-    model_name: str,
+    __model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
@@ -767,7 +767,7 @@ def create_model(
 ) -> Type[BaseModel]:
     """
     Dynamically create a model.
-    :param model_name: name of the created model
+    :param __model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
     :param __validators__: a dict of method names and @validator class methods
@@ -809,7 +809,7 @@ def create_model(
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(model_name, (__base__,), namespace)
+    return type(__model_name, (__base__,), namespace)
 
 
 _missing = object()
