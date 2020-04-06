@@ -155,8 +155,8 @@ def stdev(d):
 def run_tests(classes, cases, repeats, json=False):
     if json:
         classes = [c for c in classes if hasattr(c, 'to_json')]
-    lpad = max([len(t.package) for t in classes]) + 4
-    print(f'testing {", ".join([t.package for t in classes])}, {repeats} times each')
+    lpad = max(len(t.package) for t in classes) + 4
+    print(f'testing {", ".join(t.package for t in classes)}, {repeats} times each')
     results = []
     csv_results = []
 
