@@ -18,25 +18,27 @@ def isoformat(o: Union[datetime.date, datetime.time]) -> str:
 
 
 ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
+    bytes: lambda o: o.decode(),
     Color: str,
-    IPv4Address: str,
-    IPv6Address: str,
-    IPv4Interface: str,
-    IPv6Interface: str,
-    IPv4Network: str,
-    IPv6Network: str,
-    SecretStr: str,
-    SecretBytes: str,
-    UUID: str,
-    datetime.datetime: isoformat,
     datetime.date: isoformat,
+    datetime.datetime: isoformat,
     datetime.time: isoformat,
     datetime.timedelta: lambda td: td.total_seconds(),
-    set: list,
+    Decimal: float,
+    Enum: lambda o: o.value,
     frozenset: list,
     GeneratorType: list,
-    bytes: lambda o: o.decode(),
-    Decimal: float,
+    IPv4Address: str,
+    IPv4Interface: str,
+    IPv4Network: str,
+    IPv6Address: str,
+    IPv6Interface: str,
+    IPv6Network: str,
+    Path: str,
+    SecretBytes: str,
+    SecretStr: str,
+    set: list,
+    UUID: str,
 }
 
 
@@ -46,10 +48,6 @@ def pydantic_encoder(obj: Any) -> Any:
 
     if isinstance(obj, BaseModel):
         return obj.dict()
-    elif isinstance(obj, Enum):
-        return obj.value
-    elif isinstance(obj, Path):
-        return str(obj)
     elif is_dataclass(obj):
         return asdict(obj)
 
