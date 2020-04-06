@@ -165,16 +165,19 @@ def run_tests(classes, cases, repeats, json=False):
         p = test_class.package
         for i in range(repeats):
             count, pass_count = 0, 0
-            start = datetime.now()
             test = test_class(True)
+            if json:
+                models = [m for passed, m in (test.validate(c) for c in cases) if passed]
+            start = datetime.now()
             for j in range(3):
-                for case in cases:
-                    if json:
-                        passed, result = test.to_json(case)
-                    else:
+                if json:
+                    for model in models:
+                        passed, result = test.to_json(model)
+                else:
+                    for case in cases:
                         passed, result = test.validate(case)
-                    count += 1
-                    pass_count += passed
+                count += 1
+                pass_count += passed
             time = (datetime.now() - start).total_seconds()
             success = pass_count / count * 100
             print(f'{p:>{lpad}} ({i+1:>{len(str(repeats))}}/{repeats}) time={time:0.3f}s, success={success:0.2f}%')
