@@ -278,3 +278,4 @@ def test_context():
 
     model = Model.from_orm(TestCls(), bar='changed', baz=1.1)
     assert model.dict() == {'foo': 1, 'bar': 'changed', 'baz': 1.1}
+    assert set(model) == {'foo', 'bar', 'baz'}
