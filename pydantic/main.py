@@ -476,10 +476,10 @@ class BaseModel(metaclass=ModelMetaclass):
         return cls.parse_obj(obj)
 
     @classmethod
-    def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
+    def from_orm(cls: Type['Model'], obj: Any, **context: Any) -> 'Model':
         if not cls.__config__.orm_mode:
             raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
-        obj = cls._decompose_class(obj)
+        obj = cls._decompose_class(obj, **context)
         m = cls.__new__(cls)
         values, fields_set, validation_error = validate_model(cls, obj)
         if validation_error:
@@ -571,8 +571,11 @@ class BaseModel(metaclass=ModelMetaclass):
             return cls(**value_as_dict)
 
     @classmethod
-    def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
-        return cls.__config__.getter_dict(obj)
+    def _decompose_class(cls: Type['Model'], obj: Any, **context: Any) -> GetterDict:
+        if context:
+            return cls.__config__.getter_dict(obj, **context)
+        else:
+            return cls.__config__.getter_dict(obj)
 
     @classmethod
     @no_type_check

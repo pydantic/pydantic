@@ -147,7 +147,14 @@ provide a dictionary-like interface to any class. You can customise how this wor
 sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
 
 You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`. 
-In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
+In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.  
+
+You can pass any keyword argument to `from_orm` constructor if you want to use some custom values during model creation. In that case passed keyword arguments have a higher priority.  
+
+```py
+{!.tmp_examples/models_orm_mode_context.py!}
+```
+
 
 ## Error Handling
 

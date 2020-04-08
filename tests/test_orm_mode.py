@@ -261,3 +261,20 @@ def test_custom_getter_dict_derived_model_class():
 
     model = ExampleOrm.from_orm(Example())
     assert model.dict() == {'name': 'name', 'col': [0, 1, 2, 3, 4], 'id': 1}
+
+
+def test_context():
+    class TestCls:
+        foo = 1
+        bar = 'original'
+
+    class Model(BaseModel):
+        foo: int
+        bar: str
+        baz: float
+
+        class Config:
+            orm_mode = True
+
+    model = Model.from_orm(TestCls(), bar='changed', baz=1.1)
+    assert model.dict() == {'foo': 1, 'bar': 'changed', 'baz': 1.1}

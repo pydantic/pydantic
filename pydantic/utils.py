@@ -262,6 +262,9 @@ class Representation:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 
 
+_not_set = object()
+
+
 class GetterDict(Representation):
     """
     Hack to make object's smell just enough like dicts for validate_model.
@@ -271,17 +274,24 @@ class GetterDict(Representation):
 
     __slots__ = ('_obj',)
 
-    def __init__(self, obj: Any):
+    def __init__(self, obj: Any, **context: Any):
         self._obj = obj
+        self._context = context
 
     def __getitem__(self, key: str) -> Any:
+        return self._get(key)
+
+    def _get(self, key: str, default: Any = _not_set) -> Any:
         try:
-            return getattr(self._obj, key)
+            if default is not _not_set:
+                return self._context.get(key, getattr(self._obj, key, default))
+            else:
+                return self._context.get(key, getattr(self._obj, key))
         except AttributeError as e:
             raise KeyError(key) from e
 
-    def get(self, key: Any, default: Any = None) -> Any:
-        return getattr(self._obj, key, default)
+    def get(self, key: Any, default: Any = _not_set) -> Any:
+        return self._get(key, default)
 
     def extra_keys(self) -> Set[Any]:
         """
@@ -307,6 +317,8 @@ class GetterDict(Representation):
         for name in dir(self._obj):
             if not name.startswith('_'):
                 yield name
+        for k in self._context:
+            yield k
 
     def __len__(self) -> int:
         return sum(1 for _ in self)
