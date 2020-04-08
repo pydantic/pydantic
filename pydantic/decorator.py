@@ -14,20 +14,29 @@ if TYPE_CHECKING:
     Callable = TypeVar('Callable', bound=AnyCallable)
 
 
-def validate_arguments(function: 'Callable') -> 'Callable':
+def _validate_arguments(**configs):
+    def validate(function: 'Callable') -> 'Callable':
+        vd = ValidatedFunction(function, **configs)
+
+        @wraps(function)
+        def wrapper_function(*args: Any, **kwargs: Any) -> Any:
+            return vd.call(*args, **kwargs)
+
+        wrapper_function.vd = vd  # type: ignore
+        wrapper_function.raw_function = vd.raw_function  # type: ignore
+        wrapper_function.model = vd.model  # type: ignore
+        return cast('Callable', wrapper_function)
+    return validate
+
+
+def validate_arguments(func: 'Callable' = None, **configs):
     """
     Decorator to validate the arguments passed to a function.
     """
-    vd = ValidatedFunction(function)
-
-    @wraps(function)
-    def wrapper_function(*args: Any, **kwargs: Any) -> Any:
-        return vd.call(*args, **kwargs)
-
-    wrapper_function.vd = vd  # type: ignore
-    wrapper_function.raw_function = vd.raw_function  # type: ignore
-    wrapper_function.model = vd.model  # type: ignore
-    return cast('Callable', wrapper_function)
+    if func:
+        return _validate_arguments(**configs)(func)
+    else:
+        return _validate_arguments(**configs)
 
 
 ALT_V_ARGS = 'v__args'
@@ -36,7 +45,7 @@ V_POSITIONAL_ONLY_NAME = 'v__positional_only'
 
 
 class ValidatedFunction:
-    def __init__(self, function: 'Callable'):
+    def __init__(self, function: 'Callable', **configs):
         from inspect import signature, Parameter
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
@@ -100,7 +109,7 @@ class ValidatedFunction:
             # same with kwargs
             fields[self.v_kwargs_name] = Dict[Any, Any], None
 
-        self.create_model(fields, takes_args, takes_kwargs)
+        self.create_model(fields, takes_args, takes_kwargs, **configs)
 
     def call(self, *args: Any, **kwargs: Any) -> Any:
         values = self.build_values(args, kwargs)
@@ -170,8 +179,9 @@ class ValidatedFunction:
         else:
             return self.raw_function(**d)
 
-    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool) -> None:
+    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, **configs) -> None:
         pos_args = len(self.arg_mapping)
+        configs.update(extra=Extra.forbid)
 
         class DecoratorBaseModel(BaseModel):
             @validator(self.v_args_name, check_fields=False, allow_reuse=True)
@@ -196,7 +206,9 @@ class ValidatedFunction:
                 keys = ', '.join(map(repr, v))
                 raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
 
-            class Config:
-                extra = Extra.forbid
+            # class Config:
+            #     extra = Extra.forbid
+
+            Config = type('Config', (), configs)
 
         self.model = create_model(to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
