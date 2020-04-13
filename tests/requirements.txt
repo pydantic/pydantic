@@ -1,5 +1,5 @@
 black==19.10b0
-coverage==5.0.4
+coverage==5.1
 Cython==0.29.15;sys_platform!='win32'
 flake8==3.7.9
 flake8-quotes==2.1.1
