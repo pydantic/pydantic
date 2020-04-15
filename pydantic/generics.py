@@ -30,7 +30,7 @@ class GenericModel(BaseModel):
         if not isinstance(params, tuple):
             params = (params,)
         if cls is GenericModel and any(isinstance(param, TypeVar) for param in params):  # type: ignore
-            raise TypeError(f'Type parameters should be placed on typing.Generic, not GenericModel')
+            raise TypeError('Type parameters should be placed on typing.Generic, not GenericModel')
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
 
