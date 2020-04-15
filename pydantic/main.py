@@ -791,9 +791,9 @@ def create_model(
                 f_annotation, f_value = f_def
             except ValueError as e:
                 raise ConfigError(
-                    f'field definitions should either be a tuple of (<type>, <default>) or just a '
-                    f'default value, unfortunately this means tuples as '
-                    f'default values are not allowed'
+                    'field definitions should either be a tuple of (<type>, <default>) or just a '
+                    'default value, unfortunately this means tuples as '
+                    'default values are not allowed'
                 ) from e
         else:
             f_annotation, f_value = None, f_def

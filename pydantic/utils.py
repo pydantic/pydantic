@@ -349,8 +349,8 @@ class ValueItems(Representation):
                 items = self._normalize_indexes(items, len(value))
             except TypeError as e:
                 raise TypeError(
-                    f'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
-                    f'expected integer keys or keyword "__all__"'
+                    'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
+                    'expected integer keys or keyword "__all__"'
                 ) from e
 
         self._items = items
