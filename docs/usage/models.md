@@ -385,6 +385,12 @@ This is demonstrated in the following example:
 !!! warning
     Calling the `parse_obj` method on a dict with the single key `"__root__"` for non-mapping custom root types
     is currently supported for backwards compatibility, but is not recommended and may be dropped in a future version.
+    
+If you want to access items in the `__root__` field directly or to iterate over the items, you can implement custom `__iter__` and `__getitem__` functions, as shown in the following example.
+
+```py
+{!.tmp_examples/models_custom_root_access.py!}
+```
 
 ## Faux Immutability
 
