@@ -61,6 +61,7 @@ __all__ = (
     'DateError',
     'TimeError',
     'DurationError',
+    'HashableError',
     'UUIDError',
     'UUIDVersionError',
     'ArbitraryTypeError',
@@ -390,6 +391,10 @@ class TimeError(PydanticValueError):
 
 class DurationError(PydanticValueError):
     msg_template = 'invalid duration format'
+
+
+class HashableError(PydanticTypeError):
+    msg_template = 'value is not a valid hashable'
 
 
 class UUIDError(PydanticTypeError):
