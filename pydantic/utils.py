@@ -220,6 +220,8 @@ class Representation:
     of objects.
     """
 
+    __slots__: Tuple[str, ...] = tuple()
+
     def __repr_args__(self) -> 'ReprArgs':
         """
         Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
