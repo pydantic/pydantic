@@ -105,7 +105,7 @@ exception by default, or both.
 see [model data conversion](models.md#data-conversion) and `validate_arguments` is no different.
 
 See [#1098](https://github.com/samuelcolvin/pydantic/issues/1098) and other issues with the "strictness" label
-for a discussion of this. If *pydantic* get's a "strict" mode in future, `validate_arguments` will have an option
+for a discussion of this. If *pydantic* gets a "strict" mode in future, `validate_arguments` will have an option
 to use this, it may even become the default for the decorator.
 
 ### Performance
