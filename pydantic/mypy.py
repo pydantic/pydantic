@@ -246,7 +246,8 @@ class PydanticModelTransformer:
                 # Basically, it is an edge case when dealing with complex import logic
                 # This is the same logic used in the dataclasses plugin
                 continue
-            assert isinstance(node, Var)
+            if not isinstance(node, Var):
+                continue
 
             # x: ClassVar[int] is ignored by dataclasses.
             if node.is_classvar:
