@@ -1071,3 +1071,21 @@ def test_default_factory():
 
     m = FunctionModel()
     assert m.uid is uuid4
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
+def test_none_min_max_items():
+    # None default
+    class Foo(BaseModel):
+        foo: List = Field(None)
+        bar: List = Field(None, min_items=0)
+        baz: List = Field(None, max_items=10)
+
+    f1 = Foo()
+    f2 = Foo(bar=None)
+    f3 = Foo(baz=None)
+    f4 = Foo(bar=None, baz=None)
+    for f in (f1, f2, f3, f4):
+        assert f.foo is None
+        assert f.bar is None
+        assert f.baz is None
