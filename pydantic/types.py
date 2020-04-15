@@ -81,6 +81,7 @@ if TYPE_CHECKING:
     from .dataclasses import DataclassType  # noqa: F401
     from .main import BaseModel, BaseConfig  # noqa: F401
     from .typing import CallableGenerator
+    from .fields import ModelField
 
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
 
@@ -129,7 +130,7 @@ class ConstrainedList(list):  # type: ignore
         update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
 
     @classmethod
-    def list_length_validator(cls, v: 'Optional[List[T]]', field: 'ModelField') -> 'Optional[List[T]]':  # type: ignore[name-defined] # noqa: E501,F821
+    def list_length_validator(cls, v: 'Optional[List[T]]', field: 'ModelField') -> 'Optional[List[T]]':
         if v is None and not field.required:
             return None
 
