@@ -59,7 +59,7 @@ if TYPE_CHECKING:
         def __call__(self, schema: Dict[str, Any]) -> None:
             pass
 
-        @overload
+        @overload  # noqa: F811
         def __call__(self, schema: Dict[str, Any], model_class: Type['Model']) -> None:  # noqa: F811
             pass
 
