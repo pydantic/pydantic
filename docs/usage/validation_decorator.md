@@ -116,7 +116,7 @@ there will still be a performance impact to using the `validate_arguments` decor
 calling the raw function.
 
 In many situations this will have little or no noticeable effect, however be aware that
-`validate_arguments` is not an equivalent or alternative to function definitions in strongly typed languages,
+`validate_arguments` is not an equivalent or alternative to function definitions in strongly typed languages;
 it never will be.
 
 ### Return Value
