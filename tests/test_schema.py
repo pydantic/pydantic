@@ -1529,18 +1529,33 @@ def test_model_with_schema_extra_callable_no_model_class():
     assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
-def test_model_with_schema_extra_callable_classmethod_asserts():
+def test_model_with_schema_extra_callable_classmethod():
     class Model(BaseModel):
         name: str = None
 
         class Config:
+            type = 'foo'
+
             @classmethod
             def schema_extra(cls, schema, model_class):
                 schema.pop('properties')
-                schema['type'] = 'override'
+                schema['type'] = cls.type
+                assert model_class is Model
 
-    with pytest.raises(TypeError, match='Model.Config.schema_extra callable is expected to be a staticmethod'):
-        Model.schema()
+    assert Model.schema() == {'title': 'Model', 'type': 'foo'}
+
+
+def test_model_with_schema_extra_callable_instance_method():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            def schema_extra(schema, model_class):
+                schema.pop('properties')
+                schema['type'] = 'override'
+                assert model_class is Model
+
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
 def test_model_with_extra_forbidden():
