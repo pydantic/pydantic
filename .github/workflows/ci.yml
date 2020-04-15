@@ -155,6 +155,7 @@ jobs:
 
     - run: make benchmark-pydantic
     - run: make benchmark-all
+    - run: make benchmark-json
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
