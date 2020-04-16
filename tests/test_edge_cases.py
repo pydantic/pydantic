@@ -436,6 +436,34 @@ def test_advanced_exclude():
     assert m.dict(exclude={'e': ..., 'f': {'d'}}) == {'f': {'c': 'foo'}}
 
 
+def test_advanced_exclude_by_alias():
+    class SubSubModel(BaseModel):
+        a: str
+        aliased_b: str = Field(..., alias='b_alias')
+
+    class SubModel(BaseModel):
+        aliased_c: str = Field(..., alias='c_alias')
+        aliased_d: List[SubSubModel] = Field(..., alias='d_alias')
+
+    class Model(BaseModel):
+        aliased_e: str = Field(..., alias='e_alias')
+        aliased_f: SubModel = Field(..., alias='f_alias')
+
+    m = Model(
+        e_alias='e',
+        f_alias=SubModel(c_alias='foo', d_alias=[SubSubModel(a='a', b_alias='b'), SubSubModel(a='c', b_alias='e')]),
+    )
+
+    excludes = {'aliased_f': {'aliased_c': ..., 'aliased_d': {-1: {'a'}}}}
+    assert m.dict(exclude=excludes, by_alias=True) == {
+        'e_alias': 'e',
+        'f_alias': {'d_alias': [{'a': 'a', 'b_alias': 'b'}, {'b_alias': 'e'}]},
+    }
+
+    excludes = {'aliased_e': ..., 'aliased_f': {'aliased_d'}}
+    assert m.dict(exclude=excludes, by_alias=True) == {'f_alias': {'c_alias': 'foo'}}
+
+
 def test_advanced_value_include():
     class SubSubModel(BaseModel):
         a: str

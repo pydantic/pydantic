@@ -690,27 +690,29 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         value_exclude = ValueItems(self, exclude) if exclude else None
         value_include = ValueItems(self, include) if include else None
 
-        for k, v in self.__dict__.items():
+        for field_key, v in self.__dict__.items():
             if (
-                (allowed_keys is not None and k not in allowed_keys)
+                (allowed_keys is not None and field_key not in allowed_keys)
                 or (exclude_none and v is None)
-                or (exclude_defaults and self.__field_defaults__.get(k, _missing) == v)
+                or (exclude_defaults and self.__field_defaults__.get(field_key, _missing) == v)
             ):
                 continue
-            if by_alias and k in self.__fields__:
-                k = self.__fields__[k].alias
+            if by_alias and field_key in self.__fields__:
+                dict_key = self.__fields__[field_key].alias
+            else:
+                dict_key = field_key
             if to_dict or value_include or value_exclude:
                 v = self._get_value(
                     v,
                     to_dict=to_dict,
                     by_alias=by_alias,
-                    include=value_include and value_include.for_element(k),
-                    exclude=value_exclude and value_exclude.for_element(k),
+                    include=value_include and value_include.for_element(field_key),
+                    exclude=value_exclude and value_exclude.for_element(field_key),
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
                     exclude_none=exclude_none,
                 )
-            yield k, v
+            yield dict_key, v
 
     def _calculate_keys(
         self,
