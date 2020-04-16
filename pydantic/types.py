@@ -534,7 +534,7 @@ class SecretStr:
 
     @classmethod
     def validate(cls, value: Any) -> 'SecretStr':
-        if value.__class__ == cls:
+        if isinstance(value, cls):
             return value
         value = str_validator(value)
         return cls(value)
@@ -570,7 +570,7 @@ class SecretBytes:
 
     @classmethod
     def validate(cls, value: Any) -> 'SecretBytes':
-        if value.__class__ == cls:
+        if isinstance(value, cls):
             return value
         value = bytes_validator(value)
         return cls(value)

@@ -1893,7 +1893,8 @@ def test_secretstr_idempotent():
         password: SecretStr
 
     # Should not raise an exception
-    _ = Foobar(password=SecretStr('1234'))
+    m = Foobar(password=SecretStr('1234'))
+    assert m.password.get_secret_value() == '1234'
 
 
 def test_secretstr_error():
