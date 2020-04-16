@@ -436,7 +436,7 @@ def test_advanced_exclude():
     assert m.dict(exclude={'e': ..., 'f': {'d'}}) == {'f': {'c': 'foo'}}
 
 
-def test_advanced_value_inclide():
+def test_advanced_value_include():
     class SubSubModel(BaseModel):
         a: str
         b: str
