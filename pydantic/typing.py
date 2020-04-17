@@ -8,6 +8,7 @@ from typing import (  # type: ignore
     Dict,
     Generator,
     List,
+    Mapping,
     NewType,
     Optional,
     Sequence,
@@ -72,6 +73,7 @@ if TYPE_CHECKING:
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
     DictIntStrAny = Dict[IntStr, Any]
+    MappingIntStrAny = Mapping[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
     ReprArgs = Sequence[Tuple[Optional[str], Any]]
 
