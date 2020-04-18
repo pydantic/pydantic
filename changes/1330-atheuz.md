@@ -1,1 +1,1 @@
-Make SecretStr and SecretBytes initialization idempotent
+Make `SecretStr` and `SecretBytes` initialization idempotent
