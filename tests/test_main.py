@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Any, Callable, ClassVar, List, Mapping, Optional, Type
+from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type
 from uuid import UUID, uuid4
 
 import pytest
@@ -980,6 +980,42 @@ def test_model_iteration():
     assert dict(m) == {'c': 3, 'd': Foo()}
 
 
+def test_model_export_nested_list():
+    class Foo(BaseModel):
+        a: int = 1
+        b: int = 2
+
+    class Bar(BaseModel):
+        c: int
+        foos: List[Foo]
+
+    m = Bar(c=3, foos=[Foo(a=1, b=2), Foo(a=3, b=4)])
+
+    assert m.dict(exclude={'foos': {0: {'a'}, 1: {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
+
+    with pytest.raises(TypeError, match='expected integer keys'):
+        m.dict(exclude={'foos': {'a'}})
+
+    assert m.dict(exclude={'foos': {0: {'b'}, '__all__': {'a'}}}) == {'c': 3, 'foos': [{}, {'b': 4}]}
+    assert m.dict(exclude={'foos': {'__all__': {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
+    assert m.dict(exclude={'foos': {'__all__'}}) == {'c': 3, 'foos': []}
+
+    with pytest.raises(ValueError, match='set with keyword "__all__" must not contain other elements'):
+        m.dict(exclude={'foos': {'a', '__all__'}})
+
+
+def test_model_export_dict_exclusion():
+    class Foo(BaseModel):
+        a: int = 1
+        bars: List[Dict[str, int]]
+
+    m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
+
+    assert m.dict(exclude={'bars': {0}}) == {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]}
+    assert m.dict(exclude={'bars': {'__all__'}}) == {'a': 1, 'bars': []}
+    assert m.dict(exclude={'bars': {'__all__': {'w'}}}) == {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]}
+
+
 def test_custom_init_subclass_params():
     class DerivedModel(BaseModel):
         def __init_subclass__(cls, something):
@@ -1035,3 +1071,21 @@ def test_default_factory():
 
     m = FunctionModel()
     assert m.uid is uuid4
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
+def test_none_min_max_items():
+    # None default
+    class Foo(BaseModel):
+        foo: List = Field(None)
+        bar: List = Field(None, min_items=0)
+        baz: List = Field(None, max_items=10)
+
+    f1 = Foo()
+    f2 = Foo(bar=None)
+    f3 = Foo(baz=None)
+    f4 = Foo(bar=None, baz=None)
+    for f in (f1, f2, f3, f4):
+        assert f.foo is None
+        assert f.bar is None
+        assert f.baz is None

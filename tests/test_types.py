@@ -1849,7 +1849,7 @@ def test_pattern_error():
         pattern: Pattern
 
     with pytest.raises(ValidationError) as exc_info:
-        Foobar(pattern=f'[xx')
+        Foobar(pattern='[xx')
     assert exc_info.value.errors() == [
         {'loc': ('pattern',), 'msg': 'Invalid regular expression', 'type': 'value_error.regex_pattern'}
     ]

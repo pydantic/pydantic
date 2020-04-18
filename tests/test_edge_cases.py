@@ -1,4 +1,5 @@
 import sys
+from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, FrozenSet, Generic, List, Optional, Set, Tuple, Type, TypeVar, Union
@@ -1478,3 +1479,27 @@ def test_custom_generic_disallowed():
         class Model(BaseModel):
             a: str
             gen: MyGen[str, bool]
+
+
+def test_hashable_required():
+    class Model(BaseModel):
+        v: Hashable
+
+    Model(v=None)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[])
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value is not a valid hashable', 'type': 'type_error.hashable'}
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+@pytest.mark.parametrize('default', [1, None])
+def test_hashable_optional(default):
+    class Model(BaseModel):
+        v: Hashable = default
+
+    Model(v=None)
+    Model()

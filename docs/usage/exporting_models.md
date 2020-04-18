@@ -113,7 +113,11 @@ sets or dictionaries. This allows nested selection of which fields to export:
 ```
 
 The ellipsis (``...``) indicates that we want to exclude or include an entire key, just as if we included it in a set.
-Of course, the same can be done at any depth level:
+Of course, the same can be done at any depth level.
+
+Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.  In this scenario,
+`dict` and related methods expect integer keys for element-wise inclusion or exclusion. To exclude a field from **every**
+member of a list or tuple, the dictionary key `'__all__'` can be used as follows:
 
 ```py
 {!.tmp_examples/exporting_models_exclude2.py!}

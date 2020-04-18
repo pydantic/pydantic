@@ -1,4 +1,5 @@
 import dataclasses
+from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
 from typing import ClassVar, Dict, FrozenSet, Optional
@@ -21,6 +22,17 @@ def test_simple():
     d = MyDataclass(b=10, a=20)
     assert d.a == 20
     assert d.b == 10
+
+
+def test_model_name():
+    @pydantic.dataclasses.dataclass
+    class MyDataClass:
+        model_name: str
+
+    d = MyDataClass('foo')
+    assert d.model_name == 'foo'
+    d = MyDataClass(model_name='foo')
+    assert d.model_name == 'foo'
 
 
 def test_value_error():
@@ -578,3 +590,29 @@ def test_inheritance_post_init():
 
     Child(a=1, b=2)
     assert post_init_called
+
+
+def test_hashable_required():
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        v: Hashable
+
+    MyDataclass(v=None)
+    with pytest.raises(ValidationError) as exc_info:
+        MyDataclass(v=[])
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value is not a valid hashable', 'type': 'type_error.hashable'}
+    ]
+    with pytest.raises(TypeError) as exc_info:
+        MyDataclass()
+    assert str(exc_info.value) == "__init__() missing 1 required positional argument: 'v'"
+
+
+@pytest.mark.parametrize('default', [1, None, ...])
+def test_hashable_optional(default):
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        v: Hashable = default
+
+    MyDataclass()
+    MyDataclass(v=None)

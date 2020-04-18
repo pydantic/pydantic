@@ -21,6 +21,7 @@ from typing import (
     Union,
     cast,
     no_type_check,
+    overload,
 )
 
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
@@ -43,6 +44,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
+    import typing_extensions
     from inspect import Signature
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
@@ -51,6 +53,16 @@ if TYPE_CHECKING:
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
+
+    class SchemaExtraCallable(typing_extensions.Protocol):
+        @overload
+        def __call__(self, schema: Dict[str, Any]) -> None:
+            pass
+
+        @overload  # noqa: F811
+        def __call__(self, schema: Dict[str, Any], model_class: Type['Model']) -> None:  # noqa: F811
+            pass
+
 
 try:
     import cython  # type: ignore
@@ -89,7 +101,7 @@ class BaseConfig:
     getter_dict: Type[GetterDict] = GetterDict
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
-    schema_extra: Union[Dict[str, Any], Callable[[Dict[str, Any]], None]] = {}
+    schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
     json_encoders: Dict[AnyType, AnyCallable] = {}
@@ -172,6 +184,12 @@ def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
 
 UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
 
+# Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
+# (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
+# safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
+# the `BaseModel` class, since that's defined immediately after the metaclass.
+_is_base_model_class_defined = False
+
 
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
@@ -183,7 +201,7 @@ class ModelMetaclass(ABCMeta):
 
         pre_root_validators, post_root_validators = [], []
         for base in reversed(bases):
-            if issubclass(base, BaseModel) and base != BaseModel:
+            if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(deepcopy(base.__fields__))
                 config = inherit_config(base.__config__, config)
                 validators = inherit_validators(base.__validators__, validators)
@@ -285,7 +303,7 @@ class ModelMetaclass(ABCMeta):
         return cls
 
 
-class BaseModel(metaclass=ModelMetaclass):
+class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
@@ -302,12 +320,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
-    # equivalent of inheriting from Representation
-    __repr_name__ = Representation.__repr_name__
-    __repr_str__ = Representation.__repr_str__
-    __pretty__ = Representation.__pretty__
-    __str__ = Representation.__str__
-    __repr__ = Representation.__repr__
+    __doc__ = ''  # Null out the Representation docstring
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         """
@@ -756,8 +769,11 @@ class BaseModel(metaclass=ModelMetaclass):
         return self.__dict__
 
 
+_is_base_model_class_defined = True
+
+
 def create_model(
-    model_name: str,
+    __model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
@@ -767,7 +783,7 @@ def create_model(
 ) -> Type[BaseModel]:
     """
     Dynamically create a model.
-    :param model_name: name of the created model
+    :param __model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
     :param __validators__: a dict of method names and @validator class methods
@@ -791,9 +807,9 @@ def create_model(
                 f_annotation, f_value = f_def
             except ValueError as e:
                 raise ConfigError(
-                    f'field definitions should either be a tuple of (<type>, <default>) or just a '
-                    f'default value, unfortunately this means tuples as '
-                    f'default values are not allowed'
+                    'field definitions should either be a tuple of (<type>, <default>) or just a '
+                    'default value, unfortunately this means tuples as '
+                    'default values are not allowed'
                 ) from e
         else:
             f_annotation, f_value = None, f_def
@@ -809,7 +825,7 @@ def create_model(
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(model_name, (__base__,), namespace)
+    return type(__model_name, (__base__,), namespace)
 
 
 _missing = object()

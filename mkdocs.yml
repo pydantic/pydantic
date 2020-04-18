@@ -20,7 +20,7 @@ google_analytics:
 
 extra_css:
 - 'extra/terminal.css'
-- 'extra/ad.css'
+- 'extra/tweaks.css'
 extra_javascript:
 - 'extra/redirects.js'
 - 'extra/ad.js'

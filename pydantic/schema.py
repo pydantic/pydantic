@@ -5,7 +5,6 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -53,15 +52,7 @@ from .types import (
     conlist,
     constr,
 )
-from .typing import (
-    ForwardRef,
-    Literal,
-    is_callable_type,
-    is_literal_type,
-    is_new_type,
-    literal_values,
-    new_type_supertype,
-)
+from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, literal_values
 from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
@@ -467,8 +458,6 @@ def model_process_schema(
     s.update(m_schema)
     schema_extra = model.__config__.schema_extra
     if callable(schema_extra):
-        if not isinstance(schema_extra, FunctionType):
-            raise TypeError(f'{model.__name__}.Config.schema_extra callable is expected to be a staticmethod')
         if len(signature(schema_extra).parameters) == 1:
             schema_extra(s)
         else:
@@ -638,8 +627,6 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
     field_type = field.type_
-    if is_new_type(field_type):
-        field_type = new_type_supertype(field_type)
     if is_literal_type(field_type):
         values = literal_values(field_type)
         if len(values) > 1:

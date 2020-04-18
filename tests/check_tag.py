@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 import os
+import re
 import sys
-from importlib.machinery import SourceFileLoader
 
-VERSION = SourceFileLoader('version', 'pydantic/version.py').load_module().VERSION
+from pydantic.version import VERSION
 
-git_tag = os.getenv('TRAVIS_TAG')
-if git_tag:
-    if git_tag.lower().lstrip('v') != str(VERSION).lower():
-        print('✖ "TRAVIS_TAG" environment variable does not match package version: "%s" vs. "%s"' % (git_tag, VERSION))
-        sys.exit(1)
+
+def main(env_var='GITHUB_REF') -> int:
+    git_ref = os.getenv(env_var, 'none')
+    tag = re.sub('^refs/tags/v*', '', git_ref.lower())
+    version = VERSION.lower()
+    if tag == version:
+        print(f'✓ {env_var} env var {git_ref!r} matches package version: {tag!r} == {version!r}')
+        return 0
     else:
-        print('✓ "TRAVIS_TAG" environment variable matches package version: "%s" vs. "%s"' % (git_tag, VERSION))
+        print(f'✖ {env_var} env var {git_ref!r} does not match package version: {tag!r} != {version!r}')
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

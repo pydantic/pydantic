@@ -220,6 +220,8 @@ class Representation:
     of objects.
     """
 
+    __slots__: Tuple[str, ...] = tuple()
+
     def __repr_args__(self) -> 'ReprArgs':
         """
         Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
@@ -345,7 +347,13 @@ class ValueItems(Representation):
             raise TypeError(f'Unexpected type of exclude value {items.__class__}')
 
         if isinstance(value, (list, tuple)):
-            items = self._normalize_indexes(items, len(value))
+            try:
+                items = self._normalize_indexes(items, len(value))
+            except TypeError as e:
+                raise TypeError(
+                    'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
+                    'expected integer keys or keyword "__all__"'
+                ) from e
 
         self._items = items
 
@@ -393,10 +401,21 @@ class ValueItems(Representation):
 
         >>> self._normalize_indexes({0, -2, -1}, 4)
         {0, 2, 3}
+        >>> self._normalize_indexes({'__all__'}, 4)
+        {0, 1, 2, 3}
         """
         if self._type is set:
+            if '__all__' in items:
+                if items != {'__all__'}:
+                    raise ValueError('set with keyword "__all__" must not contain other elements')
+                return {i for i in range(v_length)}
             return {v_length + i if i < 0 else i for i in items}
         else:
+            if '__all__' in items:
+                all_set = items.pop('__all__')
+                for i in range(v_length):
+                    iset = items.setdefault(i, set())
+                    iset.update(all_set)
             return {v_length + i if i < 0 else i: v for i, v in items.items()}
 
     def __repr_args__(self) -> 'ReprArgs':
