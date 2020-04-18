@@ -1011,9 +1011,15 @@ def test_model_export_dict_exclusion():
 
     m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
 
-    assert m.dict(exclude={'bars': {0}}) == {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]}
-    assert m.dict(exclude={'bars': {'__all__'}}) == {'a': 1, 'bars': []}
-    assert m.dict(exclude={'bars': {'__all__': {'w'}}}) == {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]}
+    excludes = {'bars': {0}}
+    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]}
+    assert excludes == {'bars': {0}}
+    excludes = {'bars': {'__all__'}}
+    assert m.dict(exclude=excludes) == {'a': 1, 'bars': []}
+    assert excludes == {'bars': {'__all__'}}
+    excludes = {'bars': {'__all__': {'w'}}}
+    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]}
+    assert excludes == {'bars': {'__all__': {'w'}}}
 
 
 def test_custom_init_subclass_params():
