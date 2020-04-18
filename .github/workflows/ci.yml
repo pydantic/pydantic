@@ -246,7 +246,10 @@ jobs:
       - name: install
         run: make install
 
-      - run: twine check dist/*
+      - name: twine check
+        run: |
+          mv pypi_files dist
+          twine check dist/*
 
       - name: check tag
         run: ./tests/check_tag.py
