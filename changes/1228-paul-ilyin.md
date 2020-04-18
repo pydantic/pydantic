@@ -1,1 +1,0 @@
-`update_forward_refs()` method of BaseModel now copies `__dict__` of class module instead of modyfying it

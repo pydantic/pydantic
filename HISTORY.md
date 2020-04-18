@@ -1,3 +1,36 @@
+## v1.5 (2020-04-18)
+
+* Make includes/excludes arguments for `.dict()`, `._iter()`, ..., immutable, #1404 by @AlexECX
+* Always use a field's real name with includes/excludes in `model._iter()`, regardless of `by_alias`, #1397 by @AlexECX
+* Update constr regex example to include start and end lines, #1396 by @lmcnearney
+* Confirm that shallow `model.copy()` does make a shallow copy of attributes, #1383 by @samuelcolvin
+* Renaming `model_name` argument of `main.create_model()` to `__model_name` to allow using `model_name` as a field name, #1367 by @kittipatv
+* Replace raising of exception to silent passing  for non-Var attributes in mypy plugin, #1345 by @b0g3r
+* Remove `typing_extensions` dependency for python 3.8, #1342 by @prettywood
+* Make `SecretStr` and `SecretBytes` initialization idempotent, #1330 by @atheuz
+* document making secret types dumpable using the json method, #1328 by @atheuz
+* Move all testing and build to github actions, add windows and macos binaries, 
+  thank you @StephenBrown2 for much help, #1326 by @samuelcolvin
+* fix card number length check in `PaymentCardNumber`, `PaymentCardBrand` now inherits from `str`, #1317 by @samuelcolvin
+* Have `BaseModel` inherit from `Representation` to make mypy happy when overriding `__str__`, #1310 by @FuegoFro
+* Allow `None` as input to all optional list fields, #1307 by @prettywood
+* Add `datetime` field to `default_factory` example, #1301 by @StephenBrown2
+* Allow subclasses of known types to be encoded with superclass encoder, #1291 by @StephenBrown2
+* Exclude exported fields from all elements of a list/tuple of submodels/dicts with `'__all__'`, #1286 by @masalim2
+* Add pydantic.color.Color objects as available input for Color fields, #1258 by @leosussan
+* In examples, type nullable fields as `Optional`, so that these are valid mypy annotations, #1248 by @kokes
+* Make `pattern_validator()` accept pre-compiled `Pattern` objects. Fix `str_validator()` return type to `str`, #1237 by @adamgreg
+* Document how to manage Generics and inheritance, #1229 by @esadruhn
+* `update_forward_refs()` method of BaseModel now copies `__dict__` of class module instead of modyfying it, #1228 by @paul-ilyin
+* Support instance methods and class methods with `@validate_arguments`, #1222 by @samuelcolvin
+* Add `default_factory` argument to `Field` to create a dynamic default value by passing a zero-argument callable, #1210 by @prettywood
+* add support for `NewType` of `List`, `Optional`, etc, #1207 by @Kazy
+* fix mypy signature for `root_validator`, #1192 by @samuelcolvin
+* Fixed parsing of nested 'custom root type' models, #1190 by @Shados
+* Add `validate_arguments` function decorator which checks the arguments to a function matches type annotations, #1179 by @samuelcolvin
+* Add `__signature__` to models, #1034 by @MrMrRobat
+* Refactor `._iter()` method, 10x speed boost for `dict(model)`, #1017 by @MrMrRobat
+
 ## v1.4 (2020-01-24)
 
 * **Breaking Change:** alias precedence logic changed so aliases on a field always take priority over
@@ -159,6 +192,8 @@
   `Model._custom_root_type` -> `Model.__custom_root_type__`, #851 by @samuelcolvin
 
 ## v0.32.2 (2019-08-17)
+
+(Docs are available [here](https://5d584fcca7c9b70007d1c997--pydantic-docs.netlify.com))
 
 * fix `__post_init__` usage with dataclass inheritance, fix #739 by @samuelcolvin
 * fix required fields validation on GenericModels classes, #742 by @amitbl

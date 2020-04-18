@@ -1,1 +1,0 @@
-Allow subclasses of known types to be encoded with superclass encoder
