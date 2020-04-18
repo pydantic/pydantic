@@ -25,7 +25,7 @@ from .version import version_info
 if TYPE_CHECKING:
     from inspect import Signature
     from .main import BaseModel, BaseConfig  # noqa: F401
-    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
     from .fields import ModelField  # noqa: F401
     from .dataclasses import DataclassType  # noqa: F401
 
@@ -333,9 +333,9 @@ class ValueItems(Representation):
 
     __slots__ = ('_items', '_type')
 
-    def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'DictIntStrAny']) -> None:
+    def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> None:
         if TYPE_CHECKING:
-            self._items: Union['AbstractSetIntStr', 'DictIntStrAny']
+            self._items: Union['AbstractSetIntStr', 'MappingIntStrAny']
             self._type: Type[Union[set, dict]]  # type: ignore
 
         # For further type checks speed-up
@@ -380,7 +380,7 @@ class ValueItems(Representation):
         return item in self._items
 
     @no_type_check
-    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'DictIntStrAny']]:
+    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
         :return: raw values for elemet if self._items is dict and contain needed element
@@ -393,7 +393,7 @@ class ValueItems(Representation):
 
     @no_type_check
     def _normalize_indexes(
-        self, items: Union['AbstractSetIntStr', 'DictIntStrAny'], v_length: int
+        self, items: Union['AbstractSetIntStr', 'MappingIntStrAny'], v_length: int
     ) -> Union['AbstractSetIntStr', 'DictIntStrAny']:
         """
         :param items: dict or set of indexes which will be normalized
@@ -411,12 +411,13 @@ class ValueItems(Representation):
                 return {i for i in range(v_length)}
             return {v_length + i if i < 0 else i for i in items}
         else:
-            if '__all__' in items:
-                all_set = items.pop('__all__')
+            normalized_items = {v_length + i if i < 0 else i: v for i, v in items.items() if i != '__all__'}
+            all_set = items.get('__all__')
+            if all_set:
                 for i in range(v_length):
-                    iset = items.setdefault(i, set())
-                    iset.update(all_set)
-            return {v_length + i if i < 0 else i: v for i, v in items.items()}
+                    normalized_items.setdefault(i, set()).update(all_set)
+
+            return normalized_items
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]

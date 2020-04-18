@@ -14,6 +14,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
     Tuple,
     Type,
@@ -49,7 +50,7 @@ if TYPE_CHECKING:
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
     from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
-    from .typing import AbstractSetIntStr, DictIntStrAny, ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
@@ -363,8 +364,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def dict(
         self,
         *,
-        include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
+        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = None,
         exclude_unset: bool = False,
@@ -397,8 +398,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def json(
         self,
         *,
-        include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
+        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
         by_alias: bool = False,
         skip_defaults: bool = None,
         exclude_unset: bool = False,
@@ -517,8 +518,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def copy(
         self: 'Model',
         *,
-        include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
+        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
         update: 'DictStrAny' = None,
         deep: bool = False,
     ) -> 'Model':
@@ -594,8 +595,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         v: Any,
         to_dict: bool,
         by_alias: bool,
-        include: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
-        exclude: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
@@ -674,8 +675,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         self,
         to_dict: bool = False,
         by_alias: bool = False,
-        include: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'DictIntStrAny'] = None,
+        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -716,8 +717,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def _calculate_keys(
         self,
-        include: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
-        exclude: Optional[Union['AbstractSetIntStr', 'DictIntStrAny']],
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
         exclude_unset: bool,
         update: Optional['DictStrAny'] = None,
     ) -> Optional[AbstractSet[str]]:
@@ -731,7 +732,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             keys = self.__dict__.keys()
 
         if include is not None:
-            if isinstance(include, dict):
+            if isinstance(include, Mapping):
                 keys &= include.keys()
             else:
                 keys &= include
@@ -740,7 +741,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             keys -= update.keys()
 
         if exclude:
-            if isinstance(exclude, dict):
+            if isinstance(exclude, Mapping):
                 keys -= {k for k, v in exclude.items() if v is ...}
             else:
                 keys -= exclude
