@@ -18,25 +18,27 @@ def isoformat(o: Union[datetime.date, datetime.time]) -> str:
 
 
 ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
+    bytes: lambda o: o.decode(),
     Color: str,
-    IPv4Address: str,
-    IPv6Address: str,
-    IPv4Interface: str,
-    IPv6Interface: str,
-    IPv4Network: str,
-    IPv6Network: str,
-    SecretStr: str,
-    SecretBytes: str,
-    UUID: str,
-    datetime.datetime: isoformat,
     datetime.date: isoformat,
+    datetime.datetime: isoformat,
     datetime.time: isoformat,
     datetime.timedelta: lambda td: td.total_seconds(),
-    set: list,
+    Decimal: float,
+    Enum: lambda o: o.value,
     frozenset: list,
     GeneratorType: list,
-    bytes: lambda o: o.decode(),
-    Decimal: float,
+    IPv4Address: str,
+    IPv4Interface: str,
+    IPv4Network: str,
+    IPv6Address: str,
+    IPv6Interface: str,
+    IPv6Network: str,
+    Path: str,
+    SecretBytes: str,
+    SecretStr: str,
+    set: list,
+    UUID: str,
 }
 
 
@@ -46,26 +48,29 @@ def pydantic_encoder(obj: Any) -> Any:
 
     if isinstance(obj, BaseModel):
         return obj.dict()
-    elif isinstance(obj, Enum):
-        return obj.value
-    elif isinstance(obj, Path):
-        return str(obj)
     elif is_dataclass(obj):
         return asdict(obj)
 
-    try:
-        encoder = ENCODERS_BY_TYPE[obj.__class__]
-    except KeyError:
-        raise TypeError(f"Object of type '{obj.__class__.__name__}' is not JSON serializable")
-    else:
+    # Check the class type and its superclasses for a matching encoder
+    for base in obj.__class__.__mro__[:-1]:
+        try:
+            encoder = ENCODERS_BY_TYPE[base]
+        except KeyError:
+            continue
         return encoder(obj)
+    else:  # We have exited the for loop without finding a suitable encoder
+        raise TypeError(f"Object of type '{obj.__class__.__name__}' is not JSON serializable")
 
 
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
-    encoder = type_encoders.get(obj.__class__)
-    if encoder:
+    # Check the class type and its superclasses for a matching encoder
+    for base in obj.__class__.__mro__[:-1]:
+        try:
+            encoder = type_encoders[base]
+        except KeyError:
+            continue
         return encoder(obj)
-    else:
+    else:  # We have exited the for loop without finding a suitable encoder
         return pydantic_encoder(obj)
 
 
