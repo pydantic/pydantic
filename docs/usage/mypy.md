@@ -1,4 +1,4 @@
-Pydantic models work with [mypy](http://mypy-lang.org/) provided you use the annotation-only version of
+*pydantic* models work with [mypy](http://mypy-lang.org/) provided you use the annotation-only version of
 required fields:
 
 ```py
@@ -44,5 +44,5 @@ See the [pydantic mypy plugin docs](../mypy_plugin.md) for more details.
 
 ## Other pydantic interfaces
 
-Pydantic [dataclasses](dataclasses.md) and the [`validate_assignment` decorator](validation_decorator.md)
+Pydantic [dataclasses](dataclasses.md) and the [`validate_arguments` decorator](validation_decorator.md)
 should also work well with mypy.

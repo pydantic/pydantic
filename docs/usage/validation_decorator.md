@@ -1,10 +1,10 @@
-The `validate_assignment` decorator allows the arguments passed to a function to be parsed and validated using
+The `validate_arguments` decorator allows the arguments passed to a function to be parsed and validated using
 the function's annotations before the function is called. While under the hood this uses the same approach of model
 creation and initialisation; it provides an extremely easy way to apply validation to your code with minimal
 boilerplate.
 
 !!! info "In Beta"
-    The `validate_assignment` decorator is in **beta**, it has been added to *pydantic* in **v1.5** on a
+    The `validate_arguments` decorator is in **beta**, it has been added to *pydantic* in **v1.5** on a
     **provisional basis**. It may change significantly in future releases and its interface will not be concrete
     until **v2**. Feedback from the community while it's still provisional would be extremely useful; either comment
     on [#1205](https://github.com/samuelcolvin/pydantic/issues/1205) or create a new issue.
@@ -19,7 +19,7 @@ _(This script is complete, it should run "as is")_
 ## Argument Types
 
 Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
-as `Any`. Since `validate_assignment` internally uses a standard `BaseModel`, all types listed in
+as `Any`. Since `validate_arguments` internally uses a standard `BaseModel`, all types listed in
 [types](types.md) can be validated, including *pydantic* models and [custom types](types.md#custom-data-types).
 As with the rest of *pydantic*, types can be coerced by the decorator before they're passed to the actual function:
 
@@ -34,7 +34,7 @@ A few notes:
 * `max` has no type annotation, so will be considered as `Any` by the decorator
 
 Type coercion like this can be extremely helpful but also confusing or not desired,
-see [below](#coercion-and-stictness) for a discussion of `validate_assignment`'s limitations in this regard.
+see [below](#coercion-and-stictness) for a discussion of `validate_arguments`'s limitations in this regard.
 
 ## Function Signatures
 
@@ -56,7 +56,7 @@ _(This script is complete, it should run "as is")_
 
 ## Usage with mypy
 
-The `validate_assignment` decorator should work "out of the box" with [mypy](http://mypy-lang.org/) since it's
+The `validate_arguments` decorator should work "out of the box" with [mypy](http://mypy-lang.org/) since it's
 defined to return a function with the same signature as the function it decorates. The only limitation is that
 since we trick mypy into thinking the function returned by the decorator is the same as the function being
 decorated; access to the [raw function](#raw-function) or other attributes will require `type: ignore`.
@@ -73,7 +73,7 @@ _(This script is complete, it should run "as is")_
 
 ## Async Functions
 
-`validate_assignment` can also be used on async functions:
+`validate_arguments` can also be used on async functions:
 
 ```py
 {!.tmp_examples/validation_decorator_async.py!}
@@ -83,7 +83,7 @@ _(This script is complete, it should run "as is")_
 
 ## Limitations
 
-`validate_assignment` has been released on a provisional basis without all the bells and whistles, which may
+`validate_arguments` has been released on a provisional basis without all the bells and whistles, which may
 be added later, see [#1205](https://github.com/samuelcolvin/pydantic/issues/1205) for some more discussion of this.
 
 In particular:
@@ -102,21 +102,21 @@ exception by default, or both.
 ### Coercion and Stictness
 
 *pydantic* currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
-see [model data conversion](models.md#data-conversion) and `validate_assignment` is no different.
+see [model data conversion](models.md#data-conversion) and `validate_arguments` is no different.
 
 See [#1098](https://github.com/samuelcolvin/pydantic/issues/1098) and other issues with the "strictness" label
-for a discussion of this. If *pydantic* get's a "strict" mode in future, `validate_assignment` will have an option
+for a discussion of this. If *pydantic* gets a "strict" mode in future, `validate_arguments` will have an option
 to use this, it may even become the default for the decorator.
 
 ### Performance
 
 We've made a big effort to make *pydantic* as performant as possible (see [the benchmarks](../benchmarks.md))
 and argument inspect and model creation is only performed once when the function is defined, however
-there will still be a performance impact to using the `validate_assignment` decorator compared to
+there will still be a performance impact to using the `validate_arguments` decorator compared to
 calling the raw function.
 
 In many situations this will have little or no noticeable effect, however be aware that
-`validate_assignment` is not an equivalent or alternative to function definitions in strongly typed languages,
+`validate_arguments` is not an equivalent or alternative to function definitions in strongly typed languages;
 it never will be.
 
 ### Return Value
