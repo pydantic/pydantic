@@ -1095,3 +1095,18 @@ def test_none_min_max_items():
         assert f.foo is None
         assert f.bar is None
         assert f.baz is None
+
+
+def test_reuse_same_field():
+    required_field = Field(...)
+
+    class Model1(BaseModel):
+        required: str = required_field
+
+    class Model2(BaseModel):
+        required: str = required_field
+
+    with pytest.raises(ValidationError):
+        Model1.parse_obj({})
+    with pytest.raises(ValidationError):
+        Model2.parse_obj({})
