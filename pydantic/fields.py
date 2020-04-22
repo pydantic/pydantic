@@ -302,7 +302,7 @@ class ModelField(Representation):
         required: 'BoolUndefined' = Undefined
         if value is Required:
             required = True
-            field_info.default = None
+            value = None
         elif value is not Undefined:
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
@@ -312,7 +312,7 @@ class ModelField(Representation):
             type_=annotation,
             alias=field_info.alias,
             class_validators=class_validators,
-            default=field_info.default,
+            default=value,
             default_factory=field_info.default_factory,
             required=required,
             model_config=config,
