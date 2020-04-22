@@ -44,10 +44,12 @@ def test_custom_init_signature():
     sig = signature(MyModel)
     assert _equals(
         map(str, sig.parameters.values()),
-        ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", 'foo: str', '**data'),
+        ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", 'foo: str', '**extra_data'),
     )
 
-    assert _equals(str(sig), "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **data) -> None")
+    assert _equals(
+        str(sig), "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **extra_data) -> None"
+    )
 
 
 def test_custom_init_signature_with_no_var_kw():
@@ -71,7 +73,7 @@ def test_invalid_identifiers_signature():
     )
     assert _equals(str(signature(model)), '(*, valid_identifier: int = 123, yeah: int = 0) -> None')
     model = create_model('Model', **{'123 invalid identifier!': 123, '!': Field(0, alias='yeah')})
-    assert _equals(str(signature(model)), '(*, yeah: int = 0, **data: Any) -> None')
+    assert _equals(str(signature(model)), '(*, yeah: int = 0, **extra_data: Any) -> None')
 
 
 def test_use_field_name():
@@ -82,3 +84,25 @@ def test_use_field_name():
             allow_population_by_field_name = True
 
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
+
+
+def test_extra_allow():
+    """It should use a valid name for the extra kwargs"""
+
+    class Model(BaseModel):
+        data: str
+        foo: str
+
+        class Config:
+            extra = Extra.allow
+
+    assert _equals(str(signature(Model)), '(*, data: str, foo: str, **extra_data: Any) -> None')
+
+    class Model(BaseModel):
+        extra_data: str
+        foo: str
+
+        class Config:
+            extra = Extra.allow
+
+    assert _equals(str(signature(Model)), '(*, extra_data: str, foo: str, **extra_data_: Any) -> None')

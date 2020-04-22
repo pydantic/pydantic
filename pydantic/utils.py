@@ -180,7 +180,12 @@ def generate_model_signature(
         use_var_kw = True
 
     if var_kw and use_var_kw:
-        merged_params[var_kw.name] = var_kw
+        # Make sure the parameter for extra kwargs
+        # does not have the same name as a field
+        var_kw_name = 'extra_data'
+        while var_kw_name in fields:
+            var_kw_name += '_'
+        merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
 
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
