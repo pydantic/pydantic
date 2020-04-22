@@ -1,5 +1,5 @@
 from inspect import signature
-from typing import Any, Iterable, Union
+from typing import Any, Dict, Iterable, Union
 
 from pydantic import BaseModel, Extra, Field, create_model
 
@@ -99,10 +99,10 @@ def test_extra_allow():
     assert _equals(str(signature(Model)), '(*, data: str, foo: str, **extra_data: Any) -> None')
 
     class Model(BaseModel):
-        extra_data: str
+        extra_data: Dict[str, str]
         foo: str
 
         class Config:
             extra = Extra.allow
 
-    assert _equals(str(signature(Model)), '(*, extra_data: str, foo: str, **extra_data_: Any) -> None')
+    assert _equals(str(signature(Model)), '(*, extra_data: Dict[str, str], foo: str, **extra_data_: Any) -> None')
