@@ -184,7 +184,18 @@ def generate_model_signature(
     if var_kw and use_var_kw:
         # Make sure the parameter for extra kwargs
         # does not have the same name as a field
-        var_kw_name = 'extra_data'
+        default_model_signature = [
+            ('__pydantic_self__', Parameter.POSITIONAL_OR_KEYWORD),
+            ('data', Parameter.VAR_KEYWORD),
+        ]
+        if [(p.name, p.kind) for p in present_params] == default_model_signature:
+            # if this is the standard model signature, use extra_data as the extra args name
+            var_kw_name = 'extra_data'
+        else:
+            # else start from var_kw
+            var_kw_name = var_kw.name
+
+        # generate a name that's definitely unique
         while var_kw_name in fields:
             var_kw_name += '_'
         merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)

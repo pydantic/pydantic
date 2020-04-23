@@ -1,5 +1,5 @@
 from inspect import signature
-from typing import Any, Dict, Iterable, Union
+from typing import Any, Iterable, Union
 
 from pydantic import BaseModel, Extra, Field, create_model
 
@@ -44,12 +44,10 @@ def test_custom_init_signature():
     sig = signature(MyModel)
     assert _equals(
         map(str, sig.parameters.values()),
-        ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", 'foo: str', '**extra_data'),
+        ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", 'foo: str', '**data'),
     )
 
-    assert _equals(
-        str(sig), "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **extra_data) -> None"
-    )
+    assert _equals(str(sig), "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **data) -> None")
 
 
 def test_custom_init_signature_with_no_var_kw():
@@ -86,23 +84,45 @@ def test_use_field_name():
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
 
-def test_extra_allow():
-    """It should use a valid name for the extra kwargs"""
-
+def test_extra_allow_no_conflict():
     class Model(BaseModel):
-        data: str
-        foo: str
+        spam: str
 
         class Config:
             extra = Extra.allow
 
-    assert _equals(str(signature(Model)), '(*, data: str, foo: str, **extra_data: Any) -> None')
+    assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
 
+
+def test_extra_allow_conflict():
     class Model(BaseModel):
-        extra_data: Dict[str, str]
-        foo: str
+        extra_data: str
 
         class Config:
             extra = Extra.allow
 
-    assert _equals(str(signature(Model)), '(*, extra_data: Dict[str, str], foo: str, **extra_data_: Any) -> None')
+    assert _equals(str(signature(Model)), '(*, extra_data: str, **extra_data_: Any) -> None')
+
+
+def test_extra_allow_conflict_twice():
+    class Model(BaseModel):
+        extra_data: str
+        extra_data_: str
+
+        class Config:
+            extra = Extra.allow
+
+    assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
+
+
+def test_extra_allow_conflict_custom_signature():
+    class Model(BaseModel):
+        extra_data: int
+
+        def __init__(self, extra_data: int = 1, **foobar: Any):
+            super().__init__(extra_data=extra_data, **foobar)
+
+        class Config:
+            extra = Extra.allow
+
+    assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
