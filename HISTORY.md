@@ -1,3 +1,8 @@
+## v1.5.1 (2020-04-23)
+
+* Signature generation with `extra: allow` never uses a field name, #1418 by @prettywood
+* Avoid mutating `Field` default value, #1412 by @prettywood
+
 ## v1.5 (2020-04-18)
 
 * Make includes/excludes arguments for `.dict()`, `._iter()`, ..., immutable, #1404 by @AlexECX
