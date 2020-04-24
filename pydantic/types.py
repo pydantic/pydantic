@@ -350,7 +350,8 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def _schema_ieee_compatibility_transform(cls, field_schema: Dict[Any, Any]) -> None:
-        """Modify constraints to account for differences between IEEE floats and json
+        """
+        Modify constraints to account for differences between IEEE floats and json
 
         Transformations applied:
         - remove field exclusiveMinimum if it is equal to `-math.inf`
