@@ -218,6 +218,23 @@ def test_encode_nested_root():
     )
 
 
+def test_encode_several_nested_root():
+    class PetsAlias(BaseModel):
+        __root__: List[str]
+
+    class Pets(BaseModel):
+        __root__: PetsAlias
+
+    class PetHouse(BaseModel):
+        Animals: Pets
+        Location: str
+
+    assert (
+        PetHouse(**{'Animals': ['dog', 'cat'], 'Location': 'Montpellier'}).json()
+        == '{"Animals": ["dog", "cat"], "Location": "Montpellier"}'
+    )
+
+
 def test_custom_decode_encode():
     load_calls, dump_calls = 0, 0
 

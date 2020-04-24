@@ -438,10 +438,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             for k, v in d.items():
                 if isinstance(v, dict):
                     if k is not ROOT_KEY:
-                        if k is not None:
-                            result[k] = reparent_root(v)
-                        else:
-                            return reparent_root(v)
+                        result[k] = reparent_root(v)
+                    else:
+                        return reparent_root(v)
                 else:
                     if k is not ROOT_KEY:
                         result[k] = v
@@ -449,8 +448,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                         return v
             return result
 
-        data = reparent_root(data)
-
+        res = reparent_root(data)
+        data = res
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
