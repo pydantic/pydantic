@@ -1,1 +1,1 @@
-include format with secret types #546
+include `'format': 'password'` in the schema for secret types
