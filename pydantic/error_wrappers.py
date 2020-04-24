@@ -1,4 +1,5 @@
 import json
+import pprint
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 
 from .json import pydantic_encoder
@@ -8,6 +9,7 @@ if TYPE_CHECKING:
     from .main import BaseConfig  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
     from .typing import ReprArgs
+    from .typing import DictStrAny
 
     Loc = Tuple[Union[int, str], ...]
 
@@ -37,20 +39,25 @@ ErrorList = Union[Sequence[Any], ErrorWrapper]
 
 
 class ValidationError(Representation, ValueError):
-    __slots__ = 'raw_errors', 'model', '_error_cache'
+    __slots__ = 'raw_errors', 'model', '_error_cache', 'input_data'
 
-    def __init__(self, errors: Sequence[ErrorList], model: 'ModelOrDc') -> None:
+    def __init__(self, errors: Sequence[ErrorList], model: 'ModelOrDc', input_data: 'DictStrAny' = None) -> None:
         self.raw_errors = errors
         self.model = model
         self._error_cache: Optional[List[Dict[str, Any]]] = None
+        self.input_data = input_data
+
+    @property
+    def config(self):  # type: ignore
+        try:
+            config = self.model.__config__  # type: ignore
+        except AttributeError:
+            config = self.model.__pydantic_model__.__config__  # type: ignore
+        return config
 
     def errors(self) -> List[Dict[str, Any]]:
         if self._error_cache is None:
-            try:
-                config = self.model.__config__  # type: ignore
-            except AttributeError:
-                config = self.model.__pydantic_model__.__config__  # type: ignore
-            self._error_cache = list(flatten_errors(self.raw_errors, config))
+            self._error_cache = list(flatten_errors(self.raw_errors, self.config))
         return self._error_cache
 
     def json(self, *, indent: Union[None, int, str] = 2) -> str:
@@ -62,14 +69,24 @@ class ValidationError(Representation, ValueError):
         return (
             f'{no_errors} validation error{"" if no_errors == 1 else "s"} for {self.model.__name__}\n'
             f'{display_errors(errors)}'
+            f'{display_input_data(self.input_data, self.config.show_input_data)}'
         )
 
     def __repr_args__(self) -> 'ReprArgs':
+        if self.input_data is not None and self.config.show_input_data:
+            return [('model', self.model.__name__), ('errors', self.errors()), ('input_data', self.input_data)]
         return [('model', self.model.__name__), ('errors', self.errors())]
 
 
 def display_errors(errors: List[Dict[str, Any]]) -> str:
     return '\n'.join(f'{_display_error_loc(e)}\n  {e["msg"]} ({_display_error_type_and_ctx(e)})' for e in errors)
+
+
+def display_input_data(input_data: Optional[Dict[str, Any]], show_input_data: bool) -> str:
+    if input_data is not None and show_input_data:
+        line = '\n'.join(['input data', f'  {pprint.pformat(input_data, indent=4)}'])
+        return f'\n{line}'
+    return ''
 
 
 def _display_error_loc(error: Dict[str, Any]) -> str:

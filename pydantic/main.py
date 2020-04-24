@@ -106,6 +106,7 @@ class BaseConfig:
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
     json_encoders: Dict[AnyType, AnyCallable] = {}
+    show_input_data = False
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
@@ -854,7 +855,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
         try:
             input_data = validator(cls_, input_data)
         except (ValueError, TypeError, AssertionError) as exc:
-            return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_)
+            return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_, input_data)
 
     for name, field in model.__fields__.items():
         if field.type_.__class__ == ForwardRef:
@@ -916,6 +917,6 @@ def validate_model(  # noqa: C901 (ignore complexity)
             break
 
     if errors:
-        return values, fields_set, ValidationError(errors, cls_)
+        return values, fields_set, ValidationError(errors, cls_, input_data)
     else:
         return values, fields_set, None

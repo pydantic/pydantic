@@ -81,6 +81,9 @@ not be included in the model schemas. **Note**: this means that attributes on th
 **`json_encoders`**
 : a `dict` used to customise the way types are encoded to JSON; see [JSON Serialisation](exporting_models.md#modeljson)
 
+**`show_input_data`**
+: whether to display invalid input data in case of validation error (default: `False`)
+
 ```py
 {!.tmp_examples/model_config_main.py!}
 ```

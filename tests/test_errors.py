@@ -307,6 +307,25 @@ x
     )
 
 
+def test_single_error_with_input_data():
+    class Model(BaseModel):
+        x: int
+
+        class Config:
+            show_input_data = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='x')
+
+    expected = """\
+1 validation error for Model
+x
+  value is not a valid integer (type=type_error.integer)
+input data
+  {'x': 'x'}"""
+    assert str(exc_info.value) == expected
+
+
 def test_nested_error():
     class NestedModel3(BaseModel):
         x: str
@@ -323,6 +342,31 @@ def test_nested_error():
     expected = [{'loc': ('data1', 0, 'data2', 0, 'x'), 'msg': 'field required', 'type': 'value_error.missing'}]
 
     assert exc_info.value.errors() == expected
+
+
+def test_nested_error_with_input_data():
+    class NestedModel3(BaseModel):
+        x: int
+
+    class NestedModel2(BaseModel):
+        data2: List[NestedModel3]
+
+    class NestedModel1(BaseModel):
+        class Config:
+            show_input_data = True
+
+        data1: List[NestedModel2]
+
+    with pytest.raises(ValidationError) as exc_info:
+        NestedModel1(data1=[{'data2': [{'x': 'x'}]}])
+
+        expected = """\
+    1 validation error for Model
+    x
+      value is not a valid integer (type=type_error.integer)
+    input data
+      {'x': 'x'}"""
+        assert str(exc_info.value) == expected
 
 
 def test_validate_assignment_error():
