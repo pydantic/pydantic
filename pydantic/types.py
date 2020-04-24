@@ -340,25 +340,7 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
             maximum=cls.le,
             multipleOf=cls.multiple_of,
         )
-        cls._schema_ieee_compatibility_transform(field_schema)
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield strict_float_validator if cls.strict else float_validator
-        yield number_size_validator
-        yield number_multiple_validator
-
-    @classmethod
-    def _schema_ieee_compatibility_transform(cls, field_schema: Dict[Any, Any]) -> None:
-        """
-        Modify constraints to account for differences between IEEE floats and json
-
-        Transformations applied:
-        - remove field exclusiveMinimum if it is equal to `-math.inf`
-        - remove field minimum if it is equal to `-math.inf`
-        - remove field exclusiveMaximum if it is equal to `math.inf`
-        - remove field maximum if it is equal to `math.inf`
-        """
+        # Modify constraints to account for differences between IEEE floats and json
         if field_schema.get('exclusiveMinimum') == -math.inf:
             del field_schema['exclusiveMinimum']
         if field_schema.get('minimum') == -math.inf:
@@ -367,6 +349,12 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
             del field_schema['exclusiveMaximum']
         if field_schema.get('maximum') == math.inf:
             del field_schema['maximum']
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield strict_float_validator if cls.strict else float_validator
+        yield number_size_validator
+        yield number_multiple_validator
 
 
 def confloat(
