@@ -544,8 +544,8 @@ The generated signature will also respect custom `__init__` functions:
 To be included in the signature, a field's alias or name must be a valid python identifier. 
 *pydantic* prefers aliases over names, but may use field names if the alias is not a valid python identifier. 
 
-If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
-In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
+If a field's alias and name are both invalid identifiers, a `**extra_data` argument will be added.
+In addition, the `**extra_data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
 
 !!! note
     Types in the model signature are the same as declared in model annotations, 
