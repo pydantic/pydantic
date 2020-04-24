@@ -1,6 +1,8 @@
 from inspect import signature
 from typing import Any, Iterable, Union
 
+import pytest
+
 from pydantic import BaseModel, Extra, Field, create_model
 
 
@@ -25,6 +27,8 @@ def test_model_signature():
     assert sig != signature(BaseModel)
     assert _equals(map(str, sig.parameters.values()), ('a: float', 'b: int = 10'))
     assert _equals(str(sig), '(*, a: float, b: int = 10) -> None')
+    with pytest.raises(TypeError):
+        signature(Model(a=1.2))
 
 
 def test_custom_init_signature():
@@ -126,3 +130,14 @@ def test_extra_allow_conflict_custom_signature():
             extra = Extra.allow
 
     assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
+
+
+def test_callable_model():
+    class Model(BaseModel):
+        foo: str
+
+        def __call__(self, bar: int) -> int:
+            return bar
+
+    assert _equals(str(signature(Model)), '(*, foo: str) -> None')
+    assert _equals(str(signature(Model(foo='pika'))), '(bar: int) -> int')

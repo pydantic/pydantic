@@ -1,0 +1,1 @@
+fix `BaseModel` instance signature

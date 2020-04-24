@@ -340,6 +340,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         object.__setattr__(__pydantic_self__, '__fields_set__', fields_set)
 
     @no_type_check
+    def __getattribute__(self, name):
+        """Avoid using the __signature__, which was set for the BaseModel class (not the instance)"""
+        if name == '__signature__':
+            raise AttributeError()
+        return super().__getattribute__(name)
+
+    @no_type_check
     def __setattr__(self, name, value):
         if self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
