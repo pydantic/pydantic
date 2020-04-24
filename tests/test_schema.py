@@ -16,6 +16,7 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
+    get_enums_from_models,
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
@@ -204,14 +205,19 @@ def test_choices():
         spam: SpamEnum = Field(None)
 
     assert Model.schema() == {
-        'type': 'object',
         'title': 'Model',
+        'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'enum': ['f', 'b']},
-            'bar': {'type': 'integer', 'title': 'Bar', 'enum': [1, 2]},
-            'spam': {'type': 'string', 'title': 'Spam', 'enum': ['f', 'b']},
+            'foo': {'$ref': '#/definitions/FooEnum'},
+            'bar': {'$ref': '#/definitions/BarEnum'},
+            'spam': {'$ref': '#/definitions/SpamEnum'},
         },
         'required': ['foo', 'bar'],
+        'definitions': {
+            'FooEnum': {'title': 'FooEnum', 'description': 'An enumeration.', 'enum': ['f', 'b']},
+            'BarEnum': {'title': 'BarEnum', 'description': 'An enumeration.', 'type': 'integer', 'enum': [1, 2]},
+            'SpamEnum': {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']},
+        },
     }
 
 
@@ -921,6 +927,26 @@ def test_model_name_maps():
         ModelB: 'pydantic_schema_test__moduleb__modelb__Model',
         ModelC: 'pydantic_schema_test__modulec__modelc__Model',
     }
+
+
+def test_get_enums_from_models():
+    class Foo(str, Enum):
+        A = 'A'
+        B = 'B'
+
+    class Bar(str, Enum):
+        C = 'C'
+        D = 'D'
+
+    class ModelA(BaseModel):
+        foo: Foo
+        bar: Bar
+
+    class ModelB(BaseModel):
+        foo: Foo
+
+    enums = get_enums_from_models([ModelA, ModelB])
+    assert enums == set([Foo, Bar])
 
 
 def test_schema_overrides():
@@ -1759,8 +1785,15 @@ def test_schema_attributes():
     assert Example.schema() == {
         'title': 'Example',
         'type': 'object',
-        'properties': {'example': {'title': 'Example', 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE']}},
+        'properties': {'example': {'$ref': '#/definitions/ExampleEnum'}},
         'required': ['example'],
+        'definitions': {
+            'ExampleEnum': {
+                'title': 'ExampleEnum',
+                'description': 'An enumeration.',
+                'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE'],
+            }
+        },
     }
 
 

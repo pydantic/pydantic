@@ -89,7 +89,8 @@ def schema(
     clean_models = [get_model(model) for model in models]
     ref_prefix = ref_prefix or default_prefix
     flat_models = get_flat_models_from_models(clean_models)
-    model_name_map = get_model_name_map(flat_models)
+    enums = get_enums_from_models(flat_models)
+    model_name_map = get_model_name_map(flat_models | enums)
     definitions = {}
     output_schema: Dict[str, Any] = {}
     if title:
@@ -127,7 +128,8 @@ def model_schema(
     model = get_model(model)
     ref_prefix = ref_prefix or default_prefix
     flat_models = get_flat_models_from_model(model)
-    model_name_map = get_model_name_map(flat_models)
+    enums = get_enums_from_models(flat_models)
+    model_name_map = get_model_name_map(flat_models | enums)
     model_name = model_name_map[model]
     m_schema, m_definitions, nested_models = model_process_schema(
         model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
@@ -237,10 +239,10 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
     return f_schema
 
 
-def get_model_name_map(unique_models: Set[Type['BaseModel']]) -> Dict[Type['BaseModel'], str]:
+def get_model_name_map(unique_models: Set[Union[Type['BaseModel'], Enum]]) -> Dict[Union[Type['BaseModel'], Enum], str]:
     """
-    Process a set of models and generate unique names for them to be used as keys in the JSON Schema
-    definitions. By default the names are the same as the class name. But if two models in different Python
+    Process a set of models or enums and generate unique names for them to be used as keys in the JSON Schema
+    definitions. By default the names are the same as the class name. But if two models / enums in different Python
     modules have the same name (e.g. "users.Model" and "items.Model"), the generated names will be
     based on the Python module path for those conflicting models to prevent name collisions.
 
@@ -343,6 +345,18 @@ def get_flat_models_from_models(models: Sequence[Type['BaseModel']]) -> Set[Type
     for model in models:
         flat_models |= get_flat_models_from_model(model)
     return flat_models
+
+
+def get_enums_from_models(models: Sequence[Type['BaseModel']]) -> Set[Enum]:
+    """
+    Take a list of ``models`` and generate a set with all of the enums in those models.
+    """
+    enums: Set[Type['BaseModel']] = set()
+    for model in models:
+        for field in model.__fields__.values():
+            if lenient_issubclass(field.type_, Enum):
+                enums.add(field.type_)
+    return enums
 
 
 def get_long_model_name(model: Type['BaseModel']) -> str:
@@ -516,6 +530,25 @@ def model_type_schema(
     return out_schema, definitions, nested_models
 
 
+def enum_process_schema(enum: Enum) -> Dict[str, Any]:
+    """
+    Take a single ``enum`` and generate its schema.
+
+    This is similar to the ``model_process_schema`` function, but applies to ``Enum`` objects.
+    """
+    from inspect import getdoc, signature
+
+    s = {'title': enum.__name__}
+    doc = getdoc(enum)
+    if doc:
+        s['description'] = doc
+
+    # Add enum values and the enum field type to the schema.
+    s.update({'enum': [item.value for item in enum]})
+    add_field_type_to_schema(enum, s)
+    return s
+
+
 def field_singleton_sub_fields_schema(
     sub_fields: Sequence[ModelField],
     *,
@@ -591,6 +624,19 @@ field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
 json_scheme = {'type': 'string', 'format': 'json-string'}
 
 
+def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]):
+    """
+    Update the given ``schema`` with the type-specific metadata for the given ``field_type``.
+
+    This function looks through ``field_class_to_schema`` for a class that matches the given ``field_type``,
+    and then modifies the given `schema` with the information from that type.
+    """
+    for type_, t_schema in field_class_to_schema:
+        if issubclass(field_type, type_):
+            schema.update(t_schema)
+            break
+
+
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
     field: ModelField,
     *,
@@ -642,13 +688,11 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema['const'] = literal_value
 
     if issubclass(field_type, Enum):
-        f_schema.update({'enum': [item.value for item in field_type]})
-        # Don't return immediately, to allow adding specific types
-
-    for type_, t_schema in field_class_to_schema:
-        if issubclass(field_type, type_):
-            f_schema.update(t_schema)
-            break
+        model_name = model_name_map[field_type]
+        f_schema = {'$ref': ref_prefix + model_name}
+        definitions[model_name] = enum_process_schema(field_type)
+    else:
+        add_field_type_to_schema(field_type, f_schema)
 
     modify_schema = getattr(field_type, '__modify_schema__', None)
     if modify_schema:
