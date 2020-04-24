@@ -1432,6 +1432,23 @@ def test_root_nested_model():
     }
 
 
+def test_nested_root_model():
+    class Pets(BaseModel):
+        __root__: List[str]
+
+    class PetHouse(BaseModel):
+        Animals: Pets
+        Location: str
+
+    assert PetHouse.schema() == {
+        'title': 'PetHouse',
+        'type': 'object',
+        'properties': {'Animals': {'$ref': '#/definitions/Pets'}, 'Location': {'title': 'Location', 'type': 'string'}},
+        'required': ['Animals', 'Location'],
+        'definitions': {'Pets': {'title': 'Pets', 'type': 'array', 'items': {'type': 'string'}}},
+    }
+
+
 def test_new_type_schema():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)

@@ -428,8 +428,29 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
         )
-        if self.__custom_root_type__:
-            data = data[ROOT_KEY]
+
+        def reparent_root(d: 'DictStrAny') -> 'DictStrAny':
+            """
+            Parse the input dictionary, search for the keys "__root__" and take the associated values and reparent them
+            to "__root__" parent
+            """
+            result = dict()
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    if k is not ROOT_KEY:
+                        if k is not None:
+                            result[k] = reparent_root(v)
+                        else:
+                            return reparent_root(v)
+                else:
+                    if k is not ROOT_KEY:
+                        result[k] = v
+                    else:
+                        return v
+            return result
+
+        data = reparent_root(data)
+
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
