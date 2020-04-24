@@ -18,7 +18,7 @@ from pydantic import (
     validate_model,
     validator,
 )
-from pydantic.fields import Field, Schema
+from pydantic.fields import Field, Schema, Undefined, UndefinedType
 
 
 def test_str_bytes():
@@ -27,7 +27,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert repr(m.__fields__['v']) == "ModelField(name='v', type=Union[str, bytes], required=True)"
+    assert repr(m.__fields__['v']) == "ModelField(name='v', type=Union[str, bytes], required=False)"
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -263,8 +263,11 @@ def test_recursive_list():
 
 def test_recursive_list_error():
     class SubModel(BaseModel):
-        name: str = ...
+        name: str
         count: int = None
+
+        class Config:
+            required_fields = ('name', )
 
     class Model(BaseModel):
         v: List[SubModel] = []
@@ -731,18 +734,13 @@ def test_return_errors_error():
     assert f == {'foo', 'bar'}
     assert e.errors() == [{'loc': ('bar', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]
 
-    d, f, e = validate_model(Model, {'bar': (1, 2, 3)}, False)
-    assert d == {'bar': [1, 2, 3]}
-    assert f == {'bar'}
-    assert e.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
-
 
 def test_optional_required():
     class Model(BaseModel):
         bar: Optional[int]
 
     assert Model(bar=123).dict() == {'bar': 123}
-    assert Model().dict() == {'bar': None}
+    assert Model().dict() == {}
     assert Model(bar=None).dict() == {'bar': None}
 
 
@@ -785,7 +783,7 @@ def test_multiple_errors():
         {'loc': ('a',), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
         {'loc': ('a',), 'msg': 'value is not a valid decimal', 'type': 'type_error.decimal'},
     ]
-    assert Model().a is None
+    assert isinstance(Model().a, UndefinedType)
     assert Model(a=None).a is None
 
 
@@ -795,6 +793,7 @@ def test_validate_all():
         b: int
 
         class Config:
+            required_fields = ('a', 'b')
             validate_all = True
 
     with pytest.raises(ValidationError) as exc_info:
@@ -864,6 +863,9 @@ def test_submodel_different_type():
     class Foo(BaseModel):
         a: int
 
+        class Config:
+            required_fields = ('a', )
+
     class Bar(BaseModel):
         b: int
 
@@ -890,7 +892,6 @@ def test_self():
         'title': 'Model',
         'type': 'object',
         'properties': {'self': {'title': 'Self', 'type': 'string'}},
-        'required': ['self'],
     }
 
 
@@ -998,8 +999,8 @@ def test_optional_subfields():
     class Model(BaseModel):
         a: Optional[int]
 
-    assert Model.__fields__['a'].sub_fields is None
-    assert Model.__fields__['a'].allow_none is True
+    assert not Model.__fields__['a'].sub_fields
+    assert Model.__fields__['a'].allow_none
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1007,7 +1008,7 @@ def test_optional_subfields():
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
-    assert Model().a is None
+    assert isinstance(Model().a, UndefinedType)
     assert Model(a=None).a is None
     assert Model(a=12).a == 12
 
@@ -1020,9 +1021,8 @@ def test_not_optional_subfields():
         def check_a(cls, v):
             return v
 
-    assert Model.__fields__['a'].sub_fields is None
-    # assert Model.__fields__['a'].required is True
-    assert Model.__fields__['a'].allow_none is True
+    assert not Model.__fields__['a'].sub_fields
+    assert Model.__fields__['a'].allow_none
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1030,7 +1030,7 @@ def test_not_optional_subfields():
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
-    assert Model().a is None
+    assert isinstance(Model().a, UndefinedType)
     assert Model(a=None).a is None
     assert Model(a=12).a == 12
 
@@ -1074,8 +1074,8 @@ def test_field_str_shape():
     class Model(BaseModel):
         a: List[int]
 
-    assert repr(Model.__fields__['a']) == "ModelField(name='a', type=List[int], required=True)"
-    assert str(Model.__fields__['a']) == "name='a' type=List[int] required=True"
+    assert repr(Model.__fields__['a']) == "ModelField(name='a', type=List[int], required=False)"
+    assert str(Model.__fields__['a']) == "name='a' type=List[int] required=False"
 
 
 T1 = TypeVar('T1')
@@ -1152,7 +1152,6 @@ def test_type_var_constraint():
         'title': 'MyModel',
         'type': 'object',
         'properties': {'foo': {'title': 'Foo', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
-        'required': ['foo'],
     }
     with pytest.raises(ValidationError, match='none is not an allowed value'):
         MyModel(foo=None)
@@ -1172,7 +1171,6 @@ def test_type_var_bound():
         'title': 'MyModel',
         'type': 'object',
         'properties': {'foo': {'title': 'Foo', 'type': 'integer'}},
-        'required': ['foo'],
     }
     with pytest.raises(ValidationError, match='none is not an allowed value'):
         MyModel(foo=None)
@@ -1218,8 +1216,8 @@ def test_modify_fields():
 
     # output is slightly different for 3.6
     if sys.version_info >= (3, 7):
-        assert repr(Foo.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
-        assert repr(Bar.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+        assert repr(Foo.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=False)"
+        assert repr(Bar.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=False)"
     assert Foo(foo=[[0, 1]]).foo == [[0, 1]]
     assert Bar(foo=[[0, 1]]).foo == [[0, 1]]
 
@@ -1323,7 +1321,7 @@ def test_optional_validator():
             val_calls.append(v)
             return v
 
-    assert Model().dict() == {'something': None}
+    assert Model().dict() == {}
     assert Model(something=None).dict() == {'something': None}
     assert Model(something='hello').dict() == {'something': 'hello'}
     assert val_calls == [None, 'hello']
@@ -1331,8 +1329,11 @@ def test_optional_validator():
 
 def test_required_optional():
     class Model(BaseModel):
-        nullable1: Optional[int] = ...
-        nullable2: Optional[int] = Field(...)
+        nullable1: Optional[int]
+        nullable2: Optional[int]
+
+        class Config:
+            required_fields = ('nullable1', 'nullable2')
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -1360,38 +1361,31 @@ def test_required_any():
     class Model(BaseModel):
         optional1: Any
         optional2: Any = None
-        nullable1: Any = ...
-        nullable2: Any = Field(...)
+        nullable1: Any
+
+        class Config:
+            required_fields = ('nullable1', )
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors() == [
         {'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
-        Model(nullable1='a')
-    assert exc_info.value.errors() == [{'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'}]
-    with pytest.raises(ValidationError) as exc_info:
-        Model(nullable2=False)
+        Model()
     assert exc_info.value.errors() == [{'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'}]
-    assert Model(nullable1=None, nullable2=None).dict() == {
-        'optional1': None,
+    assert Model(nullable1=None).dict() == {
         'optional2': None,
         'nullable1': None,
-        'nullable2': None,
     }
-    assert Model(nullable1=1, nullable2='two').dict() == {
-        'optional1': None,
+    assert Model(nullable1='two').dict() == {
         'optional2': None,
-        'nullable1': 1,
-        'nullable2': 'two',
+        'nullable1': 'two',
     }
-    assert Model(optional1='op1', optional2=False, nullable1=1, nullable2='two').dict() == {
+    assert Model(optional1='op1', optional2=False, nullable1='two').dict() == {
         'optional1': 'op1',
         'optional2': False,
-        'nullable1': 1,
-        'nullable2': 'two',
+        'nullable1': 'two',
     }
 
 
@@ -1512,6 +1506,9 @@ def test_custom_generic_disallowed():
 def test_hashable_required():
     class Model(BaseModel):
         v: Hashable
+
+        class Config:
+            required_fields = ('v', )
 
     Model(v=None)
     with pytest.raises(ValidationError) as exc_info:

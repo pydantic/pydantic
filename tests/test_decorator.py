@@ -23,13 +23,10 @@ def test_args():
     assert foo(*(1, 2)) == '1, 2'
     assert foo(*[1], 2) == '1, 2'
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError) as exc_info:
         foo()
 
-    assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
-    ]
+    assert exc_info.value.args[0] == 'foo() missing 2 required positional arguments: \'a\' and \'b\''
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 'x')
@@ -94,8 +91,6 @@ def test_kwargs():
         foo(1, 'x')
 
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
         {'loc': ('args',), 'msg': '0 positional arguments expected but 2 given', 'type': 'type_error'},
     ]
 
@@ -200,9 +195,9 @@ def test_async():
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError) as exc_info:
         loop.run_until_complete(foo('x'))
-    assert exc_info.value.errors() == [{'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert exc_info.value.args[0] == 'foo() missing 1 required positional argument: \'b\''
 
 
 def test_string_annotation():
@@ -216,7 +211,6 @@ def test_string_annotation():
         foo(['x'])
     assert exc_info.value.errors() == [
         {'loc': ('a', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
 
 
@@ -234,13 +228,10 @@ def test_item_method():
     assert x.foo(4, 2) == '4, 2'
     assert x.foo(*[4, 2]) == '4, 2'
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError) as exc_info:
         x.foo()
 
-    assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
-    ]
+    assert exc_info.value.args[0] == 'foo() missing 2 required positional arguments: \'a\' and \'b\''
 
 
 def test_class_method():
@@ -255,10 +246,7 @@ def test_class_method():
     assert x.foo(4, 2) == '4, 2'
     assert x.foo(*[4, 2]) == '4, 2'
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError) as exc_info:
         x.foo()
 
-    assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
-    ]
+    assert exc_info.value.args[0] == 'foo() missing 2 required positional arguments: \'a\' and \'b\''

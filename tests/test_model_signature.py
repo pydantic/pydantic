@@ -2,6 +2,7 @@ from inspect import signature
 from typing import Any, Iterable, Union
 
 from pydantic import BaseModel, Extra, Field, create_model
+from pydantic.fields import Undefined
 
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
@@ -23,15 +24,15 @@ def test_model_signature():
 
     sig = signature(Model)
     assert sig != signature(BaseModel)
-    assert _equals(map(str, sig.parameters.values()), ('a: float', 'b: int = 10'))
-    assert _equals(str(sig), '(*, a: float, b: int = 10) -> None')
+    assert _equals(map(str, sig.parameters.values()), (f'a: float = {Undefined}', 'b: int = 10'))
+    assert _equals(str(sig), f'(*, a: float = {Undefined}, b: int = 10) -> None')
 
 
 def test_custom_init_signature():
     class MyModel(BaseModel):
         id: int
         name: str = 'John Doe'
-        f__: str = Field(..., alias='foo')
+        f__: str = Field(alias='foo')
 
         class Config:
             extra = Extra.allow
@@ -44,10 +45,11 @@ def test_custom_init_signature():
     sig = signature(MyModel)
     assert _equals(
         map(str, sig.parameters.values()),
-        ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", 'foo: str', '**data'),
+        ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", f'foo: str = {Undefined}', '**data'),
     )
 
-    assert _equals(str(sig), "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **data) -> None")
+    assert _equals(str(sig), (f"(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe',"
+                              f" foo: str = {Undefined}, **data) -> None"))
 
 
 def test_custom_init_signature_with_no_var_kw():
@@ -76,9 +78,9 @@ def test_invalid_identifiers_signature():
 
 def test_use_field_name():
     class Foo(BaseModel):
-        foo: str = Field(..., alias='this is invalid')
+        foo: str = Field(alias='this is invalid')
 
         class Config:
             allow_population_by_field_name = True
 
-    assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
+    assert _equals(str(signature(Foo)), f'(*, foo: str = {Undefined}) -> None')

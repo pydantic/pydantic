@@ -1664,7 +1664,7 @@ def test_new_type_success():
 
     m = Model(a=42, b=24, c=[1, 2, 3])
     assert m.dict() == {'a': 42, 'b': 24, 'c': [1, 2, 3]}
-    assert repr(Model.__fields__['c']) == "ModelField(name='c', type=List[int], required=True)"
+    assert repr(Model.__fields__['c']) == "ModelField(name='c', type=List[int], required=False)"
 
 
 def test_new_type_fails():
@@ -1809,7 +1809,10 @@ def test_json_optional_complex():
 
 def test_json_explicitly_required():
     class JsonRequired(BaseModel):
-        json_obj: Json = ...
+        json_obj: Json
+
+        class Config:
+            required_fields = ('json_obj', )
 
     assert JsonRequired(json_obj=None).dict() == {'json_obj': None}
     assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
@@ -1824,7 +1827,7 @@ def test_json_no_default():
 
     assert JsonRequired(json_obj=None).dict() == {'json_obj': None}
     assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
-    assert JsonRequired().dict() == {'json_obj': None}
+    assert JsonRequired().dict() == {}
 
 
 def test_pattern():

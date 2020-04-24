@@ -366,7 +366,6 @@ def test_son():
         'title': 'Model',
         'type': 'object',
         'properties': {'v': {'title': 'V', 'minLength': 1, 'maxLength': 2083, 'type': 'string', 'format': 'uri'}},
-        'required': ['v'],
     }
 
 

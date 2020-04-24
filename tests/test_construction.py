@@ -4,6 +4,7 @@ from typing import Any, List
 import pytest
 
 from pydantic import BaseModel
+from pydantic.fields import Undefined, UndefinedType
 
 
 class Model(BaseModel):
@@ -22,9 +23,8 @@ def test_simple_construct():
 def test_construct_misuse():
     m = Model.construct(b='foobar')
     assert m.b == 'foobar'
+    assert isinstance(m.a, UndefinedType)
     assert m.dict() == {'b': 'foobar'}
-    with pytest.raises(AttributeError, match="'Model' object has no attribute 'a'"):
-        print(m.a)
 
 
 def test_construct_fields_set():

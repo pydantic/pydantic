@@ -11,6 +11,9 @@ class Model(BaseModel):
     a: float
     b: int = 10
 
+    class Config:
+        required_fields = ('a', )
+
 
 def test_obj():
     m = Model.parse_obj(dict(a=10.2))

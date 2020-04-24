@@ -340,10 +340,7 @@ def test_wildcard_validator_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': '"foobar" not found in a', 'type': 'value_error'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
-    ]
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': '"foobar" not found in a', 'type': 'value_error'}]
 
 
 def test_invalid_field():

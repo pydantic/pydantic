@@ -74,7 +74,6 @@ def test_key():
     s = {
         'type': 'object',
         'properties': {'a': {'type': 'number', 'title': 'A'}, 'b': {'type': 'integer', 'title': 'B', 'default': 10}},
-        'required': ['a'],
         'title': 'ApplePie',
         'description': 'This is a test.',
     }
@@ -102,7 +101,6 @@ def test_by_alias():
             'Snap': {'type': 'number', 'title': 'Snap'},
             'Crackle': {'type': 'integer', 'title': 'Crackle', 'default': 10},
         },
-        'required': ['Snap'],
     }
     assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
@@ -122,7 +120,6 @@ def test_by_alias_generator():
         'title': 'ApplePie',
         'type': 'object',
         'properties': {'A': {'title': 'A', 'type': 'number'}, 'B': {'title': 'B', 'default': 10, 'type': 'integer'}},
-        'required': ['A'],
     }
     assert ApplePie.schema(by_alias=False)['properties'].keys() == {'a', 'b'}
 
@@ -146,11 +143,9 @@ def test_sub_model():
                 'title': 'Foo',
                 'description': 'hello',
                 'properties': {'b': {'type': 'number', 'title': 'B'}},
-                'required': ['b'],
             }
         },
         'properties': {'a': {'type': 'integer', 'title': 'A'}, 'b': {'$ref': '#/definitions/Foo'}},
-        'required': ['a'],
     }
 
 
@@ -158,9 +153,6 @@ def test_schema_class():
     class Model(BaseModel):
         foo: int = Field(4, title='Foo is Great')
         bar: str = Field(..., description='this description of bar')
-
-    with pytest.raises(ValidationError):
-        Model()
 
     m = Model(bar=123)
     assert m.dict() == {'foo': 4, 'bar': '123'}
@@ -172,7 +164,6 @@ def test_schema_class():
             'foo': {'type': 'integer', 'title': 'Foo is Great', 'default': 4},
             'bar': {'type': 'string', 'title': 'Bar', 'description': 'this description of bar'},
         },
-        'required': ['bar'],
     }
 
 
@@ -211,7 +202,6 @@ def test_choices():
             'bar': {'type': 'integer', 'title': 'Bar', 'enum': [1, 2]},
             'spam': {'type': 'string', 'title': 'Spam', 'enum': ['f', 'b']},
         },
-        'required': ['foo', 'bar'],
     }
 
 
@@ -256,11 +246,10 @@ def test_list_sub_model():
                 'title': 'Foo',
                 'type': 'object',
                 'properties': {'a': {'type': 'number', 'title': 'A'}},
-                'required': ['a'],
+
             }
         },
         'properties': {'b': {'type': 'array', 'items': {'$ref': '#/definitions/Foo'}, 'title': 'B'}},
-        'required': ['b'],
     }
 
 
@@ -290,7 +279,6 @@ def test_set():
             'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}},
             'b': {'title': 'B', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
-        'required': ['a', 'b'],
     }
 
 
@@ -340,7 +328,6 @@ def test_tuple(field_type, expected_schema):
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'array'}},
-        'required': ['a'],
     }
     base_schema['properties']['a']['items'] = expected_schema
 
@@ -355,7 +342,6 @@ def test_bool():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'boolean'}},
-        'required': ['a'],
     }
 
 
@@ -367,7 +353,6 @@ def test_strict_bool():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'boolean'}},
-        'required': ['a'],
     }
 
 
@@ -379,7 +364,6 @@ def test_dict():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'object'}},
-        'required': ['a'],
     }
 
 
@@ -391,7 +375,6 @@ def test_list():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'array', 'items': {}}},
-        'required': ['a'],
     }
 
 
@@ -406,12 +389,11 @@ class Foo(BaseModel):
             Union[int, str],
             {
                 'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
-                'required': ['a'],
             },
         ),
         (
             List[int],
-            {'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}}, 'required': ['a']},
+            {'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}}},
         ),
         (
             Dict[str, Foo],
@@ -421,13 +403,11 @@ class Foo(BaseModel):
                         'title': 'Foo',
                         'type': 'object',
                         'properties': {'a': {'title': 'A', 'type': 'number'}},
-                        'required': ['a'],
                     }
                 },
                 'properties': {
                     'a': {'title': 'A', 'type': 'object', 'additionalProperties': {'$ref': '#/definitions/Foo'}}
                 },
-                'required': ['a'],
             },
         ),
         (
@@ -438,13 +418,12 @@ class Foo(BaseModel):
                         'title': 'Foo',
                         'type': 'object',
                         'properties': {'a': {'title': 'A', 'type': 'number'}},
-                        'required': ['a'],
                     }
                 },
                 'properties': {'a': {'$ref': '#/definitions/Foo'}},
             },
         ),
-        (Dict[str, Any], {'properties': {'a': {'title': 'A', 'type': 'object'}}, 'required': ['a']}),
+        (Dict[str, Any], {'properties': {'a': {'title': 'A', 'type': 'object'}}}),
     ],
 )
 def test_list_union_dict(field_type, expected_schema):
@@ -472,8 +451,7 @@ def test_date_types(field_type, expected_schema):
 
     attribute_schema = {'title': 'A'}
     attribute_schema.update(expected_schema)
-
-    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': attribute_schema}, 'required': ['a']}
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': attribute_schema}}
 
     assert Model.schema() == base_schema
 
@@ -489,7 +467,6 @@ def test_date_types(field_type, expected_schema):
                 'properties': {
                     'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
                 },
-                'required': ['a'],
             },
         ),
         (
@@ -529,7 +506,7 @@ def test_str_constrained_types(field_type, expected_schema):
     model_schema = Model.schema()
     assert model_schema['properties']['a'] == expected_schema
 
-    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': expected_schema}, 'required': ['a']}
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': expected_schema}}
 
     assert model_schema == base_schema
 
@@ -548,7 +525,7 @@ def test_special_str_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}}
     base_schema['properties']['a'] = expected_schema
 
     assert Model.schema() == base_schema
@@ -564,7 +541,6 @@ def test_email_str_types(field_type, expected_schema):
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
     }
     base_schema['properties']['a']['format'] = expected_schema
 
@@ -580,7 +556,6 @@ def test_secret_types(field_type, inner_type):
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True}},
-        'required': ['a'],
     }
 
     assert Model.schema() == base_schema
@@ -605,7 +580,6 @@ def test_special_int_types(field_type, expected_schema):
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'integer'}},
-        'required': ['a'],
     }
     base_schema['properties']['a'].update(expected_schema)
 
@@ -635,7 +609,6 @@ def test_special_float_types(field_type, expected_schema):
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'number'}},
-        'required': ['a'],
     }
     base_schema['properties']['a'].update(expected_schema)
 
@@ -654,7 +627,6 @@ def test_uuid_types(field_type, expected_schema):
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
-        'required': ['a'],
     }
     base_schema['properties']['a']['format'] = expected_schema
 
@@ -672,7 +644,6 @@ def test_path_types(field_type, expected_schema):
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
-        'required': ['a'],
     }
     base_schema['properties']['a']['format'] = expected_schema
 
@@ -691,7 +662,6 @@ def test_json_type():
             'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
             'b': {'title': 'B', 'type': 'integer'},
         },
-        'required': ['b'],
     }
 
 
@@ -704,7 +674,6 @@ def test_ipv4address_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'ip_address': {'title': 'Ip Address', 'type': 'string', 'format': 'ipv4'}},
-        'required': ['ip_address'],
     }
 
 
@@ -717,7 +686,6 @@ def test_ipv6address_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'ip_address': {'title': 'Ip Address', 'type': 'string', 'format': 'ipv6'}},
-        'required': ['ip_address'],
     }
 
 
@@ -730,7 +698,6 @@ def test_ipvanyaddress_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'ip_address': {'title': 'Ip Address', 'type': 'string', 'format': 'ipvanyaddress'}},
-        'required': ['ip_address'],
     }
 
 
@@ -743,7 +710,6 @@ def test_ipv4interface_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'ip_interface': {'title': 'Ip Interface', 'type': 'string', 'format': 'ipv4interface'}},
-        'required': ['ip_interface'],
     }
 
 
@@ -756,7 +722,6 @@ def test_ipv6interface_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'ip_interface': {'title': 'Ip Interface', 'type': 'string', 'format': 'ipv6interface'}},
-        'required': ['ip_interface'],
     }
 
 
@@ -769,7 +734,6 @@ def test_ipvanyinterface_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'ip_interface': {'title': 'Ip Interface', 'type': 'string', 'format': 'ipvanyinterface'}},
-        'required': ['ip_interface'],
     }
 
 
@@ -782,7 +746,6 @@ def test_ipv4network_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'ip_network': {'title': 'Ip Network', 'type': 'string', 'format': 'ipv4network'}},
-        'required': ['ip_network'],
     }
 
 
@@ -795,7 +758,6 @@ def test_ipv6network_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'ip_network': {'title': 'Ip Network', 'type': 'string', 'format': 'ipv6network'}},
-        'required': ['ip_network'],
     }
 
 
@@ -808,7 +770,6 @@ def test_ipvanynetwork_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'ip_network': {'title': 'Ip Network', 'type': 'string', 'format': 'ipvanynetwork'}},
-        'required': ['ip_network'],
     }
 
 
@@ -945,7 +906,7 @@ def test_schema_overrides():
                 'title': 'Foo',
                 'type': 'object',
                 'properties': {'a': {'title': 'A', 'type': 'string'}},
-                'required': ['a'],
+
             },
             'Bar': {
                 'title': 'Bar',
@@ -955,7 +916,6 @@ def test_schema_overrides():
             'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
         },
         'properties': {'d': {'$ref': '#/definitions/Baz'}},
-        'required': ['d'],
     }
 
 
@@ -997,37 +957,37 @@ def test_schema_from_models():
                         'items': {'$ref': '#/definitions/Ingredient'},
                     },
                 },
-                'required': ['name', 'ingredients'],
+
             },
             'Ingredient': {
                 'title': 'Ingredient',
                 'type': 'object',
                 'properties': {'name': {'title': 'Name', 'type': 'string'}},
-                'required': ['name'],
+
             },
             'Model': {
                 'title': 'Model',
                 'type': 'object',
                 'properties': {'d': {'$ref': '#/definitions/Baz'}},
-                'required': ['d'],
+
             },
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
                 'properties': {'c': {'$ref': '#/definitions/Bar'}},
-                'required': ['c'],
+
             },
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
                 'properties': {'b': {'$ref': '#/definitions/Foo'}},
-                'required': ['b'],
+
             },
             'Foo': {
                 'title': 'Foo',
                 'type': 'object',
                 'properties': {'a': {'title': 'A', 'type': 'string'}},
-                'required': ['a'],
+
             },
         },
     }
@@ -1050,19 +1010,19 @@ def test_schema_with_ref_prefix():
                 'title': 'Baz',
                 'type': 'object',
                 'properties': {'c': {'$ref': '#/components/schemas/Bar'}},
-                'required': ['c'],
+
             },
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
                 'properties': {'b': {'$ref': '#/components/schemas/Foo'}},
-                'required': ['b'],
+
             },
             'Foo': {
                 'title': 'Foo',
                 'type': 'object',
                 'properties': {'a': {'title': 'A', 'type': 'string'}},
-                'required': ['a'],
+
             },
         }
     }
@@ -1273,7 +1233,7 @@ def test_bytes_constrained_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}}
     base_schema['properties']['a'] = expected_schema
 
     assert Model.schema() == base_schema
@@ -1289,7 +1249,7 @@ def test_optional_dict():
         'properties': {'something': {'title': 'Something', 'type': 'object'}},
     }
 
-    assert Model().dict() == {'something': None}
+    assert Model().dict() == {}
     assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}
 
 
@@ -1308,7 +1268,7 @@ def test_optional_validator():
         'properties': {'something': {'title': 'Something', 'type': 'string'}},
     }
 
-    assert Model().dict() == {'something': None}
+    assert Model().dict() == {}
     assert Model(something=None).dict() == {'something': None}
     assert Model(something='hello').dict() == {'something': 'hello'}
 
@@ -1339,7 +1299,6 @@ def test_unparameterized_schema_generation():
         'title': 'FooList',
         'type': 'object',
         'properties': {'d': {'items': {}, 'title': 'D', 'type': 'array'}},
-        'required': ['d'],
     }
 
     foo_list_schema = model_schema(FooList)
@@ -1358,7 +1317,6 @@ def test_unparameterized_schema_generation():
         'title': 'FooDict',
         'type': 'object',
         'properties': {'d': {'title': 'D', 'type': 'object'}},
-        'required': ['d'],
     }
 
     foo_dict_schema = model_schema(FooDict)
@@ -1382,13 +1340,12 @@ def test_known_model_optimization():
             'dep': {'$ref': '#/definitions/Dep'},
             'dep_l': {'title': 'Dep L', 'type': 'array', 'items': {'$ref': '#/definitions/Dep'}},
         },
-        'required': ['dep', 'dep_l'],
         'definitions': {
             'Dep': {
                 'title': 'Dep',
                 'type': 'object',
                 'properties': {'number': {'title': 'Number', 'type': 'integer'}},
-                'required': ['number'],
+
             }
         },
     }
@@ -1426,7 +1383,7 @@ def test_root_nested_model():
                 'title': 'NestedModel',
                 'type': 'object',
                 'properties': {'a': {'title': 'A', 'type': 'string'}},
-                'required': ['a'],
+
             }
         },
     }
@@ -1448,7 +1405,6 @@ def test_new_type_schema():
             'b': {'title': 'B', 'type': 'integer'},
             'c': {'title': 'C', 'type': 'string'},
         },
-        'required': ['a', 'b', 'c'],
         'title': 'Model',
         'type': 'object',
     }
@@ -1467,7 +1423,6 @@ def test_literal_schema():
             'b': {'title': 'B', 'type': 'string', 'const': 'a'},
             'c': {'anyOf': [{'type': 'string', 'const': 'a'}, {'type': 'integer', 'const': 1}], 'title': 'C'},
         },
-        'required': ['a', 'b', 'c'],
         'title': 'Model',
         'type': 'object',
     }
@@ -1482,7 +1437,6 @@ def test_color_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'color': {'title': 'Color', 'type': 'string', 'format': 'color'}},
-        'required': ['color'],
     }
 
 
@@ -1497,7 +1451,6 @@ def test_model_with_schema_extra():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
         'examples': [{'a': 'Foo'}],
     }
 
@@ -1569,7 +1522,6 @@ def test_model_with_extra_forbidden():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
         'additionalProperties': False,
     }
 
@@ -1661,7 +1613,7 @@ def test_real_vs_phony_constraints():
             'title': 'Test Model',
             'type': 'object',
             'properties': {'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'type': 'integer'}},
-            'required': ['foo'],
+
         }
     )
 
@@ -1686,7 +1638,6 @@ def test_conlist():
             'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4},
             'bar': {'title': 'Bar', 'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4},
         },
-        'required': ['foo'],
     }
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1715,7 +1666,6 @@ def test_subfield_field_info():
                 'additionalProperties': {'type': 'array', 'items': {'type': 'integer'}},
             }
         },
-        'required': ['entries'],
     }
 
 
@@ -1730,7 +1680,6 @@ def test_dataclass():
                 'title': 'Model',
                 'type': 'object',
                 'properties': {'a': {'title': 'A', 'type': 'boolean'}},
-                'required': ['a'],
             }
         }
     }
@@ -1739,7 +1688,6 @@ def test_dataclass():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'boolean'}},
-        'required': ['a'],
     }
 
 
@@ -1760,7 +1708,6 @@ def test_schema_attributes():
         'title': 'Example',
         'type': 'object',
         'properties': {'example': {'title': 'Example', 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE']}},
-        'required': ['example'],
     }
 
 
@@ -1781,7 +1728,6 @@ def test_path_modify_schema():
             'path1': {'title': 'Path1', 'type': 'string', 'format': 'path'},
             'path2': {'title': 'Path2', 'type': 'string', 'format': 'path', 'foobar': 123},
         },
-        'required': ['path1', 'path2'],
     }
 
 
@@ -1812,7 +1758,6 @@ def test_iterable():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}},
-        'required': ['a'],
     }
 
 
@@ -1826,5 +1771,4 @@ def test_new_type():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
     }

@@ -35,7 +35,7 @@ class Model(BaseModel):
 """
     )
     assert module.Model(a='123').dict() == {'a': 123}
-    assert module.Model().dict() == {'a': None}
+    assert module.Model().dict() == {}
 
 
 def test_basic_forward_ref(create_module):
@@ -55,7 +55,7 @@ class Bar(BaseModel):
 """
     )
 
-    assert module.Bar().dict() == {'b': None}
+    assert module.Bar().dict() == {}
     assert module.Bar(b={'a': '123'}).dict() == {'b': {'a': 123}}
 
 
@@ -203,6 +203,9 @@ class Node(BaseModel):
     value: int
     left: TreeType
     right: TreeType
+    
+    class Config:
+        required_fields = ('value', 'left', 'right')
 
 
 Node.update_forward_refs()
@@ -282,7 +285,6 @@ Account.update_forward_refs()
                         'items': {'$ref': '#/definitions/Account'},
                     },
                 },
-                'required': ['name'],
             }
         },
     }
@@ -319,7 +321,6 @@ Account.update_forward_refs()
                         'items': {'$ref': '#/definitions/Account'},
                     },
                 },
-                'required': ['name'],
             }
         },
     }
@@ -360,13 +361,11 @@ Owner.update_forward_refs()
                         'items': {'$ref': '#/definitions/Account'},
                     },
                 },
-                'required': ['name', 'owner'],
             },
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
                 'properties': {'account': {'$ref': '#/definitions/Account'}},
-                'required': ['account'],
             },
         },
     }
@@ -409,13 +408,11 @@ Owner.update_forward_refs()
                         'items': {'$ref': '#/definitions/Account'},
                     },
                 },
-                'required': ['name', 'owner'],
             },
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
                 'properties': {'account': {'$ref': '#/definitions/Account'}},
-                'required': ['account'],
             },
         },
     }

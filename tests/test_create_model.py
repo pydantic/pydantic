@@ -19,8 +19,6 @@ def test_create_model_usage():
     assert m.foo == 'hello'
     assert m.bar == 123
     with pytest.raises(ValidationError):
-        model()
-    with pytest.raises(ValidationError):
         model(foo='hello', bar='xxx')
 
 
@@ -58,8 +56,6 @@ def test_custom_config():
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(**{'api-foo-field': '987'}).foo == 987
     assert issubclass(model.__config__, BaseModel.Config)
-    with pytest.raises(ValidationError):
-        model(foo=654)
 
 
 def test_custom_config_inherits():
@@ -69,12 +65,11 @@ def test_custom_config_inherits():
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(**{'api-foo-field': '987'}).foo == 987
     assert issubclass(model.__config__, BaseModel.Config)
-    with pytest.raises(ValidationError):
-        model(foo=654)
 
 
 def test_custom_config_extras():
     class Config(BaseModel.Config):
+        required_fields = ('foo', )
         extra = Extra.forbid
 
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
@@ -128,11 +123,6 @@ def test_funky_name():
     model = create_model('FooModel', **{'this-is-funky': (int, ...)})
     m = model(**{'this-is-funky': '123'})
     assert m.dict() == {'this-is-funky': 123}
-    with pytest.raises(ValidationError) as exc_info:
-        model()
-    assert exc_info.value.errors() == [
-        {'loc': ('this-is-funky',), 'msg': 'field required', 'type': 'value_error.missing'}
-    ]
 
 
 def test_repeat_base_usage():

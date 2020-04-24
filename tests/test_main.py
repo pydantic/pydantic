@@ -23,6 +23,9 @@ class UltraSimpleModel(BaseModel):
     a: float
     b: int = 10
 
+    class Config:
+        required_fields = ('a', )
+
 
 def test_ultra_simple_missing():
     with pytest.raises(ValidationError) as exc_info:
@@ -321,8 +324,11 @@ def test_field_order():
 def test_required():
     # same as below but defined here so class definition occurs inside the test
     class Model(BaseModel):
-        a: float = Required
+        a: float
         b: int = 10
+
+        class Config:
+            required_fields = ('a', )
 
     m = Model(a=10.2)
     assert m.dict() == dict(a=10.2, b=10)
@@ -415,7 +421,6 @@ def test_const_list():
         'definitions': {
             'SubModel': {
                 'properties': {'b': {'title': 'B', 'type': 'integer'}},
-                'required': ['b'],
                 'title': 'SubModel',
                 'type': 'object',
             }
@@ -862,13 +867,11 @@ def test_root_failed():
             a: str
 
 
-def test_root_undefined_failed():
+def test_root_undefined_not_failed():
     class MyModel(BaseModel):
         a: List[str]
 
-    with pytest.raises(ValidationError) as exc_info:
-        MyModel(__root__=['a'])
-        assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert MyModel(__root__=['a'])
 
 
 def test_parse_root_as_mapping():
@@ -1098,13 +1101,17 @@ def test_none_min_max_items():
 
 
 def test_reuse_same_field():
-    required_field = Field(...)
-
     class Model1(BaseModel):
-        required: str = required_field
+        required: str
+
+        class Config:
+            required_fields = ('required', )
 
     class Model2(BaseModel):
-        required: str = required_field
+        required: str
+
+        class Config:
+            required_fields = ('required', )
 
     with pytest.raises(ValidationError):
         Model1.parse_obj({})

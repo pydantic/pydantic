@@ -228,6 +228,9 @@ def test_validation_error(result, expected):
         y: int
         z: str
 
+        class Config:
+            required_fields = ('x', 'z')
+
     class Model(BaseModel):
         a: int
         b: SubModel
@@ -295,21 +298,13 @@ x
     assert str(exc_info.value) == expected
     assert str(exc_info.value) == expected  # to check lru cache doesn't break anything
 
-    with pytest.raises(ValidationError) as exc_info:
-        Model()
-
-    assert (
-        str(exc_info.value)
-        == """\
-1 validation error for Model
-x
-  field required (type=value_error.missing)"""
-    )
-
 
 def test_nested_error():
     class NestedModel3(BaseModel):
         x: str
+
+        class Config:
+            required_fields = ('x', )
 
     class NestedModel2(BaseModel):
         data2: List[NestedModel3]

@@ -8,6 +8,7 @@ import pytest
 
 import pydantic
 from pydantic import BaseModel, ValidationError, validator
+from pydantic.fields import Undefined, UndefinedType
 
 
 def test_simple():
@@ -396,7 +397,10 @@ def test_nested_dataclass_model():
 
 
 def test_fields():
-    @pydantic.dataclasses.dataclass
+    class Config:
+        required_fields = ('id',)
+
+    @pydantic.dataclasses.dataclass(config=Config)
     class User:
         id: int
         name: str = 'John Doe'
@@ -406,7 +410,7 @@ def test_fields():
     fields = user.__pydantic_model__.__fields__
 
     assert fields['id'].required is True
-    assert fields['id'].default is None
+    assert isinstance(fields['id'].default, UndefinedType)
 
     assert fields['name'].required is False
     assert fields['name'].default == 'John Doe'
@@ -424,8 +428,8 @@ def test_default_factory_field():
     user = User(id=123)
     fields = user.__pydantic_model__.__fields__
 
-    assert fields['id'].required is True
-    assert fields['id'].default is None
+    assert fields['id'].required is False
+    assert fields['id'].default is Undefined
 
     assert fields['aliases'].required is False
     assert fields['aliases'].default == {'John': 'Joey'}
@@ -454,7 +458,6 @@ def test_schema():
             },
             'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
         },
-        'required': ['id'],
     }
 
 
@@ -471,13 +474,11 @@ def test_nested_schema():
         'title': 'Outer',
         'type': 'object',
         'properties': {'n': {'$ref': '#/definitions/Nested'}},
-        'required': ['n'],
         'definitions': {
             'Nested': {
                 'title': 'Nested',
                 'type': 'object',
                 'properties': {'number': {'title': 'Number', 'type': 'integer'}},
-                'required': ['number'],
             }
         },
     }

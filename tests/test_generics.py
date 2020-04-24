@@ -5,6 +5,7 @@ from typing import Any, ClassVar, Dict, Generic, List, Optional, Tuple, Type, Ty
 import pytest
 
 from pydantic import BaseModel, Field, ValidationError, root_validator, validator
+from pydantic.fields import Undefined, UndefinedType
 from pydantic.generics import GenericModel, _generic_types_cache
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
@@ -304,10 +305,12 @@ def test_generic():
 
         @validator('error', always=True)
         def validate_error(cls, v: Optional[error_type], values: Dict[str, Any]) -> Optional[error_type]:
-            if values.get('data', None) is None and v is None:
-                raise ValueError('Must provide data or error')
-            if values.get('data', None) is not None and v is not None:
-                raise ValueError('Must not provide both data and error')
+            data = values.get('data', None)
+            if not isinstance(data, UndefinedType):
+                if data is None and v is None:
+                    raise ValueError('Must provide data or error')
+                elif data is not None and v is not None:
+                    raise ValueError('Must not provide both data and error')
             return v
 
         @validator('positive_number')
@@ -324,12 +327,14 @@ def test_generic():
         text: str
 
     success1 = Result[Data, Error](data=[Data(number=1, text='a')], positive_number=1)
-    assert success1.dict() == {'data': [{'number': 1, 'text': 'a'}], 'error': None, 'positive_number': 1}
-    assert repr(success1) == "Result[Data, Error](data=[Data(number=1, text='a')], error=None, positive_number=1)"
+    assert success1.dict() == {'data': [{'number': 1, 'text': 'a'}], 'positive_number': 1}
+    assert repr(success1) == ("Result[Data, Error](data=[Data(number=1, text='a')],"
+                              " error=PydanticUndefined, positive_number=1)")
 
     success2 = Result[Data, Error](error=Error(message='error'), positive_number=1)
-    assert success2.dict() == {'data': None, 'error': {'message': 'error'}, 'positive_number': 1}
-    assert repr(success2) == "Result[Data, Error](data=None, error=Error(message='error'), positive_number=1)"
+    assert success2.dict() == {'error': {'message': 'error'}, 'positive_number': 1}
+    assert repr(success2) == ("Result[Data, Error](data=PydanticUndefined,"
+                              " error=Error(message='error'), positive_number=1)")
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](error=Error(message='error'), positive_number=-1)
     assert exc_info.value.errors() == [{'loc': ('positive_number',), 'msg': '', 'type': 'value_error'}]
@@ -382,6 +387,9 @@ def test_required_value():
 
     class MyModel(GenericModel, Generic[T]):
         a: int
+
+        class Config:
+            required_fields = ('a', )
 
     with pytest.raises(ValidationError) as exc_info:
         MyModel[int]()

@@ -111,20 +111,11 @@ def test_object_with_getattr():
         class Config:
             orm_mode = True
 
-    class ModelInvalid(BaseModel):
-        foo: str
-        bar: int
-
-        class Config:
-            orm_mode = True
-
     foo = FooGetAttr()
     model = Model.from_orm(foo)
     assert model.foo == 'Foo'
     assert model.bar == 1
     assert model.dict(exclude_unset=True) == {'foo': 'Foo'}
-    with pytest.raises(ValidationError):
-        ModelInvalid.from_orm(foo)
 
 
 def test_properties():
