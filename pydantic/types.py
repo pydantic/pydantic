@@ -340,7 +340,7 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
             maximum=cls.le,
             multipleOf=cls.multiple_of,
         )
-        # Modify constraints to account for differences between IEEE floats and json
+        # Modify constraints to account for differences between IEEE floats and JSON
         if field_schema.get('exclusiveMinimum') == -math.inf:
             del field_schema['exclusiveMinimum']
         if field_schema.get('minimum') == -math.inf:
