@@ -28,7 +28,7 @@ from typing import (
 from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import SHAPE_MAPPING, ModelField, Undefined
+from .fields import SHAPE_MAPPING, ModelField, Undefined, UndefinedType
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
@@ -76,6 +76,7 @@ else:  # pragma: no cover
         compiled = False
 
 __all__ = 'BaseConfig', 'BaseModel', 'Extra', 'compiled', 'create_model', 'validate_model'
+ALL_FIELDS = '__all__'
 
 
 class Extra(str, Enum):
@@ -95,6 +96,7 @@ class BaseConfig:
     allow_population_by_field_name = False
     use_enum_values = False
     fields: Dict[str, Union[str, Dict[str, str]]] = {}
+    required_fields: Union[Tuple[str], str] = ()
     validate_assignment = False
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
@@ -133,7 +135,14 @@ class BaseConfig:
         """
         Optional hook to check or modify fields during model creation.
         """
-        pass
+        if field.required is Undefined:
+            field.required = cls.field_required(field.name)
+
+    @classmethod
+    def field_required(cls, field_name) -> bool:
+        if cls.required_fields == ALL_FIELDS:
+            return True
+        return field_name in cls.required_fields
 
 
 def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'ConfigType':
@@ -250,7 +259,7 @@ class ModelMetaclass(ABCMeta):
                         class_validators=vg.get_validators(ann_name),
                         config=config,
                     )
-                    if not inferred.required:
+                    if inferred.default:
                         fields_defaults[ann_name] = inferred.default
 
             for var_name, value in namespace.items():
@@ -274,8 +283,6 @@ class ModelMetaclass(ABCMeta):
                             f'if you wish to change the type of this field, please use a type annotation'
                         )
                     fields[var_name] = inferred
-                    if not inferred.required:
-                        fields_defaults[var_name] = inferred.default
 
         _custom_root_type = ROOT_KEY in fields
         if _custom_root_type:
@@ -696,6 +703,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 (allowed_keys is not None and field_key not in allowed_keys)
                 or (exclude_none and v is None)
                 or (exclude_defaults and self.__field_defaults__.get(field_key, _missing) == v)
+                or isinstance(v, UndefinedType)
             ):
                 continue
             if by_alias and field_key in self.__fields__:
@@ -832,6 +840,7 @@ def create_model(
 
 
 _missing = object()
+_unset_field_type = UndefinedType
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
@@ -865,6 +874,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
 
         value = input_data.get(field.alias, _missing)
         using_name = False
+
         if value is _missing and config.allow_population_by_field_name and field.alt_alias:
             value = input_data.get(field.name, _missing)
             using_name = True
@@ -875,6 +885,9 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 continue
 
             value = field.get_default()
+            if isinstance(value, _unset_field_type):
+                values[name] = value
+                continue
 
             if not config.validate_all and not field.validate_always:
                 values[name] = value

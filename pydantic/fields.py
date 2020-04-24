@@ -240,7 +240,7 @@ class ModelField(Representation):
         type_: AnyType,
         class_validators: Optional[Dict[str, Validator]],
         model_config: Type['BaseConfig'],
-        default: Any = None,
+        default: Any = Undefined,
         default_factory: Optional[NoArgAnyCallable] = None,
         required: 'BoolUndefined' = Undefined,
         alias: str = None,
@@ -277,6 +277,9 @@ class ModelField(Representation):
         elif self.default is None:
             # deepcopy is quite slow on None
             value = None
+        # For backward compatibility with Ellipsis in default value, now it's Undefined
+        elif self.default is Ellipsis:
+            value = Undefined
         else:
             value = deepcopy(self.default)
         return value
@@ -299,12 +302,6 @@ class ModelField(Representation):
             value = field_info.default_factory() if field_info.default_factory is not None else field_info.default
         else:
             field_info = FieldInfo(value, **field_info_from_config)
-        required: 'BoolUndefined' = Undefined
-        if value is Required:
-            required = True
-            value = None
-        elif value is not Undefined:
-            required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
         annotation = get_annotation_from_field_info(annotation, field_info, name)
         return cls(
@@ -314,7 +311,6 @@ class ModelField(Representation):
             class_validators=class_validators,
             default=value,
             default_factory=field_info.default_factory,
-            required=required,
             model_config=config,
             field_info=field_info,
         )
@@ -358,15 +354,14 @@ class ModelField(Representation):
             v.always for v in self.class_validators.values()
         )
 
-        if self.required is False and default_value is None:
-            self.allow_none = True
+        if not isinstance(default_value, UndefinedType):
+            self.required = False
+        else:
+            self.default = Undefined
+
+        self.allow_none = True if self.allow_none else not bool(default_value)
 
         self._type_analysis()
-        if self.required is Undefined:
-            self.required = True
-            self.field_info.default = Required
-        if self.default is Undefined and self.default_factory is None:
-            self.default = None
         self.populate_validators()
 
     def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
@@ -388,8 +383,6 @@ class ModelField(Representation):
             self.type_ = new_type_supertype(self.type_)
 
         if self.type_ is Any:
-            if self.required is Undefined:
-                self.required = False
             self.allow_none = True
             return
         elif self.type_ is Pattern:
@@ -411,8 +404,6 @@ class ModelField(Representation):
             types_ = []
             for type_ in self.type_.__args__:
                 if type_ is NoneType:
-                    if self.required is Undefined:
-                        self.required = False
                     self.allow_none = True
                     continue
                 types_.append(type_)
@@ -754,11 +745,10 @@ class ModelField(Representation):
     def __repr_args__(self) -> 'ReprArgs':
         args = [('name', self.name), ('type', self._type_display()), ('required', self.required)]
 
-        if not self.required:
-            if self.default_factory is not None:
-                args.append(('default_factory', f'<function {self.default_factory.__name__}>'))
-            else:
-                args.append(('default', self.default))
+        if self.default_factory is not None:
+            args.append(('default_factory', f'<function {self.default_factory.__name__}>'))
+        elif not isinstance(self.default, UndefinedType):
+            args.append(('default', self.default))
 
         if self.alt_alias:
             args.append(('alias', self.alias))

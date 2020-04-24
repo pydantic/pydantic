@@ -36,6 +36,7 @@ from .fields import (
     SHAPE_TUPLE_ELLIPSIS,
     FieldInfo,
     ModelField,
+    UndefinedType,
 )
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr
@@ -173,7 +174,10 @@ def field_schema(
         s['description'] = field.field_info.description
         schema_overrides = True
 
-    if not field.required and not field.field_info.const and field.default is not None:
+    if (
+            not field.required and not field.field_info.const
+            and (field.default is not None and not isinstance(field.default, UndefinedType))
+    ):
         s['default'] = encode_default(field.default)
         schema_overrides = True
 
