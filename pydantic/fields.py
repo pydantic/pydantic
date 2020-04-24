@@ -402,8 +402,11 @@ class ModelField(Representation):
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable
-            if isinstance(self.type_, type) and isinstance(None, self.type_):
-                self.allow_none = True
+            try:
+                if isinstance(self.type_, type) and isinstance(None, self.type_):
+                    self.allow_none = True
+            except TypeError:
+                pass
             return
         if origin is Callable:
             return

@@ -20,6 +20,12 @@ from pydantic import (
 )
 from pydantic.fields import Field, Schema
 
+try:
+    from typing import TypedDict
+except ImportError:
+    # TypedDict was part of typing-extensions for python<=3.6
+    from typing_extensions import TypedDict
+
 
 def test_str_bytes():
     class Model(BaseModel):
@@ -1531,3 +1537,13 @@ def test_hashable_optional(default):
 
     Model(v=None)
     Model()
+
+
+def test_typeddict():
+    TD = TypedDict('TD', {'a': int})
+
+    class Model(BaseModel):
+        t: TD
+
+    m = Model(t={'a': 42})
+    assert m.t == TD({'a': 42})
