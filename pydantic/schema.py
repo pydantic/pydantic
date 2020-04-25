@@ -526,9 +526,9 @@ def enum_process_schema(enum: EnumMeta) -> Dict[str, Any]:
 
     schema: Dict[str, Any] = {'title': enum.__name__}
 
-    doc = getdoc(enum)
-    if doc:
-        schema['description'] = doc
+    # Python assigns all enums a default docstring value of 'An enumeration', so
+    # all enums will have a description field even if not explicitly provided.
+    schema['description'] = getdoc(enum)
 
     # Add enum values and the enum field type to the schema.
     schema.update({'enum': [item.value for item in cast(Iterable[Enum], enum)]})
