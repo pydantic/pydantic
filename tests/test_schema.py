@@ -16,7 +16,6 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
-    get_enums_from_models,
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
@@ -927,26 +926,6 @@ def test_model_name_maps():
         ModelB: 'pydantic_schema_test__moduleb__modelb__Model',
         ModelC: 'pydantic_schema_test__modulec__modelc__Model',
     }
-
-
-def test_get_enums_from_models():
-    class Foo(str, Enum):
-        A = 'A'
-        B = 'B'
-
-    class Bar(str, Enum):
-        C = 'C'
-        D = 'D'
-
-    class ModelA(BaseModel):
-        foo: Foo
-        bar: Bar
-
-    class ModelB(BaseModel):
-        foo: Foo
-
-    enums = get_enums_from_models([ModelA, ModelB])
-    assert enums == set([Foo, Bar])
 
 
 def test_schema_overrides():
