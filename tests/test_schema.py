@@ -1750,6 +1750,8 @@ def test_dataclass():
 
 def test_schema_attributes():
     class ExampleEnum(Enum):
+        """This is a test description."""
+
         gt = 'GT'
         lt = 'LT'
         ge = 'GE'
@@ -1769,7 +1771,7 @@ def test_schema_attributes():
         'definitions': {
             'ExampleEnum': {
                 'title': 'ExampleEnum',
-                'description': 'An enumeration.',
+                'description': 'This is a test description.',
                 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE'],
             }
         },
