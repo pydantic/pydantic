@@ -522,7 +522,7 @@ def enum_process_schema(enum: EnumMeta) -> Dict[str, Any]:
 
     This is similar to the ``model_process_schema`` function, but applies to ``Enum`` objects.
     """
-    from inspect import getdoc, signature
+    from inspect import getdoc
 
     schema: Dict[str, Any] = {'title': enum.__name__}
 
