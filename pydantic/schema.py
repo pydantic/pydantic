@@ -240,8 +240,8 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
 
 def get_model_name_map(unique_models: Set[Type['BaseModel']]) -> Dict[Type['BaseModel'], str]:
     """
-    Process a set of models or enums and generate unique names for them to be used as keys in the JSON Schema
-    definitions. By default the names are the same as the class name. But if two models / enums in different Python
+    Process a set of models and generate unique names for them to be used as keys in the JSON Schema
+    definitions. By default the names are the same as the class name. But if two models in different Python
     modules have the same name (e.g. "users.Model" and "items.Model"), the generated names will be
     based on the Python module path for those conflicting models to prevent name collisions.
 
