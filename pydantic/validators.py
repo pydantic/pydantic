@@ -29,11 +29,11 @@ from .typing import (
     AnyCallable,
     AnyType,
     ForwardRef,
+    all_literal_values,
     display_as_type,
     get_class,
     is_callable_type,
     is_literal_type,
-    literal_values,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
@@ -401,18 +401,8 @@ def callable_validator(v: Any) -> AnyCallable:
     raise errors.CallableError(value=v)
 
 
-def flatten_literal(s: Any) -> List[Any]:
-    if is_literal_type(s):
-        s = list(literal_values(s))
-    if s == []:
-        return s
-    if is_literal_type(s[0]):
-        return flatten_literal(s[0]) + flatten_literal(s[1:])
-    return s[:1] + flatten_literal(s[1:])
-
-
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
-    permitted_choices: Tuple[Any, ...] = tuple(flatten_literal(type_))
+    permitted_choices: Tuple[Any, ...] = all_literal_values(type_)
     allowed_choices_set = set(permitted_choices)
 
     def literal_validator(v: Any) -> Any:
