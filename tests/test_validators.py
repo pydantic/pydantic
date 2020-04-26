@@ -1042,6 +1042,7 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1060,6 +1061,7 @@ def test_literal_validator():
     ]
 
 
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_nested_literal_validator():
     L1 = Literal['foo']
     L2 = Literal['bar']
@@ -1081,6 +1083,7 @@ def test_nested_literal_validator():
     ]
 
 
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_flatten_nested_literals():
     L1 = Literal['1']
     assert flatten_literal(L1) == ['1']
