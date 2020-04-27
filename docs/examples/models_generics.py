@@ -1,6 +1,7 @@
 from typing import Generic, TypeVar, Optional, List
 
 from pydantic import BaseModel, validator, ValidationError
+from pydantic.fields import UndefinedType
 from pydantic.generics import GenericModel
 
 DataT = TypeVar('DataT')
@@ -19,10 +20,12 @@ class Response(GenericModel, Generic[DataT]):
 
     @validator('error', always=True)
     def check_consistency(cls, v, values):
-        if v is not None and values['data'] is not None:
-            raise ValueError('must not provide both data and error')
-        if v is None and values.get('data') is None:
-            raise ValueError('must provide data or error')
+        data = values.get('data', None)
+        if not isinstance(data, UndefinedType):
+            if data is None and v is None:
+                raise ValueError('Must provide data or error')
+            elif data is not None and v is not None:
+                raise ValueError('Must not provide both data and error')
         return v
 
 data = DataModel(numbers=[1, 2, 3], people=[])

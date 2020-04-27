@@ -48,8 +48,9 @@ def test_custom_init_signature():
         ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", f'foo: str = {Undefined}', '**data'),
     )
 
-    assert _equals(str(sig), (f"(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe',"
-                              f" foo: str = {Undefined}, **data) -> None"))
+    assert _equals(
+        str(sig), f"(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str = {Undefined}, **data) -> None",
+    )
 
 
 def test_custom_init_signature_with_no_var_kw():

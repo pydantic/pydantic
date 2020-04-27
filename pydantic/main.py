@@ -96,7 +96,7 @@ class BaseConfig:
     allow_population_by_field_name = False
     use_enum_values = False
     fields: Dict[str, Union[str, Dict[str, str]]] = {}
-    required_fields: Union[Tuple[str], str] = ()
+    required_fields: Union[Tuple[str, ...], str] = ()
     validate_assignment = False
     error_msg_templates: Dict[str, str] = {}
     arbitrary_types_allowed = False
@@ -139,7 +139,7 @@ class BaseConfig:
             field.required = cls.field_required(field.name)
 
     @classmethod
-    def field_required(cls, field_name) -> bool:
+    def field_required(cls, field_name: str) -> bool:
         if cls.required_fields == ALL_FIELDS:
             return True
         return field_name in cls.required_fields
@@ -849,7 +849,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
     """
     validate data against a model.
     """
-    values = {}
+    values: DictStrAny = {}
     errors = []
     # input_data names, possibly alias
     names_used = set()

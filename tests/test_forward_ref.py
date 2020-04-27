@@ -203,7 +203,7 @@ class Node(BaseModel):
     value: int
     left: TreeType
     right: TreeType
-    
+
     class Config:
         required_fields = ('value', 'left', 'right')
 

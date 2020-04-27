@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, ValidationError, constr
 
 
 def test_success():
@@ -24,7 +24,7 @@ class UltraSimpleModel(BaseModel):
     b: int = 10
 
     class Config:
-        required_fields = ('a', )
+        required_fields = ('a',)
 
 
 def test_ultra_simple_missing():
@@ -328,7 +328,7 @@ def test_required():
         b: int = 10
 
         class Config:
-            required_fields = ('a', )
+            required_fields = ('a',)
 
     m = Model(a=10.2)
     assert m.dict() == dict(a=10.2, b=10)
@@ -419,11 +419,7 @@ def test_const_list():
     assert m.b == [SubModel(b=4), SubModel(b=5), SubModel(b=6)]
     assert m.schema() == {
         'definitions': {
-            'SubModel': {
-                'properties': {'b': {'title': 'B', 'type': 'integer'}},
-                'title': 'SubModel',
-                'type': 'object',
-            }
+            'SubModel': {'properties': {'b': {'title': 'B', 'type': 'integer'}}, 'title': 'SubModel', 'type': 'object'}
         },
         'properties': {
             'a': {
@@ -1105,13 +1101,13 @@ def test_reuse_same_field():
         required: str
 
         class Config:
-            required_fields = ('required', )
+            required_fields = ('required',)
 
     class Model2(BaseModel):
         required: str
 
         class Config:
-            required_fields = ('required', )
+            required_fields = ('required',)
 
     with pytest.raises(ValidationError):
         Model1.parse_obj({})

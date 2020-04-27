@@ -1812,7 +1812,7 @@ def test_json_explicitly_required():
         json_obj: Json
 
         class Config:
-            required_fields = ('json_obj', )
+            required_fields = ('json_obj',)
 
     assert JsonRequired(json_obj=None).dict() == {'json_obj': None}
     assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}

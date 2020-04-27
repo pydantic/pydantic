@@ -18,7 +18,7 @@ from pydantic import (
     validate_model,
     validator,
 )
-from pydantic.fields import Field, Schema, Undefined, UndefinedType
+from pydantic.fields import Field, Schema, UndefinedType
 
 
 def test_str_bytes():
@@ -267,7 +267,7 @@ def test_recursive_list_error():
         count: int = None
 
         class Config:
-            required_fields = ('name', )
+            required_fields = ('name',)
 
     class Model(BaseModel):
         v: List[SubModel] = []
@@ -864,7 +864,7 @@ def test_submodel_different_type():
         a: int
 
         class Config:
-            required_fields = ('a', )
+            required_fields = ('a',)
 
     class Bar(BaseModel):
         b: int
@@ -1364,7 +1364,7 @@ def test_required_any():
         nullable1: Any
 
         class Config:
-            required_fields = ('nullable1', )
+            required_fields = ('nullable1',)
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -1508,7 +1508,7 @@ def test_hashable_required():
         v: Hashable
 
         class Config:
-            required_fields = ('v', )
+            required_fields = ('v',)
 
     Model(v=None)
     with pytest.raises(ValidationError) as exc_info:

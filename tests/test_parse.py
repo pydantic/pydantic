@@ -12,7 +12,7 @@ class Model(BaseModel):
     b: int = 10
 
     class Config:
-        required_fields = ('a', )
+        required_fields = ('a',)
 
 
 def test_obj():

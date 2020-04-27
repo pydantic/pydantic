@@ -304,7 +304,7 @@ def test_nested_error():
         x: str
 
         class Config:
-            required_fields = ('x', )
+            required_fields = ('x',)
 
     class NestedModel2(BaseModel):
         data2: List[NestedModel3]

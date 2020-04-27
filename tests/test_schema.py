@@ -242,12 +242,7 @@ def test_list_sub_model():
         'title': 'Bar',
         'type': 'object',
         'definitions': {
-            'Foo': {
-                'title': 'Foo',
-                'type': 'object',
-                'properties': {'a': {'type': 'number', 'title': 'A'}},
-
-            }
+            'Foo': {'title': 'Foo', 'type': 'object', 'properties': {'a': {'type': 'number', 'title': 'A'}}}
         },
         'properties': {'b': {'type': 'array', 'items': {'$ref': '#/definitions/Foo'}, 'title': 'B'}},
     }
@@ -385,25 +380,13 @@ class Foo(BaseModel):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (
-            Union[int, str],
-            {
-                'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
-            },
-        ),
-        (
-            List[int],
-            {'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}}},
-        ),
+        (Union[int, str], {'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}}},),
+        (List[int], {'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}}},),
         (
             Dict[str, Foo],
             {
                 'definitions': {
-                    'Foo': {
-                        'title': 'Foo',
-                        'type': 'object',
-                        'properties': {'a': {'title': 'A', 'type': 'number'}},
-                    }
+                    'Foo': {'title': 'Foo', 'type': 'object', 'properties': {'a': {'title': 'A', 'type': 'number'}}}
                 },
                 'properties': {
                     'a': {'title': 'A', 'type': 'object', 'additionalProperties': {'$ref': '#/definitions/Foo'}}
@@ -414,11 +397,7 @@ class Foo(BaseModel):
             Union[None, Foo],
             {
                 'definitions': {
-                    'Foo': {
-                        'title': 'Foo',
-                        'type': 'object',
-                        'properties': {'a': {'title': 'A', 'type': 'number'}},
-                    }
+                    'Foo': {'title': 'Foo', 'type': 'object', 'properties': {'a': {'title': 'A', 'type': 'number'}}}
                 },
                 'properties': {'a': {'$ref': '#/definitions/Foo'}},
             },
@@ -902,12 +881,7 @@ def test_schema_overrides():
         'title': 'Model',
         'type': 'object',
         'definitions': {
-            'Foo': {
-                'title': 'Foo',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'string'}},
-
-            },
+            'Foo': {'title': 'Foo', 'type': 'object', 'properties': {'a': {'title': 'A', 'type': 'string'}}},
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
@@ -957,38 +931,16 @@ def test_schema_from_models():
                         'items': {'$ref': '#/definitions/Ingredient'},
                     },
                 },
-
             },
             'Ingredient': {
                 'title': 'Ingredient',
                 'type': 'object',
                 'properties': {'name': {'title': 'Name', 'type': 'string'}},
-
             },
-            'Model': {
-                'title': 'Model',
-                'type': 'object',
-                'properties': {'d': {'$ref': '#/definitions/Baz'}},
-
-            },
-            'Baz': {
-                'title': 'Baz',
-                'type': 'object',
-                'properties': {'c': {'$ref': '#/definitions/Bar'}},
-
-            },
-            'Bar': {
-                'title': 'Bar',
-                'type': 'object',
-                'properties': {'b': {'$ref': '#/definitions/Foo'}},
-
-            },
-            'Foo': {
-                'title': 'Foo',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'string'}},
-
-            },
+            'Model': {'title': 'Model', 'type': 'object', 'properties': {'d': {'$ref': '#/definitions/Baz'}}},
+            'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
+            'Bar': {'title': 'Bar', 'type': 'object', 'properties': {'b': {'$ref': '#/definitions/Foo'}}},
+            'Foo': {'title': 'Foo', 'type': 'object', 'properties': {'a': {'title': 'A', 'type': 'string'}}},
         },
     }
 
@@ -1006,24 +958,9 @@ def test_schema_with_ref_prefix():
     model_schema = schema([Bar, Baz], ref_prefix='#/components/schemas/')  # OpenAPI style
     assert model_schema == {
         'definitions': {
-            'Baz': {
-                'title': 'Baz',
-                'type': 'object',
-                'properties': {'c': {'$ref': '#/components/schemas/Bar'}},
-
-            },
-            'Bar': {
-                'title': 'Bar',
-                'type': 'object',
-                'properties': {'b': {'$ref': '#/components/schemas/Foo'}},
-
-            },
-            'Foo': {
-                'title': 'Foo',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'string'}},
-
-            },
+            'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/components/schemas/Bar'}}},
+            'Bar': {'title': 'Bar', 'type': 'object', 'properties': {'b': {'$ref': '#/components/schemas/Foo'}}},
+            'Foo': {'title': 'Foo', 'type': 'object', 'properties': {'a': {'title': 'A', 'type': 'string'}}},
         }
     }
 
@@ -1341,12 +1278,7 @@ def test_known_model_optimization():
             'dep_l': {'title': 'Dep L', 'type': 'array', 'items': {'$ref': '#/definitions/Dep'}},
         },
         'definitions': {
-            'Dep': {
-                'title': 'Dep',
-                'type': 'object',
-                'properties': {'number': {'title': 'Number', 'type': 'integer'}},
-
-            }
+            'Dep': {'title': 'Dep', 'type': 'object', 'properties': {'number': {'title': 'Number', 'type': 'integer'}}}
         },
     }
 
@@ -1383,7 +1315,6 @@ def test_root_nested_model():
                 'title': 'NestedModel',
                 'type': 'object',
                 'properties': {'a': {'title': 'A', 'type': 'string'}},
-
             }
         },
     }
@@ -1613,7 +1544,6 @@ def test_real_vs_phony_constraints():
             'title': 'Test Model',
             'type': 'object',
             'properties': {'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'type': 'integer'}},
-
         }
     )
 
@@ -1676,11 +1606,7 @@ def test_dataclass():
 
     assert schema([Model]) == {
         'definitions': {
-            'Model': {
-                'title': 'Model',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'boolean'}},
-            }
+            'Model': {'title': 'Model', 'type': 'object', 'properties': {'a': {'title': 'A', 'type': 'boolean'}}}
         }
     }
 

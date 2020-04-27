@@ -2,7 +2,7 @@ from typing import Any, List
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError, root_validator
+from pydantic import BaseModel, ConfigError, root_validator
 from pydantic.utils import GetterDict
 
 

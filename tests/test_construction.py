@@ -4,7 +4,7 @@ from typing import Any, List
 import pytest
 
 from pydantic import BaseModel
-from pydantic.fields import Undefined, UndefinedType
+from pydantic.fields import UndefinedType
 
 
 class Model(BaseModel):

@@ -26,7 +26,7 @@ def test_args():
     with pytest.raises(TypeError) as exc_info:
         foo()
 
-    assert exc_info.value.args[0] == 'foo() missing 2 required positional arguments: \'a\' and \'b\''
+    assert exc_info.value.args[0] == "foo() missing 2 required positional arguments: 'a' and 'b'"
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 'x')
@@ -197,7 +197,7 @@ def test_async():
     loop.run_until_complete(run())
     with pytest.raises(TypeError) as exc_info:
         loop.run_until_complete(foo('x'))
-    assert exc_info.value.args[0] == 'foo() missing 1 required positional argument: \'b\''
+    assert exc_info.value.args[0] == "foo() missing 2 required positional arguments: 'b'"
 
 
 def test_string_annotation():
@@ -231,7 +231,7 @@ def test_item_method():
     with pytest.raises(TypeError) as exc_info:
         x.foo()
 
-    assert exc_info.value.args[0] == 'foo() missing 2 required positional arguments: \'a\' and \'b\''
+    assert exc_info.value.args[0] == "foo() missing 2 required positional arguments: 'a' and 'b'"
 
 
 def test_class_method():
@@ -249,4 +249,4 @@ def test_class_method():
     with pytest.raises(TypeError) as exc_info:
         x.foo()
 
-    assert exc_info.value.args[0] == 'foo() missing 2 required positional arguments: \'a\' and \'b\''
+    assert exc_info.value.args[0] == "foo() missing 2 required positional arguments: 'a' and 'b'"

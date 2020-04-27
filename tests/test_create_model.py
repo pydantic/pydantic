@@ -69,7 +69,7 @@ def test_custom_config_inherits():
 
 def test_custom_config_extras():
     class Config(BaseModel.Config):
-        required_fields = ('foo', )
+        required_fields = ('foo',)
         extra = Extra.forbid
 
     model = create_model('FooModel', foo=(int, ...), __config__=Config)

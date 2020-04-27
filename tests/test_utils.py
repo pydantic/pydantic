@@ -212,7 +212,7 @@ def test_devtools_output_validation_error():
         a: int
 
         class Config:
-            required_fields = ('a', )
+            required_fields = ('a',)
 
     with pytest.raises(ValueError) as exc_info:
         Model()
