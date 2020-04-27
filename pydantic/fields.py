@@ -510,11 +510,11 @@ class ModelField(Representation):
             )
             self.validators = prep_validators(v_funcs)
 
-        # Add const validator
         self.pre_validators = []
         self.post_validators = []
+
         if self.field_info and self.field_info.const:
-            self.pre_validators = [make_generic_validator(constant_validator)]
+            self.post_validators.append(make_generic_validator(constant_validator))
 
         if class_validators_:
             self.pre_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and v.pre)
