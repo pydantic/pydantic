@@ -197,7 +197,7 @@ def test_async():
     loop.run_until_complete(run())
     with pytest.raises(TypeError) as exc_info:
         loop.run_until_complete(foo('x'))
-    assert exc_info.value.args[0] == "foo() missing 2 required positional arguments: 'b'"
+    assert exc_info.value.args[0] == "foo() missing 1 required positional argument: 'b'"
 
 
 def test_string_annotation():
