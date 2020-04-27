@@ -7,7 +7,6 @@ import pytest
 from pydantic import BaseModel, ConfigError, Extra, ValidationError, errors, validator
 from pydantic.class_validators import make_generic_validator, root_validator
 from pydantic.typing import Literal
-from pydantic.validators import all_literal_values
 
 
 def test_simple():
@@ -1081,16 +1080,3 @@ def test_nested_literal_validator():
             'ctx': {'given': 'nope', 'permitted': ('foo', 'bar')},
         }
     ]
-
-
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
-def test_flatten_nested_literals():
-    L1 = Literal['1']
-    assert all_literal_values(L1) == ('1',)
-
-    L2 = Literal['2']
-    L12 = Literal[L1, L2]
-    assert sorted(all_literal_values(L12)) == sorted(('1', '2'))
-
-    L312 = Literal['3', Literal[L1, L2]]
-    assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
