@@ -694,11 +694,12 @@ class ModelField(Representation):
         It is used to make sure we first validate a given value with the right sub_field
         to avoid an unintended type coercion
         """
+        sub_fields: List['ModelField'] = self.sub_fields or []
         try:
-            idx = [i for i, f in enumerate(self.sub_fields) if f.type_ == type_][0]
-            return [self.sub_fields[idx], *self.sub_fields[:idx], *self.sub_fields[idx + 1 :]]
+            idx = [i for i, f in enumerate(sub_fields) if f.type_ == type_][0]
+            return [sub_fields[idx], *sub_fields[:idx], *sub_fields[idx + 1 :]]
         except IndexError:
-            return self.sub_fields
+            return sub_fields
 
     def _validate_singleton(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
