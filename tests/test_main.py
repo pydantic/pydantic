@@ -1,11 +1,23 @@
 import sys
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type
+from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, TypeVar
 from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    NoneBytes,
+    NoneStr,
+    Required,
+    StrictBool,
+    StrictInt,
+    StrictStr,
+    ValidationError,
+    constr,
+)
 
 
 def test_success():
@@ -1110,3 +1122,19 @@ def test_reuse_same_field():
         Model1.parse_obj({})
     with pytest.raises(ValidationError):
         Model2.parse_obj({})
+
+
+@pytest.mark.parametrize('value', ('true', True, 1))
+def test_type_coercion(value):
+    """If a given value is valid, it should never have its type changed"""
+    BoolFirst = TypeVar('BoolFirst', bool, int, str)
+    BoolLast = TypeVar('BoolLast', int, str, bool)
+    StrictType = TypeVar('StrictType', StrictBool, StrictInt, StrictStr)
+
+    class TypeTest(BaseModel):
+        first: BoolFirst
+        last: BoolLast
+        strict: StrictType
+
+    model = TypeTest(first=value, last=value, strict=value)
+    assert model.first == model.last == model.strict == value

@@ -688,12 +688,24 @@ class ModelField(Representation):
         else:
             return result, None
 
+    def _sorted_sub_fields(self, type_: AnyType) -> List['ModelField']:
+        """
+        Put the sub field for a given type at the beginning if found
+        It is used to make sure we first validate a given value with the right sub_field
+        to avoid an unintended type coercion
+        """
+        try:
+            idx = [i for i, f in enumerate(self.sub_fields) if f.type_ == type_][0]
+            return [self.sub_fields[idx], *self.sub_fields[:idx], *self.sub_fields[idx + 1 :]]
+        except IndexError:
+            return self.sub_fields
+
     def _validate_singleton(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
-            for field in self.sub_fields:
+            for field in self._sorted_sub_fields(type(v)):
                 value, error = field.validate(v, values, loc=loc, cls=cls)
                 if error:
                     errors.append(error)
