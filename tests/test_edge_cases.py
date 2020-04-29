@@ -30,7 +30,7 @@ def test_str_bytes():
     assert repr(m.__fields__['v']) == "ModelField(name='v', type=Union[str, bytes], required=True)"
 
     m = Model(v=b'b')
-    assert m.v == 'b'
+    assert m.v == b'b'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
@@ -47,7 +47,7 @@ def test_str_bytes_none():
     assert m.v == 's'
 
     m = Model(v=b'b')
-    assert m.v == 'b'
+    assert m.v == b'b'
 
     m = Model(v=None)
     assert m.v is None
@@ -61,7 +61,7 @@ def test_union_int_str():
     assert m.v == 123
 
     m = Model(v='123')
-    assert m.v == 123
+    assert m.v == '123'
 
     m = Model(v=b'foobar')
     assert m.v == 'foobar'
@@ -84,7 +84,7 @@ def test_union_priority():
     class ModelTwo(BaseModel):
         v: Union[str, int] = ...
 
-    assert ModelOne(v='123').v == 123
+    assert ModelOne(v='123').v == '123'
     assert ModelTwo(v='123').v == '123'
 
 
@@ -280,7 +280,7 @@ def test_list_unions():
     class Model(BaseModel):
         v: List[Union[int, str]] = ...
 
-    assert Model(v=[123, '456', 'foobar']).v == [123, 456, 'foobar']
+    assert Model(v=[123, '456', 'foobar']).v == [123, '456', 'foobar']
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
