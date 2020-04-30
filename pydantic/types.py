@@ -540,7 +540,7 @@ class Json(metaclass=JsonMeta):
 class SecretStr:
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(type='string', writeOnly=True)
+        field_schema.update(type='string', writeOnly=True, format='password')
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -576,7 +576,7 @@ class SecretStr:
 class SecretBytes:
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(type='string', writeOnly=True)
+        field_schema.update(type='string', writeOnly=True, format='password')
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':

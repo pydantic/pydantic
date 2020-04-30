@@ -580,7 +580,7 @@ def test_secret_types(field_type, inner_type):
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True}},
+        'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True, 'format': 'password'}},
         'required': ['a'],
     }
 
