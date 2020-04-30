@@ -251,7 +251,7 @@ def get_model_name_map(unique_models: Set[Type['BaseModel']]) -> Dict[Type['Base
     name_model_map = {}
     conflicting_names: Set[str] = set()
     for model in unique_models:
-        model_name = normalize_model_name(model.__name__)
+        model_name = normalize_name(model.__name__)
         if model_name in conflicting_names:
             model_name = get_long_model_name(model)
             name_model_map[model_name] = model
@@ -518,20 +518,21 @@ def model_type_schema(
 
 def enum_process_schema(enum: EnumMeta) -> Dict[str, Any]:
     """
-    Take a single ``enum`` and generate its schema.
+    Take a single `enum` and generate its schema.
 
-    This is similar to the ``model_process_schema`` function, but applies to ``Enum`` objects.
+    This is similar to the `model_process_schema` function, but applies to ``Enum`` objects.
     """
     from inspect import getdoc
 
-    schema: Dict[str, Any] = {'title': enum.__name__}
+    schema: Dict[str, Any] = {
+        'title': enum.__name__,
+        # Python assigns all enums a default docstring value of 'An enumeration', so
+        # all enums will have a description field even if not explicitly provided.
+        'description': getdoc(enum),
+        # Add enum values and the enum field type to the schema.
+        'enum': [item.value for item in cast(Iterable[Enum], enum)],
+    }
 
-    # Python assigns all enums a default docstring value of 'An enumeration', so
-    # all enums will have a description field even if not explicitly provided.
-    schema['description'] = getdoc(enum)
-
-    # Add enum values and the enum field type to the schema.
-    schema.update({'enum': [item.value for item in cast(Iterable[Enum], enum)]})
     add_field_type_to_schema(enum, schema)
 
     return schema
@@ -614,9 +615,9 @@ json_scheme = {'type': 'string', 'format': 'json-string'}
 
 def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]) -> None:
     """
-    Update the given ``schema`` with the type-specific metadata for the given ``field_type``.
+    Update the given `schema` with the type-specific metadata for the given `field_type`.
 
-    This function looks through ``field_class_to_schema`` for a class that matches the given ``field_type``,
+    This function looks through `field_class_to_schema` for a class that matches the given `field_type`,
     and then modifies the given `schema` with the information from that type.
     """
     for type_, t_schema in field_class_to_schema:
@@ -676,9 +677,9 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema['const'] = literal_value
 
     if isinstance(field_type, EnumMeta):
-        model_name = normalize_model_name(field_type.__name__)
-        f_schema = {'$ref': ref_prefix + model_name}
-        definitions[model_name] = enum_process_schema(field_type)
+        enum_name = normalize_name(field_type.__name__)
+        f_schema = {'$ref': ref_prefix + enum_name}
+        definitions[enum_name] = enum_process_schema(field_type)
     else:
         add_field_type_to_schema(field_type, f_schema)
 
@@ -839,8 +840,10 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
     return ans
 
 
-def normalize_model_name(name: str) -> str:
-    """Normalizes the given model name."""
+def normalize_name(name: str) -> str:
+    """
+    Normalizes the given name. This can be applied to either a model *or* enum.
+    """
     return re.sub(r'[^a-zA-Z0-9.\-_]', '_', name)
 
 
