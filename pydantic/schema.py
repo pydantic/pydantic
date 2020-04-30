@@ -559,6 +559,11 @@ def field_singleton_sub_fields_schema(
                 known_models=known_models,
             )
             definitions.update(sub_definitions)
+            if schema_overrides and 'allOf' in sub_schema:
+                # if the sub_field is a referenced schema we only need the referenced
+                # object. Otherwise we will end up with several allOf inside anyOf.
+                # See https://github.com/samuelcolvin/pydantic/issues/1209
+                sub_schema = sub_schema['allOf'][0]
             sub_field_schemas.append(sub_schema)
             nested_models.update(sub_nested_models)
         return {'anyOf': sub_field_schemas}, definitions, nested_models

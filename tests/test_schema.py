@@ -960,6 +960,22 @@ def test_schema_overrides():
     }
 
 
+def test_schema_overrides_w_union():
+    class Foo(BaseModel):
+        pass
+
+    class Bar(BaseModel):
+        pass
+
+    class Model_1(BaseModel):
+        a: Union[Foo, Bar]
+
+    class Model_2(BaseModel):
+        a: Union[Foo, Bar] = Field(...)
+
+    assert Model_1.schema()['properties'] == Model_2.schema()['properties']
+
+
 def test_schema_from_models():
     class Foo(BaseModel):
         a: str
