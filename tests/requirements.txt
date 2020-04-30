@@ -1,6 +1,6 @@
 black==19.10b0
 coverage==5.1
-Cython==0.29.16;sys_platform!='win32'
+Cython==0.29.17;sys_platform!='win32'
 flake8==3.7.9
 flake8-quotes==3
 isort==4.3.21
