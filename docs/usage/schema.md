@@ -48,7 +48,7 @@ It has the following arguments:
 * `title`: if omitted, `field_name.title()` is used
 * `description`: if omitted and the annotation is a sub-model,
     the docstring of the sub-model will be used
-* `const`: this argument *must* have be the same as the field's default value if present
+* `const`: this argument *must* be the same as the field's default value if present.
 * `gt`: for numeric values (``int``, `float`, `Decimal`), adds a validation of "greater than" and an annotation
   of `exclusiveMinimum` to the JSON Schema
 * `ge`: for numeric values, this adds a validation of "greater than or equal" and an annotation of `minimum` to the

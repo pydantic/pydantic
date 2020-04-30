@@ -383,6 +383,15 @@ def test_const_uses_default():
     assert m.a == 3
 
 
+def test_const_validates_after_type_validators():
+    # issue #1410
+    class Model(BaseModel):
+        a: int = Field(3, const=True)
+
+    m = Model(a='3')
+    assert m.a == 3
+
+
 def test_const_with_wrong_value():
     class Model(BaseModel):
         a: int = Field(3, const=True)
