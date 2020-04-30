@@ -34,7 +34,7 @@ A few notes:
 * `max` has no type annotation, so will be considered as `Any` by the decorator
 
 Type coercion like this can be extremely helpful but also confusing or not desired,
-see [below](#coercion-and-stictness) for a discussion of `validate_arguments`'s limitations in this regard.
+see [below](#coercion-and-strictness) for a discussion of `validate_arguments`'s limitations in this regard.
 
 ## Function Signatures
 
@@ -99,7 +99,7 @@ from `ValueError` **not** `TypeError` which may be unexpected since python would
 or missing arguments. This may be addressed in future by either allow a custom error or raising a different
 exception by default, or both.
 
-### Coercion and Stictness
+### Coercion and Strictness
 
 *pydantic* currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
 see [model data conversion](models.md#data-conversion) and `validate_arguments` is no different.
