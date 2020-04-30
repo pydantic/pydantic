@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 import tempfile
@@ -1119,6 +1120,10 @@ def test_dict_default():
         ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
         ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
         ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
+        ({'gt': -math.inf}, float, {'type': 'number'}),
+        ({'lt': math.inf}, float, {'type': 'number'}),
+        ({'ge': -math.inf}, float, {'type': 'number'}),
+        ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
         ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
         ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),

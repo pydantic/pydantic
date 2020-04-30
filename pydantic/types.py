@@ -1,3 +1,4 @@
+import math
 import re
 import warnings
 from decimal import Decimal
@@ -339,6 +340,15 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
             maximum=cls.le,
             multipleOf=cls.multiple_of,
         )
+        # Modify constraints to account for differences between IEEE floats and JSON
+        if field_schema.get('exclusiveMinimum') == -math.inf:
+            del field_schema['exclusiveMinimum']
+        if field_schema.get('minimum') == -math.inf:
+            del field_schema['minimum']
+        if field_schema.get('exclusiveMaximum') == math.inf:
+            del field_schema['exclusiveMaximum']
+        if field_schema.get('maximum') == math.inf:
+            del field_schema['maximum']
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
