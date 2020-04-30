@@ -12,7 +12,15 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import display_as_type, is_new_type, new_type_supertype
-from pydantic.utils import ValueItems, deep_update, get_model, import_string, lenient_issubclass, truncate
+from pydantic.utils import (
+    ClassAttribute,
+    ValueItems,
+    deep_update,
+    get_model,
+    import_string,
+    lenient_issubclass,
+    truncate,
+)
 from pydantic.version import version_info
 
 try:
@@ -298,3 +306,17 @@ def test_version_info():
 
 def test_version_strict():
     assert str(StrictVersion(VERSION)) == VERSION
+
+
+def test_class_attribute():
+    class Foo:
+        attr = ClassAttribute('attr', 'foo')
+
+    assert Foo.attr == 'foo'
+
+    with pytest.raises(AttributeError, match="'attr' attribute of 'Foo' is class-only"):
+        Foo().attr
+
+    f = Foo()
+    f.attr = 'not foo'
+    assert f.attr == 'not foo'

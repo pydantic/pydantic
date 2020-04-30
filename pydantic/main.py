@@ -35,6 +35,7 @@ from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
+    ClassAttribute,
     GetterDict,
     Representation,
     ValueItems,
@@ -300,7 +301,8 @@ class ModelMetaclass(ABCMeta):
         }
 
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
-        cls.__signature__ = generate_model_signature(cls.__init__, fields, config)
+        # set __signature__ attr only for model class, but not for its instances
+        cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
         return cls
 
 

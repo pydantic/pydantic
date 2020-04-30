@@ -126,3 +126,15 @@ def test_extra_allow_conflict_custom_signature():
             extra = Extra.allow
 
     assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
+
+
+def test_signature_is_class_only():
+    class Model(BaseModel):
+        foo: int = 123
+
+        def __call__(self, a: int) -> bool:
+            pass
+
+    assert _equals(str(signature(Model)), '(*, foo: int = 123) -> None')
+    assert _equals(str(signature(Model())), '(a: int) -> bool')
+    assert not hasattr(Model(), '__signature__')
