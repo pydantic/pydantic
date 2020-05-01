@@ -967,13 +967,16 @@ def test_schema_overrides_w_union():
     class Bar(BaseModel):
         pass
 
-    class Model_1(BaseModel):
-        a: Union[Foo, Bar]
+    class Spam(BaseModel):
+        a: Union[Foo, Bar] = Field(..., description='xxx')
 
-    class Model_2(BaseModel):
-        a: Union[Foo, Bar] = Field(...)
-
-    assert Model_1.schema()['properties'] == Model_2.schema()['properties']
+    assert Spam.schema()['properties'] == {
+        'a': {
+            'title': 'A',
+            'description': 'xxx',
+            'anyOf': [{'$ref': '#/definitions/Foo'}, {'$ref': '#/definitions/Bar'}],
+        },
+    }
 
 
 def test_schema_from_models():
