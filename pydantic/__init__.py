@@ -35,6 +35,7 @@ __all__ = [
     'BaseConfig',
     'BaseModel',
     'Extra',
+    'PopulateBy',
     'compiled',
     'create_model',
     'validate_model',

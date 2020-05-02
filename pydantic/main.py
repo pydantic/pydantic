@@ -75,13 +75,22 @@ else:  # pragma: no cover
     except AttributeError:
         compiled = False
 
-__all__ = 'BaseConfig', 'BaseModel', 'Extra', 'compiled', 'create_model', 'validate_model'
+__all__ = 'BaseConfig', 'BaseModel', 'Extra', 'PopulateBy', 'compiled', 'create_model', 'validate_model'
 
 
 class Extra(str, Enum):
     allow = 'allow'
     ignore = 'ignore'
     forbid = 'forbid'
+
+
+class PopulateBy(str, Enum):
+    # Populate by alias name, default behaviour
+    alias = 'alias'
+    # Equivalent to 'allow_population_by_field_name' = True
+    either = 'either'
+    # Populate by field name only
+    field_name = 'field_name'
 
 
 class BaseConfig:
@@ -92,7 +101,8 @@ class BaseConfig:
     validate_all = False
     extra = Extra.ignore
     allow_mutation = True
-    allow_population_by_field_name = False
+    # allow_population_by_field_name = False
+    populate_by = PopulateBy.alias
     use_enum_values = False
     fields: Dict[str, Union[str, Dict[str, str]]] = {}
     validate_assignment = False
@@ -162,6 +172,16 @@ def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
             DeprecationWarning,
         )
         config.allow_population_by_field_name = config.allow_population_by_alias  # type: ignore
+
+    # NOTE(lpeschke): This still allows for "allow_population_by_field_name" and "allow_population_by_alias".
+    # However, if someone uses the latter, they'll get two deprecation warning: one for "allow_population_by_alias"
+    # and one for "allow_population_by_field_name"
+    if hasattr(config, 'allow_population_by_field_name'):
+        warnings.warn(
+            f'{cls_name}: "allow_population_by_field_name" is deprecated and replaced by "populate_by"',
+            DeprecationWarning,
+        )
+        config.populate_by = PopulateBy.either
 
     if hasattr(config, 'case_insensitive') and any('BaseSettings.Config' in c.__qualname__ for c in config.__mro__):
         warnings.warn(
@@ -863,9 +883,29 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 f'you might need to call {cls_.__name__}.update_forward_refs().'
             )
 
-        value = input_data.get(field.alias, _missing)
-        using_name = False
-        if value is _missing and config.allow_population_by_field_name and field.alt_alias:
+        if config.populate_by in (PopulateBy.alias, PopulateBy.either):
+            value = input_data.get(field.alias, _missing)
+            using_name = False
+            if value is _missing and config.populate_by == PopulateBy.either and field.alt_alias:
+                value = input_data.get(field.name, _missing)
+                using_name = True
+
+            # if value is _missing:
+            #     if field.required:
+            #         errors.append(ErrorWrapper(MissingError(), loc=field.alias))
+            #         continue
+
+            #     value = field.get_default()
+
+            #     if not config.validate_all and not field.validate_always:
+            #         values[name] = value
+            #         continue
+            # else:
+            #     fields_set.add(name)
+            #     if check_extra:
+            #         names_used.add(field.name if using_name else field.alias)
+
+        else:
             value = input_data.get(field.name, _missing)
             using_name = True
 

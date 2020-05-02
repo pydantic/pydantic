@@ -11,6 +11,7 @@ from pydantic import (
     BaseSettings,
     Extra,
     NoneStrBytes,
+    PopulateBy,
     StrBytes,
     ValidationError,
     constr,
@@ -837,25 +838,26 @@ def test_multiple_inheritance_config():
 
     class Child(Mixin, Parent):
         class Config:
-            allow_population_by_field_name = True
+            # allow_population_by_field_name = True
+            populate_by = PopulateBy.either
 
     assert BaseModel.__config__.allow_mutation is True
-    assert BaseModel.__config__.allow_population_by_field_name is False
+    assert BaseModel.__config__.populate_by is PopulateBy.alias
     assert BaseModel.__config__.extra is Extra.ignore
     assert BaseModel.__config__.use_enum_values is False
 
     assert Parent.__config__.allow_mutation is False
-    assert Parent.__config__.allow_population_by_field_name is False
+    assert Parent.__config__.populate_by is PopulateBy.alias
     assert Parent.__config__.extra is Extra.forbid
     assert Parent.__config__.use_enum_values is False
 
     assert Mixin.__config__.allow_mutation is True
-    assert Mixin.__config__.allow_population_by_field_name is False
+    assert Mixin.__config__.populate_by is PopulateBy.alias
     assert Mixin.__config__.extra is Extra.ignore
     assert Mixin.__config__.use_enum_values is True
 
     assert Child.__config__.allow_mutation is False
-    assert Child.__config__.allow_population_by_field_name is True
+    assert Child.__config__.populate_by is PopulateBy.either
     assert Child.__config__.extra is Extra.forbid
     assert Child.__config__.use_enum_values is True
 

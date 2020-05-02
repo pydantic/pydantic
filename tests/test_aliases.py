@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, Extra, ValidationError
+from pydantic import BaseConfig, BaseModel, Extra, PopulateBy, ValidationError
 from pydantic.fields import Field
 
 
@@ -143,13 +143,13 @@ def test_get_field_info_inherit():
     assert v == {'one_thing': 123, 'another_thing': 321, 'third_thing': 1}
 
 
-def test_pop_by_field_name():
+def test_pop_either():
     class Model(BaseModel):
         last_updated_by: Optional[str] = None
 
         class Config:
             extra = Extra.forbid
-            allow_population_by_field_name = True
+            populate_by = PopulateBy.either
             fields = {'last_updated_by': 'lastUpdatedBy'}
 
     assert Model(lastUpdatedBy='foo').dict() == {'last_updated_by': 'foo'}
@@ -199,7 +199,7 @@ def test_alias_generator_parent():
         x: int
 
         class Config:
-            allow_population_by_field_name = True
+            populate_by = PopulateBy.either
 
             @classmethod
             def alias_generator(cls, f_name):

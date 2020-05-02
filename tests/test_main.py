@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, PopulateBy, Required, ValidationError, constr
 
 
 def test_success():
@@ -300,7 +300,7 @@ def test_population_by_field_name():
         a: str
 
         class Config:
-            allow_population_by_field_name = True
+            populate_by = PopulateBy.either
             fields = {'a': {'alias': '_a'}}
 
     assert Model(a='different').a == 'different'
@@ -798,7 +798,7 @@ def test_dict_exclude_unset_populated_by_alias():
         b: str = Field('default', alias='alias_b')
 
         class Config:
-            allow_population_by_field_name = True
+            populate_by = PopulateBy.either
 
     m = MyModel(alias_a='a')
 

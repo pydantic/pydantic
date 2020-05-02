@@ -1,7 +1,7 @@
 from inspect import signature
 from typing import Any, Iterable, Union
 
-from pydantic import BaseModel, Extra, Field, create_model
+from pydantic import BaseModel, Extra, Field, PopulateBy, create_model
 
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
@@ -79,7 +79,7 @@ def test_use_field_name():
         foo: str = Field(..., alias='this is invalid')
 
         class Config:
-            allow_population_by_field_name = True
+            populate_by = PopulateBy.either
 
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
