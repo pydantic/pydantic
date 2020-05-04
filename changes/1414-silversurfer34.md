@@ -1,2 +1,1 @@
-Fix proposal for the issue 1414, wrong behavior of json method when there are nested models with custom root.
-Once the dict is generated, it is parsed and each time an item has the __root__ key, its associated value is attached to the parent key
+Change the behavior of json() method to remove the extra `__root__` keys in the result when using nested models with custom root types
