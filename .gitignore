@@ -4,6 +4,8 @@ venv/
 env36/
 env37/
 env38/
+Pipfile
+*.lock
 *.py[cod]
 *.egg-info/
 .python-version
