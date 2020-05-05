@@ -1,5 +1,6 @@
 import re
 import warnings
+import string
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -76,6 +77,7 @@ def schema(
     title: Optional[str] = None,
     description: Optional[str] = None,
     ref_prefix: Optional[str] = None,
+    ref_template: Optional[string.Template] = None,
 ) -> Dict[str, Any]:
     """
     Process a list of models and generate a single JSON Schema with all of them defined in the ``definitions``
@@ -90,6 +92,9 @@ def schema(
       else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
       top-level key ``definitions``, so you can extract them from there. But all the references will have the set
       prefix.
+    :param ref_template: Use a ``string.Template`` for ``$ref`` instead of a prefix. This can be useful for references
+      that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a sibling json file
+      in the a ``/schemas`` directory use ``Template("/schemas/${model_name}.json#")``.
     :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for
       the models and sub-models passed in ``models``.
     """
@@ -105,7 +110,10 @@ def schema(
         output_schema['description'] = description
     for model in clean_models:
         m_schema, m_definitions, m_nested_models = model_process_schema(
-            model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+            model, by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            ref_template=ref_template,
         )
         definitions.update(m_definitions)
         model_name = model_name_map[model]
@@ -116,7 +124,10 @@ def schema(
 
 
 def model_schema(
-    model: Union[Type['BaseModel'], Type['DataclassType']], by_alias: bool = True, ref_prefix: Optional[str] = None
+    model: Union[Type['BaseModel'], Type['DataclassType']],
+    by_alias: bool = True,
+    ref_prefix: Optional[str] = None,
+    ref_template: Optional[string.Template] = None,
 ) -> Dict[str, Any]:
     """
     Generate a JSON Schema for one model. With all the sub-models defined in the ``definitions`` top-level
@@ -129,6 +140,9 @@ def model_schema(
       else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
       top-level key ``definitions``, so you can extract them from there. But all the references will have the set
       prefix.
+    :param ref_template: Use a ``string.Template`` for ``$ref`` instead of a prefix. This can be useful for references
+      that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a sibling json file
+      in the a ``/schemas`` directory use ``Template("/schemas/${model_name}.json#")``.
     :return: dict with the JSON Schema for the passed ``model``
     """
     model = get_model(model)
@@ -142,11 +156,13 @@ def model_schema(
     if model_name in nested_models:
         # model_name is in Nested models, it has circular references
         m_definitions[model_name] = m_schema
-        m_schema = {'$ref': ref_prefix + model_name}
+        if ref_template:
+            m_schema = {'$ref': ref_template.substitute(model_name=model_name)}
+        else:
+            m_schema = {'$ref': ref_prefix + model_name}
     if m_definitions:
         m_schema.update({'definitions': m_definitions})
     return m_schema
-
 
 def field_schema(
     field: ModelField,
@@ -154,6 +170,7 @@ def field_schema(
     by_alias: bool = True,
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
+    ref_template: Optional[str] = None,
     known_models: TypeModelSet = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -167,6 +184,9 @@ def field_schema(
     :param model_name_map: used to generate the JSON Schema references to other models included in the definitions
     :param ref_prefix: the JSON Pointer prefix to use for references to other schemas, if None, the default of
       #/definitions/ will be used
+    :param ref_template: Use a ``string.Template`` for ``$ref`` instead of a prefix. This can be useful for references
+      that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a sibling json file
+      in the a ``/schemas`` directory use ``Template("/schemas/${model_name}.json#")``.
     :param known_models: used to solve circular references
     :return: tuple of the schema for this field and additional definitions
     """
@@ -195,6 +215,7 @@ def field_schema(
         model_name_map=model_name_map,
         schema_overrides=schema_overrides,
         ref_prefix=ref_prefix,
+        ref_template=ref_template,
         known_models=known_models or set(),
     )
     # $ref will only be returned when there are no schema_overrides
@@ -363,6 +384,7 @@ def field_type_schema(
     model_name_map: Dict[TypeModelOrEnum, str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
+    ref_template: Optional[string.Template] = None,
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -377,7 +399,12 @@ def field_type_schema(
     ref_prefix = ref_prefix or default_prefix
     if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET, SHAPE_ITERABLE}:
         items_schema, f_definitions, f_nested_models = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
+            field,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            ref_template=ref_template,
+            known_models=known_models,
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
@@ -390,7 +417,12 @@ def field_type_schema(
         key_field = cast(ModelField, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
         items_schema, f_definitions, f_nested_models = field_singleton_schema(
-            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
+            field,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            ref_template=ref_template,
+            known_models=known_models,
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
@@ -406,7 +438,12 @@ def field_type_schema(
         sub_fields = cast(List[ModelField], field.sub_fields)
         for sf in sub_fields:
             sf_schema, sf_definitions, sf_nested_models = field_type_schema(
-                sf, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
+                sf,
+                by_alias=by_alias,
+                model_name_map=model_name_map,
+                ref_prefix=ref_prefix,
+                ref_template=ref_template,
+                known_models=known_models,
             )
             definitions.update(sf_definitions)
             nested_models.update(sf_nested_models)
@@ -422,6 +459,7 @@ def field_type_schema(
             model_name_map=model_name_map,
             schema_overrides=schema_overrides,
             ref_prefix=ref_prefix,
+            ref_template=ref_template,
             known_models=known_models,
         )
         definitions.update(f_definitions)
@@ -441,6 +479,7 @@ def model_process_schema(
     by_alias: bool = True,
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
+    ref_template: Optional[string.Template] = None,
     known_models: TypeModelSet = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -465,7 +504,12 @@ def model_process_schema(
         s['description'] = doc
     known_models.add(model)
     m_schema, m_definitions, nested_models = model_type_schema(
-        model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
+        model,
+        by_alias=by_alias,
+        model_name_map=model_name_map,
+        ref_prefix=ref_prefix,
+        ref_template=ref_template,
+        known_models=known_models,
     )
     s.update(m_schema)
     schema_extra = model.__config__.schema_extra
@@ -485,6 +529,7 @@ def model_type_schema(
     by_alias: bool,
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
+    ref_template: Optional[string.Template] = None,
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -501,7 +546,12 @@ def model_type_schema(
     for k, f in model.__fields__.items():
         try:
             f_schema, f_definitions, f_nested_models = field_schema(
-                f, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
+                f,
+                by_alias=by_alias,
+                model_name_map=model_name_map,
+                ref_prefix=ref_prefix,
+                ref_template=ref_template,
+                known_models=known_models,
             )
         except SkipField as skip:
             warnings.warn(skip.message, UserWarning)
@@ -561,6 +611,7 @@ def field_singleton_sub_fields_schema(
     model_name_map: Dict[TypeModelOrEnum, str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
+    ref_template: Optional[string.Template] = None,
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -580,6 +631,7 @@ def field_singleton_sub_fields_schema(
             model_name_map=model_name_map,
             schema_overrides=schema_overrides,
             ref_prefix=ref_prefix,
+            ref_template=ref_template,
             known_models=known_models,
         )
     else:
@@ -591,6 +643,7 @@ def field_singleton_sub_fields_schema(
                 model_name_map=model_name_map,
                 schema_overrides=schema_overrides,
                 ref_prefix=ref_prefix,
+                ref_template=ref_template,
                 known_models=known_models,
             )
             definitions.update(sub_definitions)
@@ -655,6 +708,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     model_name_map: Dict[TypeModelOrEnum, str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
+    ref_template: Optional[string.Template] = None,
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -674,6 +728,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             model_name_map=model_name_map,
             schema_overrides=schema_overrides,
             ref_prefix=ref_prefix,
+            ref_template=ref_template,
             known_models=known_models,
         )
     if field.type_ is Any or field.type_.__class__ == TypeVar:
@@ -692,6 +747,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
                 by_alias=by_alias,
                 model_name_map=model_name_map,
                 ref_prefix=ref_prefix,
+                ref_template=ref_template,
                 known_models=known_models,
             )
         literal_value = values[0]
@@ -724,6 +780,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
                 by_alias=by_alias,
                 model_name_map=model_name_map,
                 ref_prefix=ref_prefix,
+                ref_template=ref_template,
                 known_models=known_models,
             )
             definitions.update(sub_definitions)
@@ -731,7 +788,10 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             nested_models.update(sub_nested_models)
         else:
             nested_models.add(model_name)
-        schema_ref = {'$ref': ref_prefix + model_name}
+        if ref_template:
+            schema_ref = {'$ref': ref_template.substitute(model_name=model_name)}
+        else:
+            schema_ref = {'$ref': ref_prefix + model_name}
         if not schema_overrides:
             return schema_ref, definitions, nested_models
         else:

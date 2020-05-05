@@ -1,5 +1,6 @@
 import math
 import os
+import string
 import sys
 import tempfile
 from datetime import date, datetime, time, timedelta
@@ -1120,6 +1121,42 @@ def test_schema_with_ref_prefix():
             },
         }
     }
+
+
+def test_schema_with_ref_template():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    model_schema = schema([Bar, Baz], ref_template=string.Template('/schemas/${model_name}.json#/'))
+    assert model_schema == {
+        'definitions': {
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'$ref': '/schemas/Bar.json#/'}},
+                'required': ['c'],
+            },
+            'Bar': {
+                'title': 'Bar',
+                'type': 'object',
+                'properties': {'b': {'$ref': '/schemas/Foo.json#/'}},
+                'required': ['b'],
+            },
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            },
+        }
+    }
+
 
 
 def test_schema_no_definitions():
