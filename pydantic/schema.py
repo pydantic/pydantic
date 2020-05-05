@@ -94,7 +94,7 @@ def schema(
       prefix.
     :param ref_template: Use a ``string.Template`` for ``$ref`` instead of a prefix. This can be useful for references
       that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a sibling json file
-      in the a ``/schemas`` directory use ``Template("/schemas/${model_name}.json#")``.
+      in a ``/schemas`` directory use ``Template("/schemas/${model_name}.json#")``.
     :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for
       the models and sub-models passed in ``models``.
     """
@@ -139,7 +139,7 @@ def model_schema(
       prefix.
     :param ref_template: Use a ``string.Template`` for ``$ref`` instead of a prefix. This can be useful for references
       that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a sibling json file
-      in the a ``/schemas`` directory use ``Template("/schemas/${model_name}.json#")``.
+      in a ``/schemas`` directory use ``Template("/schemas/${model_name}.json#")``.
     :return: dict with the JSON Schema for the passed ``model``
     """
     model = get_model(model)
@@ -184,7 +184,7 @@ def field_schema(
       #/definitions/ will be used
     :param ref_template: Use a ``string.Template`` for ``$ref`` instead of a prefix. This can be useful for references
       that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a sibling json file
-      in the a ``/schemas`` directory use ``Template("/schemas/${model_name}.json#")``.
+      in a ``/schemas`` directory use ``Template("/schemas/${model_name}.json#")``.
     :param known_models: used to solve circular references
     :return: tuple of the schema for this field and additional definitions
     """
