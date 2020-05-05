@@ -1158,7 +1158,6 @@ def test_schema_with_ref_template():
     }
 
 
-
 def test_schema_no_definitions():
     model_schema = schema([], title='Schema without definitions')
     assert model_schema == {'title': 'Schema without definitions'}

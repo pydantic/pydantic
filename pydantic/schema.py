@@ -1,6 +1,6 @@
 import re
-import warnings
 import string
+import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -110,10 +110,7 @@ def schema(
         output_schema['description'] = description
     for model in clean_models:
         m_schema, m_definitions, m_nested_models = model_process_schema(
-            model, by_alias=by_alias,
-            model_name_map=model_name_map,
-            ref_prefix=ref_prefix,
-            ref_template=ref_template,
+            model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, ref_template=ref_template,
         )
         definitions.update(m_definitions)
         model_name = model_name_map[model]
@@ -163,6 +160,7 @@ def model_schema(
     if m_definitions:
         m_schema.update({'definitions': m_definitions})
     return m_schema
+
 
 def field_schema(
     field: ModelField,
