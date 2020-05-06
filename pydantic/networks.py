@@ -179,7 +179,8 @@ class AnyUrl(str):
 
         m = url_regex().match(url)
         # the regex should always match, if it doesn't please report with details of the URL tried
-        assert m, 'URL regex failed unexpectedly'
+        if not m:
+            raise AssertionError('URL regex failed unexpectedly')
 
         parts = m.groupdict()
         scheme = parts['scheme']

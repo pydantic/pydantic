@@ -79,7 +79,8 @@ class ValidatedFunction:
                 fields[name] = Tuple[annotation, ...], None
                 takes_args = True
             else:
-                assert p.kind == Parameter.VAR_KEYWORD, p.kind
+                if p.kind != Parameter.VAR_KEYWORD:
+                    raise AssertionError(p.kind)
                 self.v_kwargs_name = name
                 fields[name] = Dict[str, annotation], None  # type: ignore
                 takes_kwargs = True

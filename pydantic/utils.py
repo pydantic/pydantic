@@ -238,7 +238,7 @@ class Representation:
     of objects.
     """
 
-    __slots__: Tuple[str, ...] = tuple()
+    __slots__: Tuple[str, ...] = ()
 
     def __repr_args__(self) -> 'ReprArgs':
         """

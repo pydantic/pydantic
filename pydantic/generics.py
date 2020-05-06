@@ -80,7 +80,7 @@ class GenericModel(BaseModel):
 
 def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
     if hasattr(type_, '__origin__') and getattr(type_, '__parameters__', None):
-        concrete_type_args = tuple([typevars_map[x] for x in type_.__parameters__])
+        concrete_type_args = tuple(typevars_map[x] for x in type_.__parameters__)
         return type_[concrete_type_args]
     return typevars_map.get(type_, type_)
 
