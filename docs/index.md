@@ -73,6 +73,13 @@ So *pydantic* uses some cool new language features, but why should I actually go
   a [`dataclass`](usage/dataclasses.md) decorator which creates (almost) vanilla python dataclasses with input
   data parsing and validation.
 
+## Talks and video tutorials
+
+Talks and videos discussing and teaching pydantic.
+
+[Python pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg)
+: a talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to pydantic and walking through the core features of pydantic.
+
 ## Using Pydantic
 
 Hundreds of organisations and packages are using *pydantic*, including:
