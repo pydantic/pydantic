@@ -1088,6 +1088,46 @@ def test_default_factory():
     assert m.uid is uuid4
 
 
+def test_default_factory_side_effect():
+    """It should call only once the given factory"""
+
+    class Seq:
+        def __init__(self):
+            self.v = 0
+
+        def __call__(self):
+            self.v += 1
+            return self.v
+
+    class MyModel(BaseModel):
+        id: int = Field(default_factory=Seq())
+
+    m1 = MyModel()
+    assert m1.id == 1
+    m2 = MyModel()
+    assert m2.id == 2
+    assert m1.id == 1
+
+
+def test_default_factory_side_effect_2():
+    """It should call only once the given factory"""
+
+    v = 0
+
+    def factory():
+        nonlocal v
+        v += 1
+        return v
+
+    class MyModel(BaseModel):
+        id: int = Field(default_factory=factory)
+
+    m1 = MyModel()
+    assert m1.id == 1
+    m2 = MyModel()
+    assert m2.id == 2
+
+
 @pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
 def test_none_min_max_items():
     # None default

@@ -492,6 +492,10 @@ _(This script is complete, it should run "as is")_
 
 Where `Field` refers to the [field function](schema.md#field-customisation).
 
+!!! warning
+    If you don't declare the type of the field or if you want to validate default values with `validate_all`,
+    *pydantic* will need to call the `default_factory`, which could lead to side effects !
+
 ## Parsing data into a specified type
 
 Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing
