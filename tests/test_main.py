@@ -1087,6 +1087,20 @@ def test_default_factory():
     m = FunctionModel()
     assert m.uid is uuid4
 
+    # Returning a singleton from a default_factory is supported
+    class MySingleton:
+        pass
+
+    MY_SINGLETON = MySingleton()
+
+    class SingletonFieldModel(BaseModel):
+        singleton: MySingleton = Field(default_factory=lambda: MY_SINGLETON)
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    assert SingletonFieldModel().singleton is SingletonFieldModel().singleton
+
 
 @pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
 def test_none_min_max_items():
