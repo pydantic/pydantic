@@ -106,7 +106,7 @@ def null_missing_email():
 
 def rand_date():
     r = random.randrange
-    return f'{r(1900, 2020)}-{r(0, 12)}-{r(0, 32)}T{r(0, 24)}:{r(0, 60)}:{r(0, 60)}'
+    return f'{r(1900, 2020)}-{r(0, 12):02}-{r(0, 32):02}T{r(0, 24):02}:{r(0, 60):02}:{r(0, 60):02}'
 
 
 def remove_missing(d):
