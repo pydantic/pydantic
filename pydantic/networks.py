@@ -190,6 +190,7 @@ class AnyUrl(str):
             raise errors.UrlSchemePermittedError(cls.allowed_schemes)
 
         user = parts['user']
+        password = parts['password']
         if cls.user_required and user is None and password is None:
             raise errors.UrlUserInfoError()
 
@@ -202,7 +203,7 @@ class AnyUrl(str):
             None if rebuild else url,
             scheme=scheme,
             user=user,
-            password=parts['password'],
+            password=password,
             host=host,
             tld=tld,
             host_type=host_type,
