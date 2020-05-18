@@ -73,7 +73,7 @@ def display_errors(errors: List[Dict[str, Any]]) -> str:
 
 
 def _display_error_loc(error: Dict[str, Any]) -> str:
-    return ' -> '.join(str(l) for l in error['loc'])
+    return ' -> '.join(str(e) for e in error['loc'])
 
 
 def _display_error_type_and_ctx(error: Dict[str, Any]) -> str:
