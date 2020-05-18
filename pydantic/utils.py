@@ -45,6 +45,7 @@ __all__ = (
     'GetterDict',
     'ValueItems',
     'version_info',  # required here to match behaviour in v1.3
+    'ClassAttribute',
 )
 
 
@@ -439,3 +440,23 @@ class ValueItems(Representation):
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]
+
+
+class ClassAttribute:
+    """
+    Hide class attribute from its instances
+    """
+
+    __slots__ = (
+        'name',
+        'value',
+    )
+
+    def __init__(self, name: str, value: Any) -> None:
+        self.name = name
+        self.value = value
+
+    def __get__(self, instance: Any, owner: Type[Any]) -> None:
+        if instance is None:
+            return self.value
+        raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
