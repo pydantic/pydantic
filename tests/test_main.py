@@ -1049,7 +1049,7 @@ def test_custom_init_subclass_params():
 
 def test_update_forward_refs_does_not_modify_module_dict():
     class MyModel(BaseModel):
-        field: Optional['MyModel']
+        field: Optional['MyModel']  # noqa: F821
 
     MyModel.update_forward_refs()
 
