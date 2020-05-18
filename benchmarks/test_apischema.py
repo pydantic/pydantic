@@ -4,23 +4,22 @@ from typing import Any, Dict, List, NewType, Optional, Type
 
 import apischema
 import importlib_metadata
-from apischema import (ValidationError, from_data, input_converter, schema,
-                       with_fields_set)
+from apischema import (ValidationError, field_input_converter, from_data,
+                       schema, with_fields_set)
 
 PositiveInt = NewType("PositiveInt", int)
 schema(exc_min=0)(PositiveInt)
 
 
-Contractor = NewType("Contractor", PositiveInt)
-
-
-# Coercion not handled easily, by choice
-@input_converter
-def coerce_contractor(s: str) -> Contractor:
-    contractor = int(s)
-    if contractor <= 0:
-        yield "contractor < 0"
-    return Contractor(PositiveInt(contractor))
+def coerce_contractor(s: str) -> PositiveInt:
+    try:
+        contractor = int(s)
+    except ValueError:
+        yield "contractor expected str"
+    else:
+        if contractor <= 0:
+            yield "contractor < 0"
+        return PositiveInt(contractor)
 
 
 # Defined on top level in order to be able to evaluate annotations (see PEP 563)
@@ -55,7 +54,9 @@ class Model:
 
     # cannot use PositiveInt because of coercion
     # contractor: Optional[PositiveInt] = None
-    contractor: Optional[Contractor] = None
+    contractor: Optional[PositiveInt] = field(
+        default=None, metadata=field_input_converter(coerce_contractor)
+    )
     upstream_http_referrer: Optional[str] = field(default=None,
                                                   metadata=schema(max_len=1023))
     last_updated: Optional[datetime] = None
@@ -81,7 +82,9 @@ class TestApischema:
 
 
 from apischema.alias import ALIAS_METADATA
-from apischema.data.from_data import DataWithConstraint, FromData, check_type
+from apischema.conversion import INPUT_METADATA
+from apischema.data.from_data import (DataWithConstraint, FromData, check_type,
+                                      apply_converter)
 from apischema.fields import init_fields
 from apischema.schema import CONSTRAINT_METADATA
 from apischema.typing import get_type_hints
@@ -122,7 +125,12 @@ class OptimizedFromData(FromData):
                 else:
                     to_visit = data[alias], None
                 try:
-                    values[name] = self.visit(types[name], to_visit)
+                    if INPUT_METADATA in metadata:
+                        param, converter = field.metadata[INPUT_METADATA]
+                        tmp = self.visit(param, to_visit)
+                        values[name] = apply_converter(tmp, converter)
+                    else:
+                        values[name] = self.visit(types[name], to_visit)
                 except ValidationError as err:
                     field_errors[alias] = err
                 aliases.append(alias)
