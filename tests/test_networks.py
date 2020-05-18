@@ -453,5 +453,5 @@ def test_name_email():
 
     assert str(Model(v=NameEmail('foo bar', 'foobaR@example.com')).v) == 'foo bar <foobaR@example.com>'
     assert str(Model(v='foo bar  <foobaR@example.com>').v) == 'foo bar <foobaR@example.com>'
-    assert Model(v=NameEmail('foo bar', 'foobaR@example.com')) == Model(v=NameEmail('foo bar', 'foobaR@example.com'))
-    assert Model(v=NameEmail('foo bar', 'foobaR@example.com')) != 'foo bar <foobaR@example.com>'
+        assert NameEmail('foo bar', 'foobaR@example.com') == NameEmail('foo bar', 'foobaR@example.com')
+        assert NameEmail('foo bar', 'foobaR@example.com') != NameEmail('foo bar', 'different@example.com')
