@@ -1,5 +1,5 @@
 import pickle
-from typing import List
+from typing import Any, List
 
 import pytest
 
@@ -257,3 +257,21 @@ def test_copy_update_exclude():
 
     assert m._calculate_keys(exclude={'x'}, include=None, exclude_unset=False) == {'c', 'd'}
     assert m._calculate_keys(exclude={'x'}, include=None, exclude_unset=False, update={'c': 42}) == {'d'}
+
+
+def test_shallow_copy_modify():
+    class X(BaseModel):
+        val: int
+        deep: Any
+
+    x = X(val=1, deep={'deep_thing': [1, 2]})
+
+    y = x.copy()
+    y.val = 2
+    y.deep['deep_thing'].append(3)
+
+    assert x.val == 1
+    assert y.val == 2
+    # deep['deep_thing'] gets modified
+    assert x.deep['deep_thing'] == [1, 2, 3]
+    assert y.deep['deep_thing'] == [1, 2, 3]

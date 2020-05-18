@@ -127,7 +127,7 @@ def from_orm_callback(ctx: MethodContext) -> Type:
     elif isinstance(ctx.type, Instance):
         model_type = ctx.type  # called on an instance (unusual, but still valid)
     else:  # pragma: no cover
-        detail = f'ctx.type: {ctx.type} (of type {type(ctx.type).__name__})'
+        detail = f'ctx.type: {ctx.type} (of type {ctx.type.__class__.__name__})'
         error_unexpected_behavior(detail, ctx.api, ctx.context)
         return ctx.default_return_type
     pydantic_metadata = model_type.type.metadata.get(METADATA_KEY)
@@ -246,7 +246,8 @@ class PydanticModelTransformer:
                 # Basically, it is an edge case when dealing with complex import logic
                 # This is the same logic used in the dataclasses plugin
                 continue
-            assert isinstance(node, Var)
+            if not isinstance(node, Var):
+                continue
 
             # x: ClassVar[int] is ignored by dataclasses.
             if node.is_classvar:
@@ -407,7 +408,7 @@ class PydanticModelTransformer:
         if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
             # The "default value" is a call to `Field`; at this point, the field is
             # only required if default is Ellipsis (i.e., `field_name: Annotation = Field(...)`)
-            return len(expr.args) > 0 and type(expr.args[0]) is EllipsisExpr
+            return len(expr.args) > 0 and expr.args[0].__class__ is EllipsisExpr
         # Only required if the "default value" is Ellipsis (i.e., `field_name: Annotation = ...`)
         return isinstance(expr, EllipsisExpr)
 

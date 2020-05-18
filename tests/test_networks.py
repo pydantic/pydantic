@@ -331,7 +331,7 @@ def test_redis_dsns():
 
 def test_custom_schemes():
     class Model(BaseModel):
-        v: stricturl(strip_whitespace=False, allowed_schemes={'ws', 'wss'})
+        v: stricturl(strip_whitespace=False, allowed_schemes={'ws', 'wss'})  # noqa: F821
 
     assert Model(v='ws://example.org').v == 'ws://example.org'
 

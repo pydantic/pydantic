@@ -302,7 +302,7 @@ class ModelField(Representation):
         required: 'BoolUndefined' = Undefined
         if value is Required:
             required = True
-            field_info.default = None
+            value = None
         elif value is not Undefined:
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
@@ -312,7 +312,7 @@ class ModelField(Representation):
             type_=annotation,
             alias=field_info.alias,
             class_validators=class_validators,
-            default=field_info.default,
+            default=value,
             default_factory=field_info.default_factory,
             required=required,
             model_config=config,
@@ -343,13 +343,13 @@ class ModelField(Representation):
         """
         default_value = self.get_default()
         if default_value is not None and self.type_ is None:
-            self.type_ = type(default_value)
+            self.type_ = default_value.__class__
             self.outer_type_ = self.type_
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
-        if type(self.type_) == ForwardRef:
+        if self.type_.__class__ == ForwardRef:
             # self.type_ is currently a ForwardRef and there's nothing we can do now,
             # user will need to call model.update_forward_refs()
             return
@@ -401,13 +401,16 @@ class ModelField(Representation):
         origin = getattr(self.type_, '__origin__', None)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
+            # allow None for virtual superclasses of NoneType, e.g. Hashable
+            if isinstance(self.type_, type) and isinstance(None, self.type_):
+                self.allow_none = True
             return
         if origin is Callable:
             return
         if origin is Union:
             types_ = []
             for type_ in self.type_.__args__:
-                if type_ is NoneType:  # type: ignore
+                if type_ is NoneType:
                     if self.required is Undefined:
                         self.required = False
                     self.allow_none = True
@@ -507,11 +510,11 @@ class ModelField(Representation):
             )
             self.validators = prep_validators(v_funcs)
 
-        # Add const validator
         self.pre_validators = []
         self.post_validators = []
+
         if self.field_info and self.field_info.const:
-            self.pre_validators = [make_generic_validator(constant_validator)]
+            self.post_validators.append(make_generic_validator(constant_validator))
 
         if class_validators_:
             self.pre_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and v.pre)
@@ -714,7 +717,7 @@ class ModelField(Representation):
         """
         False if this is a simple field just allowing None as used in Unions/Optional.
         """
-        return self.type_ != NoneType  # type: ignore
+        return self.type_ != NoneType
 
     def is_complex(self) -> bool:
         """

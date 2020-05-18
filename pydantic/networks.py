@@ -171,7 +171,7 @@ class AnyUrl(str):
 
     @classmethod
     def validate(cls, value: Any, field: 'ModelField', config: 'BaseConfig') -> 'AnyUrl':
-        if type(value) == cls:
+        if value.__class__ == cls:
             return value
         value = str_validator(value)
         if cls.strip_whitespace:
@@ -343,7 +343,7 @@ class NameEmail(Representation):
 
     @classmethod
     def validate(cls, value: Any) -> 'NameEmail':
-        if type(value) == cls:
+        if value.__class__ == cls:
             return value
         value = str_validator(value)
         return cls(*validate_email(value))

@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 import tempfile
@@ -60,11 +61,6 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
-
-try:
-    import typing_extensions
-except ImportError:
-    typing_extensions = None
 
 
 def test_key():
@@ -584,7 +580,7 @@ def test_secret_types(field_type, inner_type):
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True}},
+        'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True, 'format': 'password'}},
         'required': ['a'],
     }
 
@@ -964,6 +960,25 @@ def test_schema_overrides():
     }
 
 
+def test_schema_overrides_w_union():
+    class Foo(BaseModel):
+        pass
+
+    class Bar(BaseModel):
+        pass
+
+    class Spam(BaseModel):
+        a: Union[Foo, Bar] = Field(..., description='xxx')
+
+    assert Spam.schema()['properties'] == {
+        'a': {
+            'title': 'A',
+            'description': 'xxx',
+            'anyOf': [{'$ref': '#/definitions/Foo'}, {'$ref': '#/definitions/Bar'}],
+        },
+    }
+
+
 def test_schema_from_models():
     class Foo(BaseModel):
         a: str
@@ -1124,6 +1139,10 @@ def test_dict_default():
         ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
         ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
         ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
+        ({'gt': -math.inf}, float, {'type': 'number'}),
+        ({'lt': math.inf}, float, {'type': 'number'}),
+        ({'ge': -math.inf}, float, {'type': 'number'}),
+        ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
         ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
         ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),
@@ -1459,7 +1478,7 @@ def test_new_type_schema():
     }
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed and python version < 3.8')
 def test_literal_schema():
     class Model(BaseModel):
         a: Literal[1]
@@ -1534,18 +1553,33 @@ def test_model_with_schema_extra_callable_no_model_class():
     assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
-def test_model_with_schema_extra_callable_classmethod_asserts():
+def test_model_with_schema_extra_callable_classmethod():
     class Model(BaseModel):
         name: str = None
 
         class Config:
+            type = 'foo'
+
             @classmethod
             def schema_extra(cls, schema, model_class):
                 schema.pop('properties')
-                schema['type'] = 'override'
+                schema['type'] = cls.type
+                assert model_class is Model
 
-    with pytest.raises(TypeError, match='Model.Config.schema_extra callable is expected to be a staticmethod'):
-        Model.schema()
+    assert Model.schema() == {'title': 'Model', 'type': 'foo'}
+
+
+def test_model_with_schema_extra_callable_instance_method():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            def schema_extra(schema, model_class):
+                schema.pop('properties')
+                schema['type'] = 'override'
+                assert model_class is Model
+
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
 def test_model_with_extra_forbidden():
@@ -1802,5 +1836,19 @@ def test_iterable():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}},
+        'required': ['a'],
+    }
+
+
+def test_new_type():
+    new_type = NewType('NewStr', str)
+
+    class Model(BaseModel):
+        a: new_type
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
     }

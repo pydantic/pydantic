@@ -20,7 +20,7 @@ class Model(BaseModel):
     strip_bytes: conbytes(strip_whitespace=True)
 
     short_str: constr(min_length=2, max_length=10)
-    regex_str: constr(regex='apple (pie|tart|sandwich)')
+    regex_str: constr(regex='^apple (pie|tart|sandwich)$')
     strip_str: constr(strip_whitespace=True)
 
     big_int: conint(gt=1000, lt=1024)

@@ -16,7 +16,7 @@ def test_assert_raises_validation_error():
             return v
 
     Model(a='a')
-    expected_errors = [{'loc': ('a',), 'msg': f'invalid a', 'type': 'assertion_error'}]
+    expected_errors = [{'loc': ('a',), 'msg': 'invalid a', 'type': 'assertion_error'}]
 
     try:
         Model(a='snap')

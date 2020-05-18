@@ -5,7 +5,6 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -53,15 +52,7 @@ from .types import (
     conlist,
     constr,
 )
-from .typing import (
-    ForwardRef,
-    Literal,
-    is_callable_type,
-    is_literal_type,
-    is_new_type,
-    literal_values,
-    new_type_supertype,
-)
+from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, literal_values
 from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
@@ -243,6 +234,9 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
         f_schema['const'] = field.default
     if field.field_info.extra:
         f_schema.update(field.field_info.extra)
+    modify_schema = getattr(field.type_, '__modify_schema__', None)
+    if modify_schema:
+        modify_schema(f_schema)
     return f_schema
 
 
@@ -467,8 +461,6 @@ def model_process_schema(
     s.update(m_schema)
     schema_extra = model.__config__.schema_extra
     if callable(schema_extra):
-        if not isinstance(schema_extra, FunctionType):
-            raise TypeError(f'{model.__name__}.Config.schema_extra callable is expected to be a staticmethod')
         if len(signature(schema_extra).parameters) == 1:
             schema_extra(s)
         else:
@@ -567,6 +559,11 @@ def field_singleton_sub_fields_schema(
                 known_models=known_models,
             )
             definitions.update(sub_definitions)
+            if schema_overrides and 'allOf' in sub_schema:
+                # if the sub_field is a referenced schema we only need the referenced
+                # object. Otherwise we will end up with several allOf inside anyOf.
+                # See https://github.com/samuelcolvin/pydantic/issues/1209
+                sub_schema = sub_schema['allOf'][0]
             sub_field_schemas.append(sub_schema)
             nested_models.update(sub_nested_models)
         return {'anyOf': sub_field_schemas}, definitions, nested_models
@@ -630,7 +627,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_prefix=ref_prefix,
             known_models=known_models,
         )
-    if field.type_ is Any or type(field.type_) == TypeVar:
+    if field.type_ is Any or field.type_.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
@@ -638,8 +635,6 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
     field_type = field.type_
-    if is_new_type(field_type):
-        field_type = new_type_supertype(field_type)
     if is_literal_type(field_type):
         values = literal_values(field_type)
         if len(values) > 1:
@@ -651,7 +646,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
                 known_models=known_models,
             )
         literal_value = values[0]
-        field_type = type(literal_value)
+        field_type = literal_value.__class__
         f_schema['const'] = literal_value
 
     if issubclass(field_type, Enum):
@@ -715,7 +710,7 @@ def encode_default(dft: Any) -> Any:
     if isinstance(dft, (int, float, str)):
         return dft
     elif sequence_like(dft):
-        t = type(dft)
+        t = dft.__class__
         return t(encode_default(v) for v in dft)
     elif isinstance(dft, dict):
         return {encode_default(k): encode_default(v) for k, v in dft.items()}

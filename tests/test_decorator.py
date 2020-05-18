@@ -35,21 +35,21 @@ def test_args():
         foo(1, 'x')
 
     assert exc_info.value.errors() == [
-        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, 3)
 
     assert exc_info.value.errors() == [
-        {'loc': ('args',), 'msg': '2 positional arguments expected but 3 given', 'type': 'type_error'},
+        {'loc': ('args',), 'msg': '2 positional arguments expected but 3 given', 'type': 'type_error'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, apple=3)
 
     assert exc_info.value.errors() == [
-        {'loc': ('kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'},
+        {'loc': ('kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'}
     ]
 
 
@@ -63,10 +63,10 @@ def test_wrap():
     assert foo_bar.__name__ == 'foo_bar'
     assert foo_bar.__module__ == 'tests.test_decorator'
     assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
-    assert isinstance(foo_bar, ValidatedFunction)
+    assert isinstance(foo_bar.vd, ValidatedFunction)
     assert callable(foo_bar.raw_function)
-    assert foo_bar.arg_mapping == {0: 'a', 1: 'b'}
-    assert foo_bar.positional_only_args == set()
+    assert foo_bar.vd.arg_mapping == {0: 'a', 1: 'b'}
+    assert foo_bar.vd.positional_only_args == set()
     assert issubclass(foo_bar.model, BaseModel)
     assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs'}
     assert foo_bar.model.__name__ == 'FooBar'
@@ -87,7 +87,7 @@ def test_kwargs():
         foo(a=1, b='x')
 
     assert exc_info.value.errors() == [
-        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -141,7 +141,7 @@ def foo(a, b, /, c=None):
             'loc': ('v__positional_only',),
             'msg': "positional-only argument passed as keyword argument: 'b'",
             'type': 'type_error',
-        },
+        }
     ]
     with pytest.raises(ValidationError) as exc_info:
         module.foo(a=1, b=2)
@@ -150,7 +150,7 @@ def foo(a, b, /, c=None):
             'loc': ('v__positional_only',),
             'msg': "positional-only arguments passed as keyword arguments: 'a', 'b'",
             'type': 'type_error',
-        },
+        }
     ]
 
 
@@ -165,19 +165,19 @@ def test_args_name():
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, apple=4)
     assert exc_info.value.errors() == [
-        {'loc': ('v__kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'},
+        {'loc': ('v__kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, apple=4, banana=5)
     assert exc_info.value.errors() == [
-        {'loc': ('v__kwargs',), 'msg': "unexpected keyword arguments: 'apple', 'banana'", 'type': 'type_error'},
+        {'loc': ('v__kwargs',), 'msg': "unexpected keyword arguments: 'apple', 'banana'", 'type': 'type_error'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, 3)
     assert exc_info.value.errors() == [
-        {'loc': ('v__args',), 'msg': '2 positional arguments expected but 3 given', 'type': 'type_error'},
+        {'loc': ('v__args',), 'msg': '2 positional arguments expected but 3 given', 'type': 'type_error'}
     ]
 
 
@@ -202,9 +202,7 @@ def test_async():
     loop.run_until_complete(run())
     with pytest.raises(ValidationError) as exc_info:
         loop.run_until_complete(foo('x'))
-    assert exc_info.value.errors() == [
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
-    ]
+    assert exc_info.value.errors() == [{'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 def test_string_annotation():
@@ -218,5 +216,49 @@ def test_string_annotation():
         foo(['x'])
     assert exc_info.value.errors() == [
         {'loc': ('a', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
+def test_item_method():
+    class X:
+        def __init__(self, v):
+            self.v = v
+
+        @validate_arguments
+        def foo(self, a: int, b: int):
+            assert self.v == a
+            return f'{a}, {b}'
+
+    x = X(4)
+    assert x.foo(4, 2) == '4, 2'
+    assert x.foo(*[4, 2]) == '4, 2'
+
+    with pytest.raises(ValidationError) as exc_info:
+        x.foo()
+
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
+def test_class_method():
+    class X:
+        @classmethod
+        @validate_arguments
+        def foo(cls, a: int, b: int):
+            assert cls == X
+            return f'{a}, {b}'
+
+    x = X()
+    assert x.foo(4, 2) == '4, 2'
+    assert x.foo(*[4, 2]) == '4, 2'
+
+    with pytest.raises(ValidationError) as exc_info:
+        x.foo()
+
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
         {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
     ]

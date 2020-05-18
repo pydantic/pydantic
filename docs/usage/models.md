@@ -263,11 +263,6 @@ For example, in the example above, if `_fields_set` was not provided,
 
 ## Generic Models
 
-!!! note
-    New in version **v0.29**.
-
-    This feature requires Python 3.7+.
-
 Pydantic supports the creation of generic models to make it easier to reuse a common model structure.
 
 In order to declare a generic model, you perform the following steps:
@@ -385,6 +380,12 @@ This is demonstrated in the following example:
 !!! warning
     Calling the `parse_obj` method on a dict with the single key `"__root__"` for non-mapping custom root types
     is currently supported for backwards compatibility, but is not recommended and may be dropped in a future version.
+    
+If you want to access items in the `__root__` field directly or to iterate over the items, you can implement custom `__iter__` and `__getitem__` functions, as shown in the following example.
+
+```py
+{!.tmp_examples/models_custom_root_access.py!}
+```
 
 ## Faux Immutability
 

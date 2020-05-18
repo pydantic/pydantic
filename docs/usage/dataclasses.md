@@ -11,8 +11,8 @@ _(This script is complete, it should run "as is")_
 !!! note
     Keep in mind that `pydantic.dataclasses.dataclass` is a drop-in replacement for `dataclasses.dataclass`
     with validation, **not** a replacement for `pydantic.BaseModel` (with a small difference in how [initialization hooks](#initialize-hooks) work). There are cases where subclassing
-    `pydantic.BaseModel` is the better choice. 
-    
+    `pydantic.BaseModel` is the better choice.
+
     For more information and discussion see
     [samuelcolvin/pydantic#710](https://github.com/samuelcolvin/pydantic/issues/710).
 
@@ -33,7 +33,7 @@ keyword argument `config` which has the same meaning as [Config](model_config.md
 !!! warning
     After v1.2, [The Mypy plugin](/mypy_plugin.md) must be installed to type check pydantic dataclasses.
 
-For more information about combining validators with dataclasses, see 
+For more information about combining validators with dataclasses, see
 [dataclass validators](validators.md#dataclass-validators).
 
 ## Nested dataclasses
@@ -70,4 +70,12 @@ _(This script is complete, it should run "as is")_
 
 Note that the `dataclasses.dataclass` from python stdlib implements only the `__post_init__` method since it doesn't run a validation step.
 
-When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.dataclass`, it is recommended to move the code executed in the `__post_init__` method to the `__post_init_post_parse__` method, and only leave behind part of code which needs to be executed before validation. 
+When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.dataclass`, it is recommended to move the code executed in the `__post_init__` method to the `__post_init_post_parse__` method, and only leave behind part of code which needs to be executed before validation.
+
+## JSON Dumping
+
+Pydantic dataclasses do not feature a `.json()` function. To dump them as JSON, you will need to make use of the `pydantic_encoder` as follows:
+
+```py
+{!.tmp_examples/dataclasses_json_dumps.py!}
+```

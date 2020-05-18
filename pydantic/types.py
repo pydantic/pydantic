@@ -1,3 +1,4 @@
+import math
 import re
 import warnings
 from decimal import Decimal
@@ -81,6 +82,7 @@ if TYPE_CHECKING:
     from .dataclasses import DataclassType  # noqa: F401
     from .main import BaseModel, BaseConfig  # noqa: F401
     from .typing import CallableGenerator
+    from .fields import ModelField
 
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
 
@@ -122,7 +124,6 @@ class ConstrainedList(list):  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield list_validator
         yield cls.list_length_validator
 
     @classmethod
@@ -130,7 +131,11 @@ class ConstrainedList(list):  # type: ignore
         update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
 
     @classmethod
-    def list_length_validator(cls, v: 'List[T]') -> 'List[T]':
+    def list_length_validator(cls, v: 'Optional[List[T]]', field: 'ModelField') -> 'Optional[List[T]]':
+        if v is None and not field.required:
+            return None
+
+        v = list_validator(v)
         v_len = len(v)
 
         if cls.min_items is not None and v_len < cls.min_items:
@@ -335,6 +340,15 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
             maximum=cls.le,
             multipleOf=cls.multiple_of,
         )
+        # Modify constraints to account for differences between IEEE floats and JSON
+        if field_schema.get('exclusiveMinimum') == -math.inf:
+            del field_schema['exclusiveMinimum']
+        if field_schema.get('minimum') == -math.inf:
+            del field_schema['minimum']
+        if field_schema.get('exclusiveMaximum') == math.inf:
+            del field_schema['exclusiveMaximum']
+        if field_schema.get('maximum') == math.inf:
+            del field_schema['maximum']
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -526,15 +540,17 @@ class Json(metaclass=JsonMeta):
 class SecretStr:
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(type='string', writeOnly=True)
+        field_schema.update(type='string', writeOnly=True, format='password')
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> 'SecretStr':
+    def validate(cls, value: Any) -> 'SecretStr':
+        if isinstance(value, cls):
+            return value
+        value = str_validator(value)
         return cls(value)
 
     def __init__(self, value: str):
@@ -560,15 +576,17 @@ class SecretStr:
 class SecretBytes:
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(type='string', writeOnly=True)
+        field_schema.update(type='string', writeOnly=True, format='password')
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield bytes_validator
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: bytes) -> 'SecretBytes':
+    def validate(cls, value: Any) -> 'SecretBytes':
+        if isinstance(value, cls):
+            return value
+        value = bytes_validator(value)
         return cls(value)
 
     def __init__(self, value: bytes):
@@ -591,7 +609,7 @@ class SecretBytes:
         return self._secret_value
 
 
-class PaymentCardBrand(Enum):
+class PaymentCardBrand(str, Enum):
     amex = 'American Express'
     mastercard = 'Mastercard'
     visa = 'Visa'
@@ -666,10 +684,10 @@ class PaymentCardNumber(str):
         https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
         """
         required_length: Optional[int] = None
-        if card_number.brand is (PaymentCardBrand.visa or PaymentCardBrand.mastercard):
+        if card_number.brand in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}:
             required_length = 16
             valid = len(card_number) == required_length
-        elif card_number.brand is PaymentCardBrand.amex:
+        elif card_number.brand == PaymentCardBrand.amex:
             required_length = 15
             valid = len(card_number) == required_length
         else:

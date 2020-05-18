@@ -1,4 +1,5 @@
 import sys
+from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, FrozenSet, Generic, List, Optional, Set, Tuple, Type, TypeVar, Union
@@ -435,7 +436,35 @@ def test_advanced_exclude():
     assert m.dict(exclude={'e': ..., 'f': {'d'}}) == {'f': {'c': 'foo'}}
 
 
-def test_advanced_value_inclide():
+def test_advanced_exclude_by_alias():
+    class SubSubModel(BaseModel):
+        a: str
+        aliased_b: str = Field(..., alias='b_alias')
+
+    class SubModel(BaseModel):
+        aliased_c: str = Field(..., alias='c_alias')
+        aliased_d: List[SubSubModel] = Field(..., alias='d_alias')
+
+    class Model(BaseModel):
+        aliased_e: str = Field(..., alias='e_alias')
+        aliased_f: SubModel = Field(..., alias='f_alias')
+
+    m = Model(
+        e_alias='e',
+        f_alias=SubModel(c_alias='foo', d_alias=[SubSubModel(a='a', b_alias='b'), SubSubModel(a='c', b_alias='e')]),
+    )
+
+    excludes = {'aliased_f': {'aliased_c': ..., 'aliased_d': {-1: {'a'}}}}
+    assert m.dict(exclude=excludes, by_alias=True) == {
+        'e_alias': 'e',
+        'f_alias': {'d_alias': [{'a': 'a', 'b_alias': 'b'}, {'b_alias': 'e'}]},
+    }
+
+    excludes = {'aliased_e': ..., 'aliased_f': {'aliased_d'}}
+    assert m.dict(exclude=excludes, by_alias=True) == {'f_alias': {'c_alias': 'foo'}}
+
+
+def test_advanced_value_include():
     class SubSubModel(BaseModel):
         a: str
         b: str
@@ -1478,3 +1507,27 @@ def test_custom_generic_disallowed():
         class Model(BaseModel):
             a: str
             gen: MyGen[str, bool]
+
+
+def test_hashable_required():
+    class Model(BaseModel):
+        v: Hashable
+
+    Model(v=None)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[])
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value is not a valid hashable', 'type': 'type_error.hashable'}
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+@pytest.mark.parametrize('default', [1, None])
+def test_hashable_optional(default):
+    class Model(BaseModel):
+        v: Hashable = default
+
+    Model(v=None)
+    Model()

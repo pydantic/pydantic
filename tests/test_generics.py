@@ -170,7 +170,7 @@ def test_must_inherit_from_generic():
 
         Result[int]
 
-    assert str(exc_info.value) == f'Type Result must inherit from typing.Generic before being parameterized'
+    assert str(exc_info.value) == 'Type Result must inherit from typing.Generic before being parameterized'
 
 
 @skip_36

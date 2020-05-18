@@ -1,4 +1,4 @@
-[![BuildStatus](https://travis-ci.org/samuelcolvin/pydantic.svg?branch=master)](https://travis-ci.org/samuelcolvin/pydantic)
+[![CI](https://github.com/samuelcolvin/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/samuelcolvin/pydantic/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI)
 [![Coverage](https://codecov.io/gh/samuelcolvin/pydantic/branch/master/graph/badge.svg)](https://codecov.io/gh/samuelcolvin/pydantic)
 [![pypi](https://img.shields.io/pypi/v/pydantic.svg)](https://pypi.python.org/pypi/pydantic)
 [![CondaForge](https://img.shields.io/conda/v/conda-forge/pydantic.svg)](https://anaconda.org/conda-forge/pydantic)
@@ -12,10 +12,6 @@ Data validation and settings management using python type annotations.
 *pydantic* enforces type hints at runtime, and provides user friendly errors when data is invalid.
 
 Define how data should be in pure, canonical python; validate it with *pydantic*.
-
-!!! note "Version 0.32 Documentation"
-    This documentation refers to Version 1 of *pydantic* which has just been released, **v0.32.2** 
-    (the previous release) docs are available [here](https://5d584fcca7c9b70007d1c997--pydantic-docs.netlify.com).
 
 ## Example
 

@@ -51,7 +51,7 @@ exclude_keys = {
     'second_name': ...,
     'address': {'post_code': ..., 'country': {'phone_code'}},
     'card_details': ...,
-    # You can exclude values from tuples and lists by indexes
+    # You can exclude fields from specific members of a tuple/list by index:
     'hobbies': {-1: {'info'}},
 }
 
@@ -63,3 +63,6 @@ include_keys = {
 
 # would be the same as user.dict(exclude=exclude_keys) in this case:
 print(user.dict(include=include_keys))
+
+# To exclude a field from all members of a nested list or tuple, use "__all__":
+print(user.dict(exclude={'hobbies': {'__all__': {'info'}}}))
