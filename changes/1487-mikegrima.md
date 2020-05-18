@@ -1,0 +1,1 @@
+Added docs about dumping dataclasses to JSON.
