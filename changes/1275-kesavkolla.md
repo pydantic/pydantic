@@ -1,1 +1,1 @@
-Made user info optional for RedisDSN
+Made user info optional for `RedisDSN`
