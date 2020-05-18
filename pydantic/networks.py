@@ -329,6 +329,12 @@ class NameEmail(Representation):
         self.name = name
         self.email = email
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, NameEmail):
+            return (self.name, self.email,) == (other.name, other.email,)
+        else:
+            return other == self
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='name-email')
