@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ValidationError, validator
 
+
 class Model(BaseModel):
     foo: str
 
@@ -10,8 +11,8 @@ class Model(BaseModel):
 
         return v
 
+
 try:
     Model(foo='ber')
 except ValidationError as e:
     print(e.errors())
-

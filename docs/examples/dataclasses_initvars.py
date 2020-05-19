@@ -4,6 +4,7 @@ from typing import Optional
 
 from pydantic.dataclasses import dataclass
 
+
 @dataclass
 class PathData:
     path: Path
@@ -15,6 +16,7 @@ class PathData:
     def __post_init_post_parse__(self, base_path):
         if base_path is not None:
             self.path = base_path / self.path
+
 
 path_data = PathData('world', base_path='/hello')
 # Received path='world', base_path='/hello'

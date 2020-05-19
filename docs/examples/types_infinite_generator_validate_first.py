@@ -3,6 +3,7 @@ from typing import Iterable
 from pydantic import BaseModel, validator, ValidationError
 from pydantic.fields import ModelField
 
+
 class Model(BaseModel):
     infinite: Iterable[int]
 
@@ -22,19 +23,23 @@ class Model(BaseModel):
         # the rest of the values from the (already started) iterable
         return itertools.chain([first_value], iterable)
 
+
 def infinite_ints():
     i = 0
     while True:
         yield i
         i += 1
 
+
 m = Model(infinite=infinite_ints())
 print(m)
+
 
 def infinite_strs():
     while True:
         for letter in 'allthesingleladies':
             yield letter
+
 
 try:
     Model(infinite=infinite_strs())

@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 
+
 class FooBarModel(BaseModel):
     a: str
     b: dict
 
     class Config:
         allow_mutation = False
+
 
 foobar = FooBarModel(a='hello', b={'apple': 'pear'})
 

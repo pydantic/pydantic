@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ValidationError, validator
 
+
 class UserModel(BaseModel):
     name: str
     username: str
@@ -23,11 +24,21 @@ class UserModel(BaseModel):
         assert v.isalpha(), 'must be alphanumeric'
         return v
 
-print(UserModel(name='samuel colvin', username='scolvin', password1='zxcvbn',
-                password2='zxcvbn'))
+
+user = UserModel(
+    name='samuel colvin',
+    username='scolvin',
+    password1='zxcvbn',
+    password2='zxcvbn',
+)
+print(user)
 
 try:
-    UserModel(name='samuel', username='scolvin', password1='zxcvbn',
-              password2='zxcvbn2')
+    UserModel(
+        name='samuel',
+        username='scolvin',
+        password1='zxcvbn',
+        password2='zxcvbn2',
+    )
 except ValidationError as e:
     print(e)

@@ -1,5 +1,6 @@
-from typing import List, Dict
-from pydantic import BaseModel, ValidationError
+from typing import List
+from pydantic import BaseModel
+
 
 class Pets(BaseModel):
     __root__: List[str]
@@ -9,6 +10,7 @@ class Pets(BaseModel):
 
     def __getitem__(self, item):
         return self.__root__[item]
+
 
 pets = Pets.parse_obj(['dog', 'cat'])
 print(pets[0])

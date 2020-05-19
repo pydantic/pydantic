@@ -155,7 +155,7 @@ def exec_examples():
             error('file not used anywhere')
 
         file_text = file.read_text('utf-8')
-        if '\n\n\n' in file_text:
+        if '\n\n\n\n' in file_text:
             error('too many new lines')
         if not file_text.endswith('\n'):
             error('no trailing new line')
