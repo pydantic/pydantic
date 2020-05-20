@@ -252,7 +252,12 @@ def uuid_validator(v: Any, field: 'ModelField') -> UUID:
         if isinstance(v, str):
             v = UUID(v)
         elif isinstance(v, (bytes, bytearray)):
-            v = UUID(v.decode())
+            try:
+                v = UUID(v.decode())
+            except ValueError:
+                # 16 bytes in big-endian order as the bytes argument fail
+                # the above check
+                v = UUID(bytes=v)
     except ValueError:
         raise errors.UUIDError()
 
