@@ -16,20 +16,20 @@ from .errors import ConfigError
 from .main import BaseModel, Extra, create_model
 from .utils import to_camel
 
-__all__ = ("validate_arguments",)
+__all__ = ('validate_arguments',)
 
 if TYPE_CHECKING:
     from .typing import AnyCallable
 
-    Callable = TypeVar("Callable", bound=AnyCallable)
+    Callable = TypeVar('Callable', bound=AnyCallable)
 
 
-def validate_arguments(func: "Callable" = None, **configs: Any):
+def validate_arguments(func: 'Callable' = None, **configs: Any):
     """
     Decorator to validate the arguments passed to a function.
     """
 
-    def validate(_func: "Callable") -> "Callable":
+    def validate(_func: 'Callable') -> 'Callable':
         vd = ValidatedFunction(_func, **configs)
 
         @wraps(_func)
@@ -39,7 +39,7 @@ def validate_arguments(func: "Callable" = None, **configs: Any):
         wrapper_function.vd = vd  # type: ignore
         wrapper_function.raw_function = vd.raw_function  # type: ignore
         wrapper_function.model = vd.model  # type: ignore
-        return cast("Callable", wrapper_function)
+        return cast('Callable', wrapper_function)
 
     if func:
         return validate(func)
@@ -47,13 +47,13 @@ def validate_arguments(func: "Callable" = None, **configs: Any):
         return validate
 
 
-ALT_V_ARGS = "v__args"
-ALT_V_KWARGS = "v__kwargs"
-V_POSITIONAL_ONLY_NAME = "v__positional_only"
+ALT_V_ARGS = 'v__args'
+ALT_V_KWARGS = 'v__kwargs'
+V_POSITIONAL_ONLY_NAME = 'v__positional_only'
 
 
 class ValidatedFunction:
-    def __init__(self, function: "Callable", **configs: Any):
+    def __init__(self, function: 'Callable', **configs: Any):
         from inspect import signature, Parameter
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
@@ -67,8 +67,8 @@ class ValidatedFunction:
         self.raw_function = function
         self.arg_mapping: Dict[int, str] = {}
         self.positional_only_args = set()
-        self.v_args_name = "args"
-        self.v_kwargs_name = "kwargs"
+        self.v_args_name = 'args'
+        self.v_kwargs_name = 'kwargs'
 
         type_hints = get_type_hints(function)
         takes_args = False
@@ -206,7 +206,7 @@ class ValidatedFunction:
                     return v
 
                 raise TypeError(
-                    f"{pos_args} positional arguments expected but {pos_args + len(v)} given"
+                    f'{pos_args} positional arguments expected but {pos_args + len(v)} given'
                 )
 
             @validator(self.v_kwargs_name, check_fields=False, allow_reuse=True)
@@ -214,23 +214,21 @@ class ValidatedFunction:
                 if takes_kwargs:
                     return v
 
-                plural = "" if len(v) == 1 else "s"
-                keys = ", ".join(map(repr, v.keys()))
-                raise TypeError(f"unexpected keyword argument{plural}: {keys}")
+                plural = '' if len(v) == 1 else 's'
+                keys = ', '.join(map(repr, v.keys()))
+                raise TypeError(f'unexpected keyword argument{plural}: {keys}')
 
             @validator(V_POSITIONAL_ONLY_NAME, check_fields=False, allow_reuse=True)
             def check_positional_only(cls, v: List[str]) -> None:
-                plural = "" if len(v) == 1 else "s"
-                keys = ", ".join(map(repr, v))
+                plural = '' if len(v) == 1 else 's'
+                keys = ', '.join(map(repr, v))
                 raise TypeError(
-                    f"positional-only argument{plural} passed as keyword argument{plural}: {keys}"
+                    f'positional-only argument{plural} passed as keyword argument{plural}: {keys}'
                 )
 
             # class Config:
             #     extra = Extra.forbid
 
-            Config = type("Config", (), configs)
+            Config = type('Config', (), configs)
 
-        self.model = create_model(
-            to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields
-        )
+        self.model = create_model(to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
