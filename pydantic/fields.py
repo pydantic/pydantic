@@ -354,10 +354,6 @@ class ModelField(Representation):
             # user will need to call model.update_forward_refs()
             return
 
-        self.validate_always = getattr(self.type_, 'validate_always', False) or any(
-            v.always for v in self.class_validators.values()
-        )
-
         if self.required is False and default_value is None:
             self.allow_none = True
 
@@ -500,6 +496,10 @@ class ModelField(Representation):
         and class validators. This method should be idempotent, e.g. it should be safe to call multiple times
         without mis-configuring the field.
         """
+        self.validate_always = getattr(self.type_, 'validate_always', False) or any(
+            v.always for v in self.class_validators.values()
+        )
+
         class_validators_ = self.class_validators.values()
         if not self.sub_fields or self.shape == SHAPE_GENERIC:
             get_validators = getattr(self.type_, '__get_validators__', None)

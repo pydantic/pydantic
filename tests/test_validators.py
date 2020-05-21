@@ -286,6 +286,25 @@ def test_validate_always():
     assert check_calls == 2
 
 
+def test_validate_always_on_inheritance():
+    check_calls = 0
+
+    class ParentModel(BaseModel):
+        a: str = None
+
+    class Model(ParentModel):
+        @validator('a', pre=True, always=True)
+        def check_a(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v or 'xxx'
+
+    assert Model().a == 'xxx'
+    assert check_calls == 1
+    assert Model(a='y').a == 'y'
+    assert check_calls == 2
+
+
 def test_validate_not_always():
     check_calls = 0
 
