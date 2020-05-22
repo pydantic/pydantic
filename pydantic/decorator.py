@@ -1,15 +1,5 @@
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Tuple,
-    TypeVar,
-    cast,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast, get_type_hints
 
 from . import validator
 from .errors import ConfigError
@@ -124,9 +114,7 @@ class ValidatedFunction:
         m = self.model(**values)
         return self.execute(m)
 
-    def build_values(
-        self, args: Tuple[Any, ...], kwargs: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def build_values(self, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Dict[str, Any]:
         values: Dict[str, Any] = {}
         if args:
             arg_iter = enumerate(args)
@@ -189,13 +177,7 @@ class ValidatedFunction:
         else:
             return self.raw_function(**d)
 
-    def create_model(
-        self,
-        fields: Dict[str, Any],
-        takes_args: bool,
-        takes_kwargs: bool,
-        **configs: Any,
-    ) -> None:
+    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, **configs: Any,) -> None:
         pos_args = len(self.arg_mapping)
         configs.update(extra=Extra.forbid)
 
@@ -205,9 +187,7 @@ class ValidatedFunction:
                 if takes_args:
                     return v
 
-                raise TypeError(
-                    f'{pos_args} positional arguments expected but {pos_args + len(v)} given'
-                )
+                raise TypeError(f'{pos_args} positional arguments expected but {pos_args + len(v)} given')
 
             @validator(self.v_kwargs_name, check_fields=False, allow_reuse=True)
             def check_kwargs(cls, v: Dict[str, Any]) -> Dict[str, Any]:
@@ -222,9 +202,7 @@ class ValidatedFunction:
             def check_positional_only(cls, v: List[str]) -> None:
                 plural = '' if len(v) == 1 else 's'
                 keys = ', '.join(map(repr, v))
-                raise TypeError(
-                    f'positional-only argument{plural} passed as keyword argument{plural}: {keys}'
-                )
+                raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
 
             # class Config:
             #     extra = Extra.forbid
