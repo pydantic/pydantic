@@ -1,1 +1,1 @@
-Added a videos section with link to "Pydantic Introduction" video by Alexander Hultnér
+Added a "Discussion of Pydantic" section to the documentation, with a link to "Pydantic Introduction" video by Alexander Hultnér
