@@ -11,7 +11,7 @@ from pydantic import VERSION, BaseModel
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
-from pydantic.typing import display_as_type, is_new_type, new_type_supertype
+from pydantic.typing import Literal, all_literal_values, display_as_type, is_new_type, new_type_supertype
 from pydantic.utils import (
     ClassAttribute,
     ValueItems,
@@ -320,3 +320,16 @@ def test_class_attribute():
     f = Foo()
     f.attr = 'not foo'
     assert f.attr == 'not foo'
+
+
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
+def test_all_literal_values():
+    L1 = Literal['1']
+    assert all_literal_values(L1) == ('1',)
+
+    L2 = Literal['2']
+    L12 = Literal[L1, L2]
+    assert sorted(all_literal_values(L12)) == sorted(('1', '2'))
+
+    L312 = Literal['3', Literal[L1, L2]]
+    assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
