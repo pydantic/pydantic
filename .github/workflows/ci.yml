@@ -59,7 +59,7 @@ jobs:
         DEPS: yes
 
     - name: uninstall deps
-      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv phonenumbers
 
     - name: test compiled without deps
       run: make test-codecov

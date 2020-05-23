@@ -416,6 +416,9 @@ _(This script is complete, it should run "as is")_
 `PaymentCardNumber`
 : for parsing and validating payment cards; see [payment cards](#payment-card-numbers)
 
+`PhoneNumber`
+: for parsing and validating phone numbers; see [phone numbers](#phone-numbers)
+
 `AnyUrl`
 : any URL; see [URLs](#urls)
 
@@ -689,6 +692,14 @@ The actual validation verifies the card number is:
 * [luhn](https://en.wikipedia.org/wiki/Luhn_algorithm) valid
 * the correct length based on the BIN, if Amex, Mastercard or Visa, and between
   12 and 19 digits for all other brands
+  
+### Phone Numbers
+Requires [phonenumbers](https://pypi.org/project/phonenumbers/) to be installed.
+
+The `PhoneNumber` type validates phone numbers in [E.164 format](https://en.wikipedia.org/wiki/E.164); the output is a 
+simple string.
+
+
 
 ## Constrained Types
 

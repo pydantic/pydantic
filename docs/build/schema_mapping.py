@@ -437,6 +437,13 @@ table = [
         'Pydantic standard "format" extension',
         '',
     ],
+    [
+        'PhoneNumber',
+        'string',
+        {'format': 'phoneNumber'},
+        'JSON Schema Validation',
+        ''
+    ],
 ]
 
 headings = [

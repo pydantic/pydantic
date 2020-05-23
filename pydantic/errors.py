@@ -88,6 +88,7 @@ __all__ = (
     'InvalidLengthForBrand',
     'InvalidByteSize',
     'InvalidByteSizeUnit',
+    'PhoneNumberError',
 )
 
 
@@ -518,3 +519,7 @@ class InvalidByteSize(PydanticValueError):
 
 class InvalidByteSizeUnit(PydanticValueError):
     msg_template = 'could not interpret byte unit: {unit}'
+
+
+class PhoneNumberError(PydanticValueError):
+    msg_template = 'value is not a valid phone number'

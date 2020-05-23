@@ -41,6 +41,7 @@ from pydantic import (
     NameEmail,
     NegativeFloat,
     NegativeInt,
+    PhoneNumber,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -71,6 +72,11 @@ try:
     import typing_extensions
 except ImportError:
     typing_extensions = None
+
+try:
+    import phonenumbers
+except ImportError:
+    phonenumbers = None
 
 
 class ConBytesModel(BaseModel):
@@ -2117,3 +2123,26 @@ def test_bytesize_raises():
     m = Model(size='1MB')
     with pytest.raises(errors.InvalidByteSizeUnit, match='byte unit'):
         m.size.to('bad_unit')
+
+
+@pytest.mark.skipif(phonenumbers, reason='phonenumbers is installed')
+def test_phonenumbers_not_installed_phone_number():
+    with pytest.raises(ImportError):
+
+        class Model(BaseModel):
+            str_email: PhoneNumber = ...
+
+
+@pytest.mark.skipif(not phonenumbers, reason='phonenumbers not installed')
+def test_phone_number():
+    class Model(BaseModel):
+        v: PhoneNumber
+
+    assert Model(v=PhoneNumber('+442083661177')).v == '+442083661177'
+    assert Model(v='+442083661177').v == '+442083661177'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=PhoneNumber('Not a phone number'))
+    assert exc_info.value.errors() == [
+        {'loc': ('v',), 'msg': 'value is not a valid phone number', 'type': 'value_error.phonenumber'}
+    ]

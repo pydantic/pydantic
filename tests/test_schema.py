@@ -41,6 +41,7 @@ from pydantic.types import (
     NoneBytes,
     NoneStr,
     NoneStrBytes,
+    PhoneNumber,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -61,6 +62,11 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
+
+try:
+    import phonenumbers
+except ImportError:
+    phonenumbers = None
 
 
 def test_key():
@@ -1852,3 +1858,19 @@ def test_new_type():
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
     }
+
+
+@pytest.mark.skipif(not phonenumbers, reason='phonenumbers not installed')
+def test_phonenumber_type():
+    class Model(BaseModel):
+        a: PhoneNumber
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['format'] = 'phoneNumber'
+
+    assert Model.schema() == base_schema

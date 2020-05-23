@@ -129,6 +129,7 @@ setup(
     ],
     extras_require={
         'email': ['email-validator>=1.0.3'],
+        'phonenumbers': ['phonenumbers>=8.12.4'],
         'typing_extensions': ['typing-extensions>=3.7.2'],
         'dotenv': ['python-dotenv>=0.10.4'],
     },

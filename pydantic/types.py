@@ -67,6 +67,7 @@ __all__ = [
     'StrictFloat',
     'PaymentCardNumber',
     'ByteSize',
+    'PhoneNumber',
 ]
 
 NoneStr = Optional[str]
@@ -79,12 +80,15 @@ OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
+    import phonenumbers
     from .dataclasses import DataclassType  # noqa: F401
     from .main import BaseModel, BaseConfig  # noqa: F401
     from .typing import CallableGenerator
     from .fields import ModelField
 
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
+else:
+    phonenumbers = None
 
 
 class ConstrainedBytes(bytes):
@@ -783,3 +787,42 @@ class ByteSize(int):
             raise errors.InvalidByteSizeUnit(unit=unit)
 
         return self / unit_div
+
+
+def import_phonenumbers() -> None:
+    global phonenumbers
+    try:
+        import phonenumbers
+    except ImportError as e:
+        raise ImportError('phonenumbers is not installed, run `pip install pydantic[phonenumbers]`') from e
+
+
+class PhoneNumber(str):
+    """
+    Phone number validated using the phonenumbers package.
+    """
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format='phoneNumber')
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        # included here and below so the error happens straight away
+        import_phonenumbers()
+
+        yield str_validator
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: Union[str]) -> str:
+        if phonenumbers is None:
+            import_phonenumbers()
+
+        phone_number = value.strip()
+
+        try:
+            phonenumbers.parse(phone_number)
+            return phone_number
+        except phonenumbers.phonenumberutil.NumberParseException as e:
+            raise errors.PhoneNumberError() from e

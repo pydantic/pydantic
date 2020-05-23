@@ -94,6 +94,7 @@ __all__ = [
     'StrictFloat',
     'PaymentCardNumber',
     'ByteSize',
+    'PhoneNumber',
     # version
     'VERSION',
 ]
