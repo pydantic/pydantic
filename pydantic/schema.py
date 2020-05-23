@@ -2,7 +2,7 @@ import re
 import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from enum import Enum, EnumMeta
+from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import (
@@ -523,7 +523,7 @@ def model_type_schema(
     return out_schema, definitions, nested_models
 
 
-def enum_process_schema(enum: EnumMeta) -> Dict[str, Any]:
+def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
     """
     Take a single `enum` and generate its schema.
 
