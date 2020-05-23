@@ -19,6 +19,7 @@ from pydantic.schema import (
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
+    model_process_schema,
     model_schema,
     schema,
 )
@@ -1776,6 +1777,16 @@ def test_schema_attributes():
             }
         },
     }
+
+
+def test_model_process_schema_enum():
+    class SpamEnum(str, Enum):
+        foo = 'f'
+        bar = 'b'
+
+    model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
+    print(model_schema)
+    assert model_schema == {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']}
 
 
 def test_path_modify_schema():
