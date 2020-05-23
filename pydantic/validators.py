@@ -402,7 +402,7 @@ def callable_validator(v: Any) -> AnyCallable:
 
 
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
-    permitted_choices: Tuple[Any, ...] = all_literal_values(type_)
+    permitted_choices = all_literal_values(type_)
     allowed_choices_set = set(permitted_choices)
 
     def literal_validator(v: Any) -> Any:
