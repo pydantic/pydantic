@@ -1,9 +1,9 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast, get_type_hints
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, Type, TypeVar, cast, get_type_hints
 
 from . import validator
 from .errors import ConfigError
-from .main import BaseModel, Extra, create_model
+from .main import BaseConfig, BaseModel, Extra, create_model
 from .utils import to_camel
 
 __all__ = ('validate_arguments',)
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     Callable = TypeVar('Callable', bound=AnyCallable)
 
 
-def validate_arguments(func: 'Callable' = None, **configs: Any):
+def validate_arguments(func: 'Callable' = None, **configs: Any) -> 'Callable':
     """
     Decorator to validate the arguments passed to a function.
     """
@@ -34,7 +34,7 @@ def validate_arguments(func: 'Callable' = None, **configs: Any):
     if func:
         return validate(func)
     else:
-        return validate
+        return cast('Callable', validate)
 
 
 ALT_V_ARGS = 'v__args'
@@ -207,6 +207,6 @@ class ValidatedFunction:
             # class Config:
             #     extra = Extra.forbid
 
-            Config = type('Config', (), configs)
+            Config = cast(Type[BaseConfig], type('Config', (), configs))
 
         self.model = create_model(to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
