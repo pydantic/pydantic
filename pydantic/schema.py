@@ -623,6 +623,7 @@ field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (list, {'type': 'array', 'items': {}}),
     (tuple, {'type': 'array', 'items': {}}),
     (set, {'type': 'array', 'items': {}, 'uniqueItems': True}),
+    (frozenset, {'type': 'array', 'item': {}, 'uniqueItems': True}),
 )
 
 json_scheme = {'type': 'string', 'format': 'json-string'}
