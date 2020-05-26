@@ -121,3 +121,11 @@ For a more comprehensive list of open-source projects using *pydantic* see the
 
 [Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand)
 : "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management using python type annotations, and it's the python type annotations that makes me really extra happy... It works automatically with all the IDE's you already have.*" --Michael Kennedy
+
+### Discussion of Pydantic
+
+Talks and videos discussing and teaching pydantic.
+
+[Python pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg)
+: a talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to pydantic and walking through the core features of pydantic.
+
