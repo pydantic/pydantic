@@ -58,6 +58,7 @@ markdown_extensions:
 - admonition
 - codehilite
 - extra
+- attr_list
 
 plugins:
 - search

@@ -117,15 +117,20 @@ Hundreds of organisations and packages are using *pydantic*, including:
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
 
-## Testimonials
+## Discussion of Pydantic
 
-[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand)
-: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management using python type annotations, and it's the python type annotations that makes me really extra happy... It works automatically with all the IDE's you already have.*" --Michael Kennedy
+Podcasts and videos discussing pydantic.
 
-### Discussion of Pydantic
+[Podcast.\_\_init\_\_](https://www.pythonpodcast.com/pydantic-data-validation-episode-263/){target=_blank}
+: Discussion about where *pydantic* came from and ideas for where it might go next with 
+  Samuel Colvin the creator of pydantic.
 
-Talks and videos discussing and teaching pydantic.
+[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand){target=_blank}
+: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management 
+  using python type annotations, and it's the python type annotations that makes me really extra happy... It works 
+  automatically with all the IDE's you already have.*" --Michael Kennedy
 
-[Python pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg)
-: a talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to pydantic and walking through the core features of pydantic.
+[Python pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
+: a talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to pydantic and walking 
+  through the core features of pydantic.
 
