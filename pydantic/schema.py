@@ -404,7 +404,7 @@ def field_type_schema(
 
         f_schema = {
             'type': 'array',
-            'items': {"items": [key_schema, value_schema], "maxItems": 2, "minItems": 2, "type": "array"},
+            'items': {'items': [key_schema, value_schema], 'maxItems': 2, 'minItems': 2, 'type': 'array'},
         }
 
     elif field.shape == SHAPE_MAPPING:

@@ -1869,7 +1869,7 @@ def test_frozen_set():
 
 def test_ordered_dict():
     class Model(BaseModel):
-        a: OrderedDictTyped[int, str] = OrderedDict([[1, "hi"]])
+        a: OrderedDictTyped[int, str] = OrderedDict([[1, 'hi']])
 
     assert Model.schema() == {
         'title': 'Model',
@@ -1877,7 +1877,7 @@ def test_ordered_dict():
         'properties': {
             'a': {
                 'title': 'A',
-                'default': OrderedDict([[1, "hi"]]),
+                'default': OrderedDict([[1, 'hi']]),
                 'type': 'array',
                 'items': {
                     'type': 'array',
