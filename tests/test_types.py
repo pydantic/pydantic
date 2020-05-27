@@ -17,6 +17,7 @@ from typing import (
     MutableSet,
     NewType,
     Optional,
+    OrderedDict as OrderedDictTyping,
     Pattern,
     Sequence,
     Set,
@@ -641,6 +642,26 @@ def test_ordered_dict():
     assert Model(v=OrderedDict([(1, 10), (2, 20)])).v == OrderedDict([(1, 10), (2, 20)])
     assert Model(v={1: 10, 2: 20}).v in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
     assert Model(v=[(1, 2), (3, 4)]).v == OrderedDict([(1, 2), (3, 4)])
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[1, 2, 3])
+    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
+
+
+def test_typed_ordered_dict():
+    class Model(BaseModel):
+        v: OrderedDictTyping[int, List[int]]
+
+    # Test takes in three forms
+    assert Model(v=OrderedDict([(1, [10]), (2, [20])])).v == OrderedDict([(1, [10]), (2, [20])])
+    assert Model(v={1: [10], 2: [20]}).v in (OrderedDict([(1, [10]), (2, [20])]), OrderedDict([(2, [20]), (1, [10])]))
+    assert Model(v=[(1, [2]), (3, [4])]).v == OrderedDict([(1, [2]), (3, [4])])
+
+    # test handles sub types
+    assert Model(v=[(1, (2,))]).v == OrderedDict([(1, [2])])
+
+    # Test it returns orderedDict
+    assert isinstance(Model(v=[]).v, OrderedDict)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, 3])
