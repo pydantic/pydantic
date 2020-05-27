@@ -3,7 +3,7 @@ import os
 import re
 import sys
 import uuid
-from collections import OrderedDict
+from collections import OrderedDict as OrderedDictCollection
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -17,7 +17,7 @@ from typing import (
     MutableSet,
     NewType,
     Optional,
-    OrderedDict as OrderedDictTyping,
+    OrderedDict,
     Pattern,
     Sequence,
     Set,
@@ -637,7 +637,7 @@ def test_list_fails(value):
 
 def test_ordered_dict():
     class Model(BaseModel):
-        v: OrderedDict
+        v: OrderedDictCollection
 
     assert Model(v=OrderedDict([(1, 10), (2, 20)])).v == OrderedDict([(1, 10), (2, 20)])
     assert Model(v={1: 10, 2: 20}).v in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
@@ -650,7 +650,7 @@ def test_ordered_dict():
 
 def test_typed_ordered_dict():
     class Model(BaseModel):
-        v: OrderedDictTyping[int, List[int]]
+        v: OrderedDict[int, List[int]]
 
     # Test takes in three forms
     assert Model(v=OrderedDict([(1, [10]), (2, [20])])).v == OrderedDict([(1, [10]), (2, [20])])
