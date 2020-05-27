@@ -6,7 +6,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import List
+from typing import List, OrderedDict
 from uuid import UUID
 
 import pytest
@@ -84,11 +84,12 @@ def test_model_encoding():
         b: bytes
         c: Decimal
         d: ModelA
+        e: OrderedDict[int, int]
 
-    m = Model(a=10.2, b='foobar', c=10.2, d={'x': 123, 'y': '123'})
-    assert m.dict() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}}
-    assert m.json() == '{"a": 10.2, "b": "foobar", "c": 10.2, "d": {"x": 123, "y": "123"}}'
-    assert m.json(exclude={'b'}) == '{"a": 10.2, "c": 10.2, "d": {"x": 123, "y": "123"}}'
+    m = Model(a=10.2, b='foobar', c=10.2, d={'x': 123, 'y': '123'}, e=[[1, 2]])
+    assert m.dict() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}, 'e': [(1, 2)]}
+    assert m.json() == '{"a": 10.2, "b": "foobar", "c": 10.2, "d": {"x": 123, "y": "123"}, "e": [[1, 2]]}'
+    assert m.json(exclude={'b'}) == '{"a": 10.2, "c": 10.2, "d": {"x": 123, "y": "123"}, "e": [[1, 2]]}'
 
 
 def test_subclass_encoding():
