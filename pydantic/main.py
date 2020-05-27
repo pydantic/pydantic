@@ -2,6 +2,7 @@ import json
 import sys
 import warnings
 from abc import ABCMeta
+from collections import OrderedDict
 from copy import deepcopy
 from enum import Enum
 from functools import partial
@@ -619,6 +620,36 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         value_exclude = ValueItems(v, exclude) if exclude else None
         value_include = ValueItems(v, include) if include else None
+
+        # Return a list of lists, so that when this ends up being serialized into
+        # JSON it stays ordered
+        # If we had a way to override how the OrderedDict class is serialized, we could
+        # instead just return that, but we don't with Python's built in JSON serializer
+        # or with orjson
+        # Alternatively, we could walk the objects again before passing to the JSON serializer
+        # to pre-process the, which is probably the better thing to do long term, but a bigger
+        # change.
+        # If we do this, remove this conditional, and use the `v.__class__` trick below
+        # on the dict constructor.
+        if isinstance(v, OrderedDict):
+            return [
+                (
+                    k_,
+                    cls._get_value(
+                        v_,
+                        to_dict=to_dict,
+                        by_alias=by_alias,
+                        exclude_unset=exclude_unset,
+                        exclude_defaults=exclude_defaults,
+                        include=value_include and value_include.for_element(k_),
+                        exclude=value_exclude and value_exclude.for_element(k_),
+                        exclude_none=exclude_none,
+                    ),
+                )
+                for k_, v_ in v.items()
+                if (not value_exclude or not value_exclude.is_excluded(k_))
+                and (not value_include or value_include.is_included(k_))
+            ]
 
         if isinstance(v, dict):
             return {
