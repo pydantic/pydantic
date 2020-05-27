@@ -1,5 +1,6 @@
 import warnings
-from collections.abc import Iterable as CollectionsIterable
+from collections import OrderedDict
+from collections.abc import Iterable as CollectionsIterable, MutableMapping
 from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
@@ -199,6 +200,7 @@ SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
 SHAPE_ITERABLE = 9
 SHAPE_GENERIC = 10
+SHAPE_ORDERED_DICT = 11
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -458,6 +460,10 @@ class ModelField(Representation):
         elif issubclass(origin, FrozenSet):
             self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_FROZENSET
+        elif issubclass(origin, OrderedDict):
+            self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name, for_keys=True)
+            self.type_ = self.type_.__args__[1]
+            self.shape = SHAPE_ORDERED_DICT
         elif issubclass(origin, Sequence):
             self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_SEQUENCE
@@ -547,8 +553,10 @@ class ModelField(Representation):
 
         if self.shape == SHAPE_SINGLETON:
             v, errors = self._validate_singleton(v, values, loc, cls)
+        elif self.shape == SHAPE_ORDERED_DICT:
+            v, errors = self._validate_mapping(v, values, loc, cls, OrderedDict())
         elif self.shape == SHAPE_MAPPING:
-            v, errors = self._validate_mapping(v, values, loc, cls)
+            v, errors = self._validate_mapping(v, values, loc, cls, {})
         elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
         elif self.shape == SHAPE_ITERABLE:
@@ -660,7 +668,7 @@ class ModelField(Representation):
             return tuple(result), None
 
     def _validate_mapping(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], result: MutableMapping
     ) -> 'ValidateReturn':
         try:
             v_iter = dict_validator(v)
@@ -668,7 +676,7 @@ class ModelField(Representation):
             return v, ErrorWrapper(exc, loc)
 
         loc = loc if isinstance(loc, tuple) else (loc,)
-        result, errors = {}, []
+        errors = []
         for k, v_ in v_iter.items():
             v_loc = *loc, '__key__'
             key_result, key_errors = self.key_field.validate(k, values, loc=v_loc, cls=cls)  # type: ignore
@@ -737,6 +745,8 @@ class ModelField(Representation):
         # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
         if self.shape == SHAPE_MAPPING:
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
+        elif self.shape == SHAPE_ORDERED_DICT:
+            t = f'OrderedDict[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:
             t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
         elif self.shape == SHAPE_GENERIC:

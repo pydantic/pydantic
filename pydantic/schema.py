@@ -30,6 +30,7 @@ from .fields import (
     SHAPE_ITERABLE,
     SHAPE_LIST,
     SHAPE_MAPPING,
+    SHAPE_ORDERED_DICT,
     SHAPE_SEQUENCE,
     SHAPE_SET,
     SHAPE_SINGLETON,
@@ -382,6 +383,29 @@ def field_type_schema(
         f_schema = {'type': 'array', 'items': items_schema}
         if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
             f_schema['uniqueItems'] = True
+
+    elif field.shape == SHAPE_ORDERED_DICT:
+        key_field = cast(ModelField, field.key_field)
+        key_schema, f_definitions, f_nested_models = field_singleton_schema(
+            key_field,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            known_models=known_models,
+        )
+        definitions.update(f_definitions)
+        nested_models.update(f_nested_models)
+
+        value_schema, f_definitions, f_nested_models = field_singleton_schema(
+            field, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, known_models=known_models
+        )
+        definitions.update(f_definitions)
+        nested_models.update(f_nested_models)
+
+        f_schema = {
+            'type': 'array',
+            'items': {"items": [key_schema, value_schema], "maxItems": 2, "minItems": 2, "type": "array"},
+        }
 
     elif field.shape == SHAPE_MAPPING:
         f_schema = {'type': 'object'}
