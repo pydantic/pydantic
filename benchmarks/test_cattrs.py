@@ -3,7 +3,7 @@ from typing import List, Optional
 
 import attr
 import cattr
-from dateutil.parser import parse
+from ciso8601 import parse_datetime as parse
 
 
 class TestCAttrs:

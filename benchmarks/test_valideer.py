@@ -1,7 +1,8 @@
 import re
 import subprocess
 
-import dateutil.parser
+from ciso8601 import parse_datetime
+
 import valideer as V
 
 # valideer appears to provide no way of getting the installed version
@@ -23,7 +24,7 @@ class TestValideer:
             'contractor': V.Range(V.AdaptTo(int), min_value=1),
             'upstream_http_referrer': V.Nullable(V.String(max_length=1023)),
             '+grecaptcha_response': V.String(min_length=20, max_length=1000),
-            'last_updated': V.AdaptBy(dateutil.parser.parse),
+            'last_updated': V.AdaptBy(parse_datetime),
             'skills': V.Nullable(
                 [
                     {

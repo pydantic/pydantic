@@ -1,4 +1,4 @@
-from dateutil.parser import parse
+from ciso8601 import parse_datetime as parse
 import trafaret as t
 
 

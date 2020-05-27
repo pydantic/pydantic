@@ -1,6 +1,5 @@
 from cerberus import Validator, __version__
-from dateutil.parser import parse as datetime_parse
-
+from ciso8601 import parse_datetime
 
 class TestCerberus:
     package = 'cerberus'
@@ -20,7 +19,7 @@ class TestCerberus:
             'contractor': {'type': 'integer', 'min': 0, 'nullable': True, 'coerce': int},
             'upstream_http_referrer': {'type': 'string', 'maxlength': 1023, 'nullable': True},
             'grecaptcha_response': {'type': 'string', 'minlength': 20, 'maxlength': 1000, 'required': True},
-            'last_updated': {'type': 'datetime', 'nullable': True, 'coerce': datetime_parse},
+            'last_updated': {'type': 'datetime', 'nullable': True, 'coerce': parse_datetime},
             'skills': {
                 'type': 'list',
                 'default': [],

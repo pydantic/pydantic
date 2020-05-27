@@ -1,6 +1,6 @@
 # no versions since benchmarks should always run with the most recent version of each package
 
-python-dateutil
+ciso8601
 trafaret
 django
 djangorestframework

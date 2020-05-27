@@ -1,4 +1,4 @@
-from dateutil.parser import parse as parse_datetime
+from ciso8601 import parse_datetime
 import voluptuous as v
 from voluptuous.humanize import humanize_error
 
