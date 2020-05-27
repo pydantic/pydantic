@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from collections.abc import Iterable as CollectionsIterable, MutableMapping
+from collections.abc import Iterable as CollectionsIterable
 from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
@@ -12,6 +12,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    MutableMapping,
     Optional,
     Pattern,
     Sequence,
@@ -668,7 +669,12 @@ class ModelField(Representation):
             return tuple(result), None
 
     def _validate_mapping(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], result: MutableMapping
+        self,
+        v: Any,
+        values: Dict[str, Any],
+        loc: 'LocStr',
+        cls: Optional['ModelOrDc'],
+        result: MutableMapping[Any, Any],
     ) -> 'ValidateReturn':
         try:
             v_iter = dict_validator(v)
