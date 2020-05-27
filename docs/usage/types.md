@@ -84,6 +84,9 @@ with custom properties and validation.
 `typing.Dict`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
+`typing.OrderedDict`
+: Serialized as lists of lists, to preserve order. see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
 `typing.Set`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 

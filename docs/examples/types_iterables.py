@@ -1,4 +1,4 @@
-from typing import Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union, OrderedDict
 
 from pydantic import BaseModel
 
@@ -23,6 +23,8 @@ class Model(BaseModel):
 
     compound: Dict[Union[str, bytes], List[Set[int]]] = None
 
+    ordered_dict: OrderedDict[int, int] = None
+
 print(Model(simple_list=['1', '2', '3']).simple_list)
 print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
 
@@ -34,3 +36,5 @@ print(Model(tuple_of_different_types=[4, 3, 2, 1]).tuple_of_different_types)
 
 print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
 print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)
+
+print(Model(ordered_dict=((1, 2), (3, 4))).ordered_dict)
