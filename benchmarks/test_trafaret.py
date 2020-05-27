@@ -1,4 +1,4 @@
-from ciso8601 import parse_datetime as parse
+from datetime import datetime
 import trafaret as t
 
 
@@ -23,7 +23,7 @@ class TestTrafaret:
             t.Key('upstream_http_referrer', optional=True): t.Or(t.Null | t.String(max_length=1023)),
             t.Key('grecaptcha_response'): t.String(min_length=20, max_length=1000),
 
-            t.Key('last_updated', optional=True): t.Or(t.Null | t.String >> parse),
+            t.Key('last_updated', optional=True): t.Or(t.Null | t.String >> datetime.fromisoformat),
 
             t.Key('skills', default=[]): t.List(t.Dict({
                 'subject': t.String,

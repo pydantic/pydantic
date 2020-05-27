@@ -3,7 +3,6 @@ from typing import List, Optional
 
 import attr
 import cattr
-from ciso8601 import parse_datetime as parse
 
 
 class TestCAttrs:
@@ -33,7 +32,7 @@ class TestCAttrs:
                 raise ValueError()
             return i
 
-        cattr.register_structure_hook(datetime, lambda isostring, _: parse(isostring))
+        cattr.register_structure_hook(datetime, lambda isostring, _: datetime.fromisoformat(isostring))
         cattr.register_structure_hook(str, structure_str)
         cattr.register_structure_hook(int, structure_int)
         cattr.register_structure_hook(PositiveInt, structure_posint)

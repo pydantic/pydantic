@@ -1,7 +1,6 @@
 import re
 import subprocess
-
-from ciso8601 import parse_datetime
+from datetime import datetime
 
 import valideer as V
 
@@ -24,7 +23,7 @@ class TestValideer:
             'contractor': V.Range(V.AdaptTo(int), min_value=1),
             'upstream_http_referrer': V.Nullable(V.String(max_length=1023)),
             '+grecaptcha_response': V.String(min_length=20, max_length=1000),
-            'last_updated': V.AdaptBy(parse_datetime),
+            'last_updated': V.AdaptBy(datetime.fromisoformat),
             'skills': V.Nullable(
                 [
                     {

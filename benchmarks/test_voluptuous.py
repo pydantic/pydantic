@@ -1,4 +1,4 @@
-from ciso8601 import parse_datetime
+from datetime import datetime
 import voluptuous as v
 from voluptuous.humanize import humanize_error
 
@@ -27,7 +27,7 @@ class TestVoluptuous:
                 v.Optional('contractor'): v.Maybe(v.All(v.Coerce(int), v.Range(min=1))),
                 v.Optional('upstream_http_referrer'): v.Maybe(v.All(str, v.Length(max=1023))),
                 v.Required('grecaptcha_response'): v.All(str, v.Length(min=20, max=1000)),
-                v.Optional('last_updated'): v.Maybe(parse_datetime),
+                v.Optional('last_updated'): v.Maybe(datetime.fromisoformat),
                 v.Required('skills', default=[]): [
                     v.Schema(
                         {
