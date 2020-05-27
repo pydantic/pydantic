@@ -1,4 +1,14 @@
-from typing import Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union, OrderedDict
+from typing import (
+    Dict,
+    FrozenSet,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    OrderedDict,
+)
 
 from pydantic import BaseModel
 
