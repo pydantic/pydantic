@@ -2,7 +2,7 @@ import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, Generic, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, OrderedDict, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -1109,6 +1109,7 @@ class DisplayGen(Generic[T1, T2]):
         (List[Tuple[int, int]], 'List[Tuple[int, int]]'),
         (Dict[int, str], 'Mapping[int, str]'),
         (FrozenSet[int], 'FrozenSet[int]'),
+        (OrderedDict[int, int], 'OrderedDict[int, int]'),
         (Tuple[int, ...], 'Tuple[int, ...]'),
         (Optional[List[int]], 'Optional[List[int]]'),
         (dict, 'dict'),
