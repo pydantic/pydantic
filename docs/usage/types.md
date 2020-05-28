@@ -85,7 +85,7 @@ with custom properties and validation.
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
 `typing.OrderedDict`
-: Serialized as lists of lists, to preserve order. see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+: Serialized as lists of lists, to preserve order. Requires Python >= 3.7. see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
 `typing.Set`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation

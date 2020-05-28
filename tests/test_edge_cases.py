@@ -2,7 +2,7 @@ import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, Generic, List, Optional, OrderedDict, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -19,6 +19,11 @@ from pydantic import (
     validator,
 )
 from pydantic.fields import Field, Schema
+
+try:
+    from typing import OrderedDict
+except ImportError:
+    OrderedDict = None
 
 
 def test_str_bytes():
@@ -1109,12 +1114,14 @@ class DisplayGen(Generic[T1, T2]):
         (List[Tuple[int, int]], 'List[Tuple[int, int]]'),
         (Dict[int, str], 'Mapping[int, str]'),
         (FrozenSet[int], 'FrozenSet[int]'),
-        (OrderedDict[int, int], 'OrderedDict[int, int]'),
         (Tuple[int, ...], 'Tuple[int, ...]'),
         (Optional[List[int]], 'Optional[List[int]]'),
         (dict, 'dict'),
         (DisplayGen[bool, str], 'DisplayGen[bool, str]'),
-    ],
+    ]
+    + [(OrderedDict[int, int], 'OrderedDict[int, int]')]
+    if OrderedDict
+    else [],
 )
 def test_field_type_display(type_, expected):
     class Model(BaseModel):

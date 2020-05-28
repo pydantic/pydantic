@@ -3,7 +3,7 @@ import os
 import re
 import sys
 import uuid
-from collections import OrderedDict as OrderedDictCollection
+from collections import OrderedDict as OrderedDictCollections
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -637,35 +637,48 @@ def test_list_fails(value):
 
 def test_ordered_dict():
     class Model(BaseModel):
-        v: OrderedDictCollection
+        v: OrderedDictCollections
 
-    assert Model(v=OrderedDict([(1, 10), (2, 20)])).v == OrderedDict([(1, 10), (2, 20)])
-    assert Model(v={1: 10, 2: 20}).v in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
-    assert Model(v=[(1, 2), (3, 4)]).v == OrderedDict([(1, 2), (3, 4)])
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v=[1, 2, 3])
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
-
-
-def test_typed_ordered_dict():
-    class Model(BaseModel):
-        v: OrderedDict[int, List[int]]
-
-    # Test takes in three forms
-    assert Model(v=OrderedDict([(1, [10]), (2, [20])])).v == OrderedDict([(1, [10]), (2, [20])])
-    assert Model(v={1: [10], 2: [20]}).v in (OrderedDict([(1, [10]), (2, [20])]), OrderedDict([(2, [20]), (1, [10])]))
-    assert Model(v=[(1, [2]), (3, [4])]).v == OrderedDict([(1, [2]), (3, [4])])
-
-    # test handles sub types
-    assert Model(v=[(1, (2,))]).v == OrderedDict([(1, [2])])
+    assert Model(v=OrderedDictCollections([(1, 10), (2, 20)])).v == OrderedDictCollections([(1, 10), (2, 20)])
+    assert Model(v={1: 10, 2: 20}).v in (
+        OrderedDictCollections([(1, 10), (2, 20)]),
+        OrderedDictCollections([(2, 20), (1, 10)]),
+    )
+    assert Model(v=[(1, 2), (3, 4)]).v == OrderedDictCollections([(1, 2), (3, 4)])
 
     # Test it returns orderedDict
-    assert isinstance(Model(v=[]).v, OrderedDict)
+    assert isinstance(Model(v=[]).v, OrderedDictCollections)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, 3])
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
+
+
+if OrderedDict:
+
+    def test_typed_ordered_dict():
+        class Model(BaseModel):
+            v: OrderedDict[int, List[int]]
+
+        # Test takes in three forms
+        assert Model(v=OrderedDict([(1, [10]), (2, [20])])).v == OrderedDict([(1, [10]), (2, [20])])
+        assert Model(v={1: [10], 2: [20]}).v in (
+            OrderedDict([(1, [10]), (2, [20])]),
+            OrderedDict([(2, [20]), (1, [10])]),
+        )
+        assert Model(v=[(1, [2]), (3, [4])]).v == OrderedDict([(1, [2]), (3, [4])])
+
+        # test handles sub types
+        assert Model(v=[(1, (2,))]).v == OrderedDict([(1, [2])])
+
+        # Test it returns orderedDict
+        assert isinstance(Model(v=[]).v, OrderedDict)
+
+        with pytest.raises(ValidationError) as exc_info:
+            Model(v=[1, 2, 3])
+        assert exc_info.value.errors() == [
+            {'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}
+        ]
 
 
 @pytest.mark.parametrize(

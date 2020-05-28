@@ -1,12 +1,13 @@
 import datetime
 import json
 import sys
+from collections import OrderedDict as OrderedDictCollections
 from dataclasses import dataclass as vanilla_dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import List, OrderedDict
+from typing import List
 from uuid import UUID
 
 import pytest
@@ -16,6 +17,11 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
+
+try:
+    from typing import OrderedDict
+except ImportError:
+    OrderedDict = None
 
 
 class MyEnum(Enum):
@@ -84,7 +90,7 @@ def test_model_encoding():
         b: bytes
         c: Decimal
         d: ModelA
-        e: OrderedDict[int, int]
+        e: (OrderedDict[int, int] if OrderedDict else OrderedDictCollections)
 
     m = Model(a=10.2, b='foobar', c=10.2, d={'x': 123, 'y': '123'}, e=[[1, 2]])
     assert m.dict() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}, 'e': [(1, 2)]}
