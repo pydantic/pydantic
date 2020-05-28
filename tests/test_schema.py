@@ -2,7 +2,7 @@ import math
 import os
 import sys
 import tempfile
-from collections import OrderedDict
+from collections import OrderedDict as OrderedDictCollections
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -58,6 +58,12 @@ from pydantic.types import (
     constr,
 )
 from pydantic.typing import Literal
+
+try:
+    from typing import OrderedDict
+except ImportError:
+    OrderedDict = None
+
 
 try:
     import email_validator
@@ -1854,27 +1860,29 @@ def test_frozen_set():
     }
 
 
-def test_ordered_dict():
-    class Model(BaseModel):
-        a: OrderedDict = OrderedDict([[1, 'hi']])
+if OrderedDict:
 
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'a': {
-                'title': 'A',
-                'default': OrderedDict([[1, 'hi']]),
-                'type': 'array',
-                'items': {
+    def test_typed_ordered_dict():
+        class Model(BaseModel):
+            a: OrderedDict[int, str] = OrderedDictCollections([[1, 'hi']])
+
+        assert Model.schema() == {
+            'title': 'Model',
+            'type': 'object',
+            'properties': {
+                'a': {
+                    'title': 'A',
+                    'default': OrderedDictCollections([[1, 'hi']]),
                     'type': 'array',
-                    'items': [{'type': 'integer'}, {'type': 'string'}],
-                    'minItems': 2,
-                    'maxItems': 2,
-                },
-            }
-        },
-    }
+                    'items': {
+                        'type': 'array',
+                        'items': [{'type': 'integer'}, {'type': 'string'}],
+                        'minItems': 2,
+                        'maxItems': 2,
+                    },
+                }
+            },
+        }
 
 
 def test_iterable():
