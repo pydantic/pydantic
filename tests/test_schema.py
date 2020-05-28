@@ -2,12 +2,13 @@ import math
 import os
 import sys
 import tempfile
+from collections import OrderedDict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NewType, Optional, OrderedDict, Set, Tuple, Union
+from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NewType, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
@@ -1855,7 +1856,7 @@ def test_frozen_set():
 
 def test_ordered_dict():
     class Model(BaseModel):
-        a: OrderedDict[int, str] = OrderedDict([[1, 'hi']])
+        a: OrderedDict = OrderedDict([[1, 'hi']])
 
     assert Model.schema() == {
         'title': 'Model',

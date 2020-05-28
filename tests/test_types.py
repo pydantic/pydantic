@@ -17,7 +17,6 @@ from typing import (
     MutableSet,
     NewType,
     Optional,
-    OrderedDict,
     Pattern,
     Sequence,
     Set,
@@ -62,6 +61,11 @@ from pydantic import (
     errors,
     validator,
 )
+
+try:
+    from typing import OrderedDict
+except ImportError:
+    OrderedDict = None
 
 try:
     import email_validator
