@@ -105,8 +105,11 @@ def null_missing_email():
 
 
 def rand_date():
-    r = random.randrange
-    return f'{r(1900, 2020)}-{r(0, 12)}-{r(0, 32)}T{r(0, 24)}:{r(0, 60)}:{r(0, 60)}'
+    ts = random.randrange(
+        datetime(1900, 1, 1).timestamp(),
+        datetime(2021, 1, 1).timestamp(),
+    )
+    return datetime.fromtimestamp(ts).isoformat()
 
 
 def remove_missing(d):
