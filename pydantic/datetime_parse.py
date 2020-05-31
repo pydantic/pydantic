@@ -15,10 +15,16 @@ Changed to:
 * support parsing unix timestamps for dates and datetimes
 """
 import re
+import sys
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Optional, Union
 
 from . import errors
+
+if sys.version_info < (3, 7):
+    from backports.datetime_fromisoformat import MonkeyPatch
+
+    MonkeyPatch.patch_fromisoformat()
 
 date_re = re.compile(r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$')
 

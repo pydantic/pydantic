@@ -125,7 +125,8 @@ setup(
     python_requires='>=3.6',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html
     install_requires=[
-        'dataclasses>=0.6;python_version<"3.7"'
+        'dataclasses>=0.6;python_version<"3.7"',
+        'backports-datetime-fromisoformat>=1.0.0;python_version<"3.7"',
     ],
     extras_require={
         'email': ['email-validator>=1.0.3'],
