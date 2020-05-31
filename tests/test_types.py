@@ -454,7 +454,7 @@ class DatetimeModel(BaseModel):
 
 
 def test_datetime_successful():
-    m = DatetimeModel(dt='2017-10-5T19:47:07', date_=1_494_012_000, time_='10:20:30.400', duration='15:30.0001')
+    m = DatetimeModel(dt='2017-10-05T19:47:07', date_=1_494_012_000, time_='10:20:30.400', duration='15:30.0001')
     assert m.dt == datetime(2017, 10, 5, 19, 47, 7)
     assert m.date_ == date(2017, 5, 5)
     assert m.time_ == time(10, 20, 30, 400_000)
@@ -463,7 +463,7 @@ def test_datetime_successful():
 
 def test_datetime_errors():
     with pytest.raises(ValueError) as exc_info:
-        DatetimeModel(dt='2017-13-5T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001 broken')
+        DatetimeModel(dt='2017-13-05T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001 brake')
     assert exc_info.value.errors() == [
         {'loc': ('dt',), 'msg': 'invalid datetime format', 'type': 'value_error.datetime'},
         {'loc': ('date_',), 'msg': 'invalid date format', 'type': 'value_error.date'},

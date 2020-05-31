@@ -16,7 +16,7 @@ Changed to:
 """
 import re
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Dict, Union
+from typing import Optional, Union
 
 from . import errors
 
@@ -24,13 +24,6 @@ date_re = re.compile(r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$')
 
 time_re = re.compile(
     r'(?P<hour>\d{1,2}):(?P<minute>\d{1,2})(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
-)
-
-datetime_re = re.compile(
-    r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})'
-    r'[T ](?P<hour>\d{1,2}):(?P<minute>\d{1,2})'
-    r'(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
-    r'(?P<tzinfo>Z|[+-]\d{2}(?::?\d{2})?)?$'
 )
 
 standard_duration_re = re.compile(
@@ -158,8 +151,7 @@ def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
     This function supports time zone offsets. When the input contains one,
     the output uses a timezone with a fixed offset from UTC.
 
-    Raise ValueError if the input is well formatted but not a valid datetime.
-    Raise ValueError if the input isn't well formatted.
+    Raise DateTimeError for invalid values.
     """
     if isinstance(value, datetime):
         return value
@@ -168,36 +160,24 @@ def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
     if number is not None:
         return from_unix_seconds(number)
 
-    if isinstance(value, bytes):
-        value = value.decode()
+    if value.__class__ is bytes:
+        value = value.decode()  # type: ignore
 
-    match = datetime_re.match(value)  # type: ignore
-    if match is None:
-        raise errors.DateTimeError()
-
-    kw = match.groupdict()
-    if kw['microsecond']:
-        kw['microsecond'] = kw['microsecond'].ljust(6, '0')
-
-    tzinfo_str = kw.pop('tzinfo')
-    if tzinfo_str == 'Z':
-        tzinfo = timezone.utc
-    elif tzinfo_str is not None:
-        offset_mins = int(tzinfo_str[-2:]) if len(tzinfo_str) > 3 else 0
-        offset = 60 * int(tzinfo_str[1:3]) + offset_mins
-        if tzinfo_str[0] == '-':
-            offset = -offset
-        tzinfo = timezone(timedelta(minutes=offset))
+    if value[-1] == 'Z':  # type: ignore
+        change_tz: Optional[timezone] = timezone.utc
+        value = value[:-1]  # type: ignore
     else:
-        tzinfo = None
-
-    kw_: Dict[str, Union[int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
-    kw_['tzinfo'] = tzinfo
+        change_tz = None
 
     try:
-        return datetime(**kw_)  # type: ignore
-    except ValueError:
-        raise errors.DateTimeError()
+        dt = datetime.fromisoformat(value)  # type: ignore
+    except ValueError as e:
+        raise errors.DateTimeError() from e
+    else:
+        if change_tz is None:
+            return dt
+        else:
+            return dt.replace(tzinfo=change_tz)
 
 
 def parse_duration(value: StrBytesIntFloat) -> timedelta:
