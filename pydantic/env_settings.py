@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 
 from .fields import ModelField
-from .main import BaseModel, Extra
+from .main import BaseConfig, BaseModel, Extra
 from .typing import display_as_type
 from .utils import deep_update, sequence_like
 
@@ -65,7 +65,7 @@ class BaseSettings(BaseModel):
             d[field.alias] = env_val
         return d
 
-    class Config(BaseModel.Config):
+    class Config(BaseConfig):
         env_prefix = ''
         env_file = None
         validate_all = True
