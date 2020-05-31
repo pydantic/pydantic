@@ -145,7 +145,7 @@ with custom properties and validation.
   see [Pydantic Types](#pydantic-types) for other more strict path types
 
 `uuid.UUID`
-: strings and bytes (converted to strings) are passed to `UUID(v)`;
+: strings and bytes (converted to strings) are passed to `UUID(v)`, with a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`;
   see [Pydantic Types](#pydantic-types) for other stricter UUID types
 
 `ByteSize`
