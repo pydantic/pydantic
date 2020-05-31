@@ -431,6 +431,23 @@ def test_default_factory_field():
     assert fields['aliases'].default == {'John': 'Joey'}
 
 
+def test_default_factory_singleton_field():
+    class MySingleton:
+        pass
+
+    class MyConfig:
+        arbitrary_types_allowed = True
+
+    MY_SINGLETON = MySingleton()
+
+    @pydantic.dataclasses.dataclass(config=MyConfig)
+    class Foo:
+        singleton: MySingleton = dataclasses.field(default_factory=lambda: MY_SINGLETON)
+
+    # Returning a singleton from a default_factory is supported
+    assert Foo().singleton is Foo().singleton
+
+
 def test_schema():
     @pydantic.dataclasses.dataclass
     class User:

@@ -132,6 +132,22 @@ The example here uses SQLAlchemy, but the same approach should work for any ORM.
 ```
 _(This script is complete, it should run "as is")_
 
+### Reserved names
+
+You may want to name a Column after a reserved SQLAlchemy field. In that case, Field aliases will be
+convenient:
+
+```py
+{!.tmp_examples/models_orm_mode_reserved_name.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! note
+    The example above works because aliases have priority over field names for
+    field population. Accessing `SQLModel`'s `metadata` attribute would lead to a `ValidationError`.
+
+### Recursive ORM models
+
 ORM instances will be parsed with `from_orm` recursively as well as at the top level.
 
 Here a vanilla class is used to demonstrate the principle, but any ORM class could be used instead.

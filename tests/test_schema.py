@@ -20,6 +20,7 @@ from pydantic.schema import (
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
+    model_process_schema,
     model_schema,
     schema,
 )
@@ -205,14 +206,19 @@ def test_choices():
         spam: SpamEnum = Field(None)
 
     assert Model.schema() == {
-        'type': 'object',
         'title': 'Model',
+        'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'enum': ['f', 'b']},
-            'bar': {'type': 'integer', 'title': 'Bar', 'enum': [1, 2]},
-            'spam': {'type': 'string', 'title': 'Spam', 'enum': ['f', 'b']},
+            'foo': {'$ref': '#/definitions/FooEnum'},
+            'bar': {'$ref': '#/definitions/BarEnum'},
+            'spam': {'$ref': '#/definitions/SpamEnum'},
         },
         'required': ['foo', 'bar'],
+        'definitions': {
+            'FooEnum': {'title': 'FooEnum', 'description': 'An enumeration.', 'enum': ['f', 'b']},
+            'BarEnum': {'title': 'BarEnum', 'description': 'An enumeration.', 'type': 'integer', 'enum': [1, 2]},
+            'SpamEnum': {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']},
+        },
     }
 
 
@@ -1769,6 +1775,8 @@ def test_dataclass():
 
 def test_schema_attributes():
     class ExampleEnum(Enum):
+        """This is a test description."""
+
         gt = 'GT'
         lt = 'LT'
         ge = 'GE'
@@ -1783,9 +1791,26 @@ def test_schema_attributes():
     assert Example.schema() == {
         'title': 'Example',
         'type': 'object',
-        'properties': {'example': {'title': 'Example', 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE']}},
+        'properties': {'example': {'$ref': '#/definitions/ExampleEnum'}},
         'required': ['example'],
+        'definitions': {
+            'ExampleEnum': {
+                'title': 'ExampleEnum',
+                'description': 'This is a test description.',
+                'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE'],
+            }
+        },
     }
+
+
+def test_model_process_schema_enum():
+    class SpamEnum(str, Enum):
+        foo = 'f'
+        bar = 'b'
+
+    model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
+    print(model_schema)
+    assert model_schema == {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']}
 
 
 def test_path_modify_schema():

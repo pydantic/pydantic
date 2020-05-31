@@ -1,5 +1,6 @@
 from pydantic import BaseSettings
 
+
 class Settings(BaseSettings):
     redis_host = 'localhost'
 

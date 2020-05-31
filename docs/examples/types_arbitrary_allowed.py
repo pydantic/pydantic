@@ -1,9 +1,11 @@
 from pydantic import BaseModel, ValidationError
 
+
 # This is not a pydantic model, it's an arbitrary class
 class Pet:
     def __init__(self, name: str):
         self.name = name
+
 
 class Model(BaseModel):
     pet: Pet
@@ -11,6 +13,7 @@ class Model(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
 
 pet = Pet(name='Hedwig')
 # A simple check of instance type is used to validate the data

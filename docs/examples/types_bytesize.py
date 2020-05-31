@@ -1,7 +1,9 @@
 from pydantic import BaseModel, ByteSize
 
+
 class MyModel(BaseModel):
     size: ByteSize
+
 
 print(MyModel(size=52000).size)
 print(MyModel(size='3000 KiB').size)

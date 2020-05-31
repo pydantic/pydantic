@@ -3,21 +3,26 @@ from typing import List
 
 from pydantic import BaseModel, SecretStr
 
+
 class Country(BaseModel):
     name: str
     phone_code: int
+
 
 class Address(BaseModel):
     post_code: int
     country: Country
 
+
 class CardDetails(BaseModel):
     number: SecretStr
     expires: datetime.date
 
+
 class Hobby(BaseModel):
     name: str
     info: str
+
 
 class User(BaseModel):
     first_name: str
@@ -25,6 +30,7 @@ class User(BaseModel):
     address: Address
     card_details: CardDetails
     hobbies: List[Hobby]
+
 
 user = User(
     first_name='John',
@@ -42,9 +48,8 @@ user = User(
     ),
     hobbies=[
         Hobby(name='Programming', info='Writing code and stuff'),
-        Hobby(name='Gaming', info='Hell Yeah!!!')
-    ]
-
+        Hobby(name='Gaming', info='Hell Yeah!!!'),
+    ],
 )
 
 exclude_keys = {
@@ -58,7 +63,7 @@ exclude_keys = {
 include_keys = {
     'first_name': ...,
     'address': {'country': {'name'}},
-    'hobbies': {0: ..., -1: {'name'}}
+    'hobbies': {0: ..., -1: {'name'}},
 }
 
 # would be the same as user.dict(exclude=exclude_keys) in this case:

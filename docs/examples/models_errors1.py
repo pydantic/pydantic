@@ -1,9 +1,11 @@
 from typing import List
 from pydantic import BaseModel, ValidationError, conint
 
+
 class Location(BaseModel):
     lat = 0.1
     lng = 10.1
+
 
 class Model(BaseModel):
     is_required: float
@@ -11,6 +13,7 @@ class Model(BaseModel):
     list_of_ints: List[int] = None
     a_float: float = None
     recursive_model: Location = None
+
 
 data = dict(
     list_of_ints=['1', 2, 'bad'],
