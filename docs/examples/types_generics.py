@@ -5,6 +5,7 @@ from typing import TypeVar, Generic
 AgedType = TypeVar('AgedType')
 QualityType = TypeVar('QualityType')
 
+
 # This is not a pydantic model, it's an arbitrary generic class
 class TastingModel(Generic[AgedType, QualityType]):
     def __init__(self, name: str, aged: AgedType, quality: QualityType):
@@ -43,6 +44,7 @@ class TastingModel(Generic[AgedType, QualityType]):
         # Validation passed without errors, return the same instance received
         return v
 
+
 class Model(BaseModel):
     # for wine, "aged" is an int with years, "quality" is a float
     wine: TastingModel[int, float]
@@ -51,13 +53,14 @@ class Model(BaseModel):
     # for thing, "aged" is a Any, "quality" is Any
     thing: TastingModel
 
+
 model = Model(
     # This wine was aged for 20 years and has a quality of 85.6
     wine=TastingModel(name='Cabernet Sauvignon', aged=20, quality=85.6),
     # This cheese is aged (is mature) and has "Good" quality
     cheese=TastingModel(name='Gouda', aged=True, quality='Good'),
     # This Python thing has aged "Not much" and has a quality "Awesome"
-    thing=TastingModel(name='Python', aged='Not much', quality='Awesome')
+    thing=TastingModel(name='Python', aged='Not much', quality='Awesome'),
 )
 print(model)
 print(model.wine.aged)
@@ -74,7 +77,7 @@ try:
         cheese=TastingModel(name='Gouda', aged='yeah', quality=5),
         # For thing, no type parameters are declared, and we skipped validation
         # in those cases in the Assessment.validate() function
-        thing=TastingModel(name='Python', aged='Not much', quality='Awesome')
+        thing=TastingModel(name='Python', aged='Not much', quality='Awesome'),
     )
 except ValidationError as e:
     print(e)

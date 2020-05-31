@@ -2,9 +2,11 @@ from uuid import UUID
 from typing import Union
 from pydantic import BaseModel
 
+
 class User(BaseModel):
     id: Union[int, str, UUID]
     name: str
+
 
 user_01 = User(id=123, name='John Doe')
 print(user_01)

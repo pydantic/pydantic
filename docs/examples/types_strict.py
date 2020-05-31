@@ -1,17 +1,19 @@
-from pydantic import (
-    BaseModel, confloat,  StrictBool, StrictInt, ValidationError
-)
+from pydantic import BaseModel, StrictBool, StrictInt, ValidationError, confloat
+
 
 class StrictIntModel(BaseModel):
     strict_int: StrictInt
+
 
 try:
     StrictIntModel(strict_int=3.14159)
 except ValidationError as e:
     print(e)
 
+
 class ConstrainedFloatModel(BaseModel):
     constrained_float: confloat(strict=True, ge=0.0)
+
 
 try:
     ConstrainedFloatModel(constrained_float=3)
@@ -23,8 +25,10 @@ try:
 except ValidationError as e:
     print(e)
 
+
 class StrictBoolModel(BaseModel):
     strict_bool: StrictBool
+
 
 try:
     StrictBoolModel(strict_bool='False')

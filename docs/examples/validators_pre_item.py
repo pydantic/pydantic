@@ -1,6 +1,7 @@
 from typing import List
 from pydantic import BaseModel, ValidationError, validator
 
+
 class DemoModel(BaseModel):
     square_numbers: List[int] = []
     cube_numbers: List[int] = []
@@ -15,7 +16,7 @@ class DemoModel(BaseModel):
     @validator('cube_numbers', 'square_numbers')
     def check_sum(cls, v):
         if sum(v) > 42:
-            raise ValueError(f'sum of numbers greater than 42')
+            raise ValueError('sum of numbers greater than 42')
         return v
 
     @validator('square_numbers', each_item=True)
@@ -30,6 +31,7 @@ class DemoModel(BaseModel):
         assert v ** (1 / 3) % 1 == 0, f'{v} is not a cubed number'
         return v
 
+
 print(DemoModel(square_numbers=[1, 4, 9]))
 print(DemoModel(square_numbers='1|4|16'))
 print(DemoModel(square_numbers=[16], cube_numbers=[8, 27]))
@@ -42,4 +44,3 @@ try:
     DemoModel(cube_numbers=[27, 27])
 except ValidationError as e:
     print(e)
-

@@ -1,12 +1,19 @@
 from typing import Set
 
 from pydantic import (
-    BaseModel, BaseSettings, PyObject, RedisDsn, PostgresDsn, Field
+    BaseModel,
+    BaseSettings,
+    PyObject,
+    RedisDsn,
+    PostgresDsn,
+    Field,
 )
+
 
 class SubModel(BaseModel):
     foo = 'bar'
     apple = 1
+
 
 class Settings(BaseSettings):
     auth_key: str
@@ -35,5 +42,6 @@ class Settings(BaseSettings):
                 'env': ['service_redis_dsn', 'redis_url']
             }
         }
+
 
 print(Settings().dict())
