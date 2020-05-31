@@ -3,7 +3,7 @@ import warnings
 from pathlib import Path
 from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 
-from .fields import FieldInfo, ModelField
+from .fields import ModelField
 from .main import BaseModel, Extra
 from .typing import display_as_type
 from .utils import deep_update, sequence_like

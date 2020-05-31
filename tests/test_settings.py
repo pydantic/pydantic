@@ -229,7 +229,7 @@ def test_env_inheritance_config(env):
         class Config:
             env_prefix = 'prefix_'
             fields = {
-                'foobar': {'env': ['foobar_env'],},
+                'foobar': {'env': ['foobar_env']},
             }
 
     env.set('foobar_env', 'env value')
