@@ -281,6 +281,10 @@ For example, in the example above, if `_fields_set` was not provided,
 
 Pydantic supports the creation of generic models to make it easier to reuse a common model structure.
 
+!!! warning
+    Generic models are only supported with python `>=3.7`, this is because of numerous subtle changes in how
+    generics are implemented between python 3.6 and python 3.7.
+
 In order to declare a generic model, you perform the following steps:
 
 * Declare one or more `typing.TypeVar` instances to use to parameterize your model.
