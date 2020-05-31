@@ -3,7 +3,7 @@ import warnings
 from pathlib import Path
 from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 
-from .fields import ModelField
+from .fields import FieldInfo, ModelField
 from .main import BaseModel, Extra
 from .typing import display_as_type
 from .utils import deep_update, sequence_like
@@ -65,7 +65,7 @@ class BaseSettings(BaseModel):
             d[field.alias] = env_val
         return d
 
-    class Config:
+    class Config(BaseModel.Config):
         env_prefix = ''
         env_file = None
         validate_all = True
@@ -76,7 +76,9 @@ class BaseSettings(BaseModel):
         @classmethod
         def prepare_field(cls, field: ModelField) -> None:
             env_names: Union[List[str], AbstractSet[str]]
-            env = field.field_info.extra.get('env')
+            field_info_from_config = cls.get_field_info(field.name)
+
+            env = field_info_from_config.get('env') or field.field_info.extra.get('env')
             if env is None:
                 if field.has_alias:
                     warnings.warn(

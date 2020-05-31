@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 import pytest
 
@@ -219,6 +219,22 @@ def test_env_inheritance_field(env):
     assert SettingsParent(foobar='abc').foobar == 'abc'
     assert SettingsChild().foobar == 'child default'
     assert SettingsChild(foobar='abc').foobar == 'abc'
+
+
+def test_env_inheritance_config(env):
+    class Parent(BaseSettings):
+        foobar: Optional[str]
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+            fields = {
+                'foobar': {'env': ['foobar_env'],},
+            }
+
+    env.set('foobar_env', 'env value')
+
+    assert Child().foobar == 'env value'
 
 
 def test_env_invalid(env):
