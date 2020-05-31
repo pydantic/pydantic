@@ -222,6 +222,34 @@ def test_choices():
     }
 
 
+def test_enum_modify_schema():
+    class SpamEnum(str, Enum):
+        foo = 'f'
+        bar = 'b'
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema['tsEnumNames'] = list(e.name for e in cls)
+
+    class Model(BaseModel):
+        spam: SpamEnum = Field(None)
+
+    assert Model.schema() == {
+        'definitions': {
+            'SpamEnum': {
+                'description': 'An enumeration.',
+                'enum': ['f', 'b'],
+                'title': 'SpamEnum',
+                'tsEnumNames': ['foo', 'bar'],
+                'type': 'string',
+            }
+        },
+        'properties': {'spam': {'$ref': '#/definitions/SpamEnum'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_json_schema():
     class Model(BaseModel):
         a = b'foobar'

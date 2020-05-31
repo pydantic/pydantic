@@ -545,6 +545,10 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
 
     add_field_type_to_schema(enum, schema)
 
+    modify_schema = getattr(enum, '__modify_schema__', None)
+    if modify_schema:
+        modify_schema(schema)
+
     return schema
 
 
@@ -698,9 +702,9 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     else:
         add_field_type_to_schema(field_type, f_schema)
 
-    modify_schema = getattr(field_type, '__modify_schema__', None)
-    if modify_schema:
-        modify_schema(f_schema)
+        modify_schema = getattr(field_type, '__modify_schema__', None)
+        if modify_schema:
+            modify_schema(f_schema)
 
     if f_schema:
         return f_schema, definitions, nested_models
