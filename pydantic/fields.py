@@ -342,10 +342,15 @@ class ModelField(Representation):
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
 
-        # to prevent side effects by calling the default_factory for nothing, we only call it
-        # when we want to validate the default value i.e. when `validate_all` is set to True
-        if self.default_factory is not None and self.type_ is not None and not self.model_config.validate_all:
-            return
+        # To prevent side effects by calling the `default_factory` for nothing, we only call it
+        # when we want to validate the default value i.e. when `validate_all` is set to True.
+        if self.default_factory is not None:
+            if self.type_ is None:
+                raise errors_.ConfigError(
+                    f'you need to set the type of field {self.name!r} when using `default_factory`'
+                )
+            if not self.model_config.validate_all:
+                return
 
         default_value = self.get_default()
 
