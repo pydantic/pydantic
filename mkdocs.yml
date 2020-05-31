@@ -46,7 +46,7 @@ nav:
 - benchmarks.md
 - 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md
-- 'datamodel-code-generator': datamodel_code_generator.md
+- 'Code Generation': datamodel_code_generator.md
 - changelog.md
 
 markdown_extensions:
