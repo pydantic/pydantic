@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import Any, List, Optional
 from pydantic import BaseModel, Field, conint
 
+
 class Pet(BaseModel):
     name: Optional[str] = None
     age: Optional[int] = None
+
 
 class Person(BaseModel):
     first_name: str = Field(..., description="The person's first name.")
