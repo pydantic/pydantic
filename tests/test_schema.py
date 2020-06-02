@@ -1839,6 +1839,7 @@ def test_frozen_set():
         a: FrozenSet[int] = frozenset({1, 2, 3})
         b: FrozenSet = frozenset({1, 2, 3})
         c: frozenset = frozenset({1, 2, 3})
+        d: frozenset = ...
 
     print(Model.schema())
     assert Model.schema() == {
@@ -1854,7 +1855,9 @@ def test_frozen_set():
             },
             'b': {'title': 'B', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
             'c': {'title': 'C', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'd': {'title': 'D', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
+        'required': ['d'],
     }
 
 
