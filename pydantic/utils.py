@@ -10,6 +10,7 @@ from typing import (
     Generator,
     Iterator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -238,6 +239,28 @@ def unique_list(input_list: Union[List[T], Tuple[T, ...]]) -> List[T]:
     return result
 
 
+def update_normalized_all(
+    item: Union['AbstractSetIntStr', 'MappingIntStrAny'], all_items: Union['AbstractSetIntStr', 'MappingIntStrAny'],
+) -> Union['AbstractSetIntStr', 'MappingIntStrAny']:
+    if not item:
+        return all_items
+    if isinstance(item, dict) and isinstance(all_items, dict):
+        item.update({k: update_normalized_all(item[k], v) for k, v in all_items.items() if k in item})
+        item.update({k: v for k, v in all_items.items() if k not in item})
+        return item
+    if isinstance(item, set) and isinstance(all_items, set):
+        item.update(all_items)
+        return item
+    if isinstance(item, dict) and isinstance(all_items, set):
+        item.update({k: ... for k in all_items if k not in item})
+        return item
+    if isinstance(item, set) and isinstance(all_items, dict):
+        new_item = {k: ... for k in item}
+        new_item.update({k: v for k, v in all_items.items() if k not in item})
+        return new_item
+    return all_items  # pragma: no cover
+
+
 class PyObjectStr(str):
     """
     String class where repr doesn't include quotes. Useful with Representation when you want to return a string
@@ -375,7 +398,7 @@ class ValueItems(Representation):
             self._type: Type[Union[set, dict]]  # type: ignore
 
         # For further type checks speed-up
-        if isinstance(items, dict):
+        if isinstance(items, Mapping):
             self._type = dict
         elif isinstance(items, AbstractSet):
             self._type = set
@@ -383,13 +406,7 @@ class ValueItems(Representation):
             raise TypeError(f'Unexpected type of exclude value {items.__class__}')
 
         if isinstance(value, (list, tuple)):
-            try:
-                items = self._normalize_indexes(items, len(value))
-            except TypeError as e:
-                raise TypeError(
-                    'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
-                    'expected integer keys or keyword "__all__"'
-                ) from e
+            items = self._normalize_indexes(items, len(value))
 
         self._items = items
 
@@ -440,6 +457,11 @@ class ValueItems(Representation):
         >>> self._normalize_indexes({'__all__'}, 4)
         {0, 1, 2, 3}
         """
+        if any(not isinstance(i, int) and i != '__all__' for i in items):
+            raise TypeError(
+                'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
+                'expected integer keys or keyword "__all__"'
+            )
         if self._type is set:
             if '__all__' in items:
                 if items != {'__all__'}:
@@ -447,12 +469,26 @@ class ValueItems(Representation):
                 return {i for i in range(v_length)}
             return {v_length + i if i < 0 else i for i in items}
         else:
+            all_items = items.get('__all__')
+            for i, v in items.items():
+                if not (isinstance(v, Mapping) or isinstance(v, AbstractSet) or v is ...):
+                    raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
             normalized_items = {v_length + i if i < 0 else i: v for i, v in items.items() if i != '__all__'}
-            all_set = items.get('__all__')
-            if all_set:
+            if all_items:
+                default: Type[Union[set, dict]]  # type: ignore
+                if isinstance(all_items, Mapping):
+                    default = dict
+                elif isinstance(all_items, AbstractSet):
+                    default = set
+                else:
+                    default = ...
                 for i in range(v_length):
-                    normalized_items.setdefault(i, set()).update(all_set)
-
+                    if default is ...:
+                        normalized_items.setdefault(i, ...)
+                        continue
+                    normalized_item = normalized_items.setdefault(i, default())
+                    if normalized_item is not ...:
+                        normalized_items[i] = update_normalized_all(normalized_item, all_items)
             return normalized_items
 
     def __repr_args__(self) -> 'ReprArgs':

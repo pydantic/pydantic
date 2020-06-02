@@ -509,6 +509,132 @@ def test_advanced_value_exclude_include():
     }
 
 
+def test_advanced_exclude_nested_lists():
+    class SubSubModel(BaseModel):
+        i: int
+        j: int
+
+    class SubModel(BaseModel):
+        k: int
+        subsubs: List[SubSubModel]
+
+    class Model(BaseModel):
+        subs: List[SubModel]
+
+    m = Model(
+        subs=[
+            SubModel(k=1, subsubs=[SubSubModel(i=1, j=1), SubSubModel(i=2, j=2)]),
+            SubModel(k=2, subsubs=[SubSubModel(i=3, j=3)]),
+        ]
+    )
+
+    # Normal nested __all__
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{'j': 1}, {'j': 2}]}, {'k': 2, 'subsubs': [{'j': 3}]}]
+    }
+    # Merge sub dicts
+    assert m.dict(
+        exclude={'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}}
+    ) == {'subs': [{'k': 1, 'subsubs': [{}, {}]}, {'k': 2, 'subsubs': [{'j': 3}]}]}
+    # Merge sub sets
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}}) == {
+        'subs': [{'k': 1, 'subsubs': []}, {'k': 2, 'subsubs': []}]
+    }
+    # Merge sub dict-set
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{'j': 1}]}, {'k': 2, 'subsubs': [{'j': 3}]}]
+    }
+    # Different keys
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs'}, 0: {'k'}}}) == {'subs': [{}, {'k': 2}]}
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}}) == {'subs': [{}, {'k': 2}]}
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}}) == {'subs': [{}, {'k': 2}]}
+    # Nested different keys
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]
+    }
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]
+    }
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]
+    }
+    # Ignore __all__ for index with defined exclude.
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]
+    }
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}}) == {
+        'subs': [{'k': 2, 'subsubs': [{'i': 3}]}]
+    }
+    assert m.dict(exclude={'subs': {'__all__': ..., 0: {'subsubs'}}}) == {'subs': [{'k': 1}]}
+
+
+def test_advanced_include_nested_lists():
+    class SubSubModel(BaseModel):
+        i: int
+        j: int
+
+    class SubModel(BaseModel):
+        k: int
+        subsubs: List[SubSubModel]
+
+    class Model(BaseModel):
+        subs: List[SubModel]
+
+    m = Model(
+        subs=[
+            SubModel(k=1, subsubs=[SubSubModel(i=1, j=1), SubSubModel(i=2, j=2)]),
+            SubModel(k=2, subsubs=[SubSubModel(i=3, j=3)]),
+        ]
+    )
+
+    # Normal nested __all__
+    assert m.dict(include={'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}}) == {
+        'subs': [{'subsubs': [{'i': 1}, {'i': 2}]}, {'subsubs': [{'i': 3}]}]
+    }
+    # Merge sub dicts
+    assert m.dict(
+        include={'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}}
+    ) == {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]}
+    # Merge sub sets
+    assert m.dict(include={'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}}) == {
+        'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+    # Merge sub dict-set
+    assert m.dict(include={'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}}) == {
+        'subs': [{'subsubs': [{'i': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]
+    }
+    # Different keys
+    assert m.dict(include={'subs': {'__all__': {'subsubs'}, 0: {'k'}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+    assert m.dict(include={'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+    assert m.dict(include={'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+    # Nested different keys
+    assert m.dict(include={'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}}) == {
+        'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+    assert m.dict(include={'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}}) == {
+        'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+    assert m.dict(include={'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}}) == {
+        'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+    # Ignore __all__ for index with defined include.
+    assert m.dict(include={'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}}) == {
+        'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+    assert m.dict(include={'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}}) == {
+        'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]
+    }
+    assert m.dict(include={'subs': {'__all__': ..., 0: {'subsubs'}}}) == {
+        'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'k': 2, 'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+
+
 def test_field_set_ignore_extra():
     class Model(BaseModel):
         a: int
