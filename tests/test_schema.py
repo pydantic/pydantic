@@ -1841,8 +1841,6 @@ def test_frozen_set():
         c: frozenset = frozenset({1, 2, 3})
         d: frozenset = ...
 
-    print('test')
-
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
