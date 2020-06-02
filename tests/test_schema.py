@@ -1837,6 +1837,9 @@ def test_path_modify_schema():
 def test_frozen_set():
     class Model(BaseModel):
         a: FrozenSet[int] = frozenset({1, 2, 3})
+        b: FrozenSet = frozenset({1, 2, 3})
+        c: frozenset = frozenset({1, 2, 3})
+        d: frozenset = ...
 
     assert Model.schema() == {
         'title': 'Model',
@@ -1848,8 +1851,12 @@ def test_frozen_set():
                 'type': 'array',
                 'items': {'type': 'integer'},
                 'uniqueItems': True,
-            }
+            },
+            'b': {'title': 'B', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'd': {'title': 'D', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
+        'required': ['d'],
     }
 
 
