@@ -536,6 +536,12 @@ def test_advanced_exclude_nested_lists():
     assert m.dict(
         exclude={'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}}
     ) == {'subs': [{'k': 1, 'subsubs': [{}, {}]}, {'k': 2, 'subsubs': [{'j': 3}]}]}
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}}) == {
+        'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]
+    }
+    assert m.dict(exclude={'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}}) == {
+        'subs': [{'k': 1}, {'k': 2, 'subsubs': [{'i': 3}]}]
+    }
     # Merge sub sets
     assert m.dict(exclude={'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}}) == {
         'subs': [{'k': 1, 'subsubs': []}, {'k': 2, 'subsubs': []}]
@@ -595,6 +601,12 @@ def test_advanced_include_nested_lists():
     assert m.dict(
         include={'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}}
     ) == {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]}
+    assert m.dict(include={'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}}) == {
+        'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]
+    }
+    assert m.dict(include={'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}}) == {
+        'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]
+    }
     # Merge sub sets
     assert m.dict(include={'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}}) == {
         'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]

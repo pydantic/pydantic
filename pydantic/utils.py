@@ -245,20 +245,24 @@ def update_normalized_all(
     if not item:
         return all_items
     if isinstance(item, dict) and isinstance(all_items, dict):
+        item = dict(item)
         item.update({k: update_normalized_all(item[k], v) for k, v in all_items.items() if k in item})
         item.update({k: v for k, v in all_items.items() if k not in item})
         return item
     if isinstance(item, set) and isinstance(all_items, set):
+        item = set(item)
         item.update(all_items)
         return item
     if isinstance(item, dict) and isinstance(all_items, set):
+        item = dict(item)
         item.update({k: ... for k in all_items if k not in item})
         return item
     if isinstance(item, set) and isinstance(all_items, dict):
-        new_item = {k: ... for k in item}
-        new_item.update({k: v for k, v in all_items.items() if k not in item})
-        return new_item
-    return all_items  # pragma: no cover
+        item = {k: ... for k in item}
+        item.update({k: v for k, v in all_items.items() if k not in item})
+        return item
+    # Case when item or all_items is ... (in recursive calls).
+    return item
 
 
 class PyObjectStr(str):
