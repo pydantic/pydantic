@@ -99,7 +99,7 @@ validation occurs (and are provided with the raw input data), or `pre=False` (th
 they're called after field validation.
 
 Field validation will not occur if `pre=True` root validators raise an error. As with field validators,
-"post" (i.e. `pre=False`) root validators by default will be called even if field validation fails; this
+"post" (i.e. `pre=False`) root validators by default will be called even if prior validators fail; this
 behaviour can be changed by setting the `skip_on_failure=True` keyword argument to the validator.
 The `values` argument will be a dict containing the values which passed field validation and
 field defaults where applicable.
