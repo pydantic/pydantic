@@ -863,6 +863,26 @@ def test_root_list():
     assert m.__root__ == ['a']
 
 
+def test_encode_nested_root():
+    house_dict = {'pets': ['dog', 'cats']}
+
+    class Pets(BaseModel):
+        __root__: List[str]
+
+    class House(BaseModel):
+        pets: Pets
+
+    assert House(**house_dict).dict() == house_dict
+
+    class PetsDeep(BaseModel):
+        __root__: Pets
+
+    class HouseDeep(BaseModel):
+        pets: PetsDeep
+
+    assert HouseDeep(**house_dict).dict() == house_dict
+
+
 def test_root_failed():
     with pytest.raises(ValueError, match='__root__ cannot be mixed with other fields'):
 

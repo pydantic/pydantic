@@ -606,7 +606,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if isinstance(v, BaseModel):
             if to_dict:
-                return v.dict(
+                v_dict = v.dict(
                     by_alias=by_alias,
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
@@ -614,6 +614,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude=exclude,
                     exclude_none=exclude_none,
                 )
+                if '__root__' in v_dict:
+                    return v_dict['__root__']
+                return v_dict
             else:
                 return v.copy(include=include, exclude=exclude)
 
