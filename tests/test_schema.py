@@ -153,7 +153,7 @@ def test_sub_model():
         },
         'properties': {
             'a': {'type': 'integer', 'title': 'A'},
-            'b': {'anyOf': [{'$ref': '#/definitions/Foo'}, {'type': 'null'}]}
+            'b': {'anyOf': [{'$ref': '#/definitions/Foo'}, {'type': 'null'}]},
         },
         'required': ['a'],
     }
@@ -279,8 +279,9 @@ def test_optional():
         a: Optional[str]
 
     assert Model.schema() == {
-        'title': 'Model', 'type': 'object',
-        'properties': {'a': {'anyOf': [{'type': 'string'}, {'type': 'null'}], 'title': 'A'}}
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'anyOf': [{'type': 'string'}, {'type': 'null'}], 'title': 'A'}},
     }
 
 
@@ -497,11 +498,7 @@ def test_date_types(field_type, expected_schema):
         (NoneStr, {'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'null'}]}}}),
         (
             NoneBytes,
-            {
-                'properties': {
-                    'a': {'title': 'A', 'anyOf': [{'type': 'string', 'format': 'binary'}, {'type': 'null'}]}
-                }
-            }
+            {'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'string', 'format': 'binary'}, {'type': 'null'}]}}},
         ),
         (
             StrBytes,
@@ -518,9 +515,7 @@ def test_date_types(field_type, expected_schema):
                 'properties': {
                     'a': {
                         'title': 'A',
-                        'anyOf': [
-                            {'type': 'string'}, {'type': 'string', 'format': 'binary'}, {'type': 'null'}
-                        ]
+                        'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}, {'type': 'null'}],
                     }
                 }
             },
@@ -980,7 +975,7 @@ def test_schema_overrides():
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
-                'properties': {'c': {'anyOf': [{'$ref': '#/definitions/Bar'}, {'type': 'null'}]}}
+                'properties': {'c': {'anyOf': [{'$ref': '#/definitions/Bar'}, {'type': 'null'}]}},
             },
         },
         'properties': {'d': {'$ref': '#/definitions/Baz'}},
@@ -1633,7 +1628,7 @@ def test_model_with_extra_forbidden():
         (
             Optional[int],
             dict(gt=0),
-            {'title': 'A', 'exclusiveMinimum': 0, 'anyOf': [{'type': 'integer'}, {'type': 'null'}]}
+            {'title': 'A', 'exclusiveMinimum': 0, 'anyOf': [{'type': 'integer'}, {'type': 'null'}]},
         ),
         (
             Tuple[int, ...],
@@ -1743,9 +1738,10 @@ def test_conlist():
             'bar': {
                 'title': 'Bar',
                 'anyOf': [
-                    {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4}, {'type': 'null'}
-                ]
-            }
+                    {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4},
+                    {'type': 'null'},
+                ],
+            },
         },
         'required': ['foo'],
     }

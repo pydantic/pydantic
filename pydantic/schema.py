@@ -560,7 +560,7 @@ def field_singleton_sub_fields_schema(
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
     known_models: TypeModelSet,
-    allow_none: bool = False
+    allow_none: bool = False,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     This function is indirectly used by ``field_schema()``, you probably should be using that function.
@@ -678,7 +678,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             schema_overrides=schema_overrides,
             ref_prefix=ref_prefix,
             known_models=known_models,
-            allow_none=field.allow_none if field.shape == SHAPE_SINGLETON else False
+            allow_none=field.allow_none if field.shape == SHAPE_SINGLETON else False,
         )
     if field.type_ is Any or field.type_.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
