@@ -724,6 +724,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         field_type = field_type.__pydantic_model__
 
     if issubclass(field_type, BaseModel):
+        schema_ref: Dict[str, Any]
         model_name = model_name_map[field_type]
         if field_type not in known_models:
             sub_schema, sub_definitions, sub_nested_models = model_process_schema(
