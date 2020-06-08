@@ -151,7 +151,10 @@ def test_sub_model():
                 'required': ['b'],
             }
         },
-        'properties': {'a': {'type': 'integer', 'title': 'A'}, 'b': {'$ref': '#/definitions/Foo'}},
+        'properties': {
+            'a': {'type': 'integer', 'title': 'A'},
+            'b': {'anyOf': [{'$ref': '#/definitions/Foo'}, {'type': 'null'}]}
+        },
         'required': ['a'],
     }
 
@@ -211,7 +214,7 @@ def test_choices():
         'properties': {
             'foo': {'$ref': '#/definitions/FooEnum'},
             'bar': {'$ref': '#/definitions/BarEnum'},
-            'spam': {'$ref': '#/definitions/SpamEnum'},
+            'spam': {'anyOf': [{'$ref': '#/definitions/SpamEnum'}, {'type': 'null'}]},
         },
         'required': ['foo', 'bar'],
         'definitions': {
@@ -275,7 +278,10 @@ def test_optional():
     class Model(BaseModel):
         a: Optional[str]
 
-    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'type': 'string', 'title': 'A'}}}
+    assert Model.schema() == {
+        'title': 'Model', 'type': 'object',
+        'properties': {'a': {'anyOf': [{'type': 'string'},  {'type': 'null'}], 'title': 'A'}}
+    }
 
 
 def test_any():
@@ -448,7 +454,7 @@ class Foo(BaseModel):
                         'required': ['a'],
                     }
                 },
-                'properties': {'a': {'$ref': '#/definitions/Foo'}},
+                'properties': {'a': {'anyOf': [{'$ref': '#/definitions/Foo'},  {'type': 'null'}]}},
             },
         ),
         (Dict[str, Any], {'properties': {'a': {'title': 'A', 'type': 'object'}}, 'required': ['a']}),
@@ -488,8 +494,15 @@ def test_date_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (NoneStr, {'properties': {'a': {'title': 'A', 'type': 'string'}}}),
-        (NoneBytes, {'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'binary'}}}),
+        (NoneStr, {'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'string'},  {'type': 'null'}]}}}),
+        (
+            NoneBytes,
+            {
+                'properties': {
+                    'a': {'title': 'A', 'anyOf': [{'type': 'string', 'format': 'binary'},  {'type': 'null'}]}
+                }
+            }
+        ),
         (
             StrBytes,
             {
@@ -503,7 +516,12 @@ def test_date_types(field_type, expected_schema):
             NoneStrBytes,
             {
                 'properties': {
-                    'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
+                    'a': {
+                        'title': 'A',
+                        'anyOf': [
+                            {'type': 'string'}, {'type': 'string', 'format': 'binary'},  {'type': 'null'}
+                        ]
+                    }
                 }
             },
         ),
@@ -959,7 +977,11 @@ def test_schema_overrides():
                 'type': 'object',
                 'properties': {'b': {'title': 'B', 'default': {'a': 'foo'}, 'allOf': [{'$ref': '#/definitions/Foo'}]}},
             },
-            'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'anyOf': [{'$ref': '#/definitions/Bar'},  {'type': 'null'}]}}
+            },
         },
         'properties': {'d': {'$ref': '#/definitions/Baz'}},
         'required': ['d'],
@@ -1316,7 +1338,7 @@ def test_optional_dict():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'something': {'title': 'Something', 'type': 'object'}},
+        'properties': {'something': {'title': 'Something', 'anyOf': [{'type': 'object'},  {'type': 'null'}]}},
     }
 
     assert Model().dict() == {'something': None}
@@ -1335,7 +1357,7 @@ def test_optional_validator():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'something': {'title': 'Something', 'type': 'string'}},
+        'properties': {'something': {'title': 'Something', 'anyOf': [{'type': 'string'},  {'type': 'null'}]}},
     }
 
     assert Model().dict() == {'something': None}
@@ -1354,7 +1376,7 @@ def test_field_with_validator():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'something': {'type': 'integer', 'title': 'Something'}},
+        'properties': {'something': {'anyOf': [{'type': 'integer'},  {'type': 'null'}], 'title': 'Something'}},
     }
 
 
@@ -1608,7 +1630,11 @@ def test_model_with_extra_forbidden():
     'annotation,kwargs,field_schema',
     [
         (int, dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
-        (Optional[int], dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (
+            Optional[int],
+            dict(gt=0),
+            {'title': 'A', 'exclusiveMinimum': 0, 'anyOf': [{'type': 'integer'},  {'type': 'null'}]}
+        ),
         (
             Tuple[int, ...],
             dict(gt=0),
@@ -1714,7 +1740,12 @@ def test_conlist():
         'type': 'object',
         'properties': {
             'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4},
-            'bar': {'title': 'Bar', 'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4},
+            'bar': {
+                'title': 'Bar',
+                'anyOf': [
+                    {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4}, {'type': 'null'}
+                ]
+            }
         },
         'required': ['foo'],
     }

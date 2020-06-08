@@ -469,7 +469,7 @@ def test_schema():
                 'type': 'object',
                 'additionalProperties': {'type': 'string'},
             },
-            'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
+            'signup_ts': {'title': 'Signup Ts', 'anyOf': [{'type': 'string', 'format': 'date-time'}, {'type': 'null'}]},
         },
         'required': ['id'],
     }

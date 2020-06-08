@@ -196,7 +196,7 @@ def field_schema(
         known_models=known_models or set(),
     )
     # $ref will only be returned when there are no schema_overrides
-    if '$ref' in f_schema:
+    if '$ref' in f_schema or (field.allow_none and [x for x in f_schema.get('anyOf', []) if '$ref' in x]):
         return f_schema, f_definitions, f_nested_models
     else:
         s.update(f_schema)
@@ -430,6 +430,10 @@ def field_type_schema(
         modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
         if modify_schema:
             modify_schema(f_schema)
+
+    if field.shape != SHAPE_SINGLETON and field.allow_none:
+        f_schema = {'anyOf': [f_schema, {'type': 'null'}]}
+
     return f_schema, definitions, nested_models
 
 
@@ -556,6 +560,7 @@ def field_singleton_sub_fields_schema(
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
     known_models: TypeModelSet,
+    allow_none: bool = False
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     This function is indirectly used by ``field_schema()``, you probably should be using that function.
@@ -567,7 +572,7 @@ def field_singleton_sub_fields_schema(
     definitions = {}
     nested_models: Set[str] = set()
     sub_fields = [sf for sf in sub_fields if sf.include_in_schema()]
-    if len(sub_fields) == 1:
+    if len(sub_fields) == 1 and not allow_none:
         return field_type_schema(
             sub_fields[0],
             by_alias=by_alias,
@@ -595,6 +600,10 @@ def field_singleton_sub_fields_schema(
                 sub_schema = sub_schema['allOf'][0]
             sub_field_schemas.append(sub_schema)
             nested_models.update(sub_nested_models)
+
+        if allow_none:
+            sub_field_schemas.append({'type': 'null'})
+
         return {'anyOf': sub_field_schemas}, definitions, nested_models
 
 
@@ -669,6 +678,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             schema_overrides=schema_overrides,
             ref_prefix=ref_prefix,
             known_models=known_models,
+            allow_none=field.allow_none if field.shape == SHAPE_SINGLETON else False
         )
     if field.type_ is Any or field.type_.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
@@ -699,6 +709,9 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     else:
         add_field_type_to_schema(field_type, f_schema)
 
+    if f_schema and field.allow_none and field.shape == SHAPE_SINGLETON:
+        f_schema = {'anyOf': [f_schema, {'type': 'null'}]}
+
     modify_schema = getattr(field_type, '__modify_schema__', None)
     if modify_schema:
         modify_schema(f_schema)
@@ -726,6 +739,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         else:
             nested_models.add(model_name)
         schema_ref = {'$ref': ref_prefix + model_name}
+        if field.allow_none:
+            schema_ref = {'anyOf': [schema_ref, {'type': 'null'}]}
         if not schema_overrides:
             return schema_ref, definitions, nested_models
         else:
