@@ -1,4 +1,4 @@
-Behaviour of pydantic can be controlled via the `Config` class on a model.
+Behavior of pydantic can be controlled via the `Config` class on a model.
 
 Options:
 
