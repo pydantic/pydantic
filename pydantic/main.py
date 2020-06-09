@@ -66,6 +66,10 @@ if TYPE_CHECKING:
             pass
 
 
+else:
+    SchemaExtraCallable = Callable[..., None]
+
+
 try:
     import cython  # type: ignore
 except ImportError:

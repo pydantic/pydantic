@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type
+from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
@@ -1119,3 +1119,10 @@ def test_reuse_same_field():
         Model1.parse_obj({})
     with pytest.raises(ValidationError):
         Model2.parse_obj({})
+
+
+def test_base_config_type_hinting():
+    class M(BaseModel):
+        a: int
+
+    get_type_hints(M.__config__)
