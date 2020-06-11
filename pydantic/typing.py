@@ -26,18 +26,21 @@ except ImportError:
 
 
 if sys.version_info < (3, 7):
-    # python 3.6
-    from typing import _ForwardRef as ForwardRef
+    from typing import _ForwardRef as ForwardRef  # type: ignore
+else:
+    from typing import ForwardRef
 
-    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Type[Any]:
+
+if sys.version_info < (3, 7):
+
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._eval_type(globalns, localns)
 
 
 else:
-    from typing import ForwardRef
 
-    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Type[Any]:
-        return type_._evaluate(globalns, localns)  # type: ignore
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
+        return type_._evaluate(globalns, localns)
 
 
 if sys.version_info < (3, 7):
