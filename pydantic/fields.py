@@ -27,7 +27,6 @@ from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
-    AnyType,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -237,7 +236,7 @@ class ModelField(Representation):
         self,
         *,
         name: str,
-        type_: AnyType,
+        type_: Type[Any],
         class_validators: Optional[Dict[str, Validator]],
         model_config: Type['BaseConfig'],
         default: Any = None,
@@ -486,7 +485,7 @@ class ModelField(Representation):
         # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
         self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
-    def _create_sub_type(self, type_: AnyType, name: str, *, for_keys: bool = False) -> 'ModelField':
+    def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
         return self.__class__(
             type_=type_,
             name=name,

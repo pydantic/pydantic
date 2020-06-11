@@ -737,7 +737,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 def multivalue_literal_field_for_schema(values: Tuple[Any, ...], field: ModelField) -> ModelField:
     return ModelField(
         name=field.name,
-        type_=Union[tuple(Literal[value] for value in values)],
+        type_=Union[tuple(Literal[value] for value in values)],  # type: ignore
         class_validators=field.class_validators,
         model_config=field.model_config,
         default=field.default,
@@ -801,7 +801,7 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
                 return type_
 
             if origin is Union:
-                return Union[tuple(go(a) for a in args)]
+                return Union[tuple(go(a) for a in args)]  # type: ignore
 
             if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
                 used_constraints.update({'min_items', 'max_items'})

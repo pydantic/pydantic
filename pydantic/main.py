@@ -33,7 +33,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
+from .typing import AnyCallable, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
     ClassAttribute,
     GetterDict,
@@ -106,7 +106,7 @@ class BaseConfig:
     schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
-    json_encoders: Dict[AnyType, AnyCallable] = {}
+    json_encoders: Dict[Type[Any], AnyCallable] = {}
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
