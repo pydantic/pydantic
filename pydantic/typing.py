@@ -32,6 +32,7 @@ if sys.version_info < (3, 7):
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Type[Any]:
         return type_._eval_type(globalns, localns)
 
+
 else:
     from typing import ForwardRef
 
