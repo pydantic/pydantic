@@ -320,7 +320,7 @@ def test_env_takes_precedence(env):
         foo: int
         bar: str
 
-        def _build_values(self, init_kwargs, _env_file):
+        def _build_values(self, init_kwargs, _env_file, _env_file_encoding):
             return {**init_kwargs, **self._build_environ()}
 
     env.set('BAR', 'env setting')
@@ -340,7 +340,7 @@ def test_config_file_settings_nornir(env):
         b: str
         c: str
 
-        def _build_values(self, init_kwargs, _env_file):
+        def _build_values(self, init_kwargs, _env_file, _env_file_encoding):
             config_settings = init_kwargs.pop('__config_settings__')
             return {**config_settings, **init_kwargs, **self._build_environ()}
 
@@ -428,6 +428,22 @@ export C="best string"
     assert s.a == 'overridden var'
     assert s.b == 'better-string'
     assert s.c == 'best string'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_config_custom_encoding(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('pika=p!±@', encoding='latin-1')
+
+    class Settings(BaseSettings):
+        pika: str
+
+        class Config:
+            env_file = p
+            env_file_encoding = 'latin-1'
+
+    s = Settings()
+    assert s.pika == 'p!±@'
 
 
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
@@ -527,6 +543,21 @@ MY_VAR='Hello world'
         'meaning_of_life': 42,
         'my_var': 'Hello world',
     }
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_custom_encoding(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('pika=p!±@', encoding='latin-1')
+
+    class Settings(BaseSettings):
+        pika: str
+
+    with pytest.raises(UnicodeDecodeError):
+        Settings(_env_file=str(p))
+
+    s = Settings(_env_file=str(p), _env_file_encoding='latin-1')
+    assert s.dict() == {'pika': 'p!±@'}
 
 
 @pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
