@@ -1751,8 +1751,22 @@ def test_conset():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'uniqueItems': True, 'minItems': 2, 'maxItems': 4},
-            'bar': {'title': 'Bar', 'type': 'array', 'items': {'type': 'string'}, 'uniqueItems': True, 'minItems': 1, 'maxItems': 4},
+            'foo': {
+                'title': 'Foo',
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'uniqueItems': True,
+                'minItems': 2,
+                'maxItems': 4,
+            },
+            'bar': {
+                'title': 'Bar',
+                'type': 'array',
+                'items': {'type': 'string'},
+                'uniqueItems': True,
+                'minItems': 1,
+                'maxItems': 4,
+            },
         },
         'required': ['foo'],
     }

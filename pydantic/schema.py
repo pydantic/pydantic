@@ -793,7 +793,11 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
     used_constraints: Set[str] = set()
 
     def go(type_: Any) -> Type[Any]:
-        if is_literal_type(annotation) or isinstance(type_, ForwardRef) or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet)):
+        if (
+            is_literal_type(annotation)
+            or isinstance(type_, ForwardRef)
+            or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet))
+        ):
             return type_
         origin = getattr(type_, '__origin__', None)
         if origin is not None:

@@ -5,7 +5,21 @@ from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from types import new_class
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Pattern, Set, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Pattern,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from . import errors
