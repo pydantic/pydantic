@@ -91,6 +91,17 @@ __all__ = (
 )
 
 
+def cls_kwargs(cls, kwargs):  # type: ignore
+    """
+    For built-in exceptions like ValueError or TypeError, we need to implement
+    __reduce__ to override the default behaviour (instead of __getstate__/__setstate__)
+    By default pickle protocol 2 calls `cls.__new__(cls, *args)`.
+    Since we only use kwargs, we need a little constructor to change that.
+    Note: the callable can't be a lambda as pickle looks in the namespace to find it
+    """
+    return cls(**kwargs)
+
+
 class PydanticErrorMixin:
     code: str
     msg_template: str
@@ -100,6 +111,9 @@ class PydanticErrorMixin:
 
     def __str__(self) -> str:
         return self.msg_template.format(**self.__dict__)
+
+    def __reduce__(self):  # type: ignore
+        return cls_kwargs, (self.__class__, self.__dict__)
 
 
 class PydanticTypeError(PydanticErrorMixin, TypeError):
