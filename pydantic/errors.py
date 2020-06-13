@@ -1,8 +1,11 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Set, Tuple, Type, Union
 
 from .typing import AnyType, display_as_type
+
+if TYPE_CHECKING:
+    from .typing import DictStrAny
 
 # explicitly state exports to avoid "from .errors import *" also importing Decimal, Path etc.
 __all__ = (
@@ -91,7 +94,7 @@ __all__ = (
 )
 
 
-def cls_kwargs(cls, kwargs):  # type: ignore
+def cls_kwargs(cls: Type['PydanticErrorMixin'], kwargs: 'DictStrAny') -> 'PydanticErrorMixin':
     """
     For built-in exceptions like ValueError or TypeError, we need to implement
     __reduce__ to override the default behaviour (instead of __getstate__/__setstate__)
@@ -112,7 +115,7 @@ class PydanticErrorMixin:
     def __str__(self) -> str:
         return self.msg_template.format(**self.__dict__)
 
-    def __reduce__(self):  # type: ignore
+    def __reduce__(self) -> Tuple[Callable[..., 'PydanticErrorMixin'], Tuple[Type['PydanticErrorMixin'], 'DictStrAny']]:
         return cls_kwargs, (self.__class__, self.__dict__)
 
 
