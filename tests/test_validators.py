@@ -764,9 +764,11 @@ def test_root_validator():
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
-    assert root_val_values == [{'a': 123, 'b': 'barbar'},
-                                 {'a': 1, 'b': 'snap dragonsnap dragon'},
-                                 {'a': 'broken', 'b': 'barbar'}]
+    assert root_val_values == [
+        {'a': 123, 'b': 'barbar'},
+        {'a': 1, 'b': 'snap dragonsnap dragon'},
+        {'a': 'broken', 'b': 'barbar'}
+    ]
 
 
 def test_root_validator_pre():
@@ -993,9 +995,11 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
-    assert root_val_values == [{'a': 123, 'b': 'barbar'},
-                                 {'a': 1, 'b': 'snap dragonsnap dragon'},
-                                 {'a': 'broken', 'b': 'barbar'}]
+    assert root_val_values == [
+        {'a': 123, 'b': 'barbar'},
+        {'a': 1, 'b': 'snap dragonsnap dragon'},
+        {'a': 'broken', 'b': 'barbar'}
+    ]
 
 
 def test_root_validator_skip_on_failure():
