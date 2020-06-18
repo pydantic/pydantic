@@ -56,7 +56,8 @@ def test_value_validation():
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 'a'})
     assert exc_info.value.errors() == [
-        {'loc': ('data', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {'loc': ('data', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('__root__',), 'msg': "unsupported operand type(s) for +: 'int' and 'str'", 'type': 'type_error'},
     ]
 
     with pytest.raises(ValidationError) as exc_info:
