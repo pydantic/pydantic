@@ -895,8 +895,8 @@ def validate_model(  # noqa: C901 (ignore complexity)
             errors.append(errors_)
         elif isinstance(errors_, list):
             errors.extend(errors_)
-        else:
-            values[name] = v_
+
+        values[name] = v_
 
     if check_extra:
         if isinstance(input_data, GetterDict):
