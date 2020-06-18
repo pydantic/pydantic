@@ -17,6 +17,7 @@ from pydantic import (
     errors,
     validate_model,
     validator,
+    root_validator
 )
 from pydantic.fields import Field, Schema
 
@@ -1531,3 +1532,46 @@ def test_hashable_optional(default):
 
     Model(v=None)
     Model()
+
+
+def test_pass_nested_model_values():
+    """
+    This is a test to evaluate if the values from a field
+    with a nested model still passes the values even if it has validation errors
+    """
+    class Bar(BaseModel):
+        field_1: str
+        field_2: str
+
+        @root_validator
+        def check_fields_are_equal(cls, values):
+            if values.get("field_1") == values.get("field_2"):
+                raise ValueError("`field_1` cannot be the same value as `field_2")
+            return values
+
+    class Foo(BaseModel):
+        bar: Bar
+        number: int
+
+        @root_validator
+        def number_1_not_field_1_a(cls, values):
+            number = values.get("number")
+            field_1 = values.get("bar", {}).get("field_1")
+
+            if number == 1 and field_1 == "a":
+                raise ValueError("It is invalid `number` = 1 and `bar.field_1` = a")
+
+            return values
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foo.validate(
+            dict(number=1, bar=dict(field_1="a", field_2="a"))
+        )
+
+    assert exc_info.value.errors() == [
+        {'loc': ('bar', '__root__'),
+         'msg': '`field_1` cannot be the same value as `field_2',
+         'type': 'value_error'},
+        {'loc': ('__root__',),
+         'msg': 'It is invalid `number` = 1 and `bar.field_1` = a',
+         'type': 'value_error'}]
