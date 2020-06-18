@@ -763,9 +763,7 @@ def test_root_validator():
     ]
 
     assert root_val_values == [
-        {'a': 123, 'b': 'barbar'},
-        {'a': 1, 'b': 'snap dragonsnap dragon'},
-        {'a': 'broken', 'b': 'barbar'}
+        {'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}, {'a': 'broken', 'b': 'barbar'},
     ]
 
 
@@ -994,9 +992,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
     ]
 
     assert root_val_values == [
-        {'a': 123, 'b': 'barbar'},
-        {'a': 1, 'b': 'snap dragonsnap dragon'},
-        {'a': 'broken', 'b': 'barbar'}
+        {'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}, {'a': 'broken', 'b': 'barbar'},
     ]
 
 
