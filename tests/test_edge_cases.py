@@ -1569,4 +1569,5 @@ def test_pass_nested_model_values():
 
     assert exc_info.value.errors() == [
         {'loc': ('bar', '__root__'), 'msg': 'field_1 cannot be the same value as field_2', 'type': 'value_error'},
-        {'loc': ('__root__',), 'msg': 'It is invalid number = 1 and bar.field_1 = a', 'type': 'value_error'}]
+        {'loc': ('__root__',), 'msg': 'It is invalid number = 1 and bar.field_1 = a', 'type': 'value_error'}
+    ]
