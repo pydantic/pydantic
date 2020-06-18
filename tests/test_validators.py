@@ -182,7 +182,7 @@ def test_validating_assignment_dict():
         ValidateAssignmentModel(a='x', b='xx')
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('b',), 'msg': "'<' not supported between instances of 'int' and 'str'", 'type': 'type_error'}
+        {'loc': ('b',), 'msg': "'<' not supported between instances of 'int' and 'str'", 'type': 'type_error'},
     ]
 
 
