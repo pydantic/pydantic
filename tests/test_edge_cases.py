@@ -1539,6 +1539,7 @@ def test_pass_nested_model_values():
     This is a test to evaluate if the values from a field
     with a nested model still passes the values even if it has validation errors
     """
+
     class Bar(BaseModel):
         field_1: str
         field_2: str
