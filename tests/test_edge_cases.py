@@ -15,9 +15,9 @@ from pydantic import (
     ValidationError,
     constr,
     errors,
+    root_validator,
     validate_model,
-    validator,
-    root_validator
+    validator
 )
 from pydantic.fields import Field, Schema
 
