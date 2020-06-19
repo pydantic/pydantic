@@ -897,7 +897,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 errors.append(errors_)
 
                 if isinstance(value, dict):
-                    field_model = getattr(errors_.exc, "model", None)
+                    field_model = getattr(errors_.exc, 'model', None)
 
                     if field_model:
                         v_ = field_model.construct(**value)
@@ -906,7 +906,9 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 errors.extend(errors_)
 
                 if isinstance(value, dict):
-                    field_model = list(filter(lambda x: getattr(x[0].exc, "model", None) if isinstance(x, list) else getattr(x.exc, "model", None), errors_))
+                    field_model = list(filter(lambda x: getattr(x[0].exc, 'model', None)
+                        if isinstance(x, list) else getattr(x.exc, 'model', None), errors_))
+
                     if field_model:
                         v_ = field_model[0].construct(**value)
 

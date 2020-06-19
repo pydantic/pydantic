@@ -1574,29 +1574,9 @@ def test_pass_nested_model_values():
         )
 
     assert exc_info.value.errors() == [
-        {
-            'loc': ('bar', '__root__'),
-            'msg': 'field_1 cannot be a',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('bar_list', 0),
-            'msg': 'value is not a valid dict',
-            'type': 'type_error.dict',
-        },
-        {
-            'loc': ('bar_list', 1, 'field_1'),
-            'msg': 'str type expected',
-            'type': 'type_error.str',
-        },
-        {
-            'loc': ('bar_list', 2, '__root__'),
-            'msg': 'field_1 cannot be a',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('__root__',),
-            'msg': 'It is invalid number = 1 and bar.field_1 = a',
-            'type': 'value_error',
-        },
+        {'loc': ('bar', '__root__'), 'msg': 'field_1 cannot be a', 'type': 'value_error'},
+        {'loc': ('bar_list', 0), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'},
+        {'loc': ('bar_list', 1, 'field_1'), 'msg': 'str type expected', 'type': 'type_error.str'},
+        {'loc': ('bar_list', 2, '__root__'), 'msg': 'field_1 cannot be a', 'type': 'value_error'},
+        {'loc': ('__root__',), 'msg': 'It is invalid number = 1 and bar.field_1 = a', 'type': 'value_error'},
     ]
