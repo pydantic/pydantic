@@ -48,7 +48,8 @@ def test_value_validation():
 
         @root_validator()
         def validate_sum(cls, values):
-            if sum(values.get('data', {}).values()) > 5:
+            data = values.get("data")
+            if data and sum(data.values())>5:
                 raise ValueError('sum too large')
             return values
 
@@ -57,7 +58,6 @@ def test_value_validation():
         Response[Dict[int, int]](data={1: 'a'})
     assert exc_info.value.errors() == [
         {'loc': ('data', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('__root__',), 'msg': "unsupported operand type(s) for +: 'int' and 'str'", 'type': 'type_error'},
     ]
 
     with pytest.raises(ValidationError) as exc_info:

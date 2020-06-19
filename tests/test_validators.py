@@ -182,7 +182,7 @@ def test_validating_assignment_dict():
         ValidateAssignmentModel(a='x', b='xx')
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('b',), 'msg': "'<' not supported between instances of 'int' and 'str'", 'type': 'type_error'},
+        {'loc': ('b',), 'msg': "'<' not supported between instances of 'int' and 'NoneType'", 'type': 'type_error'},
     ]
 
 
@@ -765,7 +765,7 @@ def test_root_validator():
     assert root_val_values == [
         {'a': 123, 'b': 'barbar'},
         {'a': 1, 'b': 'snap dragonsnap dragon'},
-        {'a': 'broken', 'b': 'barbar'},
+        {'a': None, 'b': 'barbar'},
     ]
 
 
@@ -996,7 +996,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
     assert root_val_values == [
         {'a': 123, 'b': 'barbar'},
         {'a': 1, 'b': 'snap dragonsnap dragon'},
-        {'a': 'broken', 'b': 'barbar'},
+        {'a': None, 'b': 'barbar'},
     ]
 
 
