@@ -3,6 +3,8 @@ env/
 env36/
 env37/
 env38/
+venv/
+.venv/
 *.py[cod]
 *.egg-info/
 .python-version
