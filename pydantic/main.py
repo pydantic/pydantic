@@ -891,12 +891,26 @@ def validate_model(  # noqa: C901 (ignore complexity)
                 names_used.add(field.name if using_name else field.alias)
 
         v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls_)
-        if isinstance(errors_, ErrorWrapper):
-            errors.append(errors_)
-        elif isinstance(errors_, list):
-            errors.extend(errors_)
-        else:
-            values[name] = v_
+
+        if errors_:
+            if isinstance(errors_, ErrorWrapper):
+                errors.append(errors_)
+
+                if isinstance(value, dict):
+                    field_model = getattr(errors_.exc, "model", None)
+
+                    if field_model:
+                        v_ = field_model.construct(**value)
+
+            elif isinstance(errors_, list):
+                errors.extend(errors_)
+
+                if isinstance(value, dict):
+                    field_model = list(filter(lambda x: getattr(x[0].exc, "model", None) if isinstance(x, list) else getattr(x.exc, "model", None), errors_))
+                    if field_model:
+                        v_ = field_model[0].construct(**value)
+
+        values[name] = v_
 
     if check_extra:
         if isinstance(input_data, GetterDict):
