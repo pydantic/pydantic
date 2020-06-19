@@ -5,6 +5,7 @@ from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
 from functools import partial
+import more_itertools
 from pathlib import Path
 from types import FunctionType
 from typing import (
@@ -521,6 +522,21 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         object.__setattr__(m, '__fields_set__', _fields_set)
         return m
 
+    @classmethod
+    def construct_with_validations(cls: Type['Model'], **values: Any) -> 'Model':
+        """
+        Creates a new model setting __dict__ and __fields_set__ performing the validations without raising .
+        Default values are respected
+        """
+        m = cls.__new__(cls)
+
+        values, fields_set, validation_error = validate_model(cls, values)
+
+        object.__setattr__(m, '__dict__', values)
+        object.__setattr__(m, '__fields_set__', fields_set)
+
+        return m
+
     def copy(
         self: 'Model',
         *,
@@ -892,34 +908,14 @@ def validate_model(  # noqa: C901 (ignore complexity)
 
         v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls_)
 
+        if isinstance(errors_, ErrorWrapper):
+            errors.append(errors_)
+
+        elif isinstance(errors_, list):
+            errors.extend(errors_)
+
         if errors_:
-            if isinstance(errors_, ErrorWrapper):
-                errors.append(errors_)
-
-                if isinstance(value, dict):
-                    field_model = getattr(errors_.exc, 'model', None)
-
-                    if field_model:
-                        v_ = field_model.construct(**value)
-
-            elif isinstance(errors_, list):
-                errors.extend(errors_)
-
-                if isinstance(value, dict):
-                    field_model = list(
-                        filter(
-                            lambda x: x,
-                            map(
-                                lambda y: getattr(y[0].exc, 'model', None)
-                                if isinstance(y, list)
-                                else getattr(y.exc, 'model', None),
-                                errors_,
-                            ),
-                        )
-                    )
-
-                    if field_model:
-                        v_ = field_model[-1].construct(**value)
+            v_ = parse_field_value_based_on_errors(errors=errors_, value=v_)
 
         values[name] = v_
 
@@ -950,3 +946,43 @@ def validate_model(  # noqa: C901 (ignore complexity)
         return values, fields_set, ValidationError(errors, cls_)
     else:
         return values, fields_set, None
+
+
+def parse_field_value_based_on_errors(value: Any, errors: Union[ErrorWrapper, List[ErrorWrapper]]) -> Optional[Any]:
+
+    if isinstance(errors, ErrorWrapper):
+        field_model = getattr(errors.exc, 'model', None)
+
+    elif isinstance(errors, list):
+        errors = list(more_itertools.collapse(errors))
+        field_models = list(
+            filter(
+                lambda x: x,
+                map(
+                    lambda y: getattr(y.exc, 'model', None),
+                    errors,
+                )
+            )
+        )
+
+        field_model = field_models[0] if field_models else None
+
+    else:
+        raise NotImplementedError(f"Errors from field.validate with type {type(errors)} not handled")
+
+    if not field_model:
+        return
+
+    if isinstance(value, dict):
+        value = field_model.construct_with_validations(**value)
+
+    elif isinstance(value, list):
+        value = []
+
+        value = list(
+            map(lambda x:
+                field_model[-1].construct_with_validations(**x) if isinstance(x, dict) else None,
+                value)
+        )
+
+    return value
