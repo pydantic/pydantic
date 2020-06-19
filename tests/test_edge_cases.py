@@ -15,6 +15,7 @@ from pydantic import (
     ValidationError,
     constr,
     errors,
+    root_validator,
     validate_model,
     validator,
 )
@@ -727,7 +728,7 @@ def test_return_errors_error():
         bar: List[int]
 
     d, f, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 'x')}, False)
-    assert d == {'foo': 123}
+    assert d == {'bar': (1, 2, 'x'), 'foo': 123}
     assert f == {'foo', 'bar'}
     assert e.errors() == [{'loc': ('bar', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]
 
@@ -1531,3 +1532,71 @@ def test_hashable_optional(default):
 
     Model(v=None)
     Model()
+
+
+def test_pass_nested_model_values():
+    """
+    This is a test to evaluate if the values from a field
+    with a nested model still passes the values even if it has post validation errors
+    """
+
+    class Bar(BaseModel):
+        field_1: str
+
+        @root_validator
+        def check_fields_are_equal(cls, values):
+            if values.get('field_1') == 'a':
+                raise ValueError('field_1 cannot be a')
+            return values
+
+    class Foo(BaseModel):
+        bar: Bar
+        bar_list: List[Bar]
+        number: int
+
+        @root_validator
+        def number_1_not_field_1_a(cls, values):
+            number = values.get('number')
+            bar = values.get('bar')
+
+            if number == 1 and bar.field_1 == 'a':
+                raise ValueError('It is invalid number = 1 and bar.field_1 = a')
+
+            return values
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foo(
+            **dict(
+                number=1,
+                bar=dict(field_1='a'),
+                bar_list=[(23, 3), dict(field_1=[20, 34]), dict(field_1='a')],
+            )
+        )
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('bar', '__root__'),
+            'msg': 'field_1 cannot be a',
+            'type': 'value_error',
+        },
+        {
+            'loc': ('bar_list', 0),
+            'msg': 'value is not a valid dict',
+            'type': 'type_error.dict',
+        },
+        {
+            'loc': ('bar_list', 1, 'field_1'),
+            'msg': 'str type expected',
+            'type': 'type_error.str',
+        },
+        {
+            'loc': ('bar_list', 2, '__root__'),
+            'msg': 'field_1 cannot be a',
+            'type': 'value_error',
+        },
+        {
+            'loc': ('__root__',),
+            'msg': 'It is invalid number = 1 and bar.field_1 = a',
+            'type': 'value_error',
+        },
+    ]
