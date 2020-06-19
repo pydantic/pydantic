@@ -1565,13 +1565,7 @@ def test_pass_nested_model_values():
             return values
 
     with pytest.raises(ValidationError) as exc_info:
-        Foo(
-            **dict(
-                number=1,
-                bar=dict(field_1='a'),
-                bar_list=[(23, 3), dict(field_1=[20, 34]), dict(field_1='a')],
-            )
-        )
+        Foo(**dict(number=1, bar=dict(field_1='a'), bar_list=[(23, 3), dict(field_1=[20, 34]), dict(field_1='a')]))
 
     assert exc_info.value.errors() == [
         {'loc': ('bar', '__root__'), 'msg': 'field_1 cannot be a', 'type': 'value_error'},

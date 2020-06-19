@@ -914,7 +914,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
                                 if isinstance(y, list)
                                 else getattr(y.exc, 'model', None),
                                 errors_,
-                            )
+                            ),
                         )
                     )
 
