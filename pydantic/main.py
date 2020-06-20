@@ -969,7 +969,7 @@ def parse_field_value_based_on_errors(value: Any, errors: Union[ErrorWrapper, Li
         field_model = field_models[0] if field_models else None
 
     else:
-        raise NotImplementedError(f"Errors from field.validate with type {type(errors)} not handled")
+        raise NotImplementedError(f'Errors from field.validate with type {type(errors)} not handled')
 
     if not field_model:
         return

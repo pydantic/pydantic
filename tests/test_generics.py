@@ -48,8 +48,8 @@ def test_value_validation():
 
         @root_validator()
         def validate_sum(cls, values):
-            data = values.get("data")
-            if data and sum(data.values())>5:
+            data = values.get('data')
+            if data and sum(data.values()) > 5:
                 raise ValueError('sum too large')
             return values
 
