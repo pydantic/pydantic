@@ -894,6 +894,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
         if value is _missing:
             if field.required:
                 errors.append(ErrorWrapper(MissingError(), loc=field.alias))
+                values[name] = None
                 continue
 
             value = field.get_default()
