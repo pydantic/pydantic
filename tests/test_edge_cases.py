@@ -733,7 +733,7 @@ def test_return_errors_error():
     assert e.errors() == [{'loc': ('bar', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]
 
     d, f, e = validate_model(Model, {'bar': (1, 2, 3)}, False)
-    assert d == {'bar': [1, 2, 3]}
+    assert d == {'bar': [1, 2, 3], 'foo':None}
     assert f == {'bar'}
     assert e.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
