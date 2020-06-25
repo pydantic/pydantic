@@ -26,7 +26,14 @@ except ImportError:
 
 
 if sys.version_info < (3, 7):
-    from typing import _ForwardRef as ForwardRef  # type: ignore
+    if TYPE_CHECKING:
+
+        class ForwardRef:
+            def _eval_type(self, globalns: Any, localns: Any) -> Any:
+                pass
+
+    else:
+        from typing import _ForwardRef as ForwardRef
 else:
     from typing import ForwardRef
 
