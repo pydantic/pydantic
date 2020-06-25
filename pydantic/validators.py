@@ -27,7 +27,6 @@ from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
     AnyCallable,
-    AnyType,
     ForwardRef,
     all_literal_values,
     display_as_type,
@@ -502,7 +501,7 @@ class IfConfig:
 
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
-_VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
+_VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
     (IntEnum, [int_validator, enum_validator]),
     (Enum, [enum_validator]),
     (
@@ -547,7 +546,7 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
 
 
 def find_validators(  # noqa: C901 (ignore complexity)
-    type_: AnyType, config: Type['BaseConfig']
+    type_: Type[Any], config: Type['BaseConfig']
 ) -> Generator[AnyCallable, None, None]:
     if type_ is Any:
         return
