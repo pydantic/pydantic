@@ -324,10 +324,11 @@ def test_redis_dsns():
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
 
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a='redis://localhost:5432/app')
-    error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
+    # password is not required for redis
+    m = Model(a='redis://localhost:5432/app')
+    assert m.a == 'redis://localhost:5432/app'
+    assert m.a.user is None
+    assert m.a.password is None
 
 
 def test_custom_schemes():
