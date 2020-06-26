@@ -6,6 +6,7 @@ import pytest
 
 from pydantic import BaseModel, ConfigError, Extra, ValidationError, errors, validator
 from pydantic.class_validators import make_generic_validator, root_validator
+from pydantic.typing import Literal
 
 
 def test_simple():
@@ -713,7 +714,7 @@ def test_assert_raises_validation_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    injected_by_pytest = "\nassert 'snap' == 'a'\n  - snap\n  + a"
+    injected_by_pytest = "\nassert 'snap' == 'a'\n  - a\n  + snap"
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
     ]
@@ -1038,3 +1039,44 @@ def test_assignment_validator_cls():
     m = Model(name='hello')
     m.name = 'goodbye'
     assert validator_calls == 2
+
+
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
+def test_literal_validator():
+    class Model(BaseModel):
+        a: Literal['foo']
+
+    Model(a='foo')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='nope')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': "unexpected value; permitted: 'foo'",
+            'type': 'value_error.const',
+            'ctx': {'given': 'nope', 'permitted': ('foo',)},
+        }
+    ]
+
+
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
+def test_nested_literal_validator():
+    L1 = Literal['foo']
+    L2 = Literal['bar']
+
+    class Model(BaseModel):
+        a: Literal[L1, L2]
+
+    Model(a='foo')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='nope')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': "unexpected value; permitted: 'foo', 'bar'",
+            'type': 'value_error.const',
+            'ctx': {'given': 'nope', 'permitted': ('foo', 'bar')},
+        }
+    ]

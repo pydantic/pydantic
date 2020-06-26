@@ -16,6 +16,9 @@ from pydantic.generics import GenericModel
 class Flags(BaseModel):
     strict_bool: StrictBool = False
 
+    def __str__(self) -> str:
+        return f'flag={self.strict_bool}'
+
 
 class Model(BaseModel):
     age: int

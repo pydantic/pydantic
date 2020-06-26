@@ -15,12 +15,14 @@ post_code_regex = re.compile(
     r')'
 )
 
+
 class PostCode(str):
     """
     Partial UK postcode validation. Note: this is just an example, and is not
     intended for use in production; in particular this does NOT guarantee
     a postcode exists, just that it has a valid format.
     """
+
     @classmethod
     def __get_validators__(cls):
         # one or more validators may be yielded which will be called in the
@@ -55,8 +57,10 @@ class PostCode(str):
     def __repr__(self):
         return f'PostCode({super().__repr__()})'
 
+
 class Model(BaseModel):
     post_code: PostCode
+
 
 model = Model(post_code='sw8 5el')
 print(model)

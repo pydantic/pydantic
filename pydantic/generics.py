@@ -30,7 +30,7 @@ class GenericModel(BaseModel):
         if not isinstance(params, tuple):
             params = (params,)
         if cls is GenericModel and any(isinstance(param, TypeVar) for param in params):  # type: ignore
-            raise TypeError(f'Type parameters should be placed on typing.Generic, not GenericModel')
+            raise TypeError('Type parameters should be placed on typing.Generic, not GenericModel')
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
 
@@ -48,7 +48,7 @@ class GenericModel(BaseModel):
         created_model = cast(
             Type[GenericModel],  # casting ensures mypy is aware of the __concrete__ and __parameters__ attributes
             create_model(
-                model_name=model_name,
+                model_name,
                 __module__=cls.__module__,
                 __base__=cls,
                 __config__=None,

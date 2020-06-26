@@ -71,7 +71,7 @@ def test_invalid_identifiers_signature():
     )
     assert _equals(str(signature(model)), '(*, valid_identifier: int = 123, yeah: int = 0) -> None')
     model = create_model('Model', **{'123 invalid identifier!': 123, '!': Field(0, alias='yeah')})
-    assert _equals(str(signature(model)), '(*, yeah: int = 0, **data: Any) -> None')
+    assert _equals(str(signature(model)), '(*, yeah: int = 0, **extra_data: Any) -> None')
 
 
 def test_use_field_name():
@@ -82,3 +82,59 @@ def test_use_field_name():
             allow_population_by_field_name = True
 
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
+
+
+def test_extra_allow_no_conflict():
+    class Model(BaseModel):
+        spam: str
+
+        class Config:
+            extra = Extra.allow
+
+    assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
+
+
+def test_extra_allow_conflict():
+    class Model(BaseModel):
+        extra_data: str
+
+        class Config:
+            extra = Extra.allow
+
+    assert _equals(str(signature(Model)), '(*, extra_data: str, **extra_data_: Any) -> None')
+
+
+def test_extra_allow_conflict_twice():
+    class Model(BaseModel):
+        extra_data: str
+        extra_data_: str
+
+        class Config:
+            extra = Extra.allow
+
+    assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
+
+
+def test_extra_allow_conflict_custom_signature():
+    class Model(BaseModel):
+        extra_data: int
+
+        def __init__(self, extra_data: int = 1, **foobar: Any):
+            super().__init__(extra_data=extra_data, **foobar)
+
+        class Config:
+            extra = Extra.allow
+
+    assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
+
+
+def test_signature_is_class_only():
+    class Model(BaseModel):
+        foo: int = 123
+
+        def __call__(self, a: int) -> bool:
+            pass
+
+    assert _equals(str(signature(Model)), '(*, foo: int = 123) -> None')
+    assert _equals(str(signature(Model())), '(a: int) -> bool')
+    assert not hasattr(Model(), '__signature__')

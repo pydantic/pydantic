@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := all
 isort = isort -rc pydantic tests
-black = black -S -l 120 --target-version py36 pydantic tests
+black = black -S -l 120 --target-version py38 pydantic tests
 
 .PHONY: install
 install:
@@ -24,8 +24,8 @@ format:
 .PHONY: lint
 lint:
 	flake8 pydantic/ tests/
-	$(isort) --check-only
-	$(black) --check
+	$(isort) --check-only -df
+	$(black) --check --diff
 
 .PHONY: check-dist
 check-dist:
@@ -77,6 +77,10 @@ benchmark-all:
 benchmark-pydantic:
 	python benchmarks/run.py pydantic-only
 
+.PHONY: benchmark-json
+benchmark-json:
+	TEST_JSON=1 python benchmarks/run.py
+
 .PHONY: clean
 clean:
 	rm -rf `find . -name __pycache__`
@@ -103,6 +107,7 @@ clean:
 
 .PHONY: docs
 docs:
+	flake8 --max-line-length=80 docs/examples/
 	python docs/build/main.py
 	mkdocs build
 

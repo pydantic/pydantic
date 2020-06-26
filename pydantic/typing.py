@@ -8,6 +8,7 @@ from typing import (  # type: ignore
     Dict,
     Generator,
     List,
+    Mapping,
     NewType,
     Optional,
     Sequence,
@@ -23,19 +24,30 @@ try:
 except ImportError:
     from typing import _Final as typing_base  # type: ignore
 
-try:
-    from typing import ForwardRef  # type: ignore
 
-    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Type[Any]:
-        return type_._evaluate(globalns, localns)
+if sys.version_info < (3, 7):
+    if TYPE_CHECKING:
+
+        class ForwardRef:
+            def _eval_type(self, globalns: Any, localns: Any) -> Any:
+                pass
+
+    else:
+        from typing import _ForwardRef as ForwardRef
+else:
+    from typing import ForwardRef
 
 
-except ImportError:
-    # python 3.6
-    from typing import _ForwardRef as ForwardRef  # type: ignore
+if sys.version_info < (3, 7):
 
-    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Type[Any]:
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._eval_type(globalns, localns)
+
+
+else:
+
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
+        return type_._evaluate(globalns, localns)
 
 
 if sys.version_info < (3, 7):
@@ -72,6 +84,7 @@ if TYPE_CHECKING:
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
     DictIntStrAny = Dict[IntStr, Any]
+    MappingIntStrAny = Mapping[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
     ReprArgs = Sequence[Tuple[Optional[str], Any]]
 
@@ -80,7 +93,6 @@ __all__ = (
     'Callable',
     'AnyCallable',
     'NoArgAnyCallable',
-    'AnyType',
     'NoneType',
     'display_as_type',
     'resolve_annotations',
@@ -106,11 +118,10 @@ __all__ = (
 )
 
 
-AnyType = Type[Any]
 NoneType = None.__class__
 
 
-def display_as_type(v: AnyType) -> str:
+def display_as_type(v: Type[Any]) -> str:
     if not isinstance(v, typing_base) and not isinstance(v, type):
         v = v.__class__
 
@@ -129,7 +140,7 @@ def display_as_type(v: AnyType) -> str:
         return str(v).replace('typing.', '')
 
 
-def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Optional[str]) -> Dict[str, AnyType]:
+def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Optional[str]) -> Dict[str, Type[Any]]:
     """
     Partially taken from typing.get_type_hints.
 
@@ -155,49 +166,62 @@ def resolve_annotations(raw_annotations: Dict[str, AnyType], module_name: Option
     return annotations
 
 
-def is_callable_type(type_: AnyType) -> bool:
+def is_callable_type(type_: Type[Any]) -> bool:
     return type_ is Callable or getattr(type_, '__origin__', None) is Callable
 
 
 if sys.version_info >= (3, 7):
 
-    def is_literal_type(type_: AnyType) -> bool:
+    def is_literal_type(type_: Type[Any]) -> bool:
         return Literal is not None and getattr(type_, '__origin__', None) is Literal
 
-    def literal_values(type_: AnyType) -> Tuple[Any, ...]:
+    def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
         return type_.__args__
 
 
 else:
 
-    def is_literal_type(type_: AnyType) -> bool:
+    def is_literal_type(type_: Type[Any]) -> bool:
         return Literal is not None and hasattr(type_, '__values__') and type_ == Literal[type_.__values__]
 
-    def literal_values(type_: AnyType) -> Tuple[Any, ...]:
+    def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
         return type_.__values__
+
+
+def all_literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
+    """
+    This method is used to retrieve all Literal values as
+    Literal can be used recursively (see https://www.python.org/dev/peps/pep-0586)
+    e.g. `Literal[Literal[Literal[1, 2, 3], "foo"], 5, None]`
+    """
+    if not is_literal_type(type_):
+        return (type_,)
+
+    values = literal_values(type_)
+    return tuple(x for value in values for x in all_literal_values(value))
 
 
 test_type = NewType('test_type', str)
 
 
-def is_new_type(type_: AnyType) -> bool:
+def is_new_type(type_: Type[Any]) -> bool:
     """
     Check whether type_ was created using typing.NewType
     """
     return isinstance(type_, test_type.__class__) and hasattr(type_, '__supertype__')  # type: ignore
 
 
-def new_type_supertype(type_: AnyType) -> AnyType:
+def new_type_supertype(type_: Type[Any]) -> Type[Any]:
     while hasattr(type_, '__supertype__'):
         type_ = type_.__supertype__
     return type_
 
 
-def _check_classvar(v: AnyType) -> bool:
+def _check_classvar(v: Type[Any]) -> bool:
     return v.__class__ == ClassVar.__class__ and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
 
 
-def is_classvar(ann_type: AnyType) -> bool:
+def is_classvar(ann_type: Type[Any]) -> bool:
     return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
 
 
@@ -213,7 +237,7 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
 
 
-def get_class(type_: AnyType) -> Union[None, bool, AnyType]:
+def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
     """
     Tries to get the class of a Type[T] annotation. Returns True if Type is used
     without brackets. Otherwise returns None.

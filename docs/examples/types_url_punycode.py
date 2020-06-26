@@ -1,7 +1,9 @@
 from pydantic import BaseModel, HttpUrl
 
+
 class MyModel(BaseModel):
     url: HttpUrl
+
 
 m1 = MyModel(url='http://puny£code.com')
 print(m1.url)

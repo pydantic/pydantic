@@ -1,0 +1,1 @@
+include `'format': 'password'` in the schema for secret types

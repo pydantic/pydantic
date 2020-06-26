@@ -155,6 +155,7 @@ jobs:
 
     - run: make benchmark-pydantic
     - run: make benchmark-all
+    - run: make benchmark-json
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
@@ -205,7 +206,7 @@ jobs:
         CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
         CIBW_BEFORE_BUILD: 'pip install -U cython'
-        CIBW_TEST_REQUIRES: 'pytest==5.3.5'
+        CIBW_TEST_REQUIRES: 'pytest==5.4.1'
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
         CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
@@ -245,7 +246,10 @@ jobs:
       - name: install
         run: make install
 
-      - run: twine check dist/*
+      - name: twine check
+        run: |
+          mv pypi_files dist
+          twine check dist/*
 
       - name: check tag
         run: ./tests/check_tag.py

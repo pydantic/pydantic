@@ -20,7 +20,7 @@ google_analytics:
 
 extra_css:
 - 'extra/terminal.css'
-- 'extra/ad.css'
+- 'extra/tweaks.css'
 extra_javascript:
 - 'extra/redirects.js'
 - 'extra/ad.js'
@@ -46,6 +46,7 @@ nav:
 - benchmarks.md
 - 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md
+- 'Code Generation': datamodel_code_generator.md
 - changelog.md
 
 markdown_extensions:
@@ -58,6 +59,7 @@ markdown_extensions:
 - admonition
 - codehilite
 - extra
+- attr_list
 
 plugins:
 - search

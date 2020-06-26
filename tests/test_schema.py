@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 import tempfile
@@ -19,6 +20,7 @@ from pydantic.schema import (
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
+    model_process_schema,
     model_schema,
     schema,
 )
@@ -204,14 +206,19 @@ def test_choices():
         spam: SpamEnum = Field(None)
 
     assert Model.schema() == {
-        'type': 'object',
         'title': 'Model',
+        'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'enum': ['f', 'b']},
-            'bar': {'type': 'integer', 'title': 'Bar', 'enum': [1, 2]},
-            'spam': {'type': 'string', 'title': 'Spam', 'enum': ['f', 'b']},
+            'foo': {'$ref': '#/definitions/FooEnum'},
+            'bar': {'$ref': '#/definitions/BarEnum'},
+            'spam': {'$ref': '#/definitions/SpamEnum'},
         },
         'required': ['foo', 'bar'],
+        'definitions': {
+            'FooEnum': {'title': 'FooEnum', 'description': 'An enumeration.', 'enum': ['f', 'b']},
+            'BarEnum': {'title': 'BarEnum', 'description': 'An enumeration.', 'type': 'integer', 'enum': [1, 2]},
+            'SpamEnum': {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']},
+        },
     }
 
 
@@ -579,7 +586,7 @@ def test_secret_types(field_type, inner_type):
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True}},
+        'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True, 'format': 'password'}},
         'required': ['a'],
     }
 
@@ -959,6 +966,25 @@ def test_schema_overrides():
     }
 
 
+def test_schema_overrides_w_union():
+    class Foo(BaseModel):
+        pass
+
+    class Bar(BaseModel):
+        pass
+
+    class Spam(BaseModel):
+        a: Union[Foo, Bar] = Field(..., description='xxx')
+
+    assert Spam.schema()['properties'] == {
+        'a': {
+            'title': 'A',
+            'description': 'xxx',
+            'anyOf': [{'$ref': '#/definitions/Foo'}, {'$ref': '#/definitions/Bar'}],
+        },
+    }
+
+
 def test_schema_from_models():
     class Foo(BaseModel):
         a: str
@@ -1119,6 +1145,10 @@ def test_dict_default():
         ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
         ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
         ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
+        ({'gt': -math.inf}, float, {'type': 'number'}),
+        ({'lt': math.inf}, float, {'type': 'number'}),
+        ({'ge': -math.inf}, float, {'type': 'number'}),
+        ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
         ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
         ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),
@@ -1529,18 +1559,33 @@ def test_model_with_schema_extra_callable_no_model_class():
     assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
-def test_model_with_schema_extra_callable_classmethod_asserts():
+def test_model_with_schema_extra_callable_classmethod():
     class Model(BaseModel):
         name: str = None
 
         class Config:
+            type = 'foo'
+
             @classmethod
             def schema_extra(cls, schema, model_class):
                 schema.pop('properties')
-                schema['type'] = 'override'
+                schema['type'] = cls.type
+                assert model_class is Model
 
-    with pytest.raises(TypeError, match='Model.Config.schema_extra callable is expected to be a staticmethod'):
-        Model.schema()
+    assert Model.schema() == {'title': 'Model', 'type': 'foo'}
+
+
+def test_model_with_schema_extra_callable_instance_method():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            def schema_extra(schema, model_class):
+                schema.pop('properties')
+                schema['type'] = 'override'
+                assert model_class is Model
+
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
 def test_model_with_extra_forbidden():
@@ -1730,6 +1775,8 @@ def test_dataclass():
 
 def test_schema_attributes():
     class ExampleEnum(Enum):
+        """This is a test description."""
+
         gt = 'GT'
         lt = 'LT'
         ge = 'GE'
@@ -1744,9 +1791,26 @@ def test_schema_attributes():
     assert Example.schema() == {
         'title': 'Example',
         'type': 'object',
-        'properties': {'example': {'title': 'Example', 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE']}},
+        'properties': {'example': {'$ref': '#/definitions/ExampleEnum'}},
         'required': ['example'],
+        'definitions': {
+            'ExampleEnum': {
+                'title': 'ExampleEnum',
+                'description': 'This is a test description.',
+                'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE'],
+            }
+        },
     }
+
+
+def test_model_process_schema_enum():
+    class SpamEnum(str, Enum):
+        foo = 'f'
+        bar = 'b'
+
+    model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
+    print(model_schema)
+    assert model_schema == {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']}
 
 
 def test_path_modify_schema():
@@ -1773,6 +1837,9 @@ def test_path_modify_schema():
 def test_frozen_set():
     class Model(BaseModel):
         a: FrozenSet[int] = frozenset({1, 2, 3})
+        b: FrozenSet = frozenset({1, 2, 3})
+        c: frozenset = frozenset({1, 2, 3})
+        d: frozenset = ...
 
     assert Model.schema() == {
         'title': 'Model',
@@ -1784,8 +1851,12 @@ def test_frozen_set():
                 'type': 'array',
                 'items': {'type': 'integer'},
                 'uniqueItems': True,
-            }
+            },
+            'b': {'title': 'B', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'd': {'title': 'D', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
+        'required': ['d'],
     }
 
 

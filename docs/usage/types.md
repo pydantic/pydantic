@@ -145,7 +145,7 @@ with custom properties and validation.
   see [Pydantic Types](#pydantic-types) for other more strict path types
 
 `uuid.UUID`
-: strings and bytes (converted to strings) are passed to `UUID(v)`;
+: strings and bytes (converted to strings) are passed to `UUID(v)`, with a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`;
   see [Pydantic Types](#pydantic-types) for other stricter UUID types
 
 `ByteSize`
@@ -508,8 +508,9 @@ For URI/URL validation the following types are available:
 - `AnyUrl`: any scheme allowed, TLD not required
 - `AnyHttpUrl`: schema `http` or `https`, TLD not required
 - `HttpUrl`: schema `http` or `https`, TLD required, max length 2083
-- `PostgresDsn`: schema `postgres` or `postgresql`, userinfo required, TLD not required
-- `RedisDsn`: schema `redis`, userinfo required, tld not required
+- `PostgresDsn`: schema `postgres` or `postgresql`, user info required, TLD not required
+- `RedisDsn`: schema `redis`, user info not required, tld not required (CHANGED: user info not required from
+  **v1.6** onwards)
 - `stricturl`, method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`
@@ -647,6 +648,7 @@ The `__str__` method for `Color` returns `self.as_named(fallback=True)`.
 
 You can use the `SecretStr` and the `SecretBytes` data types for storing sensitive information
 that you do not want to be visible in logging or tracebacks.
+`SecretStr` and `SecretBytes` can be initialized idempotently or by using `str` or `bytes` literals respectively.
 The `SecretStr` and `SecretBytes` will be formatted as either `'**********'` or `''` on conversion to json.
 
 ```py

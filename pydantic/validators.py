@@ -1,6 +1,6 @@
 import re
-import sys
 from collections import OrderedDict
+from collections.abc import Hashable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum, IntEnum
@@ -25,7 +25,15 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, get_class, is_callable_type, is_literal_type
+from .typing import (
+    AnyCallable,
+    ForwardRef,
+    all_literal_values,
+    display_as_type,
+    get_class,
+    is_callable_type,
+    is_literal_type,
+)
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
@@ -251,7 +259,12 @@ def uuid_validator(v: Any, field: 'ModelField') -> UUID:
         if isinstance(v, str):
             v = UUID(v)
         elif isinstance(v, (bytes, bytearray)):
-            v = UUID(v.decode())
+            try:
+                v = UUID(v.decode())
+            except ValueError:
+                # 16 bytes in big-endian order as the bytes argument fail
+                # the above check
+                v = UUID(bytes=v)
     except ValueError:
         raise errors.UUIDError()
 
@@ -282,6 +295,13 @@ def decimal_validator(v: Any) -> Decimal:
         raise errors.DecimalIsNotFiniteError()
 
     return v
+
+
+def hashable_validator(v: Any) -> Hashable:
+    if isinstance(v, Hashable):
+        return v
+
+    raise errors.HashableError()
 
 
 def ip_v4_address_validator(v: Any) -> IPv4Address:
@@ -386,10 +406,7 @@ def callable_validator(v: Any) -> AnyCallable:
 
 
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
-    if sys.version_info >= (3, 7):
-        permitted_choices = type_.__args__
-    else:
-        permitted_choices = type_.__values__
+    permitted_choices = all_literal_values(type_)
     allowed_choices_set = set(permitted_choices)
 
     def literal_validator(v: Any) -> Any:
@@ -484,7 +501,7 @@ class IfConfig:
 
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
-_VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
+_VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
     (IntEnum, [int_validator, enum_validator]),
     (Enum, [enum_validator]),
     (
@@ -529,7 +546,7 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
 
 
 def find_validators(  # noqa: C901 (ignore complexity)
-    type_: AnyType, config: Type['BaseConfig']
+    type_: Type[Any], config: Type['BaseConfig']
 ) -> Generator[AnyCallable, None, None]:
     if type_ is Any:
         return
@@ -538,6 +555,9 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if type_ is Pattern:
         yield pattern_validator
+        return
+    if type_ is Hashable:
+        yield hashable_validator
         return
     if is_callable_type(type_):
         yield callable_validator

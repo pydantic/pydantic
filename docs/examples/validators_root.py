@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ValidationError, root_validator
 
+
 class UserModel(BaseModel):
     username: str
     password1: str
@@ -17,6 +18,7 @@ class UserModel(BaseModel):
             raise ValueError('passwords do not match')
         return values
 
+
 print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))
 try:
     UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn2')
@@ -24,7 +26,11 @@ except ValidationError as e:
     print(e)
 
 try:
-    UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn',
-              card_number='1234')
+    UserModel(
+        username='scolvin',
+        password1='zxcvbn',
+        password2='zxcvbn',
+        card_number='1234',
+    )
 except ValidationError as e:
     print(e)

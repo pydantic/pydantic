@@ -6,9 +6,11 @@ from pydantic.generics import GenericModel
 AT = TypeVar('AT')
 BT = TypeVar('BT')
 
+
 class Model(GenericModel, Generic[AT, BT]):
     a: AT
     b: BT
+
 
 print(Model(a='a', b='a'))
 

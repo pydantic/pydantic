@@ -274,7 +274,6 @@ class PostgresDsn(AnyUrl):
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis'}
-    user_required = True
 
 
 def stricturl(
@@ -328,6 +327,9 @@ class NameEmail(Representation):
     def __init__(self, name: str, email: str):
         self.name = name
         self.email = email
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, NameEmail) and (self.name, self.email) == (other.name, other.email)
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:

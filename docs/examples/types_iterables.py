@@ -2,6 +2,7 @@ from typing import Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
 
 from pydantic import BaseModel
 
+
 class Model(BaseModel):
     simple_list: list = None
     list_of_ints: List[int] = None
@@ -22,6 +23,7 @@ class Model(BaseModel):
     sequence_of_ints: Sequence[int] = None
 
     compound: Dict[Union[str, bytes], List[Set[int]]] = None
+
 
 print(Model(simple_list=['1', '2', '3']).simple_list)
 print(Model(list_of_ints=['1', '2', '3']).list_of_ints)

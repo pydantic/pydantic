@@ -1,3 +1,4 @@
 29: error: Unexpected keyword argument "z" for "Model"  [call-arg]
 64: error: Untyped fields disallowed  [pydantic-field]
 79: error: Argument "x" to "OverrideModel" has incompatible type "float"; expected "int"  [arg-type]
+125: error: Untyped fields disallowed  [pydantic-field]

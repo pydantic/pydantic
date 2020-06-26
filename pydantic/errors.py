@@ -1,8 +1,8 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Set, Union
+from typing import Any, Set, Type, Union
 
-from .typing import AnyType, display_as_type
+from .typing import display_as_type
 
 # explicitly state exports to avoid "from .errors import *" also importing Decimal, Path etc.
 __all__ = (
@@ -61,6 +61,7 @@ __all__ = (
     'DateError',
     'TimeError',
     'DurationError',
+    'HashableError',
     'UUIDError',
     'UUIDVersionError',
     'ArbitraryTypeError',
@@ -392,6 +393,10 @@ class DurationError(PydanticValueError):
     msg_template = 'invalid duration format'
 
 
+class HashableError(PydanticTypeError):
+    msg_template = 'value is not a valid hashable'
+
+
 class UUIDError(PydanticTypeError):
     msg_template = 'value is not a valid uuid'
 
@@ -408,7 +413,7 @@ class ArbitraryTypeError(PydanticTypeError):
     code = 'arbitrary_type'
     msg_template = 'instance of {expected_arbitrary_type} expected'
 
-    def __init__(self, *, expected_arbitrary_type: AnyType) -> None:
+    def __init__(self, *, expected_arbitrary_type: Type[Any]) -> None:
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
 
 
@@ -421,7 +426,7 @@ class SubclassError(PydanticTypeError):
     code = 'subclass'
     msg_template = 'subclass of {expected_class} expected'
 
-    def __init__(self, *, expected_class: AnyType) -> None:
+    def __init__(self, *, expected_class: Type[Any]) -> None:
         super().__init__(expected_class=display_as_type(expected_class))
 
 

@@ -19,13 +19,13 @@ from typing import (
     no_type_check,
 )
 
-from .typing import AnyType, display_as_type
+from .typing import display_as_type
 from .version import version_info
 
 if TYPE_CHECKING:
     from inspect import Signature
     from .main import BaseModel, BaseConfig  # noqa: F401
-    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
     from .fields import ModelField  # noqa: F401
     from .dataclasses import DataclassType  # noqa: F401
 
@@ -45,6 +45,7 @@ __all__ = (
     'GetterDict',
     'ValueItems',
     'version_info',  # required here to match behaviour in v1.3
+    'ClassAttribute',
 )
 
 
@@ -84,7 +85,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     return v
 
 
-def sequence_like(v: AnyType) -> bool:
+def sequence_like(v: Type[Any]) -> bool:
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
 
 
@@ -100,7 +101,7 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
+def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...]]) -> bool:
     return isinstance(cls, type) and issubclass(cls, class_or_tuple)
 
 
@@ -174,13 +175,31 @@ def generate_model_signature(
 
             # TODO: replace annotation with actual expected types once #1055 solved
             kwargs = {'default': field.default} if not field.required else {}
-            merged_params[param_name] = Parameter(param_name, Parameter.KEYWORD_ONLY, annotation=field.type_, **kwargs)
+            merged_params[param_name] = Parameter(
+                param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
+            )
 
     if config.extra is config.extra.allow:
         use_var_kw = True
 
     if var_kw and use_var_kw:
-        merged_params[var_kw.name] = var_kw
+        # Make sure the parameter for extra kwargs
+        # does not have the same name as a field
+        default_model_signature = [
+            ('__pydantic_self__', Parameter.POSITIONAL_OR_KEYWORD),
+            ('data', Parameter.VAR_KEYWORD),
+        ]
+        if [(p.name, p.kind) for p in present_params] == default_model_signature:
+            # if this is the standard model signature, use extra_data as the extra args name
+            var_kw_name = 'extra_data'
+        else:
+            # else start from var_kw
+            var_kw_name = var_kw.name
+
+        # generate a name that's definitely unique
+        while var_kw_name in fields:
+            var_kw_name += '_'
+        merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
 
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
@@ -219,6 +238,8 @@ class Representation:
     __pretty__ is used by [devtools](https://python-devtools.helpmanual.io/) to provide human readable representations
     of objects.
     """
+
+    __slots__: Tuple[str, ...] = tuple()
 
     def __repr_args__(self) -> 'ReprArgs':
         """
@@ -331,9 +352,9 @@ class ValueItems(Representation):
 
     __slots__ = ('_items', '_type')
 
-    def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'DictIntStrAny']) -> None:
+    def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> None:
         if TYPE_CHECKING:
-            self._items: Union['AbstractSetIntStr', 'DictIntStrAny']
+            self._items: Union['AbstractSetIntStr', 'MappingIntStrAny']
             self._type: Type[Union[set, dict]]  # type: ignore
 
         # For further type checks speed-up
@@ -349,8 +370,8 @@ class ValueItems(Representation):
                 items = self._normalize_indexes(items, len(value))
             except TypeError as e:
                 raise TypeError(
-                    f'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
-                    f'expected integer keys or keyword "__all__"'
+                    'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
+                    'expected integer keys or keyword "__all__"'
                 ) from e
 
         self._items = items
@@ -378,7 +399,7 @@ class ValueItems(Representation):
         return item in self._items
 
     @no_type_check
-    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'DictIntStrAny']]:
+    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
         :return: raw values for elemet if self._items is dict and contain needed element
@@ -391,7 +412,7 @@ class ValueItems(Representation):
 
     @no_type_check
     def _normalize_indexes(
-        self, items: Union['AbstractSetIntStr', 'DictIntStrAny'], v_length: int
+        self, items: Union['AbstractSetIntStr', 'MappingIntStrAny'], v_length: int
     ) -> Union['AbstractSetIntStr', 'DictIntStrAny']:
         """
         :param items: dict or set of indexes which will be normalized
@@ -409,12 +430,33 @@ class ValueItems(Representation):
                 return {i for i in range(v_length)}
             return {v_length + i if i < 0 else i for i in items}
         else:
-            if '__all__' in items:
-                all_set = items.pop('__all__')
+            normalized_items = {v_length + i if i < 0 else i: v for i, v in items.items() if i != '__all__'}
+            all_set = items.get('__all__')
+            if all_set:
                 for i in range(v_length):
-                    iset = items.setdefault(i, set())
-                    iset.update(all_set)
-            return {v_length + i if i < 0 else i: v for i, v in items.items()}
+                    normalized_items.setdefault(i, set()).update(all_set)
+
+            return normalized_items
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]
+
+
+class ClassAttribute:
+    """
+    Hide class attribute from its instances
+    """
+
+    __slots__ = (
+        'name',
+        'value',
+    )
+
+    def __init__(self, name: str, value: Any) -> None:
+        self.name = name
+        self.value = value
+
+    def __get__(self, instance: Any, owner: Type[Any]) -> None:
+        if instance is None:
+            return self.value
+        raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')

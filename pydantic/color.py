@@ -312,11 +312,11 @@ def parse_float_alpha(value: Union[None, str, float, int]) -> Optional[float]:
         raise ColorError(reason='alpha values must be in the range 0 to 1')
 
 
-def parse_hsl(h: str, h_units: str, s: str, l: str, alpha: Optional[float] = None) -> RGBA:
+def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: Optional[float] = None) -> RGBA:
     """
     Parse raw hue, saturation, lightness and alpha values and convert to RGBA.
     """
-    s_value, l_value = parse_color_value(s, 100), parse_color_value(l, 100)
+    s_value, l_value = parse_color_value(sat, 100), parse_color_value(light, 100)
 
     h_value = float(h)
     if h_units in {None, 'deg'}:

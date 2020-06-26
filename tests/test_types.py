@@ -392,6 +392,7 @@ class BoolCastable:
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
+        ('uuid_check', b'\x12\x34\x56\x78' * 4, UUID('12345678-1234-5678-1234-567812345678')),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-', ValidationError),
         ('uuid_check', 123, ValidationError),
         ('decimal_check', 42.24, Decimal('42.24')),
@@ -519,7 +520,7 @@ def test_string_success():
     class MoreStringsModel(BaseModel):
         str_strip_enabled: constr(strip_whitespace=True)
         str_strip_disabled: constr(strip_whitespace=False)
-        str_regex: constr(regex=r'^xxx\d{3}$') = ...
+        str_regex: constr(regex=r'^xxx\d{3}$') = ...  # noqa: F722
         str_min_length: constr(min_length=5) = ...
         str_curtailed: constr(curtail_length=5) = ...
         str_email: EmailStr = ...
@@ -548,7 +549,7 @@ def test_string_success():
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_fails():
     class MoreStringsModel(BaseModel):
-        str_regex: constr(regex=r'^xxx\d{3}$') = ...
+        str_regex: constr(regex=r'^xxx\d{3}$') = ...  # noqa: F722
         str_min_length: constr(min_length=5) = ...
         str_curtailed: constr(curtail_length=5) = ...
         str_email: EmailStr = ...
@@ -1849,7 +1850,7 @@ def test_pattern_error():
         pattern: Pattern
 
     with pytest.raises(ValidationError) as exc_info:
-        Foobar(pattern=f'[xx')
+        Foobar(pattern='[xx')
     assert exc_info.value.errors() == [
         {'loc': ('pattern',), 'msg': 'Invalid regular expression', 'type': 'value_error.regex_pattern'}
     ]
@@ -1892,6 +1893,15 @@ def test_secretstr_equality():
     assert SecretStr('123') != SecretStr('321')
     assert SecretStr('123') != '123'
     assert SecretStr('123') is not SecretStr('123')
+
+
+def test_secretstr_idempotent():
+    class Foobar(BaseModel):
+        password: SecretStr
+
+    # Should not raise an exception
+    m = Foobar(password=SecretStr('1234'))
+    assert m.password.get_secret_value() == '1234'
 
 
 def test_secretstr_error():
@@ -1940,6 +1950,14 @@ def test_secretbytes_equality():
     assert SecretBytes(b'123') != SecretBytes(b'321')
     assert SecretBytes(b'123') != b'123'
     assert SecretBytes(b'123') is not SecretBytes(b'123')
+
+
+def test_secretbytes_idempotent():
+    class Foobar(BaseModel):
+        password: SecretBytes
+
+    # Should not raise an exception.
+    _ = Foobar(password=SecretBytes(b'1234'))
 
 
 def test_secretbytes_error():

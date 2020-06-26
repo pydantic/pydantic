@@ -324,15 +324,16 @@ def test_redis_dsns():
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
 
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a='redis://localhost:5432/app')
-    error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
+    # password is not required for redis
+    m = Model(a='redis://localhost:5432/app')
+    assert m.a == 'redis://localhost:5432/app'
+    assert m.a.user is None
+    assert m.a.password is None
 
 
 def test_custom_schemes():
     class Model(BaseModel):
-        v: stricturl(strip_whitespace=False, allowed_schemes={'ws', 'wss'})
+        v: stricturl(strip_whitespace=False, allowed_schemes={'ws', 'wss'})  # noqa: F821
 
     assert Model(v='ws://example.org').v == 'ws://example.org'
 
@@ -453,3 +454,5 @@ def test_name_email():
 
     assert str(Model(v=NameEmail('foo bar', 'foobaR@example.com')).v) == 'foo bar <foobaR@example.com>'
     assert str(Model(v='foo bar  <foobaR@example.com>').v) == 'foo bar <foobaR@example.com>'
+    assert NameEmail('foo bar', 'foobaR@example.com') == NameEmail('foo bar', 'foobaR@example.com')
+    assert NameEmail('foo bar', 'foobaR@example.com') != NameEmail('foo bar', 'different@example.com')

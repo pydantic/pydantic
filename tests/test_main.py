@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type
+from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
@@ -380,6 +380,15 @@ def test_const_uses_default():
         a: int = Field(3, const=True)
 
     m = Model()
+    assert m.a == 3
+
+
+def test_const_validates_after_type_validators():
+    # issue #1410
+    class Model(BaseModel):
+        a: int = Field(3, const=True)
+
+    m = Model(a='3')
     assert m.a == 3
 
 
@@ -1011,9 +1020,15 @@ def test_model_export_dict_exclusion():
 
     m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
 
-    assert m.dict(exclude={'bars': {0}}) == {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]}
-    assert m.dict(exclude={'bars': {'__all__'}}) == {'a': 1, 'bars': []}
-    assert m.dict(exclude={'bars': {'__all__': {'w'}}}) == {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]}
+    excludes = {'bars': {0}}
+    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]}
+    assert excludes == {'bars': {0}}
+    excludes = {'bars': {'__all__'}}
+    assert m.dict(exclude=excludes) == {'a': 1, 'bars': []}
+    assert excludes == {'bars': {'__all__'}}
+    excludes = {'bars': {'__all__': {'w'}}}
+    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]}
+    assert excludes == {'bars': {'__all__': {'w'}}}
 
 
 def test_custom_init_subclass_params():
@@ -1034,7 +1049,7 @@ def test_custom_init_subclass_params():
 
 def test_update_forward_refs_does_not_modify_module_dict():
     class MyModel(BaseModel):
-        field: Optional['MyModel']
+        field: Optional['MyModel']  # noqa: F821
 
     MyModel.update_forward_refs()
 
@@ -1071,3 +1086,57 @@ def test_default_factory():
 
     m = FunctionModel()
     assert m.uid is uuid4
+
+    # Returning a singleton from a default_factory is supported
+    class MySingleton:
+        pass
+
+    MY_SINGLETON = MySingleton()
+
+    class SingletonFieldModel(BaseModel):
+        singleton: MySingleton = Field(default_factory=lambda: MY_SINGLETON)
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    assert SingletonFieldModel().singleton is SingletonFieldModel().singleton
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
+def test_none_min_max_items():
+    # None default
+    class Foo(BaseModel):
+        foo: List = Field(None)
+        bar: List = Field(None, min_items=0)
+        baz: List = Field(None, max_items=10)
+
+    f1 = Foo()
+    f2 = Foo(bar=None)
+    f3 = Foo(baz=None)
+    f4 = Foo(bar=None, baz=None)
+    for f in (f1, f2, f3, f4):
+        assert f.foo is None
+        assert f.bar is None
+        assert f.baz is None
+
+
+def test_reuse_same_field():
+    required_field = Field(...)
+
+    class Model1(BaseModel):
+        required: str = required_field
+
+    class Model2(BaseModel):
+        required: str = required_field
+
+    with pytest.raises(ValidationError):
+        Model1.parse_obj({})
+    with pytest.raises(ValidationError):
+        Model2.parse_obj({})
+
+
+def test_base_config_type_hinting():
+    class M(BaseModel):
+        a: int
+
+    get_type_hints(M.__config__)

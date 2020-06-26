@@ -1,1 +1,0 @@
-Make `pattern_validator()` accept pre-compiled `Pattern` objects. Fix `str_validator()` return type to `str`.
