@@ -1,9 +1,9 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, Type, TypeVar, cast, get_type_hints
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast, get_type_hints
 
 from . import validator
 from .errors import ConfigError
-from .main import BaseConfig, BaseModel, Extra, create_model
+from .main import BaseModel, Extra, create_model
 from .utils import to_camel
 
 __all__ = ('validate_arguments',)
@@ -177,9 +177,16 @@ class ValidatedFunction:
         else:
             return self.raw_function(**d)
 
-    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, **configs: Any,) -> None:
+    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, **config_params: Any) -> None:
         pos_args = len(self.arg_mapping)
-        configs.update(extra=Extra.forbid)
+
+        if TYPE_CHECKING:
+
+            class CustomConfig:
+                pass
+
+        else:
+            CustomConfig = type('Config', (), config_params)
 
         class DecoratorBaseModel(BaseModel):
             @validator(self.v_args_name, check_fields=False, allow_reuse=True)
@@ -204,9 +211,7 @@ class ValidatedFunction:
                 keys = ', '.join(map(repr, v))
                 raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
 
-            # class Config:
-            #     extra = Extra.forbid
-
-            Config = cast(Type[BaseConfig], type('Config', (), configs))
+            class Config(CustomConfig):
+                extra = Extra.forbid
 
         self.model = create_model(to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
