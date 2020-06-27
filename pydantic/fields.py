@@ -295,7 +295,7 @@ class ModelField(Representation):
 
         if isinstance(value, FieldInfo):
             field_info = value
-            value = field_info.default_factory() if field_info.default_factory is not None else field_info.default
+            value = None if field_info.default_factory is not None else field_info.default
         else:
             field_info = FieldInfo(value, **field_info_from_config)
         required: 'BoolUndefined' = Undefined
@@ -340,7 +340,19 @@ class ModelField(Representation):
         Note: this method is **not** idempotent (because _type_analysis is not idempotent),
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
+
+        # To prevent side effects by calling the `default_factory` for nothing, we only call it
+        # when we want to validate the default value i.e. when `validate_all` is set to True.
+        if self.default_factory is not None:
+            if self.type_ is None:
+                raise errors_.ConfigError(
+                    f'you need to set the type of field {self.name!r} when using `default_factory`'
+                )
+            if not self.model_config.validate_all:
+                return
+
         default_value = self.get_default()
+
         if default_value is not None and self.type_ is None:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_

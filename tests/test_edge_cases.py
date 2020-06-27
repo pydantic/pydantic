@@ -1531,3 +1531,23 @@ def test_hashable_optional(default):
 
     Model(v=None)
     Model()
+
+
+def test_default_factory_side_effect():
+    """It may call `default_factory` more than once when `validate_all` is set"""
+
+    v = 0
+
+    def factory():
+        nonlocal v
+        v += 1
+        return v
+
+    class MyModel(BaseModel):
+        id: int = Field(default_factory=factory)
+
+        class Config:
+            validate_all = True
+
+    m1 = MyModel()
+    assert m1.id == 2  # instead of 1

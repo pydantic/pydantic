@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, ConfigError, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
 
 
 def test_success():
@@ -52,26 +52,32 @@ def test_ultra_simple_repr():
         assert m.to_string() == 'a=10.2 b=10'
 
 
-def test_default_dict_repr():
+def test_default_factory_field():
     def myfunc():
         return 1
 
     class Model(BaseModel):
         a: int = Field(default_factory=myfunc)
-        b = Field(default_factory=myfunc)
 
     m = Model()
-    assert str(m) == 'a=1 b=1'
-    assert repr(m) == 'Model(a=1, b=1)'
+    assert str(m) == 'a=1'
     assert (
         repr(m.__fields__['a']) == "ModelField(name='a', type=int, required=False, default_factory='<function myfunc>')"
     )
-    assert (
-        repr(m.__fields__['b']) == "ModelField(name='b', type=int, required=False, default_factory='<function myfunc>')"
-    )
-    assert dict(m) == {'a': 1, 'b': 1}
-    assert m.dict() == {'a': 1, 'b': 1}
-    assert m.json() == '{"a": 1, "b": 1}'
+    assert dict(m) == {'a': 1}
+    assert m.json() == '{"a": 1}'
+
+
+def test_default_factory_no_type_field():
+    def myfunc():
+        return 1
+
+    with pytest.raises(ConfigError) as e:
+
+        class Model(BaseModel):
+            a = Field(default_factory=myfunc)
+
+    assert str(e.value) == "you need to set the type of field 'a' when using `default_factory`"
 
 
 def test_comparing():
@@ -1100,6 +1106,46 @@ def test_default_factory():
             arbitrary_types_allowed = True
 
     assert SingletonFieldModel().singleton is SingletonFieldModel().singleton
+
+
+def test_default_factory_called_once():
+    """It should call only once the given factory by default"""
+
+    class Seq:
+        def __init__(self):
+            self.v = 0
+
+        def __call__(self):
+            self.v += 1
+            return self.v
+
+    class MyModel(BaseModel):
+        id: int = Field(default_factory=Seq())
+
+    m1 = MyModel()
+    assert m1.id == 1
+    m2 = MyModel()
+    assert m2.id == 2
+    assert m1.id == 1
+
+
+def test_default_factory_called_once_2():
+    """It should call only once the given factory by default"""
+
+    v = 0
+
+    def factory():
+        nonlocal v
+        v += 1
+        return v
+
+    class MyModel(BaseModel):
+        id: int = Field(default_factory=factory)
+
+    m1 = MyModel()
+    assert m1.id == 1
+    m2 = MyModel()
+    assert m2.id == 2
 
 
 @pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
