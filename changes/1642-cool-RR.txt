@@ -1,0 +1,3 @@
+Use `chain.from_iterable` in class_validators.py. This is a faster and more idiomatic way of using `itertools.chain`.
+Instead of computing all the items in the iterable and storing them in memory, they are computed one-by-one and never
+stored as a huge list. This can save on both runtime and memory space.
