@@ -229,7 +229,7 @@ def test_enum_modify_schema():
 
         @classmethod
         def __modify_schema__(cls, field_schema):
-            field_schema['tsEnumNames'] = list(e.name for e in cls)
+            field_schema['tsEnumNames'] =  [e.name for e in cls]
 
     class Model(BaseModel):
         spam: SpamEnum = Field(None)
