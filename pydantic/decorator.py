@@ -14,13 +14,13 @@ if TYPE_CHECKING:
     Callable = TypeVar('Callable', bound=AnyCallable)
 
 
-def validate_arguments(func: 'Callable' = None, **configs: Any) -> 'Callable':
+def validate_arguments(func: 'Callable' = None, **config_params: Any) -> 'Callable':
     """
     Decorator to validate the arguments passed to a function.
     """
 
     def validate(_func: 'Callable') -> 'Callable':
-        vd = ValidatedFunction(_func, **configs)
+        vd = ValidatedFunction(_func, **config_params)
 
         @wraps(_func)
         def wrapper_function(*args: Any, **kwargs: Any) -> Any:
@@ -43,7 +43,7 @@ V_POSITIONAL_ONLY_NAME = 'v__positional_only'
 
 
 class ValidatedFunction:
-    def __init__(self, function: 'Callable', **configs: Any):
+    def __init__(self, function: 'Callable', **config_params: Any):
         from inspect import signature, Parameter
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
@@ -107,7 +107,7 @@ class ValidatedFunction:
             # same with kwargs
             fields[self.v_kwargs_name] = Dict[Any, Any], None
 
-        self.create_model(fields, takes_args, takes_kwargs, **configs)
+        self.create_model(fields, takes_args, takes_kwargs, **config_params)
 
     def call(self, *args: Any, **kwargs: Any) -> Any:
         values = self.build_values(args, kwargs)
