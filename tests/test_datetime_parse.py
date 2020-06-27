@@ -93,6 +93,7 @@ def test_time_parsing(value, result):
         (1_494_012_444, datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
         # values in ms
         ('1494012444000.883309', datetime(2017, 5, 5, 19, 27, 24, 883, tzinfo=timezone.utc)),
+        ('-1494012444000.883309', datetime(1922, 8, 29, 4, 32, 35, 999117, tzinfo=timezone.utc)),
         (1_494_012_444_000, datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
         ('2012-04-23T09:15:00', datetime(2012, 4, 23, 9, 15)),
         ('2012-4-9 4:8:16', datetime(2012, 4, 9, 4, 8, 16)),
