@@ -33,7 +33,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, AnyType, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
+from .typing import AnyCallable, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
     ClassAttribute,
     GetterDict,
@@ -110,7 +110,7 @@ class BaseConfig:
     schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
-    json_encoders: Dict[AnyType, AnyCallable] = {}
+    json_encoders: Dict[Type[Any], AnyCallable] = {}
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
@@ -610,7 +610,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if isinstance(v, BaseModel):
             if to_dict:
-                return v.dict(
+                v_dict = v.dict(
                     by_alias=by_alias,
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
@@ -618,6 +618,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude=exclude,
                     exclude_none=exclude_none,
                 )
+                if '__root__' in v_dict:
+                    return v_dict['__root__']
+                return v_dict
             else:
                 return v.copy(include=include, exclude=exclude)
 
@@ -796,8 +799,10 @@ def create_model(
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
     :param __validators__: a dict of method names and @validator class methods
-    :param **field_definitions: fields of the model (or extra fields if a base is supplied) in the format
-        `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
+    :param **field_definitions: fields of the model (or extra fields if a base is supplied)
+        in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
+        `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
+        `<name>=<FieldInfo>`, e.g. `foo=Field(default_factory=datetime.utcnow, alias='bar')`
     """
     if __base__:
         if __config__ is not None:

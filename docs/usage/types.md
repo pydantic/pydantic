@@ -248,7 +248,7 @@ types:
 * `datetime` fields can be:
 
     * `datetime`, existing `datetime` object
-    * `int` or `float`, assumed as Unix time, i.e. seconds (if <= `2e10`) or milliseconds (if > `2e10`) since 1 January 1970
+    * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
     * `str`, following formats work:
 
         * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z[±]HH[:]MM]]]`
@@ -508,8 +508,9 @@ For URI/URL validation the following types are available:
 - `AnyUrl`: any scheme allowed, TLD not required
 - `AnyHttpUrl`: schema `http` or `https`, TLD not required
 - `HttpUrl`: schema `http` or `https`, TLD required, max length 2083
-- `PostgresDsn`: schema `postgres` or `postgresql`, userinfo required, TLD not required
-- `RedisDsn`: schema `redis`, userinfo required, tld not required
+- `PostgresDsn`: schema `postgres` or `postgresql`, user info required, TLD not required
+- `RedisDsn`: schema `redis`, user info not required, tld not required (CHANGED: user info not required from
+  **v1.6** onwards)
 - `stricturl`, method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`

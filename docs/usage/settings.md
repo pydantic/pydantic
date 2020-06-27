@@ -91,7 +91,8 @@ MY_VAR='Hello world'
 
 Once you have your `.env` file filled with variables, *pydantic* supports loading it in two ways:
 
-**1.** setting `env_file` on `Config` in a `BaseSettings` class:
+**1.** setting `env_file` (and `env_file_encoding` if you don't want the default encoding of your OS) on `Config`
+in a `BaseSettings` class:
 
 ```py
 class Settings(BaseSettings):
@@ -99,12 +100,14 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = '.env'
+        env_file_encoding = 'utf-8'
 ```
 
-**2.** instantiating a `BaseSettings` derived class with the `_env_file` keyword argument:
+**2.** instantiating a `BaseSettings` derived class with the `_env_file` keyword argument
+(and the `_env_file_encoding` if needed):
 
 ```py
-settings = Settings(_env_file='prod.env')
+settings = Settings(_env_file='prod.env', _env_file_encoding='utf-8')
 ```
 
 In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the

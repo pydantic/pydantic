@@ -1822,6 +1822,7 @@ def test_path_modify_schema():
     class Model(BaseModel):
         path1: Path
         path2: MyPath
+        path3: List[MyPath]
 
     assert Model.schema() == {
         'title': 'Model',
@@ -1829,8 +1830,9 @@ def test_path_modify_schema():
         'properties': {
             'path1': {'title': 'Path1', 'type': 'string', 'format': 'path'},
             'path2': {'title': 'Path2', 'type': 'string', 'format': 'path', 'foobar': 123},
+            'path3': {'title': 'Path3', 'type': 'array', 'items': {'type': 'string', 'format': 'path', 'foobar': 123}},
         },
-        'required': ['path1', 'path2'],
+        'required': ['path1', 'path2', 'path3'],
     }
 
 

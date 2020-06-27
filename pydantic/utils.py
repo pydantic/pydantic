@@ -19,7 +19,7 @@ from typing import (
     no_type_check,
 )
 
-from .typing import AnyType, display_as_type
+from .typing import display_as_type
 from .version import version_info
 
 if TYPE_CHECKING:
@@ -85,7 +85,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     return v
 
 
-def sequence_like(v: AnyType) -> bool:
+def sequence_like(v: Type[Any]) -> bool:
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
 
 
@@ -101,7 +101,7 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
+def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...]]) -> bool:
     return isinstance(cls, type) and issubclass(cls, class_or_tuple)
 
 

@@ -274,7 +274,6 @@ class PostgresDsn(AnyUrl):
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis'}
-    user_required = True
 
 
 def stricturl(

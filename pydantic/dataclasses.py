@@ -5,7 +5,6 @@ from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
 from .main import create_model, validate_model
-from .typing import AnyType
 
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
@@ -56,7 +55,7 @@ def setattr_validate_assignment(self: 'DataclassType', name: str, value: Any) ->
 
 
 def _process_class(
-    _cls: AnyType,
+    _cls: Type[Any],
     init: bool,
     repr: bool,
     eq: bool,
@@ -120,7 +119,7 @@ def _process_class(
 
 
 def dataclass(
-    _cls: Optional[AnyType] = None,
+    _cls: Optional[Type[Any]] = None,
     *,
     init: bool = True,
     repr: bool = True,
@@ -129,7 +128,7 @@ def dataclass(
     unsafe_hash: bool = False,
     frozen: bool = False,
     config: Type[Any] = None,
-) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
+) -> Union[Callable[[Type[Any]], 'DataclassType'], 'DataclassType']:
     """
     Like the python standard lib dataclasses but with type validation.
 
@@ -137,7 +136,7 @@ def dataclass(
     as Config.validate_assignment.
     """
 
-    def wrap(cls: AnyType) -> 'DataclassType':
+    def wrap(cls: Type[Any]) -> 'DataclassType':
         return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
 
     if _cls is None:

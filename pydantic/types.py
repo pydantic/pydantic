@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional,
 from uuid import UUID
 
 from . import errors
-from .typing import AnyType
 from .utils import import_string, update_not_none
 from .validators import (
     bytes_validator,
@@ -527,7 +526,7 @@ class JsonWrapper:
 
 
 class JsonMeta(type):
-    def __getitem__(self, t: AnyType) -> Type[JsonWrapper]:
+    def __getitem__(self, t: Type[Any]) -> Type[JsonWrapper]:
         return type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t})
 
 
