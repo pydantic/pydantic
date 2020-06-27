@@ -1,0 +1,1 @@
+make *pydantic* errors (un)pickable
