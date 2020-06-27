@@ -1,1 +1,1 @@
-Add conset(), analogous to conlist()
+Add `conset()`, analogous to `conlist()`
