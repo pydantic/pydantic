@@ -70,6 +70,7 @@ def test_wrap():
     assert issubclass(foo_bar.model, BaseModel)
     assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs'}
     assert foo_bar.model.__name__ == 'FooBar'
+    assert foo_bar.model.schema()['title'] == 'FooBar'
     # signature is slightly different on 3.6
     if sys.version_info >= (3, 7):
         assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
@@ -262,3 +263,17 @@ def test_class_method():
         {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
         {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
+
+
+def test_config():
+    @validate_arguments(config=dict(title='testing', fields={'b': 'bang'}))
+    def foo(a: int, b: int):
+        return f'{a}, {b}'
+
+    assert foo(1, 2) == '1, 2'
+    assert foo(1, bang=2) == '1, 2'
+    assert foo.model.schema()['title'] == 'testing'
+    with pytest.raises(ValidationError) as exc_info:
+        foo(1, b=2)
+
+    assert exc_info.value.errors() == ...

@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, TypeVar, cast, get_type_hints
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, Type, TypeVar, Union, cast, get_type_hints
 
 from . import validator
 from .errors import ConfigError
@@ -12,15 +12,16 @@ if TYPE_CHECKING:
     from .typing import AnyCallable
 
     Callable = TypeVar('Callable', bound=AnyCallable)
+    ConfigType = Union[None, Type[Any], Dict[str, Any]]
 
 
-def validate_arguments(func: 'Callable' = None, **config_params: Any) -> 'Callable':
+def validate_arguments(func: 'Callable' = None, *, config: 'ConfigType' = None) -> 'Callable':
     """
     Decorator to validate the arguments passed to a function.
     """
 
     def validate(_func: 'Callable') -> 'Callable':
-        vd = ValidatedFunction(_func, **config_params)
+        vd = ValidatedFunction(_func, config)
 
         @wraps(_func)
         def wrapper_function(*args: Any, **kwargs: Any) -> Any:
@@ -43,7 +44,7 @@ V_POSITIONAL_ONLY_NAME = 'v__positional_only'
 
 
 class ValidatedFunction:
-    def __init__(self, function: 'Callable', **config_params: Any):
+    def __init__(self, function: 'Callable', config: 'ConfigType'):
         from inspect import signature, Parameter
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
@@ -107,7 +108,7 @@ class ValidatedFunction:
             # same with kwargs
             fields[self.v_kwargs_name] = Dict[Any, Any], None
 
-        self.create_model(fields, takes_args, takes_kwargs, **config_params)
+        self.create_model(fields, takes_args, takes_kwargs, config)
 
     def call(self, *args: Any, **kwargs: Any) -> Any:
         values = self.build_values(args, kwargs)
@@ -177,16 +178,17 @@ class ValidatedFunction:
         else:
             return self.raw_function(**d)
 
-    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, **config_params: Any) -> None:
+    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
 
-        if TYPE_CHECKING:
+        class CustomConfig:
+            pass
 
-            class CustomConfig:
-                pass
-
-        else:
-            CustomConfig = type('Config', (), config_params)
+        if not TYPE_CHECKING:
+            if isinstance(config, dict):
+                CustomConfig = type('Config', (), config)
+            elif config is not None:
+                CustomConfig = config
 
         class DecoratorBaseModel(BaseModel):
             @validator(self.v_args_name, check_fields=False, allow_reuse=True)
