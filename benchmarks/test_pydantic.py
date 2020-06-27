@@ -46,7 +46,7 @@ class TestPydantic:
         try:
             return True, self.model(**data)
         except ValidationError as e:
-            return False, str(e)
+            return False, e.errors()
 
     def to_json(self, model):
         return model.json()
