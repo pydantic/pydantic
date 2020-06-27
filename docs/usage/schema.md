@@ -156,7 +156,10 @@ Outputs:
 ```
 
 For more fine-grained control, you can alternatively set `schema_extra` to a callable and post-process the generated schema.
-The callable is passed the schema dictionary as the first and only argument, and is expected to mutate it *in-place*; the return value is not used.
+The callable can have one or two positional arguments.
+The first will be the schema dictionary.
+The second, if accepted, will be the model class.
+The callable is expected to mutate the schema dictionary *in-place*; the return value is not used.
 
 For example, the `title` key can be removed from the model's `properties`:
 
