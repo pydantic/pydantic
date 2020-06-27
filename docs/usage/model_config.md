@@ -32,7 +32,7 @@ Options:
 
 **`fields`**
 : a `dict` containing schema information for each field; this is equivalent to
-  using [the schema](schema.md) class (default: `None`)
+  using [the `Field` class](schema.md) (default: `None`)
 
 **`validate_assignment`**
 : whether to perform validation on *assignment* to attributes (default: `False`)
