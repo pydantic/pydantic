@@ -94,7 +94,7 @@ __all__ = (
 )
 
 
-def cls_kwargs(cls: Type['PydanticErrorMixin'], kwargs: 'DictStrAny') -> 'PydanticErrorMixin':
+def cls_kwargs(cls: Type['PydanticErrorMixin'], ctx: 'DictStrAny') -> 'PydanticErrorMixin':
     """
     For built-in exceptions like ValueError or TypeError, we need to implement
     __reduce__ to override the default behaviour (instead of __getstate__/__setstate__)
@@ -102,7 +102,7 @@ def cls_kwargs(cls: Type['PydanticErrorMixin'], kwargs: 'DictStrAny') -> 'Pydant
     Since we only use kwargs, we need a little constructor to change that.
     Note: the callable can't be a lambda as pickle looks in the namespace to find it
     """
-    return cls(**kwargs)
+    return cls(**ctx)
 
 
 class PydanticErrorMixin:
