@@ -242,6 +242,22 @@ def unique_list(input_list: Union[List[T], Tuple[T, ...]]) -> List[T]:
 def update_normalized_all(
     item: Union['AbstractSetIntStr', 'MappingIntStrAny'], all_items: Union['AbstractSetIntStr', 'MappingIntStrAny'],
 ) -> Union['AbstractSetIntStr', 'MappingIntStrAny']:
+    """
+    Update item based on what all items contains.
+
+    The update is done based on these cases:
+
+    - if both arguments are dicts then each key-value pair existing in ``all_items`` is merged into ``item``,
+      while the rest of the key-value pairs are updated recursively with this function.
+    - if both arguments are sets then they are just merged.
+    - if ``item`` is a dictionary and ``all_items`` is a set then all values of it are added to ``item`` as
+      ``key: ...``.
+    - if ``item`` is set and ``all_items`` is a dictionary, then ``item`` is converted to a dictionary and then the
+      key-value pairs of ``all_items`` are merged in it.
+
+    During recursive calls, there is a case where ``all_items`` can be an Ellipsis, in which case the ``item`` is
+    returned as is.
+    """
     if not item:
         return all_items
     if isinstance(item, dict) and isinstance(all_items, dict):
@@ -479,17 +495,16 @@ class ValueItems(Representation):
                     raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
             normalized_items = {v_length + i if i < 0 else i: v for i, v in items.items() if i != '__all__'}
             if all_items:
-                default: Type[Union[set, dict]]  # type: ignore
+                default: Type[Union[Set[Any], Dict[Any, Any]]]
                 if isinstance(all_items, Mapping):
                     default = dict
                 elif isinstance(all_items, AbstractSet):
                     default = set
                 else:
-                    default = ...
-                for i in range(v_length):
-                    if default is ...:
+                    for i in range(v_length):
                         normalized_items.setdefault(i, ...)
-                        continue
+                    return normalized_items
+                for i in range(v_length):
                     normalized_item = normalized_items.setdefault(i, default())
                     if normalized_item is not ...:
                         normalized_items[i] = update_normalized_all(normalized_item, all_items)
