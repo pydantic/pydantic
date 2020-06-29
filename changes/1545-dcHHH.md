@@ -1,1 +1,1 @@
-Move the assignment of field.validate_always in fields.py to make 'always' parameter of validator works on inheritance.
+Move the assignment of `field.validate_always` in `fields.py` so the `always` parameter of validators work on inheritance.
