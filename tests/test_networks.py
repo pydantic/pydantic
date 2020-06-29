@@ -310,6 +310,11 @@ def test_postgres_dsns():
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
     assert exc_info.value.json().startswith('[')
 
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='postgres://localhost:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
+
 
 def test_redis_dsns():
     class Model(BaseModel):
