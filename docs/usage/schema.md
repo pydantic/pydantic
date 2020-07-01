@@ -81,7 +81,7 @@ It has the following arguments:
         either explicitly anchor your regular expressions with `^`
         (e.g. `^foo` to match any string starting with `foo`),
         or explicitly allow an arbitrary prefix with `.*?`
-        (e.g. `.*?foo` to match any string containig the substring `foo`).
+        (e.g. `.*?foo` to match any string containing the substring `foo`).
 
         See [#1631](https://github.com/samuelcolvin/pydantic/issues/1631)
         for a discussion of possible changes to *pydantic* behavior in **v2**.
