@@ -4,8 +4,10 @@ from pydantic import BaseModel, Field
 
 storage = {}
 
+
 def get_new_id():
     return max(storage) + 1 if storage else 0
+
 
 class BaseStorageModel(BaseModel):
     __slots__ = ('_dirty', '_created')
@@ -26,9 +28,11 @@ class BaseStorageModel(BaseModel):
             storage[self.id] = self.dict()
             self._dirty = False
 
+
 class Model(BaseStorageModel):
     foo: str
     bar: int = 42
+
 
 m = Model(foo='bar')
 print(m._dirty, m._created, storage)
