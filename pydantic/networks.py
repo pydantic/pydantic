@@ -190,7 +190,7 @@ class AnyUrl(str):
             raise errors.UrlSchemePermittedError(cls.allowed_schemes)
 
         port = parts['port']
-        if port is not None and int(port) > 65_536:
+        if port is not None and int(port) > 65_535:
             raise errors.UrlPortError()
 
         user = parts['user']
