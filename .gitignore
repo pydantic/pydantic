@@ -1,5 +1,6 @@
 .idea/
 env/
+venv/
 env36/
 env37/
 env38/

@@ -185,8 +185,13 @@ class AnyUrl(str):
         scheme = parts['scheme']
         if scheme is None:
             raise errors.UrlSchemeError()
+
         if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
             raise errors.UrlSchemePermittedError(cls.allowed_schemes)
+
+        port = parts['port']
+        if port is not None and int(port) > 65_536:
+            raise errors.UrlPortError()
 
         user = parts['user']
         if cls.user_required and user is None:
@@ -205,7 +210,7 @@ class AnyUrl(str):
             host=host,
             tld=tld,
             host_type=host_type,
-            port=parts['port'],
+            port=port,
             path=parts['path'],
             query=parts['query'],
             fragment=parts['fragment'],

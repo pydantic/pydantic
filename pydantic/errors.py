@@ -27,6 +27,7 @@ __all__ = (
     'UrlUserInfoError',
     'UrlHostError',
     'UrlHostTldError',
+    'UrlPortError',
     'UrlExtraError',
     'EnumError',
     'IntegerError',
@@ -203,6 +204,11 @@ class UrlHostError(UrlError):
 class UrlHostTldError(UrlError):
     code = 'url.host'
     msg_template = 'URL host invalid, top level domain required'
+
+
+class UrlPortError(UrlError):
+    code = 'url.port'
+    msg_template = 'URL port invalid, port cannot exceed 65535'
 
 
 class UrlExtraError(UrlError):
