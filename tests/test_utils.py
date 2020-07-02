@@ -1,9 +1,11 @@
 import os
 import re
 import string
+from copy import deepcopy
 from distutils.version import StrictVersion
 from enum import Enum
 from typing import NewType, Union
+from unittest.mock import patch
 
 import pytest
 
@@ -19,6 +21,7 @@ from pydantic.utils import (
     get_model,
     import_string,
     lenient_issubclass,
+    smart_deepcopy,
     truncate,
 )
 from pydantic.version import version_info
@@ -333,3 +336,22 @@ def test_all_literal_values():
 
     L312 = Literal['3', Literal[L1, L2]]
     assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
+
+
+@pytest.mark.parametrize('obj', (1, 1.0, '1', b'1', int, None, test_all_literal_values, lambda: ...))
+def test_smart_deepcopy_immutable_non_sequence(obj):
+    # make sure deepcopy or copy is not used
+    with patch('pydantic.utils.copy', return_value=object()), patch('pydantic.utils.deepcopy', return_value=object()):
+        assert smart_deepcopy(obj) is deepcopy(obj) is obj
+
+
+@pytest.mark.parametrize('empty_collection', ({}, [], set()))  # empty tuple or frozenset is always the same object
+def test_smart_deepcopy_empty_collection(empty_collection):
+    with patch('pydantic.utils.deepcopy', return_value=empty_collection):  # make sure deepcopy is not used
+        assert smart_deepcopy(empty_collection) is not empty_collection
+
+
+@pytest.mark.parametrize('collection', ({'a': 1}, [1], {1}, ({},), frozenset((1,))))
+def test_smart_deepcopy_collection(collection):
+    with patch('pydantic.utils.copy', return_value=collection):  # make sure copy is not used
+        assert smart_deepcopy(collection) is not collection

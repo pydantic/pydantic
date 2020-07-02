@@ -2,7 +2,6 @@ import json
 import sys
 import warnings
 from abc import ABCMeta
-from copy import deepcopy
 from enum import Enum
 from functools import partial
 from pathlib import Path
@@ -25,7 +24,7 @@ from typing import (
     overload,
 )
 
-from .class_validators import ROOT_KEY, ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
+from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import SHAPE_MAPPING, ModelField, Undefined
@@ -35,14 +34,18 @@ from .schema import model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
+    ROOT_KEY,
     ClassAttribute,
     GetterDict,
     Representation,
     ValueItems,
     generate_model_signature,
+    is_valid_field,
     lenient_issubclass,
     sequence_like,
+    smart_deepcopy,
     validate_field_name,
+    validate_private_attributes,
 )
 
 if TYPE_CHECKING:
@@ -177,12 +180,6 @@ def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
         config.case_sensitive = not config.case_insensitive  # type: ignore
 
 
-def is_valid_field(name: str) -> bool:
-    if not name.startswith('_'):
-        return True
-    return ROOT_KEY == name
-
-
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
         raise ValueError('__root__ cannot be mixed with other fields')
@@ -204,15 +201,19 @@ class ModelMetaclass(ABCMeta):
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
         fields_defaults: Dict[str, Any] = {}
-
         pre_root_validators, post_root_validators = [], []
-        for base in reversed(bases):
-            if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
-                fields.update(deepcopy(base.__fields__))
+        slots: Union[str, Tuple[str, ...]] = namespace.get('__slots__', ())
+        private_attributes: Dict[str, Any] = dict.fromkeys((slots,) if isinstance(slots, str) else slots, Undefined)
+        validate_private_attributes(private_attributes)
+
+        for base in reversed(bases) if _is_base_model_class_defined else ():
+            if base is not BaseModel and issubclass(base, BaseModel):
+                fields.update(smart_deepcopy(base.__fields__))
                 config = inherit_config(base.__config__, config)
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
                 post_root_validators += base.__post_root_validators__
+                private_attributes.update(base.__private_attributes__)
 
         config = inherit_config(namespace.get('Config'), config)
         validators = inherit_validators(extract_validators(namespace), validators)
@@ -259,7 +260,9 @@ class ModelMetaclass(ABCMeta):
                         fields_defaults[ann_name] = inferred.default
 
             for var_name, value in namespace.items():
-                if (
+                if var_name in private_attributes:
+                    private_attributes[var_name] = value
+                elif (
                     var_name not in annotations
                     and is_valid_field(var_name)
                     and not isinstance(value, untouched_types)
@@ -301,13 +304,17 @@ class ModelMetaclass(ABCMeta):
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
-            **{n: v for n, v in namespace.items() if n not in fields},
+            '__private_attributes__': private_attributes,
+            **{n: v for n, v in namespace.items() if n not in fields | private_attributes.keys()},
         }
 
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
         # set __signature__ attr only for model class, but not for its instances
         cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
         return cls
+
+
+object_setattr = object.__setattr__
 
 
 class BaseModel(Representation, metaclass=ModelMetaclass):
@@ -324,6 +331,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __schema_cache__: 'DictAny' = {}
         __custom_root_type__: bool = False
         __signature__: 'Signature'
+        __private_attributes__: Dict[str, Any]
+        __fields_set__: SetStr = set()
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
@@ -336,17 +345,18 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         Raises ValidationError if the input data cannot be parsed to form a valid model.
         """
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
-        if TYPE_CHECKING:
-            __pydantic_self__.__dict__: Dict[str, Any] = {}
-            __pydantic_self__.__fields_set__: 'SetStr' = set()
         values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)
         if validation_error:
             raise validation_error
-        object.__setattr__(__pydantic_self__, '__dict__', values)
-        object.__setattr__(__pydantic_self__, '__fields_set__', fields_set)
+        object_setattr(__pydantic_self__, '__dict__', values)
+        object_setattr(__pydantic_self__, '__fields_set__', fields_set)
+        __pydantic_self__._set_private_attributes(__pydantic_self__.__private_attributes__)
 
     @no_type_check
     def __setattr__(self, name, value):
+        if name in self.__private_attributes__:
+            return object_setattr(self, name, value)
+
         if self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation:
@@ -361,11 +371,23 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         self.__fields_set__.add(name)
 
     def __getstate__(self) -> 'DictAny':
-        return {'__dict__': self.__dict__, '__fields_set__': self.__fields_set__}
+        return {
+            '__dict__': self.__dict__,
+            '__fields_set__': self.__fields_set__,
+            '__private_attributes_values__': {k: getattr(self, k, Undefined) for k in self.__private_attributes__},
+        }
 
     def __setstate__(self, state: 'DictAny') -> None:
-        object.__setattr__(self, '__dict__', state['__dict__'])
-        object.__setattr__(self, '__fields_set__', state['__fields_set__'])
+        object_setattr(self, '__dict__', state['__dict__'])
+        object_setattr(self, '__fields_set__', state['__fields_set__'])
+        self._set_private_attributes(state['__private_attributes_values__'], need_copy=False, check=False)
+
+    def _set_private_attributes(self, source: 'DictStrAny', need_copy: bool = True, check: bool = True) -> None:
+        for name, value in source.items():
+            if value is not Undefined:
+                object_setattr(self, name, smart_deepcopy(value) if need_copy else value)
+            elif check and not hasattr(self, name):
+                raise AttributeError(f'private attribute "{name}" is unset')
 
     def dict(
         self,
@@ -504,8 +526,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         values, fields_set, validation_error = validate_model(cls, obj)
         if validation_error:
             raise validation_error
-        object.__setattr__(m, '__dict__', values)
-        object.__setattr__(m, '__fields_set__', fields_set)
+        object_setattr(m, '__dict__', values)
+        object_setattr(m, '__fields_set__', fields_set)
+        m._set_private_attributes(cls.__private_attributes__)
         return m
 
     @classmethod
@@ -515,10 +538,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         Default values are respected, but no other validation is performed.
         """
         m = cls.__new__(cls)
-        object.__setattr__(m, '__dict__', {**deepcopy(cls.__field_defaults__), **values})
+        object_setattr(m, '__dict__', {**smart_deepcopy(cls.__field_defaults__), **values})
         if _fields_set is None:
             _fields_set = set(values.keys())
-        object.__setattr__(m, '__fields_set__', _fields_set)
+        object_setattr(m, '__fields_set__', _fields_set)
+        m._set_private_attributes(cls.__private_attributes__)
         return m
 
     def copy(
@@ -546,12 +570,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         )
 
         if deep:
-            v = deepcopy(v)
+            v = smart_deepcopy(v)
 
         cls = self.__class__
         m = cls.__new__(cls)
-        object.__setattr__(m, '__dict__', v)
-        object.__setattr__(m, '__fields_set__', self.__fields_set__.copy())
+        object_setattr(m, '__dict__', v)
+        object_setattr(m, '__fields_set__', self.__fields_set__.copy())
+        m._set_private_attributes(cls.__private_attributes__)
         return m
 
     @classmethod

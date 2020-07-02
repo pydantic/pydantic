@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional,
 
 from .errors import ConfigError
 from .typing import AnyCallable
-from .utils import in_ipython
+from .utils import ROOT_KEY, in_ipython
 
 
 class Validator:
@@ -42,7 +42,6 @@ if TYPE_CHECKING:
     ValidatorListDict = Dict[str, List[Validator]]
 
 _FUNCS: Set[str] = set()
-ROOT_KEY = '__root__'
 VALIDATOR_CONFIG_KEY = '__validator_config__'
 ROOT_VALIDATOR_CONFIG_KEY = '__root_validator_config__'
 

@@ -1,6 +1,7 @@
 import warnings
+from copy import copy, deepcopy
 from itertools import islice
-from types import GeneratorType
+from types import FunctionType, GeneratorType, LambdaType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -40,13 +41,30 @@ __all__ = (
     'almost_equal_floats',
     'get_model',
     'to_camel',
+    'validate_private_attributes',
+    'is_valid_field',
+    'smart_deepcopy',
     'PyObjectStr',
     'Representation',
     'GetterDict',
     'ValueItems',
     'version_info',  # required here to match behaviour in v1.3
     'ClassAttribute',
+    'ROOT_KEY',
 )
+
+ROOT_KEY = '__root__'
+IMMUTABLE_NON_COLLECTIONS_TYPES: AbstractSet[Type[Any]] = {
+    int,
+    float,
+    str,
+    bool,
+    bytes,
+    type,
+    type(None),
+    FunctionType,
+    LambdaType,
+}
 
 
 def import_string(dotted_path: str) -> Any:
@@ -94,7 +112,7 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
     Ensure that the field's name does not shadow an existing attribute of the model.
     """
     for base in bases:
-        if getattr(base, field_name, None):
+        if hasattr(base, field_name):
             raise NameError(
                 f'Field name "{field_name}" shadows a BaseModel attribute; '
                 f'use a different field name with "alias=\'{field_name}\'".'
@@ -460,3 +478,36 @@ class ClassAttribute:
         if instance is None:
             return self.value
         raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
+
+
+def is_valid_field(name: str) -> bool:
+    if not name.startswith('_'):
+        return True
+    return ROOT_KEY == name
+
+
+def validate_private_attributes(private_attributes: Dict[str, Any]) -> None:
+    """
+    Ensure that private attributes may not be valid field names.
+    """
+    for name in private_attributes:
+        if is_valid_field(name):
+            raise NameError(
+                f'Private attributes "{name}" must not be a valid field name; '
+                f'Use sunder or dunder names, e. g. "_{name}" or "__{name}__"'
+            )
+
+
+Obj = TypeVar('Obj')
+
+
+def smart_deepcopy(obj: Obj) -> Obj:
+    """
+    Use copy.deepcopy() only on unempty collections, otherwise use copy.copy() or return obj as is
+    """
+
+    if obj.__class__ in IMMUTABLE_NON_COLLECTIONS_TYPES:
+        return obj  # fastest case: obj is immutable and not collection therefore will not be copied anyway
+    elif not obj:
+        return copy(obj)  # faster way for empty collections, no need to copy its members
+    return deepcopy(obj)  # slowest way

@@ -24,7 +24,6 @@ from typing import (
 )
 from uuid import UUID
 
-from .class_validators import ROOT_KEY
 from .fields import (
     SHAPE_FROZENSET,
     SHAPE_ITERABLE,
@@ -54,7 +53,7 @@ from .types import (
     constr,
 )
 from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, literal_values
-from .utils import get_model, lenient_issubclass, sequence_like
+from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401

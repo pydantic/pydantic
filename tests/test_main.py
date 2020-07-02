@@ -1206,3 +1206,61 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
+
+
+def test_private_attribute():
+    default = {'a': {}}
+
+    class Model(BaseModel):
+        __slots__ = '__foo__'
+        __foo__ = default
+
+    assert repr(Model.__foo__) == "<member '__foo__' of 'Model' objects>"
+    assert Model.__private_attributes__ == {'__foo__': default}
+
+    m = Model()
+    assert m.__foo__ == default
+    assert m.__foo__ is not default
+    assert m.__foo__['a'] is not default['a']
+
+    m.__foo__ = None
+    assert m.__foo__ is None
+
+    assert m.dict() == {}
+    assert m.__dict__ == {}
+
+
+def test_private_attribute_intersection_with_extra_field():
+    class Model(BaseModel):
+        __slots__ = '__foo__'
+        __foo__ = 'private_attribute'
+
+        class Config:
+            extra = Extra.allow
+
+    m = Model(__foo__='field')
+    assert m.__foo__ == 'private_attribute'
+    assert m.__dict__ == m.dict() == {'__foo__': 'field'}
+
+    m.__foo__ = 'still_private'
+    assert m.__dict__ == m.dict() == {'__foo__': 'field'}
+    assert m.__foo__ == 'still_private'
+
+
+def test_private_attribute_invalid_name():
+    with pytest.raises(
+        NameError,
+        match='Private attributes "foo" must not be a valid field name; '
+        'Use sunder or dunder names, e. g. "_foo" or "__foo__"',
+    ):
+
+        class Model(BaseModel):
+            __slots__ = 'foo'
+
+
+def test_private_attribute_unfilled():
+    class Model(BaseModel):
+        __slots__ = '_foo'
+
+    with pytest.raises(AttributeError, match='private attribute "_foo" is unset'):
+        Model()

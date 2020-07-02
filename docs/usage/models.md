@@ -517,6 +517,16 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
     Moreover if you want to validate default values with `validate_all`,
     *pydantic* will need to call the `default_factory`, which could lead to side effects!
 
+## Private model attributes
+If you need to use internal attribute excluded from model fields, you can declare such in `__slots__` of your class:
+
+```py
+{!.tmp_examples/private_attributes.py!}
+```
+_(This script is complete, it should run "as is")_
+  
+Private attributes names must start with underscore to prevent conflicts with model fields.make
+
 ## Parsing data into a specified type
 
 Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing

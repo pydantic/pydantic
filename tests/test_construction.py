@@ -58,6 +58,9 @@ def test_simple_copy():
 
 
 class ModelTwo(BaseModel):
+    __slots__ = '__foo__'
+    __foo__ = {'private'}
+
     a: float
     b: int = 10
     c: str = 'foobar'
@@ -74,6 +77,8 @@ def test_deep_copy():
     assert m.d is not m2.d
     assert m == m2
     assert m.__fields__ == m2.__fields__
+    assert m.__foo__ == m2.__foo__
+    assert m.__foo__ is not m2.__foo__
 
 
 def test_copy_exclude():
@@ -215,6 +220,7 @@ def test_recursive_pickle():
     assert m.d.a == 123.45
     assert m2.d.a == 123.45
     assert m.__fields__ == m2.__fields__
+    assert m.__foo__ == m2.__foo__
 
 
 def test_immutable_copy():

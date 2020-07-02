@@ -1,6 +1,5 @@
 import warnings
 from collections.abc import Iterable as CollectionsIterable
-from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -36,7 +35,7 @@ from .typing import (
     is_new_type,
     new_type_supertype,
 )
-from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
+from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
@@ -271,14 +270,7 @@ class ModelField(Representation):
         self.prepare()
 
     def get_default(self) -> Any:
-        if self.default_factory is not None:
-            value = self.default_factory()
-        elif self.default is None:
-            # deepcopy is quite slow on None
-            value = None
-        else:
-            value = deepcopy(self.default)
-        return value
+        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
 
     @classmethod
     def infer(
