@@ -497,6 +497,10 @@ _(This script is complete, it should run "as is")_
 : type method for constraining lists;
   see [Constrained Types](#constrained-types)
 
+`conset`
+: type method for constraining sets;
+  see [Constrained Types](#constrained-types)
+
 `constr`
 : type method for constraining strs;
   see [Constrained Types](#constrained-types)

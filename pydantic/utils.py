@@ -239,6 +239,23 @@ def to_camel(string: str) -> str:
     return ''.join(word.capitalize() for word in string.split('_'))
 
 
+T = TypeVar('T')
+
+
+def unique_list(input_list: Union[List[T], Tuple[T, ...]]) -> List[T]:
+    """
+    Make a list unique while maintaining order.
+    """
+    result = []
+    unique_set = set()
+    for v in input_list:
+        if v not in unique_set:
+            unique_set.add(v)
+            result.append(v)
+
+    return result
+
+
 class PyObjectStr(str):
     """
     String class where repr doesn't include quotes. Useful with Representation when you want to return a string

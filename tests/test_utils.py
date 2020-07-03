@@ -23,6 +23,7 @@ from pydantic.utils import (
     lenient_issubclass,
     smart_deepcopy,
     truncate,
+    unique_list,
 )
 from pydantic.version import version_info
 
@@ -102,6 +103,19 @@ def test_lenient_issubclass_is_lenient():
 def test_truncate(input_value, output):
     with pytest.warns(DeprecationWarning, match='`truncate` is no-longer used by pydantic and is deprecated'):
         assert truncate(input_value, max_len=20) == output
+
+
+@pytest.mark.parametrize(
+    'input_value,output',
+    [
+        ([], []),
+        ([1, 1, 1, 2, 1, 2, 3, 2, 3, 1, 4, 2, 3, 1], [1, 2, 3, 4]),
+        (['a', 'a', 'b', 'a', 'b', 'c', 'b', 'c', 'a'], ['a', 'b', 'c']),
+    ],
+)
+def test_unique_list(input_value, output):
+    assert unique_list(input_value) == output
+    assert unique_list(unique_list(input_value)) == unique_list(input_value)
 
 
 def test_value_items():

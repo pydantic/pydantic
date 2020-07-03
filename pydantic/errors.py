@@ -27,6 +27,7 @@ __all__ = (
     'UrlUserInfoError',
     'UrlHostError',
     'UrlHostTldError',
+    'UrlPortError',
     'UrlExtraError',
     'EnumError',
     'IntegerError',
@@ -205,6 +206,11 @@ class UrlHostTldError(UrlError):
     msg_template = 'URL host invalid, top level domain required'
 
 
+class UrlPortError(UrlError):
+    code = 'url.port'
+    msg_template = 'URL port invalid, port cannot exceed 65535'
+
+
 class UrlExtraError(UrlError):
     code = 'url.extra'
     msg_template = 'URL invalid, extra characters found after valid URL: {extra!r}'
@@ -294,6 +300,22 @@ class ListMinLengthError(PydanticValueError):
 
 class ListMaxLengthError(PydanticValueError):
     code = 'list.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class SetMinLengthError(PydanticValueError):
+    code = 'set.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class SetMaxLengthError(PydanticValueError):
+    code = 'set.max_items'
     msg_template = 'ensure this value has at most {limit_value} items'
 
     def __init__(self, *, limit_value: int) -> None:
