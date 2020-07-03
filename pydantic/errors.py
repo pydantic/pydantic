@@ -300,6 +300,22 @@ class ListMaxLengthError(PydanticValueError):
         super().__init__(limit_value=limit_value)
 
 
+class SetMinLengthError(PydanticValueError):
+    code = 'set.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class SetMaxLengthError(PydanticValueError):
+    code = 'set.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
 class AnyStrMinLengthError(PydanticValueError):
     code = 'any_str.min_length'
     msg_template = 'ensure this value has at least {limit_value} characters'

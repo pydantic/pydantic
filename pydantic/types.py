@@ -5,7 +5,21 @@ from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from types import new_class
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Pattern, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Pattern,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from . import errors
@@ -22,6 +36,7 @@ from .validators import (
     number_size_validator,
     path_exists_validator,
     path_validator,
+    set_validator,
     str_validator,
     strict_float_validator,
     strict_int_validator,
@@ -38,6 +53,8 @@ __all__ = [
     'conbytes',
     'ConstrainedList',
     'conlist',
+    'ConstrainedSet',
+    'conset',
     'ConstrainedStr',
     'constr',
     'PyObject',
@@ -151,6 +168,48 @@ def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None)
     namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
     # We use new_class to be able to deal with Generic types
     return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
+
+
+# This types superclass should be Set[T], but cython chokes on that...
+class ConstrainedSet(set):  # type: ignore
+    # Needed for pydantic to detect that this is a set
+    __origin__ = set
+    __args__: Set[Type[T]]  # type: ignore
+
+    min_items: Optional[int] = None
+    max_items: Optional[int] = None
+    item_type: Type[T]  # type: ignore
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.set_length_validator
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
+
+    @classmethod
+    def set_length_validator(cls, v: 'Optional[Set[T]]', field: 'ModelField') -> 'Optional[Set[T]]':
+        if v is None and not field.required:
+            return None
+
+        v = set_validator(v)
+        v_len = len(v)
+
+        if cls.min_items is not None and v_len < cls.min_items:
+            raise errors.SetMinLengthError(limit_value=cls.min_items)
+
+        if cls.max_items is not None and v_len > cls.max_items:
+            raise errors.SetMaxLengthError(limit_value=cls.max_items)
+
+        return v
+
+
+def conset(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[Set[T]]:
+    # __args__ is needed to conform to typing generics api
+    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
+    # We use new_class to be able to deal with Generic types
+    return new_class('ConstrainedSetValue', (ConstrainedSet,), {}, lambda ns: ns.update(namespace))
 
 
 class ConstrainedStr(str):
