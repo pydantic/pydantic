@@ -94,6 +94,7 @@ def test_any_url_success(value):
             {'extra': ':db8::ff00:42:8329'},
         ),
         ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
+        ('http://example.com:99999', 'value_error.url.port', 'URL port invalid, port cannot exceed 65535', None),
     ],
 )
 def test_any_url_invalid(value, err_type, err_msg, err_ctx):
