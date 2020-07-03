@@ -42,6 +42,7 @@ from .utils import (
     generate_model_signature,
     lenient_issubclass,
     sequence_like,
+    unique_list,
     validate_field_name,
 )
 
@@ -291,13 +292,14 @@ class ModelMetaclass(ABCMeta):
         else:
             json_encoder = pydantic_encoder
         pre_rv_new, post_rv_new = extract_root_validators(namespace)
+
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
             '__field_defaults__': fields_defaults,
             '__validators__': vg.validators,
-            '__pre_root_validators__': pre_root_validators + pre_rv_new,
-            '__post_root_validators__': post_root_validators + post_rv_new,
+            '__pre_root_validators__': unique_list(pre_root_validators + pre_rv_new),
+            '__post_root_validators__': unique_list(post_root_validators + post_rv_new),
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
@@ -924,7 +926,6 @@ def validate_model(  # noqa: C901 (ignore complexity)
             values = validator(cls_, values)
         except (ValueError, TypeError, AssertionError) as exc:
             errors.append(ErrorWrapper(exc, loc=ROOT_KEY))
-            break
 
     if errors:
         return values, fields_set, ValidationError(errors, cls_)
