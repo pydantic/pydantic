@@ -42,6 +42,7 @@ from .utils import (
     generate_model_signature,
     lenient_issubclass,
     sequence_like,
+    unique_list,
     validate_field_name,
 )
 
@@ -288,27 +289,13 @@ class ModelMetaclass(ABCMeta):
             json_encoder = pydantic_encoder
         pre_rv_new, post_rv_new = extract_root_validators(namespace)
 
-        dedupe_pre_rv = set([])
-        pre_rv_unique = []
-        for rv in pre_root_validators + pre_rv_new:
-            if rv not in dedupe_pre_rv:
-                dedupe_pre_rv.add(rv)
-                pre_rv_unique.append(rv)
-
-        dedupe_post_rv = set([])
-        post_rv_unique = []
-        for rv in post_root_validators + post_rv_new:
-            if rv not in dedupe_post_rv:
-                dedupe_post_rv.add(rv)
-                post_rv_unique.append(rv)
-
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
             '__field_defaults__': fields_defaults,
             '__validators__': vg.validators,
-            '__pre_root_validators__': pre_rv_unique,
-            '__post_root_validators__': post_rv_unique,
+            '__pre_root_validators__': unique_list(pre_root_validators + pre_rv_new),
+            '__post_root_validators__': unique_list(post_root_validators + post_rv_new),
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
