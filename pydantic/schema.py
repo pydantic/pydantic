@@ -748,7 +748,10 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     if lenient_issubclass(field_type, Enum):
         enum_name = normalize_name(field_type.__name__)
-        f_schema = {'$ref': ref_prefix + enum_name}
+        if ref_prefix:
+            f_schema = {'$ref': ref_prefix + enum_name}
+        else:
+            f_schema = {'$ref': ref_template.format(model=enum_name)}
         definitions[enum_name] = enum_process_schema(field_type)
     else:
         add_field_type_to_schema(field_type, f_schema)
