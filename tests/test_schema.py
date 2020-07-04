@@ -1087,7 +1087,17 @@ def test_schema_from_models():
     }
 
 
-def test_schema_with_ref_prefix():
+@pytest.mark.parametrize(
+    'ref_prefix,ref_template',
+    [
+        # OpenAPI style
+        ('#/components/schemas/', None),
+        (None, '#/components/schemas/{model}'),
+        # ref_prefix takes priority
+        ('#/components/schemas/', '#/{model}/schemas/'),
+    ],
+)
+def test_schema_with_refs(ref_prefix, ref_template):
     class Foo(BaseModel):
         a: str
 
@@ -1097,7 +1107,7 @@ def test_schema_with_ref_prefix():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = schema([Bar, Baz], ref_prefix='#/components/schemas/')  # OpenAPI style
+    model_schema = schema([Bar, Baz], ref_prefix=ref_prefix, ref_template=ref_template)
     assert model_schema == {
         'definitions': {
             'Baz': {
@@ -1122,7 +1132,7 @@ def test_schema_with_ref_prefix():
     }
 
 
-def test_schema_with_ref_template():
+def test_schema_with_custom_ref_template():
     class Foo(BaseModel):
         a: str
 
@@ -1155,6 +1165,20 @@ def test_schema_with_ref_template():
             },
         }
     }
+
+
+def test_schema_ref_template_key_error():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    with pytest.raises(KeyError):
+        schema([Bar, Baz], ref_template='/schemas/{bad_name}.json#/')
 
 
 def test_schema_no_definitions():
