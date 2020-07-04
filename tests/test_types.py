@@ -249,10 +249,10 @@ def test_constrained_set_good():
 
 def test_constrained_set_default():
     class ConSetModelMax(BaseModel):
-        v: conset(int) = {}
+        v: conset(int) = set()
 
     m = ConSetModelMax()
-    assert m.v == {}
+    assert m.v == set()
 
 
 def test_constrained_set_too_long():
