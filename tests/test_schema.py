@@ -1,6 +1,5 @@
 import math
 import os
-import string
 import sys
 import tempfile
 from datetime import date, datetime, time, timedelta
@@ -1133,7 +1132,7 @@ def test_schema_with_ref_template():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = schema([Bar, Baz], ref_template=string.Template('/schemas/${model_name}.json#/'))
+    model_schema = schema([Bar, Baz], ref_template='/schemas/${model_name}.json#/')
     assert model_schema == {
         'definitions': {
             'Baz': {
