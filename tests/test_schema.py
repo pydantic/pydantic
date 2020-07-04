@@ -1132,7 +1132,7 @@ def test_schema_with_ref_template():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = schema([Bar, Baz], ref_template='/schemas/${model_name}.json#/')
+    model_schema = schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
     assert model_schema == {
         'definitions': {
             'Baz': {
