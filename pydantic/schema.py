@@ -99,7 +99,6 @@ def schema(
       the models and sub-models passed in ``models``.
     """
     clean_models = [get_model(model) for model in models]
-    ref_prefix = ref_prefix or default_prefix
     flat_models = get_flat_models_from_models(clean_models)
     model_name_map = get_model_name_map(flat_models)
     definitions = {}
@@ -188,7 +187,6 @@ def field_schema(
     :param known_models: used to solve circular references
     :return: tuple of the schema for this field and additional definitions
     """
-    ref_prefix = ref_prefix or default_prefix
     schema_overrides = False
     s = dict(title=field.field_info.title or field.alias.title().replace('_', ' '))
     if field.field_info.title:
@@ -394,7 +392,6 @@ def field_type_schema(
     definitions = {}
     nested_models: Set[str] = set()
     f_schema: Dict[str, Any]
-    ref_prefix = ref_prefix or default_prefix
     if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET, SHAPE_ITERABLE}:
         items_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
@@ -489,7 +486,6 @@ def model_process_schema(
     """
     from inspect import getdoc, signature
 
-    ref_prefix = ref_prefix or default_prefix
     known_models = known_models or set()
     if lenient_issubclass(model, Enum):
         model = cast(Type[Enum], model)
@@ -536,7 +532,6 @@ def model_type_schema(
     Take a single ``model`` and generate the schema for its type only, not including additional
     information as title, etc. Also return additional schema definitions, from sub-models.
     """
-    ref_prefix = ref_prefix or default_prefix
     properties = {}
     required = []
     definitions: Dict[str, Any] = {}
@@ -618,7 +613,6 @@ def field_singleton_sub_fields_schema(
     Take a list of Pydantic ``ModelField`` from the declaration of a type with parameters, and generate their
     schema. I.e., fields used as "type parameters", like ``str`` and ``int`` in ``Tuple[str, int]``.
     """
-    ref_prefix = ref_prefix or default_prefix
     definitions = {}
     nested_models: Set[str] = set()
     sub_fields = [sf for sf in sub_fields if sf.include_in_schema()]
