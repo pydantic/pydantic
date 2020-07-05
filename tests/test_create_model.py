@@ -1,3 +1,5 @@
+import pickle
+
 import pytest
 
 from pydantic import BaseModel, Extra, ValidationError, create_model, errors, validator
@@ -22,6 +24,17 @@ def test_create_model_usage():
         model()
     with pytest.raises(ValidationError):
         model(foo='hello', bar='xxx')
+
+
+def test_create_model_pickle():
+    model = create_model('FooModel', foo=(str, ...), bar=123)
+    m = model(foo='hello')
+    d = pickle.dumps(m)
+    m2 = pickle.loads(d)
+    assert m2.foo == m.foo == 'hello'
+    assert m2.bar == m.bar == 123
+    assert m2 == m
+    assert m2 is not m
 
 
 def test_invalid_name():

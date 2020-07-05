@@ -4,6 +4,7 @@ import string
 from distutils.version import StrictVersion
 from enum import Enum
 from typing import NewType, Union
+from unittest import mock
 
 import pytest
 
@@ -16,6 +17,7 @@ from pydantic.utils import (
     ClassAttribute,
     ValueItems,
     deep_update,
+    get_caller_module_name,
     get_model,
     import_string,
     lenient_issubclass,
@@ -347,3 +349,18 @@ def test_all_literal_values():
 
     L312 = Literal['3', Literal[L1, L2]]
     assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
+
+
+def test_get_caller_module_name():
+    assert get_caller_module_name() == '_pytest.python'
+
+    def get_current_module_name():
+        return get_caller_module_name()
+
+    assert get_current_module_name() == __name__
+
+
+def test_get_caller_module_name_error():
+    with mock.patch('inspect.getmodule', return_value=None):
+        with pytest.raises(LookupError, match='Could not find caller module'):
+            get_caller_module_name()

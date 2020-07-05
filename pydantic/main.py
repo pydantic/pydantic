@@ -40,6 +40,7 @@ from .utils import (
     Representation,
     ValueItems,
     generate_model_signature,
+    get_caller_module_name,
     lenient_issubclass,
     sequence_like,
     unique_list,
@@ -810,8 +811,9 @@ def create_model(
     :param __model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
+    :param __module__: module for the new model, if None caller module will be used
     :param __validators__: a dict of method names and @validator class methods
-    :param **field_definitions: fields of the model (or extra fields if a base is supplied)
+    :param field_definitions: fields of the model (or extra fields if a base is supplied)
         in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
         `<name>=<FieldInfo>`, e.g. `foo=Field(default_factory=datetime.utcnow, alias='bar')`
@@ -821,6 +823,13 @@ def create_model(
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
         __base__ = BaseModel
+
+    if __module__ is None:
+        try:
+            __module__ = get_caller_module_name()
+        except LookupError:
+            __module__ = __name__
+            warnings.warn(f'Unable to get module name, using {__name__} as default to allow pickling', RuntimeWarning)
 
     fields = {}
     annotations = {}
@@ -851,7 +860,9 @@ def create_model(
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(__model_name, (__base__,), namespace)
+    created_model = type(__model_name, (__base__,), namespace)
+    setattr(sys.modules[__module__], __model_name, created_model)  # allow pickling
+    return created_model
 
 
 _missing = object()

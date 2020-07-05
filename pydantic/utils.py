@@ -47,6 +47,7 @@ __all__ = (
     'GetterDict',
     'ValueItems',
     'version_info',  # required here to match behaviour in v1.3
+    'get_caller_module_name',
     'ClassAttribute',
 )
 
@@ -533,3 +534,14 @@ class ClassAttribute:
         if instance is None:
             return self.value
         raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
+
+
+def get_caller_module_name() -> str:
+    """Used inside the function to get its caller module name"""
+    import inspect
+
+    previous_caller_frame = inspect.stack()[2]
+    previous_caller_module = inspect.getmodule(previous_caller_frame[0])
+    if previous_caller_module is None:
+        raise LookupError('Could not find caller module')
+    return previous_caller_module.__name__
