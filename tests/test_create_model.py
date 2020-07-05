@@ -14,7 +14,7 @@ def test_create_model():
     assert model.__validators__ == {}
     assert model.__config__.__name__ == 'Config'
     assert model.__module__ == __name__
-    assert FooModel is model
+    assert globals()["FooModel"] is model
 
 
 def test_create_model_usage():
