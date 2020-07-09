@@ -46,9 +46,6 @@ from .utils import (
     validate_field_name,
 )
 
-"break linting"
-
-
 if TYPE_CHECKING:
     import typing_extensions
     from inspect import Signature

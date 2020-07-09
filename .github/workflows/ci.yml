@@ -111,11 +111,11 @@ jobs:
       run: make mypy
 
     - name: test
-      run: |
-        make test
-        coverage xml
+      run: make test
 
-    - uses: samuelcolvin/codecov-action@env-vars
+    - run: coverage xml
+
+    - uses: codecov/codecov-action@v1.0.10
       with:
         file: ./coverage.xml
         env_vars: COMPILED,DEPS,PYTHON,OS
