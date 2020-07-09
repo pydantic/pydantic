@@ -250,19 +250,27 @@ def test_conlist_wrong_type_default():
 
 
 def test_constrained_set_good():
-    class ConSetModelMax(BaseModel):
+    class Model(BaseModel):
         v: conset(int) = []
 
-    m = ConSetModelMax(v=[1, 2, 3])
+    m = Model(v=[1, 2, 3])
     assert m.v == {1, 2, 3}
 
 
 def test_constrained_set_default():
-    class ConSetModelMax(BaseModel):
+    class Model(BaseModel):
         v: conset(int) = set()
 
-    m = ConSetModelMax()
+    m = Model()
     assert m.v == set()
+
+
+def test_constrained_set_default_invalid():
+    class Model(BaseModel):
+        v: conset(int) = 'not valid, not validated'
+
+    m = Model()
+    assert m.v == 'not valid, not validated'
 
 
 def test_constrained_set_too_long():
