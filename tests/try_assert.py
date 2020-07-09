@@ -5,6 +5,7 @@ from pydantic import BaseModel, ValidationError, validator
 
 
 def test_assert_raises_validation_error():
+    raise RuntimeError('break try_assert.py')
     test_name = test_assert_raises_validation_error.__name__
 
     class Model(BaseModel):
