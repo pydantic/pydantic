@@ -239,20 +239,38 @@ def test_conlist():
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
 
 
+def test_conlist_wrong_type_default():
+    """It should not validate default value by default"""
+
+    class Model(BaseModel):
+        v: conlist(int) = 'a'
+
+    m = Model()
+    assert m.v == 'a'
+
+
 def test_constrained_set_good():
-    class ConSetModelMax(BaseModel):
+    class Model(BaseModel):
         v: conset(int) = []
 
-    m = ConSetModelMax(v=[1, 2, 3])
+    m = Model(v=[1, 2, 3])
     assert m.v == {1, 2, 3}
 
 
 def test_constrained_set_default():
-    class ConSetModelMax(BaseModel):
-        v: conset(int) = {}
+    class Model(BaseModel):
+        v: conset(int) = set()
 
-    m = ConSetModelMax()
-    assert m.v == {}
+    m = Model()
+    assert m.v == set()
+
+
+def test_constrained_set_default_invalid():
+    class Model(BaseModel):
+        v: conset(int) = 'not valid, not validated'
+
+    m = Model()
+    assert m.v == 'not valid, not validated'
 
 
 def test_constrained_set_too_long():
