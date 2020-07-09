@@ -17,7 +17,6 @@ def test_success():
     m = Model(a=10.2)
     assert m.a == 10.2
     assert m.b == 10
-    assert m.b == 'broken!'
 
 
 class UltraSimpleModel(BaseModel):
