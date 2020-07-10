@@ -1,0 +1,22 @@
+version: 2
+
+updates:
+- package-ecosystem: pip
+  directory: /
+  schedule:
+    interval: daily
+
+- package-ecosystem: pip
+  directory: /tests
+  schedule:
+    interval: monthly
+
+- package-ecosystem: pip
+  directory: /docs
+  schedule:
+    interval: monthly
+
+- package-ecosystem: pip
+  directory: /benchmarks
+  schedule:
+    interval: monthly
