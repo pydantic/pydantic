@@ -53,7 +53,13 @@ jobs:
         ls -alh pydantic/
 
     - name: test compiled and deps
-      run: make test-codecov
+      run: make test
+
+    - run: coverage xml
+    - uses: codecov/codecov-action@v1.0.10
+      with:
+        file: ./coverage.xml
+        env_vars: COMPILED,DEPS,PYTHON,OS
       env:
         COMPILED: yes
         DEPS: yes
@@ -62,7 +68,13 @@ jobs:
       run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
 
     - name: test compiled without deps
-      run: make test-codecov
+      run: make test
+
+    - run: coverage xml
+    - uses: codecov/codecov-action@v1.0.10
+      with:
+        file: ./coverage.xml
+        env_vars: COMPILED,DEPS,PYTHON,OS
       env:
         COMPILED: yes
         DEPS: no
@@ -74,7 +86,13 @@ jobs:
         ls -alh pydantic/
 
     - name: test uncompiled without deps
-      run: make test-codecov
+      run: make test
+
+    - run: coverage xml
+    - uses: codecov/codecov-action@v1.0.10
+      with:
+        file: ./coverage.xml
+        env_vars: COMPILED,DEPS,PYTHON,OS
       env:
         COMPILED: no
         DEPS: no
