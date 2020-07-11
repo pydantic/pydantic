@@ -1,1 +1,0 @@
-Make `__modify_schema__` on Enums apply to the enum schema rather than fields that use the enum.
