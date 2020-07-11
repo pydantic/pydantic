@@ -405,6 +405,14 @@ def test_conset():
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
 
 
+def test_conset_not_required():
+    class Model(BaseModel):
+        foo: Set[int] = None
+
+    assert Model(foo=None).foo is None
+    assert Model().foo is None
+
+
 class ConStringModel(BaseModel):
     v: constr(max_length=10) = 'foobar'
 

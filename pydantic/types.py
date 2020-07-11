@@ -190,9 +190,6 @@ class ConstrainedSet(set):  # type: ignore
 
     @classmethod
     def set_length_validator(cls, v: 'Optional[Set[T]]', field: 'ModelField') -> 'Optional[Set[T]]':
-        if v is None and not field.required:
-            return None
-
         v = set_validator(v)
         v_len = len(v)
 
