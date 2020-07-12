@@ -341,8 +341,22 @@ class ModelField(Representation):
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
 
-        # To prevent side effects by calling the `default_factory` for nothing, we only call it
-        # when we want to validate the default value i.e. when `validate_all` is set to True.
+        self._set_default_and_type()
+        self._type_analysis()
+        if self.required is Undefined:
+            self.required = True
+            self.field_info.default = Required
+        if self.default is Undefined and self.default_factory is None:
+            self.default = None
+        self.populate_validators()
+
+    def _set_default_and_type(self) -> None:
+        """
+        Set the default value, infer the type if needed and check if `None` value is valid.
+
+        Note: to prevent side effects by calling the `default_factory` for nothing, we only call it
+        when we want to validate the default value i.e. when `validate_all` is set to True.
+        """
         if self.default_factory is not None:
             if self.type_ is None:
                 raise errors_.ConfigError(
@@ -367,14 +381,6 @@ class ModelField(Representation):
 
         if self.required is False and default_value is None:
             self.allow_none = True
-
-        self._type_analysis()
-        if self.required is Undefined:
-            self.required = True
-            self.field_info.default = Required
-        if self.default is Undefined and self.default_factory is None:
-            self.default = None
-        self.populate_validators()
 
     def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks

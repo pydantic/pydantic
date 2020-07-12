@@ -1174,6 +1174,18 @@ def test_default_factory_called_once_2():
     assert m2.id == 2
 
 
+def test_default_factory_validate_children():
+    class Child(BaseModel):
+        x: int
+
+    class Parent(BaseModel):
+        children: List[Child] = Field(default_factory=list)
+
+    Parent(children=[{'x': 1}, {'x': 2}])
+    with pytest.raises(ValidationError):
+        Parent(children=[{'x': 1}, {'y': 2}])
+
+
 @pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
 def test_none_min_max_items():
     # None default
