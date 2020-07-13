@@ -1186,6 +1186,19 @@ def test_default_factory_validate_children():
         Parent(children=[{'x': 1}, {'y': 2}])
 
 
+def test_default_factory_parse():
+    class Inner(BaseModel):
+        val: int = Field(0)
+
+    class Outer(BaseModel):
+        inner_1: Inner = Field(default_factory=Inner)
+        inner_2: Inner = Field(Inner())
+
+    default = Outer().dict()
+    parsed = Outer.parse_obj(default)
+    assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
+
+
 @pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
 def test_none_min_max_items():
     # None default
