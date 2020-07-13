@@ -8,7 +8,7 @@
 
 ## Install
 ```bash
-pip install datamodel-code-generato
+pip install datamodel-code-generator
 ```
 
 ## Example
