@@ -1,3 +1,7 @@
+## v1.6.1 (2020-07-15)
+
+* fix validation and parsing of nested models with `default_factory`, #1710 by @PrettyWood
+
 ## v1.6 (2020-07-11)
 
 Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, and 1 anonymous sponsor for their kind support.
