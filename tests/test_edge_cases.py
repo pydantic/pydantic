@@ -1714,3 +1714,19 @@ def test_default_factory_side_effect():
 
     m1 = MyModel()
     assert m1.id == 2  # instead of 1
+
+
+def test_default_factory_validator_child():
+    class Parent(BaseModel):
+        foo: List[str] = Field(default_factory=list)
+
+        @validator('foo', pre=True, each_item=True)
+        def mutate_foo(cls, v):
+            return f'{v}-1'
+
+    assert Parent(foo=['a', 'b']).foo == ['a-1', 'b-1']
+
+    class Child(Parent):
+        pass
+
+    assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']

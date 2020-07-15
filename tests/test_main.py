@@ -1182,8 +1182,12 @@ def test_default_factory_validate_children():
         children: List[Child] = Field(default_factory=list)
 
     Parent(children=[{'x': 1}, {'x': 2}])
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc_info:
         Parent(children=[{'x': 1}, {'y': 2}])
+
+    assert exc_info.value.errors() == [
+        {'loc': ('children', 1, 'x'), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
 
 
 def test_default_factory_parse():
@@ -1196,6 +1200,7 @@ def test_default_factory_parse():
 
     default = Outer().dict()
     parsed = Outer.parse_obj(default)
+    assert parsed.dict() == {'inner_1': {'val': 0}, 'inner_2': {'val': 0}}
     assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
 
 
