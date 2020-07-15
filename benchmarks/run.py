@@ -274,6 +274,6 @@ if __name__ == '__main__':
     else:
         main()
 
-    if None in other_tests:
-        print('not all libraries could be imported!')
-        sys.exit(1)
+    # if None in other_tests:
+    #     print('not all libraries could be imported!')
+    #     sys.exit(1)

@@ -1174,6 +1174,36 @@ def test_default_factory_called_once_2():
     assert m2.id == 2
 
 
+def test_default_factory_validate_children():
+    class Child(BaseModel):
+        x: int
+
+    class Parent(BaseModel):
+        children: List[Child] = Field(default_factory=list)
+
+    Parent(children=[{'x': 1}, {'x': 2}])
+    with pytest.raises(ValidationError) as exc_info:
+        Parent(children=[{'x': 1}, {'y': 2}])
+
+    assert exc_info.value.errors() == [
+        {'loc': ('children', 1, 'x'), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
+def test_default_factory_parse():
+    class Inner(BaseModel):
+        val: int = Field(0)
+
+    class Outer(BaseModel):
+        inner_1: Inner = Field(default_factory=Inner)
+        inner_2: Inner = Field(Inner())
+
+    default = Outer().dict()
+    parsed = Outer.parse_obj(default)
+    assert parsed.dict() == {'inner_1': {'val': 0}, 'inner_2': {'val': 0}}
+    assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
+
+
 @pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
 def test_none_min_max_items():
     # None default
