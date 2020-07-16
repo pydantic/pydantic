@@ -37,7 +37,7 @@ V_POSITIONAL_ONLY_NAME = 'v__positional_only'
 
 class ValidatedFunction:
     def __init__(self, function: 'Callable'):
-        from inspect import signature, Parameter
+        from inspect import Parameter, signature
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
 

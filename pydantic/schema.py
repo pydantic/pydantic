@@ -59,8 +59,8 @@ from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, lite
 from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
-    from .main import BaseModel  # noqa: F401
     from .dataclasses import DataclassType  # noqa: F401
+    from .main import BaseModel  # noqa: F401
 
 default_prefix = '#/definitions/'
 

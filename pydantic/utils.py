@@ -25,10 +25,11 @@ from .version import version_info
 
 if TYPE_CHECKING:
     from inspect import Signature
-    from .main import BaseModel, BaseConfig  # noqa: F401
-    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
-    from .fields import ModelField  # noqa: F401
+
     from .dataclasses import DataclassType  # noqa: F401
+    from .fields import ModelField  # noqa: F401
+    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
 
 __all__ = (
     'import_string',

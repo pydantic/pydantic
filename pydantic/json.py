@@ -44,6 +44,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
 
 def pydantic_encoder(obj: Any) -> Any:
     from dataclasses import asdict, is_dataclass
+
     from .main import BaseModel
 
     if isinstance(obj, BaseModel):
