@@ -5,6 +5,7 @@ import os
 import random
 import string
 import sys
+import traceback
 from datetime import datetime
 
 from devtools import debug
@@ -19,18 +20,21 @@ try:
     from test_trafaret import TestTrafaret
 except Exception:
     print('WARNING: unable to import TestTrafaret')
+    traceback.print_exc()
     TestTrafaret = None
 
 try:
     from test_drf import TestDRF
 except Exception:
     print('WARNING: unable to import TestDRF')
+    traceback.print_exc()
     TestDRF = None
 
 try:
     from test_marshmallow import TestMarshmallow
 except Exception:
     print('WARNING: unable to import TestMarshmallow')
+    traceback.print_exc()
     TestMarshmallow = None
 
 
@@ -38,24 +42,28 @@ try:
     from test_valideer import TestValideer
 except Exception:
     print('WARNING: unable to import TestValideer')
+    traceback.print_exc()
     TestValideer = None
 
 try:
     from test_cattrs import TestCAttrs
 except Exception:
     print('WARNING: unable to import TestCAttrs')
+    traceback.print_exc()
     TestCAttrs = None
 
 try:
     from test_cerberus import TestCerberus
 except Exception:
     print('WARNING: unable to import TestCerberus')
+    traceback.print_exc()
     TestCerberus = None
 
 try:
     from test_voluptuous import TestVoluptuous
 except Exception as e:
     print('WARNING: unable to import TestVoluptuous')
+    traceback.print_exc()
     TestVoluptuous = None
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
@@ -147,6 +155,7 @@ def generate_case():
         ) for i in range(random.randrange(1, 5))]
     ))
 
+
 THIS_DIR = Path(__file__).parent.resolve()
 
 
@@ -155,6 +164,7 @@ def stdev(d):
         return stdev_(d)
     except StatisticsError:
         return 0
+
 
 def run_tests(classes, cases, repeats, json=False):
     if json:
@@ -274,6 +284,6 @@ if __name__ == '__main__':
     else:
         main()
 
-    # if None in other_tests:
-    #     print('not all libraries could be imported!')
-    #     sys.exit(1)
+    if None in other_tests:
+        print('not all libraries could be imported!')
+        sys.exit(1)
