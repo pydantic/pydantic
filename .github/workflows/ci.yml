@@ -171,6 +171,7 @@ jobs:
         make build-cython
         pip install -r benchmarks/requirements.txt
 
+    - run: pip freeze
     - run: make benchmark-pydantic
     - run: make benchmark-all
     - run: make benchmark-json
