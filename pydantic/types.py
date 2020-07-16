@@ -96,9 +96,9 @@ StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
     from .dataclasses import DataclassType  # noqa: F401
-    from .main import BaseModel, BaseConfig  # noqa: F401
-    from .typing import CallableGenerator
     from .fields import ModelField
+    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .typing import CallableGenerator
 
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
 
