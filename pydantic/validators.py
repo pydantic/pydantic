@@ -247,7 +247,9 @@ def frozenset_validator(v: Any) -> FrozenSet[Any]:
 
 def enum_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
     try:
-        enum_v = field.type_(v)
+        # if the field type is Enum instead of a subclass (e.g. FruitEnum),
+        # `v` should be an Enum instance (e.g. FruitEnum.banana)
+        enum_v = v if field.type_ is Enum and isinstance(v, Enum) else field.type_(v)
     except ValueError:
         # field.type_ should be an enum, so will be iterable
         raise errors.EnumError(enum_values=list(field.type_))
