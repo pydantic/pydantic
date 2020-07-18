@@ -726,15 +726,16 @@ def test_int_enum_successful_for_str_int():
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
 
-class CookingModelEnum(BaseModel):
-    fruit: Enum
-
-
 def test_enum_type():
-    """it should validate only 'strict' enum values"""
-    CookingModelEnum(fruit=FruitEnum.banana)
+    """it should validate any 'strict' enum values"""
+
+    class Model(BaseModel):
+        any_enum: Enum
+
+    Model(any_enum=FruitEnum.banana)
+    Model(any_enum=ToolEnum.wrench)
     with pytest.raises(ValidationError):
-        CookingModelEnum(fruit='banana')
+        Model(any_enum='banana')
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
