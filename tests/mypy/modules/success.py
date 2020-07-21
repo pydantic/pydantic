@@ -11,6 +11,7 @@ from typing import Any, Dict, Generic, List, Optional, TypeVar
 from pydantic import BaseModel, NoneStr, StrictBool, root_validator, validate_arguments, validator
 from pydantic.fields import Field
 from pydantic.generics import GenericModel
+from pydantic.typing import ForwardRef
 
 
 class Flags(BaseModel):
@@ -127,3 +128,9 @@ def foo(a: int, *, c: str = 'x') -> str:
 
 foo(1, c='thing')
 foo(1)
+
+if sys.version_info < (3, 7):
+    class Foo(BaseModel):
+        a: int
+
+    FooRef = ForwardRef('Foo')
