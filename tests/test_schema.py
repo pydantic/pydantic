@@ -209,9 +209,9 @@ def test_choices():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'$ref': '#/definitions/FooEnum'},
-            'bar': {'$ref': '#/definitions/BarEnum'},
-            'spam': {'$ref': '#/definitions/SpamEnum'},
+            'foo': {'$ref': '#/definitions/FooEnum', 'title': 'Foo'},
+            'bar': {'$ref': '#/definitions/BarEnum', 'title': 'Bar'},
+            'spam': {'$ref': '#/definitions/SpamEnum', 'title': 'Spam'},
         },
         'required': ['foo', 'bar'],
         'definitions': {
@@ -244,7 +244,44 @@ def test_enum_modify_schema():
                 'type': 'string',
             }
         },
-        'properties': {'spam': {'$ref': '#/definitions/SpamEnum'}},
+        'properties': {'spam': {'$ref': '#/definitions/SpamEnum', 'title': 'Spam'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_enum_schema_custom_field():
+    class FooBarEnum(str, Enum):
+        foo = 'foo'
+        bar = 'bar'
+
+    class Model(BaseModel):
+        pika: FooBarEnum = Field(alias='pikalias', title='Pikapika!', description='Pika is definitely the best!')
+        bulbi: FooBarEnum = Field('foo', alias='bulbialias', title='Bulbibulbi!', description='Bulbi is not...')
+
+    assert Model.schema() == {
+        'definitions': {
+            'FooBarEnum': {
+                'description': 'An enumeration.',
+                'enum': ['foo', 'bar'],
+                'title': 'FooBarEnum',
+                'type': 'string',
+            }
+        },
+        'properties': {
+            'pikalias': {
+                '$ref': '#/definitions/FooBarEnum',
+                'description': 'Pika is definitely the best!',
+                'title': 'Pikapika!',
+            },
+            'bulbialias': {
+                '$ref': '#/definitions/FooBarEnum',
+                'description': 'Bulbi is not...',
+                'title': 'Bulbibulbi!',
+                'default': 'foo',
+            },
+        },
+        'required': ['pikalias'],
         'title': 'Model',
         'type': 'object',
     }
@@ -1779,13 +1816,13 @@ def test_schema_attributes():
         multiple_of = 'MO'
         regex = 'RE'
 
-    class Example(BaseModel):
+    class Model(BaseModel):
         example: ExampleEnum
 
-    assert Example.schema() == {
-        'title': 'Example',
+    assert Model.schema() == {
+        'title': 'Model',
         'type': 'object',
-        'properties': {'example': {'$ref': '#/definitions/ExampleEnum'}},
+        'properties': {'example': {'$ref': '#/definitions/ExampleEnum', 'title': 'Example'}},
         'required': ['example'],
         'definitions': {
             'ExampleEnum': {
