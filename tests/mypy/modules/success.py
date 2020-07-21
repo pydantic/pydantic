@@ -130,6 +130,7 @@ foo(1, c='thing')
 foo(1)
 
 if sys.version_info < (3, 7):
+
     class Foo(BaseModel):
         a: int
 
