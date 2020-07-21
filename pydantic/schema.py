@@ -148,6 +148,24 @@ def model_schema(
     return m_schema
 
 
+def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
+    schema_overrides = False
+    schema: Dict[str, Any] = {'title': field.field_info.title or field.alias.title().replace('_', ' ')}
+
+    if field.field_info.title:
+        schema_overrides = True
+
+    if field.field_info.description:
+        schema['description'] = field.field_info.description
+        schema_overrides = True
+
+    if not field.required and not field.field_info.const and field.default is not None:
+        schema['default'] = encode_default(field.default)
+        schema_overrides = True
+
+    return schema, schema_overrides
+
+
 def field_schema(
     field: ModelField,
     *,
@@ -171,18 +189,7 @@ def field_schema(
     :return: tuple of the schema for this field and additional definitions
     """
     ref_prefix = ref_prefix or default_prefix
-    schema_overrides = False
-    s = dict(title=field.field_info.title or field.alias.title().replace('_', ' '))
-    if field.field_info.title:
-        schema_overrides = True
-
-    if field.field_info.description:
-        s['description'] = field.field_info.description
-        schema_overrides = True
-
-    if not field.required and not field.field_info.const and field.default is not None:
-        s['default'] = encode_default(field.default)
-        schema_overrides = True
+    s, schema_overrides = get_field_info_schema(field)
 
     validation_schema = get_field_schema_validations(field)
     if validation_schema:
