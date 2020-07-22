@@ -342,6 +342,11 @@ class ModelField(Representation):
         """
 
         self._set_default_and_type()
+        if self.type_.__class__ == ForwardRef:
+            # self.type_ is currently a ForwardRef and there's nothing we can do now,
+            # user will need to call model.update_forward_refs()
+            return
+
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
@@ -373,11 +378,6 @@ class ModelField(Representation):
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
-
-        if self.type_.__class__ == ForwardRef:
-            # self.type_ is currently a ForwardRef and there's nothing we can do now,
-            # user will need to call model.update_forward_refs()
-            return
 
         if self.required is False and default_value is None:
             self.allow_none = True
