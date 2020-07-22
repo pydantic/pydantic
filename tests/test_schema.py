@@ -209,9 +209,9 @@ def test_choices():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'$ref': '#/definitions/FooEnum', 'title': 'Foo'},
-            'bar': {'$ref': '#/definitions/BarEnum', 'title': 'Bar'},
-            'spam': {'$ref': '#/definitions/SpamEnum', 'title': 'Spam'},
+            'foo': {'allOf': [{'$ref': '#/definitions/FooEnum'}], 'title': 'Foo'},
+            'bar': {'allOf': [{'$ref': '#/definitions/BarEnum'}], 'title': 'Bar'},
+            'spam': {'allOf': [{'$ref': '#/definitions/SpamEnum'}], 'title': 'Spam'},
         },
         'required': ['foo', 'bar'],
         'definitions': {
@@ -244,7 +244,7 @@ def test_enum_modify_schema():
                 'type': 'string',
             }
         },
-        'properties': {'spam': {'$ref': '#/definitions/SpamEnum', 'title': 'Spam'}},
+        'properties': {'spam': {'allOf': [{'$ref': '#/definitions/SpamEnum'}], 'title': 'Spam'}},
         'title': 'Model',
         'type': 'object',
     }
@@ -270,12 +270,12 @@ def test_enum_schema_custom_field():
         },
         'properties': {
             'pikalias': {
-                '$ref': '#/definitions/FooBarEnum',
+                'allOf': [{'$ref': '#/definitions/FooBarEnum'}],
                 'description': 'Pika is definitely the best!',
                 'title': 'Pikapika!',
             },
             'bulbialias': {
-                '$ref': '#/definitions/FooBarEnum',
+                'allOf': [{'$ref': '#/definitions/FooBarEnum'}],
                 'description': 'Bulbi is not...',
                 'title': 'Bulbibulbi!',
                 'default': 'foo',
@@ -1822,7 +1822,7 @@ def test_schema_attributes():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'example': {'$ref': '#/definitions/ExampleEnum', 'title': 'Example'}},
+        'properties': {'example': {'allOf': [{'$ref': '#/definitions/ExampleEnum'}], 'title': 'Example'}},
         'required': ['example'],
         'definitions': {
             'ExampleEnum': {

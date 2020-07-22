@@ -234,6 +234,11 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
     a Pydantic ``FieldInfo`` with validation arguments.
     """
     f_schema: Dict[str, Any] = {}
+
+    if lenient_issubclass(field.type_, Enum):
+        # schema is already updated by `enum_process_schema`
+        return f_schema
+
     if lenient_issubclass(field.type_, (str, bytes)):
         for attr_name, t, keyword in _str_types_attrs:
             attr = getattr(field.field_info, attr_name, None)
@@ -708,7 +713,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if lenient_issubclass(field_type, Enum):
         enum_name = normalize_name(field_type.__name__)
         f_schema, _ = get_field_info_schema(field)
-        f_schema['$ref'] = ref_prefix + enum_name
+        f_schema['allOf'] = [{'$ref': ref_prefix + enum_name}]
         definitions[enum_name] = enum_process_schema(field_type)
     else:
         add_field_type_to_schema(field_type, f_schema)
