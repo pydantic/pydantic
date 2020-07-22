@@ -33,7 +33,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
+from .typing import AnyCallable, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs, get_origin
 from .utils import (
     ClassAttribute,
     GetterDict,
@@ -256,7 +256,7 @@ class ModelMetaclass(ABCMeta):
                     if (
                         isinstance(value, untouched_types)
                         and ann_type != PyObject
-                        and not lenient_issubclass(getattr(ann_type, '__origin__', None), Type)
+                        and not lenient_issubclass(get_origin(ann_type), Type)
                     ):
                         continue
                     fields[ann_name] = inferred = ModelField.infer(

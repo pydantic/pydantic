@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, TypeVar, Uni
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
 from .main import BaseModel, create_model
+from .typing import get_origin
 from .utils import lenient_issubclass
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
@@ -37,7 +38,7 @@ class GenericModel(BaseModel):
         check_parameters_count(cls, params)
         typevars_map: Dict[TypeVarType, Type[Any]] = dict(zip(cls.__parameters__, params))
         type_hints = get_type_hints(cls).items()
-        instance_type_hints = {k: v for k, v in type_hints if getattr(v, '__origin__', None) is not ClassVar}
+        instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}
         concrete_type_hints: Dict[str, Type[Any]] = {
             k: resolve_type_hint(v, typevars_map) for k, v in instance_type_hints.items()
         }
@@ -79,7 +80,7 @@ class GenericModel(BaseModel):
 
 
 def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
-    if hasattr(type_, '__origin__') and getattr(type_, '__parameters__', None):
+    if get_origin(type_) is not None and getattr(type_, '__parameters__', None):
         concrete_type_args = tuple([typevars_map[x] for x in type_.__parameters__])
         return type_[concrete_type_args]
     return typevars_map.get(type_, type_)

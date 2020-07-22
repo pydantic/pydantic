@@ -19,6 +19,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
 )
 from uuid import UUID
 
