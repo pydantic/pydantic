@@ -441,6 +441,7 @@ else:
     )
 
 
+@skip_pre_37
 def test_forward_ref_optional(create_module):
     module = create_module(
         """
