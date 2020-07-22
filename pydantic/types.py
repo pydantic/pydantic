@@ -129,15 +129,9 @@ def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_leng
 T = TypeVar('T')
 
 
-# This types superclass should be List[T], but cython chokes on that...
-class ConstrainedList(list):  # type: ignore
-    # Needed for pydantic to detect that this is a list
-    __origin__ = list
-    __args__: List[Type[T]]  # type: ignore
-
+class ConstrainedList(List[T]):
     min_items: Optional[int] = None
     max_items: Optional[int] = None
-    item_type: Type[T]  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -164,22 +158,17 @@ class ConstrainedList(list):  # type: ignore
         return v
 
 
-def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[List[T]]:
-    # __args__ is needed to conform to typing generics api
-    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
+def conlist(item_type: Type[T], *, min_items: Optional[int] = None, max_items: Optional[int] = None,) -> Type[List[T]]:
+    namespace = {'min_items': min_items, 'max_items': max_items}
     # We use new_class to be able to deal with Generic types
-    return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
+    return new_class(
+        'ConstrainedListValue', (ConstrainedList[item_type],), {}, lambda ns: ns.update(namespace)  # type:ignore
+    )
 
 
-# This types superclass should be Set[T], but cython chokes on that...
-class ConstrainedSet(set):  # type: ignore
-    # Needed for pydantic to detect that this is a set
-    __origin__ = set
-    __args__: Set[Type[T]]  # type: ignore
-
+class ConstrainedSet(Set[T]):
     min_items: Optional[int] = None
     max_items: Optional[int] = None
-    item_type: Type[T]  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -204,10 +193,11 @@ class ConstrainedSet(set):  # type: ignore
 
 
 def conset(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[Set[T]]:
-    # __args__ is needed to conform to typing generics api
-    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
+    namespace = {'min_items': min_items, 'max_items': max_items}
     # We use new_class to be able to deal with Generic types
-    return new_class('ConstrainedSetValue', (ConstrainedSet,), {}, lambda ns: ns.update(namespace))
+    return new_class(
+        'ConstrainedSetValue', (ConstrainedSet[item_type],), {}, lambda ns: ns.update(namespace)  # type:ignore
+    )
 
 
 class ConstrainedStr(str):

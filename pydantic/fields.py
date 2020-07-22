@@ -385,6 +385,8 @@ class ModelField(Representation):
             self.allow_none = True
 
     def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
+        original_type = self.type_
+
         # typing interface is horrible, we have to do some ugly checks
         if lenient_issubclass(self.type_, JsonWrapper):
             self.type_ = self.type_.inner_type
@@ -416,10 +418,25 @@ class ModelField(Representation):
         origin = get_origin(self.type_)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
-            # allow None for virtual superclasses of NoneType, e.g. Hashable
-            if isinstance(self.type_, type) and isinstance(None, self.type_):
-                self.allow_none = True
-            return
+            # It could be a subclass of a "typing" object
+            try:
+                if issubclass(self.type_, list):
+                    while not get_args(self.type_) and hasattr(self.type_, '__orig_bases__'):
+                        self.type_ = self.type_.__orig_bases__[0]
+                    origin = get_origin(self.type_)
+                elif issubclass(self.type_, set):
+                    while not get_args(self.type_) and hasattr(self.type_, '__orig_bases__'):
+                        self.type_ = self.type_.__orig_bases__[0]
+                    origin = get_origin(self.type_)
+            except TypeError:
+                pass
+
+            # Field is really not a subclass of a typing type
+            if origin is None:
+                # allow None for virtual superclasses of NoneType, e.g. Hashable
+                if isinstance(self.type_, type) and isinstance(None, self.type_):
+                    self.allow_none = True
+                return
         if origin is Callable:
             return
         if origin is Union:
@@ -456,20 +473,28 @@ class ModelField(Representation):
 
         if issubclass(origin, List):
             # Create self validators
-            get_validators = getattr(self.type_, '__get_validators__', None)
+            get_validators = [
+                f
+                for f in map(lambda t: getattr(t, '__get_validators__', None), (original_type, self.type_, origin))
+                if f
+            ]
             if get_validators:
                 self.class_validators.update(
-                    {f'list_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
+                    {f'list_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators[0]())}
                 )
 
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_LIST
         elif issubclass(origin, Set):
             # Create self validators
-            get_validators = getattr(self.type_, '__get_validators__', None)
+            get_validators = [
+                f
+                for f in map(lambda t: getattr(t, '__get_validators__', None), (original_type, self.type_, origin))
+                if f
+            ]
             if get_validators:
                 self.class_validators.update(
-                    {f'set_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
+                    {f'set_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators[0]())}
                 )
 
             self.type_ = get_args(self.type_)[0]
