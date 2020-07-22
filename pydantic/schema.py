@@ -55,7 +55,7 @@ from .types import (
     conset,
     constr,
 )
-from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, literal_values, get_origin, get_args
+from .typing import ForwardRef, Literal, get_args, get_origin, is_callable_type, is_literal_type, literal_values
 from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:

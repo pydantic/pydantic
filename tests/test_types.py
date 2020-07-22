@@ -211,7 +211,7 @@ def test_constrained_list_type_conversions():
     class ConListModel(BaseModel):
         v: conlist(UUID) = []
 
-    assert ConListModel(v=["8a15ecb2-8cf5-41fc-b10d-10a515d01ea2"]).v == [UUID("8a15ecb2-8cf5-41fc-b10d-10a515d01ea2")]
+    assert ConListModel(v=['8a15ecb2-8cf5-41fc-b10d-10a515d01ea2']).v == [UUID('8a15ecb2-8cf5-41fc-b10d-10a515d01ea2')]
 
 
 def test_constrained_list_type_erased_class():
@@ -228,10 +228,10 @@ def test_constrained_list_type_erased_class():
         ConListModel(v=[])
     assert exc_info.value.errors() == [
         {
-            "loc": ("v",),
-            "msg": "ensure this value has at least 1 items",
-            "type": "value_error.list.min_items",
-            "ctx": {"limit_value": 1},
+            'loc': ('v',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
         }
     ]
 
@@ -246,12 +246,11 @@ def test_constrained_list_type_erased_class():
         }
     ]
 
-    assert ConListModel(v=["8a15ecb2-8cf5-41fc-b10d-10a515d01ea2"]).v == [UUID("8a15ecb2-8cf5-41fc-b10d-10a515d01ea2")]
+    assert ConListModel(v=['8a15ecb2-8cf5-41fc-b10d-10a515d01ea2']).v == [UUID('8a15ecb2-8cf5-41fc-b10d-10a515d01ea2')]
 
 
-# @pytest.mark.skip("Not working for some reason")
 def test_constrained_list_class():
-    T = TypeVar("T")
+    T = TypeVar('T')
 
     class ConList(ConstrainedList[T]):
         min_items = 1
@@ -263,14 +262,14 @@ def test_constrained_list_class():
         ConListModel(v=[])
     assert exc_info.value.errors() == [
         {
-            "loc": ("v",),
-            "msg": "ensure this value has at least 1 items",
-            "type": "value_error.list.min_items",
-            "ctx": {"limit_value": 1},
+            'loc': ('v',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
         }
     ]
 
-    assert ConListModel(v=["8a15ecb2-8cf5-41fc-b10d-10a515d01ea2"]).v == [UUID("8a15ecb2-8cf5-41fc-b10d-10a515d01ea2")]
+    assert ConListModel(v=['8a15ecb2-8cf5-41fc-b10d-10a515d01ea2']).v == [UUID('8a15ecb2-8cf5-41fc-b10d-10a515d01ea2')]
 
 
 def test_conlist():
@@ -428,7 +427,7 @@ def test_constrained_set_type_conversions():
     class ConSetModel(BaseModel):
         v: conset(UUID) = []
 
-    assert ConSetModel(v=["8a15ecb2-8cf5-41fc-b10d-10a515d01ea2"]).v == {UUID("8a15ecb2-8cf5-41fc-b10d-10a515d01ea2")}
+    assert ConSetModel(v=['8a15ecb2-8cf5-41fc-b10d-10a515d01ea2']).v == {UUID('8a15ecb2-8cf5-41fc-b10d-10a515d01ea2')}
 
 
 def test_constrained_set_type_erased_class():
@@ -442,18 +441,18 @@ def test_constrained_set_type_erased_class():
         ConSetModel(v=[])
     assert exc_info.value.errors() == [
         {
-            "loc": ("v",),
-            "msg": "ensure this value has at least 1 items",
-            "type": "value_error.set.min_items",
-            "ctx": {"limit_value": 1},
+            'loc': ('v',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
         }
     ]
 
-    assert ConSetModel(v=["8a15ecb2-8cf5-41fc-b10d-10a515d01ea2"]).v == {UUID("8a15ecb2-8cf5-41fc-b10d-10a515d01ea2")}
+    assert ConSetModel(v=['8a15ecb2-8cf5-41fc-b10d-10a515d01ea2']).v == {UUID('8a15ecb2-8cf5-41fc-b10d-10a515d01ea2')}
 
 
 def test_constrained_set_class():
-    T = TypeVar("T")
+    T = TypeVar('T')
 
     class ConSet(ConstrainedSet[T]):
         min_items = 1
@@ -465,14 +464,14 @@ def test_constrained_set_class():
         ConSetModel(v=[])
     assert exc_info.value.errors() == [
         {
-            "loc": ("v",),
-            "msg": "ensure this value has at least 1 items",
-            "type": "value_error.set.min_items",
-            "ctx": {"limit_value": 1},
+            'loc': ('v',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
         }
     ]
 
-    assert ConSetModel(v=["8a15ecb2-8cf5-41fc-b10d-10a515d01ea2"]).v == {UUID("8a15ecb2-8cf5-41fc-b10d-10a515d01ea2")}
+    assert ConSetModel(v=['8a15ecb2-8cf5-41fc-b10d-10a515d01ea2']).v == {UUID('8a15ecb2-8cf5-41fc-b10d-10a515d01ea2')}
 
 
 def test_conset():

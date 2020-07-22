@@ -33,7 +33,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs, get_origin
+from .typing import AnyCallable, ForwardRef, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
     ClassAttribute,
     GetterDict,

@@ -80,8 +80,7 @@ if sys.version_info < (3, 8):
 
 
 else:
-    from typing import Literal, get_origin
-    from typing import get_args as typing_get_args
+    from typing import Literal, get_args as typing_get_args, get_origin
 
     def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
         """Get type arguments with all substitutions performed.
