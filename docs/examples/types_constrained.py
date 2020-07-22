@@ -1,7 +1,9 @@
 from decimal import Decimal
+from typing import TypeVar
 
 from pydantic import (
     BaseModel,
+    ConstrainedList,
     NegativeFloat,
     NegativeInt,
     PositiveFloat,
@@ -15,6 +17,13 @@ from pydantic import (
     constr,
     Field,
 )
+
+
+T = TypeVar('T')
+
+
+class LongList(ConstrainedList[T]):
+    min_items = 100
 
 
 class Model(BaseModel):
@@ -38,6 +47,7 @@ class Model(BaseModel):
 
     short_list: conlist(int, min_items=1, max_items=4)
     short_set: conset(int, min_items=1, max_items=4)
+    long_list: LongList[int]
 
     decimal_positive: condecimal(gt=0)
     decimal_negative: condecimal(lt=0)
