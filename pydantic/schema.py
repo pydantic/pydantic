@@ -353,6 +353,8 @@ def get_flat_models_from_models(models: Sequence[Type['BaseModel']]) -> TypeMode
 
 
 def get_long_model_name(model: TypeModelOrEnum) -> str:
+    if not model.__module__:
+        raise RuntimeError(f'{model.__name__}.__module__ not set')
     return f'{model.__module__}__{model.__name__}'.replace('.', '__')
 
 

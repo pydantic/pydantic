@@ -12,13 +12,14 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, create_model, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
     get_flat_models_from_model,
     get_flat_models_from_models,
+    get_long_model_name,
     get_model_name_map,
     model_process_schema,
     model_schema,
@@ -1880,3 +1881,15 @@ def test_new_type():
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
     }
+
+
+def test_get_long_model_name():
+    model = create_model('DynamicFoobarModel', foo=(str, ...), bar=123)
+
+    with pytest.raises(RuntimeError):
+        get_long_model_name(model)
+
+    class Model(BaseModel):
+        foo: str
+
+    assert get_long_model_name(Model) == 'tests__test_schema__Model'
