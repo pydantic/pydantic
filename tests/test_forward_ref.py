@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from pydantic import ConfigError, ValidationError
+from pydantic import ConfigError, ValidationError, create_model
 
 skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
@@ -439,3 +439,11 @@ else:
     raise AssertionError('error not raised')
     """
     )
+
+
+def test_forward_ref_script():
+    """It should update forward refs in a script (not a module)"""
+    sub_model = create_model('Sub', name=(str, ...))
+    main_model = create_model('Main', sub=('Sub', ...))
+    main_model.update_forward_refs(Sub=sub_model)
+    assert main_model(sub={'name': 'pika'}).dict() == {'sub': {'name': 'pika'}}

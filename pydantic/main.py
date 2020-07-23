@@ -681,7 +681,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         """
         Try to update ForwardRefs on fields based on this Model, globalns and localns.
         """
-        globalns = sys.modules[cls.__module__].__dict__.copy()
+        globalns = sys.modules[cls.__module__ or '__main__'].__dict__.copy()
         globalns.setdefault(cls.__name__, cls)
         for f in cls.__fields__.values():
             update_field_forward_refs(f, globalns=globalns, localns=localns)

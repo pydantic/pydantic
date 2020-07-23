@@ -1,0 +1,1 @@
+Support `update_forward_refs` in scripts
