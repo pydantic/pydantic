@@ -82,20 +82,16 @@ if sys.version_info < (3, 8):
 else:
     from typing import Literal, get_args as typing_get_args, get_origin
 
-    def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
-        """Get type arguments with all substitutions performed.
+    if sys.version_info < (3, 8, 3):
 
-        For unions, basic simplifications used by Union constructor are performed.
-        Examples::
-            get_args(Dict[str, int]) == (str, int)
-            get_args(int) == ()
-            get_args(Union[int, Union[T, int], str][int]) == (int, str)
-            get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
-            get_args(Callable[[], T][int]) == ([], int)
-        """
-        if get_origin(tp) is collections.abc.Callable and not getattr(tp, '__args__'):
-            return ()
-        return typing_get_args(tp)
+        def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
+            """This is a workaround for https://bugs.python.org/issue40398."""
+            if get_origin(tp) is collections.abc.Callable and not getattr(tp, '__args__'):
+                return ()
+            return typing_get_args(tp)
+
+    else:
+        get_args = typing_get_args
 
 
 if TYPE_CHECKING:
