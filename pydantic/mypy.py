@@ -328,7 +328,7 @@ class PydanticModelTransformer:
         construct_arguments = [fields_set_argument] + construct_arguments
 
         obj_type = ctx.api.named_type('__builtins__.object')
-        self_tvar_name = 'Model'
+        self_tvar_name = '_PydanticBaseModel'  # Make sure it does not conflict with other names in the class
         tvar_fullname = ctx.cls.fullname + '.' + self_tvar_name
         tvd = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
         self_tvar_expr = TypeVarExpr(self_tvar_name, tvar_fullname, [], obj_type)
