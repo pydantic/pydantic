@@ -1,5 +1,5 @@
 black==19.10b0
-coverage==5.2
+coverage==5.2.1
 flake8==3.8.3
 flake8-quotes==3.2.0
 isort==5.1.4
