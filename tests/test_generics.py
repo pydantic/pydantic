@@ -1,3 +1,4 @@
+import pickle
 import sys
 from enum import Enum
 from typing import Any, ClassVar, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
@@ -579,3 +580,22 @@ def test_multiple_specification():
         {'loc': ('a',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
         {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
+
+
+@skip_36
+def test_generic_model_pickle():
+    t = TypeVar('t')
+
+    class Model(BaseModel):
+        a: float
+        b: int = 10
+
+    class MyGeneric(GenericModel, Generic[t]):
+        value: t
+
+    original = MyGeneric[Model](value=Model(a='24'))
+    dumped = pickle.dumps(original)
+    loaded = pickle.loads(dumped)
+    assert loaded.value.a == original.value.a == 24
+    assert loaded.value.b == original.value.b == 10
+    assert loaded == original

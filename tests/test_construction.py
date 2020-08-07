@@ -1,10 +1,9 @@
 import pickle
-from typing import Any, Generic, List, TypeVar
+from typing import Any, List
 
 import pytest
 
 from pydantic import BaseModel
-from pydantic.generics import GenericModel
 
 
 class Model(BaseModel):
@@ -206,20 +205,6 @@ def test_simple_pickle():
     assert tuple(m) == (('a', 24.0), ('b', 10))
     assert tuple(m2) == (('a', 24.0), ('b', 10))
     assert m.__fields__ == m2.__fields__
-
-
-def test_generic_model_pickle():
-    t = TypeVar('t')
-
-    class MyGeneric(GenericModel, Generic[t]):
-        value: t
-
-    original = MyGeneric[Model](value=Model(a='24'))
-    dumped = pickle.dumps(original)
-    loaded = pickle.loads(dumped)
-    assert loaded.value.a == original.value.a == 24
-    assert loaded.value.b == original.value.b == 10
-    assert loaded == original
 
 
 def test_recursive_pickle():
