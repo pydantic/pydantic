@@ -360,7 +360,7 @@ def test_get_caller_module_name():
     assert get_current_module_name() == __name__
 
 
-def test_get_caller_module_name_error():
-    with mock.patch('inspect.getmodule', return_value=None):
-        with pytest.raises(LookupError, match='Could not find caller module'):
-            get_caller_module_name()
+def test_get_caller_module_name_error(mocker):
+    mocker.patch('inspect.getmodule', return_value=None)
+    with pytest.raises(LookupError, match='Could not find caller module'):
+        get_caller_module_name()
