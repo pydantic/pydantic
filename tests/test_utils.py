@@ -4,7 +4,6 @@ import string
 from distutils.version import StrictVersion
 from enum import Enum
 from typing import NewType, Union
-from unittest import mock
 
 import pytest
 
