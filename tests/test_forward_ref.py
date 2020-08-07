@@ -439,3 +439,16 @@ else:
     raise AssertionError('error not raised')
     """
     )
+
+
+def test_forward_ref_with_create_model(create_module):
+    create_module(
+        """
+import pydantic
+
+sub_model = pydantic.create_model("Sub", foo="bar")
+main_model = pydantic.create_model("Main", sub=("Sub", ...))
+instance = main_model(sub={})
+assert instance.sub.dict() == {"foo": "bar"}
+        """
+    )
