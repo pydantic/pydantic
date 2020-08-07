@@ -1,18 +1,15 @@
 import json
-from operator import itemgetter
-
 import os
 import random
 import string
 import sys
-from datetime import datetime
+from functools import partial
+from operator import itemgetter
+from pathlib import Path
+from statistics import StatisticsError, mean, stdev as stdev_
+from time import perf_counter
 
 from devtools import debug
-from functools import partial
-from pathlib import Path
-from statistics import StatisticsError, mean
-from statistics import stdev as stdev_
-
 from test_pydantic import TestPydantic
 
 try:
@@ -54,9 +51,15 @@ except Exception:
 
 try:
     from test_voluptuous import TestVoluptuous
-except Exception as e:
+except Exception:
     print('WARNING: unable to import TestVoluptuous')
     TestVoluptuous = None
+
+try:
+    from test_validx import TestValidx
+except Exception:
+    print('WARNING: unable to import TestValidx')
+    TestValidx = None
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
@@ -65,7 +68,11 @@ ALL = PUNCTUATION * 5 + LETTERS * 20 + UNICODE
 random = random.SystemRandom()
 
 # in order of performance for csv
-other_tests = [TestCAttrs, TestValideer, TestMarshmallow, TestVoluptuous, TestTrafaret, TestDRF, TestCerberus]
+other_tests = [
+    TestCAttrs, TestValideer, TestMarshmallow,
+    TestVoluptuous, TestTrafaret, TestDRF, TestCerberus,
+    TestValidx
+]
 active_other_tests = [t for t in other_tests if t is not None]
 
 
@@ -147,6 +154,7 @@ def generate_case():
         ) for i in range(random.randrange(1, 5))]
     ))
 
+
 THIS_DIR = Path(__file__).parent.resolve()
 
 
@@ -155,6 +163,7 @@ def stdev(d):
         return stdev_(d)
     except StatisticsError:
         return 0
+
 
 def run_tests(classes, cases, repeats, json=False):
     if json:
@@ -173,7 +182,7 @@ def run_tests(classes, cases, repeats, json=False):
             models = []
             if json:
                 models = [m for passed, m in (test.validate(c) for c in cases) if passed]
-            start = datetime.now()
+            start = perf_counter()
             for j in range(3):
                 if json:
                     for model in models:
@@ -185,7 +194,7 @@ def run_tests(classes, cases, repeats, json=False):
                         passed, result = test.validate(case)
                         pass_count += passed
                         count += 1
-            time = (datetime.now() - start).total_seconds()
+            time = perf_counter() - start
             success = pass_count / count * 100
             print(f'{p:>{lpad}} ({i+1:>{len(str(repeats))}}/{repeats}) time={time:0.3f}s, success={success:0.2f}%')
             times.append(time)
@@ -199,6 +208,7 @@ def run_tests(classes, cases, repeats, json=False):
         print()
 
     return results, csv_results
+
 
 def main():
     json_path = THIS_DIR / 'cases.json'
