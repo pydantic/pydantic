@@ -861,7 +861,9 @@ def create_model(
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
     created_model = type(__model_name, (__base__,), namespace)
-    setattr(sys.modules[__module__], __model_name, created_model)  # allow pickling
+    if "<locals>" not in created_model.__qualname__:
+        # make sure object created on top of a module, otherwise there's a risk overriding existing object
+        setattr(sys.modules[__module__], __model_name, created_model)  # allow pickling
     return created_model
 
 

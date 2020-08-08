@@ -1,4 +1,3 @@
-import pickle
 import sys
 from enum import Enum
 from typing import Any, ClassVar, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
@@ -165,7 +164,6 @@ def test_non_annotated_field():
 @skip_36
 def test_must_inherit_from_generic():
     with pytest.raises(TypeError) as exc_info:
-
         class Result(GenericModel):
             pass
 
@@ -178,7 +176,6 @@ def test_must_inherit_from_generic():
 def test_parameters_placed_on_generic():
     T = TypeVar('T')
     with pytest.raises(TypeError, match='Type parameters should be placed on typing.Generic, not GenericModel'):
-
         class Result(GenericModel[T]):
             pass
 
@@ -186,7 +183,6 @@ def test_parameters_placed_on_generic():
 @skip_36
 def test_parameters_must_be_typevar():
     with pytest.raises(TypeError, match='Type GenericModel must inherit from typing.Generic before being '):
-
         class Result(GenericModel[int]):
             pass
 
@@ -583,19 +579,31 @@ def test_multiple_specification():
 
 
 @skip_36
-def test_generic_model_pickle():
-    t = TypeVar('t')
+def test_generic_model_pickle(create_module):
+    # Using create_module because pickle doesn't support
+    # objects with <locals> in their __qualname__  (e. g. defined in function)
+    create_module(
+        """
+import pickle
+from typing import Generic, TypeVar
 
-    class Model(BaseModel):
-        a: float
-        b: int = 10
+from pydantic import BaseModel
+from pydantic.generics import GenericModel
 
-    class MyGeneric(GenericModel, Generic[t]):
-        value: t
+t = TypeVar('t')
 
-    original = MyGeneric[Model](value=Model(a='24'))
-    dumped = pickle.dumps(original)
-    loaded = pickle.loads(dumped)
-    assert loaded.value.a == original.value.a == 24
-    assert loaded.value.b == original.value.b == 10
-    assert loaded == original
+class Model(BaseModel):
+    a: float
+    b: int = 10
+
+class MyGeneric(GenericModel, Generic[t]):
+    value: t
+
+original = MyGeneric[Model](value=Model(a='24'))
+dumped = pickle.dumps(original)
+loaded = pickle.loads(dumped)
+assert loaded.value.a == original.value.a == 24
+assert loaded.value.b == original.value.b == 10
+assert loaded == original
+    """
+    )
