@@ -797,7 +797,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 _is_base_model_class_defined = True
 
 
-def create_model(
+def create_model(  # noqa: C901 (ignore complexity)
     __model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
@@ -861,9 +861,11 @@ def create_model(
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
     created_model = type(__model_name, (__base__,), namespace)
-    if "<locals>" not in created_model.__qualname__:
+
+    if '<locals>' not in created_model.__qualname__:
         # make sure object created on top of a module, otherwise there's a risk overriding existing object
         setattr(sys.modules[__module__], __model_name, created_model)  # allow pickling
+
     return created_model
 
 

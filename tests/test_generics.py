@@ -164,6 +164,7 @@ def test_non_annotated_field():
 @skip_36
 def test_must_inherit_from_generic():
     with pytest.raises(TypeError) as exc_info:
+
         class Result(GenericModel):
             pass
 
@@ -176,6 +177,7 @@ def test_must_inherit_from_generic():
 def test_parameters_placed_on_generic():
     T = TypeVar('T')
     with pytest.raises(TypeError, match='Type parameters should be placed on typing.Generic, not GenericModel'):
+
         class Result(GenericModel[T]):
             pass
 
@@ -183,6 +185,7 @@ def test_parameters_placed_on_generic():
 @skip_36
 def test_parameters_must_be_typevar():
     with pytest.raises(TypeError, match='Type GenericModel must inherit from typing.Generic before being '):
+
         class Result(GenericModel[int]):
             pass
 
