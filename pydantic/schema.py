@@ -150,7 +150,14 @@ def model_schema(
 
 def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
     schema_overrides = False
-    schema: Dict[str, Any] = {'title': field.field_info.title or field.alias.title().replace('_', ' ')}
+
+    # If no title is explicitly set, we don't set title in the schema for enums.
+    # The behaviour is the same as `BaseModel` reference, where the default title
+    # is in the definitions part of the schema.
+    is_enum_with_no_title_set = lenient_issubclass(field.type_, Enum) and not field.field_info.title
+    schema: Dict[str, Any] = {} if is_enum_with_no_title_set else {
+        'title': field.field_info.title or field.alias.title().replace('_', ' ')
+    }
 
     if field.field_info.title:
         schema_overrides = True
@@ -660,6 +667,11 @@ def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]) -> None:
             break
 
 
+def get_schema_ref(ref_name: str, schema_overrides: bool) -> Dict[str, Any]:
+    schema_ref = {'$ref': ref_name}
+    return {'allOf': [schema_ref]} if schema_overrides else schema_ref
+
+
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
     field: ModelField,
     *,
@@ -712,8 +724,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     if lenient_issubclass(field_type, Enum):
         enum_name = normalize_name(field_type.__name__)
-        f_schema, _ = get_field_info_schema(field)
-        f_schema['allOf'] = [{'$ref': ref_prefix + enum_name}]
+        f_schema, schema_overrides = get_field_info_schema(field)
+        f_schema.update(get_schema_ref(ref_prefix + enum_name, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
     else:
         add_field_type_to_schema(field_type, f_schema)
@@ -744,11 +756,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             nested_models.update(sub_nested_models)
         else:
             nested_models.add(model_name)
-        schema_ref = {'$ref': ref_prefix + model_name}
-        if not schema_overrides:
-            return schema_ref, definitions, nested_models
-        else:
-            return {'allOf': [schema_ref]}, definitions, nested_models
+        schema_ref = get_schema_ref(ref_prefix + model_name, schema_overrides)
+        return schema_ref, definitions, nested_models
 
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 

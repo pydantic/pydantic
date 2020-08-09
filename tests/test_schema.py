@@ -209,9 +209,9 @@ def test_choices():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'allOf': [{'$ref': '#/definitions/FooEnum'}], 'title': 'Foo'},
-            'bar': {'allOf': [{'$ref': '#/definitions/BarEnum'}], 'title': 'Bar'},
-            'spam': {'allOf': [{'$ref': '#/definitions/SpamEnum'}], 'title': 'Spam'},
+            'foo': {'$ref': '#/definitions/FooEnum'},
+            'bar': {'$ref': '#/definitions/BarEnum'},
+            'spam': {'$ref': '#/definitions/SpamEnum'},
         },
         'required': ['foo', 'bar'],
         'definitions': {
@@ -244,7 +244,7 @@ def test_enum_modify_schema():
                 'type': 'string',
             }
         },
-        'properties': {'spam': {'allOf': [{'$ref': '#/definitions/SpamEnum'}], 'title': 'Spam'}},
+        'properties': {'spam': {'$ref': '#/definitions/SpamEnum'}},
         'title': 'Model',
         'type': 'object',
     }
@@ -258,6 +258,7 @@ def test_enum_schema_custom_field():
     class Model(BaseModel):
         pika: FooBarEnum = Field(alias='pikalias', title='Pikapika!', description='Pika is definitely the best!')
         bulbi: FooBarEnum = Field('foo', alias='bulbialias', title='Bulbibulbi!', description='Bulbi is not...')
+        cara: FooBarEnum
 
     assert Model.schema() == {
         'definitions': {
@@ -280,9 +281,64 @@ def test_enum_schema_custom_field():
                 'title': 'Bulbibulbi!',
                 'default': 'foo',
             },
+            'cara': {'$ref': '#/definitions/FooBarEnum'},
         },
-        'required': ['pikalias'],
+        'required': ['pikalias', 'cara'],
         'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_enum_and_model_have_same_behaviour():
+    class Names(str, Enum):
+        rick = 'Rick'
+        morty = 'Morty'
+        summer = 'Summer'
+
+    class Pika(BaseModel):
+        a: str
+
+    class Foo(BaseModel):
+        enum: Names
+        titled_enum: Names = Field(
+            ..., title='Title of enum', description='Description of enum',
+        )
+        model: Pika
+        titled_model: Pika = Field(
+            ..., title='Title of model', description='Description of model',
+        )
+
+    assert Foo.schema() == {
+        'definitions': {
+            'Pika': {
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+                'title': 'Pika',
+                'type': 'object',
+            },
+            'Names': {
+                'description': 'An enumeration.',
+                'enum': ['Rick', 'Morty', 'Summer'],
+                'title': 'Names',
+                'type': 'string',
+            },
+        },
+        'properties': {
+            'enum': {'$ref': '#/definitions/Names'},
+            'model': {'$ref': '#/definitions/Pika'},
+            'titled_enum': {
+                'allOf': [{'$ref': '#/definitions/Names'}],
+                'description': 'Description of enum',
+                'title': 'Title of enum',
+            },
+            'titled_model': {
+                'allOf': [{'$ref': '#/definitions/Pika'}],
+                'description': 'Description of model',
+                'title': 'Title of model',
+            },
+        },
+        'required': ['enum', 'titled_enum', 'model', 'titled_model'],
+        'title': 'Foo',
         'type': 'object',
     }
 
@@ -1816,13 +1872,13 @@ def test_schema_attributes():
         multiple_of = 'MO'
         regex = 'RE'
 
-    class Model(BaseModel):
+    class Example(BaseModel):
         example: ExampleEnum
 
-    assert Model.schema() == {
-        'title': 'Model',
+    assert Example.schema() == {
+        'title': 'Example',
         'type': 'object',
-        'properties': {'example': {'allOf': [{'$ref': '#/definitions/ExampleEnum'}], 'title': 'Example'}},
+        'properties': {'example': {'$ref': '#/definitions/ExampleEnum'}},
         'required': ['example'],
         'definitions': {
             'ExampleEnum': {
