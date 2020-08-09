@@ -23,7 +23,9 @@ from . import errors
 date_re = re.compile(r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$')
 
 time_re = re.compile(
-    r'(?P<hour>\d{1,2}):(?P<minute>\d{1,2})(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
+    r'(?P<hour>\d{1,2}):(?P<minute>\d{1,2})'
+    r'(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
+    r'(?P<tzinfo>Z|[+-]\d{2}(?::?\d{2})?)?$'
 )
 
 datetime_re = re.compile(
@@ -117,8 +119,6 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
     """
     Parse a time/string and return a datetime.time.
 
-    This function doesn't support time zone offsets.
-
     Raise ValueError if the input is well formatted but not a valid time.
     Raise ValueError if the input isn't well formatted, in particular if it contains an offset.
     """
@@ -143,7 +143,20 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
     if kw['microsecond']:
         kw['microsecond'] = kw['microsecond'].ljust(6, '0')
 
-    kw_ = {k: int(v) for k, v in kw.items() if v is not None}
+    tzinfo_str = kw.pop('tzinfo')
+    if tzinfo_str == 'Z':
+        tzinfo = timezone.utc
+    elif tzinfo_str is not None:
+        offset_mins = int(tzinfo_str[-2:]) if len(tzinfo_str) > 3 else 0
+        offset = 60 * int(tzinfo_str[1:3]) + offset_mins
+        if tzinfo_str[0] == '-':
+            offset = -offset
+        tzinfo = timezone(timedelta(minutes=offset))
+    else:
+        tzinfo = None
+
+    kw_: Dict[str, Union[int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
+    kw_['tzinfo'] = tzinfo
 
     try:
         return time(**kw_)  # type: ignore

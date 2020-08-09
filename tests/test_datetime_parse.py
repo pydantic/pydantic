@@ -242,3 +242,8 @@ def test_unicode_decode_error(field):
         'type': 'value_error.unicodedecode',
         'msg': "'utf-8' codec can't decode byte 0x81 in position 0: invalid start byte",
     }
+
+
+def test_time_with_timedelta():
+    assert '11:05:00-05:00' == parse_time('11:05-05:00').isoformat()
+    assert '11:05:00+00:00' == parse_time('11:05:00Z').isoformat()
