@@ -1,1 +1,1 @@
-Compare validx library with pydantic (and others similars libraries) in benchmarks folder.
+Add benchmarks for `validx`
