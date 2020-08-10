@@ -1,1 +1,1 @@
-Compare validx library against pydantic in benchmarks area.
+Compare validx library with pydantic (and others similars libraries) in benchmarks folder.
