@@ -1,0 +1,1 @@
+Compare validx library against pydantic in benchmarks area.
