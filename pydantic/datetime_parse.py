@@ -151,7 +151,10 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
         offset = 60 * int(tzinfo_str[1:3]) + offset_mins
         if tzinfo_str[0] == '-':
             offset = -offset
-        tzinfo = timezone(timedelta(minutes=offset))
+        try:
+            tzinfo = timezone(timedelta(minutes=offset))
+        except ValueError:
+            raise errors.TimeError()
     else:
         tzinfo = None
 

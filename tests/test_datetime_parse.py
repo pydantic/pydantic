@@ -65,12 +65,20 @@ def test_date_parsing(value, result):
         (3610, time(1, 0, 10)),
         (3600.5, time(1, 0, 0, 500000)),
         (86400 - 1, time(23, 59, 59)),
+        ('11:05:00-05:30', time(11, 5, 0, tzinfo=create_tz(-330))),
+        ('11:05:00-0530', time(11, 5, 0, tzinfo=create_tz(-330))),
+        ('11:05:00Z', time(11, 5, 0, tzinfo=timezone.utc)),
+        ('11:05:00+00', time(11, 5, 0, tzinfo=timezone.utc)),
+        ('11:05-06', time(11, 5, 0, tzinfo=create_tz(-360))),
+        ('11:05+06', time(11, 5, 0, tzinfo=create_tz(360))),
         # Invalid inputs
         (86400, errors.TimeError),
         ('xxx', errors.TimeError),
         ('091500', errors.TimeError),
         (b'091500', errors.TimeError),
         ('09:15:90', errors.TimeError),
+        ('11:05:00Y', errors.TimeError),
+        ('11:05:00-25:00', errors.TimeError),
     ],
 )
 def test_time_parsing(value, result):
@@ -242,8 +250,3 @@ def test_unicode_decode_error(field):
         'type': 'value_error.unicodedecode',
         'msg': "'utf-8' codec can't decode byte 0x81 in position 0: invalid start byte",
     }
-
-
-def test_time_with_timedelta():
-    assert '11:05:00-05:00' == parse_time('11:05-05:00').isoformat()
-    assert '11:05:00+00:00' == parse_time('11:05:00Z').isoformat()
