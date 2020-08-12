@@ -1,11 +1,11 @@
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, Type, TypeVar, Union
 
 from pydantic.parse import Protocol, load_file
 
-from .typing import display_as_type
+from pydantic.typing import display_as_type
 
 __all__ = ('parse_file_as', 'parse_obj_as')
 
@@ -30,7 +30,7 @@ def _get_parsing_type(type_: Any, *, type_name: Optional[NameFactory] = None) ->
 T = TypeVar('T')
 
 
-def parse_obj_as(type_: Type[T], obj: Any, *, type_name: Optional[NameFactory] = None) -> T:
+def parse_obj_as(type_: Generic[T], obj: Any, *, type_name: Optional[NameFactory] = None) -> T:
     model_type = _get_parsing_type(type_, type_name=type_name)
     return model_type(__root__=obj).__root__
 
