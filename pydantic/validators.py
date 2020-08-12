@@ -548,6 +548,8 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
 def find_validators(  # noqa: C901 (ignore complexity)
     type_: Type[Any], config: Type['BaseConfig']
 ) -> Generator[AnyCallable, None, None]:
+    from .dataclasses import is_builtin_dataclass, make_dataclass_validator
+
     if type_ is Any:
         return
     type_type = type_.__class__
@@ -564,6 +566,9 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if is_literal_type(type_):
         yield make_literal_validator(type_)
+        return
+    if is_builtin_dataclass(type_):
+        yield from make_dataclass_validator(type_)
         return
 
     class_ = get_class(type_)

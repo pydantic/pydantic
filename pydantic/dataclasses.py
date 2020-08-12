@@ -1,3 +1,4 @@
+import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
@@ -41,6 +42,11 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
         return cls(*v)
     elif isinstance(v, dict):
         return cls(**v)
+    # In nested dataclasses, v can be of type `dataclasses.dataclass`.
+    # But to validate fields `cls` will be in fact a `pydantic.dataclasses.dataclass`,
+    # which inherits directly from the class of `v`.
+    elif is_builtin_dataclass(v) and cls.__bases__[0] is type(v):
+        return cls(**dataclasses.asdict(v))
     else:
         raise DataclassTypeError(class_name=cls.__name__)
 
@@ -62,6 +68,14 @@ def setattr_validate_assignment(self: 'DataclassType', name: str, value: Any) ->
     object.__setattr__(self, name, value)
 
 
+def is_builtin_dataclass(_cls: Type[Any]) -> bool:
+    """
+    `dataclasses.is_dataclass` is True if one of the class parents is a `dataclass`.
+    This is why we also add a class attribute `__processed__` to only consider 'direct' built-in dataclasses
+    """
+    return not hasattr(_cls, '__processed__') and dataclasses.is_dataclass(_cls)
+
+
 def _dataclass_with_validation(
     _cls: Type[Any], pydantic_post_init: Callable[..., None], **kwargs: Any
 ) -> Type['DataclassType']:
@@ -75,13 +89,8 @@ def _dataclass_with_validation(
       __post_init__ = _pydantic_post_init
     ```
     with the exact same fields as the base dataclass
-
-    Note: `is_dataclass` is True if one of the class parents is a `dataclass`.
-          This is why we also add a class attribute `__processed__` to only consider 'direct' built-in dataclasses
     """
-    import dataclasses
-
-    if not hasattr(_cls, '__processed__') and dataclasses.is_dataclass(_cls):
+    if is_builtin_dataclass(_cls):
         _cls = type(_cls.__name__, (_cls,), {'__post_init__': pydantic_post_init})
     else:
         _cls.__post_init__ = pydantic_post_init
@@ -102,8 +111,6 @@ def _process_class(
     frozen: bool,
     config: Optional[Type[Any]],
 ) -> Type['DataclassType']:
-    import dataclasses
-
     post_init_original = getattr(_cls, '__post_init__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
@@ -211,3 +218,8 @@ def dataclass(
         return wrap
 
     return wrap(_cls)
+
+
+def make_dataclass_validator(_cls: Type[Any], **kwargs: Any) -> 'CallableGenerator':
+    cls = dataclass(_cls, **kwargs)
+    yield from _get_validators(cls)

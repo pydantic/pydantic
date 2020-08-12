@@ -356,9 +356,9 @@ def test_nested_dataclass():
 
 
 def test_arbitrary_types_allowed():
-    @dataclasses.dataclass
     class Button:
-        href: str
+        def __init__(self, href: str):
+            self.href = href
 
     class Config:
         arbitrary_types_allowed = True
@@ -668,3 +668,27 @@ def test_override_builtin_dataclass_2():
     assert f.filename == 'thefilename'
     assert f.modified_date == datetime(2020, 1, 1, 0, 0)
     assert f.seen_count == 7
+
+
+def test_override_builtin_dataclass_nested():
+    @dataclasses.dataclass
+    class Meta:
+        modified_date: Optional[datetime]
+        seen_count: int
+
+    @dataclasses.dataclass
+    class File:
+        filename: str
+        meta: Meta
+
+    FileChecked = pydantic.dataclasses.dataclass(File)
+    f = FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count='7'))
+    assert f.filename == 'thefilename'
+    assert f.meta.modified_date == datetime(2020, 1, 1, 0, 0)
+    assert f.meta.seen_count == 7
+
+    with pytest.raises(ValidationError) as e:
+        FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count=['7']))
+    assert e.value.errors() == [
+        {'loc': ('meta', 'seen_count'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
