@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
@@ -123,7 +123,7 @@ def _process_class(
         if post_init_post_parse is not None:
             post_init_post_parse(self, *initvars)
 
-    cls: Type['DataclassType'] = _dataclass_with_validation(
+    cls = _dataclass_with_validation(
         _cls, _pydantic_post_init, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
     )
 
@@ -146,15 +146,44 @@ def _process_class(
     )
 
     cls.__initialised__ = False
-    cls.__validate__ = classmethod(_validate_dataclass)  # type: ignore
-    cls.__get_validators__ = classmethod(_get_validators)  # type: ignore
+    cls.__validate__ = classmethod(_validate_dataclass)  # type: ignore[assignment]
+    cls.__get_validators__ = classmethod(_get_validators)  # type: ignore[assignment]
     if post_init_original:
         cls.__post_init_original__ = post_init_original
 
     if cls.__pydantic_model__.__config__.validate_assignment and not frozen:
-        cls.__setattr__ = setattr_validate_assignment  # type: ignore
+        cls.__setattr__ = setattr_validate_assignment  # type: ignore[assignment]
 
     return cls
+
+
+@overload
+def dataclass(
+    *,
+    init: bool = True,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
+    unsafe_hash: bool = False,
+    frozen: bool = False,
+    config: Type[Any] = None,
+) -> Callable[[Type[Any]], Type['DataclassType']]:
+    ...
+
+
+@overload
+def dataclass(
+    _cls: Type[Any],
+    *,
+    init: bool = True,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
+    unsafe_hash: bool = False,
+    frozen: bool = False,
+    config: Type[Any] = None,
+) -> Type['DataclassType']:
+    ...
 
 
 def dataclass(
