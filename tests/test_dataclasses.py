@@ -633,3 +633,38 @@ def test_hashable_optional(default):
 
     MyDataclass()
     MyDataclass(v=None)
+
+
+def test_override_builtin_dataclass():
+    @dataclasses.dataclass
+    class File:
+        hash: str
+        name: Optional[str]
+        size: int
+        content: Optional[bytes] = None
+
+    FileChecked = pydantic.dataclasses.dataclass(File)
+    f = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
+    assert f.name == 'whatever.txt'
+    assert f.size == 456
+
+    with pytest.raises(ValidationError) as e:
+        FileChecked(hash=[1], name='name', size=3)
+    assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
+
+
+def test_override_builtin_dataclass_2():
+    @dataclasses.dataclass
+    class Meta:
+        modified_date: Optional[datetime]
+        seen_count: int
+
+    @pydantic.dataclasses.dataclass
+    @dataclasses.dataclass
+    class File(Meta):
+        filename: str
+
+    f = File(filename=b'thefilename', modified_date='2020-01-01T00:00', seen_count='7')
+    assert f.filename == 'thefilename'
+    assert f.modified_date == datetime(2020, 1, 1, 0, 0)
+    assert f.seen_count == 7
