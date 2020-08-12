@@ -10,6 +10,11 @@ from uuid import UUID
 from .color import Color
 from .types import SecretBytes, SecretStr
 
+try:
+    from .phone_number import PhoneNumber
+except ImportError:
+    PhoneNumber = None
+
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
 
 
@@ -40,6 +45,9 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     set: list,
     UUID: str,
 }
+
+if PhoneNumber is not None:
+    ENCODERS_BY_TYPE[PhoneNumber] = lambda o: o.formated
 
 
 def pydantic_encoder(obj: Any) -> Any:
