@@ -1,10 +1,11 @@
 import os
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 import pytest
 
 from pydantic import BaseModel, BaseSettings, Field, NoneStr, ValidationError, dataclasses
 from pydantic.env_settings import SettingsError, read_env_file
+from pydantic.types import SecretBytes, SecretStr
 
 try:
     import dotenv
@@ -629,3 +630,89 @@ def test_frozenset(env):
     assert Settings().dict() == {'foo': 'default foo'}
     env.set('foo_a', 'x')
     assert Settings().dict() == {'foo': 'x'}
+
+
+def test_secrets_secret_str(tmp_path):
+    p = tmp_path / 'foo'
+    p.write_text('foo_secret_value_str')
+
+    class Settings(BaseSettings):
+        foo: SecretStr
+
+        class Config:
+            secrets_dir = tmp_path
+
+    assert Settings().dict() == {'foo': SecretStr('foo_secret_value_str')}
+
+
+def test_secrets_secret_bytes(tmp_path):
+    p = tmp_path / 'foo'
+    p.write_bytes(b'foo_secret_value_bytes')
+
+    class Settings(BaseSettings):
+        foo: SecretBytes
+
+        class Config:
+            secrets_dir = tmp_path
+
+    assert Settings().dict() == {'foo': SecretBytes(b'foo_secret_value_bytes')}
+
+
+def test_secrets_skip_non_secret(tmp_path):
+    p1 = tmp_path / 'foo'
+    p1.write_text('foo_secret_value_str')
+    p2 = tmp_path / 'bar'
+    p2.write_text('bar_secret_value_str')
+
+    class Settings(BaseSettings):
+        foo: SecretStr
+        bar: Optional[str]
+
+        class Config:
+            secrets_dir = tmp_path
+
+    assert Settings().dict() == {'foo': SecretStr('foo_secret_value_str'), 'bar': None}
+
+
+def test_secrets_missing(tmp_path):
+    class Settings(BaseSettings):
+        foo: SecretStr
+
+        class Config:
+            secrets_dir = tmp_path
+
+    with pytest.raises(ValidationError) as exc_info:
+        Settings()
+    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+def test_secrets_invalid_secrets_dir(tmp_path):
+    p1 = tmp_path / 'foo'
+    p1.write_text('foo_secret_value_str')
+
+    class Settings(BaseSettings):
+        foo: SecretStr
+
+        class Config:
+            secrets_dir = p1
+
+    with pytest.raises(ValidationError) as exc_info:
+        Settings()
+    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_secrets_dotenv_override(tmp_path):
+    s = tmp_path / 'foo'
+    s.write_text('foo_secret_value_str')
+
+    e = tmp_path / '.env'
+    e.write_text('foo=foo_env_value_str')
+
+    class Settings(BaseSettings):
+        foo: SecretStr
+
+        class Config:
+            secrets_dir = tmp_path
+
+    assert Settings(_env_file=e).dict() == {'foo': SecretStr('foo_env_value_str')}

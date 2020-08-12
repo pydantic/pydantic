@@ -5,10 +5,12 @@ from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 
 from .fields import ModelField
 from .main import BaseModel, Extra
+from .types import SecretBytes, SecretStr
 from .typing import display_as_type
 from .utils import deep_update, sequence_like
 
 env_file_sentinel = str(object())
+secrets_dir_sentinel = str(object())
 
 
 class SettingsError(ValueError):
@@ -39,8 +41,53 @@ class BaseSettings(BaseModel):
         init_kwargs: Dict[str, Any],
         _env_file: Union[Path, str, None] = None,
         _env_file_encoding: Optional[str] = None,
+        _secrets_dir: Union[Path, str, None] = None,
     ) -> Dict[str, Any]:
-        return deep_update(self._build_environ(_env_file, _env_file_encoding), init_kwargs)
+        return deep_update(
+            deep_update(self._build_secrets(_secrets_dir), self._build_environ(_env_file, _env_file_encoding)),
+            init_kwargs,
+        )
+
+    def _build_secrets(self, _secrets_dir: Union[Path, str, None] = None) -> Dict[str, Optional[str]]:
+        """
+        Build secrets suitable for passing to the Model.
+        """
+        d: Dict[str, Optional[str]] = {}
+
+        secrets_dir = _secrets_dir or self.__config__.secrets_dir
+        if secrets_dir is None:
+            return d
+
+        secrets_path = Path(secrets_dir)
+
+        if not secrets_path.is_dir():
+            return d
+
+        secret_paths = {
+            (item.name if self.__config__.case_sensitive else item.name.lower()): item
+            for item in secrets_path.iterdir()
+            if item.is_file()
+        }
+
+        for field in self.__fields__.values():
+            if field.type_ not in (SecretStr, SecretBytes):
+                continue
+
+            value: Optional[str] = None
+            for env_name in field.field_info.extra['env_names']:
+                path = secret_paths.get(env_name, None)
+                if path:
+                    value = path.read_text().strip()
+                    if value is not None:
+                        break
+            else:
+                continue
+
+            if value is not None:
+                d[field.alias] = value
+
+        print(d)
+        return d
 
     def _build_environ(
         self, _env_file: Union[Path, str, None] = None, _env_file_encoding: Optional[str] = None
@@ -89,6 +136,7 @@ class BaseSettings(BaseModel):
         env_prefix = ''
         env_file = None
         env_file_encoding = None
+        secrets_dir = None
         validate_all = True
         extra = Extra.forbid
         arbitrary_types_allowed = True
