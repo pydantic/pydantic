@@ -306,10 +306,14 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     :param known_models: used to solve circular references
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
+    from .dataclasses import dataclass, is_builtin_dataclass
     from .main import BaseModel  # noqa: F811
 
     flat_models: TypeModelSet = set()
+
     # Handle dataclass-based models
+    if is_builtin_dataclass(field.type_):
+        field.type_ = dataclass(field.type_)
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
