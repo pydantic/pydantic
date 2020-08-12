@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Callable, Generic, Optional, Type, TypeVar, Union
 
 from pydantic.parse import Protocol, load_file
-
 from pydantic.typing import display_as_type
 
 __all__ = ('parse_file_as', 'parse_obj_as')
