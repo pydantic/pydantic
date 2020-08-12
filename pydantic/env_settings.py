@@ -29,11 +29,14 @@ class BaseSettings(BaseModel):
         __pydantic_self__,
         _env_file: Union[Path, str, None] = env_file_sentinel,
         _env_file_encoding: Optional[str] = None,
+        _secrets_dir: Union[Path, str, None] = None,
         **values: Any,
     ) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
         super().__init__(
-            **__pydantic_self__._build_values(values, _env_file=_env_file, _env_file_encoding=_env_file_encoding)
+            **__pydantic_self__._build_values(
+                values, _env_file=_env_file, _env_file_encoding=_env_file_encoding, _secrets_dir=_secrets_dir
+            )
         )
 
     def _build_values(
@@ -78,15 +81,8 @@ class BaseSettings(BaseModel):
                 path = secret_paths.get(env_name, None)
                 if path:
                     value = path.read_text().strip()
-                    if value is not None:
-                        break
-            else:
-                continue
+                    d[field.alias] = value
 
-            if value is not None:
-                d[field.alias] = value
-
-        print(d)
         return d
 
     def _build_environ(

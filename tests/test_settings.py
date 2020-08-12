@@ -321,7 +321,7 @@ def test_env_takes_precedence(env):
         foo: int
         bar: str
 
-        def _build_values(self, init_kwargs, _env_file, _env_file_encoding):
+        def _build_values(self, init_kwargs, _env_file, _env_file_encoding, _secrets_dir):
             return {**init_kwargs, **self._build_environ()}
 
     env.set('BAR', 'env setting')
@@ -341,7 +341,7 @@ def test_config_file_settings_nornir(env):
         b: str
         c: str
 
-        def _build_values(self, init_kwargs, _env_file, _env_file_encoding):
+        def _build_values(self, init_kwargs, _env_file, _env_file_encoding, _secrets_dir):
             config_settings = init_kwargs.pop('__config_settings__')
             return {**config_settings, **init_kwargs, **self._build_environ()}
 
@@ -702,7 +702,7 @@ def test_secrets_invalid_secrets_dir(tmp_path):
 
 
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
-def test_secrets_dotenv_override(tmp_path):
+def test_secrets_dotenv_precedence(tmp_path):
     s = tmp_path / 'foo'
     s.write_text('foo_secret_value_str')
 
