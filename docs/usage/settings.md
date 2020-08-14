@@ -147,10 +147,14 @@ Once you have your secret files, *pydantic* supports loading it in two ways:
 ```py
 class Settings(BaseSettings):
     ...
+    database_password: SecretStr
 
     class Config:
         secrets_dir = '/var/run'
 ```
+
+!!! note
+    Secrets are only loaded for fields defined as `SecretStr` or `SecretBytes`.
 
 **2.** instantiating a `BaseSettings` derived class with the `_secrets_dir` keyword argument:
 
