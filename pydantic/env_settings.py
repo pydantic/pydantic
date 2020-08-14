@@ -47,8 +47,7 @@ class BaseSettings(BaseModel):
         _secrets_dir: Union[Path, str, None] = None,
     ) -> Dict[str, Any]:
         return deep_update(
-            deep_update(self._build_secrets(_secrets_dir), self._build_environ(_env_file, _env_file_encoding)),
-            init_kwargs,
+            self._build_secrets(_secrets_dir), self._build_environ(_env_file, _env_file_encoding), init_kwargs
         )
 
     def _build_secrets(self, _secrets_dir: Union[Path, str, None] = None) -> Dict[str, Optional[str]]:
