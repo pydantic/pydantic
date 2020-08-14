@@ -73,6 +73,12 @@ class BaseSettings(BaseModel):
 
         for field in self.__fields__.values():
             if field.type_ not in (SecretStr, SecretBytes):
+                warnings.warn(
+                    f'found secret file matching field "{field.name}" but the field was not '
+                    'of type "SecretStr" or "SecretBytes". This secret file was not loaded.',
+                    Warning,
+                    stacklevel=4,
+                )
                 continue
 
             value: Optional[str] = None

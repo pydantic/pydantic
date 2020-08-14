@@ -671,7 +671,10 @@ def test_secrets_skip_non_secret(tmp_path):
         class Config:
             secrets_dir = tmp_path
 
-    assert Settings().dict() == {'foo': SecretStr('foo_secret_value_str'), 'bar': None}
+    with pytest.warns(Warning, match='field was not of type "SecretStr" or "SecretBytes"'):
+        settings = Settings()
+
+    assert settings.dict() == {'foo': SecretStr('foo_secret_value_str'), 'bar': None}
 
 
 def test_secrets_missing(tmp_path):
