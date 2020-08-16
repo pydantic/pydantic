@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from pydantic import BaseModel, ConfigError, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic.typing import Literal
 
 
 def test_success():
@@ -575,6 +576,22 @@ def test_enum_values():
     # this is the actual value, so has not "values" field
     assert not isinstance(m.foo, FooEnum)
     assert m.foo == 'foo'
+
+
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
+def test_literal_enum_values():
+    FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
+
+    class Model(BaseModel):
+        baz: Literal[FooEnum.foo]
+        boo: str = 'hoo'
+
+        class Config:
+            use_enum_values = True
+
+    m = Model(baz=FooEnum.foo)
+    assert m.dict() == {'baz': 'foo', 'boo': 'hoo'}
+    assert m.baz.value == 'foo'
 
 
 def test_enum_raw():

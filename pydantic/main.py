@@ -21,6 +21,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_type_hints,
     no_type_check,
     overload,
 )
@@ -33,7 +34,14 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
+from .typing import (
+    AnyCallable,
+    ForwardRef,
+    is_classvar,
+    is_literal_type,
+    resolve_annotations,
+    update_field_forward_refs,
+)
 from .utils import (
     ClassAttribute,
     GetterDict,
@@ -672,6 +680,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 if (not value_exclude or not value_exclude.is_excluded(i))
                 and (not value_include or value_include.is_included(i))
             )
+
+        elif (
+            isinstance(v, Enum)
+            and getattr(cls.Config, 'use_enum_values', False)
+            and any(is_literal_type(hint) for hint in get_type_hints(cls).values())
+        ):
+            return v.value
 
         else:
             return v
