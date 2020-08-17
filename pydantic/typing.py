@@ -44,10 +44,16 @@ if sys.version_info < (3, 7):
         return type_._eval_type(globalns, localns)
 
 
-else:
+elif sys.version_info < (3, 9):
 
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._evaluate(globalns, localns)
+
+
+else:
+
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
+        return type_._evaluate(globalns, localns, set())
 
 
 if sys.version_info < (3, 7):
