@@ -160,7 +160,7 @@ def test_space_separated_int_optional_none():
         v: Optional[SpaceSeparated[int]] = None
 
     m = Model(v=None)
-    assert m.v == None
+    assert m.v is None
 
 
 def test_space_separated_int_invalid_str():
@@ -238,7 +238,7 @@ def test_comma_separated_stripped_optional_none():
         v: Optional[CommaSeparatedStripped[int]] = None
 
     m = Model(v=None)
-    assert m.v == None
+    assert m.v is None
 
 
 def test_comma_separated_stripped_invalid():
