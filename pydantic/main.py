@@ -803,6 +803,7 @@ def create_model(
     __base__: Type[BaseModel] = None,
     __module__: Optional[str] = None,
     __validators__: Dict[str, classmethod] = None,
+    annotations: Dict[str, Type[Any]] = None,
     **field_definitions: Any,
 ) -> Type[BaseModel]:
     """
@@ -811,6 +812,7 @@ def create_model(
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
     :param __validators__: a dict of method names and @validator class methods
+    :param annotations: a dict of type aliases for fields, like `foo=List[Bar]`
     :param **field_definitions: fields of the model (or extra fields if a base is supplied)
         in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
@@ -823,7 +825,7 @@ def create_model(
         __base__ = BaseModel
 
     fields = {}
-    annotations = {}
+    annotations = annotations or {}
 
     for f_name, f_def in field_definitions.items():
         if not is_valid_field(f_name):
@@ -840,7 +842,7 @@ def create_model(
         else:
             f_annotation, f_value = None, f_def
 
-        if f_annotation:
+        if f_annotation and f_name not in annotations:
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 

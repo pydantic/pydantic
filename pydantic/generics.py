@@ -53,6 +53,7 @@ class GenericModel(BaseModel):
                 __base__=cls,
                 __config__=None,
                 __validators__=validators,
+                annotations=None,
                 **fields,
             ),
         )
