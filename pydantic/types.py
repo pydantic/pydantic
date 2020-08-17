@@ -840,7 +840,7 @@ class ByteSize(int):
         return self / unit_div
 
 
-if not TYPE_CHECKING:
+if not TYPE_CHECKING:  # noqa: C901
     # Actual implementation, Cythonable
     class SplitStr(list):
         # Needed for pydantic to detect that this is a list
@@ -904,6 +904,7 @@ if not TYPE_CHECKING:
 
 
 if TYPE_CHECKING:
+
     class SplitStr(List[T]):
         # Needed for pydantic to detect that this is a list
         item_type: Type[T]
@@ -920,11 +921,11 @@ if TYPE_CHECKING:
         def split_str_validator(cls, v: 'Optional[Union[List[T], str]]', field: 'ModelField') -> 'Optional[List[T]]':
             ...
 
-    class SpaceSeparated(SplitStr[T]):
+    class SpaceSeparated(SplitStr[T]):  # noqa: F811
         ...
 
-    class CommaSeparated(SplitStr[T]):
+    class CommaSeparated(SplitStr[T]):  # noqa: F811
         ...
 
-    class CommaSeparatedStripped(SplitStr[T]):
+    class CommaSeparatedStripped(SplitStr[T]):  # noqa: F811
         ...
