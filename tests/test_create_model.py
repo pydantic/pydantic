@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic import BaseModel, Extra, ValidationError, create_model, errors, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, create_model, errors, validator
 
 
 def test_create_model():
@@ -158,3 +158,18 @@ def test_repeat_base_usage():
     assert model.__fields__.keys() == {'a', 'b'}
     assert model2.__fields__.keys() == {'a', 'c'}
     assert model3.__fields__.keys() == {'a', 'b', 'd'}
+
+
+def test_annotations():
+    model = create_model('Foo', annotations={'foo': str}, foo=Field(...), bar=123)
+    assert model.__fields__.keys() == {'foo', 'bar'}
+    assert model.__annotations__.keys() == {'foo'}
+
+    annotations = {'foo': str, 'bar': int}
+    model = create_model('Foo', annotations=annotations, foo=(int, 123), bar=(str, '123'))
+    assert model.__annotations__ == annotations
+
+    annotations = {'foo': str}
+    model = create_model('Foo', annotations=annotations, foo=(int, 123), bar=(str, '123'))
+    assert model.__annotations__.keys() == {'foo', 'bar'}
+    assert model.__annotations__ == {'bar': str, **annotations}
