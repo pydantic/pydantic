@@ -852,6 +852,9 @@ if not TYPE_CHECKING:  # noqa: C901
         __args__: List[Type[T]]
         item_type: Type[T]
 
+        # classmethod not required, but make Cython happy until 0.30.0 is available
+        # ref: https://github.com/cython/cython/issues/3764
+        @classmethod
         def __class_getitem__(cls, item_type: Type[T]) -> Type[List[T]]:
             # __args__ is needed to conform to typing generics api
             namespace = {'item_type': item_type, '__args__': [item_type]}
