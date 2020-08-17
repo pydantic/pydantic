@@ -96,6 +96,10 @@ __all__ = [
     'StrictFloat',
     'PaymentCardNumber',
     'ByteSize',
+    'SplitStr',
+    'SpaceSeparated',
+    'CommaSeparated',
+    'CommaSeparatedStripped',
     # version
     'VERSION',
 ]
