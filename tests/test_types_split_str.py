@@ -1,10 +1,16 @@
+import sys
 from typing import Optional, Union
 
 import pytest
 
 from pydantic import BaseModel, CommaSeparated, CommaSeparatedStripped, SpaceSeparated, ValidationError
 
+skip_36 = pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='generic split str lists only supported for python 3.7 and above'
+)
 
+
+@skip_36
 def test_comma_separated_int_from_str():
     class Model(BaseModel):
         v: CommaSeparated[int] = []
@@ -13,6 +19,7 @@ def test_comma_separated_int_from_str():
     assert m.v == [1, 2, 3]
 
 
+@skip_36
 def test_comma_separated_int_from_list():
     class Model(BaseModel):
         v: CommaSeparated[int] = []
@@ -21,6 +28,7 @@ def test_comma_separated_int_from_list():
     assert m.v == [1, 2, 3]
 
 
+@skip_36
 def test_comma_separated_int_default():
     class Model(BaseModel):
         v: CommaSeparated[int] = []
@@ -29,6 +37,7 @@ def test_comma_separated_int_default():
     assert m.v == []
 
 
+@skip_36
 def test_comma_separated_int_none():
     class Model(BaseModel):
         v: CommaSeparated[int] = None
@@ -37,6 +46,7 @@ def test_comma_separated_int_none():
     assert m.v is None
 
 
+@skip_36
 def test_comma_separated_int_optional():
     class Model(BaseModel):
         v: Optional[CommaSeparated[int]] = None
@@ -45,6 +55,7 @@ def test_comma_separated_int_optional():
     assert m.v is None
 
 
+@skip_36
 def test_comma_separated_int_optional_str():
     class Model(BaseModel):
         v: Optional[CommaSeparated[int]] = None
@@ -53,6 +64,7 @@ def test_comma_separated_int_optional_str():
     assert m.v == [2, 3, 4]
 
 
+@skip_36
 def test_comma_separated_int_optional_required():
     class Model(BaseModel):
         v: Optional[CommaSeparated[int]]
@@ -61,6 +73,7 @@ def test_comma_separated_int_optional_required():
     assert m.v is None
 
 
+@skip_36
 def test_comma_separated_int_invalid_str():
     class Model(BaseModel):
         v: CommaSeparated[int] = []
@@ -74,6 +87,7 @@ def test_comma_separated_int_invalid_str():
     ]
 
 
+@skip_36
 def test_comma_separated_int_invalid_list():
     class Model(BaseModel):
         v: CommaSeparated[int] = []
@@ -87,6 +101,7 @@ def test_comma_separated_int_invalid_list():
     ]
 
 
+@skip_36
 def test_comma_separated_int_invalid_value():
     class Model(BaseModel):
         v: CommaSeparated[int] = []
@@ -97,6 +112,7 @@ def test_comma_separated_int_invalid_value():
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
 
 
+@skip_36
 def test_comma_separated_int_required():
     class Model(BaseModel):
         v: CommaSeparated[int]
@@ -107,6 +123,7 @@ def test_comma_separated_int_required():
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
+@skip_36
 def test_space_separated_int_from_str():
     class Model(BaseModel):
         v: SpaceSeparated[int] = []
@@ -115,6 +132,7 @@ def test_space_separated_int_from_str():
     assert m.v == [1, 234, 5678]
 
 
+@skip_36
 def test_space_separated_int_from_list():
     class Model(BaseModel):
         v: SpaceSeparated[int] = []
@@ -123,6 +141,7 @@ def test_space_separated_int_from_list():
     assert m.v == [1, 2, 3]
 
 
+@skip_36
 def test_space_separated_int_default():
     class Model(BaseModel):
         v: SpaceSeparated[int] = []
@@ -131,6 +150,7 @@ def test_space_separated_int_default():
     assert m.v == []
 
 
+@skip_36
 def test_space_separated_int_none():
     class Model(BaseModel):
         v: SpaceSeparated[int] = None
@@ -139,6 +159,7 @@ def test_space_separated_int_none():
     assert m.v is None
 
 
+@skip_36
 def test_space_separated_int_optional():
     class Model(BaseModel):
         v: Optional[SpaceSeparated[int]] = None
@@ -147,6 +168,7 @@ def test_space_separated_int_optional():
     assert m.v is None
 
 
+@skip_36
 def test_space_separated_int_optional_str():
     class Model(BaseModel):
         v: Optional[SpaceSeparated[int]] = None
@@ -155,6 +177,7 @@ def test_space_separated_int_optional_str():
     assert m.v == [2, 3, 4]
 
 
+@skip_36
 def test_space_separated_int_optional_none():
     class Model(BaseModel):
         v: Optional[SpaceSeparated[int]] = None
@@ -163,6 +186,7 @@ def test_space_separated_int_optional_none():
     assert m.v is None
 
 
+@skip_36
 def test_space_separated_int_invalid_str():
     class Model(BaseModel):
         v: SpaceSeparated[int] = []
@@ -176,6 +200,7 @@ def test_space_separated_int_invalid_str():
     ]
 
 
+@skip_36
 def test_space_separated_int_invalid_list():
     class Model(BaseModel):
         v: SpaceSeparated[int] = []
@@ -189,6 +214,7 @@ def test_space_separated_int_invalid_list():
     ]
 
 
+@skip_36
 def test_space_separated_int_required():
     class Model(BaseModel):
         v: SpaceSeparated[int]
@@ -199,6 +225,7 @@ def test_space_separated_int_required():
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
+@skip_36
 def test_space_separated_int_invalid_value():
     class Model(BaseModel):
         v: SpaceSeparated[int] = []
@@ -209,6 +236,7 @@ def test_space_separated_int_invalid_value():
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
 
 
+@skip_36
 def test_comma_separated_str_spaces():
     class Model(BaseModel):
         v: CommaSeparated[str] = []
@@ -217,6 +245,7 @@ def test_comma_separated_str_spaces():
     assert m.v == ['foo ', '  bar ', 'baz \n']
 
 
+@skip_36
 def test_comma_separated_stripped_str():
     class Model(BaseModel):
         v: CommaSeparatedStripped[str] = []
@@ -225,6 +254,7 @@ def test_comma_separated_stripped_str():
     assert m.v == ['foo', 'bar', 'baz']
 
 
+@skip_36
 def test_comma_separated_stripped_list():
     class Model(BaseModel):
         v: CommaSeparatedStripped[str] = []
@@ -233,6 +263,7 @@ def test_comma_separated_stripped_list():
     assert m.v == ['foo ', '  bar ', 'baz \n']
 
 
+@skip_36
 def test_comma_separated_stripped_optional_none():
     class Model(BaseModel):
         v: Optional[CommaSeparatedStripped[int]] = None
@@ -241,6 +272,7 @@ def test_comma_separated_stripped_optional_none():
     assert m.v is None
 
 
+@skip_36
 def test_comma_separated_stripped_invalid():
     class Model(BaseModel):
         v: CommaSeparatedStripped[str] = []
@@ -251,6 +283,7 @@ def test_comma_separated_stripped_invalid():
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
 
 
+@skip_36
 def test_comma_separated_union_str():
     class Model(BaseModel):
         v: CommaSeparatedStripped[Union[bool, float]] = []
@@ -259,6 +292,7 @@ def test_comma_separated_union_str():
     assert m.v == [True, 3, False, False, 3.14159]
 
 
+@skip_36
 def test_comma_separated_union_list():
     class Model(BaseModel):
         v: CommaSeparatedStripped[Union[bool, float]] = []
@@ -267,6 +301,7 @@ def test_comma_separated_union_list():
     assert m.v == [True, 3, False, False, 3.14159]
 
 
+@skip_36
 def test_comma_separated_union_str_invalid():
     class Model(BaseModel):
         v: CommaSeparatedStripped[Union[bool, int]] = []
@@ -280,6 +315,7 @@ def test_comma_separated_union_str_invalid():
     ]
 
 
+@skip_36
 def test_comma_separated_sub_model():
     class Model(BaseModel):
         v: CommaSeparatedStripped[Union[bool, float]] = []
@@ -291,6 +327,7 @@ def test_comma_separated_sub_model():
     assert m.data.v == [True, 3, False, False, 3.14159]
 
 
+@skip_36
 def test_comma_separated_sub_model_invalid():
     class Model(BaseModel):
         v: CommaSeparatedStripped[Union[bool, int]] = []
@@ -307,6 +344,7 @@ def test_comma_separated_sub_model_invalid():
     ]
 
 
+@skip_36
 def test_split_str_schema():
     class Model(BaseModel):
         comma_separated_stripped: CommaSeparatedStripped[int] = []
