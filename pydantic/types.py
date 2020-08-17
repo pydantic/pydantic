@@ -838,3 +838,93 @@ class ByteSize(int):
             raise errors.InvalidByteSizeUnit(unit=unit)
 
         return self / unit_div
+
+
+if not TYPE_CHECKING:
+    # Actual implementation, Cythonable
+    class SplitStr(list):
+        # Needed for pydantic to detect that this is a list
+        __origin__ = list
+        __args__: List[Type[T]]
+        item_type: Type[T]
+
+        def __class_getitem__(cls, item_type: Type[T]) -> Type[List[T]]:
+            # __args__ is needed to conform to typing generics api
+            namespace = {'item_type': item_type, '__args__': [item_type]}
+            # We use new_class to be able to deal with Generic types
+            return new_class(f'{cls.__name__}Type', (cls,), {}, lambda ns: ns.update(namespace))
+
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield cls.split_str_validator
+
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            str_schema = {**field_schema, 'type': 'string'}
+            if 'items' in str_schema:
+                del str_schema['items']
+            any_of = [field_schema.copy(), str_schema]
+            field_schema.clear()
+            field_schema['anyOf'] = any_of
+
+        @classmethod
+        def split_str_validator(cls, v: 'Optional[Union[List[T], str]]', field: 'ModelField') -> 'Optional[List[T]]':
+            if v is None and not field.required:
+                return None
+            if isinstance(v, str):
+                use_v: List[Any] = v.split()
+            else:
+                use_v = list_validator(v)
+            return use_v
+
+    class SpaceSeparated(SplitStr):
+        pass
+
+    class CommaSeparated(SplitStr):
+        @classmethod
+        def split_str_validator(cls, v: 'Optional[Union[List[T], str]]', field: 'ModelField') -> 'Optional[List[T]]':
+            if v is None and not field.required:
+                return None
+            if isinstance(v, str):
+                use_v: List[Any] = v.split(',')
+            else:
+                use_v = list_validator(v)
+            return use_v
+
+    class CommaSeparatedStripped(SplitStr):
+        @classmethod
+        def split_str_validator(cls, v: 'Optional[Union[List[T], str]]', field: 'ModelField') -> 'Optional[List[T]]':
+            if v is None and not field.required:
+                return None
+            if isinstance(v, str):
+                use_v: List[Any] = [sub_v.strip() for sub_v in v.split(',')]
+            else:
+                use_v = list_validator(v)
+            return use_v
+
+
+if TYPE_CHECKING:
+    class SplitStr(List[T]):
+        # Needed for pydantic to detect that this is a list
+        item_type: Type[T]
+
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            ...
+
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            ...
+
+        @classmethod
+        def split_str_validator(cls, v: 'Optional[Union[List[T], str]]', field: 'ModelField') -> 'Optional[List[T]]':
+            ...
+
+    class SpaceSeparated(SplitStr[T]):
+        ...
+
+    class CommaSeparated(SplitStr[T]):
+        ...
+
+    class CommaSeparatedStripped(SplitStr[T]):
+        ...
