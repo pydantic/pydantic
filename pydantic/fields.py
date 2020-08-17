@@ -32,6 +32,8 @@ from .typing import (
     NoArgAnyCallable,
     NoneType,
     display_as_type,
+    get_args,
+    get_origin,
     is_literal_type,
     is_new_type,
     new_type_supertype,
@@ -411,7 +413,7 @@ class ModelField(Representation):
         elif is_literal_type(self.type_):
             return
 
-        origin = getattr(self.type_, '__origin__', None)
+        origin = get_origin(self.type_)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable
@@ -422,7 +424,7 @@ class ModelField(Representation):
             return
         if origin is Union:
             types_ = []
-            for type_ in self.type_.__args__:
+            for type_ in get_args(self.type_):
                 if type_ is NoneType:
                     if self.required is Undefined:
                         self.required = False
@@ -444,9 +446,9 @@ class ModelField(Representation):
         if issubclass(origin, Tuple):  # type: ignore
             self.shape = SHAPE_TUPLE
             self.sub_fields = []
-            for i, t in enumerate(self.type_.__args__):
+            for i, t in enumerate(get_args(self.type_)):
                 if t is Ellipsis:
-                    self.type_ = self.type_.__args__[0]
+                    self.type_ = get_args(self.type_)[0]
                     self.shape = SHAPE_TUPLE_ELLIPSIS
                     return
                 self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
@@ -460,7 +462,7 @@ class ModelField(Representation):
                     {f'list_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
                 )
 
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_LIST
         elif issubclass(origin, Set):
             # Create self validators
@@ -470,22 +472,22 @@ class ModelField(Representation):
                     {f'set_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
                 )
 
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SET
         elif issubclass(origin, FrozenSet):
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_FROZENSET
         elif issubclass(origin, Sequence):
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
         elif issubclass(origin, Mapping):
-            self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name, for_keys=True)
-            self.type_ = self.type_.__args__[1]
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
             self.shape = SHAPE_MAPPING
         # Equality check as almost everything inherits form Iterable, including str
         # check for Iterable and CollectionsIterable, as it could receive one even when declared with the other
         elif origin in {Iterable, CollectionsIterable}:
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_ITERABLE
             self.sub_fields = [self._create_sub_type(self.type_, f'{self.name}_type')]
         elif issubclass(origin, Type):  # type: ignore
@@ -494,7 +496,7 @@ class ModelField(Representation):
             # Is a Pydantic-compatible generic that handles itself
             # or we have arbitrary_types_allowed = True
             self.shape = SHAPE_GENERIC
-            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)]
+            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(get_args(self.type_))]
             self.type_ = origin
             return
         else:

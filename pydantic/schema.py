@@ -55,7 +55,7 @@ from .types import (
     conset,
     constr,
 )
-from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, literal_values
+from .typing import ForwardRef, Literal, get_args, get_origin, is_callable_type, is_literal_type, literal_values
 from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
@@ -803,9 +803,9 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
             or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet))
         ):
             return type_
-        origin = getattr(type_, '__origin__', None)
+        origin = get_origin(type_)
         if origin is not None:
-            args: Tuple[Any, ...] = type_.__args__
+            args: Tuple[Any, ...] = get_args(type_)
             if any(isinstance(a, ForwardRef) for a in args):
                 # forward refs cause infinite recursion below
                 return type_

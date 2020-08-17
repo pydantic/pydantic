@@ -70,8 +70,37 @@ if sys.version_info < (3, 8):
             from typing_extensions import Literal
         except ImportError:
             Literal = None
+
+    def get_args(t: Type[Any]) -> Tuple[Any, ...]:
+        return getattr(t, '__args__', ())
+
+    def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
+        return getattr(t, '__origin__', None)
+
+
 else:
-    from typing import Literal
+    from typing import Literal, get_args as typing_get_args, get_origin as typing_get_origin
+
+    def get_origin(tp: Type[Any]) -> Type[Any]:
+        return typing_get_origin(tp) or getattr(tp, '__origin__', None)
+
+    def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
+        """Get type arguments with all substitutions performed.
+
+        For unions, basic simplifications used by Union constructor are performed.
+        Examples::
+            get_args(Dict[str, int]) == (str, int)
+            get_args(int) == ()
+            get_args(Union[int, Union[T, int], str][int]) == (int, str)
+            get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
+            get_args(Callable[[], T][int]) == ([], int)
+        """
+        try:
+            args = typing_get_args(tp)
+        except IndexError:
+            args = ()
+        return args or getattr(tp, '__args__', ())
+
 
 if TYPE_CHECKING:
     from .fields import ModelField
@@ -115,6 +144,8 @@ __all__ = (
     'CallableGenerator',
     'ReprArgs',
     'CallableGenerator',
+    'get_args',
+    'get_origin',
 )
 
 
@@ -167,16 +198,16 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
 
 
 def is_callable_type(type_: Type[Any]) -> bool:
-    return type_ is Callable or getattr(type_, '__origin__', None) is Callable
+    return type_ is Callable or get_origin(type_) is Callable
 
 
 if sys.version_info >= (3, 7):
 
     def is_literal_type(type_: Type[Any]) -> bool:
-        return Literal is not None and getattr(type_, '__origin__', None) is Literal
+        return Literal is not None and get_origin(type_) is Literal
 
     def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
-        return type_.__args__
+        return get_args(type_)
 
 
 else:
@@ -217,12 +248,15 @@ def new_type_supertype(type_: Type[Any]) -> Type[Any]:
     return type_
 
 
-def _check_classvar(v: Type[Any]) -> bool:
+def _check_classvar(v: Optional[Type[Any]]) -> bool:
+    if v is None:
+        return False
+
     return v.__class__ == ClassVar.__class__ and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
 
 
 def is_classvar(ann_type: Type[Any]) -> bool:
-    return _check_classvar(ann_type) or _check_classvar(getattr(ann_type, '__origin__', None))
+    return _check_classvar(ann_type) or _check_classvar(get_origin(ann_type))
 
 
 def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) -> None:
@@ -243,13 +277,13 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
     without brackets. Otherwise returns None.
     """
     try:
-        origin = getattr(type_, '__origin__')
+        origin = get_origin(type_)
         if origin is None:  # Python 3.6
             origin = type_
         if issubclass(origin, Type):  # type: ignore
-            if type_.__args__ is None or not isinstance(type_.__args__[0], type):
+            if not get_args(type_) or not isinstance(get_args(type_)[0], type):
                 return True
-            return type_.__args__[0]
-    except AttributeError:
+            return get_args(type_)[0]
+    except (AttributeError, TypeError):
         pass
     return None
