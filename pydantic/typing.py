@@ -84,6 +84,17 @@ else:
     def get_origin(tp: Type[Any]) -> Type[Any]:
         return typing_get_origin(tp) or getattr(tp, '__origin__', None)
 
+    def generic_get_args(tp: Type[Any]) -> Tuple[Any, ...]:
+        """
+        In python 3.9, `typing.Dict`, `typing.List`, ...
+        do have an empty `__args__` by default (instead of the generic ~T for example).
+        In order to still support `Dict` for example and consider it as `Dict[Any, Any]`,
+        we retrieve the `_nparams` value that tells us how many parameters it needs.
+        """
+        if hasattr(tp, '_nparams'):
+            return (Any,) * tp._nparams
+        return ()
+
     def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
         """Get type arguments with all substitutions performed.
 
@@ -99,7 +110,7 @@ else:
             args = typing_get_args(tp)
         except IndexError:
             args = ()
-        return args or getattr(tp, '__args__', ())
+        return args or getattr(tp, '__args__', ()) or generic_get_args(tp)
 
 
 if TYPE_CHECKING:
