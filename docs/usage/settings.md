@@ -128,6 +128,25 @@ Because python-dotenv is used to parse the file, bash-like semantics such as `ex
 (depending on your OS and environment) may allow your dotenv file to also be used with `source`,
 see [python-dotenv's documentation](https://saurabh-kumar.com/python-dotenv/#usages) for more details.
 
+## A simple example
+
+For example, if you had a file `settings.env` with:
+
+```bash
+{!.tmp_examples/settings.env!}
+```
+
+You could load and parse it with:
+
+```py
+{!.tmp_examples/settings_env.py!}
+```
+
+!!! tip
+    Notice that you can use `CommaSeparatedStripped[str]` to parse a string separated by commas.
+
+    This is specially useful in environments where it is difficult to write valid JSON inside of quotes.
+
 ## Field value priority
 
 In the case where a value is specified for the same `Settings` field in multiple ways,
