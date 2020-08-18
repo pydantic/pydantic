@@ -133,7 +133,11 @@ def exec_examples():
     errors = []
     all_md = all_md_contents()
     new_files = {}
-    os.environ.update({'my_auth_key': 'xxx', 'my_api_key': 'xxx'})
+    os.environ.update({
+        'my_auth_key': 'xxx',
+        'my_api_key': 'xxx',
+        'cors_origins': 'https://helpmanual.io, http://127.0.0.1:8000/',
+    })
 
     sys.path.append(str(EXAMPLES_DIR))
     for file in sorted(EXAMPLES_DIR.iterdir()):
