@@ -1,0 +1,1 @@
+Add types for string values separated by commas or spaces: `SpaceSeparated`, `CommaSeparated`, `CommaSeparatedStripped`
