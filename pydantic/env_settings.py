@@ -125,7 +125,7 @@ class BaseSettings(BaseModel):
 
 def read_env_file(file_path: Path, *, encoding: str = None, case_sensitive: bool = False) -> Dict[str, Optional[str]]:
     try:
-        from dotenv import dotenv_values
+        from dotenv import dotenv_values  # type: ignore
     except ImportError as e:
         raise ImportError('python-dotenv is not installed, run `pip install pydantic[dotenv]`') from e
 
