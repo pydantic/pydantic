@@ -140,6 +140,8 @@ def exec_examples():
     })
 
     sys.path.append(str(EXAMPLES_DIR))
+    # Move to the examples dir so that settings_env.py can read settings.env
+    os.chdir(EXAMPLES_DIR)
     for file in sorted(EXAMPLES_DIR.iterdir()):
 
         def error(desc: str):
@@ -229,6 +231,7 @@ def exec_examples():
     for file_name, content in new_files.items():
         (TMP_EXAMPLES_DIR / file_name).write_text(content, 'utf-8')
     gen_ansi_output()
+    os.chdir(THIS_DIR)
     return 0
 
 
