@@ -5,8 +5,9 @@ from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 
 from .fields import ModelField
 from .main import BaseModel, Extra
+from .types import SplitStr
 from .typing import display_as_type
-from .utils import deep_update, sequence_like
+from .utils import deep_update, lenient_issubclass, sequence_like
 
 env_file_sentinel = str(object())
 
@@ -77,7 +78,7 @@ class BaseSettings(BaseModel):
             if env_val is None:
                 continue
 
-            if field.is_complex():
+            if field.is_complex() and not lenient_issubclass(field.outer_type_, SplitStr):
                 try:
                     env_val = self.__config__.json_loads(env_val)  # type: ignore
                 except ValueError as e:
