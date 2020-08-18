@@ -765,7 +765,7 @@ surrounding space from the values.
 
 You can use them with an internal type.
 
-The same way you could type annotations like `List[float]`, you can use `CommaSeparated[float]`, etc.
+The same way you could use type annotations like `List[float]`, you can use `CommaSeparated[float]`, etc.
 
 *pydantic* will parse the string, extract the list of values, and then validate/parse
 the values with the declared internal type (type parameter).

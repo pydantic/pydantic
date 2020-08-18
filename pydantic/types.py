@@ -912,8 +912,8 @@ if not TYPE_CHECKING:  # noqa: C901
 
 if TYPE_CHECKING:
 
+    # Actual valid type annotations, for mypy and static type checkers
     class SplitStr(List[T]):
-        # Needed for pydantic to detect that this is a list
         item_type: Type[T]
 
         @classmethod
