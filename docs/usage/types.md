@@ -505,6 +505,19 @@ _(This script is complete, it should run "as is")_
 : type method for constraining strs;
   see [Constrained Types](#constrained-types)
 
+`CommaSeparated`
+: separate the input string by commas (`,`);
+see [Values separated by commas and spaces](#values-separated-by-commas-and-spaces).
+
+`SpaceSeparated`
+: separate the input string by spaces (` `);
+see [Values separated by commas and spaces](#values-separated-by-commas-and-spaces).
+
+`CommaSeparatedStripped`
+: separate the input string by commas (`,`) and strip any
+surrounding space from the values;
+see [Values separated by commas and spaces](#values-separated-by-commas-and-spaces).
+
 ### URLs
 
 For URI/URL validation the following types are available:
@@ -737,6 +750,42 @@ raw bytes and print out human readable versions of the bytes as well.
 {!.tmp_examples/types_bytesize.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+## Values separated by commas and spaces
+
+In special cases, you might need to declare that a type should receive a string with
+values of some type, separated by commas (`,`) or spaces (` `).
+
+You can use:
+
+* `CommaSeparated`: separate the input string by commas (`,`).
+* `SpaceSeparated`: separate the input string by spaces (` `).
+* `CommaSeparatedStripped`: separate the input string by commas (`,`) and strip any
+surrounding space from the values.
+
+You can use them with an internal type.
+
+The same way you could type annotations like `List[float]`, you can use `CommaSeparated[float]`, etc.
+
+*pydantic* will parse the string, extract the list of values, and then validate/parse
+the values with the declared internal type (type parameter).
+
+If you pass a list of values instead of a string, *pydantic* will receive it and
+validate it as a normal list.
+
+!!! tip
+    This is mostly useful for reading environment variables. You will see an example
+    in [Settings management](settings.md).
+
+```py
+{!.tmp_examples/types_split_str.py!}
+```
+
+_(This script is complete, it should run "as is")_
+
+!!! warning
+    As `CommaSeparated`, `SpaceSeparated`, and `CommaSeparatedStripped` are custom
+    generics, they are only supported with [Python `>=3.7`](https://www.python.org/dev/peps/pep-0560/).
 
 ## Custom Data Types
 
