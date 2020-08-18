@@ -7,6 +7,7 @@ from pydantic import (
     RedisDsn,
     PostgresDsn,
     Field,
+    CommaSeparatedStripped,
 )
 
 
@@ -27,6 +28,10 @@ class Settings(BaseSettings):
     # to override domains:
     # export my_prefix_domains='["foo.com", "bar.com"]'
     domains: Set[str] = set()
+
+    # to override cors_origins:
+    # export cors_origins="https://helpmanual.io, http://127.0.0.1:8000/"
+    cors_origins: CommaSeparatedStripped[str] = []
 
     # to override more_settings:
     # export my_prefix_more_settings='{"foo": "x", "apple": 1}'
