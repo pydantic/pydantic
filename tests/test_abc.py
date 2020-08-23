@@ -44,3 +44,16 @@ def test_model_subclassing_abstract_base_classes_without_implementation_raises_e
         "Can't instantiate abstract class Model with abstract methods "
         "my_abstract_classmethod, my_abstract_method, my_abstract_property, my_abstract_staticmethod"  # noqa: Q000
     )
+
+    
+def test_shadowing_abstract_property():
+    class AbstractModel(BaseModel, abc.ABC):
+        @property
+        @abc.abstractmethod
+        def some_field(self) -> str:
+            pass
+        
+    class ChildModel(AbstractModel):
+        some_field: str
+            
+    ChildModel(some_field='some_value')
