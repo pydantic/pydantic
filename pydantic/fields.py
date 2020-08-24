@@ -129,7 +129,7 @@ def Field(
     **extra: Any,
 ) -> Any:
     """
-    Used to provide extra information about a field, either for the model schema or complex valiation. Some arguments
+    Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``.
 
     :param default: since this is replacing the field’s default, its first argument is used
