@@ -71,7 +71,7 @@ Models possess the following methods and attributes:
   cf. [exporting models](exporting_models.md#modeljson)
 
 `copy()`
-: returns a copy(by default, shallow copy) of the model; cf. [exporting models](exporting_models.md#modelcopy)
+: returns a copy (by default, shallow copy) of the model; cf. [exporting models](exporting_models.md#modelcopy)
 
 `parse_obj()`
 : a utility for loading any object into a model with error handling if the object is not a dictionary;
