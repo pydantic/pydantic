@@ -567,7 +567,7 @@ def is_call_from_module() -> bool:
     return previous_caller_frame.f_locals is previous_caller_frame.f_globals
 
 
-def ensure_picklable(model: Type['BaseModel']) -> None:
+def ensure_picklable(model: Type['BaseModel']) -> Type['BaseModel']:
     """
     Ensures that model is declared in its module by its name
     """
@@ -576,3 +576,4 @@ def ensure_picklable(model: Type['BaseModel']) -> None:
         raise NameError(
             f'Name conflict: {model.__name__!r} on {model.__module__!r} is already used by {object_on_module!r}'
         )
+    return model

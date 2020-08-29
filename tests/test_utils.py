@@ -400,7 +400,7 @@ model = create_model("FooModel")
 with pytest.raises(pickle.PicklingError, match="attribute lookup FooModel"):
     pickle.dumps(model)
 
-ensure_picklable(model)
+model = ensure_picklable(model)
 dumped = pickle.dumps(model)
 loaded = pickle.loads(dumped)
 assert loaded == model
@@ -408,7 +408,7 @@ assert loaded == model
 another_model_with_same_class_name = create_model("FooModel")
 with pytest.raises(
     NameError,
-    match="Name conflict: 'FooModel' on 'test_code_.*?' is already used by <class 'test_code_.*?.FooModel'>"
+    match=f"Name conflict: 'FooModel' on {model.__module__!r} is already used by <class {model!r}"
     ):
     ensure_picklable(another_model_with_same_class_name)
         """
