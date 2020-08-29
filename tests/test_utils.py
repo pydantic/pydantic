@@ -359,7 +359,57 @@ def test_get_caller_module_name():
     assert get_current_module_name() == __name__
 
 
-def test_get_caller_module_name_error(mocker):
+def test_get_caller_module_name_not_found(mocker):
     mocker.patch('inspect.getmodule', return_value=None)
-    with pytest.raises(LookupError, match='Could not find caller module'):
-        get_caller_module_name()
+    assert get_caller_module_name() is None
+
+
+def test_is_call_from_module(create_module):
+    create_module(
+        """
+from pydantic.utils import is_call_from_module
+
+def function():
+    assert is_call_from_module()
+
+    another_function()
+
+def another_function():
+    assert not is_call_from_module()
+    third_function()
+
+def third_function():
+    assert not is_call_from_module()
+
+function()
+        """
+    )
+
+
+def test_ensure_picklable(create_module):
+    create_module(
+        """
+import pickle
+
+import pytest
+
+from pydantic import create_model
+from pydantic.utils import ensure_picklable
+
+model = create_model("FooModel")
+with pytest.raises(pickle.PicklingError, match="attribute lookup FooModel"):
+    pickle.dumps(model)
+
+ensure_picklable(model)
+dumped = pickle.dumps(model)
+loaded = pickle.loads(dumped)
+assert loaded == model
+
+another_model_with_same_class_name = create_model("FooModel")
+with pytest.raises(
+    NameError,
+    match="Name conflict: 'FooModel' on 'test_code_.*?' is already used by <class 'test_code_.*?.FooModel'>"
+    ):
+    ensure_picklable(another_model_with_same_class_name)
+        """
+    )

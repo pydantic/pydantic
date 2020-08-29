@@ -1,6 +1,7 @@
+import sys
 import warnings
 from itertools import islice
-from types import GeneratorType
+from types import FrameType, GeneratorType, ModuleType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -17,6 +18,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     no_type_check,
 )
 
@@ -536,12 +538,41 @@ class ClassAttribute:
         raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
 
 
-def get_caller_module_name() -> str:
-    """Used inside the function to get its caller module name"""
+def get_caller_module_name() -> Optional[str]:
+    """
+    Used inside a function to get its caller module name
+    """
     import inspect
 
-    previous_caller_frame = inspect.stack()[2]
-    previous_caller_module = inspect.getmodule(previous_caller_frame[0])
-    if previous_caller_module is None:
-        raise LookupError('Could not find caller module')
-    return previous_caller_module.__name__
+    try:
+        previous_caller_frame = inspect.stack()[2].frame
+    except IndexError:
+        raise RuntimeError('This function must be used inside another function')
+
+    getmodule = cast(Callable[[FrameType, str], Optional[ModuleType]], inspect.getmodule)
+    previous_caller_module = getmodule(previous_caller_frame, previous_caller_frame.f_code.co_filename)
+    return previous_caller_module.__name__ if previous_caller_module is not None else None
+
+
+def is_call_from_module() -> bool:
+    """
+    Used inside a function to check whether it was called globally
+    """
+    import inspect
+
+    try:
+        previous_caller_frame = inspect.stack()[2].frame
+    except IndexError:
+        raise RuntimeError('This function must be used inside another function')
+    return previous_caller_frame.f_locals is previous_caller_frame.f_globals
+
+
+def ensure_picklable(model: Type['BaseModel']) -> None:
+    """
+    Ensures that model is declared in its module by its name
+    """
+    object_on_module = sys.modules[model.__module__].__dict__.setdefault(model.__name__, model)
+    if object_on_module is not model:  # same name was used in module by another object, won't rewrite it
+        raise NameError(
+            f'Name conflict: {model.__name__!r} on {model.__module__!r} is already used by {object_on_module!r}'
+        )

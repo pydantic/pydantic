@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, TypeVar, Uni
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
 from .main import BaseModel, create_model
-from .utils import lenient_issubclass
+from .utils import ensure_picklable, get_caller_module_name, is_call_from_module, lenient_issubclass
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
@@ -49,13 +49,21 @@ class GenericModel(BaseModel):
             Type[GenericModel],  # casting ensures mypy is aware of the __concrete__ and __parameters__ attributes
             create_model(
                 model_name,
-                __module__=cls.__module__,
+                __module__=get_caller_module_name() or cls.__module__,
                 __base__=cls,
                 __config__=None,
                 __validators__=validators,
                 **fields,
             ),
         )
+
+        # allow pickling (only if concrete model was defined globally)
+        if is_call_from_module():
+            try:
+                ensure_picklable(created_model)
+            except NameError:  # this should not happen because or _generic_types_cache, but just in case
+                raise TypeError(f'{model_name!r} already defined above, please consider reusing it')
+
         created_model.Config = cls.Config
         concrete = all(not _is_typevar(v) for v in concrete_type_hints.values())
         created_model.__concrete__ = concrete

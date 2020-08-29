@@ -825,11 +825,9 @@ def create_model(  # noqa: C901 (ignore complexity)
         __base__ = BaseModel
 
     if __module__ is None:
-        try:
-            __module__ = get_caller_module_name()
-        except LookupError:
+        __module__ = get_caller_module_name()
+        if __module__ is None:
             __module__ = __name__
-            warnings.warn(f'Unable to get module name, using {__name__} as default to allow pickling', RuntimeWarning)
 
     fields = {}
     annotations = {}
@@ -860,13 +858,7 @@ def create_model(  # noqa: C901 (ignore complexity)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    created_model = type(__model_name, (__base__,), namespace)
-
-    if '<locals>' not in created_model.__qualname__:
-        # make sure object created on top of a module, otherwise there's a risk overriding existing object
-        setattr(sys.modules[__module__], __model_name, created_model)  # allow pickling
-
-    return created_model
+    return type(__model_name, (__base__,), namespace)
 
 
 _missing = object()
