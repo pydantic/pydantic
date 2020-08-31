@@ -57,7 +57,6 @@ __all__ = (
     'NumberNotLeError',
     'NumberNotMultipleError',
     'DecimalError',
-    'DecimalIsNotFiniteError',
     'DecimalMaxDigitsError',
     'DecimalMaxPlacesError',
     'DecimalWholeDigitsError',
@@ -384,11 +383,6 @@ class NumberNotMultipleError(PydanticValueError):
 
 
 class DecimalError(PydanticTypeError):
-    msg_template = 'value is not a valid decimal'
-
-
-class DecimalIsNotFiniteError(PydanticValueError):
-    code = 'decimal.not_finite'
     msg_template = 'value is not a valid decimal'
 
 

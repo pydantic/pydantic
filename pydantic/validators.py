@@ -291,9 +291,6 @@ def decimal_validator(v: Any) -> Decimal:
     except DecimalException:
         raise errors.DecimalError()
 
-    if not v.is_finite():
-        raise errors.DecimalIsNotFiniteError()
-
     return v
 
 

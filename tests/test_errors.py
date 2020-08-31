@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import UUID1, BaseConfig, BaseModel, PydanticTypeError, ValidationError, conint, errors, validator
+from pydantic import UUID1, BaseConfig, BaseModel, PydanticTypeError, ValidationError, conint, validator
 from pydantic.error_wrappers import flatten_errors, get_exc_type
 from pydantic.errors import StrRegexError
 from pydantic.typing import Literal
@@ -277,13 +277,7 @@ def test_errors_unknown_error_object():
 
 
 @pytest.mark.parametrize(
-    'exc,type_',
-    (
-        (TypeError(), 'type_error'),
-        (ValueError(), 'value_error'),
-        (AssertionError(), 'assertion_error'),
-        (errors.DecimalIsNotFiniteError(), 'value_error.decimal.not_finite'),
-    ),
+    'exc,type_', ((TypeError(), 'type_error'), (ValueError(), 'value_error'), (AssertionError(), 'assertion_error'),),
 )
 def test_get_exc_type(exc, type_):
     if isinstance(type_, str):

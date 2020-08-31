@@ -612,7 +612,6 @@ class BoolCastable:
         ('decimal_check', '  42.24  ', Decimal('42.24')),
         ('decimal_check', Decimal('42.24'), Decimal('42.24')),
         ('decimal_check', 'not a valid decimal', ValidationError),
-        ('decimal_check', 'NaN', ValidationError),
     ],
 )
 def test_default_validators(field, value, result):
@@ -1550,11 +1549,7 @@ def test_anystr_strip_whitespace_disabled():
             ],
         ),
         *[
-            (
-                condecimal(decimal_places=2, max_digits=10),
-                value,
-                [{'loc': ('foo',), 'msg': 'value is not a valid decimal', 'type': 'value_error.decimal.not_finite'}],
-            )
+            (condecimal(decimal_places=2, max_digits=10), value, Decimal(value),)
             for value in (
                 'NaN',
                 '-NaN',
@@ -1571,11 +1566,7 @@ def test_anystr_strip_whitespace_disabled():
             )
         ],
         *[
-            (
-                condecimal(decimal_places=2, max_digits=10),
-                Decimal(value),
-                [{'loc': ('foo',), 'msg': 'value is not a valid decimal', 'type': 'value_error.decimal.not_finite'}],
-            )
+            (condecimal(decimal_places=2, max_digits=10), Decimal(value), Decimal(value),)
             for value in (
                 'NaN',
                 '-NaN',
@@ -1613,6 +1604,8 @@ def test_decimal_validation(type_, value, result):
             model(foo=value)
         assert exc_info.value.errors() == result
         assert exc_info.value.json().startswith('[')
+    elif result.is_nan():
+        assert model(foo=value).foo.is_nan()
     else:
         assert model(foo=value).foo == result
 

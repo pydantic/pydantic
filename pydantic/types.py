@@ -467,9 +467,9 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def validate(cls, value: Decimal) -> Decimal:
+        if not value.is_finite():
+            return value
         digit_tuple, exponent = value.as_tuple()[1:]
-        if exponent in {'F', 'n', 'N'}:
-            raise errors.DecimalIsNotFiniteError()
 
         if exponent >= 0:
             # A positive exponent adds that many trailing zeros.
