@@ -382,8 +382,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def dict(
         self,
         *,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
         by_alias: bool = False,
         skip_defaults: bool = None,
         exclude_unset: bool = False,
@@ -413,11 +413,48 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             )
         )
 
+    def serializable(
+        self,
+        *,
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        by_alias: bool = False,
+        skip_defaults: bool = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        type_converter: Optional[AnyCallable] = None,
+    ) -> 'DictStrAny':
+        """
+        Generate a serializable dictionary representation of the model, optionally specifying which fields to include or
+        exclude.
+
+        """
+        if skip_defaults is not None:
+            warnings.warn(
+                f'{self.__class__.__name__}.dict(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                DeprecationWarning,
+            )
+            exclude_unset = skip_defaults
+        converter = type_converter or self.__json_encoder__
+        return dict(
+            self._iter(
+                to_dict=True,
+                by_alias=by_alias,
+                include=include,
+                exclude=exclude,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                type_converter=converter,
+            )
+        )
+
     def json(
         self,
         *,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
         by_alias: bool = False,
         skip_defaults: bool = None,
         exclude_unset: bool = False,
@@ -618,17 +655,22 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        type_converter: Optional[AnyCallable],
     ) -> Any:
 
         if isinstance(v, BaseModel):
             if to_dict:
-                v_dict = v.dict(
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=include,
-                    exclude=exclude,
-                    exclude_none=exclude_none,
+                v_dict = dict(
+                    v._iter(
+                        to_dict=to_dict,
+                        by_alias=by_alias,
+                        exclude_unset=exclude_unset,
+                        exclude_defaults=exclude_defaults,
+                        include=include,
+                        exclude=exclude,
+                        exclude_none=exclude_none,
+                        type_converter=type_converter,
+                    )
                 )
                 if '__root__' in v_dict:
                     return v_dict['__root__']
@@ -650,6 +692,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     include=value_include and value_include.for_element(k_),
                     exclude=value_exclude and value_exclude.for_element(k_),
                     exclude_none=exclude_none,
+                    type_converter=type_converter,
                 )
                 for k_, v_ in v.items()
                 if (not value_exclude or not value_exclude.is_excluded(k_))
@@ -667,6 +710,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     include=value_include and value_include.for_element(i),
                     exclude=value_exclude and value_exclude.for_element(i),
                     exclude_none=exclude_none,
+                    type_converter=type_converter,
                 )
                 for i, v_ in enumerate(v)
                 if (not value_exclude or not value_exclude.is_excluded(i))
@@ -674,6 +718,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             )
 
         else:
+            if type_converter:
+                return type_converter(v)
             return v
 
     @classmethod
@@ -696,11 +742,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         self,
         to_dict: bool = False,
         by_alias: bool = False,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        type_converter: Optional[AnyCallable] = None,
     ) -> 'TupleGenerator':
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
@@ -733,6 +780,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
                     exclude_none=exclude_none,
+                    type_converter=type_converter,
                 )
             yield dict_key, v
 
