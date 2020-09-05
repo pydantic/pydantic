@@ -1,4 +1,5 @@
 import sys
+from datetime import date, datetime
 from enum import Enum
 from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
@@ -1274,3 +1275,77 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
+
+
+AnEnum = Enum('AnEnum', {'foo': 1})
+
+
+@pytest.mark.parametrize(
+    'T,param,result',
+    [
+        (date, date(2020, 1, 1), '2020-01-01'),
+        (datetime, datetime(2020, 1, 1, 1, 1, 1), '2020-01-01T01:01:01'),
+        (UUID, UUID('12345678-1234-5678-1234-567812345678'), '12345678-1234-5678-1234-567812345678'),
+        (AnEnum, AnEnum.foo, 1),
+    ],
+)
+def test_serializable(T, param, result):
+    class M(BaseModel):
+        a: T
+
+    m = M(a=param)
+    d = m.dict()
+    s = m.serializable()
+    assert d == {'a': param}
+    assert s == {'a': result}
+
+
+def test_serializable_submodel():
+    class S(BaseModel):
+        d: date
+
+    class P(BaseModel):
+        s: S
+
+    params = {'s': {'d': '2020-01-01'}}
+    m = P(**params)
+    d = m.dict()
+    s = m.serializable()
+    assert d == {'s': {'d': date(2020, 1, 1)}}
+    assert s == params
+
+
+def test_serializable_list():
+    class M(BaseModel):
+        a: List[date]
+
+    params = {'a': ['2020-01-01', '2020-01-02']}
+    m = M(**params)
+    d = m.dict()
+    s = m.serializable()
+    assert d == {'a': [date(2020, 1, 1), date(2020, 1, 2)]}
+    assert s == params
+
+
+def test_serializable_list_submodel():
+    class S(BaseModel):
+        d: date
+
+    class P(BaseModel):
+        s: List[S]
+
+    params = {'s': [{'d': '2020-01-01'}, {'d': '2020-01-02'}]}
+    m = P(**params)
+    d = m.dict()
+    s = m.serializable()
+    assert d == {'s': [{'d': date(2020, 1, 1)}, {'d': date(2020, 1, 2)}]}
+    assert s == params
+
+
+def test_serializable_custom_converter():
+    class M(BaseModel):
+        a: datetime
+
+    model = M(a='2020-01-01T00:00:00')
+    s = model.serializable(type_converter=lambda v: v.timestamp() if isinstance(v, datetime) else v)
+    assert s == {'a': 1577836800}
