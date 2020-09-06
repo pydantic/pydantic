@@ -237,7 +237,7 @@ jobs:
         twine check dist/*
 
     - name: Store dist artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2.1.4
       with:
         name: pypi_files
         path: dist
