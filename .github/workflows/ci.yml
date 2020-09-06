@@ -257,7 +257,7 @@ jobs:
           python-version: '3.8'
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2.0.5
         with:
           name: pypi_files
 
