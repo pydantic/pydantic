@@ -518,7 +518,8 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
     *pydantic* will need to call the `default_factory`, which could lead to side effects!
 
 ## Private model attributes
-If you need to use internal attribute excluded from model fields, you can declare such in `__slots__` of your class:
+
+If you need to use internal attribute excluded from model fields, you can declare them in `__slots__` of your class:
 
 ```py
 {!.tmp_examples/private_attributes.py!}
