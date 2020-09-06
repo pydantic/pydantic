@@ -1,4 +1,4 @@
-from pydantic import validate_arguments
+from pydantic import ValidationError, validate_arguments
 
 
 class Foobar:
@@ -22,5 +22,5 @@ print(c)
 
 try:
     add_foobars(1, 2)
-except ValueError as e:
+except ValidationError as e:
     print(e)
