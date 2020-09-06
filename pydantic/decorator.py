@@ -55,21 +55,6 @@ class ValidatedFunction:
                 f'names when using the "{validate_arguments.__name__}" decorator'
             )
 
-        class CustomConfig:
-            pass
-
-        if not TYPE_CHECKING:  # pragma: no branch
-            if isinstance(config, dict):
-                CustomConfig = type('Config', (), config)  # noqa: F811
-            elif config is not None:
-                CustomConfig = config  # noqa: F811
-
-        if hasattr(CustomConfig, 'fields'):
-            raise ConfigError(
-                'Setting the "fields" property on custom Config for '
-                '@validate_arguments is not yet supported, please remove.'
-            )
-
         self.raw_function = function
         self.arg_mapping: Dict[int, str] = {}
         self.positional_only_args = set()
@@ -123,7 +108,7 @@ class ValidatedFunction:
             # same with kwargs
             fields[self.v_kwargs_name] = Dict[Any, Any], None
 
-        self.create_model(fields, takes_args, takes_kwargs, CustomConfig)
+        self.create_model(fields, takes_args, takes_kwargs, config)
 
     def call(self, *args: Any, **kwargs: Any) -> Any:
         values = self.build_values(args, kwargs)
@@ -193,10 +178,23 @@ class ValidatedFunction:
         else:
             return self.raw_function(**d)
 
-    def create_model(
-        self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, CustomConfig: Type[Any]
-    ) -> None:
+    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
+
+        class CustomConfig:
+            pass
+
+        if not TYPE_CHECKING:  # pragma: no branch
+            if isinstance(config, dict):
+                CustomConfig = type('Config', (), config)  # noqa: F811
+            elif config is not None:
+                CustomConfig = config  # noqa: F811
+
+        if hasattr(CustomConfig, 'fields') or hasattr(CustomConfig, 'alias_generator'):
+            raise ConfigError(
+                'Setting the "fields" and "alias_generator" property on custom Config for '
+                '@validate_arguments is not yet supported, please remove.'
+            )
 
         class DecoratorBaseModel(BaseModel):
             @validator(self.v_args_name, check_fields=False, allow_reuse=True)

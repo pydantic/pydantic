@@ -289,7 +289,7 @@ def test_config_title_cls():
 
 
 def test_config_fields():
-    with pytest.raises(ConfigError, match='Setting the "fields" property on custom Config for'):
+    with pytest.raises(ConfigError, match='Setting the "fields" and "alias_generator" property on custom Config for @'):
 
         @validate_arguments(config=dict(fields={'b': 'bang'}))
         def foo(a: int, b: int):
