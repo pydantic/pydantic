@@ -265,15 +265,55 @@ def test_class_method():
     ]
 
 
-def test_config():
-    @validate_arguments(config=dict(title='testing', fields={'b': 'bang'}))
+def test_config_title():
+    @validate_arguments(config=dict(title='Testing'))
     def foo(a: int, b: int):
         return f'{a}, {b}'
 
     assert foo(1, 2) == '1, 2'
-    assert foo(1, bang=2) == '1, 2'
-    assert foo.model.schema()['title'] == 'testing'
-    with pytest.raises(ValidationError) as exc_info:
-        foo(1, b=2)
+    assert foo(1, b=2) == '1, 2'
+    assert foo.model.schema()['title'] == 'Testing'
 
-    assert exc_info.value.errors() == ...
+
+def test_config_title_cls():
+    class Config:
+        title = 'Testing'
+
+    @validate_arguments(config=Config)
+    def foo(a: int, b: int):
+        return f'{a}, {b}'
+
+    assert foo(1, 2) == '1, 2'
+    assert foo(1, b=2) == '1, 2'
+    assert foo.model.schema()['title'] == 'Testing'
+
+
+def test_config_fields():
+    with pytest.raises(ConfigError, match='Setting the "fields" property on custom Config for'):
+
+        @validate_arguments(config=dict(fields={'b': 'bang'}))
+        def foo(a: int, b: int):
+            return f'{a}, {b}'
+
+
+def test_config_arbitrary_types_allowed():
+    class EggBox:
+        def __str__(self) -> str:
+            return 'EggBox()'
+
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def foo(a: int, b: EggBox):
+        return f'{a}, {b}'
+
+    assert foo(1, EggBox()) == '1, EggBox()'
+    with pytest.raises(ValidationError) as exc_info:
+        assert foo(1, 2) == '1, 2'
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('b',),
+            'msg': 'instance of EggBox expected',
+            'type': 'type_error.arbitrary_type',
+            'ctx': {'expected_arbitrary_type': 'EggBox'},
+        },
+    ]
