@@ -98,7 +98,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
 : are using *pydantic* in [WALKOFF](https://github.com/nsacyber/WALKOFF), an open-source automation framework.
 
 **Uber**
-: are using *pydantic* in [Ludwig](https://github.com/uber/ludwig), an an open-source TensorFlow wrapper.
+: are using *pydantic* in [Ludwig](https://github.com/uber/ludwig), an open-source TensorFlow wrapper.
 
 **Cuenca**
 : are a Mexican neobank that uses *pydantic* for several internal

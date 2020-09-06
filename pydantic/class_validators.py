@@ -33,8 +33,8 @@ class Validator:
 if TYPE_CHECKING:
     from inspect import Signature
 
-    from .main import BaseConfig
     from .fields import ModelField
+    from .main import BaseConfig
     from .types import ModelOrDc
 
     ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], ModelField, Type[BaseConfig]], Any]
@@ -164,11 +164,9 @@ class ValidatorGroup:
 
     def check_for_unused(self) -> None:
         unused_validators = set(
-            chain(
-                *[
-                    (v.func.__name__ for v in self.validators[f] if v.check_fields)
-                    for f in (self.validators.keys() - self.used_validators)
-                ]
+            chain.from_iterable(
+                (v.func.__name__ for v in self.validators[f] if v.check_fields)
+                for f in (self.validators.keys() - self.used_validators)
             )
         )
         if unused_validators:

@@ -295,7 +295,7 @@ class ModelField(Representation):
 
         if isinstance(value, FieldInfo):
             field_info = value
-            value = field_info.default_factory() if field_info.default_factory is not None else field_info.default
+            value = None if field_info.default_factory is not None else field_info.default
         else:
             field_info = FieldInfo(value, **field_info_from_config)
         required: 'BoolUndefined' = Undefined
@@ -340,7 +340,33 @@ class ModelField(Representation):
         Note: this method is **not** idempotent (because _type_analysis is not idempotent),
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
+
+        self._set_default_and_type()
+        self._type_analysis()
+        if self.required is Undefined:
+            self.required = True
+            self.field_info.default = Required
+        if self.default is Undefined and self.default_factory is None:
+            self.default = None
+        self.populate_validators()
+
+    def _set_default_and_type(self) -> None:
+        """
+        Set the default value, infer the type if needed and check if `None` value is valid.
+
+        Note: to prevent side effects by calling the `default_factory` for nothing, we only call it
+        when we want to validate the default value i.e. when `validate_all` is set to True.
+        """
+        if self.default_factory is not None:
+            if self.type_ is None:
+                raise errors_.ConfigError(
+                    f'you need to set the type of field {self.name!r} when using `default_factory`'
+                )
+            if not self.model_config.validate_all:
+                return
+
         default_value = self.get_default()
+
         if default_value is not None and self.type_ is None:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_
@@ -353,20 +379,8 @@ class ModelField(Representation):
             # user will need to call model.update_forward_refs()
             return
 
-        self.validate_always = getattr(self.type_, 'validate_always', False) or any(
-            v.always for v in self.class_validators.values()
-        )
-
         if self.required is False and default_value is None:
             self.allow_none = True
-
-        self._type_analysis()
-        if self.required is Undefined:
-            self.required = True
-            self.field_info.default = Required
-        if self.default is Undefined and self.default_factory is None:
-            self.default = None
-        self.populate_validators()
 
     def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
@@ -443,15 +457,19 @@ class ModelField(Representation):
             get_validators = getattr(self.type_, '__get_validators__', None)
             if get_validators:
                 self.class_validators.update(
-                    {
-                        f'list_{i}': Validator(validator, pre=True, always=True)
-                        for i, validator in enumerate(get_validators())
-                    }
+                    {f'list_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
                 )
 
             self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_LIST
         elif issubclass(origin, Set):
+            # Create self validators
+            get_validators = getattr(self.type_, '__get_validators__', None)
+            if get_validators:
+                self.class_validators.update(
+                    {f'set_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
+                )
+
             self.type_ = self.type_.__args__[0]
             self.shape = SHAPE_SET
         elif issubclass(origin, FrozenSet):
@@ -499,6 +517,10 @@ class ModelField(Representation):
         and class validators. This method should be idempotent, e.g. it should be safe to call multiple times
         without mis-configuring the field.
         """
+        self.validate_always = getattr(self.type_, 'validate_always', False) or any(
+            v.always for v in self.class_validators.values()
+        )
+
         class_validators_ = self.class_validators.values()
         if not self.sub_fields or self.shape == SHAPE_GENERIC:
             get_validators = getattr(self.type_, '__get_validators__', None)

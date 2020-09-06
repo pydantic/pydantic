@@ -1,1 +1,0 @@
-Add datamodel-code-generator link in pydantic document site.

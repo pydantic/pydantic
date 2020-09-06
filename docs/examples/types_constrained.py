@@ -11,6 +11,7 @@ from pydantic import (
     confloat,
     conint,
     conlist,
+    conset,
     constr,
     Field,
 )
@@ -36,6 +37,7 @@ class Model(BaseModel):
     neg_float: NegativeFloat
 
     short_list: conlist(int, min_items=1, max_items=4)
+    short_set: conset(int, min_items=1, max_items=4)
 
     decimal_positive: condecimal(gt=0)
     decimal_negative: condecimal(lt=0)

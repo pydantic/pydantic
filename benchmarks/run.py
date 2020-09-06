@@ -18,37 +18,44 @@ from test_pydantic import TestPydantic
 try:
     from test_trafaret import TestTrafaret
 except Exception:
+    print('WARNING: unable to import TestTrafaret')
     TestTrafaret = None
 
 try:
     from test_drf import TestDRF
 except Exception:
+    print('WARNING: unable to import TestDRF')
     TestDRF = None
 
 try:
     from test_marshmallow import TestMarshmallow
 except Exception:
+    print('WARNING: unable to import TestMarshmallow')
     TestMarshmallow = None
 
 
 try:
     from test_valideer import TestValideer
 except Exception:
+    print('WARNING: unable to import TestValideer')
     TestValideer = None
 
 try:
     from test_cattrs import TestCAttrs
 except Exception:
+    print('WARNING: unable to import TestCAttrs')
     TestCAttrs = None
 
 try:
     from test_cerberus import TestCerberus
 except Exception:
+    print('WARNING: unable to import TestCerberus')
     TestCerberus = None
 
 try:
     from test_voluptuous import TestVoluptuous
 except Exception as e:
+    print('WARNING: unable to import TestVoluptuous')
     TestVoluptuous = None
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
@@ -58,11 +65,8 @@ ALL = PUNCTUATION * 5 + LETTERS * 20 + UNICODE
 random = random.SystemRandom()
 
 # in order of performance for csv
-other_tests = [
-    t for t in
-    [TestCAttrs, TestValideer, TestMarshmallow, TestVoluptuous, TestTrafaret, TestDRF, TestCerberus]
-    if t is not None
-]
+other_tests = [TestCAttrs, TestValideer, TestMarshmallow, TestVoluptuous, TestTrafaret, TestDRF, TestCerberus]
+active_other_tests = [t for t in other_tests if t is not None]
 
 
 class GenerateData:
@@ -209,7 +213,7 @@ def main():
 
     tests = [TestPydantic]
     if 'pydantic-only' not in sys.argv:
-        tests += other_tests
+        tests += active_other_tests
 
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
     test_json = 'TEST_JSON' in os.environ
@@ -251,7 +255,7 @@ def diff():
 
     allow_extra = True
     pydantic = TestPydantic(allow_extra)
-    others = [t(allow_extra) for t in other_tests]
+    others = [t(allow_extra) for t in active_other_tests]
 
     for case in cases:
         pydantic_passed, pydantic_result = pydantic.validate(case)
@@ -269,3 +273,7 @@ if __name__ == '__main__':
         diff()
     else:
         main()
+
+    # if None in other_tests:
+    #     print('not all libraries could be imported!')
+    #     sys.exit(1)

@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, ConfigError, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
 
 
 def test_success():
@@ -52,26 +52,32 @@ def test_ultra_simple_repr():
         assert m.to_string() == 'a=10.2 b=10'
 
 
-def test_default_dict_repr():
+def test_default_factory_field():
     def myfunc():
         return 1
 
     class Model(BaseModel):
         a: int = Field(default_factory=myfunc)
-        b = Field(default_factory=myfunc)
 
     m = Model()
-    assert str(m) == 'a=1 b=1'
-    assert repr(m) == 'Model(a=1, b=1)'
+    assert str(m) == 'a=1'
     assert (
         repr(m.__fields__['a']) == "ModelField(name='a', type=int, required=False, default_factory='<function myfunc>')"
     )
-    assert (
-        repr(m.__fields__['b']) == "ModelField(name='b', type=int, required=False, default_factory='<function myfunc>')"
-    )
-    assert dict(m) == {'a': 1, 'b': 1}
-    assert m.dict() == {'a': 1, 'b': 1}
-    assert m.json() == '{"a": 1, "b": 1}'
+    assert dict(m) == {'a': 1}
+    assert m.json() == '{"a": 1}'
+
+
+def test_default_factory_no_type_field():
+    def myfunc():
+        return 1
+
+    with pytest.raises(ConfigError) as e:
+
+        class Model(BaseModel):
+            a = Field(default_factory=myfunc)
+
+    assert str(e.value) == "you need to set the type of field 'a' when using `default_factory`"
 
 
 def test_comparing():
@@ -863,6 +869,26 @@ def test_root_list():
     assert m.__root__ == ['a']
 
 
+def test_encode_nested_root():
+    house_dict = {'pets': ['dog', 'cats']}
+
+    class Pets(BaseModel):
+        __root__: List[str]
+
+    class House(BaseModel):
+        pets: Pets
+
+    assert House(**house_dict).dict() == house_dict
+
+    class PetsDeep(BaseModel):
+        __root__: Pets
+
+    class HouseDeep(BaseModel):
+        pets: PetsDeep
+
+    assert HouseDeep(**house_dict).dict() == house_dict
+
+
 def test_root_failed():
     with pytest.raises(ValueError, match='__root__ cannot be mixed with other fields'):
 
@@ -1004,13 +1030,19 @@ def test_model_export_nested_list():
 
     with pytest.raises(TypeError, match='expected integer keys'):
         m.dict(exclude={'foos': {'a'}})
+    with pytest.raises(TypeError, match='expected integer keys'):
+        m.dict(exclude={'foos': {0: ..., 'a': ...}})
+    with pytest.raises(TypeError, match='Unexpected type'):
+        m.dict(exclude={'foos': {0: 1}})
+    with pytest.raises(TypeError, match='Unexpected type'):
+        m.dict(exclude={'foos': {'__all__': 1}})
 
     assert m.dict(exclude={'foos': {0: {'b'}, '__all__': {'a'}}}) == {'c': 3, 'foos': [{}, {'b': 4}]}
     assert m.dict(exclude={'foos': {'__all__': {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
     assert m.dict(exclude={'foos': {'__all__'}}) == {'c': 3, 'foos': []}
 
     with pytest.raises(ValueError, match='set with keyword "__all__" must not contain other elements'):
-        m.dict(exclude={'foos': {'a', '__all__'}})
+        m.dict(exclude={'foos': {1, '__all__'}})
 
 
 def test_model_export_dict_exclusion():
@@ -1100,6 +1132,76 @@ def test_default_factory():
             arbitrary_types_allowed = True
 
     assert SingletonFieldModel().singleton is SingletonFieldModel().singleton
+
+
+def test_default_factory_called_once():
+    """It should call only once the given factory by default"""
+
+    class Seq:
+        def __init__(self):
+            self.v = 0
+
+        def __call__(self):
+            self.v += 1
+            return self.v
+
+    class MyModel(BaseModel):
+        id: int = Field(default_factory=Seq())
+
+    m1 = MyModel()
+    assert m1.id == 1
+    m2 = MyModel()
+    assert m2.id == 2
+    assert m1.id == 1
+
+
+def test_default_factory_called_once_2():
+    """It should call only once the given factory by default"""
+
+    v = 0
+
+    def factory():
+        nonlocal v
+        v += 1
+        return v
+
+    class MyModel(BaseModel):
+        id: int = Field(default_factory=factory)
+
+    m1 = MyModel()
+    assert m1.id == 1
+    m2 = MyModel()
+    assert m2.id == 2
+
+
+def test_default_factory_validate_children():
+    class Child(BaseModel):
+        x: int
+
+    class Parent(BaseModel):
+        children: List[Child] = Field(default_factory=list)
+
+    Parent(children=[{'x': 1}, {'x': 2}])
+    with pytest.raises(ValidationError) as exc_info:
+        Parent(children=[{'x': 1}, {'y': 2}])
+
+    assert exc_info.value.errors() == [
+        {'loc': ('children', 1, 'x'), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
+def test_default_factory_parse():
+    class Inner(BaseModel):
+        val: int = Field(0)
+
+    class Outer(BaseModel):
+        inner_1: Inner = Field(default_factory=Inner)
+        inner_2: Inner = Field(Inner())
+
+    default = Outer().dict()
+    parsed = Outer.parse_obj(default)
+    assert parsed.dict() == {'inner_1': {'val': 0}, 'inner_2': {'val': 0}}
+    assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
 
 
 @pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')

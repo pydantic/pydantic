@@ -45,20 +45,22 @@ from .types import (
     ConstrainedFloat,
     ConstrainedInt,
     ConstrainedList,
+    ConstrainedSet,
     ConstrainedStr,
     conbytes,
     condecimal,
     confloat,
     conint,
     conlist,
+    conset,
     constr,
 )
 from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, literal_values
 from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
-    from .main import BaseModel  # noqa: F401
     from .dataclasses import DataclassType  # noqa: F401
+    from .main import BaseModel  # noqa: F401
 
 default_prefix = '#/definitions/'
 
@@ -239,7 +241,7 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
         f_schema['const'] = field.default
     if field.field_info.extra:
         f_schema.update(field.field_info.extra)
-    modify_schema = getattr(field.type_, '__modify_schema__', None)
+    modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
     if modify_schema:
         modify_schema(f_schema)
     return f_schema
@@ -545,6 +547,10 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
 
     add_field_type_to_schema(enum, schema)
 
+    modify_schema = getattr(enum, '__modify_schema__', None)
+    if modify_schema:
+        modify_schema(schema)
+
     return schema
 
 
@@ -699,9 +705,9 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     else:
         add_field_type_to_schema(field_type, f_schema)
 
-    modify_schema = getattr(field_type, '__modify_schema__', None)
-    if modify_schema:
-        modify_schema(f_schema)
+        modify_schema = getattr(field_type, '__modify_schema__', None)
+        if modify_schema:
+            modify_schema(f_schema)
 
     if f_schema:
         return f_schema, definitions, nested_models
@@ -791,7 +797,11 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
     used_constraints: Set[str] = set()
 
     def go(type_: Any) -> Type[Any]:
-        if is_literal_type(annotation) or isinstance(type_, ForwardRef) or lenient_issubclass(type_, ConstrainedList):
+        if (
+            is_literal_type(annotation)
+            or isinstance(type_, ForwardRef)
+            or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet))
+        ):
             return type_
         origin = getattr(type_, '__origin__', None)
         if origin is not None:
@@ -806,6 +816,10 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
             if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
                 used_constraints.update({'min_items', 'max_items'})
                 return conlist(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+
+            if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
+                used_constraints.update({'min_items', 'max_items'})
+                return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
 
             for t in (Tuple, List, Set, FrozenSet, Sequence):
                 if issubclass(origin, t):  # type: ignore
@@ -824,7 +838,7 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = conbytes
             elif issubclass(type_, numeric_types) and not issubclass(
-                type_, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, bool)
+                type_, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, ConstrainedSet, bool)
             ):
                 # Is numeric type
                 attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')

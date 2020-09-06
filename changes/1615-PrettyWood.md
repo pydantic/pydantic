@@ -1,1 +1,0 @@
-Allow custom encoding for `dotenv` files.

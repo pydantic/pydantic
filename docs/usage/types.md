@@ -248,7 +248,7 @@ types:
 * `datetime` fields can be:
 
     * `datetime`, existing `datetime` object
-    * `int` or `float`, assumed as Unix time, i.e. seconds (if <= `2e10`) or milliseconds (if > `2e10`) since 1 January 1970
+    * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
     * `str`, following formats work:
 
         * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z[±]HH[:]MM]]]`
@@ -495,6 +495,10 @@ _(This script is complete, it should run "as is")_
 
 `conlist`
 : type method for constraining lists;
+  see [Constrained Types](#constrained-types)
+
+`conset`
+: type method for constraining sets;
   see [Constrained Types](#constrained-types)
 
 `constr`

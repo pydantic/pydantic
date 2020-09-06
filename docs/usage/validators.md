@@ -50,6 +50,16 @@ A few more things to note:
 * passing `each_item=True` will result in the validator being applied to individual values
   (e.g. of `List`, `Dict`, `Set`, etc.), rather than the whole object
 
+## Subclass Validators and `each_item`
+
+If using a validator with a subclass that references a `List` type field on a parent class, using `each_item=True` will
+cause the validator not to run; instead, the list must be iterated over programatically.
+
+```py
+{!.tmp_examples/validators_subclass_each_item.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Validate Always
 
 For performance reasons, by default validators are not called for fields when a value is not supplied.
@@ -99,7 +109,7 @@ validation occurs (and are provided with the raw input data), or `pre=False` (th
 they're called after field validation.
 
 Field validation will not occur if `pre=True` root validators raise an error. As with field validators,
-"post" (i.e. `pre=False`) root validators by default will be called even if field validation fails; this
+"post" (i.e. `pre=False`) root validators by default will be called even if prior validators fail; this
 behaviour can be changed by setting the `skip_on_failure=True` keyword argument to the validator.
 The `values` argument will be a dict containing the values which passed field validation and
 field defaults where applicable.

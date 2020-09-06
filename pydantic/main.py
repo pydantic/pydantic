@@ -42,16 +42,27 @@ from .utils import (
     generate_model_signature,
     lenient_issubclass,
     sequence_like,
+    unique_list,
     validate_field_name,
 )
 
 if TYPE_CHECKING:
-    import typing_extensions
     from inspect import Signature
+
+    import typing_extensions
+
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
-    from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
-    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
+    from .typing import (  # noqa: F401
+        AbstractSetIntStr,
+        CallableGenerator,
+        DictAny,
+        DictStrAny,
+        MappingIntStrAny,
+        ReprArgs,
+        SetStr,
+        TupleGenerator,
+    )
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
@@ -291,13 +302,14 @@ class ModelMetaclass(ABCMeta):
         else:
             json_encoder = pydantic_encoder
         pre_rv_new, post_rv_new = extract_root_validators(namespace)
+
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
             '__field_defaults__': fields_defaults,
             '__validators__': vg.validators,
-            '__pre_root_validators__': pre_root_validators + pre_rv_new,
-            '__post_root_validators__': post_root_validators + post_rv_new,
+            '__pre_root_validators__': unique_list(pre_root_validators + pre_rv_new),
+            '__post_root_validators__': unique_list(post_root_validators + post_rv_new),
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
@@ -610,7 +622,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if isinstance(v, BaseModel):
             if to_dict:
-                return v.dict(
+                v_dict = v.dict(
                     by_alias=by_alias,
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
@@ -618,6 +630,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude=exclude,
                     exclude_none=exclude_none,
                 )
+                if '__root__' in v_dict:
+                    return v_dict['__root__']
+                return v_dict
             else:
                 return v.copy(include=include, exclude=exclude)
 
@@ -796,8 +811,10 @@ def create_model(
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
     :param __validators__: a dict of method names and @validator class methods
-    :param **field_definitions: fields of the model (or extra fields if a base is supplied) in the format
-        `<name>=(<type>, <default default>)` or `<name>=<default value> eg. `foobar=(str, ...)` or `foobar=123`
+    :param **field_definitions: fields of the model (or extra fields if a base is supplied)
+        in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
+        `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
+        `<name>=<FieldInfo>`, e.g. `foo=Field(default_factory=datetime.utcnow, alias='bar')`
     """
     if __base__:
         if __config__ is not None:
@@ -919,7 +936,6 @@ def validate_model(  # noqa: C901 (ignore complexity)
             values = validator(cls_, values)
         except (ValueError, TypeError, AssertionError) as exc:
             errors.append(ErrorWrapper(exc, loc=ROOT_KEY))
-            break
 
     if errors:
         return values, fields_set, ValidationError(errors, cls_)

@@ -12,7 +12,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, ValidationError, conlist, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
@@ -219,6 +219,34 @@ def test_choices():
             'BarEnum': {'title': 'BarEnum', 'description': 'An enumeration.', 'type': 'integer', 'enum': [1, 2]},
             'SpamEnum': {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']},
         },
+    }
+
+
+def test_enum_modify_schema():
+    class SpamEnum(str, Enum):
+        foo = 'f'
+        bar = 'b'
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema['tsEnumNames'] = [e.name for e in cls]
+
+    class Model(BaseModel):
+        spam: SpamEnum = Field(None)
+
+    assert Model.schema() == {
+        'definitions': {
+            'SpamEnum': {
+                'description': 'An enumeration.',
+                'enum': ['f', 'b'],
+                'title': 'SpamEnum',
+                'tsEnumNames': ['foo', 'bar'],
+                'type': 'string',
+            }
+        },
+        'properties': {'spam': {'$ref': '#/definitions/SpamEnum'}},
+        'title': 'Model',
+        'type': 'object',
     }
 
 
@@ -1185,6 +1213,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'gt': 0}, Callable),
         ({'gt': 0}, Callable[[int], int]),
         ({'gt': 0}, conlist(int, min_items=4)),
+        ({'gt': 0}, conset(int, min_items=4)),
     ],
 )
 def test_unenforced_constraints_schema(kwargs, type_):
@@ -1696,41 +1725,6 @@ def test_real_vs_phony_constraints():
     )
 
 
-def test_conlist():
-    class Model(BaseModel):
-        foo: List[int] = Field(..., min_items=2, max_items=4)
-        bar: conlist(str, min_items=1, max_items=4) = None
-
-    assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
-
-    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
-        Model(foo=[1])
-
-    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
-        Model(foo=list(range(5)))
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4},
-            'bar': {'title': 'Bar', 'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4},
-        },
-        'required': ['foo'],
-    }
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(foo=[1, 'x', 'y'])
-    assert exc_info.value.errors() == [
-        {'loc': ('foo', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('foo', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(foo=1)
-    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
-
-
 def test_subfield_field_info():
     class MyModel(BaseModel):
         entries: Dict[str, List[int]]
@@ -1822,6 +1816,7 @@ def test_path_modify_schema():
     class Model(BaseModel):
         path1: Path
         path2: MyPath
+        path3: List[MyPath]
 
     assert Model.schema() == {
         'title': 'Model',
@@ -1829,8 +1824,9 @@ def test_path_modify_schema():
         'properties': {
             'path1': {'title': 'Path1', 'type': 'string', 'format': 'path'},
             'path2': {'title': 'Path2', 'type': 'string', 'format': 'path', 'foobar': 123},
+            'path3': {'title': 'Path3', 'type': 'array', 'items': {'type': 'string', 'format': 'path', 'foobar': 123}},
         },
-        'required': ['path1', 'path2'],
+        'required': ['path1', 'path2', 'path3'],
     }
 
 

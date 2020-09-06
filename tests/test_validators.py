@@ -287,6 +287,25 @@ def test_validate_always():
     assert check_calls == 2
 
 
+def test_validate_always_on_inheritance():
+    check_calls = 0
+
+    class ParentModel(BaseModel):
+        a: str = None
+
+    class Model(ParentModel):
+        @validator('a', pre=True, always=True)
+        def check_a(cls, v):
+            nonlocal check_calls
+            check_calls += 1
+            return v or 'xxx'
+
+    assert Model().a == 'xxx'
+    assert check_calls == 1
+    assert Model(a='y').a == 'y'
+    assert check_calls == 2
+
+
 def test_validate_not_always():
     check_calls = 0
 
@@ -737,6 +756,7 @@ def test_root_validator():
     class Model(BaseModel):
         a: int = 1
         b: str
+        c: str
 
         @validator('b')
         def repeat_b(cls, v):
@@ -749,19 +769,36 @@ def test_root_validator():
                 raise ValueError('foobar')
             return dict(values, b='changed')
 
-    assert Model(a='123', b='bar').dict() == {'a': 123, 'b': 'changed'}
+        @root_validator
+        def example_root_validator2(cls, values):
+            root_val_values.append(values)
+            if 'snap' in values.get('c', ''):
+                raise ValueError('foobar2')
+            return dict(values, c='changed')
+
+    assert Model(a='123', b='bar', c='baz').dict() == {'a': 123, 'b': 'changed', 'c': 'changed'}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(b='snap dragon')
-    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
+        Model(b='snap dragon', c='snap dragon2')
+    assert exc_info.value.errors() == [
+        {'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'},
+        {'loc': ('__root__',), 'msg': 'foobar2', 'type': 'value_error'},
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='broken', b='bar')
+        Model(a='broken', b='bar', c='baz')
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
-    assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}, {'b': 'barbar'}]
+    assert root_val_values == [
+        {'a': 123, 'b': 'barbar', 'c': 'baz'},
+        {'a': 123, 'b': 'changed', 'c': 'baz'},
+        {'a': 1, 'b': 'snap dragonsnap dragon', 'c': 'snap dragon2'},
+        {'a': 1, 'b': 'snap dragonsnap dragon', 'c': 'snap dragon2'},
+        {'b': 'barbar', 'c': 'baz'},
+        {'b': 'changed', 'c': 'baz'},
+    ]
 
 
 def test_root_validator_pre():

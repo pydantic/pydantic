@@ -69,6 +69,23 @@ It has the following arguments:
   JSON Schema
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
   annotation of `pattern` to the JSON Schema
+
+    !!! note
+        *pydantic* validates strings using `re.match`,
+        which treats regular expressions as implicitly anchored at the beginning.
+        On the contrary,
+        JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
+        more like what `re.search` does.
+
+        For interoperability, depending on your desired behavior,
+        either explicitly anchor your regular expressions with `^`
+        (e.g. `^foo` to match any string starting with `foo`),
+        or explicitly allow an arbitrary prefix with `.*?`
+        (e.g. `.*?foo` to match any string containing the substring `foo`).
+
+        See [#1631](https://github.com/samuelcolvin/pydantic/issues/1631)
+        for a discussion of possible changes to *pydantic* behavior in **v2**.
+
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used
@@ -156,7 +173,10 @@ Outputs:
 ```
 
 For more fine-grained control, you can alternatively set `schema_extra` to a callable and post-process the generated schema.
-The callable is passed the schema dictionary as the first and only argument, and is expected to mutate it *in-place*; the return value is not used.
+The callable can have one or two positional arguments.
+The first will be the schema dictionary.
+The second, if accepted, will be the model class.
+The callable is expected to mutate the schema dictionary *in-place*; the return value is not used.
 
 For example, the `title` key can be removed from the model's `properties`:
 

@@ -45,7 +45,7 @@ V_POSITIONAL_ONLY_NAME = 'v__positional_only'
 
 class ValidatedFunction:
     def __init__(self, function: 'Callable', config: 'ConfigType'):
-        from inspect import signature, Parameter
+        from inspect import Parameter, signature
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
 
@@ -186,9 +186,9 @@ class ValidatedFunction:
 
         if not TYPE_CHECKING:
             if isinstance(config, dict):
-                CustomConfig = type('Config', (), config)
+                CustomConfig = type('Config', (), config)  # noqa: F811
             elif config is not None:
-                CustomConfig = config
+                CustomConfig = config  # noqa: F811
 
         class DecoratorBaseModel(BaseModel):
             @validator(self.v_args_name, check_fields=False, allow_reuse=True)

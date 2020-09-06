@@ -1,3 +1,4 @@
+import pickle
 import sys
 from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
@@ -6,6 +7,7 @@ import pytest
 
 from pydantic import UUID1, BaseConfig, BaseModel, PydanticTypeError, ValidationError, conint, errors, validator
 from pydantic.error_wrappers import flatten_errors, get_exc_type
+from pydantic.errors import StrRegexError
 from pydantic.typing import Literal
 
 
@@ -20,6 +22,17 @@ def test_pydantic_error():
     with pytest.raises(TestError) as exc_info:
         raise TestError(test_ctx='test_value')
     assert str(exc_info.value) == 'test message template "test_value"'
+
+
+def test_pydantic_error_pickable():
+    """
+    Pydantic errors should be (un)pickable.
+    (this test does not create a custom local error as we can't pickle local objects)
+    """
+    p = pickle.dumps(StrRegexError(pattern='pika'))
+    error = pickle.loads(p)
+    assert isinstance(error, StrRegexError)
+    assert error.pattern == 'pika'
 
 
 @pytest.mark.skipif(not Literal, reason='typing_extensions not installed')

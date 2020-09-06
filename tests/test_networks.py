@@ -94,6 +94,7 @@ def test_any_url_success(value):
             {'extra': ':db8::ff00:42:8329'},
         ),
         ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
+        ('http://example.com:99999', 'value_error.url.port', 'URL port invalid, port cannot exceed 65535', None),
     ],
 )
 def test_any_url_invalid(value, err_type, err_msg, err_ctx):
@@ -309,6 +310,11 @@ def test_postgres_dsns():
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
     assert exc_info.value.json().startswith('[')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='postgres://localhost:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
 
 
 def test_redis_dsns():

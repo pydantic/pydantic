@@ -75,7 +75,7 @@ def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[Non
 
 
 def from_unix_seconds(seconds: Union[int, float]) -> datetime:
-    while seconds > MS_WATERSHED:
+    while abs(seconds) > MS_WATERSHED:
         seconds /= 1000
     dt = EPOCH + timedelta(seconds=seconds)
     return dt.replace(tzinfo=timezone.utc)

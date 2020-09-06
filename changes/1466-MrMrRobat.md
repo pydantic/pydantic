@@ -1,1 +1,0 @@
-Make `BaseModel.__signature__` class-only, so getting `__signature__` from model instance will raise `AttributeError`

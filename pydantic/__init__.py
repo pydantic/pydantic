@@ -66,6 +66,8 @@ __all__ = [
     'conbytes',
     'ConstrainedList',
     'conlist',
+    'ConstrainedSet',
+    'conset',
     'ConstrainedStr',
     'constr',
     'PyObject',
