@@ -279,7 +279,7 @@ class PostgresDsn(AnyUrl):
 
 
 class RedisDsn(AnyUrl):
-    allowed_schemes = {'redis'}
+    allowed_schemes = {'redis', 'rediss'}
 
 
 def stricturl(
