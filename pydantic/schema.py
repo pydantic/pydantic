@@ -63,7 +63,6 @@ if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
 
 default_prefix = '#/definitions/'
-default_template = '#/definitions/{model}'
 
 
 TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
@@ -77,7 +76,7 @@ def schema(
     title: Optional[str] = None,
     description: Optional[str] = None,
     ref_prefix: Optional[str] = None,
-    ref_template: Optional[str] = None,
+    ref_template: str = '#/definitions/{model}',
 ) -> Dict[str, Any]:
     """
     Process a list of models and generate a single JSON Schema with all of them defined in the ``definitions``
@@ -123,7 +122,7 @@ def model_schema(
     model: Union[Type['BaseModel'], Type['DataclassType']],
     by_alias: bool = True,
     ref_prefix: Optional[str] = None,
-    ref_template: Optional[str] = None,
+    ref_template: str = '#/definitions/{model}',
 ) -> Dict[str, Any]:
     """
     Generate a JSON Schema for one model. With all the sub-models defined in the ``definitions`` top-level
@@ -142,7 +141,6 @@ def model_schema(
     :return: dict with the JSON Schema for the passed ``model``
     """
     model = get_model(model)
-    ref_template = ref_template or default_template
     flat_models = get_flat_models_from_model(model)
     model_name_map = get_model_name_map(flat_models)
     model_name = model_name_map[model]
@@ -167,7 +165,7 @@ def field_schema(
     by_alias: bool = True,
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
-    ref_template: Optional[str] = None,
+    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -380,7 +378,7 @@ def field_type_schema(
     model_name_map: Dict[TypeModelOrEnum, str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
-    ref_template: Optional[str] = None,
+    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -474,7 +472,7 @@ def model_process_schema(
     by_alias: bool = True,
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
-    ref_template: Optional[str] = None,
+    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -523,7 +521,7 @@ def model_type_schema(
     by_alias: bool,
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
-    ref_template: Optional[str] = None,
+    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -604,7 +602,7 @@ def field_singleton_sub_fields_schema(
     model_name_map: Dict[TypeModelOrEnum, str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
-    ref_template: Optional[str] = None,
+    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -700,7 +698,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     model_name_map: Dict[TypeModelOrEnum, str],
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
-    ref_template: Optional[str] = None,
+    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -710,7 +708,6 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     """
     from .main import BaseModel  # noqa: F811
 
-    ref_template = ref_template or default_template
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
     if field.sub_fields:
