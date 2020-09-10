@@ -54,7 +54,7 @@ def url_regex() -> Pattern[str]:
     if _url_regex_cache is None:
         _url_regex_cache = re.compile(
             r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
-            r'(?:(?P<user>[^\s:/]+)(?::(?P<password>[^\s/]*))?@)?'  # user info
+            r'(?:(?P<user>[^\s:/]*)(?::(?P<password>[^\s/]*))?@)?'  # user info
             r'(?:'
             r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})|'  # ipv4
             r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])|'  # ipv6
@@ -147,8 +147,9 @@ class AnyUrl(str):
         url = scheme + '://'
         if user:
             url += user
-            if password:
-                url += ':' + password
+        if password:
+            url += ':' + password
+        if user or password:
             url += '@'
         url += host
         if port:

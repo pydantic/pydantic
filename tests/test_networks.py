@@ -329,6 +329,9 @@ def test_redis_dsns():
     m = Model(a='rediss://user:pass@localhost:5432/app')
     assert m.a == 'rediss://user:pass@localhost:5432/app'
 
+    m = Model(a='rediss://:pass@localhost')
+    assert m.a == 'rediss://:pass@localhost'
+
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
