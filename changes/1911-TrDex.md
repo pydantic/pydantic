@@ -1,1 +1,1 @@
-Add `rediss` (Redis over SSL) protocol to `RedisDsn
+Add `rediss` (Redis over SSL) protocol to `RedisDsn`
