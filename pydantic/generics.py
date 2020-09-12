@@ -50,7 +50,12 @@ class GenericModel(BaseModel):
         created_model = cast(
             Type[GenericModel],  # casting ensures mypy is aware of the __concrete__ and __parameters__ attributes
             create_model(
-                model_name, __module__=model_module, __base__=cls, __config__=None, __validators__=validators, **fields,
+                model_name,
+                __module__=model_module,
+                __base__=cls,
+                __config__=None,
+                __validators__=validators,
+                **fields,
             ),
         )
 
