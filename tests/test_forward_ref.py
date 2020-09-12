@@ -446,8 +446,8 @@ def test_forward_ref_with_create_model(create_module):
         """
 import pydantic
 
-Sub = pydantic.create_model("Sub", foo="bar")
-Main = pydantic.create_model("Main", sub=("Sub", ...))
+Sub = pydantic.create_model("Sub", foo="bar", __module__=__name__)
+Main = pydantic.create_model("Main", sub=("Sub", ...), __module__=__name__)
 instance = Main(sub={})
 assert instance.sub.dict() == {"foo": "bar"}
         """

@@ -1,4 +1,3 @@
-import sys
 import warnings
 from itertools import islice
 from types import FrameType, GeneratorType, ModuleType
@@ -541,6 +540,8 @@ class ClassAttribute:
 def get_caller_module_name() -> Optional[str]:
     """
     Used inside a function to get its caller module name
+
+    Will only work against non-compiled code, therefore used only in pydantic.generics
     """
     import inspect
 
@@ -557,6 +558,8 @@ def get_caller_module_name() -> Optional[str]:
 def is_call_from_module() -> bool:
     """
     Used inside a function to check whether it was called globally
+
+    Will only work against non-compiled code, therefore used only in pydantic.generics
     """
     import inspect
 
@@ -565,15 +568,3 @@ def is_call_from_module() -> bool:
     except IndexError:
         raise RuntimeError('This function must be used inside another function')
     return previous_caller_frame.f_locals is previous_caller_frame.f_globals
-
-
-def ensure_picklable(model: Type['BaseModel']) -> Type['BaseModel']:
-    """
-    Ensures that model is declared in its module by its name
-    """
-    object_on_module = sys.modules[model.__module__].__dict__.setdefault(model.__name__, model)
-    if object_on_module is not model:  # same name was used in module by another object, won't rewrite it
-        raise NameError(
-            f'Name conflict: {model.__name__!r} on {model.__module__!r} is already used by {object_on_module!r}'
-        )
-    return model

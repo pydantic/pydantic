@@ -40,7 +40,6 @@ from .utils import (
     Representation,
     ValueItems,
     generate_model_signature,
-    get_caller_module_name,
     lenient_issubclass,
     sequence_like,
     unique_list,
@@ -802,7 +801,7 @@ def create_model(  # noqa: C901 (ignore complexity)
     *,
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
-    __module__: Optional[str] = None,
+    __module__: Optional[str] = __name__,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
 ) -> Type[BaseModel]:
@@ -823,11 +822,6 @@ def create_model(  # noqa: C901 (ignore complexity)
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
         __base__ = BaseModel
-
-    if __module__ is None:
-        __module__ = get_caller_module_name()
-        if __module__ is None:
-            __module__ = __name__
 
     fields = {}
     annotations = {}

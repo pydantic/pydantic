@@ -610,3 +610,36 @@ assert loaded.value.b == original.value.b == 10
 assert loaded == original
     """
     )
+
+
+@skip_36
+def test_generic_model_from_function_pickle_fail(create_module):
+    # Using create_module because pickle doesn't support
+    # objects with <locals> in their __qualname__  (e. g. defined in function)
+    create_module(
+        """
+import pickle
+from typing import Generic, TypeVar
+
+import pytest
+
+from pydantic import BaseModel
+from pydantic.generics import GenericModel
+
+t = TypeVar('t')
+
+class Model(BaseModel):
+    a: float
+    b: int = 10
+
+class MyGeneric(GenericModel, Generic[t]):
+    value: t
+
+def get_generic(t):
+    return MyGeneric[t]
+
+original = get_generic(Model)(value=Model(a='24'))
+with pytest.raises(pickle.PicklingError):
+    pickle.dumps(original)
+    """
+    )

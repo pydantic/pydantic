@@ -7,7 +7,7 @@ from typing import NewType, Union
 
 import pytest
 
-from pydantic import VERSION, BaseModel
+from pydantic import VERSION, BaseModel, compiled
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
@@ -350,8 +350,23 @@ def test_all_literal_values():
     assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
 
 
-def test_get_caller_module_name():
-    assert get_caller_module_name() == '_pytest.python'
+def test_get_caller_module_name_from_function():
+    def get_current_module_name():
+        return get_caller_module_name()
+
+    assert get_current_module_name() == __name__
+
+
+def test_get_caller_module_name_from_module(create_module):
+    create_module(
+        """
+from pydantic.utils import get_caller_module_name
+def get_current_module_name():
+    return get_caller_module_name()
+
+assert get_current_module_name() == __name__
+        """
+    )
 
     def get_current_module_name():
         return get_caller_module_name()
@@ -364,6 +379,10 @@ def test_get_caller_module_name_not_found(mocker):
     assert get_caller_module_name() is None
 
 
+@pytest.mark.skipif(
+    compiled,
+    reason='This function can be used only against non-compiled code, therefore used only in pydantic.generics',
+)
 def test_is_call_from_module(create_module):
     create_module(
         """
@@ -382,34 +401,5 @@ def third_function():
     assert not is_call_from_module()
 
 function()
-        """
-    )
-
-
-def test_ensure_picklable(create_module):
-    create_module(
-        """
-import pickle
-
-import pytest
-
-from pydantic import create_model
-from pydantic.utils import ensure_picklable
-
-model = create_model("FooModel")
-with pytest.raises(pickle.PicklingError, match="attribute lookup FooModel"):
-    pickle.dumps(model)
-
-model = ensure_picklable(model)
-dumped = pickle.dumps(model)
-loaded = pickle.loads(dumped)
-assert loaded == model
-
-another_model_with_same_class_name = create_model("FooModel")
-with pytest.raises(
-    NameError,
-    match=f"Name conflict: 'FooModel' on {model.__module__!r} is already used by <class {model!r}"
-    ):
-    ensure_picklable(another_model_with_same_class_name)
         """
     )

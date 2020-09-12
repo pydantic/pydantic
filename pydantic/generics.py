@@ -1,9 +1,10 @@
+import sys
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, TypeVar, Union, cast, get_type_hints
 
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
 from .main import BaseModel, create_model
-from .utils import ensure_picklable, get_caller_module_name, is_call_from_module, lenient_issubclass
+from .utils import get_caller_module_name, is_call_from_module, lenient_issubclass
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
@@ -45,24 +46,21 @@ class GenericModel(BaseModel):
         model_name = cls.__concrete_name__(params)
         validators = gather_all_validators(cls)
         fields = _build_generic_fields(cls.__fields__, concrete_type_hints, typevars_map)
+        model_module = get_caller_module_name() or cls.__module__
         created_model = cast(
             Type[GenericModel],  # casting ensures mypy is aware of the __concrete__ and __parameters__ attributes
             create_model(
-                model_name,
-                __module__=get_caller_module_name() or cls.__module__,
-                __base__=cls,
-                __config__=None,
-                __validators__=validators,
-                **fields,
+                model_name, __module__=model_module, __base__=cls, __config__=None, __validators__=validators, **fields,
             ),
         )
 
-        # allow pickling (only if concrete model was defined globally)
-        if is_call_from_module():
-            try:
-                ensure_picklable(created_model)
-            except NameError:  # this should not happen because or _generic_types_cache, but just in case
-                raise TypeError(f'{model_name!r} already defined above, please consider reusing it')
+        if is_call_from_module():  # create global reference and therefore allow pickling
+            object_in_module = sys.modules[model_module].__dict__.setdefault(model_name, created_model)
+            if object_in_module is not created_model:
+                # this should not ever happen because of _generic_types_cache, but just in case
+                raise TypeError(f'{model_name!r} already defined above, please consider reusing it') from NameError(
+                    f'Name conflict: {model_name!r} in {model_module!r} is already used by {object_in_module!r}'
+                )
 
         created_model.Config = cls.Config
         concrete = all(not _is_typevar(v) for v in concrete_type_hints.values())
