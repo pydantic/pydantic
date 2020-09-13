@@ -358,22 +358,22 @@ def test_all_literal_values():
 )
 def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
     # make sure deepcopy is not used
-    # (other option will be to use obj.copy(), but this will produce error as none of given objects doesn't have it)
+    # (other option will be to use obj.copy(), but this will produce error as none of given objects have this method)
     mocker.patch('pydantic.utils.deepcopy', side_effect=RuntimeError)
     assert smart_deepcopy(obj) is deepcopy(obj) is obj
 
 
-@pytest.mark.parametrize('empty_collection', map(lambda collection: collection(), BUILTIN_COLLECTIONS))
+@pytest.mark.parametrize('empty_collection', (collection() for collection in BUILTIN_COLLECTIONS))
 def test_smart_deepcopy_empty_collection(empty_collection, mocker):
     mocker.patch('pydantic.utils.deepcopy', side_effect=RuntimeError)  # make sure deepcopy is not used
     if not isinstance(empty_collection, (tuple, frozenset)):  # empty tuple or frozenset are always the same object
         assert smart_deepcopy(empty_collection) is not empty_collection
 
 
-@pytest.mark.parametrize('collection', BUILTIN_COLLECTIONS)
+@pytest.mark.parametrize(
+    'collection', (c.fromkeys((1,)) if issubclass(c, dict) else c((1,)) for c in BUILTIN_COLLECTIONS)
+)
 def test_smart_deepcopy_collection(collection, mocker):
     expected_value = object()
-    if issubclass(collection, dict):
-        collection = collection.fromkeys
     mocker.patch('pydantic.utils.deepcopy', return_value=expected_value)
-    assert smart_deepcopy(collection((1,))) is expected_value
+    assert smart_deepcopy(collection) is expected_value
