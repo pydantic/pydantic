@@ -1,6 +1,9 @@
 import warnings
+import weakref
+from collections import OrderedDict, defaultdict, deque
+from copy import deepcopy
 from itertools import islice
-from types import GeneratorType
+from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -20,7 +23,7 @@ from typing import (
     no_type_check,
 )
 
-from .typing import display_as_type
+from .typing import NoneType, display_as_type
 from .version import version_info
 
 if TYPE_CHECKING:
@@ -49,6 +52,41 @@ __all__ = (
     'version_info',  # required here to match behaviour in v1.3
     'ClassAttribute',
 )
+
+# these are types that returned by deepcopy unchanged
+IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
+    int,
+    float,
+    complex,
+    str,
+    bool,
+    bytes,
+    type,
+    NoneType,
+    FunctionType,
+    BuiltinFunctionType,
+    LambdaType,
+    weakref.ref,
+    CodeType,
+    # note: including ModuleType will differ from behaviour of deepcopy by not producing error.
+    # It might be not a good idea in general, but considering that this function used only internally
+    # against default values of fields, this will allow to actually have a field with module as default value
+    ModuleType,
+    NotImplemented.__class__,
+    Ellipsis.__class__,
+}
+
+# these are types that if empty, might be copied with simple copy() instead of deepcopy()
+BUILTIN_COLLECTIONS: Set[Type[Any]] = {
+    list,
+    set,
+    # tuple,
+    frozenset,
+    dict,
+    OrderedDict,
+    defaultdict,
+    deque,
+}
 
 
 def import_string(dotted_path: str) -> Any:
@@ -534,3 +572,22 @@ class ClassAttribute:
         if instance is None:
             return self.value
         raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
+
+
+Obj = TypeVar('Obj')
+
+
+def smart_deepcopy(obj: Obj) -> Obj:
+    """
+    Return type as is for immutable built-in types
+    Use obj.copy() for built-in empty collections
+    Use copy.deepcopy() only on non-empty collections and unknown objects
+    """
+
+    obj_type = obj.__class__
+    if obj_type in IMMUTABLE_NON_COLLECTIONS_TYPES:
+        return obj  # fastest case: obj is immutable and not collection therefore will not be copied anyway
+    elif not obj and obj_type in BUILTIN_COLLECTIONS:
+        # faster way for empty collections, no need to copy its members
+        return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
+    return deepcopy(obj)  # slowest way when we actually might need a deepcopy
