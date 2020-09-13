@@ -80,7 +80,7 @@ IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
 BUILTIN_COLLECTIONS: Set[Type[Any]] = {
     list,
     set,
-    # tuple,
+    tuple,
     frozenset,
     dict,
     OrderedDict,
@@ -581,7 +581,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
     """
     Return type as is for immutable built-in types
     Use obj.copy() for built-in empty collections
-    Use copy.deepcopy() only on non-empty collections and unknown objects
+    Use copy.deepcopy() for non-empty collections and unknown objects
     """
 
     obj_type = obj.__class__
