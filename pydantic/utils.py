@@ -53,7 +53,7 @@ __all__ = (
     'ClassAttribute',
 )
 
-# these are types that returned by deepcopy unchanged
+# these are types that are returned unchanged by deepcopy
 IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
     int,
     float,
