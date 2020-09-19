@@ -1295,7 +1295,7 @@ def test_serializable(T, param, result):
 
     m = M(a=param)
     d = m.dict()
-    s = m.serializable()
+    s = m.dict(convert_types=True)
     assert d == {'a': param}
     assert s == {'a': result}
 
@@ -1310,7 +1310,7 @@ def test_serializable_submodel():
     params = {'s': {'d': '2020-01-01'}}
     m = P(**params)
     d = m.dict()
-    s = m.serializable()
+    s = m.dict(convert_types=True)
     assert d == {'s': {'d': date(2020, 1, 1)}}
     assert s == params
 
@@ -1322,7 +1322,7 @@ def test_serializable_list():
     params = {'a': ['2020-01-01', '2020-01-02']}
     m = M(**params)
     d = m.dict()
-    s = m.serializable()
+    s = m.dict(convert_types=True)
     assert d == {'a': [date(2020, 1, 1), date(2020, 1, 2)]}
     assert s == params
 
@@ -1337,7 +1337,7 @@ def test_serializable_list_submodel():
     params = {'s': [{'d': '2020-01-01'}, {'d': '2020-01-02'}]}
     m = P(**params)
     d = m.dict()
-    s = m.serializable()
+    s = m.dict(convert_types=True)
     assert d == {'s': [{'d': date(2020, 1, 1)}, {'d': date(2020, 1, 2)}]}
     assert s == params
 
@@ -1347,5 +1347,5 @@ def test_serializable_custom_converter():
         a: datetime
 
     model = M(a='2020-01-01T00:00:00')
-    s = model.serializable(type_converter=lambda v: v.timestamp() if isinstance(v, datetime) else v)
+    s = model.dict(convert_types=lambda v: v.timestamp() if isinstance(v, datetime) else v)
     assert s == {'a': 1577836800}

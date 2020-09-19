@@ -390,6 +390,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        convert_types: Optional[Union[bool, AnyCallable]] = None,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -411,43 +412,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
-            )
-        )
-
-    def serializable(
-        self,
-        *,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
-        by_alias: bool = False,
-        skip_defaults: bool = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        type_converter: Optional[AnyCallable] = None,
-    ) -> 'DictStrAny':
-        """
-        Generate a serializable dictionary representation of the model, optionally specifying which fields to include or
-        exclude.
-
-        """
-        if skip_defaults is not None:
-            warnings.warn(
-                f'{self.__class__.__name__}.dict(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
-                DeprecationWarning,
-            )
-            exclude_unset = skip_defaults
-        converter = type_converter or self.__json_encoder__
-        return dict(
-            self._iter(
-                to_dict=True,
-                by_alias=by_alias,
-                include=include,
-                exclude=exclude,
-                exclude_unset=exclude_unset,
-                exclude_defaults=exclude_defaults,
-                exclude_none=exclude_none,
-                type_converter=converter,
+                type_converter=self.__json_encoder__ if convert_types is True else convert_types
             )
         )
 
