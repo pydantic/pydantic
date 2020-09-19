@@ -31,11 +31,11 @@ with custom properties and validation.
   and `int`, `float`, and `Decimal` are coerced using `str(v).encode()`
 
 `list`
-: allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a list;
+: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a list;
   see `typing.List` below for sub-type constraints
 
 `tuple`
-: allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a tuple;
+: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a tuple;
   see `typing.Tuple` below for sub-type constraints
 
 `dict`
@@ -43,12 +43,16 @@ with custom properties and validation.
   see `typing.Dict` below for sub-type constraints
 
 `set`
-: allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a set;
+: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a set;
   see `typing.Set` below for sub-type constraints
 
 `frozenset`
-: allows `list`, `tuple`, `set`, `frozenset`, or generators and casts to a frozen set;
+: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a frozen set;
   see `typing.FrozenSet` below for sub-type constraints
+
+`deque`
+: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a frozen set;
+  see `typing.Deque` below for sub-type constraints
 
 `datetime.date`
 : see [Datetime Types](#datetime-types) below for more detail on parsing and validation
@@ -88,6 +92,9 @@ with custom properties and validation.
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
 `typing.FrozenSet`
+: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`typing.Deque`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
 `typing.Sequence`

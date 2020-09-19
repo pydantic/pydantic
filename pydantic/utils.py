@@ -126,7 +126,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
 
 
 def sequence_like(v: Type[Any]) -> bool:
-    return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:

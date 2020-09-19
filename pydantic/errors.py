@@ -278,6 +278,10 @@ class FrozenSetError(PydanticTypeError):
     msg_template = 'value is not a valid frozenset'
 
 
+class DequeError(PydanticTypeError):
+    msg_template = 'value is not a valid deque'
+
+
 class TupleError(PydanticTypeError):
     msg_template = 'value is not a valid tuple'
 
