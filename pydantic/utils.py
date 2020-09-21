@@ -242,7 +242,8 @@ def unique_list(input_list: Union[List[T], Tuple[T, ...]]) -> List[T]:
 
 
 def update_normalized_all(
-    item: Union['AbstractSetIntStr', 'MappingIntStrAny'], all_items: Union['AbstractSetIntStr', 'MappingIntStrAny'],
+    item: Union['AbstractSetIntStr', 'MappingIntStrAny'],
+    all_items: Union['AbstractSetIntStr', 'MappingIntStrAny'],
 ) -> Union['AbstractSetIntStr', 'MappingIntStrAny']:
     """
     Update item based on what all items contains.
