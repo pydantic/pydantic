@@ -245,7 +245,12 @@ class ModelMetaclass(ABCMeta):
         class_vars = set()
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
-            untouched_types = UNTOUCHED_TYPES + config.keep_untouched
+
+            def is_untouched(value):
+                untouched_types = UNTOUCHED_TYPES + config.keep_untouched
+
+                return isinstance(value, untouched_types) or value.__class__.__name__ == 'cython_function_or_method'
+
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
@@ -254,7 +259,7 @@ class ModelMetaclass(ABCMeta):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, Undefined)
                     if (
-                        isinstance(value, untouched_types)
+                        is_untouched(value)
                         and ann_type != PyObject
                         and not lenient_issubclass(getattr(ann_type, '__origin__', None), Type)
                     ):
@@ -273,7 +278,7 @@ class ModelMetaclass(ABCMeta):
                 if (
                     var_name not in annotations
                     and is_valid_field(var_name)
-                    and not isinstance(value, untouched_types)
+                    and not is_untouched(value)
                     and var_name not in class_vars
                 ):
                     validate_field_name(bases, var_name)
