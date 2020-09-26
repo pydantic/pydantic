@@ -91,7 +91,7 @@ class FieldInfo(Representation):
         self.min_length = kwargs.pop('min_length', None)
         self.max_length = kwargs.pop('max_length', None)
         self.regex = kwargs.pop('regex', None)
-        self.strict_union = kwargs.pop('strict_union', False)
+        self.strict_union = kwargs.pop('strict_union', None)
         self.extra = kwargs
 
 
@@ -112,7 +112,7 @@ def Field(
     min_length: int = None,
     max_length: int = None,
     regex: str = None,
-    strict_union: bool = False,
+    strict_union: bool = None,
     **extra: Any,
 ) -> Any:
     """

@@ -1905,8 +1905,8 @@ def test_strict_union_sanity():
     m = Model(fun=1)
     assert m.fun == 1
 
-    m = Model(fun="1")
-    assert m.fun == "1"
+    m = Model(fun='1')
+    assert m.fun == '1'
 
 
 def test_strict_union_inheritance():
@@ -1916,7 +1916,7 @@ def test_strict_union_inheritance():
     class Model(BaseModel):
         fun: Union[int, TestStr] = Field(..., strict_union=True)
 
-    test_str = TestStr("1")
+    test_str = TestStr('1')
     m = Model(fun=test_str)
     assert m.fun == test_str
 
@@ -1926,10 +1926,10 @@ def test_strict_union_disabled():
         fun: Union[str, int] = Field(..., strict_union=False)
 
     m = Model(fun=1)
-    assert m.fun == "1"
+    assert m.fun == '1'
 
-    m = Model(fun="1")
-    assert m.fun == "1"
+    m = Model(fun='1')
+    assert m.fun == '1'
 
 
 def test_strict_union_error():
