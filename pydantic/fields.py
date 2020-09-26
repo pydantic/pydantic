@@ -249,7 +249,6 @@ class ModelField(Representation):
         required: 'BoolUndefined' = Undefined,
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
-        strict_union: bool = False,
     ) -> None:
 
         self.name: str = name
@@ -263,7 +262,6 @@ class ModelField(Representation):
         self.required: 'BoolUndefined' = required
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
-        self.strict_union = strict_union
 
         self.allow_none: bool = False
         self.validate_always: bool = False
@@ -717,9 +715,9 @@ class ModelField(Representation):
             return result, None
 
     def _validate_strict_union(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+        self, sub_fields: List['ModelField'], v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
-        for field in self.sub_fields:
+        for field in sub_fields:
             if not isinstance(v, field.type_):
                 continue
             return field.validate(v, values, loc=loc, cls=cls)
@@ -731,7 +729,7 @@ class ModelField(Representation):
         if self.sub_fields:
             errors = []
             if self.field_info.strict_union and getattr(self.type_, '__origin__', None) is Union:
-                return self._validate_strict_union(v, values, loc=loc, cls=cls)
+                return self._validate_strict_union(self.sub_fields, v, values, loc=loc, cls=cls)
             for field in self.sub_fields:
                 value, error = field.validate(v, values, loc=loc, cls=cls)
                 if error:
