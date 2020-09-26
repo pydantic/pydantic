@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional
+from typing import ClassVar, Optional, Union
 
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
@@ -119,3 +119,7 @@ class AddProject:
 
 
 p = AddProject(name='x', slug='y', description='z')
+
+
+class TypeAliasAsAttribute(BaseModel):
+    __type_alias_attribute__ = Union[str, bytes]

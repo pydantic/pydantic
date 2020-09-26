@@ -1,10 +1,15 @@
 import os
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 import pytest
 
 from pydantic import BaseModel, BaseSettings, Field, NoneStr, ValidationError, dataclasses
-from pydantic.env_settings import SettingsError
+from pydantic.env_settings import SettingsError, read_env_file
+
+try:
+    import dotenv
+except ImportError:
+    dotenv = None
 
 
 class SimpleSettings(BaseSettings):
@@ -216,6 +221,107 @@ def test_env_inheritance_field(env):
     assert SettingsChild(foobar='abc').foobar == 'abc'
 
 
+def test_env_prefix_inheritance_config(env):
+    env.set('foobar', 'foobar')
+    env.set('prefix_foobar', 'prefix_foobar')
+
+    env.set('foobar_parent_from_field', 'foobar_parent_from_field')
+    env.set('foobar_child_from_field', 'foobar_child_from_field')
+
+    env.set('foobar_parent_from_config', 'foobar_parent_from_config')
+    env.set('foobar_child_from_config', 'foobar_child_from_config')
+
+    # . Child prefix does not override explicit parent field config
+    class Parent(BaseSettings):
+        foobar: str = Field(None, env='foobar_parent_from_field')
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+
+    assert Child().foobar == 'foobar_parent_from_field'
+
+    # c. Child prefix does not override explicit parent class config
+    class Parent(BaseSettings):
+        foobar: str = None
+
+        class Config:
+            fields = {
+                'foobar': {'env': ['foobar_parent_from_config']},
+            }
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+
+    assert Child().foobar == 'foobar_parent_from_config'
+
+    # d. Child prefix overrides parent with implicit config
+    class Parent(BaseSettings):
+        foobar: str = None
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+
+    assert Child().foobar == 'prefix_foobar'
+
+
+def test_env_inheritance_config(env):
+    env.set('foobar', 'foobar')
+    env.set('prefix_foobar', 'prefix_foobar')
+
+    env.set('foobar_parent_from_field', 'foobar_parent_from_field')
+    env.set('foobar_child_from_field', 'foobar_child_from_field')
+
+    env.set('foobar_parent_from_config', 'foobar_parent_from_config')
+    env.set('foobar_child_from_config', 'foobar_child_from_config')
+
+    # a. Child class config overrides prefix and parent field config
+    class Parent(BaseSettings):
+        foobar: str = Field(None, env='foobar_parent_from_field')
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+            fields = {
+                'foobar': {'env': ['foobar_child_from_config']},
+            }
+
+    assert Child().foobar == 'foobar_child_from_config'
+
+    # b. Child class config overrides prefix and parent class config
+    class Parent(BaseSettings):
+        foobar: str = None
+
+        class Config:
+            fields = {
+                'foobar': {'env': ['foobar_parent_from_config']},
+            }
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+            fields = {
+                'foobar': {'env': ['foobar_child_from_config']},
+            }
+
+    assert Child().foobar == 'foobar_child_from_config'
+
+    # . Child class config overrides prefix and parent with implicit config
+    class Parent(BaseSettings):
+        foobar: Optional[str]
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+            fields = {
+                'foobar': {'env': ['foobar_child_from_field']},
+            }
+
+    assert Child().foobar == 'foobar_child_from_field'
+
+
 def test_env_invalid(env):
     with pytest.raises(TypeError, match=r'invalid field env: 123 \(int\); should be string, list or set'):
 
@@ -315,7 +421,7 @@ def test_env_takes_precedence(env):
         foo: int
         bar: str
 
-        def _build_values(self, init_kwargs):
+        def _build_values(self, init_kwargs, _env_file, _env_file_encoding):
             return {**init_kwargs, **self._build_environ()}
 
     env.set('BAR', 'env setting')
@@ -335,7 +441,7 @@ def test_config_file_settings_nornir(env):
         b: str
         c: str
 
-        def _build_values(self, init_kwargs):
+        def _build_values(self, init_kwargs, _env_file, _env_file_encoding):
             config_settings = init_kwargs.pop('__config_settings__')
             return {**config_settings, **init_kwargs, **self._build_environ()}
 
@@ -346,6 +452,225 @@ def test_config_file_settings_nornir(env):
     assert s.a == 'config a'
     assert s.b == 'argument b'
     assert s.c == 'env setting c'
+
+
+test_env_file = """\
+# this is a comment
+A=good string
+# another one, followed by whitespace
+
+b='better string'
+c="best string"
+"""
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_config(env, tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(test_env_file)
+
+    class Settings(BaseSettings):
+        a: str
+        b: str
+        c: str
+
+        class Config:
+            env_file = p
+
+    env.set('A', 'overridden var')
+
+    s = Settings()
+    assert s.a == 'overridden var'
+    assert s.b == 'better string'
+    assert s.c == 'best string'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_config_case_sensitive(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(test_env_file)
+
+    class Settings(BaseSettings):
+        a: str
+        b: str
+        c: str
+
+        class Config:
+            env_file = p
+            case_sensitive = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        Settings()
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_export(env, tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(
+        """\
+export A='good string'
+export B=better-string
+export C="best string"
+"""
+    )
+
+    class Settings(BaseSettings):
+        a: str
+        b: str
+        c: str
+
+        class Config:
+            env_file = p
+
+    env.set('A', 'overridden var')
+
+    s = Settings()
+    assert s.a == 'overridden var'
+    assert s.b == 'better-string'
+    assert s.c == 'best string'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_config_custom_encoding(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('pika=p!±@', encoding='latin-1')
+
+    class Settings(BaseSettings):
+        pika: str
+
+        class Config:
+            env_file = p
+            env_file_encoding = 'latin-1'
+
+    s = Settings()
+    assert s.pika == 'p!±@'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_none(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('a')
+
+    class Settings(BaseSettings):
+        a: str = 'xxx'
+
+    s = Settings(_env_file=p)
+    assert s.a == 'xxx'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_override_file(tmp_path):
+    p1 = tmp_path / '.env'
+    p1.write_text(test_env_file)
+    p2 = tmp_path / '.env.prod'
+    p2.write_text('A="new string"')
+
+    class Settings(BaseSettings):
+        a: str
+
+        class Config:
+            env_file = str(p1)
+
+    s = Settings(_env_file=p2)
+    assert s.a == 'new string'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_override_none(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(test_env_file)
+
+    class Settings(BaseSettings):
+        a: str = None
+
+        class Config:
+            env_file = p
+
+    s = Settings(_env_file=None)
+    assert s.a is None
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_not_a_file(env):
+    class Settings(BaseSettings):
+        a: str = None
+
+    env.set('A', 'ignore non-file')
+    s = Settings(_env_file='tests/')
+    assert s.a == 'ignore non-file'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_env_file_cast_sensitive(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('a="test"\nB=123')
+
+    assert read_env_file(p) == {'a': 'test', 'b': '123'}
+    assert read_env_file(p, case_sensitive=True) == {'a': 'test', 'B': '123'}
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_env_file_syntax_wrong(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('NOT_AN_ASSIGNMENT')
+
+    assert read_env_file(p, case_sensitive=True) == {'NOT_AN_ASSIGNMENT': None}
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_example(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text(
+        """\
+# ignore comment
+ENVIRONMENT="production"
+REDIS_ADDRESS=localhost:6379
+MEANING_OF_LIFE=42
+MY_VAR='Hello world'
+"""
+    )
+
+    class Settings(BaseSettings):
+        environment: str
+        redis_address: str
+        meaning_of_life: int
+        my_var: str
+
+    s = Settings(_env_file=str(p))
+    assert s.dict() == {
+        'environment': 'production',
+        'redis_address': 'localhost:6379',
+        'meaning_of_life': 42,
+        'my_var': 'Hello world',
+    }
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_custom_encoding(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('pika=p!±@', encoding='latin-1')
+
+    class Settings(BaseSettings):
+        pika: str
+
+    with pytest.raises(UnicodeDecodeError):
+        Settings(_env_file=str(p))
+
+    s = Settings(_env_file=str(p), _env_file_encoding='latin-1')
+    assert s.dict() == {'pika': 'p!±@'}
+
+
+@pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
+def test_dotenv_not_installed(tmp_path):
+    p = tmp_path / '.env'
+    p.write_text('a=b')
+
+    class Settings(BaseSettings):
+        a: str
+
+    with pytest.raises(ImportError, match=r'^python-dotenv is not installed, run `pip install pydantic\[dotenv\]`$'):
+        Settings(_env_file=p)
 
 
 def test_alias_set(env):
@@ -376,3 +701,32 @@ def test_alias_set(env):
     assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'spam default'}
     env.set('spam', 'sss')
     assert SubSettings().dict() == {'foo': 'fff', 'bar': 'bbb', 'spam': 'sss'}
+
+
+def test_prefix_on_parent(env):
+    class MyBaseSettings(BaseSettings):
+        var: str = 'old'
+
+    class MySubSettings(MyBaseSettings):
+        class Config:
+            env_prefix = 'PREFIX_'
+
+    assert MyBaseSettings().dict() == {'var': 'old'}
+    assert MySubSettings().dict() == {'var': 'old'}
+    env.set('PREFIX_VAR', 'new')
+    assert MyBaseSettings().dict() == {'var': 'old'}
+    assert MySubSettings().dict() == {'var': 'new'}
+
+
+def test_frozenset(env):
+    class Settings(BaseSettings):
+        foo: str = 'default foo'
+
+        class Config:
+            fields = {'foo': {'env': frozenset(['foo_a', 'foo_b'])}}
+
+    assert Settings.__fields__['foo'].field_info.extra['env_names'] == frozenset({'foo_a', 'foo_b'})
+
+    assert Settings().dict() == {'foo': 'default foo'}
+    env.set('foo_a', 'x')
+    assert Settings().dict() == {'foo': 'x'}

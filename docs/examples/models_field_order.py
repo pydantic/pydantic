@@ -1,11 +1,13 @@
 from pydantic import BaseModel, ValidationError
 
+
 class Model(BaseModel):
     a: int
     b = 2
     c: int = 1
     d = 0
     e: float
+
 
 print(Model.__fields__.keys())
 m = Model(e=2, a=1)

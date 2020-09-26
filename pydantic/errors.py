@@ -1,8 +1,11 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Set, Tuple, Type, Union
 
-from .typing import AnyType, display_as_type
+from .typing import display_as_type
+
+if TYPE_CHECKING:
+    from .typing import DictStrAny
 
 # explicitly state exports to avoid "from .errors import *" also importing Decimal, Path etc.
 __all__ = (
@@ -24,6 +27,7 @@ __all__ = (
     'UrlUserInfoError',
     'UrlHostError',
     'UrlHostTldError',
+    'UrlPortError',
     'UrlExtraError',
     'EnumError',
     'IntegerError',
@@ -61,6 +65,7 @@ __all__ = (
     'DateError',
     'TimeError',
     'DurationError',
+    'HashableError',
     'UUIDError',
     'UUIDVersionError',
     'ArbitraryTypeError',
@@ -90,6 +95,17 @@ __all__ = (
 )
 
 
+def cls_kwargs(cls: Type['PydanticErrorMixin'], ctx: 'DictStrAny') -> 'PydanticErrorMixin':
+    """
+    For built-in exceptions like ValueError or TypeError, we need to implement
+    __reduce__ to override the default behaviour (instead of __getstate__/__setstate__)
+    By default pickle protocol 2 calls `cls.__new__(cls, *args)`.
+    Since we only use kwargs, we need a little constructor to change that.
+    Note: the callable can't be a lambda as pickle looks in the namespace to find it
+    """
+    return cls(**ctx)
+
+
 class PydanticErrorMixin:
     code: str
     msg_template: str
@@ -99,6 +115,9 @@ class PydanticErrorMixin:
 
     def __str__(self) -> str:
         return self.msg_template.format(**self.__dict__)
+
+    def __reduce__(self) -> Tuple[Callable[..., 'PydanticErrorMixin'], Tuple[Type['PydanticErrorMixin'], 'DictStrAny']]:
+        return cls_kwargs, (self.__class__, self.__dict__)
 
 
 class PydanticTypeError(PydanticErrorMixin, TypeError):
@@ -187,6 +206,11 @@ class UrlHostTldError(UrlError):
     msg_template = 'URL host invalid, top level domain required'
 
 
+class UrlPortError(UrlError):
+    code = 'url.port'
+    msg_template = 'URL port invalid, port cannot exceed 65535'
+
+
 class UrlExtraError(UrlError):
     code = 'url.extra'
     msg_template = 'URL invalid, extra characters found after valid URL: {extra!r}'
@@ -238,6 +262,10 @@ class SequenceError(PydanticTypeError):
     msg_template = 'value is not a valid sequence'
 
 
+class IterableError(PydanticTypeError):
+    msg_template = 'value is not a valid iterable'
+
+
 class ListError(PydanticTypeError):
     msg_template = 'value is not a valid list'
 
@@ -272,6 +300,22 @@ class ListMinLengthError(PydanticValueError):
 
 class ListMaxLengthError(PydanticValueError):
     code = 'list.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class SetMinLengthError(PydanticValueError):
+    code = 'set.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class SetMaxLengthError(PydanticValueError):
+    code = 'set.max_items'
     msg_template = 'ensure this value has at most {limit_value} items'
 
     def __init__(self, *, limit_value: int) -> None:
@@ -388,6 +432,10 @@ class DurationError(PydanticValueError):
     msg_template = 'invalid duration format'
 
 
+class HashableError(PydanticTypeError):
+    msg_template = 'value is not a valid hashable'
+
+
 class UUIDError(PydanticTypeError):
     msg_template = 'value is not a valid uuid'
 
@@ -404,7 +452,7 @@ class ArbitraryTypeError(PydanticTypeError):
     code = 'arbitrary_type'
     msg_template = 'instance of {expected_arbitrary_type} expected'
 
-    def __init__(self, *, expected_arbitrary_type: AnyType) -> None:
+    def __init__(self, *, expected_arbitrary_type: Type[Any]) -> None:
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
 
 
@@ -417,7 +465,7 @@ class SubclassError(PydanticTypeError):
     code = 'subclass'
     msg_template = 'subclass of {expected_class} expected'
 
-    def __init__(self, *, expected_class: AnyType) -> None:
+    def __init__(self, *, expected_class: Type[Any]) -> None:
         super().__init__(expected_class=display_as_type(expected_class))
 
 

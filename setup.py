@@ -6,6 +6,37 @@ from pathlib import Path
 
 from setuptools import setup
 
+if os.name == 'nt':
+    from distutils.command import build_ext
+
+    def get_export_symbols(self, ext):
+        """
+        Slightly modified from:
+        https://github.com/python/cpython/blob/8849e5962ba481d5d414b3467a256aba2134b4da\
+        /Lib/distutils/command/build_ext.py#L686-L703
+        """
+        # Patch from: https://bugs.python.org/issue35893
+        parts = ext.name.split('.')
+        if parts[-1] == '__init__':
+            suffix = parts[-2]
+        else:
+            suffix = parts[-1]
+
+        # from here on unchanged
+        try:
+            # Unicode module name support as defined in PEP-489
+            # https://www.python.org/dev/peps/pep-0489/#export-hook-name
+            suffix.encode('ascii')
+        except UnicodeEncodeError:
+            suffix = 'U' + suffix.encode('punycode').replace(b'-', b'_').decode('ascii')
+
+        initfunc_name = 'PyInit_' + suffix
+        if initfunc_name not in ext.export_symbols:
+            ext.export_symbols.append(initfunc_name)
+        return ext.export_symbols
+
+    build_ext.build_ext.get_export_symbols = get_export_symbols
+
 
 class ReplaceLinks:
     def __init__(self):
@@ -55,7 +86,7 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not 
         ext_modules = cythonize(
             'pydantic/*.py',
             exclude=['pydantic/generics.py'],
-            nthreads=4,
+            nthreads=int(os.getenv('CYTHON_NTHREADS', 0)),
             language_level=3,
             compiler_directives=compiler_directives,
         )
@@ -98,7 +129,8 @@ setup(
     ],
     extras_require={
         'email': ['email-validator>=1.0.3'],
-        'typing_extensions': ['typing-extensions>=3.7.2']
+        'typing_extensions': ['typing-extensions>=3.7.2'],
+        'dotenv': ['python-dotenv>=0.10.4'],
     },
     ext_modules=ext_modules,
 )

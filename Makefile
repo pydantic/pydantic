@@ -1,10 +1,10 @@
 .DEFAULT_GOAL := all
-isort = isort -rc pydantic tests
-black = black -S -l 120 --target-version py36 pydantic tests
+isort = isort pydantic tests
+black = black -S -l 120 --target-version py38 pydantic tests
 
 .PHONY: install
 install:
-	pip install -U setuptools pip
+	python -m pip install -U setuptools pip
 	pip install -U -r requirements.txt
 	SKIP_CYTHON=1 pip install -e .
 
@@ -24,8 +24,8 @@ format:
 .PHONY: lint
 lint:
 	flake8 pydantic/ tests/
-	$(isort) --check-only
-	$(black) --check
+	$(isort) --check-only --df
+	$(black) --check --diff
 
 .PHONY: check-dist
 check-dist:
@@ -58,7 +58,7 @@ test-examples:
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
 
 .PHONY: all
-all: testcov lint mypy
+all: lint mypy testcov
 
 .PHONY: benchmark-all
 benchmark-all:
@@ -67,6 +67,10 @@ benchmark-all:
 .PHONY: benchmark-pydantic
 benchmark-pydantic:
 	python benchmarks/run.py pydantic-only
+
+.PHONY: benchmark-json
+benchmark-json:
+	TEST_JSON=1 python benchmarks/run.py
 
 .PHONY: clean
 clean:
@@ -88,23 +92,30 @@ clean:
 	rm -rf site
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
+	rm -rf fastapi/test.db
+	rm -rf codecov.sh
+	rm -rf coverage.xml
 
 .PHONY: docs
 docs:
-	./docs/build/main.py
+	flake8 --max-line-length=80 docs/examples/
+	python docs/build/main.py
 	mkdocs build
-	@# to work with the old sphinx build and deploy:
-	@rm -rf docs/_build/
-	@mkdir docs/_build/
-	@cp -r site docs/_build/html
 
 .PHONY: docs-serve
 docs-serve:
-	./docs/build/main.py
+	python docs/build/main.py
 	mkdocs serve
 
-.PHONY: publish
-publish: docs
+.PHONY: publish-docs
+publish-docs: docs
 	zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
 	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
+
+fastapi:
+	git clone https://github.com/tiangolo/fastapi.git
+
+.PHONY: test-fastapi
+test-fastapi: install fastapi
+	./tests/test_fastapi.sh

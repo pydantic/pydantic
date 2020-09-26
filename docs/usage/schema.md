@@ -41,11 +41,14 @@ It has the following arguments:
 * `default`: (a positional argument) the default value of the field.
     Since the `Field` replaces the field's default, this first argument can be used to set the default.
     Use ellipsis (`...`) to indicate the field is required.
+* `default_factory`: a zero-argument callable that will be called when a default value is needed for this field.
+    Among other purposes, this can be used to set dynamic default values.
+    It is forbidden to set both `default` and `default_factory`.
 * `alias`: the public name of the field
 * `title`: if omitted, `field_name.title()` is used
 * `description`: if omitted and the annotation is a sub-model,
     the docstring of the sub-model will be used
-* `const`: this argument *must* have be the same as the field's default value if present
+* `const`: this argument *must* be the same as the field's default value if present.
 * `gt`: for numeric values (``int``, `float`, `Decimal`), adds a validation of "greater than" and an annotation
   of `exclusiveMinimum` to the JSON Schema
 * `ge`: for numeric values, this adds a validation of "greater than or equal" and an annotation of `minimum` to the
@@ -66,6 +69,23 @@ It has the following arguments:
   JSON Schema
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
   annotation of `pattern` to the JSON Schema
+
+    !!! note
+        *pydantic* validates strings using `re.match`,
+        which treats regular expressions as implicitly anchored at the beginning.
+        On the contrary,
+        JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
+        more like what `re.search` does.
+
+        For interoperability, depending on your desired behavior,
+        either explicitly anchor your regular expressions with `^`
+        (e.g. `^foo` to match any string starting with `foo`),
+        or explicitly allow an arbitrary prefix with `.*?`
+        (e.g. `.*?foo` to match any string containing the substring `foo`).
+
+        See [#1631](https://github.com/samuelcolvin/pydantic/issues/1631)
+        for a discussion of possible changes to *pydantic* behavior in **v2**.
+
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used
@@ -73,7 +93,7 @@ to set all of the arguments above except `default`.
 
 ### Unenforced Field constraints
 
-If *pydantic* finds constraints which are not being enforced, an error will be raised. If you want to force the 
+If *pydantic* finds constraints which are not being enforced, an error will be raised. If you want to force the
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
 to `Field()` with the raw schema attribute name:
 
@@ -81,6 +101,11 @@ to `Field()` with the raw schema attribute name:
 {!.tmp_examples/schema_unenforced_constraints.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+## Modifying schema in custom fields
+
+Custom field types can customise the schema generated for them using the `__modify_schema__` class method;
+see [Custom Data Types](types.md#custom-data-types) for more details.
 
 ## JSON Schema Types
 
@@ -145,4 +170,24 @@ Outputs:
 
 ```json
 {!.tmp_examples/schema_with_example.json!}
+```
+
+For more fine-grained control, you can alternatively set `schema_extra` to a callable and post-process the generated schema.
+The callable can have one or two positional arguments.
+The first will be the schema dictionary.
+The second, if accepted, will be the model class.
+The callable is expected to mutate the schema dictionary *in-place*; the return value is not used.
+
+For example, the `title` key can be removed from the model's `properties`:
+
+```py
+{!.tmp_examples/schema_extra_callable.py!}
+```
+
+_(This script is complete, it should run "as is")_
+
+Outputs:
+
+```json
+{!.tmp_examples/schema_extra_callable.json!}
 ```

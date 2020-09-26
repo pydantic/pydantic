@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 import tempfile
@@ -6,18 +7,20 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NewType, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NewType, Optional, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, ValidationError, conlist, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
 from pydantic.color import Color
+from pydantic.dataclasses import dataclass
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
+    model_process_schema,
     model_schema,
     schema,
 )
@@ -60,11 +63,6 @@ try:
 except ImportError:
     email_validator = None
 
-try:
-    import typing_extensions
-except ImportError:
-    typing_extensions = None
-
 
 def test_key():
     class ApplePie(BaseModel):
@@ -99,7 +97,7 @@ def test_by_alias():
             title = 'Apple Pie'
             fields = {'a': 'Snap', 'b': 'Crackle'}
 
-    s = {
+    assert ApplePie.schema() == {
         'type': 'object',
         'title': 'Apple Pie',
         'properties': {
@@ -108,9 +106,27 @@ def test_by_alias():
         },
         'required': ['Snap'],
     }
-    assert ApplePie.schema() == s
     assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
+
+
+def test_by_alias_generator():
+    class ApplePie(BaseModel):
+        a: float
+        b: int = 10
+
+        class Config:
+            @staticmethod
+            def alias_generator(x):
+                return x.upper()
+
+    assert ApplePie.schema() == {
+        'title': 'ApplePie',
+        'type': 'object',
+        'properties': {'A': {'title': 'A', 'type': 'number'}, 'B': {'title': 'B', 'default': 10, 'type': 'integer'}},
+        'required': ['A'],
+    }
+    assert ApplePie.schema(by_alias=False)['properties'].keys() == {'a', 'b'}
 
 
 def test_sub_model():
@@ -190,14 +206,47 @@ def test_choices():
         spam: SpamEnum = Field(None)
 
     assert Model.schema() == {
-        'type': 'object',
         'title': 'Model',
+        'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'enum': ['f', 'b']},
-            'bar': {'type': 'integer', 'title': 'Bar', 'enum': [1, 2]},
-            'spam': {'type': 'string', 'title': 'Spam', 'enum': ['f', 'b']},
+            'foo': {'$ref': '#/definitions/FooEnum'},
+            'bar': {'$ref': '#/definitions/BarEnum'},
+            'spam': {'$ref': '#/definitions/SpamEnum'},
         },
         'required': ['foo', 'bar'],
+        'definitions': {
+            'FooEnum': {'title': 'FooEnum', 'description': 'An enumeration.', 'enum': ['f', 'b']},
+            'BarEnum': {'title': 'BarEnum', 'description': 'An enumeration.', 'type': 'integer', 'enum': [1, 2]},
+            'SpamEnum': {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']},
+        },
+    }
+
+
+def test_enum_modify_schema():
+    class SpamEnum(str, Enum):
+        foo = 'f'
+        bar = 'b'
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema['tsEnumNames'] = [e.name for e in cls]
+
+    class Model(BaseModel):
+        spam: SpamEnum = Field(None)
+
+    assert Model.schema() == {
+        'definitions': {
+            'SpamEnum': {
+                'description': 'An enumeration.',
+                'enum': ['f', 'b'],
+                'title': 'SpamEnum',
+                'tsEnumNames': ['foo', 'bar'],
+                'type': 'string',
+            }
+        },
+        'properties': {'spam': {'$ref': '#/definitions/SpamEnum'}},
+        'title': 'Model',
+        'type': 'object',
     }
 
 
@@ -512,10 +561,12 @@ def test_str_constrained_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
-    base_schema['properties']['a'] = expected_schema
+    model_schema = Model.schema()
+    assert model_schema['properties']['a'] == expected_schema
 
-    assert Model.schema() == base_schema
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': expected_schema}, 'required': ['a']}
+
+    assert model_schema == base_schema
 
 
 @pytest.mark.parametrize(
@@ -563,7 +614,7 @@ def test_secret_types(field_type, inner_type):
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True}},
+        'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True, 'format': 'password'}},
         'required': ['a'],
     }
 
@@ -666,12 +717,16 @@ def test_path_types(field_type, expected_schema):
 def test_json_type():
     class Model(BaseModel):
         a: Json
+        b: Json[int]
 
-    model_schema = Model.schema()
-    assert model_schema == {
+    assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'json-string'}},
+        'properties': {
+            'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
+            'b': {'title': 'B', 'type': 'integer'},
+        },
+        'required': ['b'],
     }
 
 
@@ -939,6 +994,25 @@ def test_schema_overrides():
     }
 
 
+def test_schema_overrides_w_union():
+    class Foo(BaseModel):
+        pass
+
+    class Bar(BaseModel):
+        pass
+
+    class Spam(BaseModel):
+        a: Union[Foo, Bar] = Field(..., description='xxx')
+
+    assert Spam.schema()['properties'] == {
+        'a': {
+            'title': 'A',
+            'description': 'xxx',
+            'anyOf': [{'$ref': '#/definitions/Foo'}, {'$ref': '#/definitions/Bar'}],
+        },
+    }
+
+
 def test_schema_from_models():
     class Foo(BaseModel):
         a: str
@@ -1099,6 +1173,10 @@ def test_dict_default():
         ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
         ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
         ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
+        ({'gt': -math.inf}, float, {'type': 'number'}),
+        ({'lt': math.inf}, float, {'type': 'number'}),
+        ({'ge': -math.inf}, float, {'type': 'number'}),
+        ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
         ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
         ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),
@@ -1135,6 +1213,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'gt': 0}, Callable),
         ({'gt': 0}, Callable[[int], int]),
         ({'gt': 0}, conlist(int, min_items=4)),
+        ({'gt': 0}, conset(int, min_items=4)),
     ],
 )
 def test_unenforced_constraints_schema(kwargs, type_):
@@ -1434,7 +1513,7 @@ def test_new_type_schema():
     }
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed and python version < 3.8')
 def test_literal_schema():
     class Model(BaseModel):
         a: Literal[1]
@@ -1480,6 +1559,62 @@ def test_model_with_schema_extra():
         'required': ['a'],
         'examples': [{'a': 'Foo'}],
     }
+
+
+def test_model_with_schema_extra_callable():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            @staticmethod
+            def schema_extra(schema, model_class):
+                schema.pop('properties')
+                schema['type'] = 'override'
+                assert model_class is Model
+
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_model_with_schema_extra_callable_no_model_class():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            @staticmethod
+            def schema_extra(schema):
+                schema.pop('properties')
+                schema['type'] = 'override'
+
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_model_with_schema_extra_callable_classmethod():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            type = 'foo'
+
+            @classmethod
+            def schema_extra(cls, schema, model_class):
+                schema.pop('properties')
+                schema['type'] = cls.type
+                assert model_class is Model
+
+    assert Model.schema() == {'title': 'Model', 'type': 'foo'}
+
+
+def test_model_with_schema_extra_callable_instance_method():
+    class Model(BaseModel):
+        name: str = None
+
+        class Config:
+            def schema_extra(schema, model_class):
+                schema.pop('properties')
+                schema['type'] = 'override'
+                assert model_class is Model
+
+    assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
 def test_model_with_extra_forbidden():
@@ -1590,39 +1725,6 @@ def test_real_vs_phony_constraints():
     )
 
 
-def test_conlist():
-    class Model(BaseModel):
-        foo: List[int] = Field(..., min_items=2, max_items=4)
-
-    assert Model(foo=[1, 2]).dict() == {'foo': [1, 2]}
-
-    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
-        Model(foo=[1])
-
-    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
-        Model(foo=list(range(5)))
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4}
-        },
-        'required': ['foo'],
-    }
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(foo=[1, 'x', 'y'])
-    assert exc_info.value.errors() == [
-        {'loc': ('foo', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('foo', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(foo=1)
-    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
-
-
 def test_subfield_field_info():
     class MyModel(BaseModel):
         entries: Dict[str, List[int]]
@@ -1638,4 +1740,143 @@ def test_subfield_field_info():
             }
         },
         'required': ['entries'],
+    }
+
+
+def test_dataclass():
+    @dataclass
+    class Model:
+        a: bool
+
+    assert schema([Model]) == {
+        'definitions': {
+            'Model': {
+                'title': 'Model',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+                'required': ['a'],
+            }
+        }
+    }
+
+    assert model_schema(Model) == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+        'required': ['a'],
+    }
+
+
+def test_schema_attributes():
+    class ExampleEnum(Enum):
+        """This is a test description."""
+
+        gt = 'GT'
+        lt = 'LT'
+        ge = 'GE'
+        le = 'LE'
+        max_length = 'ML'
+        multiple_of = 'MO'
+        regex = 'RE'
+
+    class Example(BaseModel):
+        example: ExampleEnum
+
+    assert Example.schema() == {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {'example': {'$ref': '#/definitions/ExampleEnum'}},
+        'required': ['example'],
+        'definitions': {
+            'ExampleEnum': {
+                'title': 'ExampleEnum',
+                'description': 'This is a test description.',
+                'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE'],
+            }
+        },
+    }
+
+
+def test_model_process_schema_enum():
+    class SpamEnum(str, Enum):
+        foo = 'f'
+        bar = 'b'
+
+    model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
+    print(model_schema)
+    assert model_schema == {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']}
+
+
+def test_path_modify_schema():
+    class MyPath(Path):
+        @classmethod
+        def __modify_schema__(cls, schema):
+            schema.update(foobar=123)
+
+    class Model(BaseModel):
+        path1: Path
+        path2: MyPath
+        path3: List[MyPath]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'path1': {'title': 'Path1', 'type': 'string', 'format': 'path'},
+            'path2': {'title': 'Path2', 'type': 'string', 'format': 'path', 'foobar': 123},
+            'path3': {'title': 'Path3', 'type': 'array', 'items': {'type': 'string', 'format': 'path', 'foobar': 123}},
+        },
+        'required': ['path1', 'path2', 'path3'],
+    }
+
+
+def test_frozen_set():
+    class Model(BaseModel):
+        a: FrozenSet[int] = frozenset({1, 2, 3})
+        b: FrozenSet = frozenset({1, 2, 3})
+        c: frozenset = frozenset({1, 2, 3})
+        d: frozenset = ...
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {
+                'title': 'A',
+                'default': frozenset({1, 2, 3}),
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'uniqueItems': True,
+            },
+            'b': {'title': 'B', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'd': {'title': 'D', 'type': 'array', 'items': {}, 'uniqueItems': True},
+        },
+        'required': ['d'],
+    }
+
+
+def test_iterable():
+    class Model(BaseModel):
+        a: Iterable[int]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}},
+        'required': ['a'],
+    }
+
+
+def test_new_type():
+    new_type = NewType('NewStr', str)
+
+    class Model(BaseModel):
+        a: new_type
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
     }

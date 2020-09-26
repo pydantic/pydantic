@@ -10,7 +10,7 @@ from rest_framework import __version__, serializers
 
 
 class TestDRF:
-    package = 'django-restful-framework'
+    package = 'django-rest-framework'
     version = __version__
 
     def __init__(self, allow_extra):

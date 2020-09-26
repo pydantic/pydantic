@@ -1,23 +1,26 @@
 from pydantic import BaseModel, SecretStr
 
+
 class User(BaseModel):
     id: int
     username: str
     password: SecretStr
+
 
 class Transaction(BaseModel):
     id: str
     user: User
     value: int
 
+
 t = Transaction(
-    id="1234567890",
+    id='1234567890',
     user=User(
         id=42,
-        username="JohnDoe",
-        password="hashedpassword"
+        username='JohnDoe',
+        password='hashedpassword'
     ),
-    value=9876543210
+    value=9876543210,
 )
 
 # using a set:

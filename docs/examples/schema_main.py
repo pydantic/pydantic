@@ -2,9 +2,11 @@
 from enum import Enum
 from pydantic import BaseModel, Field
 
+
 class FooBar(BaseModel):
     count: int
     size: float = None
+
 
 class Gender(str, Enum):
     male = 'male'
@@ -12,10 +14,12 @@ class Gender(str, Enum):
     other = 'other'
     not_given = 'not_given'
 
+
 class MainModel(BaseModel):
     """
     This is the description of the main model
     """
+
     foo_bar: FooBar = Field(...)
     gender: Gender = Field(None, alias='Gender')
     snap: int = Field(
@@ -29,5 +33,6 @@ class MainModel(BaseModel):
     class Config:
         title = 'Main'
 
-# this is equivilant of json.dumps(MainModel.schema(), indent=2):
+
+# this is equivalent to json.dumps(MainModel.schema(), indent=2):
 print(MainModel.schema_json(indent=2))

@@ -1,3 +1,4 @@
+import json
 from typing import Dict, List, Mapping
 
 import pytest
@@ -76,3 +77,14 @@ def test_parse_file_as(tmp_path):
     p = tmp_path / 'test.json'
     p.write_text('{"1": "2"}')
     assert parse_file_as(Dict[int, int], p) == {1: 2}
+
+
+def test_parse_file_as_json_loads(tmp_path):
+    def custom_json_loads(*args, **kwargs):
+        data = json.loads(*args, **kwargs)
+        data[1] = 99
+        return data
+
+    p = tmp_path / 'test_json_loads.json'
+    p.write_text('{"1": "2"}')
+    assert parse_file_as(Dict[int, int], p, json_loads=custom_json_loads) == {1: 99}

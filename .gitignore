@@ -1,10 +1,12 @@
 .idea/
 env/
+venv/
 env36/
 env37/
 env38/
 *.py[cod]
 *.egg-info/
+.python-version
 /build/
 dist/
 .cache/
@@ -26,3 +28,6 @@ pydantic/*.c
 pydantic/*.so
 .auto-format
 /sandbox/
+/.ghtopdep_cache/
+/fastapi/
+/codecov.sh

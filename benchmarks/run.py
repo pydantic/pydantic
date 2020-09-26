@@ -18,33 +18,45 @@ from test_pydantic import TestPydantic
 try:
     from test_trafaret import TestTrafaret
 except Exception:
+    print('WARNING: unable to import TestTrafaret')
     TestTrafaret = None
 
 try:
     from test_drf import TestDRF
 except Exception:
+    print('WARNING: unable to import TestDRF')
     TestDRF = None
 
 try:
     from test_marshmallow import TestMarshmallow
 except Exception:
+    print('WARNING: unable to import TestMarshmallow')
     TestMarshmallow = None
 
 
 try:
     from test_valideer import TestValideer
 except Exception:
+    print('WARNING: unable to import TestValideer')
     TestValideer = None
 
 try:
     from test_cattrs import TestCAttrs
 except Exception:
-    TestCAttr = None
+    print('WARNING: unable to import TestCAttrs')
+    TestCAttrs = None
 
 try:
     from test_cerberus import TestCerberus
 except Exception:
+    print('WARNING: unable to import TestCerberus')
     TestCerberus = None
+
+try:
+    from test_voluptuous import TestVoluptuous
+except Exception as e:
+    print('WARNING: unable to import TestVoluptuous')
+    TestVoluptuous = None
 
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
@@ -53,11 +65,8 @@ ALL = PUNCTUATION * 5 + LETTERS * 20 + UNICODE
 random = random.SystemRandom()
 
 # in order of performance for csv
-other_tests = [
-    t for t in
-    [TestCAttrs, TestValideer, TestMarshmallow, TestTrafaret, TestDRF, TestCerberus]
-    if t is not None
-]
+other_tests = [TestCAttrs, TestValideer, TestMarshmallow, TestVoluptuous, TestTrafaret, TestDRF, TestCerberus]
+active_other_tests = [t for t in other_tests if t is not None]
 
 
 class GenerateData:
@@ -147,6 +156,49 @@ def stdev(d):
     except StatisticsError:
         return 0
 
+def run_tests(classes, cases, repeats, json=False):
+    if json:
+        classes = [c for c in classes if hasattr(c, 'to_json')]
+    lpad = max(len(t.package) for t in classes) + 4
+    print(f'testing {", ".join(t.package for t in classes)}, {repeats} times each')
+    results = []
+    csv_results = []
+
+    for test_class in classes:
+        times = []
+        p = test_class.package
+        for i in range(repeats):
+            count, pass_count = 0, 0
+            test = test_class(True)
+            models = []
+            if json:
+                models = [m for passed, m in (test.validate(c) for c in cases) if passed]
+            start = datetime.now()
+            for j in range(3):
+                if json:
+                    for model in models:
+                        test.to_json(model)
+                        pass_count += 1
+                        count += 1
+                else:
+                    for case in cases:
+                        passed, result = test.validate(case)
+                        pass_count += passed
+                        count += 1
+            time = (datetime.now() - start).total_seconds()
+            success = pass_count / count * 100
+            print(f'{p:>{lpad}} ({i+1:>{len(str(repeats))}}/{repeats}) time={time:0.3f}s, success={success:0.2f}%')
+            times.append(time)
+        print(f'{p:>{lpad}} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
+        model_count = 3 * len(cases)
+        avg = mean(times) / model_count * 1e6
+        sd = stdev(times) / model_count * 1e6
+        results.append(f'{p:>{lpad}} best={min(times) / model_count * 1e6:0.3f}μs/iter '
+                       f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter version={test_class.version}')
+        csv_results.append([p, test_class.version, avg])
+        print()
+
+    return results, csv_results
 
 def main():
     json_path = THIS_DIR / 'cases.json'
@@ -161,35 +213,11 @@ def main():
 
     tests = [TestPydantic]
     if 'pydantic-only' not in sys.argv:
-        tests += other_tests
+        tests += active_other_tests
 
     repeats = int(os.getenv('BENCHMARK_REPEATS', '5'))
-    results = []
-    csv_results = []
-    for test_class in tests:
-        times = []
-        p = test_class.package
-        for i in range(repeats):
-            count, pass_count = 0, 0
-            start = datetime.now()
-            test = test_class(True)
-            for i in range(3):
-                for case in cases:
-                    passed, result = test.validate(case)
-                    count += 1
-                    pass_count += passed
-            time = (datetime.now() - start).total_seconds()
-            success = pass_count / count * 100
-            print(f'{p:>40} time={time:0.3f}s, success={success:0.2f}%')
-            times.append(time)
-        print(f'{p:>40} best={min(times):0.3f}s, avg={mean(times):0.3f}s, stdev={stdev(times):0.3f}s')
-        model_count = 3 * len(cases)
-        avg = mean(times) / model_count * 1e6
-        sd = stdev(times) / model_count * 1e6
-        results.append(f'{p:>40} best={min(times) / model_count * 1e6:0.3f}μs/iter '
-                       f'avg={avg:0.3f}μs/iter stdev={sd:0.3f}μs/iter')
-        csv_results.append([p, test_class.version, avg])
-        print()
+    test_json = 'TEST_JSON' in os.environ
+    results, csv_results = run_tests(tests, cases, repeats, test_json)
 
     for r in results:
         print(r)
@@ -227,7 +255,7 @@ def diff():
 
     allow_extra = True
     pydantic = TestPydantic(allow_extra)
-    others = [t(allow_extra) for t in other_tests]
+    others = [t(allow_extra) for t in active_other_tests]
 
     for case in cases:
         pydantic_passed, pydantic_result = pydantic.validate(case)
@@ -245,3 +273,7 @@ if __name__ == '__main__':
         diff()
     else:
         main()
+
+    # if None in other_tests:
+    #     print('not all libraries could be imported!')
+    #     sys.exit(1)

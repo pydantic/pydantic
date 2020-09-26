@@ -10,7 +10,7 @@ eg. Color((0, 255, 255)).as_named() == 'cyan' because "cyan" comes after "aqua".
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import TYPE_CHECKING, Any, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
 from .errors import ColorError
 from .utils import Representation, almost_equal_floats
@@ -42,17 +42,18 @@ class RGBA:
         return self._tuple[item]
 
 
-r_hex_short = re.compile(r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?\s*')
-r_hex_long = re.compile(r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?\s*')
+# these are not compiled here to avoid import slowdown, they'll be compiled the first time they're used, then cached
+r_hex_short = r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?\s*'
+r_hex_long = r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?\s*'
 _r_255 = r'(\d{1,3}(?:\.\d+)?)'
 _r_comma = r'\s*,\s*'
-r_rgb = re.compile(fr'\s*rgb\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}\)\s*')
+r_rgb = fr'\s*rgb\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}\)\s*'
 _r_alpha = r'(\d(?:\.\d+)?|\.\d+|\d{1,2}%)'
-r_rgba = re.compile(fr'\s*rgba\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_alpha}\s*\)\s*')
+r_rgba = fr'\s*rgba\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_alpha}\s*\)\s*'
 _r_h = r'(-?\d+(?:\.\d+)?|-?\.\d+)(deg|rad|turn)?'
 _r_sl = r'(\d{1,3}(?:\.\d+)?)%'
-r_hsl = re.compile(fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}\s*\)\s*')
-r_hsla = re.compile(fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}{_r_comma}{_r_alpha}\s*\)\s*')
+r_hsl = fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}\s*\)\s*'
+r_hsla = fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}{_r_comma}{_r_alpha}\s*\)\s*'
 
 # colors where the two hex characters are the same, if all colors match this the short version of hex colors can be used
 repeat_colors = {int(c * 2, 16) for c in '0123456789abcdef'}
@@ -69,11 +70,18 @@ class Color(Representation):
             self._rgba = parse_tuple(value)
         elif isinstance(value, str):
             self._rgba = parse_str(value)
+        elif isinstance(value, Color):
+            self._rgba = value._rgba
+            value = value._original
         else:
             raise ColorError(reason='value must be a tuple, list or string')
 
         # if we've got here value must be a valid color
         self._original = value
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        field_schema.update(type='string', format='color')
 
     def original(self) -> ColorType:
         """
@@ -222,7 +230,7 @@ def parse_str(value: str) -> RGBA:
     else:
         return ints_to_rgba(r, g, b, None)
 
-    m = r_hex_short.fullmatch(value_lower)
+    m = re.fullmatch(r_hex_short, value_lower)
     if m:
         *rgb, a = m.groups()
         r, g, b = [int(v * 2, 16) for v in rgb]
@@ -232,7 +240,7 @@ def parse_str(value: str) -> RGBA:
             alpha = None
         return ints_to_rgba(r, g, b, alpha)
 
-    m = r_hex_long.fullmatch(value_lower)
+    m = re.fullmatch(r_hex_long, value_lower)
     if m:
         *rgb, a = m.groups()
         r, g, b = [int(v, 16) for v in rgb]
@@ -242,20 +250,20 @@ def parse_str(value: str) -> RGBA:
             alpha = None
         return ints_to_rgba(r, g, b, alpha)
 
-    m = r_rgb.fullmatch(value_lower)
+    m = re.fullmatch(r_rgb, value_lower)
     if m:
         return ints_to_rgba(*m.groups(), None)  # type: ignore
 
-    m = r_rgba.fullmatch(value_lower)
+    m = re.fullmatch(r_rgba, value_lower)
     if m:
         return ints_to_rgba(*m.groups())  # type: ignore
 
-    m = r_hsl.fullmatch(value_lower)
+    m = re.fullmatch(r_hsl, value_lower)
     if m:
         h, h_units, s, l_ = m.groups()
         return parse_hsl(h, h_units, s, l_)
 
-    m = r_hsla.fullmatch(value_lower)
+    m = re.fullmatch(r_hsla, value_lower)
     if m:
         h, h_units, s, l_, a = m.groups()
         return parse_hsl(h, h_units, s, l_, parse_float_alpha(a))
@@ -304,11 +312,11 @@ def parse_float_alpha(value: Union[None, str, float, int]) -> Optional[float]:
         raise ColorError(reason='alpha values must be in the range 0 to 1')
 
 
-def parse_hsl(h: str, h_units: str, s: str, l: str, alpha: Optional[float] = None) -> RGBA:
+def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: Optional[float] = None) -> RGBA:
     """
     Parse raw hue, saturation, lightness and alpha values and convert to RGBA.
     """
-    s_value, l_value = parse_color_value(s, 100), parse_color_value(l, 100)
+    s_value, l_value = parse_color_value(sat, 100), parse_color_value(light, 100)
 
     h_value = float(h)
     if h_units in {None, 'deg'}:

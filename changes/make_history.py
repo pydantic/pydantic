@@ -20,7 +20,11 @@ for p in THIS_DIR.glob('*.md'):
     if '\n\n' in content:
         raise RuntimeError(f'{p.name!r}: content includes multiple paragraphs')
     content = content.replace('\n', '\n  ')
-    priority = 0 if '**breaking change' in content.lower() else 1
+    priority = 0
+    if '**breaking change' in content.lower():
+        priority = 2
+    elif content.startswith('**'):
+        priority = 1
     bullet_list.append((priority, int(gh_id), f'* {content}, #{gh_id} by @{creator}'))
 
 if not bullet_list:
@@ -29,7 +33,7 @@ if not bullet_list:
 
 version = SourceFileLoader('version', 'pydantic/version.py').load_module()
 chunk_title = f'v{version.VERSION} ({date.today():%Y-%m-%d})'
-new_chunk = '## {}\n\n{}\n\n'.format(chunk_title, '\n'.join(c for *_, c in sorted(bullet_list)))
+new_chunk = '## {}\n\n{}\n\n'.format(chunk_title, '\n'.join(c for *_, c in sorted(bullet_list, reverse=True)))
 
 print(f'{chunk_title}...{len(bullet_list)} items')
 history_path = THIS_DIR / '..' / 'HISTORY.md'

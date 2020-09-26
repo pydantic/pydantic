@@ -4,10 +4,10 @@ import pytest
 
 from pydantic import ConfigError, ValidationError
 
-skip_not_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
+skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
 
-@skip_not_37
+@skip_pre_37
 def test_postponed_annotations(create_module):
     module = create_module(
         """
@@ -22,7 +22,7 @@ class Model(BaseModel):
     assert m.dict() == {'a': 123}
 
 
-@skip_not_37
+@skip_pre_37
 def test_postponed_annotations_optional(create_module):
     module = create_module(
         """
@@ -168,7 +168,7 @@ class Dataclass:
     assert m.url == 'http://example.com'
 
 
-@skip_not_37
+@skip_pre_37
 def test_forward_ref_dataclass_with_future_annotations(create_module):
     module = create_module(
         """
@@ -288,7 +288,7 @@ Account.update_forward_refs()
     }
 
 
-@skip_not_37
+@skip_pre_37
 def test_self_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         """
@@ -372,7 +372,7 @@ Owner.update_forward_refs()
     }
 
 
-@skip_not_37
+@skip_pre_37
 def test_circular_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         """

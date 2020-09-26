@@ -1,6 +1,6 @@
 import re
-import sys
 from collections import OrderedDict
+from collections.abc import Hashable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum, IntEnum
@@ -14,7 +14,6 @@ from typing import (
     FrozenSet,
     Generator,
     List,
-    Optional,
     Pattern,
     Set,
     Tuple,
@@ -26,7 +25,15 @@ from uuid import UUID
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .typing import AnyCallable, AnyType, ForwardRef, display_as_type, get_class, is_callable_type, is_literal_type
+from .typing import (
+    AnyCallable,
+    ForwardRef,
+    all_literal_values,
+    display_as_type,
+    get_class,
+    is_callable_type,
+    is_literal_type,
+)
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
@@ -40,7 +47,7 @@ if TYPE_CHECKING:
     StrBytes = Union[str, bytes]
 
 
-def str_validator(v: Any) -> Optional[str]:
+def str_validator(v: Any) -> Union[str]:
     if isinstance(v, str):
         if isinstance(v, Enum):
             return v.value
@@ -55,7 +62,7 @@ def str_validator(v: Any) -> Optional[str]:
         raise errors.StrError()
 
 
-def strict_str_validator(v: Any) -> str:
+def strict_str_validator(v: Any) -> Union[str]:
     if isinstance(v, str):
         return v
     raise errors.StrError()
@@ -252,7 +259,12 @@ def uuid_validator(v: Any, field: 'ModelField') -> UUID:
         if isinstance(v, str):
             v = UUID(v)
         elif isinstance(v, (bytes, bytearray)):
-            v = UUID(v.decode())
+            try:
+                v = UUID(v.decode())
+            except ValueError:
+                # 16 bytes in big-endian order as the bytes argument fail
+                # the above check
+                v = UUID(bytes=v)
     except ValueError:
         raise errors.UUIDError()
 
@@ -283,6 +295,13 @@ def decimal_validator(v: Any) -> Decimal:
         raise errors.DecimalIsNotFiniteError()
 
     return v
+
+
+def hashable_validator(v: Any) -> Hashable:
+    if isinstance(v, Hashable):
+        return v
+
+    raise errors.HashableError()
 
 
 def ip_v4_address_validator(v: Any) -> IPv4Address:
@@ -387,10 +406,7 @@ def callable_validator(v: Any) -> AnyCallable:
 
 
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
-    if sys.version_info >= (3, 7):
-        permitted_choices = type_.__args__
-    else:
-        permitted_choices = type_.__values__
+    permitted_choices = all_literal_values(type_)
     allowed_choices_set = set(permitted_choices)
 
     def literal_validator(v: Any) -> Any:
@@ -424,6 +440,9 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseCon
 
 
 def validate_json(v: Any, config: 'BaseConfig') -> Any:
+    if v is None:
+        # pass None through to other validators
+        return v
     try:
         return config.json_loads(v)  # type: ignore
     except ValueError:
@@ -460,8 +479,13 @@ def any_class_validator(v: Any) -> Type[T]:
 
 
 def pattern_validator(v: Any) -> Pattern[str]:
+    if isinstance(v, Pattern):
+        return v
+
+    str_value = str_validator(v)
+
     try:
-        return re.compile(v)
+        return re.compile(str_value)
     except re.error:
         raise errors.PatternError()
 
@@ -475,10 +499,9 @@ class IfConfig:
         return any(getattr(config, name) not in {None, False} for name in self.config_attr_names)
 
 
-pattern_validators = [str_validator, pattern_validator]
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
-_VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
+_VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
     (IntEnum, [int_validator, enum_validator]),
     (Enum, [enum_validator]),
     (
@@ -523,15 +546,18 @@ _VALIDATORS: List[Tuple[AnyType, List[Any]]] = [
 
 
 def find_validators(  # noqa: C901 (ignore complexity)
-    type_: AnyType, config: Type['BaseConfig']
+    type_: Type[Any], config: Type['BaseConfig']
 ) -> Generator[AnyCallable, None, None]:
     if type_ is Any:
         return
-    type_type = type(type_)
+    type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
         return
     if type_ is Pattern:
-        yield from pattern_validators
+        yield pattern_validator
+        return
+    if type_ is Hashable:
+        yield hashable_validator
         return
     if is_callable_type(type_):
         yield callable_validator
@@ -547,10 +573,6 @@ def find_validators(  # noqa: C901 (ignore complexity)
         else:
             yield any_class_validator
         return
-
-    supertype = _find_supertype(type_)
-    if supertype is not None:
-        type_ = supertype
 
     for val_type, validators in _VALIDATORS:
         try:
@@ -569,18 +591,3 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield make_arbitrary_type_validator(type_)
     else:
         raise RuntimeError(f'no validator found for {type_}, see `arbitrary_types_allowed` in Config')
-
-
-def _find_supertype(type_: AnyType) -> Optional[AnyType]:
-    if not _is_new_type(type_):
-        return None
-
-    supertype = type_.__supertype__
-    if _is_new_type(supertype):
-        supertype = _find_supertype(supertype)
-
-    return supertype
-
-
-def _is_new_type(type_: AnyType) -> bool:
-    return hasattr(type_, '__name__') and hasattr(type_, '__supertype__')

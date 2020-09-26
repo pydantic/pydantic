@@ -5,7 +5,7 @@ from line_profiler import LineProfiler
 import pydantic.datetime_parse
 import pydantic.validators
 from pydantic import validate_model
-from pydantic.fields import Field
+from pydantic.fields import ModelField
 from test_pydantic import TestPydantic
 
 with open('./benchmarks/cases.json') as f:
@@ -22,8 +22,8 @@ def run():
     print('success percentage:', pass_count / count * 100)
 
 
-funcs_to_profile = [validate_model, Field.validate, Field._validate_singleton, Field._apply_validators]
-module_objects = {**vars(pydantic.validators), **vars(pydantic.datetime_parse), **vars(Field)}
+funcs_to_profile = [validate_model, ModelField.validate, ModelField._validate_singleton, ModelField._apply_validators]
+module_objects = {**vars(pydantic.validators), **vars(pydantic.datetime_parse), **vars(ModelField)}
 funcs_to_profile += [v for k, v in module_objects.items() if not k.startswith('_') and str(v).startswith('<cyfunction')]
 
 

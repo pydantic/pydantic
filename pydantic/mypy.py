@@ -1,5 +1,5 @@
 from configparser import ConfigParser
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
@@ -17,6 +17,7 @@ from mypy.nodes import (
     Context,
     Decorator,
     EllipsisExpr,
+    FuncBase,
     FuncDef,
     JsonDict,
     MemberExpr,
@@ -25,6 +26,7 @@ from mypy.nodes import (
     PlaceholderNode,
     RefExpr,
     StrExpr,
+    SymbolNode,
     SymbolTableNode,
     TempNode,
     TypeInfo,
@@ -47,6 +49,7 @@ from mypy.types import (
     TypeVarDef,
     TypeVarType,
     UnionType,
+    get_proper_type,
 )
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
@@ -78,7 +81,7 @@ class PydanticPlugin(Plugin):
         sym = self.lookup_fully_qualified(fullname)
         if sym and isinstance(sym.node, TypeInfo):  # pragma: no branch
             # No branching may occur if the mypy cache has not been cleared
-            if any(base.fullname() == BASEMODEL_FULLNAME for base in sym.node.mro):
+            if any(get_fullname(base) == BASEMODEL_FULLNAME for base in sym.node.mro):
                 return self._pydantic_model_class_maker_callback
         return None
 
@@ -124,7 +127,7 @@ def from_orm_callback(ctx: MethodContext) -> Type:
     elif isinstance(ctx.type, Instance):
         model_type = ctx.type  # called on an instance (unusual, but still valid)
     else:  # pragma: no cover
-        detail = f'ctx.type: {ctx.type} (of type {type(ctx.type).__name__})'
+        detail = f'ctx.type: {ctx.type} (of type {ctx.type.__class__.__name__})'
         error_unexpected_behavior(detail, ctx.api, ctx.context)
         return ctx.default_return_type
     pydantic_metadata = model_type.type.metadata.get(METADATA_KEY)
@@ -132,7 +135,7 @@ def from_orm_callback(ctx: MethodContext) -> Type:
         return ctx.default_return_type
     orm_mode = pydantic_metadata.get('config', {}).get('orm_mode')
     if orm_mode is not True:
-        error_from_orm(model_type.type.name(), ctx.api, ctx.context)
+        error_from_orm(get_name(model_type.type), ctx.api, ctx.context)
     return ctx.default_return_type
 
 
@@ -168,7 +171,7 @@ class PydanticModelTransformer:
             if info[field.name].type is None:
                 if not ctx.api.final_iteration:
                     ctx.api.defer()
-        is_settings = any(base.fullname() == BASESETTINGS_FULLNAME for base in info.mro[:-1])
+        is_settings = any(get_fullname(base) == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings)
         self.add_construct_method(fields)
         self.set_frozen(fields, frozen=config.allow_mutation is False)
@@ -203,7 +206,7 @@ class PydanticModelTransformer:
                 continue
 
             # Each class depends on the set of fields in its ancestors
-            ctx.api.add_plugin_dependency(make_wildcard_trigger(info.fullname()))
+            ctx.api.add_plugin_dependency(make_wildcard_trigger(get_fullname(info)))
             for name, value in info.metadata[METADATA_KEY]['config'].items():
                 config.setdefault(name, value)
         return config
@@ -243,7 +246,8 @@ class PydanticModelTransformer:
                 # Basically, it is an edge case when dealing with complex import logic
                 # This is the same logic used in the dataclasses plugin
                 continue
-            assert isinstance(node, Var)
+            if not isinstance(node, Var):
+                continue
 
             # x: ClassVar[int] is ignored by dataclasses.
             if node.is_classvar:
@@ -275,7 +279,7 @@ class PydanticModelTransformer:
 
             superclass_fields = []
             # Each class depends on the set of fields in its ancestors
-            ctx.api.add_plugin_dependency(make_wildcard_trigger(info.fullname()))
+            ctx.api.add_plugin_dependency(make_wildcard_trigger(get_fullname(info)))
 
             for name, data in info.metadata[METADATA_KEY]['fields'].items():
                 if name not in known_fields:
@@ -357,8 +361,8 @@ class PydanticModelTransformer:
                 var = field.to_var(info, use_alias=False)
                 var.info = info
                 var.is_property = frozen
-                var._fullname = info.fullname() + '.' + var.name()
-                info.names[var.name()] = SymbolTableNode(MDEF, var)
+                var._fullname = get_fullname(info) + '.' + get_name(var)
+                info.names[get_name(var)] = SymbolTableNode(MDEF, var)
 
     def get_config_update(self, substmt: AssignmentStmt) -> Optional['ModelConfigData']:
         """
@@ -396,7 +400,7 @@ class PydanticModelTransformer:
         expr = stmt.rvalue
         if isinstance(expr, TempNode):
             # TempNode means annotation-only, so only non-required if Optional
-            value_type = cls.info[lhs.name].type
+            value_type = get_proper_type(cls.info[lhs.name].type)
             if isinstance(value_type, UnionType) and any(isinstance(item, NoneType) for item in value_type.items):
                 # Annotated as Optional, or otherwise having NoneType in the union
                 return False
@@ -404,7 +408,7 @@ class PydanticModelTransformer:
         if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
             # The "default value" is a call to `Field`; at this point, the field is
             # only required if default is Ellipsis (i.e., `field_name: Annotation = Field(...)`)
-            return len(expr.args) > 0 and type(expr.args[0]) is EllipsisExpr
+            return len(expr.args) > 0 and expr.args[0].__class__ is EllipsisExpr
         # Only required if the "default value" is Ellipsis (i.e., `field_name: Annotation = ...`)
         return isinstance(expr, EllipsisExpr)
 
@@ -618,7 +622,7 @@ def add_method(
     for arg in args:
         assert arg.type_annotation, 'All arguments must be fully typed.'
         arg_types.append(arg.type_annotation)
-        arg_names.append(arg.variable.name())
+        arg_names.append(get_name(arg.variable))
         arg_kinds.append(arg.kind)
 
     function_type = ctx.api.named_type('__builtins__.function')
@@ -631,7 +635,7 @@ def add_method(
     func.type = set_callable_name(signature, func)
     func.is_class = is_classmethod
     # func.is_static = is_staticmethod
-    func._fullname = info.fullname() + '.' + name
+    func._fullname = get_fullname(info) + '.' + name
     func.line = info.line
 
     # NOTE: we would like the plugin generated node to dominate, but we still
@@ -661,3 +665,23 @@ def add_method(
 
     info.names[name] = sym
     info.defn.defs.body.append(func)
+
+
+def get_fullname(x: Union[FuncBase, SymbolNode]) -> str:
+    """
+    Used for compatibility with mypy 0.740; can be dropped once support for 0.740 is dropped.
+    """
+    fn = x.fullname
+    if callable(fn):  # pragma: no cover
+        return fn()
+    return fn
+
+
+def get_name(x: Union[FuncBase, SymbolNode]) -> str:
+    """
+    Used for compatibility with mypy 0.740; can be dropped once support for 0.740 is dropped.
+    """
+    fn = x.name
+    if callable(fn):  # pragma: no cover
+        return fn()
+    return fn

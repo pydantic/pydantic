@@ -1,7 +1,6 @@
 import warnings
 from collections import ChainMap
 from functools import wraps
-from inspect import Signature, signature
 from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
@@ -12,7 +11,7 @@ from .utils import in_ipython
 
 
 class Validator:
-    __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields'
+    __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields', 'skip_on_failure'
 
     def __init__(
         self,
@@ -21,17 +20,21 @@ class Validator:
         each_item: bool = False,
         always: bool = False,
         check_fields: bool = False,
+        skip_on_failure: bool = False,
     ):
         self.func = func
         self.pre = pre
         self.each_item = each_item
         self.always = always
         self.check_fields = check_fields
+        self.skip_on_failure = skip_on_failure
 
 
 if TYPE_CHECKING:
-    from .main import BaseConfig
+    from inspect import Signature
+
     from .fields import ModelField
+    from .main import BaseConfig
     from .types import ModelOrDc
 
     ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], ModelField, Type[BaseConfig]], Any]
@@ -100,12 +103,14 @@ def root_validator(_func: AnyCallable) -> classmethod:
 
 
 @overload
-def root_validator(*, pre: bool = False) -> Callable[[AnyCallable], classmethod]:
+def root_validator(
+    *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
+) -> Callable[[AnyCallable], classmethod]:
     ...
 
 
 def root_validator(
-    _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False
+    _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
 ) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
     """
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
@@ -113,12 +118,16 @@ def root_validator(
     """
     if _func:
         f_cls = _prepare_validator(_func, allow_reuse)
-        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre))
+        setattr(
+            f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
+        )
         return f_cls
 
     def dec(f: AnyCallable) -> classmethod:
         f_cls = _prepare_validator(f, allow_reuse)
-        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre))
+        setattr(
+            f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
+        )
         return f_cls
 
     return dec
@@ -155,11 +164,9 @@ class ValidatorGroup:
 
     def check_for_unused(self) -> None:
         unused_validators = set(
-            chain(
-                *[
-                    (v.func.__name__ for v in self.validators[f] if v.check_fields)
-                    for f in (self.validators.keys() - self.used_validators)
-                ]
+            chain.from_iterable(
+                (v.func.__name__ for v in self.validators[f] if v.check_fields)
+                for f in (self.validators.keys() - self.used_validators)
             )
         )
         if unused_validators:
@@ -184,9 +191,11 @@ def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
     return validators
 
 
-def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[AnyCallable]]:
+def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[Tuple[bool, AnyCallable]]]:
+    from inspect import signature
+
     pre_validators: List[AnyCallable] = []
-    post_validators: List[AnyCallable] = []
+    post_validators: List[Tuple[bool, AnyCallable]] = []
     for name, value in namespace.items():
         validator_config: Optional[Validator] = getattr(value, ROOT_VALIDATOR_CONFIG_KEY, None)
         if validator_config:
@@ -203,7 +212,7 @@ def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable
             if validator_config.pre:
                 pre_validators.append(validator_config.func)
             else:
-                post_validators.append(validator_config.func)
+                post_validators.append((validator_config.skip_on_failure, validator_config.func))
     return pre_validators, post_validators
 
 
@@ -225,6 +234,8 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
     It's done like this so validators don't all need **kwargs in their signature, eg. any combination of
     the arguments "values", "fields" and/or "config" are permitted.
     """
+    from inspect import signature
+
     sig = signature(validator)
     args = list(sig.parameters.keys())
     first_arg = args.pop(0)
@@ -248,7 +259,7 @@ def prep_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
 all_kwargs = {'values', 'field', 'config'}
 
 
-def _generic_validator_cls(validator: AnyCallable, sig: Signature, args: Set[str]) -> 'ValidatorCallable':
+def _generic_validator_cls(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
     # assume the first argument is value
     has_kwargs = False
     if 'kwargs' in args:
@@ -282,7 +293,7 @@ def _generic_validator_cls(validator: AnyCallable, sig: Signature, args: Set[str
         return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field, config=config)
 
 
-def _generic_validator_basic(validator: AnyCallable, sig: Signature, args: Set[str]) -> 'ValidatorCallable':
+def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
     has_kwargs = False
     if 'kwargs' in args:
         has_kwargs = True
