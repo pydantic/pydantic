@@ -6,7 +6,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Pattern, Sequence, Set, Tuple
+from typing import Dict, FrozenSet, Iterator, List, MutableSet, NewType, Pattern, Sequence, Set, Tuple, Union
 from uuid import UUID
 
 import pytest
@@ -21,6 +21,7 @@ from pydantic import (
     ConfigError,
     DirectoryPath,
     EmailStr,
+    Field,
     FilePath,
     Json,
     NameEmail,
@@ -1895,3 +1896,45 @@ def test_bytesize_raises():
     m = Model(size='1MB')
     with pytest.raises(errors.InvalidByteSizeUnit, match='byte unit'):
         m.size.to('bad_unit')
+
+
+def test_strict_union_sanity():
+    class Model(BaseModel):
+        fun: Union[str, int] = Field(..., strict_union=True)
+
+    m = Model(fun=1)
+    assert m.fun == 1
+
+    m = Model(fun="1")
+    assert m.fun == "1"
+
+
+def test_strict_union_inheritance():
+    class TestStr(str):
+        pass
+
+    class Model(BaseModel):
+        fun: Union[int, TestStr] = Field(..., strict_union=True)
+
+    test_str = TestStr("1")
+    m = Model(fun=test_str)
+    assert m.fun == test_str
+
+
+def test_strict_union_disabled():
+    class Model(BaseModel):
+        fun: Union[str, int] = Field(..., strict_union=False)
+
+    m = Model(fun=1)
+    assert m.fun == "1"
+
+    m = Model(fun="1")
+    assert m.fun == "1"
+
+
+def test_strict_union_error():
+    class Model(BaseModel):
+        fun: Union[str, bool] = Field(..., strict_union=True)
+
+    with pytest.raises(ValueError):
+        Model(fun=1)
