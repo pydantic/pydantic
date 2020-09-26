@@ -40,7 +40,7 @@ There are other benefits too! See below for more details.
   `__init__` will raise errors even if `Config.extra` is not `"forbid"`.
 * **Optional:** If the [`init_typed` **plugin setting**](#plugin-settings) is set to `True`, the generated signature
   will use the types of the model fields (otherwise they will be annotated as `Any` to allow parsing).
- 
+
 #### Generate a typed signature for `Model.construct`
 * The [`construct`](usage/models.md#creating-models-without-validation) method is a faster alternative to `__init__`
   when input data is known to be valid and does not need to be parsed. But because this method performs no runtime
@@ -64,7 +64,7 @@ There are other benefits too! See below for more details.
   error any time you use a dynamically-determined alias or alias generator on a model with
   `Config.allow_population_by_field_name=False`.
 * This is important because if such aliases are present, mypy cannot properly type check calls to `__init__`.
-  In this case, it will default to treating all arguments as optional. 
+  In this case, it will default to treating all arguments as optional.
 
 #### Prevent the use of untyped fields
 * If the [`warn_untyped_fields` **plugin setting**](#plugin-settings) is set to `True`, you'll get a mypy error
@@ -95,7 +95,7 @@ The plugin offers a few optional strictness flags if you want even stronger chec
 * `init_forbid_extra`
 
     If enabled, disallow extra arguments to the `__init__` call even when `Config.extra` is not `"forbid"`.
-  
+
 * `init_typed`
 
     If enabled, include the field types as type hints in the generated signature for the `__init__` method.
@@ -117,7 +117,7 @@ The plugin offers a few optional strictness flags if you want even stronger chec
 To change the values of the plugin settings, create a section in your mypy config file called `[pydantic-mypy]`,
 and add any key-value pairs for settings you want to override.
 
-A `mypy.ini` file with all plugin strictness flags enabled (and some other mypy strictness flags, too) might look like: 
+A `mypy.ini` file with all plugin strictness flags enabled (and some other mypy strictness flags, too) might look like:
 ```ini
 [mypy]
 plugins = pydantic.mypy
@@ -128,6 +128,7 @@ warn_redundant_casts = True
 warn_unused_ignores = True
 disallow_any_generics = True
 check_untyped_defs = True
+no_implicit_reexport = True
 
 # for strict mypy: (this is the tricky one :-))
 disallow_untyped_defs = True

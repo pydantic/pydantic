@@ -8,13 +8,16 @@ import sys
 from datetime import datetime
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, NoneStr, StrictBool, root_validator, validator
+from pydantic import BaseModel, NoneStr, StrictBool, root_validator, validate_arguments, validator
 from pydantic.fields import Field
 from pydantic.generics import GenericModel
 
 
 class Flags(BaseModel):
     strict_bool: StrictBool = False
+
+    def __str__(self) -> str:
+        return f'flag={self.strict_bool}'
 
 
 class Model(BaseModel):
@@ -33,7 +36,7 @@ class Model(BaseModel):
     def root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
-    @root_validator(pre=True)
+    @root_validator(pre=True, allow_reuse=False, skip_on_failure=False)
     def pre_root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
@@ -115,3 +118,12 @@ if sys.version_info >= (3, 7):
 class WithField(BaseModel):
     age: int
     first_name: str = Field('John', const=True)
+
+
+@validate_arguments
+def foo(a: int, *, c: str = 'x') -> str:
+    return c * a
+
+
+foo(1, c='thing')
+foo(1)

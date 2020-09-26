@@ -37,20 +37,20 @@ if no `ValidationError` is raised, you know the resulting model instance is vali
 ```py
 assert user.id == 123
 ```
-fields of a model can be accessed as normal attributes of the user object
-the string '123' has been cast to an int as per the field type
+Fields of a model can be accessed as normal attributes of the user object.
+The string '123' has been cast to an int as per the field type
 ```py
 assert user.name == 'Jane Doe'
 ```
-name wasn't set when user was initialised, so it has the default value
+`name` wasn't set when user was initialised, so it has the default value
 ```py
 assert user.__fields_set__ == {'id'}
 ```
-the fields which were supplied when user was initialised:
+The fields which were supplied when user was initialised:
 ```py
 assert user.dict() == dict(user) == {'id': 123, 'name': 'Jane Doe'}
 ```
-either `.dict()` or `dict(user)` will provide a dict of fields, but `.dict()` can take numerous other arguments.
+Either `.dict()` or `dict(user)` will provide a dict of fields, but `.dict()` can take numerous other arguments.
 ```py
 user.id = 321
 assert user.id == 321
@@ -131,6 +131,22 @@ The example here uses SQLAlchemy, but the same approach should work for any ORM.
 {!.tmp_examples/models_orm_mode.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+### Reserved names
+
+You may want to name a Column after a reserved SQLAlchemy field. In that case, Field aliases will be
+convenient:
+
+```py
+{!.tmp_examples/models_orm_mode_reserved_name.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! note
+    The example above works because aliases have priority over field names for
+    field population. Accessing `SQLModel`'s `metadata` attribute would lead to a `ValidationError`.
+
+### Recursive ORM models
 
 ORM instances will be parsed with `from_orm` recursively as well as at the top level.
 
@@ -263,12 +279,11 @@ For example, in the example above, if `_fields_set` was not provided,
 
 ## Generic Models
 
-!!! note
-    New in version **v0.29**.
-
-    This feature requires Python 3.7+.
-
 Pydantic supports the creation of generic models to make it easier to reuse a common model structure.
+
+!!! warning
+    Generic models are only supported with python `>=3.7`, this is because of numerous subtle changes in how
+    generics are implemented between python 3.6 and python 3.7.
 
 In order to declare a generic model, you perform the following steps:
 
@@ -296,10 +311,38 @@ you would expect mypy to provide if you were to declare the type without using `
     Internally, pydantic uses `create_model` to generate a (cached) concrete `BaseModel` at runtime,
     so there is essentially zero overhead introduced by making use of `GenericModel`.
 
+To inherit from a GenericModel without replacing the `TypeVar` instance, a class must also inherit from 
+`typing.Generic`:
+
+```py
+{!.tmp_examples/models_generics_inheritance.py!}
+```
+_(This script is complete, it should run "as is")_
+
 If the name of the concrete subclasses is important, you can also override the default behavior:
 
 ```py
 {!.tmp_examples/models_generics_naming.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Using the same TypeVar in nested models allows you to enforce typing relationships at different points in your model:
+
+```py
+{!.tmp_examples/models_generics_nested.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Pydantic also treats `GenericModel` similarly to how it treats built-in generic types like `List` and `Dict` when it
+comes to leaving them unparameterized, or using bounded `TypeVar` instances:    
+
+* If you don't specify parameters before instantiating the generic model, they will be treated as `Any`
+* You can parametrize models with one or more *bounded* parameters to add subclass checks
+
+Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
+
+```py
+{!.tmp_examples/models_generics_typevars.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -313,6 +356,11 @@ the `create_model` method to allow models to be created on the fly.
 ```
 
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
+
+!!! warning
+    See the note in [Required Optional Fields](#required-optional-fields) for the distinct between an ellipsis as a
+    field default and annotation only fields. 
+    See [samuelcolvin/pydantic#1047](https://github.com/samuelcolvin/pydantic/issues/1047) for more details.
 
 Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The
 special key word arguments `__config__` and `__base__` can be used to customise the new model. This includes
@@ -352,6 +400,12 @@ This is demonstrated in the following example:
 !!! warning
     Calling the `parse_obj` method on a dict with the single key `"__root__"` for non-mapping custom root types
     is currently supported for backwards compatibility, but is not recommended and may be dropped in a future version.
+    
+If you want to access items in the `__root__` field directly or to iterate over the items, you can implement custom `__iter__` and `__getitem__` functions, as shown in the following example.
+
+```py
+{!.tmp_examples/models_custom_root_access.py!}
+```
 
 ## Faux Immutability
 
@@ -410,12 +464,7 @@ To declare a field as required, you may declare it using just an annotation, or 
 as the value:
 
 ```py
-from pydantic import BaseModel, Field
-
-class Model(BaseModel):
-    a: int
-    b: int = ...
-    c: int = Field(...)
+{!.tmp_examples/models_required_fields.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -424,14 +473,49 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
 with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
 
-If you want to specify a field that can take a `None` value while still being required, you can use `Optional` with `...`:
+### Required Optional fields
+
+!!! warning
+    Since version **v1.2** annotation only nullable (`Optional[...]`, `Union[None, ...]` and `Any`) fields and nullable
+    fields with an ellipsis (`...`) as the default value, no longer mean the same thing.
+
+    In some situations this may cause **v1.2** to not be entirely backwards compatible with earlier **v1.*** releases.
+
+If you want to specify a field that can take a `None` value while still being required,
+you can use `Optional` with `...`:
 
 ```py
 {!.tmp_examples/models_required_field_optional.py!}
 ```
 _(This script is complete, it should run "as is")_
 
-In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required. `b` and `c` require a value, even if the value is `None`.
+In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required.
+`b` and `c` require a value, even if the value is `None`.
+
+## Field with dynamic default value
+
+When declaring a field with a default value, you may want it to be dynamic (i.e. different for each model).
+To do this, you may want to use a `default_factory`.
+
+!!! info "In Beta"
+    The `default_factory` argument is in **beta**, it has been added to *pydantic* in **v1.5** on a
+    **provisional basis**. It may change significantly in future releases and its signature or behaviour will not
+    be concrete until **v2**. Feedback from the community while it's still provisional would be extremely useful;
+    either comment on [#866](https://github.com/samuelcolvin/pydantic/issues/866) or create a new issue.
+
+Example of usage:
+
+```py
+{!.tmp_examples/models_default_factory.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Where `Field` refers to the [field function](schema.md#field-customisation).
+
+!!! warning
+    The `default_factory` expects the field type to be set.
+    Moreover if you want to validate default values with `validate_all`,
+    *pydantic* will need to call the `default_factory`, which could lead to side effects!
 
 ## Parsing data into a specified type
 
@@ -465,3 +549,30 @@ _(This script is complete, it should run "as is")_
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
 [here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.
+
+## Model signature
+
+All *pydantic* models will have their signature generated based on their fields:
+
+```py
+{!.tmp_examples/models_signature.py!}
+```
+
+An accurate signature is useful for introspection purposes and libraries like `FastAPI` or `hypothesis`.
+
+The generated signature will also respect custom `__init__` functions:
+
+```py
+{!.tmp_examples/models_signature_custom_init.py!}
+```
+
+To be included in the signature, a field's alias or name must be a valid python identifier. 
+*pydantic* prefers aliases over names, but may use field names if the alias is not a valid python identifier. 
+
+If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
+In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
+
+!!! note
+    Types in the model signature are the same as declared in model annotations, 
+    not necessarily all the types that can actually be provided to that field.
+    This may be fixed one day once [#1055](https://github.com/samuelcolvin/pydantic/issues/1055) is solved.

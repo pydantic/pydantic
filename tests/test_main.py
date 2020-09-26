@@ -1,9 +1,11 @@
+import sys
 from enum import Enum
-from typing import Any, ClassVar, List, Mapping, Type
+from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
+from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import BaseModel, ConfigError, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
 
 
 def test_success():
@@ -48,6 +50,34 @@ def test_ultra_simple_repr():
     assert m.json() == '{"a": 10.2, "b": 10}'
     with pytest.raises(DeprecationWarning, match=r'`model.to_string\(\)` method is deprecated'):
         assert m.to_string() == 'a=10.2 b=10'
+
+
+def test_default_factory_field():
+    def myfunc():
+        return 1
+
+    class Model(BaseModel):
+        a: int = Field(default_factory=myfunc)
+
+    m = Model()
+    assert str(m) == 'a=1'
+    assert (
+        repr(m.__fields__['a']) == "ModelField(name='a', type=int, required=False, default_factory='<function myfunc>')"
+    )
+    assert dict(m) == {'a': 1}
+    assert m.json() == '{"a": 1}'
+
+
+def test_default_factory_no_type_field():
+    def myfunc():
+        return 1
+
+    with pytest.raises(ConfigError) as e:
+
+        class Model(BaseModel):
+            a = Field(default_factory=myfunc)
+
+    assert str(e.value) == "you need to set the type of field 'a' when using `default_factory`"
 
 
 def test_comparing():
@@ -356,6 +386,15 @@ def test_const_uses_default():
         a: int = Field(3, const=True)
 
     m = Model()
+    assert m.a == 3
+
+
+def test_const_validates_after_type_validators():
+    # issue #1410
+    class Model(BaseModel):
+        a: int = Field(3, const=True)
+
+    m = Model(a='3')
     assert m.a == 3
 
 
@@ -812,58 +851,6 @@ def test_dict_with_extra_keys():
     assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
 
 
-def test_alias_generator():
-    def to_camel(string: str):
-        return ''.join(x.capitalize() for x in string.split('_'))
-
-    class MyModel(BaseModel):
-        a: List[str] = None
-        foo_bar: str
-
-        class Config:
-            alias_generator = to_camel
-
-    data = {'A': ['foo', 'bar'], 'FooBar': 'foobar'}
-    v = MyModel(**data)
-    assert v.a == ['foo', 'bar']
-    assert v.foo_bar == 'foobar'
-    assert v.dict(by_alias=True) == data
-
-
-def test_alias_generator_with_field_schema():
-    def to_upper_case(string: str):
-        return string.upper()
-
-    class MyModel(BaseModel):
-        my_shiny_field: Any  # Alias from Config.fields will be used
-        foo_bar: str  # Alias from Config.fields will be used
-        baz_bar: str  # Alias will be generated
-        another_field: str  # Alias will be generated
-
-        class Config:
-            alias_generator = to_upper_case
-            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}, 'another_field': {'not_alias': 'a'}}
-
-    data = {'MY_FIELD': ['a'], 'FOO': 'bar', 'BAZ_BAR': 'ok', 'ANOTHER_FIELD': '...'}
-    m = MyModel(**data)
-    assert m.dict(by_alias=True) == data
-
-
-def test_alias_generator_wrong_type_error():
-    def return_bytes(string):
-        return b'not a string'
-
-    with pytest.raises(TypeError) as e:
-
-        class MyModel(BaseModel):
-            bar: Any
-
-            class Config:
-                alias_generator = return_bytes
-
-    assert str(e.value) == "Config.alias_generator must return str, not <class 'bytes'>"
-
-
 def test_root():
     class MyModel(BaseModel):
         __root__: str
@@ -880,6 +867,26 @@ def test_root_list():
     m = MyModel(__root__=['a'])
     assert m.dict() == {'__root__': ['a']}
     assert m.__root__ == ['a']
+
+
+def test_encode_nested_root():
+    house_dict = {'pets': ['dog', 'cats']}
+
+    class Pets(BaseModel):
+        __root__: List[str]
+
+    class House(BaseModel):
+        pets: Pets
+
+    assert House(**house_dict).dict() == house_dict
+
+    class PetsDeep(BaseModel):
+        __root__: Pets
+
+    class HouseDeep(BaseModel):
+        pets: PetsDeep
+
+    assert HouseDeep(**house_dict).dict() == house_dict
 
 
 def test_root_failed():
@@ -1008,6 +1015,54 @@ def test_model_iteration():
     assert dict(m) == {'c': 3, 'd': Foo()}
 
 
+def test_model_export_nested_list():
+    class Foo(BaseModel):
+        a: int = 1
+        b: int = 2
+
+    class Bar(BaseModel):
+        c: int
+        foos: List[Foo]
+
+    m = Bar(c=3, foos=[Foo(a=1, b=2), Foo(a=3, b=4)])
+
+    assert m.dict(exclude={'foos': {0: {'a'}, 1: {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
+
+    with pytest.raises(TypeError, match='expected integer keys'):
+        m.dict(exclude={'foos': {'a'}})
+    with pytest.raises(TypeError, match='expected integer keys'):
+        m.dict(exclude={'foos': {0: ..., 'a': ...}})
+    with pytest.raises(TypeError, match='Unexpected type'):
+        m.dict(exclude={'foos': {0: 1}})
+    with pytest.raises(TypeError, match='Unexpected type'):
+        m.dict(exclude={'foos': {'__all__': 1}})
+
+    assert m.dict(exclude={'foos': {0: {'b'}, '__all__': {'a'}}}) == {'c': 3, 'foos': [{}, {'b': 4}]}
+    assert m.dict(exclude={'foos': {'__all__': {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
+    assert m.dict(exclude={'foos': {'__all__'}}) == {'c': 3, 'foos': []}
+
+    with pytest.raises(ValueError, match='set with keyword "__all__" must not contain other elements'):
+        m.dict(exclude={'foos': {1, '__all__'}})
+
+
+def test_model_export_dict_exclusion():
+    class Foo(BaseModel):
+        a: int = 1
+        bars: List[Dict[str, int]]
+
+    m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
+
+    excludes = {'bars': {0}}
+    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]}
+    assert excludes == {'bars': {0}}
+    excludes = {'bars': {'__all__'}}
+    assert m.dict(exclude=excludes) == {'a': 1, 'bars': []}
+    assert excludes == {'bars': {'__all__'}}
+    excludes = {'bars': {'__all__': {'w'}}}
+    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]}
+    assert excludes == {'bars': {'__all__': {'w'}}}
+
+
 def test_custom_init_subclass_params():
     class DerivedModel(BaseModel):
         def __init_subclass__(cls, something):
@@ -1022,3 +1077,168 @@ def test_custom_init_subclass_params():
         something = 1
 
     assert NewModel.something == 2
+
+
+def test_update_forward_refs_does_not_modify_module_dict():
+    class MyModel(BaseModel):
+        field: Optional['MyModel']  # noqa: F821
+
+    MyModel.update_forward_refs()
+
+    assert 'MyModel' not in sys.modules[MyModel.__module__].__dict__
+
+
+def test_two_defaults():
+    with pytest.raises(ValueError, match='^cannot specify both default and default_factory$'):
+
+        class Model(BaseModel):
+            a: int = Field(default=3, default_factory=lambda: 3)
+
+
+def test_default_factory():
+    class ValueModel(BaseModel):
+        uid: UUID = uuid4()
+
+    m1 = ValueModel()
+    m2 = ValueModel()
+    assert m1.uid == m2.uid
+
+    class DynamicValueModel(BaseModel):
+        uid: UUID = Field(default_factory=uuid4)
+
+    m1 = DynamicValueModel()
+    m2 = DynamicValueModel()
+    assert isinstance(m1.uid, UUID)
+    assert m1.uid != m2.uid
+
+    # With a callable: we still should be able to set callables as defaults
+    class FunctionModel(BaseModel):
+        a: int = 1
+        uid: Callable[[], UUID] = Field(uuid4)
+
+    m = FunctionModel()
+    assert m.uid is uuid4
+
+    # Returning a singleton from a default_factory is supported
+    class MySingleton:
+        pass
+
+    MY_SINGLETON = MySingleton()
+
+    class SingletonFieldModel(BaseModel):
+        singleton: MySingleton = Field(default_factory=lambda: MY_SINGLETON)
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    assert SingletonFieldModel().singleton is SingletonFieldModel().singleton
+
+
+def test_default_factory_called_once():
+    """It should call only once the given factory by default"""
+
+    class Seq:
+        def __init__(self):
+            self.v = 0
+
+        def __call__(self):
+            self.v += 1
+            return self.v
+
+    class MyModel(BaseModel):
+        id: int = Field(default_factory=Seq())
+
+    m1 = MyModel()
+    assert m1.id == 1
+    m2 = MyModel()
+    assert m2.id == 2
+    assert m1.id == 1
+
+
+def test_default_factory_called_once_2():
+    """It should call only once the given factory by default"""
+
+    v = 0
+
+    def factory():
+        nonlocal v
+        v += 1
+        return v
+
+    class MyModel(BaseModel):
+        id: int = Field(default_factory=factory)
+
+    m1 = MyModel()
+    assert m1.id == 1
+    m2 = MyModel()
+    assert m2.id == 2
+
+
+def test_default_factory_validate_children():
+    class Child(BaseModel):
+        x: int
+
+    class Parent(BaseModel):
+        children: List[Child] = Field(default_factory=list)
+
+    Parent(children=[{'x': 1}, {'x': 2}])
+    with pytest.raises(ValidationError) as exc_info:
+        Parent(children=[{'x': 1}, {'y': 2}])
+
+    assert exc_info.value.errors() == [
+        {'loc': ('children', 1, 'x'), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
+def test_default_factory_parse():
+    class Inner(BaseModel):
+        val: int = Field(0)
+
+    class Outer(BaseModel):
+        inner_1: Inner = Field(default_factory=Inner)
+        inner_2: Inner = Field(Inner())
+
+    default = Outer().dict()
+    parsed = Outer.parse_obj(default)
+    assert parsed.dict() == {'inner_1': {'val': 0}, 'inner_2': {'val': 0}}
+    assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
+def test_none_min_max_items():
+    # None default
+    class Foo(BaseModel):
+        foo: List = Field(None)
+        bar: List = Field(None, min_items=0)
+        baz: List = Field(None, max_items=10)
+
+    f1 = Foo()
+    f2 = Foo(bar=None)
+    f3 = Foo(baz=None)
+    f4 = Foo(bar=None, baz=None)
+    for f in (f1, f2, f3, f4):
+        assert f.foo is None
+        assert f.bar is None
+        assert f.baz is None
+
+
+def test_reuse_same_field():
+    required_field = Field(...)
+
+    class Model1(BaseModel):
+        required: str = required_field
+
+    class Model2(BaseModel):
+        required: str = required_field
+
+    with pytest.raises(ValidationError):
+        Model1.parse_obj({})
+    with pytest.raises(ValidationError):
+        Model2.parse_obj({})
+
+
+def test_base_config_type_hinting():
+    class M(BaseModel):
+        a: int
+
+    get_type_hints(M.__config__)

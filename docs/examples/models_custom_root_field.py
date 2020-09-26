@@ -3,8 +3,10 @@ import json
 from pydantic import BaseModel
 from pydantic.schema import schema
 
+
 class Pets(BaseModel):
     __root__: List[str]
+
 
 print(Pets(__root__=['dog', 'cat']))
 print(Pets(__root__=['dog', 'cat']).json())

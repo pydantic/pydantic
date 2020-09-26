@@ -1,4 +1,3 @@
-import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, TypeVar, Union
 
 from .class_validators import gather_all_validators
@@ -6,7 +5,6 @@ from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
 from .main import create_model, validate_model
-from .typing import AnyType
 
 if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
@@ -51,13 +49,13 @@ def setattr_validate_assignment(self: 'DataclassType', name: str, value: Any) ->
         if known_field:
             value, error_ = known_field.validate(value, d, loc=name, cls=self.__class__)
             if error_:
-                raise ValidationError([error_], type(self))
+                raise ValidationError([error_], self.__class__)
 
     object.__setattr__(self, name, value)
 
 
 def _process_class(
-    _cls: AnyType,
+    _cls: Type[Any],
     init: bool,
     repr: bool,
     eq: bool,
@@ -66,6 +64,8 @@ def _process_class(
     frozen: bool,
     config: Optional[Type[Any]],
 ) -> 'DataclassType':
+    import dataclasses
+
     post_init_original = getattr(_cls, '__post_init__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
@@ -119,7 +119,7 @@ def _process_class(
 
 
 def dataclass(
-    _cls: Optional[AnyType] = None,
+    _cls: Optional[Type[Any]] = None,
     *,
     init: bool = True,
     repr: bool = True,
@@ -128,7 +128,7 @@ def dataclass(
     unsafe_hash: bool = False,
     frozen: bool = False,
     config: Type[Any] = None,
-) -> Union[Callable[[AnyType], 'DataclassType'], 'DataclassType']:
+) -> Union[Callable[[Type[Any]], 'DataclassType'], 'DataclassType']:
     """
     Like the python standard lib dataclasses but with type validation.
 
@@ -136,7 +136,7 @@ def dataclass(
     as Config.validate_assignment.
     """
 
-    def wrap(cls: AnyType) -> 'DataclassType':
+    def wrap(cls: Type[Any]) -> 'DataclassType':
         return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, config)
 
     if _cls is None:

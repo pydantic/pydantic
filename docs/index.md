@@ -1,4 +1,4 @@
-[![BuildStatus](https://travis-ci.org/samuelcolvin/pydantic.svg?branch=master)](https://travis-ci.org/samuelcolvin/pydantic)
+[![CI](https://github.com/samuelcolvin/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/samuelcolvin/pydantic/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI)
 [![Coverage](https://codecov.io/gh/samuelcolvin/pydantic/branch/master/graph/badge.svg)](https://codecov.io/gh/samuelcolvin/pydantic)
 [![pypi](https://img.shields.io/pypi/v/pydantic.svg)](https://pypi.python.org/pypi/pydantic)
 [![CondaForge](https://img.shields.io/conda/v/conda-forge/pydantic.svg)](https://anaconda.org/conda-forge/pydantic)
@@ -12,10 +12,6 @@ Data validation and settings management using python type annotations.
 *pydantic* enforces type hints at runtime, and provides user friendly errors when data is invalid.
 
 Define how data should be in pure, canonical python; validate it with *pydantic*.
-
-!!! note "Version 0.32 Documentation"
-    This documentation refers to Version 1 of *pydantic* which has just been released, **v0.32.2** 
-    (the previous release) docs are available [here](https://5d584fcca7c9b70007d1c997--pydantic-docs.netlify.com).
 
 ## Example
 
@@ -102,7 +98,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
 : are using *pydantic* in [WALKOFF](https://github.com/nsacyber/WALKOFF), an open-source automation framework.
 
 **Uber**
-: are using *pydantic* in [Ludwig](https://github.com/uber/ludwig), an an open-source TensorFlow wrapper.
+: are using *pydantic* in [Ludwig](https://github.com/uber/ludwig), an open-source TensorFlow wrapper.
 
 **Cuenca**
 : are a Mexican neobank that uses *pydantic* for several internal
@@ -114,10 +110,27 @@ Hundreds of organisations and packages are using *pydantic*, including:
 : are using *pydantic* in [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
   for quantum chemistry.
 
+[Reach](https://www.reach.vote)
+: trusts *pydantic* (via FastAPI) and [*arq*](https://github.com/samuelcolvin/arq) (Samuel's excellent
+  asynchronous task queue) to reliably power multiple mission-critical microservices.
+
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
 
-## Testimonials
+## Discussion of Pydantic
 
-[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand)
-: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management using python type annotations, and it's the python type annotations that makes me really extra happy... It works automatically with all the IDE's you already have.*" --Michael Kennedy
+Podcasts and videos discussing pydantic.
+
+[Podcast.\_\_init\_\_](https://www.pythonpodcast.com/pydantic-data-validation-episode-263/){target=_blank}
+: Discussion about where *pydantic* came from and ideas for where it might go next with 
+  Samuel Colvin the creator of pydantic.
+
+[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand){target=_blank}
+: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management 
+  using python type annotations, and it's the python type annotations that makes me really extra happy... It works 
+  automatically with all the IDE's you already have.*" --Michael Kennedy
+
+[Python pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
+: a talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to pydantic and walking 
+  through the core features of pydantic.
+

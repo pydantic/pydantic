@@ -1,6 +1,6 @@
-import inspect
 import warnings
-from importlib import import_module
+from itertools import islice
+from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -10,6 +10,7 @@ from typing import (
     Generator,
     Iterator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -19,13 +20,35 @@ from typing import (
     no_type_check,
 )
 
-from .typing import AnyType, display_as_type
+from .typing import display_as_type
+from .version import version_info
 
 if TYPE_CHECKING:
-    from .main import BaseModel  # noqa: F401
-    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, ReprArgs  # noqa: F401
+    from inspect import Signature
 
-KeyType = TypeVar('KeyType')
+    from .dataclasses import DataclassType  # noqa: F401
+    from .fields import ModelField  # noqa: F401
+    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
+
+__all__ = (
+    'import_string',
+    'sequence_like',
+    'validate_field_name',
+    'lenient_issubclass',
+    'in_ipython',
+    'deep_update',
+    'update_not_none',
+    'almost_equal_floats',
+    'get_model',
+    'to_camel',
+    'PyObjectStr',
+    'Representation',
+    'GetterDict',
+    'ValueItems',
+    'version_info',  # required here to match behaviour in v1.3
+    'ClassAttribute',
+)
 
 
 def import_string(dotted_path: str) -> Any:
@@ -33,6 +56,8 @@ def import_string(dotted_path: str) -> Any:
     Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
     last name in the path. Raise ImportError if the import fails.
     """
+    from importlib import import_module
+
     try:
         module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
     except ValueError as e:
@@ -56,17 +81,14 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     try:
         v = v.__repr__()
     except TypeError:
-        v = type(v).__repr__(v)  # in case v is a type
+        v = v.__class__.__repr__(v)  # in case v is a type
     if len(v) > max_len:
         v = v[: max_len - 1] + '…'
     return v
 
 
-ExcType = Type[Exception]
-
-
-def sequence_like(v: AnyType) -> bool:
-    return isinstance(v, (list, tuple, set, frozenset)) or inspect.isgenerator(v)
+def sequence_like(v: Type[Any]) -> bool:
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
@@ -81,7 +103,7 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-def lenient_issubclass(cls: Any, class_or_tuple: Union[AnyType, Tuple[AnyType, ...]]) -> bool:
+def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...]]) -> bool:
     return isinstance(cls, type) and issubclass(cls, class_or_tuple)
 
 
@@ -97,6 +119,9 @@ def in_ipython() -> bool:
         return True
 
 
+KeyType = TypeVar('KeyType')
+
+
 def deep_update(mapping: Dict[KeyType, Any], updating_mapping: Dict[KeyType, Any]) -> Dict[KeyType, Any]:
     updated_mapping = mapping.copy()
     for k, v in updating_mapping.items():
@@ -107,11 +132,155 @@ def deep_update(mapping: Dict[KeyType, Any], updating_mapping: Dict[KeyType, Any
     return updated_mapping
 
 
+def update_not_none(mapping: Dict[Any, Any], **update: Any) -> None:
+    mapping.update({k: v for k, v in update.items() if v is not None})
+
+
 def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
     """
     Return True if two floats are almost equal
     """
     return abs(value_1 - value_2) <= delta
+
+
+def generate_model_signature(
+    init: Callable[..., None], fields: Dict[str, 'ModelField'], config: Type['BaseConfig']
+) -> 'Signature':
+    """
+    Generate signature for model based on its fields
+    """
+    from inspect import Parameter, Signature, signature
+
+    present_params = signature(init).parameters.values()
+    merged_params: Dict[str, Parameter] = {}
+    var_kw = None
+    use_var_kw = False
+
+    for param in islice(present_params, 1, None):  # skip self arg
+        if param.kind is param.VAR_KEYWORD:
+            var_kw = param
+            continue
+        merged_params[param.name] = param
+
+    if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
+        allow_names = config.allow_population_by_field_name
+        for field_name, field in fields.items():
+            param_name = field.alias
+            if field_name in merged_params or param_name in merged_params:
+                continue
+            elif not param_name.isidentifier():
+                if allow_names and field_name.isidentifier():
+                    param_name = field_name
+                else:
+                    use_var_kw = True
+                    continue
+
+            # TODO: replace annotation with actual expected types once #1055 solved
+            kwargs = {'default': field.default} if not field.required else {}
+            merged_params[param_name] = Parameter(
+                param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
+            )
+
+    if config.extra is config.extra.allow:
+        use_var_kw = True
+
+    if var_kw and use_var_kw:
+        # Make sure the parameter for extra kwargs
+        # does not have the same name as a field
+        default_model_signature = [
+            ('__pydantic_self__', Parameter.POSITIONAL_OR_KEYWORD),
+            ('data', Parameter.VAR_KEYWORD),
+        ]
+        if [(p.name, p.kind) for p in present_params] == default_model_signature:
+            # if this is the standard model signature, use extra_data as the extra args name
+            var_kw_name = 'extra_data'
+        else:
+            # else start from var_kw
+            var_kw_name = var_kw.name
+
+        # generate a name that's definitely unique
+        while var_kw_name in fields:
+            var_kw_name += '_'
+        merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
+
+    return Signature(parameters=list(merged_params.values()), return_annotation=None)
+
+
+def get_model(obj: Union[Type['BaseModel'], Type['DataclassType']]) -> Type['BaseModel']:
+    from .main import BaseModel  # noqa: F811
+
+    try:
+        model_cls = obj.__pydantic_model__  # type: ignore
+    except AttributeError:
+        model_cls = obj
+
+    if not issubclass(model_cls, BaseModel):
+        raise TypeError('Unsupported type, must be either BaseModel or dataclass')
+    return model_cls
+
+
+def to_camel(string: str) -> str:
+    return ''.join(word.capitalize() for word in string.split('_'))
+
+
+T = TypeVar('T')
+
+
+def unique_list(input_list: Union[List[T], Tuple[T, ...]]) -> List[T]:
+    """
+    Make a list unique while maintaining order.
+    """
+    result = []
+    unique_set = set()
+    for v in input_list:
+        if v not in unique_set:
+            unique_set.add(v)
+            result.append(v)
+
+    return result
+
+
+def update_normalized_all(
+    item: Union['AbstractSetIntStr', 'MappingIntStrAny'],
+    all_items: Union['AbstractSetIntStr', 'MappingIntStrAny'],
+) -> Union['AbstractSetIntStr', 'MappingIntStrAny']:
+    """
+    Update item based on what all items contains.
+
+    The update is done based on these cases:
+
+    - if both arguments are dicts then each key-value pair existing in ``all_items`` is merged into ``item``,
+      while the rest of the key-value pairs are updated recursively with this function.
+    - if both arguments are sets then they are just merged.
+    - if ``item`` is a dictionary and ``all_items`` is a set then all values of it are added to ``item`` as
+      ``key: ...``.
+    - if ``item`` is set and ``all_items`` is a dictionary, then ``item`` is converted to a dictionary and then the
+      key-value pairs of ``all_items`` are merged in it.
+
+    During recursive calls, there is a case where ``all_items`` can be an Ellipsis, in which case the ``item`` is
+    returned as is.
+    """
+    if not item:
+        return all_items
+    if isinstance(item, dict) and isinstance(all_items, dict):
+        item = dict(item)
+        item.update({k: update_normalized_all(item[k], v) for k, v in all_items.items() if k in item})
+        item.update({k: v for k, v in all_items.items() if k not in item})
+        return item
+    if isinstance(item, set) and isinstance(all_items, set):
+        item = set(item)
+        item.update(all_items)
+        return item
+    if isinstance(item, dict) and isinstance(all_items, set):
+        item = dict(item)
+        item.update({k: ... for k in all_items if k not in item})
+        return item
+    if isinstance(item, set) and isinstance(all_items, dict):
+        item = {k: ... for k in item}
+        item.update({k: v for k, v in all_items.items() if k not in item})
+        return item
+    # Case when item or all_items is ... (in recursive calls).
+    return item
 
 
 class PyObjectStr(str):
@@ -131,6 +300,8 @@ class Representation:
     __pretty__ is used by [devtools](https://python-devtools.helpmanual.io/) to provide human readable representations
     of objects.
     """
+
+    __slots__: Tuple[str, ...] = tuple()
 
     def __repr_args__(self) -> 'ReprArgs':
         """
@@ -243,18 +414,18 @@ class ValueItems(Representation):
 
     __slots__ = ('_items', '_type')
 
-    def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'DictIntStrAny']) -> None:
+    def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> None:
         if TYPE_CHECKING:
-            self._items: Union['AbstractSetIntStr', 'DictIntStrAny']
+            self._items: Union['AbstractSetIntStr', 'MappingIntStrAny']
             self._type: Type[Union[set, dict]]  # type: ignore
 
         # For further type checks speed-up
-        if isinstance(items, dict):
+        if isinstance(items, Mapping):
             self._type = dict
         elif isinstance(items, AbstractSet):
             self._type = set
         else:
-            raise TypeError(f'Unexpected type of exclude value {type(items)}')
+            raise TypeError(f'Unexpected type of exclude value {items.__class__}')
 
         if isinstance(value, (list, tuple)):
             items = self._normalize_indexes(items, len(value))
@@ -284,7 +455,7 @@ class ValueItems(Representation):
         return item in self._items
 
     @no_type_check
-    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'DictIntStrAny']]:
+    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
         :return: raw values for elemet if self._items is dict and contain needed element
@@ -297,7 +468,7 @@ class ValueItems(Representation):
 
     @no_type_check
     def _normalize_indexes(
-        self, items: Union['AbstractSetIntStr', 'DictIntStrAny'], v_length: int
+        self, items: Union['AbstractSetIntStr', 'MappingIntStrAny'], v_length: int
     ) -> Union['AbstractSetIntStr', 'DictIntStrAny']:
         """
         :param items: dict or set of indexes which will be normalized
@@ -305,11 +476,61 @@ class ValueItems(Representation):
 
         >>> self._normalize_indexes({0, -2, -1}, 4)
         {0, 2, 3}
+        >>> self._normalize_indexes({'__all__'}, 4)
+        {0, 1, 2, 3}
         """
+        if any(not isinstance(i, int) and i != '__all__' for i in items):
+            raise TypeError(
+                'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
+                'expected integer keys or keyword "__all__"'
+            )
         if self._type is set:
+            if '__all__' in items:
+                if items != {'__all__'}:
+                    raise ValueError('set with keyword "__all__" must not contain other elements')
+                return {i for i in range(v_length)}
             return {v_length + i if i < 0 else i for i in items}
         else:
-            return {v_length + i if i < 0 else i: v for i, v in items.items()}
+            all_items = items.get('__all__')
+            for i, v in items.items():
+                if not (isinstance(v, Mapping) or isinstance(v, AbstractSet) or v is ...):
+                    raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
+            normalized_items = {v_length + i if i < 0 else i: v for i, v in items.items() if i != '__all__'}
+            if all_items:
+                default: Type[Union[Set[Any], Dict[Any, Any]]]
+                if isinstance(all_items, Mapping):
+                    default = dict
+                elif isinstance(all_items, AbstractSet):
+                    default = set
+                else:
+                    for i in range(v_length):
+                        normalized_items.setdefault(i, ...)
+                    return normalized_items
+                for i in range(v_length):
+                    normalized_item = normalized_items.setdefault(i, default())
+                    if normalized_item is not ...:
+                        normalized_items[i] = update_normalized_all(normalized_item, all_items)
+            return normalized_items
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]
+
+
+class ClassAttribute:
+    """
+    Hide class attribute from its instances
+    """
+
+    __slots__ = (
+        'name',
+        'value',
+    )
+
+    def __init__(self, name: str, value: Any) -> None:
+        self.name = name
+        self.value = value
+
+    def __get__(self, instance: Any, owner: Type[Any]) -> None:
+        if instance is None:
+            return self.value
+        raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')

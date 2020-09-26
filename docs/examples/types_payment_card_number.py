@@ -3,6 +3,7 @@ from datetime import date
 from pydantic import BaseModel
 from pydantic.types import PaymentCardBrand, PaymentCardNumber, constr
 
+
 class Card(BaseModel):
     name: constr(strip_whitespace=True, min_length=1)
     number: PaymentCardNumber
@@ -16,10 +17,11 @@ class Card(BaseModel):
     def expired(self) -> bool:
         return self.exp < date.today()
 
+
 card = Card(
     name='Georg Wilhelm Friedrich Hegel',
     number='4000000000000002',
-    exp=date(2023, 9, 30)
+    exp=date(2023, 9, 30),
 )
 
 assert card.number.brand == PaymentCardBrand.visa

@@ -1,8 +1,11 @@
--r benchmarks/requirements.txt
+# benchmark requirements are skipped here since they're rarely required
+# -r benchmarks/requirements.txt
 -r docs/requirements.txt
 -r tests/requirements.txt
 
-devtools==0.5.1
-email-validator==1.0.5
+Cython==0.29.21;sys_platform!='win32'
+devtools==0.6.0
+email-validator==1.1.1
 dataclasses==0.6; python_version < '3.7'
-typing-extensions==3.7.4.1
+typing-extensions==3.7.4.1; python_version < '3.8'
+python-dotenv==0.14.0

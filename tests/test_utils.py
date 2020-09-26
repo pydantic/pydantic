@@ -1,15 +1,28 @@
 import os
+import re
 import string
+from distutils.version import StrictVersion
 from enum import Enum
 from typing import NewType, Union
 
 import pytest
 
-from pydantic import BaseModel
+from pydantic import VERSION, BaseModel
 from pydantic.color import Color
+from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
-from pydantic.typing import display_as_type, is_new_type, new_type_supertype
-from pydantic.utils import ValueItems, deep_update, import_string, lenient_issubclass, truncate
+from pydantic.typing import Literal, all_literal_values, display_as_type, is_new_type, new_type_supertype
+from pydantic.utils import (
+    ClassAttribute,
+    ValueItems,
+    deep_update,
+    get_model,
+    import_string,
+    lenient_issubclass,
+    truncate,
+    unique_list,
+)
+from pydantic.version import version_info
 
 try:
     import devtools
@@ -87,6 +100,19 @@ def test_lenient_issubclass_is_lenient():
 def test_truncate(input_value, output):
     with pytest.warns(DeprecationWarning, match='`truncate` is no-longer used by pydantic and is deprecated'):
         assert truncate(input_value, max_len=20) == output
+
+
+@pytest.mark.parametrize(
+    'input_value,output',
+    [
+        ([], []),
+        ([1, 1, 1, 2, 1, 2, 3, 2, 3, 1, 4, 2, 3, 1], [1, 2, 3, 4]),
+        (['a', 'a', 'b', 'a', 'b', 'c', 'b', 'c', 'a'], ['a', 'b', 'c']),
+    ],
+)
+def test_unique_list(input_value, output):
+    assert unique_list(input_value) == output
+    assert unique_list(unique_list(input_value)) == unique_list(input_value)
 
 
 def test_value_items():
@@ -265,3 +291,59 @@ def test_deep_update_is_not_mutating():
 
 def test_undefined_repr():
     assert repr(Undefined) == 'PydanticUndefined'
+
+
+def test_get_model():
+    class A(BaseModel):
+        a: str
+
+    assert get_model(A) == A
+
+    @dataclass
+    class B:
+        a: str
+
+    assert get_model(B) == B.__pydantic_model__
+
+    class C:
+        pass
+
+    with pytest.raises(TypeError):
+        get_model(C)
+
+
+def test_version_info():
+    s = version_info()
+    assert re.match(' *pydantic version: ', s)
+    assert s.count('\n') == 5
+
+
+def test_version_strict():
+    assert str(StrictVersion(VERSION)) == VERSION
+
+
+def test_class_attribute():
+    class Foo:
+        attr = ClassAttribute('attr', 'foo')
+
+    assert Foo.attr == 'foo'
+
+    with pytest.raises(AttributeError, match="'attr' attribute of 'Foo' is class-only"):
+        Foo().attr
+
+    f = Foo()
+    f.attr = 'not foo'
+    assert f.attr == 'not foo'
+
+
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
+def test_all_literal_values():
+    L1 = Literal['1']
+    assert all_literal_values(L1) == ('1',)
+
+    L2 = Literal['2']
+    L12 = Literal[L1, L2]
+    assert sorted(all_literal_values(L12)) == sorted(('1', '2'))
+
+    L312 = Literal['3', Literal[L1, L2]]
+    assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))

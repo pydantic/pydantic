@@ -23,7 +23,7 @@ from . import errors
 date_re = re.compile(r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$')
 
 time_re = re.compile(
-    r'(?P<hour>\d{1,2}):(?P<minute>\d{1,2})' r'(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
+    r'(?P<hour>\d{1,2}):(?P<minute>\d{1,2})(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
 )
 
 datetime_re = re.compile(
@@ -75,7 +75,7 @@ def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[Non
 
 
 def from_unix_seconds(seconds: Union[int, float]) -> datetime:
-    while seconds > MS_WATERSHED:
+    while abs(seconds) > MS_WATERSHED:
         seconds /= 1000
     dt = EPOCH + timedelta(seconds=seconds)
     return dt.replace(tzinfo=timezone.utc)

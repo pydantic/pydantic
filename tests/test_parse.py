@@ -1,9 +1,10 @@
+import json
 import pickle
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import pytest
 
-from pydantic import BaseModel, Field, Protocol, ValidationError
+from pydantic import BaseModel, Field, Protocol, ValidationError, parse_obj_as
 
 
 class Model(BaseModel):
@@ -56,6 +57,55 @@ def test_parse_root_list():
     assert m.__root__ == ['a']
 
 
+def test_parse_nested_root_list():
+    class NestedData(BaseModel):
+        id: str
+
+    class NestedModel(BaseModel):
+        __root__: List[NestedData]
+
+    class MyModel(BaseModel):
+        nested: NestedModel
+
+    m = MyModel.parse_obj({'nested': [{'id': 'foo'}]})
+    assert isinstance(m.nested, NestedModel)
+    assert isinstance(m.nested.__root__[0], NestedData)
+
+
+def test_parse_nested_root_tuple():
+    class NestedData(BaseModel):
+        id: str
+
+    class NestedModel(BaseModel):
+        __root__: Tuple[int, NestedData]
+
+    class MyModel(BaseModel):
+        nested: List[NestedModel]
+
+    data = [0, {'id': 'foo'}]
+    m = MyModel.parse_obj({'nested': [data]})
+    assert isinstance(m.nested[0], NestedModel)
+    assert isinstance(m.nested[0].__root__[1], NestedData)
+
+    nested = parse_obj_as(NestedModel, data)
+    assert isinstance(nested, NestedModel)
+
+
+def test_parse_nested_custom_root():
+    class NestedModel(BaseModel):
+        __root__: List[str]
+
+    class MyModel(BaseModel):
+        __root__: NestedModel
+
+    nested = ['foo', 'bar']
+    m = MyModel.parse_obj(nested)
+    assert isinstance(m, MyModel)
+    assert isinstance(m.__root__, NestedModel)
+    assert isinstance(m.__root__.__root__, List)
+    assert isinstance(m.__root__.__root__[0], str)
+
+
 def test_json():
     assert Model.parse_raw('{"a": 12, "b": 8}') == Model(a=12, b=8)
 
@@ -104,6 +154,24 @@ def test_file_json_no_ext(tmpdir):
     p = tmpdir.join('test')
     p.write('{"a": 12, "b": 8}')
     assert Model.parse_file(str(p)) == Model(a=12, b=8)
+
+
+def test_file_json_loads(tmp_path):
+    def custom_json_loads(*args, **kwargs):
+        data = json.loads(*args, **kwargs)
+        data['a'] = 99
+        return data
+
+    class Example(BaseModel):
+        a: int
+
+        class Config:
+            json_loads = custom_json_loads
+
+    p = tmp_path / 'test_json_loads.json'
+    p.write_text('{"a": 12}')
+
+    assert Example.parse_file(p) == Example(a=99)
 
 
 def test_file_pickle(tmpdir):

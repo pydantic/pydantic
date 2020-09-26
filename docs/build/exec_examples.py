@@ -10,7 +10,7 @@ import sys
 import textwrap
 import traceback
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Tuple
 from unittest.mock import patch
 
 from ansi2html import Ansi2HTMLConverter
@@ -52,18 +52,41 @@ class MockPrint:
 
     def __call__(self, *args, file=None, flush=None):
         frame = inspect.currentframe().f_back.f_back.f_back
+        if sys.version_info >= (3, 8):
+            frame = frame.f_back
         if not self.file.samefile(frame.f_code.co_filename):
             # happens when index_error.py imports index_main.py
             return
         s = ' '.join(map(to_string, args))
 
-        lines = []
-        for line in s.split('\n'):
-            if len(line) > MAX_LINE_LENGTH - 3:
-                lines += textwrap.wrap(line, width=MAX_LINE_LENGTH - 3)
-            else:
-                lines.append(line)
-        self.statements.append((frame.f_lineno, lines))
+        self.statements.append((frame.f_lineno, s))
+
+
+def build_print_lines(s: str, max_len_reduction: int = 0):
+    print_lines = []
+    max_len = MAX_LINE_LENGTH - 3 - max_len_reduction
+    for line in s.split('\n'):
+        if len(line) > max_len:
+            print_lines += textwrap.wrap(line, width=max_len)
+        else:
+            print_lines.append(line)
+    return print_lines
+
+
+def build_print_statement(line_no: int, s: str, lines: List[str]) -> None:
+    indent = ''
+    for back in range(1, 100):
+        m = re.search(r'^( *)print\(', lines[line_no - back])
+        if m:
+            indent = m.group(1)
+            break
+    print_lines = build_print_lines(s, len(indent))
+
+    if len(print_lines) > 2:
+        text = textwrap.indent('"""\n{}\n"""'.format('\n'.join(print_lines)), indent)
+    else:
+        text = '\n'.join(f'{indent}#> {line}' for line in print_lines)
+    lines.insert(line_no, text)
 
 
 def all_md_contents() -> str:
@@ -87,11 +110,29 @@ def gen_ansi_output():
     print(f'generated ansi output to {path}')
 
 
+dont_execute_re = re.compile(r'^# dont-execute\n', flags=re.M | re.I)
+required_py_re = re.compile(r'^# *requires *python *(\d+).(\d+)', flags=re.M)
+
+
+def should_execute(file_name: str, file_text: str) -> Tuple[str, bool]:
+    if dont_execute_re.search(file_text):
+        return dont_execute_re.sub('', file_text), False
+    m = required_py_re.search(file_text)
+    if m:
+        if sys.version_info >= tuple(int(v) for v in m.groups()):
+            return required_py_re.sub('', file_text), True
+        else:
+            v = '.'.join(m.groups())
+            print(f'WARNING: {file_name} requires python {v}, not running')
+            return required_py_re.sub(f'# requires python {v}, NOT EXECUTED!', file_text), False
+    else:
+        return file_text, True
+
+
 def exec_examples():
     errors = []
     all_md = all_md_contents()
     new_files = {}
-    os.environ.clear()
     os.environ.update({'my_auth_key': 'xxx', 'my_api_key': 'xxx'})
 
     sys.path.append(str(EXAMPLES_DIR))
@@ -113,27 +154,27 @@ def exec_examples():
         if f'{{!.tmp_examples/{file.name}!}}' not in all_md:
             error('file not used anywhere')
 
-        file_text = file.read_text()
-        if '\n\n\n' in file_text:
+        file_text = file.read_text('utf-8')
+        if '\n\n\n\n' in file_text:
             error('too many new lines')
         if not file_text.endswith('\n'):
             error('no trailing new line')
         if re.search('^ *# *>', file_text, flags=re.M):
             error('contains comments with print output, please remove')
 
-        dont_execute_re = re.compile(r'^# dont-execute\n', flags=re.M)
-        if dont_execute_re.search(file_text):
-            lines = dont_execute_re.sub('', file_text).split('\n')
-        else:
+        file_text, execute = should_execute(file.name, file_text)
+        if execute:
             no_print_intercept_re = re.compile(r'^# no-print-intercept\n', flags=re.M)
-            no_print_intercept = bool(no_print_intercept_re.search(file_text))
-            if no_print_intercept:
+            print_intercept = not bool(no_print_intercept_re.search(file_text))
+            if not print_intercept:
                 file_text = no_print_intercept_re.sub('', file_text)
 
+            if file.stem in sys.modules:
+                del sys.modules[file.stem]
             mp = MockPrint(file)
             mod = None
             with patch('builtins.print') as mock_print:
-                if not no_print_intercept:
+                if print_intercept:
                     mock_print.side_effect = mp
                 try:
                     mod = importlib.import_module(file.stem)
@@ -150,16 +191,14 @@ def exec_examples():
             if to_json_line in lines:
                 lines = [line for line in lines if line != to_json_line]
                 if len(mp.statements) != 1:
-                    error('should only have one print statement')
-                new_files[file.stem + '.json'] = '\n'.join(mp.statements[0][1]) + '\n'
-
+                    error('should have exactly one print statement')
+                print_lines = build_print_lines(mp.statements[0][1])
+                new_files[file.stem + '.json'] = '\n'.join(print_lines) + '\n'
             else:
-                for line_no, print_lines in reversed(mp.statements):
-                    if len(print_lines) > 2:
-                        text = '"""\n{}\n"""'.format('\n'.join(print_lines))
-                    else:
-                        text = '\n'.join('#> ' + l for l in print_lines)
-                    lines.insert(line_no, text)
+                for line_no, print_string in reversed(mp.statements):
+                    build_print_statement(line_no, print_string, lines)
+        else:
+            lines = file_text.split('\n')
 
         try:
             ignore_above = lines.index('# ignore-above')
@@ -184,7 +223,7 @@ def exec_examples():
     print(f'writing {len(new_files)} example files to {TMP_EXAMPLES_DIR}')
     TMP_EXAMPLES_DIR.mkdir()
     for file_name, content in new_files.items():
-        (TMP_EXAMPLES_DIR / file_name).write_text(content)
+        (TMP_EXAMPLES_DIR / file_name).write_text(content, 'utf-8')
     gen_ansi_output()
     return 0
 
