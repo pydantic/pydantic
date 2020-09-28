@@ -10,3 +10,4 @@ attr
 cattrs
 cerberus
 voluptuous
+validate_it
