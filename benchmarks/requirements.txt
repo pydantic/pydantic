@@ -11,3 +11,4 @@ cattrs
 cerberus
 voluptuous
 validate_it
+serpyco
