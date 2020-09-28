@@ -24,6 +24,13 @@ class TestValidateIt:
             latitude: float = None
             longitude: float = None
 
+        def dt_parser(value):
+            try:
+                value = datetime.strptime(value, '%Y-%m-%dT%H:%M:%S')
+            except ValueError:
+                raise ValidationError()
+            return value
+
         @schema
         class Model:
             id: int
@@ -31,15 +38,15 @@ class TestValidateIt:
             sort_index: float
             # client_email: EmailStr = None
 
-            location: Location = None
+            location: Location = Options(auto_pack=True, packer=lambda x, y: y(**x))
 
-            last_updated: datetime
-            contractor: int = Options(min_value=0)
-            upstream_http_referrer: str = Options(max_length=1023)
+            last_updated: datetime = Options(parser=dt_parser)
+            contractor: int = Options(min_value=0, parser=int)
+            upstream_http_referrer: str = Options(max_length=1023, default='')
             grecaptcha_response: str = Options(min_length=20, max_length=1000)
-            client_phone: str = Options(max_length=255, default=None)
+            client_phone: str = Options(max_length=255, default='')
 
-            skills: List[Skill] = []
+            skills: List[Skill] = Options(default=list, auto_pack=True, packer=lambda x, y: [Skill(**i) for i in x])
 
             extra: str = Options(default=Extra.allow if allow_extra else Extra.forbid)
 
