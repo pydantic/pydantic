@@ -5,7 +5,18 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, Extra, Field, NoneBytes, NoneStr, Required, ValidationError, constr
+from pydantic import (
+    BaseModel,
+    ConfigError,
+    Extra,
+    Field,
+    NoneBytes,
+    NoneStr,
+    Required,
+    ValidationError,
+    constr,
+    validator,
+)
 
 
 def test_success():
@@ -401,6 +412,27 @@ def test_const_validates_after_type_validators():
 def test_const_with_wrong_value():
     class Model(BaseModel):
         a: int = Field(3, const=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=4)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'unexpected value; permitted: 3',
+            'type': 'value_error.const',
+            'ctx': {'given': 4, 'permitted': [3]},
+        }
+    ]
+
+
+def test_const_with_validator():
+    class Model(BaseModel):
+        a: int = Field(3, const=True)
+
+        @validator('a')
+        def validate(v):
+            return v
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=4)
