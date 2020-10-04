@@ -7,7 +7,7 @@ def username_alphanumeric(cls, v):
 
 
 validators = {
-    'username_validator': 
+    'username_validator':
     validator('username')(username_alphanumeric)
 }
 
