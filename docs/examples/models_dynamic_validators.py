@@ -6,6 +6,13 @@ def username_alphanumeric(cls, v):
     return v
 
 
-validators = {'username_validator': validator('username')(username_alphanumeric)}
+validators = {
+    'username_validator': 
+    validator('username')(username_alphanumeric)
+}
 
-WithValidatorModel = create_model('WithValidatorModel', username=(str, ...), __validators__=validators)
+WithValidatorModel = create_model(
+    'WithValidatorModel',
+    username=(str, ...),
+    __validators__=validators
+)
