@@ -2,7 +2,7 @@ black==20.8b1
 coverage==5.2.1
 flake8==3.8.3
 flake8-quotes==3.2.0
-isort==5.5.1
+isort==5.5.4
 mypy==0.782
 pycodestyle==2.6.0
 pyflakes==2.2.0
