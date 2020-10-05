@@ -2,7 +2,7 @@ ansi2html==1.5.2
 mkdocs==1.1.2
 markdown==3.2.2
 mkdocs-exclude==1.0.2
-mkdocs-material==5.5.12
+mkdocs-material==6.0.2
 markdown-include==0.6.0
 pygments==2.6.1
 sqlalchemy   # pyup: ignore
