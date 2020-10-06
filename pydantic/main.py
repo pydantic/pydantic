@@ -365,11 +365,32 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         elif not self.__config__.allow_mutation:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.__config__.validate_assignment:
+            new_values = {**self.__dict__, name: value}
+
+            for validator in self.__pre_root_validators__:
+                try:
+                    new_values = validator(self.__class__, new_values)
+                except (ValueError, TypeError, AssertionError) as exc:
+                    raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], self.__class__)
+
             known_field = self.__fields__.get(name, None)
             if known_field:
                 value, error_ = known_field.validate(value, self.dict(exclude={name}), loc=name, cls=self.__class__)
                 if error_:
                     raise ValidationError([error_], self.__class__)
+                new_values[name] = value
+
+            errors = []
+            for skip_on_failure, validator in self.__post_root_validators__:
+                if skip_on_failure and errors:
+                    continue
+                try:
+                    new_values = validator(self.__class__, new_values)
+                except (ValueError, TypeError, AssertionError) as exc:
+                    errors.append(ErrorWrapper(exc, loc=ROOT_KEY))
+            if errors:
+                raise ValidationError(errors, self.__class__)
+
         self.__dict__[name] = value
         self.__fields_set__.add(name)
 

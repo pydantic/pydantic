@@ -1,0 +1,1 @@
+Also check `root_validators` when `validate_assignment` is on
