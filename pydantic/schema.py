@@ -41,12 +41,14 @@ from .fields import (
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr
 from .types import (
+    BytesLike,
     ConstrainedDecimal,
     ConstrainedFloat,
     ConstrainedInt,
     ConstrainedList,
     ConstrainedSet,
     ConstrainedStr,
+    StrLike,
     conbytes,
     condecimal,
     confloat,
@@ -831,10 +833,10 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
         attrs: Optional[Tuple[str, ...]] = None
         constraint_func: Optional[Callable[..., type]] = None
         if isinstance(type_, type):
-            if issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
+            if issubclass(type_, (str, StrLike)) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = constr
-            elif issubclass(type_, bytes):
+            elif issubclass(type_, (bytes, BytesLike)):
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = conbytes
             elif issubclass(type_, numeric_types) and not issubclass(

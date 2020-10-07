@@ -76,7 +76,9 @@ __all__ = [
     'DirectoryPath',
     'Json',
     'JsonWrapper',
+    'StrLike',
     'SecretStr',
+    'BytesLike',
     'SecretBytes',
     'StrictBool',
     'StrictInt',
@@ -592,7 +594,11 @@ class Json(metaclass=JsonMeta):
         field_schema.update(type='string', format='json-string')
 
 
-class SecretStr:
+class StrLike:
+    pass
+
+
+class SecretStr(StrLike):
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', writeOnly=True, format='password')
@@ -628,7 +634,11 @@ class SecretStr:
         return self._secret_value
 
 
-class SecretBytes:
+class BytesLike:
+    pass
+
+
+class SecretBytes(BytesLike):
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', writeOnly=True, format='password')
