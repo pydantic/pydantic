@@ -123,3 +123,13 @@ p = AddProject(name='x', slug='y', description='z')
 
 class TypeAliasAsAttribute(BaseModel):
     __type_alias_attribute__ = Union[str, bytes]
+
+
+class NestedModel(BaseModel):
+    class Model(BaseModel):
+        id: str
+
+    model: Model
+
+
+_ = NestedModel.Model
