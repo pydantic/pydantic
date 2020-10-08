@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 import pytest
 
@@ -219,6 +219,107 @@ def test_env_inheritance_field(env):
     assert SettingsParent(foobar='abc').foobar == 'abc'
     assert SettingsChild().foobar == 'child default'
     assert SettingsChild(foobar='abc').foobar == 'abc'
+
+
+def test_env_prefix_inheritance_config(env):
+    env.set('foobar', 'foobar')
+    env.set('prefix_foobar', 'prefix_foobar')
+
+    env.set('foobar_parent_from_field', 'foobar_parent_from_field')
+    env.set('foobar_child_from_field', 'foobar_child_from_field')
+
+    env.set('foobar_parent_from_config', 'foobar_parent_from_config')
+    env.set('foobar_child_from_config', 'foobar_child_from_config')
+
+    # . Child prefix does not override explicit parent field config
+    class Parent(BaseSettings):
+        foobar: str = Field(None, env='foobar_parent_from_field')
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+
+    assert Child().foobar == 'foobar_parent_from_field'
+
+    # c. Child prefix does not override explicit parent class config
+    class Parent(BaseSettings):
+        foobar: str = None
+
+        class Config:
+            fields = {
+                'foobar': {'env': ['foobar_parent_from_config']},
+            }
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+
+    assert Child().foobar == 'foobar_parent_from_config'
+
+    # d. Child prefix overrides parent with implicit config
+    class Parent(BaseSettings):
+        foobar: str = None
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+
+    assert Child().foobar == 'prefix_foobar'
+
+
+def test_env_inheritance_config(env):
+    env.set('foobar', 'foobar')
+    env.set('prefix_foobar', 'prefix_foobar')
+
+    env.set('foobar_parent_from_field', 'foobar_parent_from_field')
+    env.set('foobar_child_from_field', 'foobar_child_from_field')
+
+    env.set('foobar_parent_from_config', 'foobar_parent_from_config')
+    env.set('foobar_child_from_config', 'foobar_child_from_config')
+
+    # a. Child class config overrides prefix and parent field config
+    class Parent(BaseSettings):
+        foobar: str = Field(None, env='foobar_parent_from_field')
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+            fields = {
+                'foobar': {'env': ['foobar_child_from_config']},
+            }
+
+    assert Child().foobar == 'foobar_child_from_config'
+
+    # b. Child class config overrides prefix and parent class config
+    class Parent(BaseSettings):
+        foobar: str = None
+
+        class Config:
+            fields = {
+                'foobar': {'env': ['foobar_parent_from_config']},
+            }
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+            fields = {
+                'foobar': {'env': ['foobar_child_from_config']},
+            }
+
+    assert Child().foobar == 'foobar_child_from_config'
+
+    # . Child class config overrides prefix and parent with implicit config
+    class Parent(BaseSettings):
+        foobar: Optional[str]
+
+    class Child(Parent):
+        class Config:
+            env_prefix = 'prefix_'
+            fields = {
+                'foobar': {'env': ['foobar_child_from_field']},
+            }
+
+    assert Child().foobar == 'foobar_child_from_field'
 
 
 def test_env_invalid(env):

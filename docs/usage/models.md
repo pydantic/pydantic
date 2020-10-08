@@ -81,7 +81,7 @@ Models possess the following methods and attributes:
 : a utility for loading strings of numerous formats; cf. [helper functions](#helper-functions)
 
 `parse_file()`
-: like `parse_raw()` but for files; cf. [helper function](#helper-functions)
+: like `parse_raw()` but for file paths; cf. [helper function](#helper-functions)
 
 `from_orm()`
 : loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
@@ -238,7 +238,7 @@ _(This script is complete, it should run "as is")_
   rather than keyword arguments. If the object passed is not a dict a `ValidationError` will be raised.
 * **`parse_raw`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `parse_obj`.
   Parsing *pickle* data is also supported by setting the `content_type` argument appropriately.
-* **`parse_file`**: this reads a file and passes the contents to `parse_raw`. If `content_type` is omitted,
+* **`parse_file`**: this takes in a file path, reads the file and passes the contents to `parse_raw`. If `content_type` is omitted,
   it is inferred from the file's extension.
 
 ```py
