@@ -437,21 +437,21 @@ def test_config_file_settings_nornir(env):
     """
 
     class Settings(BaseSettings):
-        a: str
-        b: str
-        c: str
+        param_a: str
+        param_b: str
+        param_c: str
 
         def _build_values(self, init_kwargs, _env_file, _env_file_encoding):
             config_settings = init_kwargs.pop('__config_settings__')
             return {**config_settings, **init_kwargs, **self._build_environ()}
 
-    env.set('C', 'env setting c')
+    env.set('PARAM_C', 'env setting c')
 
-    config = {'a': 'config a', 'b': 'config b', 'c': 'config c'}
-    s = Settings(__config_settings__=config, b='argument b', c='argument c')
-    assert s.a == 'config a'
-    assert s.b == 'argument b'
-    assert s.c == 'env setting c'
+    config = {'param_a': 'config a', 'param_b': 'config b', 'param_c': 'config c'}
+    s = Settings(__config_settings__=config, param_b='argument b', param_c='argument c')
+    assert s.param_a == 'config a'
+    assert s.param_b == 'argument b'
+    assert s.param_c == 'env setting c'
 
 
 test_env_file = """\
