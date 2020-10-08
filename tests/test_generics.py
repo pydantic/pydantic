@@ -5,7 +5,7 @@ from typing import Any, ClassVar, Dict, Generic, List, Optional, Tuple, Type, Ty
 import pytest
 
 from pydantic import BaseModel, Field, ValidationError, root_validator, validator
-from pydantic.generics import GenericModel, _generic_types_cache
+from pydantic.generics import GenericModel, _generic_types_cache, get_caller_module_name
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 
@@ -642,4 +642,55 @@ original = get_generic(Model)(value=Model(a='24'))
 with pytest.raises(pickle.PicklingError):
     pickle.dumps(original)
     """
+    )
+
+
+def test_get_caller_module_name_from_function():
+    def get_current_module_name():
+        return get_caller_module_name()
+
+    assert get_current_module_name() == __name__
+
+
+def test_get_caller_module_name_from_module(create_module):
+    create_module(
+        """
+from pydantic.generics import get_caller_module_name
+def get_current_module_name():
+    return get_caller_module_name()
+
+assert get_current_module_name() == __name__
+        """
+    )
+
+    def get_current_module_name():
+        return get_caller_module_name()
+
+    assert get_current_module_name() == __name__
+
+
+def test_get_caller_module_name_not_found(mocker):
+    mocker.patch('inspect.getmodule', return_value=None)
+    assert get_caller_module_name() is None
+
+
+def test_is_call_from_module(create_module):
+    create_module(
+        """
+from pydantic.generics import is_call_from_module
+
+def function():
+    assert is_call_from_module()
+
+    another_function()
+
+def another_function():
+    assert not is_call_from_module()
+    third_function()
+
+def third_function():
+    assert not is_call_from_module()
+
+function()
+        """
     )

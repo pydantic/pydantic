@@ -1,10 +1,24 @@
 import sys
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, TypeVar, Union, cast, get_type_hints
+from types import FrameType, ModuleType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    get_type_hints,
+)
 
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
 from .main import BaseModel, create_model
-from .utils import get_caller_module_name, is_call_from_module, lenient_issubclass
+from .utils import lenient_issubclass
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
@@ -125,3 +139,36 @@ def _parameterize_generic_field(field_type: Type[Any], typevars_map: Dict[TypeVa
 
 def _is_typevar(v: Any) -> bool:
     return isinstance(v, TypeVar)  # type: ignore
+
+
+def get_caller_module_name() -> Optional[str]:
+    """
+    Used inside a function to get its caller module name
+
+    Will only work against non-compiled code, therefore used only in pydantic.generics
+    """
+    import inspect
+
+    try:
+        previous_caller_frame = inspect.stack()[2].frame
+    except IndexError:
+        raise RuntimeError('This function must be used inside another function')
+
+    getmodule = cast(Callable[[FrameType, str], Optional[ModuleType]], inspect.getmodule)
+    previous_caller_module = getmodule(previous_caller_frame, previous_caller_frame.f_code.co_filename)
+    return previous_caller_module.__name__ if previous_caller_module is not None else None
+
+
+def is_call_from_module() -> bool:
+    """
+    Used inside a function to check whether it was called globally
+
+    Will only work against non-compiled code, therefore used only in pydantic.generics
+    """
+    import inspect
+
+    try:
+        previous_caller_frame = inspect.stack()[2].frame
+    except IndexError:
+        raise RuntimeError('This function must be used inside another function')
+    return previous_caller_frame.f_locals is previous_caller_frame.f_globals

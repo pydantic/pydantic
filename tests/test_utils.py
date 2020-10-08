@@ -7,7 +7,7 @@ from typing import NewType, Union
 
 import pytest
 
-from pydantic import VERSION, BaseModel, compiled
+from pydantic import VERSION, BaseModel
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
@@ -16,7 +16,6 @@ from pydantic.utils import (
     ClassAttribute,
     ValueItems,
     deep_update,
-    get_caller_module_name,
     get_model,
     import_string,
     lenient_issubclass,
@@ -348,58 +347,3 @@ def test_all_literal_values():
 
     L312 = Literal['3', Literal[L1, L2]]
     assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
-
-
-def test_get_caller_module_name_from_function():
-    def get_current_module_name():
-        return get_caller_module_name()
-
-    assert get_current_module_name() == __name__
-
-
-def test_get_caller_module_name_from_module(create_module):
-    create_module(
-        """
-from pydantic.utils import get_caller_module_name
-def get_current_module_name():
-    return get_caller_module_name()
-
-assert get_current_module_name() == __name__
-        """
-    )
-
-    def get_current_module_name():
-        return get_caller_module_name()
-
-    assert get_current_module_name() == __name__
-
-
-def test_get_caller_module_name_not_found(mocker):
-    mocker.patch('inspect.getmodule', return_value=None)
-    assert get_caller_module_name() is None
-
-
-@pytest.mark.skipif(
-    compiled,
-    reason='This function can be used only against non-compiled code, therefore used only in pydantic.generics',
-)
-def test_is_call_from_module(create_module):
-    create_module(
-        """
-from pydantic.utils import is_call_from_module
-
-def function():
-    assert is_call_from_module()
-
-    another_function()
-
-def another_function():
-    assert not is_call_from_module()
-    third_function()
-
-def third_function():
-    assert not is_call_from_module()
-
-function()
-        """
-    )

@@ -1,6 +1,6 @@
 import warnings
 from itertools import islice
-from types import FrameType, GeneratorType, ModuleType
+from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -17,7 +17,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
     no_type_check,
 )
 
@@ -48,7 +47,6 @@ __all__ = (
     'GetterDict',
     'ValueItems',
     'version_info',  # required here to match behaviour in v1.3
-    'get_caller_module_name',
     'ClassAttribute',
 )
 
@@ -536,36 +534,3 @@ class ClassAttribute:
         if instance is None:
             return self.value
         raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
-
-
-def get_caller_module_name() -> Optional[str]:
-    """
-    Used inside a function to get its caller module name
-
-    Will only work against non-compiled code, therefore used only in pydantic.generics
-    """
-    import inspect
-
-    try:
-        previous_caller_frame = inspect.stack()[2].frame
-    except IndexError:
-        raise RuntimeError('This function must be used inside another function')
-
-    getmodule = cast(Callable[[FrameType, str], Optional[ModuleType]], inspect.getmodule)
-    previous_caller_module = getmodule(previous_caller_frame, previous_caller_frame.f_code.co_filename)
-    return previous_caller_module.__name__ if previous_caller_module is not None else None
-
-
-def is_call_from_module() -> bool:
-    """
-    Used inside a function to check whether it was called globally
-
-    Will only work against non-compiled code, therefore used only in pydantic.generics
-    """
-    import inspect
-
-    try:
-        previous_caller_frame = inspect.stack()[2].frame
-    except IndexError:
-        raise RuntimeError('This function must be used inside another function')
-    return previous_caller_frame.f_locals is previous_caller_frame.f_globals
