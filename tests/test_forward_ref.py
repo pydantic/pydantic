@@ -439,3 +439,36 @@ else:
     raise AssertionError('error not raised')
     """
     )
+
+
+@skip_pre_37
+def test_forward_ref_optional(create_module):
+    module = create_module(
+        """
+from __future__ import annotations
+from pydantic import BaseModel, Field
+from typing import List, Optional
+
+
+class Spec(BaseModel):
+    spec_fields: List[str] = Field(..., alias="fields")
+    filter: Optional[str]
+    sort: Optional[str]
+
+
+class PSpec(Spec):
+    g: Optional[GSpec]
+
+
+class GSpec(Spec):
+    p: Optional[PSpec]
+
+PSpec.update_forward_refs()
+
+class Filter(BaseModel):
+    g: Optional[GSpec]
+    p: Optional[PSpec]
+    """
+    )
+    Filter = module.Filter
+    assert isinstance(Filter(p={'sort': 'some_field:asc', 'fields': []}), Filter)
