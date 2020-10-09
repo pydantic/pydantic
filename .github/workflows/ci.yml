@@ -224,7 +224,7 @@ jobs:
         CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
         CIBW_BEFORE_BUILD: 'pip install -U cython'
-        CIBW_TEST_REQUIRES: 'pytest==5.4.1'
+        CIBW_TEST_REQUIRES: 'pytest==6.1.1 pytest-mock==3.3.1'
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
         CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
