@@ -123,7 +123,6 @@ A `mypy.ini` file with all plugin strictness flags enabled (and some other mypy 
 plugins = pydantic.mypy
 
 follow_imports = silent
-strict_optional = True
 warn_redundant_casts = True
 warn_unused_ignores = True
 disallow_any_generics = True
