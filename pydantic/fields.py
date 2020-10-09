@@ -539,7 +539,7 @@ class ModelField(Representation):
 
         if class_validators_:
             self.pre_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and v.pre)
-            self.post_validators = prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
+            self.post_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
 
         if self.parse_json:
             self.pre_validators.append(make_generic_validator(validate_json))
