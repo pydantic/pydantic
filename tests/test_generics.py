@@ -235,7 +235,6 @@ def test_generic_subclass_of_generic_implicit_parameters():
     assert ConcreteSubclass.__fields__["data"].outer_type_ == Dict[int, float]
     assert ConcreteSubclass.__fields__["stuff"].outer_type_ == List[str]
     assert ConcreteSubclass.__fields__["extra"].outer_type_ == int
-    ConcreteSubclass(data={2: 1.0}, stuff=["stuff"], extra=2)
 
 
 @skip_36
