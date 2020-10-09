@@ -151,8 +151,8 @@ def get_caller_module_name() -> Optional[str]:
 
     try:
         previous_caller_frame = inspect.stack()[2].frame
-    except IndexError:
-        raise RuntimeError('This function must be used inside another function')
+    except IndexError as e:
+        raise RuntimeError('This function must be used inside another function') from e
 
     getmodule = cast(Callable[[FrameType, str], Optional[ModuleType]], inspect.getmodule)
     previous_caller_module = getmodule(previous_caller_frame, previous_caller_frame.f_code.co_filename)
@@ -169,6 +169,6 @@ def is_call_from_module() -> bool:
 
     try:
         previous_caller_frame = inspect.stack()[2].frame
-    except IndexError:
-        raise RuntimeError('This function must be used inside another function')
+    except IndexError as e:
+        raise RuntimeError('This function must be used inside another function') from e
     return previous_caller_frame.f_locals is previous_caller_frame.f_globals

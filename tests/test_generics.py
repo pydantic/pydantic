@@ -659,7 +659,8 @@ from pydantic.generics import get_caller_module_name
 def get_current_module_name():
     return get_caller_module_name()
 
-assert get_current_module_name() == __name__
+module_name = get_current_module_name()
+assert module_name == __name__, f'{module_name} != {__name__}'
         """
     )
 

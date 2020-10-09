@@ -798,12 +798,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 _is_base_model_class_defined = True
 
 
-def create_model(  # noqa: C901 (ignore complexity)
+def create_model(
     __model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
-    __module__: Optional[str] = __name__,
+    __module__: str = __name__,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
 ) -> Type[BaseModel]:
