@@ -1,4 +1,5 @@
 import sys
+import typing
 from types import FrameType, ModuleType
 from typing import (
     TYPE_CHECKING,
@@ -7,6 +8,9 @@ from typing import (
     ClassVar,
     Dict,
     Generic,
+    Iterable,
+    Iterator,
+    List,
     Optional,
     Tuple,
     Type,
@@ -19,7 +23,7 @@ from typing import (
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
 from .main import BaseModel, create_model
-from .typing import get_origin
+from .typing import get_args, get_origin
 from .utils import lenient_issubclass
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
@@ -53,6 +57,8 @@ class GenericModel(BaseModel):
 
         check_parameters_count(cls, params)
         typevars_map: Dict[TypeVarType, Type[Any]] = dict(zip(cls.__parameters__, params))
+        if is_identity_typevars_map(typevars_map):
+            return cls  # if arguments are equal to parameters it's the same object
         type_hints = get_type_hints(cls).items()
         instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}
         concrete_type_hints: Dict[str, Type[Any]] = {
@@ -84,12 +90,14 @@ class GenericModel(BaseModel):
                 )
 
         created_model.Config = cls.Config
-        concrete = all(not _is_typevar(v) for v in concrete_type_hints.values())
-        created_model.__concrete__ = concrete
-        if not concrete:
-            parameters = tuple(v for v in concrete_type_hints.values() if _is_typevar(v))
-            parameters = tuple({k: None for k in parameters}.keys())  # get unique params while maintaining order
-            created_model.__parameters__ = parameters
+
+        new_params = tuple(
+            {param: None for param in iter_contained_typevars(typevars_map.values())}
+        )  # use dict as ordered set
+        created_model.__concrete__ = not new_params
+        if new_params:
+            created_model.__parameters__ = new_params
+
         _generic_types_cache[(cls, params)] = created_model
         if len(params) == 1:
             _generic_types_cache[(cls, params[0])] = created_model
@@ -100,15 +108,48 @@ class GenericModel(BaseModel):
         """
         This method can be overridden to achieve a custom naming scheme for GenericModels
         """
-        param_names = [param.__name__ if hasattr(param, '__name__') else str(param) for param in params]
+        try:
+            GenericAlias = typing.GenericAlias  # type: ignore
+        except AttributeError:
+            GenericAlias = ()  # for all python < 3.9
+        param_names = [
+            param.__name__ if hasattr(param, '__name__') and not isinstance(param, GenericAlias) else str(param)
+            for param in params
+        ]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
 
 
-def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
-    if get_origin(type_) and getattr(type_, '__parameters__', None):
-        concrete_type_args = tuple([typevars_map[x] for x in type_.__parameters__])
-        return type_[concrete_type_args]
+def is_identity_typevars_map(typevars_map: Dict[TypeVarType, Type[Any]]) -> bool:
+    return bool(typevars_map) and all(k is v for k, v in typevars_map.items())
+
+
+def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Any:
+    type_args = get_args(type_)
+    if type_args:
+        concrete_type_args = tuple(resolve_type_hint(arg, typevars_map) for arg in type_args)
+        origin_type = get_origin(type_)
+        if origin_type is not None:
+            try:
+                return origin_type[concrete_type_args]
+            except TypeError:
+                pass
+            try:
+                # finally try to get origin directly from typing module
+                # in particular this can happen for python < 3.9 where the origin
+                # is a builtin type, see https://www.python.org/dev/peps/pep-0585
+                origin_type = getattr(typing, type_._name)
+                return cast(Any, origin_type)[concrete_type_args]
+            except (TypeError, AttributeError):  # pragma: no cover
+                pass
+        # this should not be reached
+        raise TypeError(f'Could not resolve type origin: {type_}')  # pragma: no cover
+
+    if not get_origin(type_) and lenient_issubclass(type_, GenericModel) and not type_.__concrete__:
+        return type_[tuple(resolve_type_hint(t, typevars_map) for t in type_.__parameters__)]
+    if isinstance(type_, (List, list)):
+        # handle special case for typehints that can have lists as arguments
+        return list(resolve_type_hint(element, typevars_map) for element in type_)
     return typevars_map.get(type_, type_)
 
 
@@ -118,6 +159,20 @@ def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...])
     if actual != expected:
         description = 'many' if actual > expected else 'few'
         raise TypeError(f'Too {description} parameters for {cls.__name__}; actual {actual}, expected {expected}')
+
+
+def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
+    if isinstance(v, cast(type, TypeVar)):  # mypy < 0.790 needs this cast
+        yield v
+    elif hasattr(v, '__parameters__') and not get_origin(v) and lenient_issubclass(v, GenericModel):
+        yield from v.__parameters__
+    elif isinstance(v, Iterable):
+        for var in v:
+            yield from iter_contained_typevars(var)
+    else:
+        args = get_args(v)
+        for arg in args:
+            yield from iter_contained_typevars(arg)
 
 
 def _build_generic_fields(
@@ -133,14 +188,14 @@ def _build_generic_fields(
 
 
 def _parameterize_generic_field(field_type: Type[Any], typevars_map: Dict[TypeVarType, Type[Any]]) -> Type[Any]:
-    if lenient_issubclass(field_type, GenericModel) and not field_type.__concrete__:
+    try:
+        is_model = isinstance(field_type, GenericModel) and not field_type.__concrete__
+    except TypeError:
+        is_model = False
+    if is_model:
         parameters = tuple(typevars_map.get(param, param) for param in field_type.__parameters__)
         field_type = field_type[parameters]
     return field_type
-
-
-def _is_typevar(v: Any) -> bool:
-    return isinstance(v, TypeVar)
 
 
 def get_caller_module_name() -> Optional[str]:

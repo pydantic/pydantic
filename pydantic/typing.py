@@ -1,4 +1,5 @@
 import sys
+import typing
 from enum import Enum
 from typing import (  # type: ignore
     TYPE_CHECKING,
@@ -74,7 +75,7 @@ else:
     AnyCallable = TypingCallable[..., Any]
     NoArgAnyCallable = TypingCallable[[], Any]
 
-if sys.version_info < (3, 8):
+if sys.version_info < (3, 8):  # noqa: C901
     if TYPE_CHECKING:
         from typing_extensions import Literal
     else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
@@ -83,8 +84,21 @@ if sys.version_info < (3, 8):
         except ImportError:
             Literal = None
 
-    def get_args(t: Type[Any]) -> Tuple[Any, ...]:
-        return getattr(t, '__args__', ())
+    if sys.version_info < (3, 7):
+
+        def get_args(t: Type[Any]) -> Tuple[Any, ...]:
+            return getattr(t, '__args__', ())
+
+    else:
+        _GenericAlias = getattr(typing, '_GenericAlias')
+
+        def get_args(t: Type[Any]) -> Tuple[Any, ...]:
+            if isinstance(t, _GenericAlias):
+                res = t.__args__
+                if t.__origin__ is Callable and res and res[0] is not Ellipsis:
+                    res = (list(res[:-1]), res[-1])
+                return res
+            return getattr(t, '__args__', ())
 
     def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
         return getattr(t, '__origin__', None)
