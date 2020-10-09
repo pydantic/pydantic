@@ -39,24 +39,7 @@ from .fields import (
     ModelField,
 )
 from .json import pydantic_encoder
-from .networks import AnyUrl, EmailStr
-from .types import (
-    ConstrainedDecimal,
-    ConstrainedFloat,
-    ConstrainedInt,
-    ConstrainedList,
-    ConstrainedSet,
-    ConstrainedStr,
-    SecretBytes,
-    SecretStr,
-    conbytes,
-    condecimal,
-    confloat,
-    conint,
-    conlist,
-    conset,
-    constr,
-)
+from .types import ConstrainedList, ConstrainedSet, conbytes, condecimal, confloat, conint, conlist, conset, constr
 from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, literal_values
 from .utils import get_model, lenient_issubclass, sequence_like
 
@@ -65,7 +48,6 @@ if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
 
 default_prefix = '#/definitions/'
-
 
 TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
 TypeModelSet = Set[TypeModelOrEnum]
@@ -833,15 +815,13 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
         attrs: Optional[Tuple[str, ...]] = None
         constraint_func: Optional[Callable[..., type]] = None
         if isinstance(type_, type):
-            if issubclass(type_, (str, SecretStr)) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
+            if type_ is str:
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = constr
-            elif issubclass(type_, (bytes, SecretBytes)):
+            elif type_ is bytes:
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = conbytes
-            elif issubclass(type_, numeric_types) and not issubclass(
-                type_, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, ConstrainedSet, bool)
-            ):
+            elif type_ in numeric_types:
                 # Is numeric type
                 attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
                 numeric_type = next(t for t in numeric_types if issubclass(type_, t))  # pragma: no branch
@@ -857,6 +837,25 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
             if kwargs:
                 constraint_func = cast(Callable[..., type], constraint_func)
                 return constraint_func(**kwargs)
+
+        field_constraints = getattr(type_, '__constraints__', set())
+
+        if field_constraints:
+            used_constraints.update(field_constraints)
+
+            def _constraints() -> Iterable[Tuple[str, Any]]:
+                for constrain in field_constraints:
+                    if hasattr(field_info, constrain):
+                        value = getattr(field_info, constrain)
+                    elif constrain in field_info.extra:
+                        value = field_info.extra[constrain]
+                    else:
+                        continue
+
+                    yield constrain, value
+
+            return type(f'Constrained{type.__name__}', (type_,), dict(_constraints()))
+
         return type_
 
     ans = go(annotation)
