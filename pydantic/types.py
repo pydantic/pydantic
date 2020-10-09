@@ -596,8 +596,6 @@ class SecretStr:
     min_length: OptionalInt = None
     max_length: OptionalInt = None
 
-    __constraints__: Set[str] = {'min_length', 'max_length'}
-
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         update_not_none(
@@ -647,8 +645,6 @@ class SecretStr:
 class SecretBytes:
     min_length: OptionalInt = None
     max_length: OptionalInt = None
-
-    __constraints__: Set[str] = {'min_length', 'max_length'}
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
