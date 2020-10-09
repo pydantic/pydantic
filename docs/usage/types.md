@@ -51,7 +51,7 @@ with custom properties and validation.
   see `typing.FrozenSet` below for sub-type constraints
 
 `deque`
-: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a frozen set;
+: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a deque;
   see `typing.Deque` below for sub-type constraints
 
 `datetime.date`
