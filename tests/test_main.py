@@ -1349,3 +1349,15 @@ def test_serializable_custom_converter():
     model = M(a='2020-01-01T00:00:00')
     s = model.dict(serialize=lambda v: v.timestamp() if isinstance(v, datetime) else v)
     assert s == {'a': 1577836800}
+
+
+def test_serializable_custom_json_encoders():
+    class M(BaseModel):
+        a: datetime
+
+        class Config:
+            json_encoders = {datetime: lambda v: v.timestamp()}
+
+    model = M(a='2020-01-01T00:00:00')
+    s = model.dict(serialize=True)
+    assert s == {'a': 1577836800}
