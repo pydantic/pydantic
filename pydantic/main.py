@@ -390,7 +390,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        convert_types: Optional[Union[bool, AnyCallable]] = None,
+        serialize: Union[bool, Callable[[Any], Any]] = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -412,7 +412,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
-                type_converter=self.__json_encoder__ if convert_types is True else convert_types
+                serializer=cast(Callable[[Any], Any], self.__json_encoder__)
+                if serialize is True
+                else cast(Callable[[Any], Any], serialize)
+                if serialize
+                else None,
             )
         )
 
@@ -622,7 +626,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
-        type_converter: Optional[AnyCallable],
+        serializer: Optional[Callable[[Any], Any]],
     ) -> Any:
 
         if isinstance(v, BaseModel):
@@ -636,7 +640,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                         include=include,
                         exclude=exclude,
                         exclude_none=exclude_none,
-                        type_converter=type_converter,
+                        serializer=serializer,
                     )
                 )
                 if '__root__' in v_dict:
@@ -659,7 +663,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     include=value_include and value_include.for_element(k_),
                     exclude=value_exclude and value_exclude.for_element(k_),
                     exclude_none=exclude_none,
-                    type_converter=type_converter,
+                    serializer=serializer,
                 )
                 for k_, v_ in v.items()
                 if (not value_exclude or not value_exclude.is_excluded(k_))
@@ -677,7 +681,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     include=value_include and value_include.for_element(i),
                     exclude=value_exclude and value_exclude.for_element(i),
                     exclude_none=exclude_none,
-                    type_converter=type_converter,
+                    serializer=serializer,
                 )
                 for i, v_ in enumerate(v)
                 if (not value_exclude or not value_exclude.is_excluded(i))
@@ -685,8 +689,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             )
 
         else:
-            if type_converter:
-                return type_converter(v)
+            if serializer:
+                return serializer(v)
             return v
 
     @classmethod
@@ -714,7 +718,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        type_converter: Optional[AnyCallable] = None,
+        serializer: Optional[Callable[[Any], Any]] = None,
     ) -> 'TupleGenerator':
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
@@ -747,7 +751,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
                     exclude_none=exclude_none,
-                    type_converter=type_converter,
+                    serializer=serializer,
                 )
             yield dict_key, v
 
