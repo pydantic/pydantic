@@ -69,6 +69,11 @@ def parse_raw_as(
     type_name: Optional[NameFactory] = None,
 ) -> T:
     obj = load_str_bytes(
-        b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle, json_loads=json_loads,
+        b,
+        proto=proto,
+        content_type=content_type,
+        encoding=encoding,
+        allow_pickle=allow_pickle,
+        json_loads=json_loads,
     )
     return parse_obj_as(type_, obj, type_name=type_name)
