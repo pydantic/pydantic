@@ -1,7 +1,7 @@
 import os
 import re
 import string
-from copy import deepcopy
+from copy import copy, deepcopy
 from distutils.version import StrictVersion
 from enum import Enum
 from typing import NewType, Union
@@ -294,6 +294,11 @@ def test_deep_update_is_not_mutating():
 
 def test_undefined_repr():
     assert repr(Undefined) == 'PydanticUndefined'
+
+
+def test_undefined_copy():
+    copy(Undefined) is Undefined
+    deepcopy(Undefined) is Undefined
 
 
 def test_get_model():

@@ -411,6 +411,26 @@ def test_custom_schema():
 
 
 @skip_36
+def test_child_schema():
+
+    T = TypeVar('T')
+
+    class Model(GenericModel, Generic[T]):
+        a: T
+
+    class Child(Model[T], Generic[T]):
+        pass
+
+    schema = Child[int].schema()
+    assert schema == {
+        'title': 'Child[int]',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+    }
+
+
+@skip_36
 def test_custom_generic_naming():
     T = TypeVar('T')
 
