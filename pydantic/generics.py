@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, TypeVar, Union, cast, get_type_hints
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, Set, TypeVar, Union, cast, get_type_hints, \
+    Iterable, Iterator
 
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
@@ -35,7 +36,8 @@ class GenericModel(BaseModel):
             raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
 
         check_parameters_count(cls, params)
-        typevars_map: Dict[TypeVarType, Type[Any]] = dict(zip(cls.__parameters__, params))
+        class_parameters = _get_class_parameters(cls)
+        typevars_map: Dict[TypeVarType, Type[Any]] = dict(zip(class_parameters, params))
         type_hints = get_type_hints(cls).items()
         instance_type_hints = {k: v for k, v in type_hints if getattr(v, '__origin__', None) is not ClassVar}
         concrete_type_hints: Dict[str, Type[Any]] = {
@@ -57,11 +59,10 @@ class GenericModel(BaseModel):
             ),
         )
         created_model.Config = cls.Config
-        concrete = all(not _is_typevar(v) for v in concrete_type_hints.values())
+        concrete = all(_is_concretete(v) for v in concrete_type_hints.values())
         created_model.__concrete__ = concrete
         if not concrete:
-            parameters = tuple(v for v in concrete_type_hints.values() if _is_typevar(v))
-            parameters = tuple({k: None for k in parameters}.keys())  # get unique params while maintaining order
+            parameters = _get_parameters_from_type_hints(concrete_type_hints.values())
             created_model.__parameters__ = parameters
         _generic_types_cache[(cls, params)] = created_model
         if len(params) == 1:
@@ -87,10 +88,32 @@ def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
 
 def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...]) -> None:
     actual = len(parameters)
-    expected = len(cls.__parameters__)
+    expected = _count_class_parameters(cls)
     if actual != expected:
         description = 'many' if actual > expected else 'few'
         raise TypeError(f'Too {description} parameters for {cls.__name__}; actual {actual}, expected {expected}')
+
+
+def _count_class_parameters(cls: Type[GenericModel]) -> int:
+    parameters = _get_class_parameters(cls)
+    return len(parameters)
+
+
+def _get_class_parameters(cls: Type[GenericModel]) -> Tuple[Any]:
+    return tuple({param: None for param in _generate_class_parameters_from_bases(cls)})
+
+
+def _generate_class_parameters_from_bases(cls: Type[Any]) -> Iterator[Any]:
+    if getattr(cls, '__parameters__', ()):
+        # If any parameters are specified, then all parameters must be
+        # specified, and we simply preserve their order
+        yield from getattr(cls, '__parameters__', ())
+    else:
+        # All parameters are collected in the lexographic order (i.e. by first
+        # appearance)
+        for base in cls.__bases__:
+            if hasattr(base, '__parameters__') or issubclass(base, GenericModel):
+                yield from _get_class_parameters(base)
 
 
 def _build_generic_fields(
@@ -110,6 +133,32 @@ def _parameterize_generic_field(field_type: Type[Any], typevars_map: Dict[TypeVa
         parameters = tuple(typevars_map.get(param, param) for param in field_type.__parameters__)
         field_type = field_type[parameters]
     return field_type
+
+
+def _is_concretete(v: Any) -> bool:
+    if _is_typevar(v):
+        return False
+    else:
+        parameters = getattr(v, "__parameters__", ())
+        return not bool(parameters)
+
+
+def _get_parameters_from_type_hints(concrete_type_hints: Iterable[Type[Any]]) -> Tuple[Type[Any], ...]:
+    # get unique params while maintaining order
+    unique_parameters = {k: None for k in _generate_all_parameters_from_type_hints(concrete_type_hints)}
+    return tuple(unique_parameters.keys())
+
+
+def _generate_all_parameters_from_type_hints(concrete_type_hints: Iterable[Type[Any]]) -> Iterator[Type[Any]]:
+    for type_hint in concrete_type_hints:
+        yield from _generate_parameters_from_type_hint(type_hint)
+
+
+def _generate_parameters_from_type_hint(type_hint: Type[Any]) -> Iterator[Type[Any]]:
+    if _is_typevar(type_hint):
+        yield type_hint
+    else:
+        yield from getattr(type_hint, "__parameters__", ())
 
 
 def _is_typevar(v: Any) -> bool:

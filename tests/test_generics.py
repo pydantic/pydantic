@@ -201,6 +201,44 @@ def test_subclass_can_be_genericized():
 
 
 @skip_36
+def test_generic_subclass_of_generic_explicit_parameters():
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    class BaseGeneric(GenericModel, Generic[T]):
+        data: List[T]
+
+    class GenericSubclass(BaseGeneric[T], Generic[U, T]):
+        extra: U
+
+    ConcreteSubclass = GenericSubclass[int, float]
+    assert ConcreteSubclass.__fields__["data"].outer_type_ == List[float]
+    assert ConcreteSubclass.__fields__["extra"].outer_type_ == int
+
+
+@skip_36
+def test_generic_subclass_of_generic_implicit_parameters():
+    K = TypeVar('K')
+    V = TypeVar('V')
+    T = TypeVar('T')
+
+    class BaseGenericA(GenericModel, Generic[K, V]):
+        data: Dict[K, V]
+
+    class BaseGenericB(GenericModel, Generic[T]):
+        stuff: List[T]
+
+    class GenericSubclass(BaseGenericA[K, V], BaseGenericB[T]):
+        extra: int
+
+    ConcreteSubclass = GenericSubclass[int, float, str]
+    assert ConcreteSubclass.__fields__["data"].outer_type_ == Dict[int, float]
+    assert ConcreteSubclass.__fields__["stuff"].outer_type_ == List[str]
+    assert ConcreteSubclass.__fields__["extra"].outer_type_ == int
+    ConcreteSubclass(data={2: 1.0}, stuff=["stuff"], extra=2)
+
+
+@skip_36
 def test_parameter_count():
     T = TypeVar('T')
     S = TypeVar('S')
