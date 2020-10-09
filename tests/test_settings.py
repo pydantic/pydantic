@@ -1,4 +1,6 @@
 import os
+import uuid
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 import pytest
@@ -545,6 +547,28 @@ def test_env_file_config_custom_encoding(tmp_path):
 
     s = Settings()
     assert s.pika == 'p!±@'
+
+
+@pytest.fixture
+def home_tmp():
+    tmp_filename = f'{uuid.uuid4()}.env'
+    home_tmp_path = Path.home() / tmp_filename
+    yield home_tmp_path, tmp_filename
+    home_tmp_path.unlink()
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_home_directory(home_tmp):
+    home_tmp_path, tmp_filename = home_tmp
+    home_tmp_path.write_text('pika=baz')
+
+    class Settings(BaseSettings):
+        pika: str
+
+        class Config:
+            env_file = f'~/{tmp_filename}'
+
+    assert Settings().pika == 'baz'
 
 
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
