@@ -35,8 +35,8 @@ class GenericModel(BaseModel):
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
 
-        check_parameters_count(cls, params)
         class_parameters = _get_class_parameters(cls)
+        check_parameters_count(class_parameters, params)
         typevars_map: Dict[TypeVarType, Type[Any]] = dict(zip(class_parameters, params))
         type_hints = get_type_hints(cls).items()
         instance_type_hints = {k: v for k, v in type_hints if getattr(v, '__origin__', None) is not ClassVar}
@@ -86,17 +86,12 @@ def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
     return typevars_map.get(type_, type_)
 
 
-def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...]) -> None:
+def check_parameters_count(cls_parameters: Tuple[Any, ...], parameters: Tuple[Any, ...]) -> None:
     actual = len(parameters)
-    expected = _count_class_parameters(cls)
+    expected = len(cls_parameters)
     if actual != expected:
         description = 'many' if actual > expected else 'few'
         raise TypeError(f'Too {description} parameters for {cls.__name__}; actual {actual}, expected {expected}')
-
-
-def _count_class_parameters(cls: Type[GenericModel]) -> int:
-    parameters = _get_class_parameters(cls)
-    return len(parameters)
 
 
 def _get_class_parameters(cls: Type[GenericModel]) -> Tuple[Any]:
