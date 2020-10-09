@@ -772,7 +772,7 @@ def test_secrets_skip_non_secret(tmp_path):
         class Config:
             secrets_dir = tmp_path
 
-    with pytest.warns(Warning, match='field was not of type "SecretStr" or "SecretBytes"'):
+    with pytest.warns(UserWarning, match='field was not of type "SecretStr" or "SecretBytes"'):
         settings = Settings()
 
     assert settings.dict() == {'foo': SecretStr('foo_secret_value_str'), 'bar': None}
@@ -800,9 +800,33 @@ def test_secrets_invalid_secrets_dir(tmp_path):
         class Config:
             secrets_dir = p1
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(SettingsError):
         Settings()
-    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+
+def test_secrets_missing_location(tmp_path):
+    class Settings(BaseSettings):
+        foo: SecretStr
+
+        class Config:
+            secrets_dir = tmp_path / 'does_not_exist'
+
+    with pytest.raises(SettingsError):
+        Settings()
+
+
+def test_secrets_file_is_a_directory(tmp_path):
+    p1 = tmp_path / 'foo'
+    p1.mkdir()
+
+    class Settings(BaseSettings):
+        foo: Optional[SecretStr]
+
+        class Config:
+            secrets_dir = tmp_path
+
+    with pytest.warns(UserWarning, match='found a directory instead'):
+        Settings()
 
 
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')

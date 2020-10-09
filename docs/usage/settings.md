@@ -172,6 +172,32 @@ Even when using a secrets directory, *pydantic* will still read environment vari
 Passing a file path via the `_secrets_dir` keyword argument on instantiation (method 2) will override
 the value (if any) set on the `Config` class.
 
+## Use Case: Docker Secrets
+Docker Secrets can be used to provide sensitive configuration to an application running in a Docker container. To use these secrets in a *Pydantic* application the process is simple. More information regarding creating, managing and using secrets in Docker see the offical [Docker documentation](https://docs.docker.com/engine/swarm/secrets/)
+
+
+**1.** Define your Settings
+```py
+class Settings(BaseSettings):
+    my_secret_data: SecretStr
+
+    class Config:
+        secrets_dir = '/run/secrets'
+```
+!!! note
+    By default Docker uses `/run/secrets` as the target mount point. If you want to use a different location change `Config.secrets_dir` accordingly.
+
+**2.** Create your secret via the Docker CLI
+```bash
+printf "This is a secret" | docker secret create my_secret_data -
+```
+
+**3.** Run your application inside a Docker container and supply your newly created secret
+```bash
+docker service create --name pydantic-with-secrets --secret my_secret_data pydantic-app:latest
+```
+
+
 ## Field value priority
 
 In the case where a value is specified for the same `Settings` field in multiple ways,
@@ -180,4 +206,5 @@ the selected value is determined as follows (in descending order of priority):
 1. Arguments passed to the `Settings` class initialiser.
 2. Environment variables, e.g. `my_prefix_special_function` as described above.
 3. Variables loaded from a dotenv (`.env`) file.
-4. The default field values for the `Settings` model.
+4. Variables loaded from the secrets directory.
+5. The default field values for the `Settings` model.
