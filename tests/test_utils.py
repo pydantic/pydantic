@@ -1,6 +1,7 @@
 import os
 import re
 import string
+from copy import deepcopy
 from distutils.version import StrictVersion
 from enum import Enum
 from typing import NewType, Union
@@ -13,12 +14,14 @@ from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import Literal, all_literal_values, display_as_type, is_new_type, new_type_supertype
 from pydantic.utils import (
+    BUILTIN_COLLECTIONS,
     ClassAttribute,
     ValueItems,
     deep_update,
     get_model,
     import_string,
     lenient_issubclass,
+    smart_deepcopy,
     truncate,
     unique_list,
 )
@@ -347,3 +350,30 @@ def test_all_literal_values():
 
     L312 = Literal['3', Literal[L1, L2]]
     assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
+
+
+@pytest.mark.parametrize(
+    'obj',
+    (1, 1.0, '1', b'1', int, None, test_all_literal_values, len, test_all_literal_values.__code__, lambda: ..., ...),
+)
+def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
+    # make sure deepcopy is not used
+    # (other option will be to use obj.copy(), but this will produce error as none of given objects have this method)
+    mocker.patch('pydantic.utils.deepcopy', side_effect=RuntimeError)
+    assert smart_deepcopy(obj) is deepcopy(obj) is obj
+
+
+@pytest.mark.parametrize('empty_collection', (collection() for collection in BUILTIN_COLLECTIONS))
+def test_smart_deepcopy_empty_collection(empty_collection, mocker):
+    mocker.patch('pydantic.utils.deepcopy', side_effect=RuntimeError)  # make sure deepcopy is not used
+    if not isinstance(empty_collection, (tuple, frozenset)):  # empty tuple or frozenset are always the same object
+        assert smart_deepcopy(empty_collection) is not empty_collection
+
+
+@pytest.mark.parametrize(
+    'collection', (c.fromkeys((1,)) if issubclass(c, dict) else c((1,)) for c in BUILTIN_COLLECTIONS)
+)
+def test_smart_deepcopy_collection(collection, mocker):
+    expected_value = object()
+    mocker.patch('pydantic.utils.deepcopy', return_value=expected_value)
+    assert smart_deepcopy(collection) is expected_value

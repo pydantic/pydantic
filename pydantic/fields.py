@@ -1,6 +1,5 @@
 import warnings
 from collections.abc import Iterable as CollectionsIterable
-from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -36,7 +35,7 @@ from .typing import (
     is_new_type,
     new_type_supertype,
 )
-from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
+from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
@@ -271,14 +270,7 @@ class ModelField(Representation):
         self.prepare()
 
     def get_default(self) -> Any:
-        if self.default_factory is not None:
-            value = self.default_factory()
-        elif self.default is None:
-            # deepcopy is quite slow on None
-            value = None
-        else:
-            value = deepcopy(self.default)
-        return value
+        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
 
     @classmethod
     def infer(
@@ -342,6 +334,11 @@ class ModelField(Representation):
         """
 
         self._set_default_and_type()
+        if self.type_.__class__ == ForwardRef:
+            # self.type_ is currently a ForwardRef and there's nothing we can do now,
+            # user will need to call model.update_forward_refs()
+            return
+
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
@@ -373,11 +370,6 @@ class ModelField(Representation):
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
-
-        if self.type_.__class__ == ForwardRef:
-            # self.type_ is currently a ForwardRef and there's nothing we can do now,
-            # user will need to call model.update_forward_refs()
-            return
 
         if self.required is False and default_value is None:
             self.allow_none = True
