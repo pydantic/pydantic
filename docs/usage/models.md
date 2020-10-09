@@ -533,8 +533,8 @@ _(This script is complete, it should run "as is")_
 
 This function is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
 
-Pydantic also includes a similar standalone function called `parse_file_as`,
-which is analogous to `BaseModel.parse_file`.
+Pydantic also includes two similar standalone functions called `parse_file_as` and `parse_raw_as`,
+which are analogous to `BaseModel.parse_file` and `BaseModel.parse_raw`.
 
 ## Data Conversion
 
