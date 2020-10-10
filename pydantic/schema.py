@@ -14,6 +14,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Pattern,
     Sequence,
     Set,
     Tuple,
@@ -622,6 +623,7 @@ field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (IPv6Interface, {'type': 'string', 'format': 'ipv6interface'}),
     (IPv4Address, {'type': 'string', 'format': 'ipv4'}),
     (IPv6Address, {'type': 'string', 'format': 'ipv6'}),
+    (Pattern, {'type': 'string', 'format': 'regex'}),
     (str, {'type': 'string'}),
     (bytes, {'type': 'string', 'format': 'binary'}),
     (bool, {'type': 'boolean'}),
@@ -647,7 +649,8 @@ def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]) -> None:
     and then modifies the given `schema` with the information from that type.
     """
     for type_, t_schema in field_class_to_schema:
-        if issubclass(field_type, type_):
+        # Fallback for `typing.Pattern` as it is not a valid class
+        if lenient_issubclass(field_type, type_) or field_type is type_ is Pattern:
             schema.update(t_schema)
             break
 

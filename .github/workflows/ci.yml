@@ -24,7 +24,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: set up python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -56,7 +56,7 @@ jobs:
       run: make test
 
     - run: coverage xml
-    - uses: codecov/codecov-action@v1.0.10
+    - uses: codecov/codecov-action@v1.0.13
       with:
         file: ./coverage.xml
         env_vars: COMPILED,DEPS,PYTHON,OS
@@ -71,7 +71,7 @@ jobs:
       run: make test
 
     - run: coverage xml
-    - uses: codecov/codecov-action@v1.0.10
+    - uses: codecov/codecov-action@v1.0.13
       with:
         file: ./coverage.xml
         env_vars: COMPILED,DEPS,PYTHON,OS
@@ -89,7 +89,7 @@ jobs:
       run: make test
 
     - run: coverage xml
-    - uses: codecov/codecov-action@v1.0.10
+    - uses: codecov/codecov-action@v1.0.13
       with:
         file: ./coverage.xml
         env_vars: COMPILED,DEPS,PYTHON,OS
@@ -115,7 +115,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: set up python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -133,7 +133,7 @@ jobs:
 
     - run: coverage xml
 
-    - uses: codecov/codecov-action@v1.0.10
+    - uses: codecov/codecov-action@v1.0.13
       with:
         file: ./coverage.xml
         env_vars: COMPILED,DEPS,PYTHON,OS
@@ -145,7 +145,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: set up python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: '3.7'
 
@@ -161,7 +161,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: set up python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: '3.7'
 
@@ -201,7 +201,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: set up python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: '3.8'
 
@@ -224,7 +224,7 @@ jobs:
         CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
         CIBW_BEFORE_BUILD: 'pip install -U cython'
-        CIBW_TEST_REQUIRES: 'pytest==5.4.1'
+        CIBW_TEST_REQUIRES: 'pytest==6.1.1 pytest-mock==3.3.1'
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
         CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
@@ -237,7 +237,7 @@ jobs:
         twine check dist/*
 
     - name: Store dist artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
       with:
         name: pypi_files
         path: dist
@@ -252,12 +252,12 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: set up python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: '3.8'
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: pypi_files
 

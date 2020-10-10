@@ -78,8 +78,23 @@ _(This script is complete, it should run "as is")_
 ```py
 {!.tmp_examples/validation_decorator_async.py!}
 ```
-_(This script is complete, it should run "as is")_
 
+## Custom Config
+
+The model behind `validate_arguments` can be customised using a config setting which is equivalent to 
+setting the `Config` sub-class in normal models.
+
+!!! warning
+    The `fields` and `alias_generator` properties of `Config` which allow aliases to be configured are not supported
+    yet with `@validate_arguments`, using them will raise an error.
+    
+Configuration is set using the `config` keyword argument to the decorator, it may be either a config class
+or a dict of properties which are converted to a class later.
+
+```py
+{!.tmp_examples/validation_decorator_config.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ## Limitations
 
@@ -126,7 +141,9 @@ in future.
 
 ### Config and Validators
 
-Custom [`Config`](model_config.md) and [validators](validators.md) are not yet supported.
+`fields` and `alias_generator` on custom [`Config`](model_config.md) are not supported, see [above](#custom-config).
+ 
+Neither are [validators](validators.md).
 
 ### Model fields and reserved arguments
 
