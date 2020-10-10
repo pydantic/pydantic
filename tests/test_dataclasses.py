@@ -681,6 +681,9 @@ def test_override_builtin_dataclass_nested():
         filename: str
         meta: Meta
 
+    class Foo(BaseModel):
+        file: File
+
     FileChecked = pydantic.dataclasses.dataclass(File)
     f = FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count='7'))
     assert f.filename == 'thefilename'
@@ -692,6 +695,18 @@ def test_override_builtin_dataclass_nested():
     assert e.value.errors() == [
         {'loc': ('meta', 'seen_count'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
+
+    foo = Foo.parse_obj(
+        {
+            'file': {
+                'filename': b'thefilename',
+                'meta': {'modified_date': '2020-01-01T00:00', 'seen_count': '7'},
+            },
+        }
+    )
+    assert foo.file.filename == 'thefilename'
+    assert foo.file.meta.modified_date == datetime(2020, 1, 1, 0, 0)
+    assert foo.file.meta.seen_count == 7
 
 
 def test_override_builtin_dataclass_nested_schema():
