@@ -1,1 +1,1 @@
-add Enum type support for fields
+add `Enum` and `IntEnum` as valid types for fields
