@@ -1,4 +1,3 @@
-import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
@@ -46,6 +45,8 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
     # But to validate fields `cls` will be in fact a `pydantic.dataclasses.dataclass`,
     # which inherits directly from the class of `v`.
     elif is_builtin_dataclass(v) and cls.__bases__[0] is type(v):
+        import dataclasses
+
         return cls(**dataclasses.asdict(v))
     else:
         raise DataclassTypeError(class_name=cls.__name__)
@@ -73,6 +74,8 @@ def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     `dataclasses.is_dataclass` is True if one of the class parents is a `dataclass`.
     This is why we also add a class attribute `__processed__` to only consider 'direct' built-in dataclasses
     """
+    import dataclasses
+
     return not hasattr(_cls, '__processed__') and dataclasses.is_dataclass(_cls)
 
 
@@ -86,6 +89,8 @@ def _process_class(
     frozen: bool,
     config: Optional[Type[Any]],
 ) -> Type['Dataclass']:
+    import dataclasses
+
     post_init_original = getattr(_cls, '__post_init__', None)
     if post_init_original and post_init_original.__name__ == '_pydantic_post_init':
         post_init_original = None
