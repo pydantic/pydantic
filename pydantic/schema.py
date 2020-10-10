@@ -60,7 +60,7 @@ from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, lite
 from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
-    from .dataclasses import DataclassType  # noqa: F401
+    from .dataclasses import Dataclass  # noqa: F401
     from .main import BaseModel  # noqa: F401
 
 default_prefix = '#/definitions/'
@@ -71,7 +71,7 @@ TypeModelSet = Set[TypeModelOrEnum]
 
 
 def schema(
-    models: Sequence[Union[Type['BaseModel'], Type['DataclassType']]],
+    models: Sequence[Union[Type['BaseModel'], Type['Dataclass']]],
     *,
     by_alias: bool = True,
     title: Optional[str] = None,
@@ -117,7 +117,7 @@ def schema(
 
 
 def model_schema(
-    model: Union[Type['BaseModel'], Type['DataclassType']], by_alias: bool = True, ref_prefix: Optional[str] = None
+    model: Union[Type['BaseModel'], Type['Dataclass']], by_alias: bool = True, ref_prefix: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Generate a JSON Schema for one model. With all the sub-models defined in the ``definitions`` top-level

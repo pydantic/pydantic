@@ -29,7 +29,7 @@ from .version import version_info
 if TYPE_CHECKING:
     from inspect import Signature
 
-    from .dataclasses import DataclassType  # noqa: F401
+    from .dataclasses import Dataclass  # noqa: F401
     from .fields import ModelField  # noqa: F401
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
@@ -244,7 +244,7 @@ def generate_model_signature(
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
-def get_model(obj: Union[Type['BaseModel'], Type['DataclassType']]) -> Type['BaseModel']:
+def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseModel']:
     from .main import BaseModel  # noqa: F811
 
     try:
