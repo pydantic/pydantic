@@ -2055,6 +2055,13 @@ def test_pattern():
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
 
+    assert Foobar.schema() == {
+        'type': 'object',
+        'title': 'Foobar',
+        'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
+        'required': ['pattern'],
+    }
+
 
 def test_pattern_error():
     class Foobar(BaseModel):

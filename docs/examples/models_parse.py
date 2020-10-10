@@ -30,3 +30,9 @@ m = User.parse_raw(
     pickle_data, content_type='application/pickle', allow_pickle=True
 )
 print(m)
+
+path = 'data.json'
+with open(path, 'w') as f:
+    f.write('{"id": 123, "name": "James"}')
+m = User.parse_file(path)
+print(m)
