@@ -4,7 +4,7 @@ try:
     get_caller_module_name()
 except RuntimeError as e:
     assert isinstance(e, RuntimeError), e
-    assert e.args == ('Thcis function must be used inside another function',), e.args
+    assert e.args == ('This function must be used inside another function',), e.args
     assert isinstance(e.__cause__, IndexError), e.__cause__
     assert isinstance(e.__context__, IndexError), e.__context__
 else:
