@@ -1,5 +1,7 @@
 import pickle
 from datetime import datetime
+from pathlib import Path
+
 from pydantic import BaseModel, ValidationError
 
 
@@ -31,7 +33,9 @@ m = User.parse_raw(
 )
 print(m)
 
-path = 'data.json'
+path = 'docs/.tmp_examples/data.json'
+Path(path).parent.mkdir(parents=True, exist_ok=True)
+
 with open(path, 'w') as f:
     f.write('{"id": 123, "name": "James"}')
 m = User.parse_file(path)
