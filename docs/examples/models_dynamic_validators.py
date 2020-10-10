@@ -1,4 +1,4 @@
-from pydantic import create_model, validator
+from pydantic import create_model, ValidationError, validator
 
 
 def username_alphanumeric(cls, v):
