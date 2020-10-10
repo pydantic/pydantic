@@ -40,10 +40,18 @@ from .validators import constant_validator, dict_validator, find_validators, val
 
 Required: Any = Ellipsis
 
+T = TypeVar('T')
+
 
 class UndefinedType:
     def __repr__(self) -> str:
         return 'PydanticUndefined'
+
+    def __copy__(self: T) -> T:
+        return self
+
+    def __deepcopy__(self: T, _: Any) -> T:
+        return self
 
 
 Undefined = UndefinedType()
@@ -128,7 +136,7 @@ def Field(
     **extra: Any,
 ) -> Any:
     """
-    Used to provide extra information about a field, either for the model schema or complex valiation. Some arguments
+    Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``.
 
     :param default: since this is replacing the field’s default, its first argument is used
@@ -531,7 +539,7 @@ class ModelField(Representation):
 
         if class_validators_:
             self.pre_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and v.pre)
-            self.post_validators = prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
+            self.post_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
 
         if self.parse_json:
             self.pre_validators.append(make_generic_validator(validate_json))

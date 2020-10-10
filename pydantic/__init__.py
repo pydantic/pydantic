@@ -56,6 +56,7 @@ __all__ = [
     # tools
     'parse_file_as',
     'parse_obj_as',
+    'parse_raw_as',
     # types
     'NoneStr',
     'NoneBytes',
