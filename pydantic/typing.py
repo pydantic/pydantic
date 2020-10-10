@@ -52,8 +52,7 @@ elif sys.version_info < (3, 9):
 
 else:
 
-    # TODO: remove the pragma: no cover once we can run CI on python 3.9
-    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:  # pragma: no cover
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._evaluate(globalns, localns, set())
 
 
@@ -104,8 +103,7 @@ else:
         In order to still support `Dict` for example and consider it as `Dict[Any, Any]`,
         we retrieve the `_nparams` value that tells us how many parameters it needs.
         """
-        # TODO: remove the pragma: no cover once we can run CI on python 3.9
-        if hasattr(tp, '_nparams'):  # pragma: no cover
+        if hasattr(tp, '_nparams'):
             return (Any,) * tp._nparams
         return ()
 
@@ -122,8 +120,7 @@ else:
         """
         try:
             args = typing_get_args(tp)
-        # TODO: remove the pragma: no cover once we can run CI on python 3.9
-        except IndexError:  # pragma: no cover
+        except IndexError:
             args = ()
         # the fallback is needed for the same reasons as `get_origin` (see above)
         return args or getattr(tp, '__args__', ()) or generic_get_args(tp)
