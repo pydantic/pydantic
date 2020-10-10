@@ -17,6 +17,7 @@ from typing import (  # type: ignore
     Type,
     Union,
     _eval_type,
+    cast,
 )
 
 try:
@@ -53,7 +54,9 @@ elif sys.version_info < (3, 9):
 else:
 
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
-        return type_._evaluate(globalns, localns, set())
+        # Even though it is the right signature for python 3.9, mypy complains with
+        # `error: Too many arguments for "_evaluate" of "ForwardRef"` hence the cast...
+        return cast(Any, type_)._evaluate(globalns, localns, set())
 
 
 if sys.version_info < (3, 7):
