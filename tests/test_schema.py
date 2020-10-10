@@ -301,11 +301,15 @@ def test_enum_and_model_have_same_behaviour():
     class Foo(BaseModel):
         enum: Names
         titled_enum: Names = Field(
-            ..., title='Title of enum', description='Description of enum',
+            ...,
+            title='Title of enum',
+            description='Description of enum',
         )
         model: Pika
         titled_model: Pika = Field(
-            ..., title='Title of model', description='Description of model',
+            ...,
+            title='Title of model',
+            description='Description of model',
         )
 
     assert Foo.schema() == {
