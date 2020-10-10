@@ -51,7 +51,7 @@ def test_module():
 
     def _test_module(module_name):
         result = subprocess.run(
-            [sys.executable, TEST_DIR / module_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5
+            [sys.executable, str(TEST_DIR / module_name)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5
         )
         if result.returncode != 0:
             pytest.fail(
