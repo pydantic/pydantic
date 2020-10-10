@@ -29,7 +29,7 @@ __all__ = (
     'UrlHostTldError',
     'UrlPortError',
     'UrlExtraError',
-    'EnumError',
+    'EnumMemberError',
     'IntegerError',
     'FloatError',
     'PathError',
@@ -216,7 +216,9 @@ class UrlExtraError(UrlError):
     msg_template = 'URL invalid, extra characters found after valid URL: {extra!r}'
 
 
-class EnumError(PydanticTypeError):
+class EnumMemberError(PydanticTypeError):
+    code = 'enum'
+
     def __str__(self) -> str:
         permitted = ', '.join(repr(v.value) for v in self.enum_values)  # type: ignore
         return f'value is not a valid enumeration member; permitted: {permitted}'

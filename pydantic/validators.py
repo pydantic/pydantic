@@ -245,14 +245,14 @@ def frozenset_validator(v: Any) -> FrozenSet[Any]:
         raise errors.FrozenSetError()
 
 
-def enum_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
+def enum_member_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
     try:
         # if the field type is Enum instead of a subclass (e.g. FruitEnum),
         # `v` should be an Enum instance (e.g. FruitEnum.banana)
         enum_v = v if field.type_ is Enum and isinstance(v, Enum) else field.type_(v)
     except ValueError:
         # field.type_ should be an enum, so will be iterable
-        raise errors.EnumError(enum_values=list(field.type_))
+        raise errors.EnumMemberError(enum_values=list(field.type_))
     return enum_v.value if config.use_enum_values else enum_v
 
 
@@ -504,8 +504,8 @@ class IfConfig:
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
-    (IntEnum, [int_validator, enum_validator]),
-    (Enum, [enum_validator]),
+    (IntEnum, [int_validator, enum_member_validator]),
+    (Enum, [enum_member_validator]),
     (
         str,
         [
