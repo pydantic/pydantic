@@ -1,6 +1,5 @@
 import warnings
 from collections.abc import Iterable as CollectionsIterable
-from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -36,15 +35,23 @@ from .typing import (
     is_new_type,
     new_type_supertype,
 )
-from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like
+from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
+
+T = TypeVar('T')
 
 
 class UndefinedType:
     def __repr__(self) -> str:
         return 'PydanticUndefined'
+
+    def __copy__(self: T) -> T:
+        return self
+
+    def __deepcopy__(self: T, _: Any) -> T:
+        return self
 
 
 Undefined = UndefinedType()
@@ -129,7 +136,7 @@ def Field(
     **extra: Any,
 ) -> Any:
     """
-    Used to provide extra information about a field, either for the model schema or complex valiation. Some arguments
+    Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``.
 
     :param default: since this is replacing the field’s default, its first argument is used
@@ -271,14 +278,7 @@ class ModelField(Representation):
         self.prepare()
 
     def get_default(self) -> Any:
-        if self.default_factory is not None:
-            value = self.default_factory()
-        elif self.default is None:
-            # deepcopy is quite slow on None
-            value = None
-        else:
-            value = deepcopy(self.default)
-        return value
+        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
 
     @classmethod
     def infer(
@@ -342,6 +342,11 @@ class ModelField(Representation):
         """
 
         self._set_default_and_type()
+        if self.type_.__class__ == ForwardRef:
+            # self.type_ is currently a ForwardRef and there's nothing we can do now,
+            # user will need to call model.update_forward_refs()
+            return
+
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
@@ -373,11 +378,6 @@ class ModelField(Representation):
 
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
-
-        if self.type_.__class__ == ForwardRef:
-            # self.type_ is currently a ForwardRef and there's nothing we can do now,
-            # user will need to call model.update_forward_refs()
-            return
 
         if self.required is False and default_value is None:
             self.allow_none = True
@@ -539,7 +539,7 @@ class ModelField(Representation):
 
         if class_validators_:
             self.pre_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and v.pre)
-            self.post_validators = prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
+            self.post_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
 
         if self.parse_json:
             self.pre_validators.append(make_generic_validator(validate_json))

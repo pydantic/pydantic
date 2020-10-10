@@ -1,3 +1,6 @@
 include LICENSE
 include README.md
 include HISTORY.md
+graft tests
+global-exclude __pycache__
+global-exclude *.py[cod]
