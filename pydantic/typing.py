@@ -89,6 +89,12 @@ else:
     from typing import Literal, get_args as typing_get_args, get_origin as typing_get_origin
 
     def get_origin(tp: Type[Any]) -> Type[Any]:
+        """
+        We can't directly use `typing.get_origin` since we need a fallback to support
+        custom generic classes like `ConstrainedList`
+        It should be useless once https://github.com/cython/cython/issues/3537 is
+        solved and https://github.com/samuelcolvin/pydantic/pull/1753 is merged.
+        """
         return typing_get_origin(tp) or getattr(tp, '__origin__', None)
 
     def generic_get_args(tp: Type[Any]) -> Tuple[Any, ...]:
@@ -119,6 +125,7 @@ else:
         # TODO: remove the pragma: no cover once we can run CI on python 3.9
         except IndexError:  # pragma: no cover
             args = ()
+        # the fallback is needed for the same reasons as `get_origin` (see above)
         return args or getattr(tp, '__args__', ()) or generic_get_args(tp)
 
 
