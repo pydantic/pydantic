@@ -727,15 +727,28 @@ def test_int_enum_successful_for_str_int():
 
 
 def test_enum_type():
-    """it should validate any 'strict' enum values"""
+    """it should validate any Enum"""
 
     class Model(BaseModel):
-        any_enum: Enum
+        my_enum: Enum
 
-    Model(any_enum=FruitEnum.banana)
-    Model(any_enum=ToolEnum.wrench)
+    Model(my_enum=FruitEnum.banana)
+    Model(my_enum=ToolEnum.wrench)
     with pytest.raises(ValidationError):
-        Model(any_enum='banana')
+        Model(my_enum='banana')
+
+
+def test_int_enum_type():
+    """it should validate any IntEnum"""
+
+    class Model(BaseModel):
+        my_int_enum: IntEnum
+
+    Model(my_int_enum=ToolEnum.wrench)
+    with pytest.raises(ValidationError):
+        Model(my_int_enum=FruitEnum.banana)
+    with pytest.raises(ValidationError):
+        Model(my_int_enum=2)
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')

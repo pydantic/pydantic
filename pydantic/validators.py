@@ -247,9 +247,7 @@ def frozenset_validator(v: Any) -> FrozenSet[Any]:
 
 def enum_member_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
     try:
-        # if the field type is Enum instead of a subclass (e.g. FruitEnum),
-        # `v` should be an Enum instance (e.g. FruitEnum.banana)
-        enum_v = v if field.type_ is Enum and isinstance(v, Enum) else field.type_(v)
+        enum_v = field.type_(v)
     except ValueError:
         # field.type_ should be an enum, so will be iterable
         raise errors.EnumMemberError(enum_values=list(field.type_))
@@ -405,6 +403,20 @@ def callable_validator(v: Any) -> AnyCallable:
         return v
 
     raise errors.CallableError(value=v)
+
+
+def enum_validator(v: Any) -> Enum:
+    if isinstance(v, Enum):
+        return v
+
+    raise errors.EnumError(value=v)
+
+
+def int_enum_validator(v: Any) -> IntEnum:
+    if isinstance(v, IntEnum):
+        return v
+
+    raise errors.IntEnumError(value=v)
 
 
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
@@ -566,6 +578,12 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if is_literal_type(type_):
         yield make_literal_validator(type_)
+        return
+    if type_ is Enum:
+        yield enum_validator
+        return
+    if type_ is IntEnum:
+        yield int_enum_validator
         return
 
     class_ = get_class(type_)

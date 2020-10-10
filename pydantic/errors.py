@@ -29,6 +29,8 @@ __all__ = (
     'UrlHostTldError',
     'UrlPortError',
     'UrlExtraError',
+    'EnumError',
+    'IntEnumError',
     'EnumMemberError',
     'IntegerError',
     'FloatError',
@@ -492,6 +494,16 @@ class DataclassTypeError(PydanticTypeError):
 
 class CallableError(PydanticTypeError):
     msg_template = '{value} is not callable'
+
+
+class EnumError(PydanticTypeError):
+    code = 'enum_instance'
+    msg_template = '{value} is not a valid Enum instance'
+
+
+class IntEnumError(PydanticTypeError):
+    code = 'int_enum_instance'
+    msg_template = '{value} is not a valid IntEnum instance'
 
 
 class IPvAnyAddressError(PydanticValueError):
