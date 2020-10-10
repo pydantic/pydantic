@@ -76,31 +76,6 @@ def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     return not hasattr(_cls, '__processed__') and dataclasses.is_dataclass(_cls)
 
 
-def _dataclass_with_validation(
-    _cls: Type[Any], pydantic_post_init: Callable[..., None], **kwargs: Any
-) -> Type['DataclassType']:
-    """
-    If the class is already a dataclass, __post_init__ will not be called automatically
-    so no validation will be added.
-    We hence create dynamically a new dataclass:
-    ```
-    @dataclasses.dataclass
-    class NewClass(_cls):
-      __post_init__ = _pydantic_post_init
-    ```
-    with the exact same fields as the base dataclass
-    """
-    if is_builtin_dataclass(_cls):
-        _cls = type(_cls.__name__, (_cls,), {'__post_init__': pydantic_post_init})
-    else:
-        _cls.__post_init__ = pydantic_post_init
-
-    cls: Type['DataclassType'] = dataclasses.dataclass(_cls, **kwargs)  # type: ignore
-    cls.__processed__ = ClassAttribute('__processed__', True)
-
-    return cls
-
-
 def _process_class(
     _cls: Type[Any],
     init: bool,
@@ -130,9 +105,23 @@ def _process_class(
         if post_init_post_parse is not None:
             post_init_post_parse(self, *initvars)
 
-    cls = _dataclass_with_validation(
-        _cls, _pydantic_post_init, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
+    # If the class is already a dataclass, __post_init__ will not be called automatically
+    # so no validation will be added.
+    # We hence create dynamically a new dataclass:
+    # ```
+    # @dataclasses.dataclass
+    # class NewClass(_cls):
+    #   __post_init__ = _pydantic_post_init
+    # ```
+    # with the exact same fields as the base dataclass
+    if is_builtin_dataclass(_cls):
+        _cls = type(_cls.__name__, (_cls,), {'__post_init__': _pydantic_post_init})
+    else:
+        _cls.__post_init__ = _pydantic_post_init
+    cls: Type['DataclassType'] = dataclasses.dataclass(  # type: ignore
+        _cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
     )
+    cls.__processed__ = ClassAttribute('__processed__', True)
 
     fields: Dict[str, Any] = {}
     for field in dataclasses.fields(cls):
