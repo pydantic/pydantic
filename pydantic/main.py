@@ -42,6 +42,7 @@ from .utils import (
     generate_model_signature,
     lenient_issubclass,
     sequence_like,
+    smart_deepcopy,
     unique_list,
     validate_field_name,
 )
@@ -218,7 +219,7 @@ class ModelMetaclass(ABCMeta):
         pre_root_validators, post_root_validators = [], []
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
-                fields.update(deepcopy(base.__fields__))
+                fields.update(smart_deepcopy(base.__fields__))
                 config = inherit_config(base.__config__, config)
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
@@ -551,6 +552,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         )
 
         if deep:
+            # chances of having empty dict here are quite low for using smart_deepcopy
             v = deepcopy(v)
 
         cls = self.__class__

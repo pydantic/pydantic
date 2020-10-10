@@ -146,6 +146,13 @@ table = [
         ''
     ],
     [
+        'Pattern',
+        'string',
+        {'format': 'regex'},
+        'JSON Schema Validation',
+        ''
+    ],
+    [
         'bytes',
         'string',
         {'format': 'binary'},
