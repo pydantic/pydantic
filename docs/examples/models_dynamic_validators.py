@@ -11,8 +11,16 @@ validators = {
     validator('username')(username_alphanumeric)
 }
 
-WithValidatorModel = create_model(
-    'WithValidatorModel',
+UserModel = create_model(
+    'UserModel',
     username=(str, ...),
     __validators__=validators
 )
+
+user = UserModel(username='scolvin')
+print(user)
+
+try:
+    UserModel(username='scolvi%n')
+except ValidationError as e:
+    print(e)
