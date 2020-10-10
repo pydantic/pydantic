@@ -45,8 +45,10 @@ def test_module():
     """
     Used in cases where clean stack matters
     """
+
     def _test_module(module_name):
         result = subprocess.run([sys.executable, module_name], timeout=5)
         if result.returncode != 0:
             pytest.fail(f'Running {module_name} failed with non-zero return code: {result.returncode}')
+
     return _test_module

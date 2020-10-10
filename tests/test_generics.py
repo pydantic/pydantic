@@ -718,8 +718,8 @@ function()
 
 
 def test_is_call_from_module_called_in_module(test_module):
-    test_module("_test_is_call_from_module_called_in_module.py")
+    test_module('_test_is_call_from_module_called_in_module.py')
 
 
 def test_get_caller_module_called_from_module(test_module):
-    test_module("_test_get_caller_module_called_from_module.py")
+    test_module('_test_get_caller_module_called_from_module.py')
