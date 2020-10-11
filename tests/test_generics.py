@@ -412,7 +412,6 @@ def test_custom_schema():
 
 @skip_36
 def test_child_schema():
-
     T = TypeVar('T')
 
     class Model(GenericModel, Generic[T]):
@@ -605,64 +604,58 @@ def test_multiple_specification():
 def test_generic_model_pickle(create_module):
     # Using create_module because pickle doesn't support
     # objects with <locals> in their __qualname__  (e. g. defined in function)
-    create_module(
-        """
-import pickle
-from typing import Generic, TypeVar
+    @create_module
+    def module():
+        import pickle
+        from typing import Generic, TypeVar
 
-from pydantic import BaseModel
-from pydantic.generics import GenericModel
+        from pydantic import BaseModel
+        from pydantic.generics import GenericModel
 
-t = TypeVar('t')
+        t = TypeVar('t')
 
-class Model(BaseModel):
-    a: float
-    b: int = 10
+        class Model(BaseModel):
+            a: float
+            b: int = 10
 
-class MyGeneric(GenericModel, Generic[t]):
-    value: t
+        class MyGeneric(GenericModel, Generic[t]):
+            value: t
 
-original = MyGeneric[Model](value=Model(a='24'))
-dumped = pickle.dumps(original)
-loaded = pickle.loads(dumped)
-assert loaded.value.a == original.value.a == 24
-assert loaded.value.b == original.value.b == 10
-assert loaded == original
-    """
-    )
+        original = MyGeneric[Model](value=Model(a='24'))
+        dumped = pickle.dumps(original)
+        loaded = pickle.loads(dumped)
+        assert loaded.value.a == original.value.a == 24
+        assert loaded.value.b == original.value.b == 10
+        assert loaded == original
 
 
 @skip_36
 def test_generic_model_from_function_pickle_fail(create_module):
-    # Using create_module because pickle doesn't support
-    # objects with <locals> in their __qualname__  (e. g. defined in function)
-    create_module(
-        """
-import pickle
-from typing import Generic, TypeVar
+    @create_module
+    def module():
+        import pickle
+        from typing import Generic, TypeVar
 
-import pytest
+        import pytest
 
-from pydantic import BaseModel
-from pydantic.generics import GenericModel
+        from pydantic import BaseModel
+        from pydantic.generics import GenericModel
 
-t = TypeVar('t')
+        t = TypeVar('t')
 
-class Model(BaseModel):
-    a: float
-    b: int = 10
+        class Model(BaseModel):
+            a: float
+            b: int = 10
 
-class MyGeneric(GenericModel, Generic[t]):
-    value: t
+        class MyGeneric(GenericModel, Generic[t]):
+            value: t
 
-def get_generic(t):
-    return MyGeneric[t]
+        def get_generic(t):
+            return MyGeneric[t]
 
-original = get_generic(Model)(value=Model(a='24'))
-with pytest.raises(pickle.PicklingError):
-    pickle.dumps(original)
-    """
-    )
+        original = get_generic(Model)(value=Model(a='24'))
+        with pytest.raises(pickle.PicklingError):
+            pickle.dumps(original)
 
 
 def test_get_caller_module_name_from_function():
@@ -673,21 +666,20 @@ def test_get_caller_module_name_from_function():
 
 
 def test_get_caller_module_name_from_module(create_module):
-    create_module(
-        """
-from pydantic.generics import get_caller_module_name
-def get_current_module_name():
-    return get_caller_module_name()
+    @create_module
+    def module():
+        from pydantic.generics import get_caller_module_name
 
-module_name = get_current_module_name()
-assert module_name == __name__, f'{module_name} != {__name__}'
-        """
-    )
+        def get_current_module_name():
+            return get_caller_module_name()
 
-    def get_current_module_name():
-        return get_caller_module_name()
+        module_name = get_current_module_name()
+        assert module_name == __name__, f'{module_name} != {__name__}'
 
-    assert get_current_module_name() == __name__
+        def get_current_module_name():
+            return get_caller_module_name()
+
+        assert get_current_module_name() == __name__
 
 
 def test_get_caller_module_name_not_found(mocker):
@@ -696,30 +688,52 @@ def test_get_caller_module_name_not_found(mocker):
 
 
 def test_is_call_from_module(create_module):
-    create_module(
-        """
-from pydantic.generics import is_call_from_module
+    @create_module
+    def module():
+        from pydantic.generics import is_call_from_module
 
-def function():
-    assert is_call_from_module()
+        def function():
+            assert is_call_from_module()
 
-    another_function()
+            another_function()
 
-def another_function():
-    assert not is_call_from_module()
-    third_function()
+        def another_function():
+            assert not is_call_from_module()
+            third_function()
 
-def third_function():
-    assert not is_call_from_module()
+        def third_function():
+            assert not is_call_from_module()
 
-function()
-        """
-    )
+        function()
 
 
-def test_is_call_from_module_called_in_module(test_module):
-    test_module('_test_is_call_from_module_called_in_module.py')
+def test_is_call_from_module_called_in_module(run_as_module):
+    @run_as_module
+    def module():
+        from pydantic.generics import is_call_from_module
+
+        try:
+            is_call_from_module()
+        except RuntimeError as e:
+            assert isinstance(e, RuntimeError), e
+            assert e.args == ('This function must be used inside another function',), e.args
+            assert isinstance(e.__cause__, IndexError), e.__cause__
+            assert isinstance(e.__context__, IndexError), e.__context__
+        else:
+            raise AssertionError('RuntimeError was not raised')
 
 
-def test_get_caller_module_called_from_module(test_module):
-    test_module('_test_get_caller_module_called_from_module.py')
+def test_get_caller_module_called_from_module(run_as_module):
+    @run_as_module
+    def module():
+        from pydantic.generics import get_caller_module_name
+
+        try:
+            get_caller_module_name()
+        except RuntimeError as e:
+            assert isinstance(e, RuntimeError), e
+            assert e.args == ('This function must be used inside another function',), e.args
+            assert isinstance(e.__cause__, IndexError), e.__cause__
+            assert isinstance(e.__context__, IndexError), e.__context__
+        else:
+            raise AssertionError('RuntimeError was not raised')
