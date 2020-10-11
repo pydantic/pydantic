@@ -658,6 +658,32 @@ def test_generic_model_from_function_pickle_fail(create_module):
             pickle.dumps(original)
 
 
+@skip_36
+def test_generic_model_redefined_without_cache_fail(create_module):
+    @create_module
+    def module():
+        from typing import Generic, TypeVar
+        import pytest
+        from pydantic.generics import GenericModel, _generic_types_cache
+
+        t = TypeVar('t')
+
+        class MyGeneric(GenericModel, Generic[t]):
+            value: t
+
+        concrete = MyGeneric[t]
+        _generic_types_cache.clear()
+        with pytest.raises(
+                TypeError, match=r"'MyGeneric\[t\]' already defined above, please consider reusing it"
+        ) as exc_info:
+            same_concrete = MyGeneric[t]
+
+        cause = exc_info.value.__cause__
+        assert isinstance(cause, NameError), cause
+        expected_message = f"Name conflict: 'MyGeneric[t]' in {__name__!r} is already used by {concrete!r}"
+        assert cause.args[0] == expected_message, f'{cause.args[0]} != {expected_message}'
+
+
 def test_get_caller_module_name_from_function():
     def get_current_module_name():
         return get_caller_module_name()
