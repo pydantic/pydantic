@@ -116,6 +116,7 @@ def test_time_parsing(value, result):
         # Invalid inputs
         ('x20120423091500', errors.DateTimeError),
         ('2012-04-56T09:15:90', errors.DateTimeError),
+        ('2012-04-23T11:05:00-25:00', errors.DateTimeError),
         (19_999_999_999, datetime(2603, 10, 11, 11, 33, 19, tzinfo=timezone.utc)),  # just before watershed
         (20_000_000_001, datetime(1970, 8, 20, 11, 33, 20, 1000, tzinfo=timezone.utc)),  # just after watershed
         (1_549_316_052, datetime(2019, 2, 4, 21, 34, 12, 0, tzinfo=timezone.utc)),  # nowish in s
