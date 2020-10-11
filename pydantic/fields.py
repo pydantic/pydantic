@@ -550,44 +550,44 @@ class ModelField(Representation):
         self.post_validators = self.post_validators or None
 
     def validate(
-        self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
+        self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None, context: Any = None
     ) -> 'ValidateReturn':
 
         errors: Optional['ErrorList']
         if self.pre_validators:
-            v, errors = self._apply_validators(v, values, loc, cls, self.pre_validators)
+            v, errors = self._apply_validators(v, values, loc, cls, context, self.pre_validators)
             if errors:
                 return v, errors
 
         if v is None:
             if self.allow_none:
                 if self.post_validators:
-                    return self._apply_validators(v, values, loc, cls, self.post_validators)
+                    return self._apply_validators(v, values, loc, cls, context, self.post_validators)
                 else:
                     return None, None
             else:
                 return v, ErrorWrapper(NoneIsNotAllowedError(), loc)
 
         if self.shape == SHAPE_SINGLETON:
-            v, errors = self._validate_singleton(v, values, loc, cls)
+            v, errors = self._validate_singleton(v, values, loc, cls, context)
         elif self.shape == SHAPE_MAPPING:
-            v, errors = self._validate_mapping(v, values, loc, cls)
+            v, errors = self._validate_mapping(v, values, loc, cls, context)
         elif self.shape == SHAPE_TUPLE:
-            v, errors = self._validate_tuple(v, values, loc, cls)
+            v, errors = self._validate_tuple(v, values, loc, cls, context)
         elif self.shape == SHAPE_ITERABLE:
-            v, errors = self._validate_iterable(v, values, loc, cls)
+            v, errors = self._validate_iterable(v, values, loc, cls, context)
         elif self.shape == SHAPE_GENERIC:
-            v, errors = self._apply_validators(v, values, loc, cls, self.validators)
+            v, errors = self._apply_validators(v, values, loc, cls, context, self.validators)
         else:
             #  sequence, list, set, generator, tuple with ellipsis, frozen set
-            v, errors = self._validate_sequence_like(v, values, loc, cls)
+            v, errors = self._validate_sequence_like(v, values, loc, cls, context)
 
         if not errors and self.post_validators:
-            v, errors = self._apply_validators(v, values, loc, cls, self.post_validators)
+            v, errors = self._apply_validators(v, values, loc, cls, context, self.post_validators)
         return v, errors
 
     def _validate_sequence_like(  # noqa: C901 (ignore complexity)
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], context: Any
     ) -> 'ValidateReturn':
         """
         Validate sequence-like containers: lists, tuples, sets and generators
@@ -611,7 +611,7 @@ class ModelField(Representation):
         errors: List[ErrorList] = []
         for i, v_ in enumerate(v):
             v_loc = *loc, i
-            r, ee = self._validate_singleton(v_, values, v_loc, cls)
+            r, ee = self._validate_singleton(v_, values, v_loc, cls, context)
             if ee:
                 errors.append(ee)
             else:
@@ -638,7 +638,7 @@ class ModelField(Representation):
         return converted, None
 
     def _validate_iterable(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], context: Any
     ) -> 'ValidateReturn':
         """
         Validate Iterables.
@@ -653,7 +653,7 @@ class ModelField(Representation):
         return iterable, None
 
     def _validate_tuple(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], context: Any
     ) -> 'ValidateReturn':
         e: Optional[Exception] = None
         if not sequence_like(v):
@@ -671,7 +671,7 @@ class ModelField(Representation):
         errors: List[ErrorList] = []
         for i, (v_, field) in enumerate(zip(v, self.sub_fields)):  # type: ignore
             v_loc = *loc, i
-            r, ee = field.validate(v_, values, loc=v_loc, cls=cls)
+            r, ee = field.validate(v_, values, loc=v_loc, cls=cls, context=context)
             if ee:
                 errors.append(ee)
             else:
@@ -683,7 +683,7 @@ class ModelField(Representation):
             return tuple(result), None
 
     def _validate_mapping(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], context: Any
     ) -> 'ValidateReturn':
         try:
             v_iter = dict_validator(v)
@@ -694,13 +694,15 @@ class ModelField(Representation):
         result, errors = {}, []
         for k, v_ in v_iter.items():
             v_loc = *loc, '__key__'
-            key_result, key_errors = self.key_field.validate(k, values, loc=v_loc, cls=cls)  # type: ignore
+            key_result, key_errors = self.key_field.validate(  # type: ignore
+                k, values, loc=v_loc, cls=cls, context=context
+            )
             if key_errors:
                 errors.append(key_errors)
                 continue
 
             v_loc = *loc, k
-            value_result, value_errors = self._validate_singleton(v_, values, v_loc, cls)
+            value_result, value_errors = self._validate_singleton(v_, values, v_loc, cls, context)
             if value_errors:
                 errors.append(value_errors)
                 continue
@@ -712,26 +714,34 @@ class ModelField(Representation):
             return result, None
 
     def _validate_singleton(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], context: Any
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
             for field in self.sub_fields:
-                value, error = field.validate(v, values, loc=loc, cls=cls)
+                value, error = field.validate(v, values, loc=loc, cls=cls, context=context)
                 if error:
                     errors.append(error)
                 else:
                     return value, None
             return v, errors
         else:
-            return self._apply_validators(v, values, loc, cls, self.validators)
+            return self._apply_validators(v, values, loc, cls, context, self.validators)
 
     def _apply_validators(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
+        self,
+        v: Any,
+        values: Dict[str, Any],
+        loc: 'LocStr',
+        cls: Optional['ModelOrDc'],
+        context: Any,
+        validators: 'ValidatorsList',
     ) -> 'ValidateReturn':
         for validator in validators:
             try:
-                v = validator(cls, v, values, self, self.model_config)
+                v = validator(  # type: ignore
+                    cls, v, values=values, field=self, config=self.model_config, context=context
+                )
             except (ValueError, TypeError, AssertionError) as exc:
                 return v, ErrorWrapper(exc, loc)
         return v, None

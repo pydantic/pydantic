@@ -672,7 +672,9 @@ def test_make_generic_validator(fields, result):
     assert validator.__qualname__ == 'testing_function'
     assert validator.__name__ == 'testing_function'
     # args: cls, v, values, field, config
-    assert validator('_cls_', '_v_', '_values_', '_field_', '_config_') == result
+    assert (
+        validator('_cls_', '_v_', values='_values_', field='_field_', config='_config_', context='_context_') == result
+    )
 
 
 def test_make_generic_validator_kwargs():
@@ -681,16 +683,20 @@ def test_make_generic_validator_kwargs():
 
     validator = make_generic_validator(test_validator)
     assert validator.__name__ == 'test_validator'
-    assert validator('_cls_', '_v_', '_vs_', '_f_', '_c_') == 'values: _vs_, field: _f_, config: _c_'
+    assert (
+        validator('_cls_', '_v_', values='_vs_', field='_f_', config='_c_', context='_ctx_')
+        == 'values: _vs_, field: _f_, config: _c_, context: _ctx_'
+    )
 
 
 def test_make_generic_validator_invalid():
     def test_validator(v, foobar):
         return foobar
 
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(
+        ConfigError, match=r'.*: \(v, foobar\), should be: \(cls, value, values, field, config, context\).*'
+    ):
         make_generic_validator(test_validator)
-    assert ': (v, foobar), should be: (value, values, config, field)' in str(exc_info.value)
 
 
 def test_make_generic_validator_cls_kwargs():
@@ -699,25 +705,29 @@ def test_make_generic_validator_cls_kwargs():
 
     validator = make_generic_validator(test_validator)
     assert validator.__name__ == 'test_validator'
-    assert validator('_cls_', '_v_', '_vs_', '_f_', '_c_') == 'values: _vs_, field: _f_, config: _c_'
+    assert (
+        validator('_cls_', '_v_', values='_vs_', field='_f_', config='_c_', context='_ctx_')
+        == 'values: _vs_, field: _f_, config: _c_, context: _ctx_'
+    )
 
 
 def test_make_generic_validator_cls_invalid():
     def test_validator(cls, v, foobar):
         return foobar
 
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(
+        ConfigError, match=r': \(cls, v, foobar\), should be: \(cls, value, values, field, config, context\)'
+    ):
         make_generic_validator(test_validator)
-    assert ': (cls, v, foobar), should be: (cls, value, values, config, field)' in str(exc_info.value)
 
 
 def test_make_generic_validator_self():
     def test_validator(self, v):
         return v
 
-    with pytest.raises(ConfigError) as exc_info:
+    match = r'.*: \(self, v\), "self" not permitted as first argument, should be: \(cls, value'
+    with pytest.raises(ConfigError, match=match):
         make_generic_validator(test_validator)
-    assert ': (self, v), "self" not permitted as first argument, should be: (cls, value' in str(exc_info.value)
 
 
 def test_assert_raises_validation_error():
@@ -763,7 +773,7 @@ def test_root_validator():
             return v * 2
 
         @root_validator
-        def example_root_validator(cls, values):
+        def example_root_validator(cls, values, **kw):
             root_val_values.append(values)
             if 'snap' in values.get('b', ''):
                 raise ValueError('foobar')
@@ -860,7 +870,7 @@ def test_root_validator_repeat2():
 
 def test_root_validator_self():
     with pytest.raises(
-        errors.ConfigError, match=r'Invalid signature for root validator root_validator: \(self, values\)'
+        errors.ConfigError, match=r'Invalid signature for root validator [^ ]*root_validator: \(self, values\)'
     ):
 
         class Model(BaseModel):
@@ -872,7 +882,12 @@ def test_root_validator_self():
 
 
 def test_root_validator_extra():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    match = (
+        r'Invalid signature for root validator [^ ]*root_validator: '
+        r'\(cls, values, another\), '
+        r'should be: \(cls, values, context\), "context" is optional.'
+    )
+    with pytest.raises(errors.ConfigError, match=match):
 
         class Model(BaseModel):
             a: int = 1
@@ -880,10 +895,6 @@ def test_root_validator_extra():
             @root_validator
             def root_validator(cls, values, another):
                 return values
-
-    assert str(exc_info.value) == (
-        'Invalid signature for root validator root_validator: (cls, values, another), should be: (cls, values).'
-    )
 
 
 def test_root_validator_types():
@@ -1117,3 +1128,19 @@ def test_nested_literal_validator():
             'ctx': {'given': 'nope', 'permitted': ('foo', 'bar')},
         }
     ]
+
+
+def test_context_validator():
+    class Model(BaseModel):
+        a: int
+
+        @validator('a')
+        def check_context(cls, value, context):
+            if context != {'test': 1}:
+                raise ValueError('Unexpected context')
+            return value
+
+    Model.parse_obj({'a': 1}, context={'test': 1})
+
+    with pytest.raises(ValidationError):
+        Model.parse_obj({'a': 1}, context={'test': 2})

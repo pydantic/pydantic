@@ -1,9 +1,11 @@
+import sys
 import warnings
 from collections import ChainMap
-from functools import wraps
+from functools import lru_cache, update_wrapper, wraps
+from inspect import CO_VARKEYWORDS, Parameter, signature
 from itertools import chain
-from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
+from types import CodeType, FunctionType
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, cast, overload
 
 from .errors import ConfigError
 from .typing import AnyCallable
@@ -31,8 +33,6 @@ class Validator:
 
 
 if TYPE_CHECKING:
-    from inspect import Signature
-
     from .fields import ModelField
     from .main import BaseConfig
     from .types import ModelOrDc
@@ -192,27 +192,19 @@ def extract_validators(namespace: Dict[str, Any]) -> Dict[str, List[Validator]]:
 
 
 def extract_root_validators(namespace: Dict[str, Any]) -> Tuple[List[AnyCallable], List[Tuple[bool, AnyCallable]]]:
-    from inspect import signature
-
     pre_validators: List[AnyCallable] = []
     post_validators: List[Tuple[bool, AnyCallable]] = []
     for name, value in namespace.items():
         validator_config: Optional[Validator] = getattr(value, ROOT_VALIDATOR_CONFIG_KEY, None)
         if validator_config:
-            sig = signature(validator_config.func)
-            args = list(sig.parameters.keys())
-            if args[0] == 'self':
-                raise ConfigError(
-                    f'Invalid signature for root validator {name}: {sig}, "self" not permitted as first argument, '
-                    f'should be: (cls, values).'
-                )
-            if len(args) != 2:
-                raise ConfigError(f'Invalid signature for root validator {name}: {sig}, should be: (cls, values).')
+            root_validator = make_root_validator(validator_config.func)
             # check function signature
             if validator_config.pre:
-                pre_validators.append(validator_config.func)
+                # pre_validators.append(validator_config.func)
+                pre_validators.append(root_validator)
             else:
-                post_validators.append((validator_config.skip_on_failure, validator_config.func))
+                # post_validators.append((validator_config.skip_on_failure, validator_config.func))
+                post_validators.append((validator_config.skip_on_failure, root_validator))
     return pre_validators, post_validators
 
 
@@ -224,6 +216,7 @@ def inherit_validators(base_validators: 'ValidatorListDict', validators: 'Valida
     return validators
 
 
+@lru_cache()  # cache functions so identical input always returns same object
 def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
     """
     Make a generic function which calls a validator with the right arguments.
@@ -232,98 +225,22 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
     hence this laborious way of doing things.
 
     It's done like this so validators don't all need **kwargs in their signature, eg. any combination of
-    the arguments "values", "fields" and/or "config" are permitted.
+    the arguments "values", "fields", "config" and/or "context" are permitted.
     """
-    from inspect import signature
-
-    sig = signature(validator)
-    args = list(sig.parameters.keys())
-    first_arg = args.pop(0)
-    if first_arg == 'self':
-        raise ConfigError(
-            f'Invalid signature for validator {validator}: {sig}, "self" not permitted as first argument, '
-            f'should be: (cls, value, values, config, field), "values", "config" and "field" are all optional.'
-        )
-    elif first_arg == 'cls':
-        # assume the second argument is value
-        return wraps(validator)(_generic_validator_cls(validator, sig, set(args[1:])))
-    else:
-        # assume the first argument was value which has already been removed
-        return wraps(validator)(_generic_validator_basic(validator, sig, set(args)))
+    return modify_validator_signature(
+        validator, ('cls', 'value'), ('values', 'field', 'config', 'context'), kind='validator'
+    )
 
 
 def prep_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
     return [make_generic_validator(f) for f in v_funcs if f]
 
 
-all_kwargs = {'values', 'field', 'config'}
-
-
-def _generic_validator_cls(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
-    # assume the first argument is value
-    has_kwargs = False
-    if 'kwargs' in args:
-        has_kwargs = True
-        args -= {'kwargs'}
-
-    if not args.issubset(all_kwargs):
-        raise ConfigError(
-            f'Invalid signature for validator {validator}: {sig}, should be: '
-            f'(cls, value, values, config, field), "values", "config" and "field" are all optional.'
-        )
-
-    if has_kwargs:
-        return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field, config=config)
-    elif args == set():
-        return lambda cls, v, values, field, config: validator(cls, v)
-    elif args == {'values'}:
-        return lambda cls, v, values, field, config: validator(cls, v, values=values)
-    elif args == {'field'}:
-        return lambda cls, v, values, field, config: validator(cls, v, field=field)
-    elif args == {'config'}:
-        return lambda cls, v, values, field, config: validator(cls, v, config=config)
-    elif args == {'values', 'field'}:
-        return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field)
-    elif args == {'values', 'config'}:
-        return lambda cls, v, values, field, config: validator(cls, v, values=values, config=config)
-    elif args == {'field', 'config'}:
-        return lambda cls, v, values, field, config: validator(cls, v, field=field, config=config)
-    else:
-        # args == {'values', 'field', 'config'}
-        return lambda cls, v, values, field, config: validator(cls, v, values=values, field=field, config=config)
-
-
-def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set[str]) -> 'ValidatorCallable':
-    has_kwargs = False
-    if 'kwargs' in args:
-        has_kwargs = True
-        args -= {'kwargs'}
-
-    if not args.issubset(all_kwargs):
-        raise ConfigError(
-            f'Invalid signature for validator {validator}: {sig}, should be: '
-            f'(value, values, config, field), "values", "config" and "field" are all optional.'
-        )
-
-    if has_kwargs:
-        return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
-    elif args == set():
-        return lambda cls, v, values, field, config: validator(v)
-    elif args == {'values'}:
-        return lambda cls, v, values, field, config: validator(v, values=values)
-    elif args == {'field'}:
-        return lambda cls, v, values, field, config: validator(v, field=field)
-    elif args == {'config'}:
-        return lambda cls, v, values, field, config: validator(v, config=config)
-    elif args == {'values', 'field'}:
-        return lambda cls, v, values, field, config: validator(v, values=values, field=field)
-    elif args == {'values', 'config'}:
-        return lambda cls, v, values, field, config: validator(v, values=values, config=config)
-    elif args == {'field', 'config'}:
-        return lambda cls, v, values, field, config: validator(v, field=field, config=config)
-    else:
-        # args == {'values', 'field', 'config'}
-        return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
+@lru_cache()  # cache functions so identical input always returns same object
+def make_root_validator(validator: AnyCallable) -> AnyCallable:
+    return modify_validator_signature(
+        validator, positional_args=('cls', 'values'), keyword_args=('context',), kind='root validator'
+    )
 
 
 def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:
@@ -333,3 +250,124 @@ def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:
         for k, v in all_attributes.items()
         if hasattr(v, VALIDATOR_CONFIG_KEY) or hasattr(v, ROOT_VALIDATOR_CONFIG_KEY)
     }
+
+
+def modify_validator_signature(
+    f: AnyCallable, positional_args: Tuple[str, ...] = (), keyword_args: Tuple[str, ...] = (), kind: str = 'validator'
+) -> AnyCallable:
+
+    allowed_kwargs = set(keyword_args)
+
+    sig = signature(f)
+
+    def get_error(msg: str = '') -> ConfigError:
+        expected_signature = '(' + ', '.join(positional_args + keyword_args) + ')'
+        if len(keyword_args) > 1:
+            optional_args_str = (
+                ', '.join(f'"{arg}"' for arg in keyword_args[:-1]) + f' and \"{keyword_args[-1]}\" are optional.'
+            )
+        else:
+            optional_args_str = f'"{keyword_args[0]}" is optional'
+        msg = msg + ', ' if msg else ''
+        error = ConfigError(
+            f'Invalid signature for {kind} {f.__name__}: {sig}, '
+            f'{msg}'
+            f'should be: {expected_signature}, {optional_args_str}.'
+        )
+        return error
+
+    parameters = list(sig.parameters.values())
+    if not parameters:
+        raise get_error()
+
+    first_parameter_name = parameters[0].name
+    if first_parameter_name == 'self':
+        raise get_error('"self" not permitted as first argument')
+
+    missing_cls_parameter = first_parameter_name != 'cls'
+    if missing_cls_parameter:
+        parameters = [Parameter('cls', kind=Parameter.POSITIONAL_OR_KEYWORD)] + parameters
+
+    varkwarg_pos = next((i for i, p in enumerate(parameters) if p.kind == p.VAR_KEYWORD), None)
+    if varkwarg_pos is not None:
+        del parameters[varkwarg_pos]
+
+    optional_parameters = parameters[len(positional_args) :]
+    optional_parameter_names = {p.name for p in optional_parameters}
+    if not allowed_kwargs.issuperset(optional_parameter_names):
+        raise get_error()
+
+    vararg_pos = next((i for i, p in enumerate(parameters) if p.kind == p.VAR_POSITIONAL), None)
+    if vararg_pos is None and len(parameters) < len(positional_args):
+        raise get_error()
+
+    return wrap_function(
+        f,
+        allowed_kwargs=allowed_kwargs,
+        optional_parameter_names=optional_parameter_names,
+        has_var_keyword=varkwarg_pos is not None,
+        missing_cls_parameter=missing_cls_parameter,
+    )
+
+
+def wrap_function(
+    f: AnyCallable,
+    allowed_kwargs: Set[str],
+    optional_parameter_names: Set[str],
+    has_var_keyword: bool,
+    missing_cls_parameter: bool,
+) -> AnyCallable:
+    if not has_var_keyword:
+        # Construct a new function object that ignores unneeded keyword arguments
+        if isinstance(f, FunctionType) and sys.version_info >= (3, 8):
+            original_f = f
+            c: Any = f.__code__
+            flags = c.co_flags | CO_VARKEYWORDS
+            varnames = c.co_varnames + ('__ignored_kw',)  # use a name that won't be used
+            nlocals = c.co_nlocals + 1
+            name = original_f.__code__.co_name
+            new_code = cast(Any, CodeType)(
+                c.co_argcount,
+                c.co_posonlyargcount,
+                c.co_kwonlyargcount,
+                nlocals,
+                c.co_stacksize,
+                flags,
+                c.co_code,
+                c.co_consts,
+                c.co_names,
+                varnames,
+                c.co_filename,
+                name,
+                c.co_firstlineno,
+                c.co_lnotab,
+                c.co_freevars,
+                c.co_cellvars,
+            )
+            f = FunctionType(new_code, f.__globals__, f.__name__, f.__defaults__, f.__closure__)
+            update_wrapper(f, original_f)
+        else:
+            # For classes or callable class instances where we can't replace the function code easily
+            delete_kw = list(allowed_kwargs.difference(optional_parameter_names))
+
+            wrapped_kw_f = f
+
+            @wraps(wrapped_kw_f)
+            def kw_wrapper(*args: Any, **kwargs: Any) -> Any:
+                for k in delete_kw:
+                    del kwargs[k]
+                return wrapped_kw_f(*args, **kwargs)
+
+            f = kw_wrapper
+
+    if missing_cls_parameter:
+        # wrap cls as last step so that args and kwargs analysis isn't wrong
+        wrapped_cls_f = f
+
+        @wraps(wrapped_cls_f)
+        def cls_wrapper(cls: type, *args: Any, **kwargs: Any) -> Any:
+            return wrapped_cls_f(*args, **kwargs)
+
+        f = cls_wrapper
+
+    return f

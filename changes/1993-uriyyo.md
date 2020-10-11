@@ -1,0 +1,1 @@
+Merge `_generic_validator_basic` and `_generic_validator_cls` into one function

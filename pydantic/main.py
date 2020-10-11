@@ -337,9 +337,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __schema_cache__: 'DictAny' = {}
         __custom_root_type__: bool = False
         __signature__: 'Signature'
+        __context__: Any
 
     Config = BaseConfig
-    __slots__ = ('__dict__', '__fields_set__')
+    __slots__ = ('__dict__', '__fields_set__', '__context__')
     __doc__ = ''  # Null out the Representation docstring
 
     def __init__(__pydantic_self__, **data: Any) -> None:
@@ -352,7 +353,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         if TYPE_CHECKING:
             __pydantic_self__.__dict__: Dict[str, Any] = {}
             __pydantic_self__.__fields_set__: 'SetStr' = set()
-        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)
+        context = getattr(__pydantic_self__, '__context__', None)
+        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data, context=context)
         if validation_error:
             raise validation_error
         object.__setattr__(__pydantic_self__, '__dict__', values)
@@ -452,7 +454,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+    def parse_obj(cls: Type['Model'], obj: Any, context: Any = None) -> 'Model':
         if cls.__custom_root_type__ and (
             not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
         ):
@@ -463,7 +465,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             except (TypeError, ValueError) as e:
                 exc = TypeError(f'{cls.__name__} expected dict not {obj.__class__.__name__}')
                 raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
-        return cls(**obj)
+        new_obj = cls.__new__(cls, **obj)  # type: ignore
+        object.__setattr__(new_obj, '__context__', context)
+        new_obj.__init__(**obj)
+        return new_obj
 
     @classmethod
     def parse_raw(
@@ -861,7 +866,7 @@ _missing = object()
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Type[BaseModel], input_data: 'DictStrAny', cls: 'ModelOrDc' = None
+    model: Type[BaseModel], input_data: 'DictStrAny', cls: 'ModelOrDc' = None, context: Any = None
 ) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
     """
     validate data against a model.
@@ -878,7 +883,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
 
     for validator in model.__pre_root_validators__:
         try:
-            input_data = validator(cls_, input_data)
+            input_data = validator(cls_, input_data, context=context)
         except (ValueError, TypeError, AssertionError) as exc:
             return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_)
 
@@ -910,7 +915,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
             if check_extra:
                 names_used.add(field.name if using_name else field.alias)
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls_)
+        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls_, context=context)
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):
@@ -936,7 +941,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
         if skip_on_failure and errors:
             continue
         try:
-            values = validator(cls_, values)
+            values = validator(cls_, values, context=context)
         except (ValueError, TypeError, AssertionError) as exc:
             errors.append(ErrorWrapper(exc, loc=ROOT_KEY))
 
