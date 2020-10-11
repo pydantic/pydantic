@@ -30,25 +30,22 @@ def test_create_model_pickle(create_module):
     Pickle will work for dynamically created model only if it was defined globally with its class name
     and module where it's defined was specified
     """
-    create_module(
-        """
-import pickle
-from typing import Generic, TypeVar
 
-from pydantic import create_model
-from pydantic.generics import GenericModel
+    @create_module
+    def module():
+        import pickle
 
-FooModel = create_model('FooModel', foo=(str, ...), bar=123, __module__=__name__)
+        from pydantic import create_model
 
-m = FooModel(foo='hello')
-d = pickle.dumps(m)
-m2 = pickle.loads(d)
-assert m2.foo == m.foo == 'hello'
-assert m2.bar == m.bar == 123
-assert m2 == m
-assert m2 is not m
-    """
-    )
+        FooModel = create_model('FooModel', foo=(str, ...), bar=123, __module__=__name__)
+
+        m = FooModel(foo='hello')
+        d = pickle.dumps(m)
+        m2 = pickle.loads(d)
+        assert m2.foo == m.foo == 'hello'
+        assert m2.bar == m.bar == 123
+        assert m2 == m
+        assert m2 is not m
 
 
 def test_invalid_name():
