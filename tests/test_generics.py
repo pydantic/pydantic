@@ -676,7 +676,7 @@ def test_generic_model_redefined_without_cache_fail(create_module):
         with pytest.raises(
                 TypeError, match=r"'MyGeneric\[t\]' already defined above, please consider reusing it"
         ) as exc_info:
-            same_concrete = MyGeneric[t]
+            MyGeneric[t]
 
         cause = exc_info.value.__cause__
         assert isinstance(cause, NameError), cause
