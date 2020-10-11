@@ -736,30 +736,28 @@ def test_is_call_from_module(create_module):
 def test_is_call_from_module_called_in_module(run_as_module):
     @run_as_module
     def module():
+        import pytest
+
         from pydantic.generics import is_call_from_module
 
-        try:
+        with pytest.raises(RuntimeError, match='This function must be used inside another function') as exc_info:
             is_call_from_module()
-        except RuntimeError as e:
-            assert isinstance(e, RuntimeError), e
-            assert e.args == ('This function must be used inside another function',), e.args
-            assert isinstance(e.__cause__, IndexError), e.__cause__
-            assert isinstance(e.__context__, IndexError), e.__context__
-        else:
-            raise AssertionError('RuntimeError was not raised')
+
+        e = exc_info.value
+        assert isinstance(e.__cause__, IndexError), e.__cause__
+        assert isinstance(e.__context__, IndexError), e.__context__
 
 
 def test_get_caller_module_called_from_module(run_as_module):
     @run_as_module
     def module():
+        import pytest
+
         from pydantic.generics import get_caller_module_name
 
-        try:
+        with pytest.raises(RuntimeError, match='This function must be used inside another function') as exc_info:
             get_caller_module_name()
-        except RuntimeError as e:
-            assert isinstance(e, RuntimeError), e
-            assert e.args == ('This function must be used inside another function',), e.args
-            assert isinstance(e.__cause__, IndexError), e.__cause__
-            assert isinstance(e.__context__, IndexError), e.__context__
-        else:
-            raise AssertionError('RuntimeError was not raised')
+
+        e = exc_info.value
+        assert isinstance(e.__cause__, IndexError), e.__cause__
+        assert isinstance(e.__context__, IndexError), e.__context__
