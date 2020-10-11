@@ -663,7 +663,9 @@ def test_generic_model_redefined_without_cache_fail(create_module):
     @create_module
     def module():
         from typing import Generic, TypeVar
+
         import pytest
+
         from pydantic.generics import GenericModel, _generic_types_cache
 
         t = TypeVar('t')
@@ -674,7 +676,7 @@ def test_generic_model_redefined_without_cache_fail(create_module):
         concrete = MyGeneric[t]
         _generic_types_cache.clear()
         with pytest.raises(
-                TypeError, match=r"'MyGeneric\[t\]' already defined above, please consider reusing it"
+            TypeError, match=r"'MyGeneric\[t\]' already defined above, please consider reusing it"
         ) as exc_info:
             MyGeneric[t]
 
