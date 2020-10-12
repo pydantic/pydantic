@@ -29,7 +29,7 @@ class GenericModel(BaseModel):
             raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
             params = (params,)
-        if cls is GenericModel and any(isinstance(param, TypeVar) for param in params):  # type: ignore
+        if cls is GenericModel and any(isinstance(param, TypeVar) for param in params):
             raise TypeError('Type parameters should be placed on typing.Generic, not GenericModel')
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
@@ -113,4 +113,4 @@ def _parameterize_generic_field(field_type: Type[Any], typevars_map: Dict[TypeVa
 
 
 def _is_typevar(v: Any) -> bool:
-    return isinstance(v, TypeVar)  # type: ignore
+    return isinstance(v, TypeVar)

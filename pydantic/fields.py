@@ -390,7 +390,7 @@ class ModelField(Representation):
         elif lenient_issubclass(self.type_, Json):
             self.type_ = Any
             self.parse_json = True
-        elif isinstance(self.type_, TypeVar):  # type: ignore
+        elif isinstance(self.type_, TypeVar):
             if self.type_.__bound__:
                 self.type_ = self.type_.__bound__
             elif self.type_.__constraints__:
