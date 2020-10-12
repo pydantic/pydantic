@@ -1,29 +1,7 @@
 # benchmark requirements are skipped here since they're rarely required
 # -r benchmarks/requirements.txt
-ansi2html==1.5.2
-mkdocs==1.1.2
-markdown==3.3
-mkdocs-exclude==1.0.2
-mkdocs-material==6.0.2
-markdown-include==0.6.0
-pygments==2.7.1
-sqlalchemy   # pyup: ignore
-orjson       # pyup: ignore
-ujson        # pyup: ignore
-
-black==20.8b1
-coverage==5.3
-flake8==3.8.4
-flake8-quotes==3.2.0
-isort==5.6.1
-mypy==0.782
-pycodestyle==2.6.0
-pyflakes==2.2.0
-pytest==6.1.1
-pytest-cov==2.10.1
-pytest-mock==3.3.1
-pytest-sugar==0.9.4
-twine==3.2.0
+-r docs/requirements.txt
+-r tests/requirements.txt
 
 Cython==0.29.21;sys_platform!='win32'
 devtools==0.6.0
