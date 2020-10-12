@@ -580,7 +580,7 @@ def test_enum_values():
 
 @pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_enum_values():
-    FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
+    FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
 
     class Model(BaseModel):
         baz: Literal[FooEnum.foo]
@@ -590,8 +590,8 @@ def test_literal_enum_values():
             use_enum_values = True
 
     m = Model(baz=FooEnum.foo)
-    assert m.dict() == {'baz': 'foo', 'boo': 'hoo'}
-    assert m.baz.value == 'foo'
+    assert m.dict() == {'baz': 'foo_value', 'boo': 'hoo'}
+    assert m.baz.value == 'foo_value'
 
 
 def test_enum_raw():
