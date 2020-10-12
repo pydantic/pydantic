@@ -185,6 +185,30 @@ def test_validating_assignment_dict():
     ]
 
 
+def test_validating_assignment_values_dict():
+    class ModelOne(BaseModel):
+        a: int
+
+    class ModelTwo(BaseModel):
+        m: ModelOne
+        b: int
+
+        @validator('b')
+        def validate_b(cls, b, values):
+            if 'm' in values:
+                return b + values['m'].a  # this fails if values['m'] is a dict
+            else:
+                return b
+
+        class Config:
+            validate_assignment = True
+
+    model = ModelTwo(m=ModelOne(a=1), b=2)
+    assert model.b == 3
+    model.b = 3
+    assert model.b == 4
+
+
 def test_validate_multiple():
     # also test TypeError
     class Model(BaseModel):
