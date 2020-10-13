@@ -367,9 +367,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         elif self.__config__.validate_assignment:
             known_field = self.__fields__.get(name, None)
             if known_field:
-                values = dict(self._iter(exclude={name}))
-                value, error_ = known_field.validate(value, values, loc=name, cls=self.__class__)
+                original_value = self.__dict__.pop(name)
+                value, error_ = known_field.validate(value, self.__dict__, loc=name, cls=self.__class__)
                 if error_:
+                    self.__dict__[name] = original_value
                     raise ValidationError([error_], self.__class__)
         self.__dict__[name] = value
         self.__fields_set__.add(name)
