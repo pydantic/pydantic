@@ -77,6 +77,11 @@ class GenericModel(BaseModel):
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
 
+    @classmethod
+    def validate(cls: Type[GenericModelT], value: Any) -> GenericModelT:
+        actual_cls = cls.__base__
+        return super(GenericModel, actual_cls).validate(value)
+
 
 def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
     if hasattr(type_, '__origin__') and getattr(type_, '__parameters__', None):

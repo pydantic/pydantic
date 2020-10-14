@@ -1,3 +1,4 @@
+import abc
 import sys
 from enum import Enum
 from typing import Any, ClassVar, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
@@ -599,3 +600,25 @@ def test_multiple_specification():
         {'loc': ('a',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
         {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
+
+
+@skip_36
+def test_abstract_generic_type_recursion():
+    T = TypeVar('T')
+
+    class BaseInnerClass(GenericModel, abc.ABC, Generic[T]):
+        base_data: T
+
+        @abc.abstractmethod
+        def base_abstract(self) -> None:
+            pass
+
+    class ConcreteInnerClass(BaseInnerClass[T], Generic[T]):
+
+        def base_abstract(self) -> None:
+            return None
+
+    class OuterClass(GenericModel, Generic[T]):
+        inner_class: BaseInnerClass[T]
+
+    OuterClass[int](inner_class=ConcreteInnerClass[int](base_data=2))

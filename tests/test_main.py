@@ -1,3 +1,4 @@
+import abc
 import sys
 from enum import Enum
 from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
@@ -1274,3 +1275,23 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
+
+
+def test_abstract_recursion():
+    class BaseInnerClass(BaseModel, abc.ABC):
+        base_data: int
+
+        @abc.abstractmethod
+        def do_something(self) -> None:
+            pass
+
+    class ConcreteInnerClass(BaseInnerClass):
+
+        def do_something(self) -> None:
+            return None
+
+    class OuterClass(BaseModel):
+        inner_class: List[BaseInnerClass]
+
+    OuterClass(inner_class=[ConcreteInnerClass(base_data=2)])
+
