@@ -1,16 +1,4 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    Generic,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generic, Tuple, Type, TypeVar, Union, cast, get_type_hints
 
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
