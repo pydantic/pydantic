@@ -599,3 +599,22 @@ def test_multiple_specification():
         {'loc': ('a',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
         {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
+
+
+@skip_36
+def test_generic_subclass_of_concrete_generic():
+    T = TypeVar("T")
+    U = TypeVar("U")
+
+    class GenericBaseModel(GenericModel, Generic[T]):
+        data: T
+
+    class GenericSub(GenericBaseModel[int], Generic[U]):
+        extra: U
+
+    ConcreteSub = GenericSub[int]
+
+    with pytest.raises(ValidationError):
+        ConcreteSub(data=2, extra='wrong')
+
+    ConcreteSub(data=2, extra=3)

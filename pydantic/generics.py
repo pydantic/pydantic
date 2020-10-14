@@ -1,4 +1,16 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, TypeVar, Union, cast, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Generic,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    get_type_hints,
+)
 
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
@@ -25,7 +37,7 @@ class GenericModel(BaseModel):
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
             return cached
-        if cls.__concrete__:
+        if cls.__concrete__ and Generic not in cls.__bases__:
             raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
             params = (params,)
