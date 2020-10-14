@@ -603,8 +603,8 @@ def test_multiple_specification():
 
 @skip_36
 def test_generic_subclass_of_concrete_generic():
-    T = TypeVar("T")
-    U = TypeVar("U")
+    T = TypeVar('T')
+    U = TypeVar('U')
 
     class GenericBaseModel(GenericModel, Generic[T]):
         data: T
