@@ -622,3 +622,4 @@ def test_abstract_generic_type_recursion():
         inner_class: BaseInnerClass[T]
 
     OuterClass[int](inner_class=ConcreteInnerClass[int](base_data=2))
+    OuterClass(inner_class=ConcreteInnerClass(base_data=2))
