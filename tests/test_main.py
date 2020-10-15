@@ -1294,4 +1294,3 @@ def test_abstract_recursion():
         inner_class: List[BaseInnerClass]
 
     OuterClass(inner_class=[ConcreteInnerClass(base_data=2)])
-
