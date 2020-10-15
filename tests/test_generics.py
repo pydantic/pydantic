@@ -614,7 +614,6 @@ def test_abstract_generic_type_recursion():
             pass
 
     class ConcreteInnerClass(BaseInnerClass[T], Generic[T]):
-
         def base_abstract(self) -> None:
             return None
 

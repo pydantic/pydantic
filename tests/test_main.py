@@ -1286,7 +1286,6 @@ def test_abstract_recursion():
             pass
 
     class ConcreteInnerClass(BaseInnerClass):
-
         def do_something(self) -> None:
             return None
 
