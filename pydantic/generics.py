@@ -80,7 +80,7 @@ class GenericModel(BaseModel):
     @classmethod
     def validate(cls: Type[GenericModelT], value: Any) -> GenericModelT:
         actual_cls = cls.__base__
-        return super(GenericModel, actual_cls).validate(value)
+        return super(GenericModel, actual_cls).validate(value)  # type: ignore
 
 
 def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
