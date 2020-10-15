@@ -617,4 +617,7 @@ def test_generic_subclass_of_concrete_generic():
     with pytest.raises(ValidationError):
         ConcreteSub(data=2, extra='wrong')
 
+    with pytest.raises(ValidationError):
+        ConcreteSub(data='wrong', extra=2)
+
     ConcreteSub(data=2, extra=3)
