@@ -623,3 +623,6 @@ def test_abstract_generic_type_recursion():
 
     OuterClass[int](inner_class=ConcreteInnerClass[int](base_data=2))
     OuterClass(inner_class=ConcreteInnerClass(base_data=2))
+
+    with pytest.raises(ValidationError):
+        OuterClass[int](inner_class=ConcreteInnerClass[str](base_data='stuff'))
