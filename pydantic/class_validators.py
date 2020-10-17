@@ -284,9 +284,9 @@ def _generic_validator(
     # Actual signature is (cls, value, values, field, config)
     # cls and value is required, other args is optional
     @wraps(validator)
-    def validator_wrapper(*args):
+    def validator_wrapper(*args_: Any) -> Any:
         return validator(*args_[skip_first:required_args], **_fetch_args(args_[required_args:]))
-        
+
     return validator_wrapper
 
 
