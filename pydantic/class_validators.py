@@ -283,7 +283,11 @@ def _generic_validator(
 
     # Actual signature is (cls, value, values, field, config)
     # cls and value is required, other args is optional
-    return lambda *args_: validator(*args_[skip_first:required_args], **_fetch_args(args_[required_args:]))
+    @wraps(validator)
+    def validator_wrapper(*args):
+        return validator(*args_[skip_first:required_args], **_fetch_args(args_[required_args:]))
+        
+    return validator_wrapper
 
 
 def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:
