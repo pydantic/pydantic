@@ -1,4 +1,19 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, TypeVar, Union, cast, get_type_hints
+import sys
+from types import FrameType, ModuleType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    get_type_hints,
+)
 
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
@@ -46,17 +61,27 @@ class GenericModel(BaseModel):
         model_name = cls.__concrete_name__(params)
         validators = gather_all_validators(cls)
         fields = _build_generic_fields(cls.__fields__, concrete_type_hints, typevars_map)
+        model_module = get_caller_module_name() or cls.__module__
         created_model = cast(
             Type[GenericModel],  # casting ensures mypy is aware of the __concrete__ and __parameters__ attributes
             create_model(
                 model_name,
-                __module__=cls.__module__,
+                __module__=model_module,
                 __base__=cls,
                 __config__=None,
                 __validators__=validators,
                 **fields,
             ),
         )
+
+        if is_call_from_module():  # create global reference and therefore allow pickling
+            object_in_module = sys.modules[model_module].__dict__.setdefault(model_name, created_model)
+            if object_in_module is not created_model:
+                # this should not ever happen because of _generic_types_cache, but just in case
+                raise TypeError(f'{model_name!r} already defined above, please consider reusing it') from NameError(
+                    f'Name conflict: {model_name!r} in {model_module!r} is already used by {object_in_module!r}'
+                )
+
         created_model.Config = cls.Config
         concrete = all(not _is_typevar(v) for v in concrete_type_hints.values())
         created_model.__concrete__ = concrete
@@ -115,3 +140,36 @@ def _parameterize_generic_field(field_type: Type[Any], typevars_map: Dict[TypeVa
 
 def _is_typevar(v: Any) -> bool:
     return isinstance(v, TypeVar)
+
+
+def get_caller_module_name() -> Optional[str]:
+    """
+    Used inside a function to get its caller module name
+
+    Will only work against non-compiled code, therefore used only in pydantic.generics
+    """
+    import inspect
+
+    try:
+        previous_caller_frame = inspect.stack()[2].frame
+    except IndexError as e:
+        raise RuntimeError('This function must be used inside another function') from e
+
+    getmodule = cast(Callable[[FrameType, str], Optional[ModuleType]], inspect.getmodule)
+    previous_caller_module = getmodule(previous_caller_frame, previous_caller_frame.f_code.co_filename)
+    return previous_caller_module.__name__ if previous_caller_module is not None else None
+
+
+def is_call_from_module() -> bool:
+    """
+    Used inside a function to check whether it was called globally
+
+    Will only work against non-compiled code, therefore used only in pydantic.generics
+    """
+    import inspect
+
+    try:
+        previous_caller_frame = inspect.stack()[2].frame
+    except IndexError as e:
+        raise RuntimeError('This function must be used inside another function') from e
+    return previous_caller_frame.f_locals is previous_caller_frame.f_globals
