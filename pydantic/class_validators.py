@@ -253,7 +253,7 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
             # assume the first argument was value which has already been removed
             skip_first = True
 
-        return wraps(validator)(_generic_validator(validator, sig, set(args), skip_first))
+        return _generic_validator(validator, sig, set(args), skip_first)
 
 
 def prep_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
