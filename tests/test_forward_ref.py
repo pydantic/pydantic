@@ -472,3 +472,15 @@ class Filter(BaseModel):
     )
     Filter = module.Filter
     assert isinstance(Filter(p={'sort': 'some_field:asc', 'fields': []}), Filter)
+
+
+def test_forward_ref_with_create_model(create_module):
+    @create_module
+    def module():
+        import pydantic
+
+        Sub = pydantic.create_model('Sub', foo='bar', __module__=__name__)
+        assert Sub  # get rid of "local variable 'Sub' is assigned to but never used"
+        Main = pydantic.create_model('Main', sub=('Sub', ...), __module__=__name__)
+        instance = Main(sub={})
+        assert instance.sub.dict() == {'foo': 'bar'}

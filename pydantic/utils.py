@@ -436,10 +436,10 @@ class GetterDict(Representation):
         return item in self.keys()
 
     def __eq__(self, other: Any) -> bool:
-        return dict(self) == dict(other.items())  # type: ignore
+        return dict(self) == dict(other.items())
 
     def __repr_args__(self) -> 'ReprArgs':
-        return [(None, dict(self))]  # type: ignore
+        return [(None, dict(self))]
 
     def __repr_name__(self) -> str:
         return f'GetterDict[{display_as_type(self._obj)}]'

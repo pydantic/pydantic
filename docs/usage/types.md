@@ -137,10 +137,16 @@ with custom properties and validation.
   see [Pydantic Types](#pydantic-types) for other custom IP address types
 
 `enum.Enum`
+: checks that the value is a valid Enum instance
+
+`subclass of enum.Enum`
 : checks that the value is a valid member of the enum;
   see [Enums and Choices](#enums-and-choices) for more details
 
 `enum.IntEnum`
+: checks that the value is a valid IntEnum instance
+
+`subclass of enum.IntEnum`
 : checks that the value is a valid member of the integer enum;
   see [Enums and Choices](#enums-and-choices) for more details
 
