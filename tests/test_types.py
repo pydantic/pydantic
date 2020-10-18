@@ -726,6 +726,31 @@ def test_int_enum_successful_for_str_int():
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
 
+def test_enum_type():
+    """it should validate any Enum"""
+
+    class Model(BaseModel):
+        my_enum: Enum
+
+    Model(my_enum=FruitEnum.banana)
+    Model(my_enum=ToolEnum.wrench)
+    with pytest.raises(ValidationError):
+        Model(my_enum='banana')
+
+
+def test_int_enum_type():
+    """it should validate any IntEnum"""
+
+    class Model(BaseModel):
+        my_int_enum: IntEnum
+
+    Model(my_int_enum=ToolEnum.wrench)
+    with pytest.raises(ValidationError):
+        Model(my_int_enum=FruitEnum.banana)
+    with pytest.raises(ValidationError):
+        Model(my_int_enum=2)
+
+
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):
