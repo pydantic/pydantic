@@ -31,7 +31,7 @@ T = TypeVar('T')
 
 
 def parse_obj_as(type_: Type[T], obj: Any, *, type_name: Optional[NameFactory] = None) -> T:
-    model_type = _get_parsing_type(type_, type_name=type_name)
+    model_type = _get_parsing_type(type_, type_name=type_name)  # type: ignore[arg-type]
     return model_type(__root__=obj).__root__
 
 
