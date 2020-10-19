@@ -253,7 +253,7 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
             # assume the first argument was value which has already been removed
             skip_first = True
 
-        return _generic_validator(validator, sig, set(args), skip_first)
+        return wraps(validator)(_generic_validator(validator, sig, set(args), skip_first))
 
 
 def prep_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
@@ -278,14 +278,22 @@ def _generic_validator(
             f'({", ".join(sig_args)}), "values", "config" and "field" are all optional.'
         )
 
+    _args_indexes = tuple((i, k) for i, k in enumerate(args_order) if k in args)
+
     def _fetch_args(args_: Tuple[Any, ...]) -> Dict[str, Any]:
-        return {k: args_[args_order.index(k)] for k in args_order if k in args}
+        return {k: args_[i] for i, k in _args_indexes}
 
     # Actual signature is (cls, value, values, field, config)
     # cls and value is required, other args is optional
-    @wraps(validator)
-    def validator_wrapper(*args_: Any) -> Any:
-        return validator(*args_[skip_first:required_args], **_fetch_args(args_[required_args:]))
+    if skip_first:
+
+        def validator_wrapper(cls: 'Optional[ModelOrDc]', value: Any, *args_: Any) -> Any:
+            return validator(value, **_fetch_args(args_))
+
+    else:
+
+        def validator_wrapper(cls: 'Optional[ModelOrDc]', value: Any, *args_: Any) -> Any:
+            return validator(cls, value, **_fetch_args(args_))
 
     return validator_wrapper
 
