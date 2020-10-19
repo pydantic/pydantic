@@ -56,7 +56,7 @@ from .types import (
     conset,
     constr,
 )
-from .typing import ForwardRef, Literal, is_callable_type, is_literal_type, literal_values
+from .typing import ForwardRef, Literal, get_args, get_origin, is_callable_type, is_literal_type, literal_values
 from .utils import get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
@@ -149,6 +149,30 @@ def model_schema(
     return m_schema
 
 
+def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
+    schema_overrides = False
+
+    # If no title is explicitly set, we don't set title in the schema for enums.
+    # The behaviour is the same as `BaseModel` reference, where the default title
+    # is in the definitions part of the schema.
+    schema: Dict[str, Any] = {}
+    if field.field_info.title or not lenient_issubclass(field.type_, Enum):
+        schema['title'] = field.field_info.title or field.alias.title().replace('_', ' ')
+
+    if field.field_info.title:
+        schema_overrides = True
+
+    if field.field_info.description:
+        schema['description'] = field.field_info.description
+        schema_overrides = True
+
+    if not field.required and not field.field_info.const and field.default is not None:
+        schema['default'] = encode_default(field.default)
+        schema_overrides = True
+
+    return schema, schema_overrides
+
+
 def field_schema(
     field: ModelField,
     *,
@@ -172,18 +196,7 @@ def field_schema(
     :return: tuple of the schema for this field and additional definitions
     """
     ref_prefix = ref_prefix or default_prefix
-    schema_overrides = False
-    s = dict(title=field.field_info.title or field.alias.title().replace('_', ' '))
-    if field.field_info.title:
-        schema_overrides = True
-
-    if field.field_info.description:
-        s['description'] = field.field_info.description
-        schema_overrides = True
-
-    if not field.required and not field.field_info.const and field.default is not None:
-        s['default'] = encode_default(field.default)
-        schema_overrides = True
+    s, schema_overrides = get_field_info_schema(field)
 
     validation_schema = get_field_schema_validations(field)
     if validation_schema:
@@ -228,6 +241,11 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
     a Pydantic ``FieldInfo`` with validation arguments.
     """
     f_schema: Dict[str, Any] = {}
+
+    if lenient_issubclass(field.type_, Enum):
+        # schema is already updated by `enum_process_schema`
+        return f_schema
+
     if lenient_issubclass(field.type_, (str, bytes)):
         for attr_name, t, keyword in _str_types_attrs:
             attr = getattr(field.field_info, attr_name, None)
@@ -655,6 +673,11 @@ def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]) -> None:
             break
 
 
+def get_schema_ref(ref_name: str, schema_overrides: bool) -> Dict[str, Any]:
+    schema_ref = {'$ref': ref_name}
+    return {'allOf': [schema_ref]} if schema_overrides else schema_ref
+
+
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
     field: ModelField,
     *,
@@ -707,7 +730,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     if lenient_issubclass(field_type, Enum):
         enum_name = normalize_name(field_type.__name__)
-        f_schema = {'$ref': ref_prefix + enum_name}
+        f_schema, schema_overrides = get_field_info_schema(field)
+        f_schema.update(get_schema_ref(ref_prefix + enum_name, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
     else:
         add_field_type_to_schema(field_type, f_schema)
@@ -738,11 +762,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             nested_models.update(sub_nested_models)
         else:
             nested_models.add(model_name)
-        schema_ref = {'$ref': ref_prefix + model_name}
-        if not schema_overrides:
-            return schema_ref, definitions, nested_models
-        else:
-            return {'allOf': [schema_ref]}, definitions, nested_models
+        schema_ref = get_schema_ref(ref_prefix + model_name, schema_overrides)
+        return schema_ref, definitions, nested_models
 
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
@@ -810,9 +831,9 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
             or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet))
         ):
             return type_
-        origin = getattr(type_, '__origin__', None)
+        origin = get_origin(type_)
         if origin is not None:
-            args: Tuple[Any, ...] = type_.__args__
+            args: Tuple[Any, ...] = get_args(type_)
             if any(isinstance(a, ForwardRef) for a in args):
                 # forward refs cause infinite recursion below
                 return type_

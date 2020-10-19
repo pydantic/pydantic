@@ -33,7 +33,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
+from .typing import AnyCallable, ForwardRef, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
     ClassAttribute,
     GetterDict,
@@ -257,7 +257,7 @@ class ModelMetaclass(ABCMeta):
                     if (
                         isinstance(value, untouched_types)
                         and ann_type != PyObject
-                        and not lenient_issubclass(getattr(ann_type, '__origin__', None), Type)
+                        and not lenient_issubclass(get_origin(ann_type), Type)
                     ):
                         continue
                     fields[ann_name] = inferred = ModelField.infer(
@@ -803,7 +803,7 @@ def create_model(
     *,
     __config__: Type[BaseConfig] = None,
     __base__: Type[BaseModel] = None,
-    __module__: Optional[str] = None,
+    __module__: str = __name__,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
 ) -> Type[BaseModel]:
@@ -812,8 +812,9 @@ def create_model(
     :param __model_name: name of the created model
     :param __config__: config class to use for the new model
     :param __base__: base class for the new model to inherit from
+    :param __module__: module of the created model
     :param __validators__: a dict of method names and @validator class methods
-    :param **field_definitions: fields of the model (or extra fields if a base is supplied)
+    :param field_definitions: fields of the model (or extra fields if a base is supplied)
         in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
         `<name>=<FieldInfo>`, e.g. `foo=Field(default_factory=datetime.utcnow, alias='bar')`
