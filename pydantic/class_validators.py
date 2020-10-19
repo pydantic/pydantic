@@ -1,11 +1,10 @@
-import sys
 import warnings
 from collections import ChainMap
-from functools import lru_cache, update_wrapper, wraps
-from inspect import CO_VARKEYWORDS, Parameter, signature
+from functools import lru_cache, wraps
+from inspect import Parameter, signature
 from itertools import chain
-from types import CodeType, FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, cast, overload
+from types import FunctionType
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
 
 from .errors import ConfigError
 from .typing import AnyCallable
@@ -319,53 +318,24 @@ def wrap_function(
 ) -> AnyCallable:
     if not has_var_keyword:
         # Construct a new function object that ignores unneeded keyword arguments
-        if isinstance(f, FunctionType) and sys.version_info >= (3, 8):
-            original_f = f
-            c: Any = f.__code__
-            flags = c.co_flags | CO_VARKEYWORDS
-            varnames = c.co_varnames + ('__ignored_kw',)  # use a name that won't be used
-            nlocals = c.co_nlocals + 1
-            name = original_f.__code__.co_name
-            new_code = cast(Any, CodeType)(
-                c.co_argcount,
-                c.co_posonlyargcount,
-                c.co_kwonlyargcount,
-                nlocals,
-                c.co_stacksize,
-                flags,
-                c.co_code,
-                c.co_consts,
-                c.co_names,
-                varnames,
-                c.co_filename,
-                name,
-                c.co_firstlineno,
-                c.co_lnotab,
-                c.co_freevars,
-                c.co_cellvars,
-            )
-            f = FunctionType(new_code, f.__globals__, f.__name__, f.__defaults__, f.__closure__)
-            update_wrapper(f, original_f)
-        else:
-            # For classes or callable class instances where we can't replace the function code easily
-            delete_kw = list(allowed_kwargs.difference(optional_parameter_names))
+        delete_kw = list(allowed_kwargs.difference(optional_parameter_names))
 
-            wrapped_kw_f = f
+        wrapped_kw_f = f
 
-            @wraps(wrapped_kw_f)
-            def kw_wrapper(*args: Any, **kwargs: Any) -> Any:
-                for k in delete_kw:
-                    del kwargs[k]
-                return wrapped_kw_f(*args, **kwargs)
+        @wraps(wrapped_kw_f)
+        def kw_wrapper(*args: Any, **kwargs: Any) -> Any:
+            for k in delete_kw:
+                del kwargs[k]
+            return wrapped_kw_f(*args, **kwargs)
 
-            f = kw_wrapper
+        f = kw_wrapper
 
     if missing_cls_parameter:
         # wrap cls as last step so that args and kwargs analysis isn't wrong
         wrapped_cls_f = f
 
         @wraps(wrapped_cls_f)
-        def cls_wrapper(cls: type, *args: Any, **kwargs: Any) -> Any:
+        def cls_wrapper(cls: Any, *args: Any, **kwargs: Any) -> Any:
             return wrapped_cls_f(*args, **kwargs)
 
         f = cls_wrapper
