@@ -622,6 +622,7 @@ def test_generic_subclass_of_concrete_generic():
     ConcreteSub(data=2, extra=3)
 
 
+@skip_36
 def test_generic_model_pickle(create_module):
     # Using create_module because pickle doesn't support
     # objects with <locals> in their __qualname__  (e. g. defined in function)
