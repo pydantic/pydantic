@@ -317,6 +317,11 @@ class PyObject:
         except ImportError as e:
             raise errors.PyObjectError(error_message=str(e))
 
+    if TYPE_CHECKING:
+
+        def __call__(self, *args: Any, **kwargs: Any) -> Any:
+            ...
+
 
 class ConstrainedNumberMeta(type):
     def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'ConstrainedInt':  # type: ignore

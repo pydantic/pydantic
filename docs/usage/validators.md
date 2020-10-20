@@ -53,7 +53,7 @@ A few more things to note:
 ## Subclass Validators and `each_item`
 
 If using a validator with a subclass that references a `List` type field on a parent class, using `each_item=True` will
-cause the validator not to run; instead, the list must be iterated over programatically.
+cause the validator not to run; instead, the list must be iterated over programmatically.
 
 ```py
 {!.tmp_examples/validators_subclass_each_item.py!}

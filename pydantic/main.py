@@ -33,13 +33,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import model_schema
 from .types import PyObject, StrBytes
-from .typing import (
-    AnyCallable,
-    ForwardRef,
-    is_classvar,
-    resolve_annotations,
-    update_field_forward_refs,
-)
+from .typing import AnyCallable, ForwardRef, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
     ClassAttribute,
     GetterDict,
@@ -48,6 +42,7 @@ from .utils import (
     generate_model_signature,
     lenient_issubclass,
     sequence_like,
+    smart_deepcopy,
     unique_list,
     validate_field_name,
 )
@@ -225,7 +220,7 @@ class ModelMetaclass(ABCMeta):
         pre_root_validators, post_root_validators = [], []
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
-                fields.update(deepcopy(base.__fields__))
+                fields.update(smart_deepcopy(base.__fields__))
                 config = inherit_config(base.__config__, config)
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
@@ -533,7 +528,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         Default values are respected, but no other validation is performed.
         """
         m = cls.__new__(cls)
-        object.__setattr__(m, '__dict__', {**deepcopy(cls.__field_defaults__), **values})
+        object.__setattr__(m, '__dict__', {**smart_deepcopy(cls.__field_defaults__), **values})
         if _fields_set is None:
             _fields_set = set(values.keys())
         object.__setattr__(m, '__fields_set__', _fields_set)
@@ -564,6 +559,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         )
 
         if deep:
+            # chances of having empty dict here are quite low for using smart_deepcopy
             v = deepcopy(v)
 
         cls = self.__class__
