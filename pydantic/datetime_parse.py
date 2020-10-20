@@ -16,7 +16,7 @@ Changed to:
 """
 import re
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Dict, Optional, Type, Union
+from typing import Dict, Type, Union
 
 from . import errors
 
@@ -79,7 +79,7 @@ def from_unix_seconds(seconds: Union[int, float]) -> datetime:
     return dt.replace(tzinfo=timezone.utc)
 
 
-def _parse_timezone(value: str, error: Type[Exception]) -> Optional[timezone]:
+def _parse_timezone(value: str, error: Type[Exception]) -> Union[int, timezone]:
     if value == 'Z':
         return timezone.utc
     elif value is not None:
