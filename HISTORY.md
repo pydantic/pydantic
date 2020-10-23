@@ -1,3 +1,7 @@
+## v1.6.2 (2020-10-23)
+
+* Python 3.9 support, #1844 by @PrettyWood
+
 ## v1.6.1 (2020-07-15)
 
 * fix validation and parsing of nested models with `default_factory`, #1710 by @PrettyWood
