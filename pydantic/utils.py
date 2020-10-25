@@ -58,18 +58,6 @@ __all__ = (
 )
 
 ROOT_KEY = '__root__'
-IMMUTABLE_NON_COLLECTIONS_TYPES: AbstractSet[Type[Any]] = {
-    int,
-    float,
-    str,
-    bool,
-    bytes,
-    type,
-    type(None),
-    FunctionType,
-    LambdaType,
-}
-
 # these are types that are returned unchanged by deepcopy
 IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
     int,
@@ -625,3 +613,4 @@ def validate_private_attributes(private_attributes: Dict[str, Any]) -> None:
             raise NameError(
                 f'Private attributes "{name}" must not be a valid field name; '
                 f'Use sunder or dunder names, e. g. "_{name}" or "__{name}__"'
+            )

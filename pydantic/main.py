@@ -2,6 +2,7 @@ import json
 import sys
 import warnings
 from abc import ABCMeta
+from copy import deepcopy
 from enum import Enum
 from functools import partial
 from pathlib import Path
