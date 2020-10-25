@@ -672,6 +672,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 and (not value_include or value_include.is_included(i))
             )
 
+        elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
+            return v.value
+
         else:
             return v
 
