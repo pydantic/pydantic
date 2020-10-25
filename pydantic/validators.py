@@ -255,7 +255,7 @@ def deque_validator(v: Any) -> Deque[Any]:
         raise errors.DequeError()
 
 
-def enum_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
+def enum_member_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
     try:
         enum_v = field.type_(v)
     except ValueError:
@@ -415,7 +415,7 @@ def callable_validator(v: Any) -> AnyCallable:
     raise errors.CallableError(value=v)
 
 
-def enum_member_validator(v: Any) -> Enum:
+def enum_validator(v: Any) -> Enum:
     if isinstance(v, Enum):
         return v
 
