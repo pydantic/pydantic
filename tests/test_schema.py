@@ -17,7 +17,6 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
-    default_ref_template,
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
