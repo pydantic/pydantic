@@ -10,7 +10,7 @@ class TimeAwareModel(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        # could also might be defined with default_factory
+        # could also be defined with default_factory
         self._secret_value = randint(1, 5)
 
 
