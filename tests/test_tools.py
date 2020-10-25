@@ -5,7 +5,7 @@ import pytest
 
 from pydantic import BaseModel, ValidationError
 from pydantic.dataclasses import dataclass
-from pydantic.tools import parse_file_as, parse_obj_as
+from pydantic.tools import parse_file_as, parse_obj_as, parse_raw_as
 
 
 @pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1])])
@@ -88,3 +88,13 @@ def test_parse_file_as_json_loads(tmp_path):
     p = tmp_path / 'test_json_loads.json'
     p.write_text('{"1": "2"}')
     assert parse_file_as(Dict[int, int], p, json_loads=custom_json_loads) == {1: 99}
+
+
+def test_raw_as():
+    class Item(BaseModel):
+        id: int
+        name: str
+
+    item_data = '[{"id": 1, "name": "My Item"}]'
+    items = parse_raw_as(List[Item], item_data)
+    assert items == [Item(id=1, name='My Item')]

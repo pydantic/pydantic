@@ -250,6 +250,103 @@ def test_enum_modify_schema():
     }
 
 
+def test_enum_schema_custom_field():
+    class FooBarEnum(str, Enum):
+        foo = 'foo'
+        bar = 'bar'
+
+    class Model(BaseModel):
+        pika: FooBarEnum = Field(alias='pikalias', title='Pikapika!', description='Pika is definitely the best!')
+        bulbi: FooBarEnum = Field('foo', alias='bulbialias', title='Bulbibulbi!', description='Bulbi is not...')
+        cara: FooBarEnum
+
+    assert Model.schema() == {
+        'definitions': {
+            'FooBarEnum': {
+                'description': 'An enumeration.',
+                'enum': ['foo', 'bar'],
+                'title': 'FooBarEnum',
+                'type': 'string',
+            }
+        },
+        'properties': {
+            'pikalias': {
+                'allOf': [{'$ref': '#/definitions/FooBarEnum'}],
+                'description': 'Pika is definitely the best!',
+                'title': 'Pikapika!',
+            },
+            'bulbialias': {
+                'allOf': [{'$ref': '#/definitions/FooBarEnum'}],
+                'description': 'Bulbi is not...',
+                'title': 'Bulbibulbi!',
+                'default': 'foo',
+            },
+            'cara': {'$ref': '#/definitions/FooBarEnum'},
+        },
+        'required': ['pikalias', 'cara'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_enum_and_model_have_same_behaviour():
+    class Names(str, Enum):
+        rick = 'Rick'
+        morty = 'Morty'
+        summer = 'Summer'
+
+    class Pika(BaseModel):
+        a: str
+
+    class Foo(BaseModel):
+        enum: Names
+        titled_enum: Names = Field(
+            ...,
+            title='Title of enum',
+            description='Description of enum',
+        )
+        model: Pika
+        titled_model: Pika = Field(
+            ...,
+            title='Title of model',
+            description='Description of model',
+        )
+
+    assert Foo.schema() == {
+        'definitions': {
+            'Pika': {
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+                'title': 'Pika',
+                'type': 'object',
+            },
+            'Names': {
+                'description': 'An enumeration.',
+                'enum': ['Rick', 'Morty', 'Summer'],
+                'title': 'Names',
+                'type': 'string',
+            },
+        },
+        'properties': {
+            'enum': {'$ref': '#/definitions/Names'},
+            'model': {'$ref': '#/definitions/Pika'},
+            'titled_enum': {
+                'allOf': [{'$ref': '#/definitions/Names'}],
+                'description': 'Description of enum',
+                'title': 'Title of enum',
+            },
+            'titled_model': {
+                'allOf': [{'$ref': '#/definitions/Pika'}],
+                'description': 'Description of model',
+                'title': 'Title of model',
+            },
+        },
+        'required': ['enum', 'titled_enum', 'model', 'titled_model'],
+        'title': 'Foo',
+        'type': 'object',
+    }
+
+
 def test_json_schema():
     class Model(BaseModel):
         a = b'foobar'

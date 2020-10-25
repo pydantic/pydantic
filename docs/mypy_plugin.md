@@ -58,7 +58,7 @@ There are other benefits too! See below for more details.
 * classes decorated with [`@pydantic.dataclasess.dataclass`](usage/dataclasses.md) are type checked the same as standard python dataclasses
 * The `@pydantic.dataclasess.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](usage/model_config.md).
 
-### Optional Capabilites:
+### Optional Capabilities:
 #### Prevent the use of required dynamic aliases
 * If the [`warn_required_dynamic_aliases` **plugin setting**](#plugin-settings) is set to `True`, you'll get a mypy
   error any time you use a dynamically-determined alias or alias generator on a model with
@@ -123,7 +123,6 @@ A `mypy.ini` file with all plugin strictness flags enabled (and some other mypy 
 plugins = pydantic.mypy
 
 follow_imports = silent
-strict_optional = True
 warn_redundant_casts = True
 warn_unused_ignores = True
 disallow_any_generics = True

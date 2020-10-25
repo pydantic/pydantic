@@ -58,7 +58,7 @@ class BaseSettings(BaseModel):
         env_file = _env_file if _env_file != env_file_sentinel else self.__config__.env_file
         env_file_encoding = _env_file_encoding if _env_file_encoding is not None else self.__config__.env_file_encoding
         if env_file is not None:
-            env_path = Path(env_file)
+            env_path = Path(env_file).expanduser()
             if env_path.is_file():
                 env_vars = {
                     **read_env_file(
