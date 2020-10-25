@@ -6,6 +6,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Generic,
     Optional,
     Tuple,
     Type,
@@ -41,7 +42,7 @@ class GenericModel(BaseModel):
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
             return cached
-        if cls.__concrete__:
+        if cls.__concrete__ and Generic not in cls.__bases__:
             raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
             params = (params,)

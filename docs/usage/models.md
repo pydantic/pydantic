@@ -319,6 +319,14 @@ To inherit from a GenericModel without replacing the `TypeVar` instance, a class
 ```
 _(This script is complete, it should run "as is")_
 
+You can also create a generic subclass of a `GenericModel` that partially or fully replaces the type 
+parameters in the superclass.
+
+```py
+{!.tmp_examples/models_generics_inheritance_extend.py!}
+```
+_(This script is complete, it should run "as is")_
+
 If the name of the concrete subclasses is important, you can also override the default behavior:
 
 ```py
