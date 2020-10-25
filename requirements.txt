@@ -1,7 +1,4 @@
-# benchmark requirements are skipped here since they're rarely required
-# -r benchmarks/requirements.txt
--r docs/requirements.txt
--r tests/requirements.txt
+# requirements for compilation and from setup.py so dependabot prompts us to test with latest version of these packages
 
 Cython==0.29.21;sys_platform!='win32'
 devtools==0.6.0
