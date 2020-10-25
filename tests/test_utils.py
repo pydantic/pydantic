@@ -4,7 +4,7 @@ import string
 from copy import copy, deepcopy
 from distutils.version import StrictVersion
 from enum import Enum
-from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Union
+from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
 
 import pytest
 
@@ -13,6 +13,7 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import (
+    ForwardRef,
     Literal,
     all_literal_values,
     display_as_type,
