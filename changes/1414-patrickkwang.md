@@ -1,1 +1,0 @@
-Squash internal `__root__` dicts in `.dict()` (and, by extension, in `.json()`).

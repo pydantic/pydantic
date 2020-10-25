@@ -509,6 +509,169 @@ def test_advanced_value_exclude_include():
     }
 
 
+@pytest.mark.parametrize(
+    'exclude,expected',
+    [
+        # Normal nested __all__
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{'j': 1}, {'j': 2}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+        ),
+        # Merge sub dicts
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{}, {}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}},
+            {'subs': [{'k': 1}, {'k': 2, 'subsubs': [{'i': 3}]}]},
+        ),
+        # Merge sub sets
+        (
+            {'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}},
+            {'subs': [{'k': 1, 'subsubs': []}, {'k': 2, 'subsubs': []}]},
+        ),
+        # Merge sub dict-set
+        (
+            {'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}},
+            {'subs': [{'k': 1, 'subsubs': [{'j': 1}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+        ),
+        # Different keys
+        ({'subs': {'__all__': {'subsubs'}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}),
+        ({'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}),
+        ({'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}}, {'subs': [{}, {'k': 2}]}),
+        # Nested different keys
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+        ),
+        # Ignore __all__ for index with defined exclude
+        (
+            {'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]},
+        ),
+        ({'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}}, {'subs': [{'k': 2, 'subsubs': [{'i': 3}]}]}),
+        ({'subs': {'__all__': ..., 0: {'subsubs'}}}, {'subs': [{'k': 1}]}),
+    ],
+)
+def test_advanced_exclude_nested_lists(exclude, expected):
+    class SubSubModel(BaseModel):
+        i: int
+        j: int
+
+    class SubModel(BaseModel):
+        k: int
+        subsubs: List[SubSubModel]
+
+    class Model(BaseModel):
+        subs: List[SubModel]
+
+    m = Model(subs=[dict(k=1, subsubs=[dict(i=1, j=1), dict(i=2, j=2)]), dict(k=2, subsubs=[dict(i=3, j=3)])])
+
+    assert m.dict(exclude=exclude) == expected
+
+
+@pytest.mark.parametrize(
+    'include,expected',
+    [
+        # Normal nested __all__
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}},
+            {'subs': [{'subsubs': [{'i': 1}, {'i': 2}]}, {'subsubs': [{'i': 3}]}]},
+        ),
+        # Merge sub dicts
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]},
+        ),
+        # Merge sub sets
+        (
+            {'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+        # Merge sub dict-set
+        (
+            {'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}},
+            {'subs': [{'subsubs': [{'i': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]},
+        ),
+        # Different keys
+        (
+            {'subs': {'__all__': {'subsubs'}, 0: {'k'}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+        # Nested different keys
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+        # Ignore __all__ for index with defined include
+        (
+            {'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+        (
+            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]},
+        ),
+        (
+            {'subs': {'__all__': ..., 0: {'subsubs'}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'k': 2, 'subsubs': [{'i': 3, 'j': 3}]}]},
+        ),
+    ],
+)
+def test_advanced_include_nested_lists(include, expected):
+    class SubSubModel(BaseModel):
+        i: int
+        j: int
+
+    class SubModel(BaseModel):
+        k: int
+        subsubs: List[SubSubModel]
+
+    class Model(BaseModel):
+        subs: List[SubModel]
+
+    m = Model(subs=[dict(k=1, subsubs=[dict(i=1, j=1), dict(i=2, j=2)]), dict(k=2, subsubs=[dict(i=3, j=3)])])
+
+    assert m.dict(include=include) == expected
+
+
 def test_field_set_ignore_extra():
     class Model(BaseModel):
         a: int
@@ -1551,3 +1714,19 @@ def test_default_factory_side_effect():
 
     m1 = MyModel()
     assert m1.id == 2  # instead of 1
+
+
+def test_default_factory_validator_child():
+    class Parent(BaseModel):
+        foo: List[str] = Field(default_factory=list)
+
+        @validator('foo', pre=True, each_item=True)
+        def mutate_foo(cls, v):
+            return f'{v}-1'
+
+    assert Parent(foo=['a', 'b']).foo == ['a-1', 'b-1']
+
+    class Child(Parent):
+        pass
+
+    assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']

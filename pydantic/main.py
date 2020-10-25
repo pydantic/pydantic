@@ -50,12 +50,22 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    import typing_extensions
     from inspect import Signature
+
+    import typing_extensions
+
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
-    from .typing import CallableGenerator, TupleGenerator, DictStrAny, DictAny, SetStr
-    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
+    from .typing import (  # noqa: F401
+        AbstractSetIntStr,
+        CallableGenerator,
+        DictAny,
+        DictStrAny,
+        MappingIntStrAny,
+        ReprArgs,
+        SetStr,
+        TupleGenerator,
+    )
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
@@ -572,7 +582,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         )
 
         if deep:
-            v = smart_deepcopy(v)
+            # chances of having empty dict here are quite low for using smart_deepcopy
+            v = deepcopy(v)
 
         cls = self.__class__
         m = cls.__new__(cls)

@@ -1,3 +1,52 @@
+## v1.6.1 (2020-07-15)
+
+* fix validation and parsing of nested models with `default_factory`, #1710 by @PrettyWood
+
+## v1.6 (2020-07-11)
+
+Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, and 1 anonymous sponsor for their kind support.
+
+* Modify validators for `conlist` and `conset` to not have `always=True`, #1682 by @samuelcolvin
+* add port check to `AnyUrl` (can't exceed 65536) ports are 16 insigned bits: `0 <= port <= 2**16-1` src: [rfc793 header format](https://tools.ietf.org/html/rfc793#section-3.1), #1654 by @flapili
+* Document default `regex` anchoring semantics, #1648 by @yurikhan
+* Use `chain.from_iterable` in class_validators.py. This is a faster and more idiomatic way of using `itertools.chain`.
+  Instead of computing all the items in the iterable and storing them in memory, they are computed one-by-one and never
+  stored as a huge list. This can save on both runtime and memory space, #1642 by @cool-RR
+* Add `conset()`, analogous to `conlist()`, #1623 by @patrickkwang
+* make *pydantic* errors (un)pickable, #1616 by @PrettyWood
+* Allow custom encoding for `dotenv` files, #1615 by @PrettyWood
+* Ensure `SchemaExtraCallable` is always defined to get type hints on BaseConfig, #1614 by @PrettyWood
+* Update datetime parser to support negative timestamps, #1600 by @mlbiche
+* Update mypy, remove `AnyType` alias for `Type[Any]`, #1598 by @samuelcolvin
+* Adjust handling of root validators so that errors are aggregated from _all_ failing root validators, instead of reporting on only the first root validator to fail, #1586 by @beezee
+* Make `__modify_schema__` on Enums apply to the enum schema rather than fields that use the enum, #1581 by @therefromhere
+* Fix behavior of `__all__` key when used in conjunction with index keys in advanced include/exclude of fields that are sequences, #1579 by @xspirus
+* Subclass validators do not run when referencing a `List` field defined in a parent class when `each_item=True`. Added an example to the docs illustrating this, #1566 by @samueldeklund
+* change `schema.field_class_to_schema` to support `frozenset` in schema, #1557 by @wangpeibao
+* Call `__modify_schema__` only for the field schema, #1552 by @PrettyWood
+* Move the assignment of `field.validate_always` in `fields.py` so the `always` parameter of validators work on inheritance, #1545 by @dcHHH
+* Added support for UUID instantiation through 16 byte strings such as `b'\x12\x34\x56\x78' * 4`. This was done to support `BINARY(16)` columns in sqlalchemy, #1541 by @shawnwall
+* Add a test assertion that `default_factory` can return a singleton, #1523 by @therefromhere
+* Add `NameEmail.__eq__` so duplicate `NameEmail` instances are evaluated as equal, #1514 by @stephen-bunn
+* Add datamodel-code-generator link in pydantic document site, #1500 by @koxudaxi
+* Added a "Discussion of Pydantic" section to the documentation, with a link to "Pydantic Introduction" video by Alexander Hultnér, #1499 by @hultner
+* Avoid some side effects of `default_factory` by calling it only once
+  if possible and by not setting a default value in the schema, #1491 by @PrettyWood
+* Added docs about dumping dataclasses to JSON, #1487 by @mikegrima
+* Make `BaseModel.__signature__` class-only, so getting `__signature__` from model instance will raise `AttributeError`, #1466 by @MrMrRobat
+* include `'format': 'password'` in the schema for secret types, #1424 by @atheuz
+* Modify schema constraints on `ConstrainedFloat` so that `exclusiveMinimum` and
+  minimum are not included in the schema if they are equal to `-math.inf` and
+  `exclusiveMaximum` and `maximum` are not included if they are equal to `math.inf`, #1417 by @vdwees
+* Squash internal `__root__` dicts in `.dict()` (and, by extension, in `.json()`), #1414 by @patrickkwang
+* Move `const` validator to post-validators so it validates the parsed value, #1410 by @selimb
+* Fix model validation to handle nested literals, e.g. `Literal['foo', Literal['bar']]`, #1364 by @DBCerigo
+* Remove `user_required = True` from `RedisDsn`, neither user nor password are required, #1275 by @samuelcolvin
+* Remove extra `allOf` from schema for fields with `Union` and custom `Field`, #1209 by @mostaphaRoudsari
+* Updates OpenAPI schema generation to output all enums as separate models.
+  Instead of inlining the enum values in the model schema, models now use a `$ref`
+  property to point to the enum definition, #1173 by @calvinwyoung
+
 ## v1.5.1 (2020-04-23)
 
 * Signature generation with `extra: allow` never uses a field name, #1418 by @prettywood

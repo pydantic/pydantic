@@ -239,20 +239,38 @@ def test_conlist():
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
 
 
+def test_conlist_wrong_type_default():
+    """It should not validate default value by default"""
+
+    class Model(BaseModel):
+        v: conlist(int) = 'a'
+
+    m = Model()
+    assert m.v == 'a'
+
+
 def test_constrained_set_good():
-    class ConSetModelMax(BaseModel):
+    class Model(BaseModel):
         v: conset(int) = []
 
-    m = ConSetModelMax(v=[1, 2, 3])
+    m = Model(v=[1, 2, 3])
     assert m.v == {1, 2, 3}
 
 
 def test_constrained_set_default():
-    class ConSetModelMax(BaseModel):
-        v: conset(int) = {}
+    class Model(BaseModel):
+        v: conset(int) = set()
 
-    m = ConSetModelMax()
-    assert m.v == {}
+    m = Model()
+    assert m.v == set()
+
+
+def test_constrained_set_default_invalid():
+    class Model(BaseModel):
+        v: conset(int) = 'not valid, not validated'
+
+    m = Model()
+    assert m.v == 'not valid, not validated'
 
 
 def test_constrained_set_too_long():
@@ -385,6 +403,14 @@ def test_conset():
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=1)
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
+
+
+def test_conset_not_required():
+    class Model(BaseModel):
+        foo: Set[int] = None
+
+    assert Model(foo=None).foo is None
+    assert Model().foo is None
 
 
 class ConStringModel(BaseModel):
@@ -2028,6 +2054,13 @@ def test_pattern():
     p = re.compile(r'^whatev.r\d$')
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
+
+    assert Foobar.schema() == {
+        'type': 'object',
+        'title': 'Foobar',
+        'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
+        'required': ['pattern'],
+    }
 
 
 def test_pattern_error():

@@ -96,9 +96,9 @@ StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
     from .dataclasses import DataclassType  # noqa: F401
-    from .main import BaseModel, BaseConfig  # noqa: F401
-    from .typing import CallableGenerator
     from .fields import ModelField
+    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .typing import CallableGenerator
 
     ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
 
@@ -190,9 +190,6 @@ class ConstrainedSet(set):  # type: ignore
 
     @classmethod
     def set_length_validator(cls, v: 'Optional[Set[T]]', field: 'ModelField') -> 'Optional[Set[T]]':
-        if v is None and not field.required:
-            return None
-
         v = set_validator(v)
         v_len = len(v)
 
@@ -319,6 +316,11 @@ class PyObject:
             return import_string(value)
         except ImportError as e:
             raise errors.PyObjectError(error_message=str(e))
+
+    if TYPE_CHECKING:
+
+        def __call__(self, *args: Any, **kwargs: Any) -> Any:
+            ...
 
 
 class ConstrainedNumberMeta(type):

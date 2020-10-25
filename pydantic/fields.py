@@ -40,10 +40,18 @@ from .validators import constant_validator, dict_validator, find_validators, val
 
 Required: Any = Ellipsis
 
+T = TypeVar('T')
+
 
 class UndefinedType:
     def __repr__(self) -> str:
         return 'PydanticUndefined'
+
+    def __copy__(self: T) -> T:
+        return self
+
+    def __deepcopy__(self: T, _: Any) -> T:
+        return self
 
 
 Undefined = UndefinedType()
@@ -128,7 +136,7 @@ def Field(
     **extra: Any,
 ) -> Any:
     """
-    Used to provide extra information about a field, either for the model schema or complex valiation. Some arguments
+    Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``.
 
     :param default: since this is replacing the field’s default, its first argument is used
@@ -333,8 +341,27 @@ class ModelField(Representation):
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
 
-        # To prevent side effects by calling the `default_factory` for nothing, we only call it
-        # when we want to validate the default value i.e. when `validate_all` is set to True.
+        self._set_default_and_type()
+        if self.type_.__class__ == ForwardRef:
+            # self.type_ is currently a ForwardRef and there's nothing we can do now,
+            # user will need to call model.update_forward_refs()
+            return
+
+        self._type_analysis()
+        if self.required is Undefined:
+            self.required = True
+            self.field_info.default = Required
+        if self.default is Undefined and self.default_factory is None:
+            self.default = None
+        self.populate_validators()
+
+    def _set_default_and_type(self) -> None:
+        """
+        Set the default value, infer the type if needed and check if `None` value is valid.
+
+        Note: to prevent side effects by calling the `default_factory` for nothing, we only call it
+        when we want to validate the default value i.e. when `validate_all` is set to True.
+        """
         if self.default_factory is not None:
             if self.type_ is None:
                 raise errors_.ConfigError(
@@ -352,21 +379,8 @@ class ModelField(Representation):
         if self.type_ is None:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
-        if self.type_.__class__ == ForwardRef:
-            # self.type_ is currently a ForwardRef and there's nothing we can do now,
-            # user will need to call model.update_forward_refs()
-            return
-
         if self.required is False and default_value is None:
             self.allow_none = True
-
-        self._type_analysis()
-        if self.required is Undefined:
-            self.required = True
-            self.field_info.default = Required
-        if self.default is Undefined and self.default_factory is None:
-            self.default = None
-        self.populate_validators()
 
     def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
         # typing interface is horrible, we have to do some ugly checks
@@ -443,10 +457,7 @@ class ModelField(Representation):
             get_validators = getattr(self.type_, '__get_validators__', None)
             if get_validators:
                 self.class_validators.update(
-                    {
-                        f'list_{i}': Validator(validator, pre=True, always=True)
-                        for i, validator in enumerate(get_validators())
-                    }
+                    {f'list_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
                 )
 
             self.type_ = self.type_.__args__[0]
@@ -456,10 +467,7 @@ class ModelField(Representation):
             get_validators = getattr(self.type_, '__get_validators__', None)
             if get_validators:
                 self.class_validators.update(
-                    {
-                        f'set_{i}': Validator(validator, pre=True, always=True)
-                        for i, validator in enumerate(get_validators())
-                    }
+                    {f'set_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
                 )
 
             self.type_ = self.type_.__args__[0]
@@ -531,7 +539,7 @@ class ModelField(Representation):
 
         if class_validators_:
             self.pre_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and v.pre)
-            self.post_validators = prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
+            self.post_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
 
         if self.parse_json:
             self.pre_validators.append(make_generic_validator(validate_json))

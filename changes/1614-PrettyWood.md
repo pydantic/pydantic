@@ -1,1 +1,0 @@
-Ensure `SchemaExtraCallable` is always defined to get type hints on BaseConfig.

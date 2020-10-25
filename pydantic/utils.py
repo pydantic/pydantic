@@ -1,7 +1,9 @@
 import warnings
-from copy import copy, deepcopy
+import weakref
+from collections import OrderedDict, defaultdict, deque
+from copy import deepcopy
 from itertools import islice
-from types import FunctionType, GeneratorType, LambdaType
+from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -11,6 +13,7 @@ from typing import (
     Generator,
     Iterator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -20,15 +23,16 @@ from typing import (
     no_type_check,
 )
 
-from .typing import display_as_type
+from .typing import NoneType, display_as_type
 from .version import version_info
 
 if TYPE_CHECKING:
     from inspect import Signature
-    from .main import BaseModel, BaseConfig  # noqa: F401
-    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
-    from .fields import ModelField  # noqa: F401
+
     from .dataclasses import DataclassType  # noqa: F401
+    from .fields import ModelField  # noqa: F401
+    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
 
 __all__ = (
     'import_string',
@@ -64,6 +68,41 @@ IMMUTABLE_NON_COLLECTIONS_TYPES: AbstractSet[Type[Any]] = {
     type(None),
     FunctionType,
     LambdaType,
+}
+
+# these are types that are returned unchanged by deepcopy
+IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
+    int,
+    float,
+    complex,
+    str,
+    bool,
+    bytes,
+    type,
+    NoneType,
+    FunctionType,
+    BuiltinFunctionType,
+    LambdaType,
+    weakref.ref,
+    CodeType,
+    # note: including ModuleType will differ from behaviour of deepcopy by not producing error.
+    # It might be not a good idea in general, but considering that this function used only internally
+    # against default values of fields, this will allow to actually have a field with module as default value
+    ModuleType,
+    NotImplemented.__class__,
+    Ellipsis.__class__,
+}
+
+# these are types that if empty, might be copied with simple copy() instead of deepcopy()
+BUILTIN_COLLECTIONS: Set[Type[Any]] = {
+    list,
+    set,
+    tuple,
+    frozenset,
+    dict,
+    OrderedDict,
+    defaultdict,
+    deque,
 }
 
 
@@ -256,6 +295,49 @@ def unique_list(input_list: Union[List[T], Tuple[T, ...]]) -> List[T]:
     return result
 
 
+def update_normalized_all(
+    item: Union['AbstractSetIntStr', 'MappingIntStrAny'],
+    all_items: Union['AbstractSetIntStr', 'MappingIntStrAny'],
+) -> Union['AbstractSetIntStr', 'MappingIntStrAny']:
+    """
+    Update item based on what all items contains.
+
+    The update is done based on these cases:
+
+    - if both arguments are dicts then each key-value pair existing in ``all_items`` is merged into ``item``,
+      while the rest of the key-value pairs are updated recursively with this function.
+    - if both arguments are sets then they are just merged.
+    - if ``item`` is a dictionary and ``all_items`` is a set then all values of it are added to ``item`` as
+      ``key: ...``.
+    - if ``item`` is set and ``all_items`` is a dictionary, then ``item`` is converted to a dictionary and then the
+      key-value pairs of ``all_items`` are merged in it.
+
+    During recursive calls, there is a case where ``all_items`` can be an Ellipsis, in which case the ``item`` is
+    returned as is.
+    """
+    if not item:
+        return all_items
+    if isinstance(item, dict) and isinstance(all_items, dict):
+        item = dict(item)
+        item.update({k: update_normalized_all(item[k], v) for k, v in all_items.items() if k in item})
+        item.update({k: v for k, v in all_items.items() if k not in item})
+        return item
+    if isinstance(item, set) and isinstance(all_items, set):
+        item = set(item)
+        item.update(all_items)
+        return item
+    if isinstance(item, dict) and isinstance(all_items, set):
+        item = dict(item)
+        item.update({k: ... for k in all_items if k not in item})
+        return item
+    if isinstance(item, set) and isinstance(all_items, dict):
+        item = {k: ... for k in item}
+        item.update({k: v for k, v in all_items.items() if k not in item})
+        return item
+    # Case when item or all_items is ... (in recursive calls).
+    return item
+
+
 class PyObjectStr(str):
     """
     String class where repr doesn't include quotes. Useful with Representation when you want to return a string
@@ -393,7 +475,7 @@ class ValueItems(Representation):
             self._type: Type[Union[set, dict]]  # type: ignore
 
         # For further type checks speed-up
-        if isinstance(items, dict):
+        if isinstance(items, Mapping):
             self._type = dict
         elif isinstance(items, AbstractSet):
             self._type = set
@@ -401,13 +483,7 @@ class ValueItems(Representation):
             raise TypeError(f'Unexpected type of exclude value {items.__class__}')
 
         if isinstance(value, (list, tuple)):
-            try:
-                items = self._normalize_indexes(items, len(value))
-            except TypeError as e:
-                raise TypeError(
-                    'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
-                    'expected integer keys or keyword "__all__"'
-                ) from e
+            items = self._normalize_indexes(items, len(value))
 
         self._items = items
 
@@ -458,6 +534,11 @@ class ValueItems(Representation):
         >>> self._normalize_indexes({'__all__'}, 4)
         {0, 1, 2, 3}
         """
+        if any(not isinstance(i, int) and i != '__all__' for i in items):
+            raise TypeError(
+                'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
+                'expected integer keys or keyword "__all__"'
+            )
         if self._type is set:
             if '__all__' in items:
                 if items != {'__all__'}:
@@ -465,12 +546,25 @@ class ValueItems(Representation):
                 return {i for i in range(v_length)}
             return {v_length + i if i < 0 else i for i in items}
         else:
+            all_items = items.get('__all__')
+            for i, v in items.items():
+                if not (isinstance(v, Mapping) or isinstance(v, AbstractSet) or v is ...):
+                    raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
             normalized_items = {v_length + i if i < 0 else i: v for i, v in items.items() if i != '__all__'}
-            all_set = items.get('__all__')
-            if all_set:
+            if all_items:
+                default: Type[Union[Set[Any], Dict[Any, Any]]]
+                if isinstance(all_items, Mapping):
+                    default = dict
+                elif isinstance(all_items, AbstractSet):
+                    default = set
+                else:
+                    for i in range(v_length):
+                        normalized_items.setdefault(i, ...)
+                    return normalized_items
                 for i in range(v_length):
-                    normalized_items.setdefault(i, set()).update(all_set)
-
+                    normalized_item = normalized_items.setdefault(i, default())
+                    if normalized_item is not ...:
+                        normalized_items[i] = update_normalized_all(normalized_item, all_items)
             return normalized_items
 
     def __repr_args__(self) -> 'ReprArgs':
@@ -497,6 +591,25 @@ class ClassAttribute:
         raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
 
 
+Obj = TypeVar('Obj')
+
+
+def smart_deepcopy(obj: Obj) -> Obj:
+    """
+    Return type as is for immutable built-in types
+    Use obj.copy() for built-in empty collections
+    Use copy.deepcopy() for non-empty collections and unknown objects
+    """
+
+    obj_type = obj.__class__
+    if obj_type in IMMUTABLE_NON_COLLECTIONS_TYPES:
+        return obj  # fastest case: obj is immutable and not collection therefore will not be copied anyway
+    elif not obj and obj_type in BUILTIN_COLLECTIONS:
+        # faster way for empty collections, no need to copy its members
+        return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
+    return deepcopy(obj)  # slowest way when we actually might need a deepcopy
+
+
 def is_valid_field(name: str) -> bool:
     if not name.startswith('_'):
         return True
@@ -512,19 +625,3 @@ def validate_private_attributes(private_attributes: Dict[str, Any]) -> None:
             raise NameError(
                 f'Private attributes "{name}" must not be a valid field name; '
                 f'Use sunder or dunder names, e. g. "_{name}" or "__{name}__"'
-            )
-
-
-Obj = TypeVar('Obj')
-
-
-def smart_deepcopy(obj: Obj) -> Obj:
-    """
-    Use copy.deepcopy() only on unempty collections, otherwise use copy.copy() or return obj as is
-    """
-
-    if obj.__class__ in IMMUTABLE_NON_COLLECTIONS_TYPES:
-        return obj  # fastest case: obj is immutable and not collection therefore will not be copied anyway
-    elif not obj:
-        return copy(obj)  # faster way for empty collections, no need to copy its members
-    return deepcopy(obj)  # slowest way
