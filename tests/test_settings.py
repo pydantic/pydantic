@@ -3,9 +3,8 @@ from typing import Dict, List, Optional, Set
 
 import pytest
 
-from pydantic import BaseModel, BaseSettings, Field, NoneStr, ValidationError, dataclasses
+from pydantic import BaseModel, BaseSettings, Field, HttpUrl, NoneStr, SecretStr, ValidationError, dataclasses
 from pydantic.env_settings import SettingsError, read_env_file
-from pydantic.types import SecretBytes, SecretStr
 
 try:
     import dotenv
@@ -733,54 +732,36 @@ def test_frozenset(env):
     assert Settings().dict() == {'foo': 'x'}
 
 
-def test_secrets_secret_str(tmp_path):
+def test_secrets_path(tmp_path):
     p = tmp_path / 'foo'
     p.write_text('foo_secret_value_str')
 
     class Settings(BaseSettings):
-        foo: SecretStr
+        foo: str
 
         class Config:
             secrets_dir = tmp_path
 
-    assert Settings().dict() == {'foo': SecretStr('foo_secret_value_str')}
+    assert Settings().dict() == {'foo': 'foo_secret_value_str'}
 
 
-def test_secrets_secret_bytes(tmp_path):
-    p = tmp_path / 'foo'
-    p.write_bytes(b'foo_secret_value_bytes')
+def test_secrets_path_url(tmp_path):
+    (tmp_path / 'foo').write_text('http://www.example.com')
+    (tmp_path / 'bar').write_text('snap')
 
     class Settings(BaseSettings):
-        foo: SecretBytes
+        foo: HttpUrl
+        bar: SecretStr
 
         class Config:
             secrets_dir = tmp_path
 
-    assert Settings().dict() == {'foo': SecretBytes(b'foo_secret_value_bytes')}
-
-
-def test_secrets_skip_non_secret(tmp_path):
-    p1 = tmp_path / 'foo'
-    p1.write_text('foo_secret_value_str')
-    p2 = tmp_path / 'bar'
-    p2.write_text('bar_secret_value_str')
-
-    class Settings(BaseSettings):
-        foo: SecretStr
-        bar: Optional[str]
-
-        class Config:
-            secrets_dir = tmp_path
-
-    with pytest.warns(UserWarning, match='field was not of type "SecretStr" or "SecretBytes"'):
-        settings = Settings()
-
-    assert settings.dict() == {'foo': SecretStr('foo_secret_value_str'), 'bar': None}
+    assert Settings().dict() == {'foo': 'http://www.example.com', 'bar': SecretStr('snap')}
 
 
 def test_secrets_missing(tmp_path):
     class Settings(BaseSettings):
-        foo: SecretStr
+        foo: str
 
         class Config:
             secrets_dir = tmp_path
@@ -795,23 +776,23 @@ def test_secrets_invalid_secrets_dir(tmp_path):
     p1.write_text('foo_secret_value_str')
 
     class Settings(BaseSettings):
-        foo: SecretStr
+        foo: str
 
         class Config:
             secrets_dir = p1
 
-    with pytest.raises(SettingsError):
+    with pytest.raises(SettingsError, match='secrets_dir must reference a directory, not a file'):
         Settings()
 
 
 def test_secrets_missing_location(tmp_path):
     class Settings(BaseSettings):
-        foo: SecretStr
+        foo: str
 
         class Config:
             secrets_dir = tmp_path / 'does_not_exist'
 
-    with pytest.raises(SettingsError):
+    with pytest.raises(SettingsError, match=f'directory "{tmp_path}/does_not_exist" does not exist'):
         Settings()
 
 
@@ -820,12 +801,14 @@ def test_secrets_file_is_a_directory(tmp_path):
     p1.mkdir()
 
     class Settings(BaseSettings):
-        foo: Optional[SecretStr]
+        foo: Optional[str]
 
         class Config:
             secrets_dir = tmp_path
 
-    with pytest.warns(UserWarning, match='found a directory instead'):
+    with pytest.warns(
+        UserWarning, match=f'attempted to load secret file "{tmp_path}/foo" but found a directory instead.'
+    ):
         Settings()
 
 
@@ -838,9 +821,9 @@ def test_secrets_dotenv_precedence(tmp_path):
     e.write_text('foo=foo_env_value_str')
 
     class Settings(BaseSettings):
-        foo: SecretStr
+        foo: str
 
         class Config:
             secrets_dir = tmp_path
 
-    assert Settings(_env_file=e).dict() == {'foo': SecretStr('foo_env_value_str')}
+    assert Settings(_env_file=e).dict() == {'foo': 'foo_env_value_str'}

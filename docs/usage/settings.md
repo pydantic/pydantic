@@ -147,14 +147,11 @@ Once you have your secret files, *pydantic* supports loading it in two ways:
 ```py
 class Settings(BaseSettings):
     ...
-    database_password: SecretStr
+    database_password: str
 
     class Config:
         secrets_dir = '/var/run'
 ```
-
-!!! note
-    Secrets are only loaded for fields defined as `SecretStr` or `SecretBytes`.
 
 **2.** instantiating a `BaseSettings` derived class with the `_secrets_dir` keyword argument:
 
@@ -182,7 +179,7 @@ and using secrets in Docker see the official
 First, define your Settings
 ```py
 class Settings(BaseSettings):
-    my_secret_data: SecretStr
+    my_secret_data: str
 
     class Config:
         secrets_dir = '/run/secrets'

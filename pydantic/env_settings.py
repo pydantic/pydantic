@@ -5,9 +5,8 @@ from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 
 from .fields import ModelField
 from .main import BaseConfig, BaseModel, Extra
-from .types import SecretBytes, SecretStr
 from .typing import display_as_type
-from .utils import deep_update, sequence_like
+from .utils import deep_update, path_type, sequence_like
 
 env_file_sentinel = str(object())
 
@@ -46,12 +45,12 @@ class BaseSettings(BaseModel):
         _secrets_dir: Union[Path, str, None] = None,
     ) -> Dict[str, Any]:
         return deep_update(
-            self._build_secrets(_secrets_dir), self._build_environ(_env_file, _env_file_encoding), init_kwargs
+            self._build_secrets_files(_secrets_dir), self._build_environ(_env_file, _env_file_encoding), init_kwargs
         )
 
-    def _build_secrets(self, _secrets_dir: Union[Path, str, None] = None) -> Dict[str, Optional[str]]:
+    def _build_secrets_files(self, _secrets_dir: Union[Path, str, None] = None) -> Dict[str, Optional[str]]:
         """
-        Build secrets suitable for passing to the Model.
+        Build fields from "secrets" files.
         """
         secrets: Dict[str, Optional[str]] = {}
 
@@ -59,28 +58,21 @@ class BaseSettings(BaseModel):
         if secrets_dir is None:
             return secrets
 
-        secrets_path = Path(secrets_dir)
+        secrets_path = Path(secrets_dir).expanduser()
 
         if not secrets_path.exists():
-            raise SettingsError(f'{secrets_path} does not exist')
-        if secrets_path.is_file():
-            raise SettingsError('secrets_dir must reference a directory, but found a file instead')
+            raise SettingsError(f'directory "{secrets_path}" does not exist')
+        if not secrets_path.is_dir():
+            raise SettingsError(f'secrets_dir must reference a directory, not a {path_type(secrets_path)}')
 
         for field in self.__fields__.values():
             for env_name in field.field_info.extra['env_names']:
                 path = secrets_path / env_name
-                if path.is_file() and field.type_ in (SecretStr, SecretBytes):
-                    value = path.read_text().strip()
-                    secrets[field.alias] = value
-                elif path.is_dir():
+                if path.is_file():
+                    secrets[field.alias] = path.read_text().strip()
+                elif path.exists():
                     warnings.warn(
-                        f'attempted to load secret file for field "{field.name}" but found a directory instead.',
-                        stacklevel=4,
-                    )
-                elif path.is_file() and field.type_ not in (SecretStr, SecretBytes):
-                    warnings.warn(
-                        f'found secret file matching field "{field.name}" but the field was not '
-                        'of type "SecretStr" or "SecretBytes". This secret file was not loaded.',
+                        f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
                         stacklevel=4,
                     )
 

@@ -25,6 +25,7 @@ from .version import version_info
 
 if TYPE_CHECKING:
     from inspect import Signature
+    from pathlib import Path
 
     from .dataclasses import DataclassType  # noqa: F401
     from .fields import ModelField  # noqa: F401
@@ -48,6 +49,7 @@ __all__ = (
     'ValueItems',
     'version_info',  # required here to match behaviour in v1.3
     'ClassAttribute',
+    'path_type',
 )
 
 
@@ -535,3 +537,27 @@ class ClassAttribute:
         if instance is None:
             return self.value
         raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
+
+
+path_types = {
+    'is_dir': 'directory',
+    'is_file': 'file',
+    'is_mount': 'mount point',
+    'is_symlink': 'symlink',
+    'is_block_device': 'block device',
+    'is_char_device': 'char device',
+    'is_fifo': 'FIFO',
+    'is_socket': 'socket',
+}
+
+
+def path_type(p: 'Path') -> str:
+    """
+    Find out what sort of thing a path is.
+    """
+    assert p.exists(), 'path does not exist'
+    for method, name in path_types.items():
+        if getattr(p, method)():
+            return name
+
+    return 'unknown'
