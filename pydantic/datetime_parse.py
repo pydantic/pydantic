@@ -16,7 +16,7 @@ Changed to:
 """
 import re
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Dict, Type, Union, Optional
+from typing import Dict, Optional, Type, Union
 
 from . import errors
 
@@ -156,9 +156,8 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
         kw['microsecond'] = kw['microsecond'].ljust(6, '0')
 
     tzinfo = _parse_timezone(kw.pop('tzinfo'), errors.TimeError)
-    kw_: Dict[str, Union[int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
-    if tzinfo is not None:
-        kw_['tzinfo'] = tzinfo
+    kw_: Dict[str, Union[None, int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
+    kw_['tzinfo'] = tzinfo
 
     try:
         return time(**kw_)  # type: ignore
@@ -195,7 +194,7 @@ def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
         kw['microsecond'] = kw['microsecond'].ljust(6, '0')
 
     tzinfo = _parse_timezone(kw.pop('tzinfo'), errors.DateTimeError)
-    kw_: Dict[str, Union[int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
+    kw_: Dict[str, Union[None, int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
     kw_['tzinfo'] = tzinfo
 
     try:
