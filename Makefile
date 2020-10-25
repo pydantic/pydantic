@@ -21,7 +21,7 @@ install-docs: install-pydantic
 	pip install -U -r docs/requirements.txt
 
 .PHONY: install-benchmarks
-install-benchmarks:
+install-benchmarks: install-pydantic
 	pip install -U -r benchmarks/requirements.txt
 
 .PHONY: install

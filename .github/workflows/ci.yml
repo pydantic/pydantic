@@ -160,7 +160,7 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.7'
 
     - name: install
       run: make install-testing
@@ -277,7 +277,9 @@ jobs:
           name: pypi_files
 
       - name: install
-        run: pip install -U twine
+        run: |
+        make install-docs
+        pip install -U twine
 
       - name: twine check
         run: |
@@ -292,8 +294,8 @@ jobs:
 #        env:
 #          TWINE_USERNAME: __token__
 #          TWINE_PASSWORD: ${{ secrets.pypi_token }}
-#
-#      - name: publish docs
-#        run: make publish-docs
+
+      - name: publish docs
+        run: make publish-docs
 #        env:
 #          NETLIFY: ${{ secrets.netlify_token }}
