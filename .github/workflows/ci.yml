@@ -9,6 +9,37 @@ on:
   pull_request: {}
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      PYTHON: ${{ matrix.python-version }}
+      OS: ubuntu
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: set up python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: install dependencies
+        run: |
+          make install-linting
+          pip freeze
+
+      - name: lint
+        run: make lint
+
+      - name: mypy
+        run: make mypy
+
+      - name: make history
+        run: python3 ./changes/make_history.py
+
+      - name: check dist
+        run: make check-dist
+
   test-linux:
     name: test py${{ matrix.python-version }} on ubuntu
     runs-on: ubuntu-latest
@@ -30,24 +61,12 @@ jobs:
 
     - name: install dependencies
       run: |
-        make install
+        make install-testing
         pip freeze
-
-    - name: lint
-      run: make lint
-
-    - name: mypy
-      run: make mypy
-
-    - name: make history
-      run: python3 ./changes/make_history.py
-
-    - name: check dist
-      run: make check-dist
 
     - name: compile
       run: |
-        make build-cython-trace
+        make build-trace
         python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
         ls -alh
         ls -alh pydantic/
@@ -119,14 +138,8 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: install
-      run: make install
-
-    - name: lint
-      run: make lint
-
-    - name: mypy
-      run: make mypy
+    - name: install testing
+      run: make install-testing
 
     - name: test
       run: make test
@@ -163,13 +176,12 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.7'
+        python-version: '3.8'
 
     - name: install and build
       run: |
-        make install
-        make build-cython
-        pip install -r benchmarks/requirements.txt
+        make build
+        make install-benchmarks
 
     - run: make benchmark-pydantic
     - run: make benchmark-all
@@ -177,8 +189,8 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [test-linux, test-windows-mac, test-fastapi]
-    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
+    needs: [lint, test-linux, test-windows-mac, test-fastapi]
+#    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
       matrix:
@@ -190,6 +202,7 @@ jobs:
         - '6'
         - '7'
         - '8'
+        - '9'
         include:
         - os: ubuntu
           platform: linux
@@ -206,12 +219,10 @@ jobs:
         python-version: '3.8'
 
     - name: install
-      run: |
-        make install
-        pip install -U setuptools wheel cibuildwheel
+      run: pip install -U twine setuptools wheel cibuildwheel
 
     - name: build sdist
-      if: matrix.os == 'ubuntu' && matrix.python-version == '8'
+      if: matrix.os == 'ubuntu' && matrix.python-version == '9'
       run: python setup.py sdist bdist_wheel
       env:
         SKIP_CYTHON: 1
@@ -245,7 +256,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-    if: "success() && startsWith(github.ref, 'refs/tags/')"
+#    if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
     steps:
@@ -262,7 +273,7 @@ jobs:
           name: pypi_files
 
       - name: install
-        run: make install
+        run: make install -U twine
 
       - name: twine check
         run: |
@@ -272,13 +283,13 @@ jobs:
       - name: check tag
         run: ./tests/check_tag.py
 
-      - name: upload to pypi
-        run: twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi_token }}
-
-      - name: publish docs
-        run: make publish-docs
-        env:
-          NETLIFY: ${{ secrets.netlify_token }}
+#      - name: upload to pypi
+#        run: twine upload dist/*
+#        env:
+#          TWINE_USERNAME: __token__
+#          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+#
+#      - name: publish docs
+#        run: make publish-docs
+#        env:
+#          NETLIFY: ${{ secrets.netlify_token }}

@@ -2,18 +2,31 @@
 isort = isort pydantic tests
 black = black -S -l 120 --target-version py38 pydantic tests
 
-.PHONY: install
-install:
-	python -m pip install -U setuptools pip
-	pip install -U -r requirements.txt
+.PHONY: install-linting
+install-linting:
+	pip install -r tests/requirements-linting.txt
+
+.PHONY: install-testing
+install-testing:
+	python -m pip install -U wheel pip
+	pip install -r tests/requirements-testing.txt
+	pip install -r requirements.txt
 	SKIP_CYTHON=1 pip install -e .
 
-.PHONY: build-cython-trace
-build-cython-trace:
+.PHONY: install-benchmarks
+install-benchmarks:
+	pip install -U -r benchmarks/requirements.txt
+
+.PHONY: install
+install: install-linting install-testing
+	@echo 'installed development requirements'
+
+.PHONY: build-trace
+build-trace:
 	python setup.py build_ext --force --inplace --define CYTHON_TRACE
 
-.PHONY: build-cython
-build-cython:
+.PHONY: build
+build:
 	python setup.py build_ext --inplace
 
 .PHONY: format
@@ -48,7 +61,7 @@ testcov: test
 	@coverage html
 
 .PHONY: testcov-compile
-testcov-compile: build-cython-trace test
+testcov-compile: build-trace test
 	@echo "building coverage html"
 	@coverage html
 
