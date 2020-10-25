@@ -2160,6 +2160,38 @@ def test_secretstr_error():
     assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 
 
+def test_secretstr_min_max_length():
+    class Foobar(BaseModel):
+        password: SecretStr = Field(min_length=6, max_length=10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(password='')
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('password',),
+            'msg': 'ensure this value has at least 6 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {'limit_value': 6},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(password='1' * 20)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('password',),
+            'msg': 'ensure this value has at most 10 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 10},
+        }
+    ]
+
+    value = '1' * 8
+    assert Foobar(password=value).password.get_secret_value() == value
+
+
 def test_secretbytes():
     class Foobar(BaseModel):
         password: SecretBytes
@@ -2214,6 +2246,63 @@ def test_secretbytes_error():
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=[6, 23, 'abc'])
     assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'byte type expected', 'type': 'type_error.bytes'}]
+
+
+def test_secretbytes_min_max_length():
+    class Foobar(BaseModel):
+        password: SecretBytes = Field(min_length=6, max_length=10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(password=b'')
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('password',),
+            'msg': 'ensure this value has at least 6 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {'limit_value': 6},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(password=b'1' * 20)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('password',),
+            'msg': 'ensure this value has at most 10 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 10},
+        }
+    ]
+
+    value = b'1' * 8
+    assert Foobar(password=value).password.get_secret_value() == value
+
+
+@pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])
+@pytest.mark.parametrize(
+    'field_kw,schema_kw',
+    [
+        [{}, {}],
+        [{'min_length': 6}, {'minLength': 6}],
+        [{'max_length': 10}, {'maxLength': 10}],
+        [{'min_length': 6, 'max_length': 10}, {'minLength': 6, 'maxLength': 10}],
+    ],
+    ids=['no-constrains', 'min-constraint', 'max-constraint', 'min-max-constraints'],
+)
+def test_secrets_schema(secret_cls, field_kw, schema_kw):
+    class Foobar(BaseModel):
+        password: secret_cls = Field(**field_kw)
+
+    assert Foobar.schema() == {
+        'title': 'Foobar',
+        'type': 'object',
+        'properties': {
+            'password': {'title': 'Password', 'type': 'string', 'writeOnly': True, 'format': 'password', **schema_kw}
+        },
+        'required': ['password'],
+    }
 
 
 def test_generic_without_params():

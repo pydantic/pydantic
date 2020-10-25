@@ -48,6 +48,8 @@ from .types import (
     ConstrainedList,
     ConstrainedSet,
     ConstrainedStr,
+    SecretBytes,
+    SecretStr,
     conbytes,
     condecimal,
     confloat,
@@ -905,7 +907,13 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
         attrs: Optional[Tuple[str, ...]] = None
         constraint_func: Optional[Callable[..., type]] = None
         if isinstance(type_, type):
-            if issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
+            if issubclass(type_, (SecretStr, SecretBytes)):
+                attrs = ('max_length', 'min_length')
+
+                def constraint_func(**kwargs: Any) -> Type[Any]:
+                    return type(type_.__name__, (type_,), kwargs)
+
+            elif issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = constr
             elif issubclass(type_, bytes):
