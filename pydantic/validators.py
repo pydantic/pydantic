@@ -415,7 +415,7 @@ def callable_validator(v: Any) -> AnyCallable:
     raise errors.CallableError(value=v)
 
 
-def enum_validator(v: Any) -> Enum:
+def enum_member_validator(v: Any) -> Enum:
     if isinstance(v, Enum):
         return v
 

@@ -482,7 +482,7 @@ class ModelField(Representation):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_FROZENSET
         elif issubclass(origin, Deque):
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_DEQUE
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
