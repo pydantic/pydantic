@@ -123,7 +123,7 @@ else:
         """
         args = typing_get_args(tp)
         # the fallback is needed for the same reasons as `get_origin` (see above)
-        return tuple(args or getattr(tp, '__args__', ()) or generic_get_args(tp))
+        return args or getattr(tp, '__args__', ()) or generic_get_args(tp)
 
 
 if TYPE_CHECKING:
