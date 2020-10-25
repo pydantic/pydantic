@@ -3,7 +3,7 @@ from typing import Any, List
 
 import pytest
 
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr
 
 
 class Model(BaseModel):
@@ -280,3 +280,13 @@ def test_shallow_copy_modify():
     # deep['deep_thing'] gets modified
     assert x.deep['deep_thing'] == [1, 2, 3]
     assert y.deep['deep_thing'] == [1, 2, 3]
+
+
+def test_construct_default_factory():
+    class Model(BaseModel):
+        foo: List[int] = Field(default_factory=list)
+        bar: str = 'Baz'
+
+    m = Model.construct()
+    assert m.foo == []
+    assert m.bar == 'Baz'

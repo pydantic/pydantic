@@ -1,0 +1,6 @@
+coverage==5.3
+mypy==0.790
+pytest==6.1.1
+pytest-cov==2.10.1
+pytest-mock==3.3.1
+pytest-sugar==0.9.4

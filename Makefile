@@ -2,18 +2,38 @@
 isort = isort pydantic tests
 black = black -S -l 120 --target-version py38 pydantic tests
 
-.PHONY: install
-install:
-	python -m pip install -U setuptools pip
-	pip install -U -r requirements.txt
+.PHONY: install-linting
+install-linting:
+	pip install -r tests/requirements-linting.txt
+
+.PHONY: install-pydantic
+install-pydantic:
+	python -m pip install -U wheel pip
+	pip install -r requirements.txt
 	SKIP_CYTHON=1 pip install -e .
 
-.PHONY: build-cython-trace
-build-cython-trace:
+.PHONY: install-testing
+install-testing: install-pydantic
+	pip install -r tests/requirements-testing.txt
+
+.PHONY: install-docs
+install-docs: install-pydantic
+	pip install -U -r docs/requirements.txt
+
+.PHONY: install-benchmarks
+install-benchmarks: install-pydantic
+	pip install -U -r benchmarks/requirements.txt
+
+.PHONY: install
+install: install-linting install-testing
+	@echo 'installed development requirements'
+
+.PHONY: build-trace
+build-trace:
 	python setup.py build_ext --force --inplace --define CYTHON_TRACE
 
-.PHONY: build-cython
-build-cython:
+.PHONY: build
+build:
 	python setup.py build_ext --inplace
 
 .PHONY: format
@@ -48,7 +68,7 @@ testcov: test
 	@coverage html
 
 .PHONY: testcov-compile
-testcov-compile: build-cython-trace test
+testcov-compile: build-trace test
 	@echo "building coverage html"
 	@coverage html
 
@@ -56,6 +76,11 @@ testcov-compile: build-cython-trace test
 test-examples:
 	@echo "running examples"
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
+
+.PHONY: test-fastapi
+test-fastapi:
+	git clone https://github.com/tiangolo/fastapi.git
+	./tests/test_fastapi.sh
 
 .PHONY: all
 all: lint mypy testcov
@@ -108,14 +133,7 @@ docs-serve:
 	mkdocs serve
 
 .PHONY: publish-docs
-publish-docs: docs
+publish-docs:
 	zip -r site.zip site
-	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
+	@curl -f -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
 	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
-
-fastapi:
-	git clone https://github.com/tiangolo/fastapi.git
-
-.PHONY: test-fastapi
-test-fastapi: install fastapi
-	./tests/test_fastapi.sh

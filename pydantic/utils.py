@@ -130,7 +130,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
 
 
 def sequence_like(v: Type[Any]) -> bool:
-    return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
@@ -440,10 +440,10 @@ class GetterDict(Representation):
         return item in self.keys()
 
     def __eq__(self, other: Any) -> bool:
-        return dict(self) == dict(other.items())  # type: ignore
+        return dict(self) == dict(other.items())
 
     def __repr_args__(self) -> 'ReprArgs':
-        return [(None, dict(self))]  # type: ignore
+        return [(None, dict(self))]
 
     def __repr_name__(self) -> str:
         return f'GetterDict[{display_as_type(self._obj)}]'
