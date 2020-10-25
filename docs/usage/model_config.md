@@ -59,8 +59,8 @@ Options:
 : whether to allow usage of [ORM mode](models.md#orm-mode)
 
 **`getter_dict`**
-: a custom class (which should inherit from `GetterDict`) to use when decomposing ORM classes for validation,
-  for use with `orm_mode`
+: a custom class (which should inherit from `GetterDict`; see [#1689](https://github.com/samuelcolvin/pydantic/issues/1689))
+to use when decomposing ORM classes for validation, for use with `orm_mode`
 
 **`alias_generator`**
 : a callable that takes a field name and returns an alias for it
