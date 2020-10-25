@@ -288,11 +288,11 @@ jobs:
           twine check dist/*
           ls -lh dist
 
-      - name: check tag
-        run: ./tests/check_tag.py
-
       - name: build docs
         run: make docs
+
+#      - name: check tag
+#        run: ./tests/check_tag.py
 
 #      - name: upload to pypi
 #        run: twine upload dist/*
