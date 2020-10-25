@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: install dependencies
+      - name: install
         run: |
           make install-linting
           pip freeze
@@ -59,7 +59,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: install dependencies
+    - name: install
       run: |
         make install-testing
         pip freeze
@@ -138,7 +138,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: install testing
+    - name: install
       run: make install-testing
 
     - name: test
@@ -160,9 +160,13 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.7'
+        python-version: '3.9'
 
-    - run: make test-fastapi
+    - name: install
+      run: make install-testing
+
+    - name: test
+      run: make test-fastapi
 
   benchmark:
     name: run benchmarks
@@ -273,7 +277,7 @@ jobs:
           name: pypi_files
 
       - name: install
-        run: make install -U twine
+        run: pip install -U twine
 
       - name: twine check
         run: |

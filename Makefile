@@ -70,6 +70,11 @@ test-examples:
 	@echo "running examples"
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'python {} >/dev/null 2>&1 || (echo "{} failed")'
 
+.PHONY: test-fastapi
+test-fastapi:
+	git clone https://github.com/tiangolo/fastapi.git
+	./tests/test_fastapi.sh
+
 .PHONY: all
 all: lint mypy testcov
 
@@ -125,10 +130,3 @@ publish-docs: docs
 	zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
 	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
-
-fastapi:
-	git clone https://github.com/tiangolo/fastapi.git
-
-.PHONY: test-fastapi
-test-fastapi: install fastapi
-	./tests/test_fastapi.sh
