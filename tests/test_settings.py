@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Set
@@ -805,7 +806,7 @@ def test_secrets_invalid_secrets_dir(tmp_path):
         class Config:
             secrets_dir = p1
 
-    with pytest.raises(SettingsError, match='secrets_dir must reference a directory, not a file'):
+    with pytest.raises(SettingsError, match=re.escape('secrets_dir must reference a directory, not a file')):
         Settings()
 
 
@@ -816,7 +817,7 @@ def test_secrets_missing_location(tmp_path):
         class Config:
             secrets_dir = tmp_path / 'does_not_exist'
 
-    with pytest.raises(SettingsError, match=f'directory "{tmp_path}/does_not_exist" does not exist'):
+    with pytest.raises(SettingsError, match=re.escape(f'directory "{tmp_path}/does_not_exist" does not exist')):
         Settings()
 
 
@@ -831,7 +832,7 @@ def test_secrets_file_is_a_directory(tmp_path):
             secrets_dir = tmp_path
 
     with pytest.warns(
-        UserWarning, match=f'attempted to load secret file "{tmp_path}/foo" but found a directory instead.'
+        UserWarning, match=re.escape(f'attempted to load secret file "{tmp_path}/foo" but found a directory instead.')
     ):
         Settings()
 
