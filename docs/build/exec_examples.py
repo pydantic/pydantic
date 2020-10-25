@@ -207,6 +207,13 @@ def exec_examples():
         else:
             lines = lines[ignore_above + 1 :]
 
+        try:
+            ignore_below = lines.index('# ignore-below')
+        except ValueError:
+            pass
+        else:
+            lines = lines[:ignore_below]
+
         lines = '\n'.join(lines).split('\n')
         if any(len(l) > MAX_LINE_LENGTH for l in lines):
             error(f'lines longer than {MAX_LINE_LENGTH} characters')

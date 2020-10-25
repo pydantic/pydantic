@@ -1,4 +1,6 @@
 import os
+import uuid
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 import pytest
@@ -437,21 +439,21 @@ def test_config_file_settings_nornir(env):
     """
 
     class Settings(BaseSettings):
-        a: str
-        b: str
-        c: str
+        param_a: str
+        param_b: str
+        param_c: str
 
         def _build_values(self, init_kwargs, _env_file, _env_file_encoding, _secrets_dir):
             config_settings = init_kwargs.pop('__config_settings__')
             return {**config_settings, **init_kwargs, **self._build_environ()}
 
-    env.set('C', 'env setting c')
+    env.set('PARAM_C', 'env setting c')
 
-    config = {'a': 'config a', 'b': 'config b', 'c': 'config c'}
-    s = Settings(__config_settings__=config, b='argument b', c='argument c')
-    assert s.a == 'config a'
-    assert s.b == 'argument b'
-    assert s.c == 'env setting c'
+    config = {'param_a': 'config a', 'param_b': 'config b', 'param_c': 'config c'}
+    s = Settings(__config_settings__=config, param_b='argument b', param_c='argument c')
+    assert s.param_a == 'config a'
+    assert s.param_b == 'argument b'
+    assert s.param_c == 'env setting c'
 
 
 test_env_file = """\
@@ -545,6 +547,28 @@ def test_env_file_config_custom_encoding(tmp_path):
 
     s = Settings()
     assert s.pika == 'p!±@'
+
+
+@pytest.fixture
+def home_tmp():
+    tmp_filename = f'{uuid.uuid4()}.env'
+    home_tmp_path = Path.home() / tmp_filename
+    yield home_tmp_path, tmp_filename
+    home_tmp_path.unlink()
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_env_file_home_directory(home_tmp):
+    home_tmp_path, tmp_filename = home_tmp
+    home_tmp_path.write_text('pika=baz')
+
+    class Settings(BaseSettings):
+        pika: str
+
+        class Config:
+            env_file = f'~/{tmp_filename}'
+
+    assert Settings().pika == 'baz'
 
 
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')

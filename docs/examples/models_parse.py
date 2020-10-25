@@ -1,5 +1,7 @@
 import pickle
 from datetime import datetime
+from pathlib import Path
+
 from pydantic import BaseModel, ValidationError
 
 
@@ -30,3 +32,11 @@ m = User.parse_raw(
     pickle_data, content_type='application/pickle', allow_pickle=True
 )
 print(m)
+
+path = Path('data.json')
+path.write_text('{"id": 123, "name": "James"}')
+m = User.parse_file(path)
+print(m)
+# ignore-below
+if path.exists():
+    path.unlink()
