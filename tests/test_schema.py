@@ -1986,7 +1986,7 @@ def test_model_process_schema_enum():
         foo = 'f'
         bar = 'b'
 
-    model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={}, ref_template=default_ref_template)
+    model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
     assert model_schema == {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']}
 
 

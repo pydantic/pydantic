@@ -491,8 +491,8 @@ def model_process_schema(
     *,
     by_alias: bool = True,
     model_name_map: Dict[TypeModelOrEnum, str],
-    ref_template: str,
     ref_prefix: Optional[str] = None,
+    ref_template: str = default_ref_template,
     known_models: TypeModelSet = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
