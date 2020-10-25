@@ -4,19 +4,9 @@ updates:
 - package-ecosystem: pip
   directory: /
   schedule:
-    interval: daily
+    interval: weekly
 
-- package-ecosystem: pip
-  directory: /tests
-  schedule:
-    interval: monthly
-
-- package-ecosystem: pip
-  directory: /docs
-  schedule:
-    interval: monthly
-
-- package-ecosystem: pip
-  directory: /benchmarks
+- package-ecosystem: github-actions
+  directory: /
   schedule:
     interval: monthly

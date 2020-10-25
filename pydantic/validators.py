@@ -245,12 +245,12 @@ def frozenset_validator(v: Any) -> FrozenSet[Any]:
         raise errors.FrozenSetError()
 
 
-def enum_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
+def enum_member_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
     try:
         enum_v = field.type_(v)
     except ValueError:
         # field.type_ should be an enum, so will be iterable
-        raise errors.EnumError(enum_values=list(field.type_))
+        raise errors.EnumMemberError(enum_values=list(field.type_))
     return enum_v.value if config.use_enum_values else enum_v
 
 
@@ -405,6 +405,20 @@ def callable_validator(v: Any) -> AnyCallable:
     raise errors.CallableError(value=v)
 
 
+def enum_validator(v: Any) -> Enum:
+    if isinstance(v, Enum):
+        return v
+
+    raise errors.EnumError(value=v)
+
+
+def int_enum_validator(v: Any) -> IntEnum:
+    if isinstance(v, IntEnum):
+        return v
+
+    raise errors.IntEnumError(value=v)
+
+
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     permitted_choices = all_literal_values(type_)
     allowed_choices_set = set(permitted_choices)
@@ -502,8 +516,8 @@ class IfConfig:
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
-    (IntEnum, [int_validator, enum_validator]),
-    (Enum, [enum_validator]),
+    (IntEnum, [int_validator, enum_member_validator]),
+    (Enum, [enum_member_validator]),
     (
         str,
         [
@@ -564,6 +578,12 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if is_literal_type(type_):
         yield make_literal_validator(type_)
+        return
+    if type_ is Enum:
+        yield enum_validator
+        return
+    if type_ is IntEnum:
+        yield int_enum_validator
         return
 
     class_ = get_class(type_)
