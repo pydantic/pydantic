@@ -6,12 +6,19 @@ black = black -S -l 120 --target-version py38 pydantic tests
 install-linting:
 	pip install -r tests/requirements-linting.txt
 
-.PHONY: install-testing
-install-testing:
+.PHONY: install-pydantic
+install-pydantic:
 	python -m pip install -U wheel pip
-	pip install -r tests/requirements-testing.txt
 	pip install -r requirements.txt
 	SKIP_CYTHON=1 pip install -e .
+
+.PHONY: install-testing
+install-testing: install-pydantic
+	pip install -r tests/requirements-testing.txt
+
+.PHONY: install-docs
+install-docs: install-pydantic
+	pip install -U -r docs/requirements.txt
 
 .PHONY: install-benchmarks
 install-benchmarks:
