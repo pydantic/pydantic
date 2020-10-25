@@ -370,6 +370,12 @@ extending a base model with extra fields.
 {!.tmp_examples/models_dynamic_inheritance.py!}
 ```
 
+You can also add validators by passing a dict to the `__validators__` argument.
+
+```py
+{!.tmp_examples/models_dynamic_validators.py!}
+```
+
 ## Custom Root Types
 
 Pydantic models can be defined with a custom root type by declaring the `__root__` field. 
