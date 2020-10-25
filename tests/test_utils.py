@@ -4,16 +4,15 @@ import string
 from copy import copy, deepcopy
 from distutils.version import StrictVersion
 from enum import Enum
-from typing import NewType, Union, Dict, Tuple, Callable, TypeVar, Any, List, ForwardRef
+from typing import NewType, Union
 
 import pytest
 
-from pydantic import VERSION, BaseModel, ConstrainedList, conlist
+from pydantic import VERSION, BaseModel
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
-from pydantic.typing import Literal, all_literal_values, display_as_type, is_new_type, new_type_supertype, get_args, \
-    resolve_annotations
+from pydantic.typing import Literal, all_literal_values, display_as_type, is_new_type, new_type_supertype
 from pydantic.utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
@@ -383,28 +382,3 @@ def test_smart_deepcopy_collection(collection, mocker):
     expected_value = object()
     mocker.patch('pydantic.utils.deepcopy', return_value=expected_value)
     assert smart_deepcopy(collection) is expected_value
-
-
-T = TypeVar('T')
-
-
-@pytest.mark.parametrize(
-    'input_value,output_value', [
-        (conlist(str), (str,)),
-        (ConstrainedList, ()),
-        (List[str], (str,)),
-        (Dict[str, int], (str, int)),
-        (int, ()),
-        (Union[int, Union[T, int], str][int], (int, str)),
-        (Union[int, Tuple[T, int]][str], (int, Tuple[str, int])),
-        (Callable[[], T][int], ([], int)),
-    ]
-)
-def test_get_args(input_value, output_value):
-    assert get_args(input_value) == output_value
-
-
-def test_resolve_annotations_no_module():
-    # TODO: is there a better test for this, can this case really happen?
-    fr = ForwardRef('Foo')
-    assert resolve_annotations({'Foo': ForwardRef('Foo')}, None) == {'Foo': fr}

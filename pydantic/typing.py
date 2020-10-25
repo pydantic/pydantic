@@ -121,9 +121,12 @@ else:
             get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
             get_args(Callable[[], T][int]) == ([], int)
         """
-        args = typing_get_args(tp)
+        try:
+            args = typing_get_args(tp)
+        except IndexError:
+            args = ()
         # the fallback is needed for the same reasons as `get_origin` (see above)
-        return tuple(args or getattr(tp, '__args__', ()) or generic_get_args(tp))
+        return args or getattr(tp, '__args__', ()) or generic_get_args(tp)
 
 
 if TYPE_CHECKING:
