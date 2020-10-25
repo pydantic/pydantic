@@ -532,6 +532,8 @@ If you need to use internal attribute excluded from model fields, you can declar
 ```
 _(This script is complete, it should run "as is")_
 
+Private attributes names must start with underscore to prevent conflicts with model fields: both '_attr' and '__attr__' are options.
+
 If `Config.underscore_attrs_are_private` is `True`, any non-ClassVar underscore attribute will be treated as private:
 ```py
 {!.tmp_examples/private_attributes_underscore_attrs_are_private.py!}
@@ -539,7 +541,6 @@ If `Config.underscore_attrs_are_private` is `True`, any non-ClassVar underscore 
 _(This script is complete, it should run "as is")_
 
 Upon class creation pydantic constructs `__slots__` filled with private attributes.
-Private attributes names must start with underscore to prevent conflicts with model fields.
 
 ## Parsing data into a specified type
 
