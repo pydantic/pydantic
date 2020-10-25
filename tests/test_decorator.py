@@ -70,6 +70,7 @@ def test_wrap():
     assert issubclass(foo_bar.model, BaseModel)
     assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs'}
     assert foo_bar.model.__name__ == 'FooBar'
+    assert foo_bar.model.schema()['title'] == 'FooBar'
     # signature is slightly different on 3.6
     if sys.version_info >= (3, 7):
         assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
@@ -261,4 +262,58 @@ def test_class_method():
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
         {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
+def test_config_title():
+    @validate_arguments(config=dict(title='Testing'))
+    def foo(a: int, b: int):
+        return f'{a}, {b}'
+
+    assert foo(1, 2) == '1, 2'
+    assert foo(1, b=2) == '1, 2'
+    assert foo.model.schema()['title'] == 'Testing'
+
+
+def test_config_title_cls():
+    class Config:
+        title = 'Testing'
+
+    @validate_arguments(config=Config)
+    def foo(a: int, b: int):
+        return f'{a}, {b}'
+
+    assert foo(1, 2) == '1, 2'
+    assert foo(1, b=2) == '1, 2'
+    assert foo.model.schema()['title'] == 'Testing'
+
+
+def test_config_fields():
+    with pytest.raises(ConfigError, match='Setting the "fields" and "alias_generator" property on custom Config for @'):
+
+        @validate_arguments(config=dict(fields={'b': 'bang'}))
+        def foo(a: int, b: int):
+            return f'{a}, {b}'
+
+
+def test_config_arbitrary_types_allowed():
+    class EggBox:
+        def __str__(self) -> str:
+            return 'EggBox()'
+
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def foo(a: int, b: EggBox):
+        return f'{a}, {b}'
+
+    assert foo(1, EggBox()) == '1, EggBox()'
+    with pytest.raises(ValidationError) as exc_info:
+        assert foo(1, 2) == '1, 2'
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('b',),
+            'msg': 'instance of EggBox expected',
+            'type': 'type_error.arbitrary_type',
+            'ctx': {'expected_arbitrary_type': 'EggBox'},
+        },
     ]

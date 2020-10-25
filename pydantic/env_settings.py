@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 
 from .fields import ModelField
-from .main import BaseModel, Extra
+from .main import BaseConfig, BaseModel, Extra
 from .typing import display_as_type
 from .utils import deep_update, sequence_like
 
@@ -58,7 +58,7 @@ class BaseSettings(BaseModel):
         env_file = _env_file if _env_file != env_file_sentinel else self.__config__.env_file
         env_file_encoding = _env_file_encoding if _env_file_encoding is not None else self.__config__.env_file_encoding
         if env_file is not None:
-            env_path = Path(env_file)
+            env_path = Path(env_file).expanduser()
             if env_path.is_file():
                 env_vars = {
                     **read_env_file(
@@ -85,7 +85,7 @@ class BaseSettings(BaseModel):
             d[field.alias] = env_val
         return d
 
-    class Config:
+    class Config(BaseConfig):
         env_prefix = ''
         env_file = None
         env_file_encoding = None
@@ -97,7 +97,9 @@ class BaseSettings(BaseModel):
         @classmethod
         def prepare_field(cls, field: ModelField) -> None:
             env_names: Union[List[str], AbstractSet[str]]
-            env = field.field_info.extra.get('env')
+            field_info_from_config = cls.get_field_info(field.name)
+
+            env = field_info_from_config.get('env') or field.field_info.extra.get('env')
             if env is None:
                 if field.has_alias:
                     warnings.warn(

@@ -1,6 +1,6 @@
 from typing import ClassVar, List, Union
 
-from typing_extensions import Literal
+from typing import Literal
 
 from pydantic import BaseModel, ValidationError
 
