@@ -625,6 +625,18 @@ def test_literal_enum_values():
     assert m.dict() == {'baz': 'foo_value', 'boo': 'hoo'}
     assert m.baz.value == 'foo_value'
 
+    with pytest.raises(ValidationError) as exc_info:
+        Model(baz=FooEnum.bar)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('baz',),
+            'msg': "unexpected value; permitted: <FooEnum.foo: 'foo_value'>",
+            'type': 'value_error.const',
+            'ctx': {'given': FooEnum.bar, 'permitted': (FooEnum.foo,)},
+        },
+    ]
+
 
 def test_enum_raw():
     FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
