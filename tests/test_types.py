@@ -2152,6 +2152,9 @@ def test_secretstr_min_max_length():
         }
     ]
 
+    value = '1' * 8
+    assert Foobar(password=value).password.get_secret_value() == value
+
 
 def test_secretbytes():
     class Foobar(BaseModel):
@@ -2236,6 +2239,9 @@ def test_secretbytes_min_max_length():
             'ctx': {'limit_value': 10},
         }
     ]
+
+    value = b'1' * 8
+    assert Foobar(password=value).password.get_secret_value() == value
 
 
 @pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])

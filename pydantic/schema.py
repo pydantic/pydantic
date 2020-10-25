@@ -836,10 +836,9 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
             if issubclass(type_, (SecretStr, SecretBytes)):
                 attrs = ('max_length', 'min_length')
 
-                def _secret_constraint(**kwargs: Any) -> Type[Any]:
+                def constraint_func(**kwargs: Any) -> Type[Any]:
                     return type(type_.__name__, (type_,), kwargs)
 
-                constraint_func = _secret_constraint
             elif issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = constr
