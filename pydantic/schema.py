@@ -155,10 +155,7 @@ def model_schema(
     if model_name in nested_models:
         # model_name is in Nested models, it has circular references
         m_definitions[model_name] = m_schema
-        if ref_prefix:
-            m_schema = {'$ref': ref_prefix + model_name}
-        else:
-            m_schema = {'$ref': ref_template.format(model=model_name)}
+        m_schema = get_schema_ref(model_name, ref_prefix, ref_template, False)
     if m_definitions:
         m_schema.update({'definitions': m_definitions})
     return m_schema
@@ -716,8 +713,11 @@ def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]) -> None:
             break
 
 
-def get_schema_ref(ref_name: str, schema_overrides: bool) -> Dict[str, Any]:
-    schema_ref = {'$ref': ref_name}
+def get_schema_ref(name: str, ref_prefix: Optional[str], ref_template: str, schema_overrides: bool) -> Dict[str, Any]:
+    if ref_prefix:
+        schema_ref = {'$ref': ref_prefix + name}
+    else:
+        schema_ref = {'$ref': ref_template.format(model=name)}
     return {'allOf': [schema_ref]} if schema_overrides else schema_ref
 
 
@@ -776,12 +776,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if lenient_issubclass(field_type, Enum):
         enum_name = normalize_name(field_type.__name__)
         f_schema, schema_overrides = get_field_info_schema(field)
-        if ref_prefix:
-            ref = ref_prefix + enum_name
-        else:
-            ref = ref_template.format(model=enum_name)
-
-        f_schema.update(get_schema_ref(ref, schema_overrides))
+        f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
     else:
         add_field_type_to_schema(field_type, f_schema)
@@ -813,11 +808,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             nested_models.update(sub_nested_models)
         else:
             nested_models.add(model_name)
-        if ref_prefix:
-            schema_ref = ref_prefix + model_name
-        else:
-            schema_ref = ref_template.format(model=model_name)
-        schema_ref = get_schema_ref(schema_ref, schema_overrides)
+        schema_ref = get_schema_ref(model_name, ref_prefix, ref_template, schema_overrides)
         return schema_ref, definitions, nested_models
 
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
