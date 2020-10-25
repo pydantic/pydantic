@@ -278,8 +278,8 @@ jobs:
 
       - name: install
         run: |
-        make install-docs
-        pip install -U twine
+          make install-docs
+          pip install -U twine
 
       - name: twine check
         run: |
