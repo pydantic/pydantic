@@ -4,7 +4,7 @@ import string
 from copy import copy, deepcopy
 from distutils.version import StrictVersion
 from enum import Enum
-from typing import NewType, Union, Dict, Tuple, Callable, TypeVar, Any, List, ForwardRef
+from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Union
 
 import pytest
 
@@ -12,8 +12,15 @@ from pydantic import VERSION, BaseModel, ConstrainedList, conlist
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
-from pydantic.typing import Literal, all_literal_values, display_as_type, is_new_type, new_type_supertype, get_args, \
-    resolve_annotations
+from pydantic.typing import (
+    Literal,
+    all_literal_values,
+    display_as_type,
+    get_args,
+    is_new_type,
+    new_type_supertype,
+    resolve_annotations,
+)
 from pydantic.utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
@@ -389,7 +396,8 @@ T = TypeVar('T')
 
 
 @pytest.mark.parametrize(
-    'input_value,output_value', [
+    'input_value,output_value',
+    [
         (conlist(str), (str,)),
         (ConstrainedList, ()),
         (List[str], (str,)),
@@ -398,7 +406,7 @@ T = TypeVar('T')
         (Union[int, Union[T, int], str][int], (int, str)),
         (Union[int, Tuple[T, int]][str], (int, Tuple[str, int])),
         (Callable[[], T][int], ([], int)),
-    ]
+    ],
 )
 def test_get_args(input_value, output_value):
     assert get_args(input_value) == output_value
