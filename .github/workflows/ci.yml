@@ -275,6 +275,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: pypi_files
+          path: dist
 
       - name: install
         run: |
@@ -283,8 +284,9 @@ jobs:
 
       - name: twine check
         run: |
-          mv pypi_files dist
+          ls -lh
           twine check dist/*
+          ls -lh dist
 
       - name: check tag
         run: ./tests/check_tag.py
