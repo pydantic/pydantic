@@ -1,3 +1,4 @@
+from collections import deque
 from datetime import datetime
 from itertools import product
 from typing import Dict, List, Optional, Tuple
@@ -54,6 +55,19 @@ def test_frozenset_validation():
     assert Model(a=frozenset({1, 2, 3})).a == frozenset({1, 2, 3})
     assert Model(a=[4, 5]).a == frozenset({4, 5})
     assert Model(a=(6,)).a == frozenset({6})
+
+
+def test_deque_validation():
+    class Model(BaseModel):
+        a: deque
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='snap')
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'value is not a valid deque', 'type': 'type_error.deque'}]
+    assert Model(a={1, 2, 3}).a == deque([1, 2, 3])
+    assert Model(a=deque({1, 2, 3})).a == deque([1, 2, 3])
+    assert Model(a=[4, 5]).a == deque([4, 5])
+    assert Model(a=(6,)).a == deque([6])
 
 
 def test_validate_whole():

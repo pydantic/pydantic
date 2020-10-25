@@ -1,4 +1,5 @@
 import datetime
+from collections import deque
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -27,6 +28,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     Decimal: float,
     Enum: lambda o: o.value,
     frozenset: list,
+    deque: list,
     GeneratorType: list,
     IPv4Address: str,
     IPv4Interface: str,

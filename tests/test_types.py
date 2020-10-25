@@ -3,12 +3,13 @@ import os
 import re
 import sys
 import uuid
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
 from typing import (
+    Deque,
     Dict,
     FrozenSet,
     Iterable,
@@ -852,6 +853,7 @@ def test_dict():
         ((1, 2, '3'), [1, 2, '3']),
         ({1, 2, '3'}, list({1, 2, '3'})),
         ((i ** 2 for i in range(5)), [0, 1, 4, 9, 16]),
+        ((deque((1, 2, 3)), list(deque((1, 2, 3))))),
     ),
 )
 def test_list_success(value, result):
@@ -891,6 +893,7 @@ def test_ordered_dict():
         ((1, 2, '3'), (1, 2, '3')),
         ({1, 2, '3'}, tuple({1, 2, '3'})),
         ((i ** 2 for i in range(5)), (0, 1, 4, 9, 16)),
+        (deque([1, 2, 3]), (1, 2, 3)),
     ),
 )
 def test_tuple_success(value, result):
@@ -998,6 +1001,7 @@ def test_set_type_fails():
     (
         (int, [1, 2, 3], [1, 2, 3]),
         (int, (1, 2, 3), (1, 2, 3)),
+        (int, deque((1, 2, 3)), deque((1, 2, 3))),
         (float, {1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}),
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
@@ -2288,15 +2292,22 @@ def test_frozenset_field():
     assert object_under_test.set == test_set
 
 
-def test_frozenset_field_conversion():
+@pytest.mark.parametrize(
+    'value,result',
+    [
+        ([1, 2, 3], frozenset([1, 2, 3])),
+        ({1, 2, 3}, frozenset([1, 2, 3])),
+        ((1, 2, 3), frozenset([1, 2, 3])),
+        (deque([1, 2, 3]), frozenset([1, 2, 3])),
+    ],
+)
+def test_frozenset_field_conversion(value, result):
     class FrozenSetModel(BaseModel):
         set: FrozenSet[int]
 
-    test_list = [1, 2, 3]
-    test_set = frozenset(test_list)
-    object_under_test = FrozenSetModel(set=test_list)
+    object_under_test = FrozenSetModel(set=value)
 
-    assert object_under_test.set == test_set
+    assert object_under_test.set == result
 
 
 def test_frozenset_field_not_convertible():
@@ -2361,3 +2372,82 @@ def test_bytesize_raises():
     m = Model(size='1MB')
     with pytest.raises(errors.InvalidByteSizeUnit, match='byte unit'):
         m.size.to('bad_unit')
+
+
+def test_deque_success():
+    class Model(BaseModel):
+        v: deque
+
+    assert Model(v=[1, 2, 3]).v == deque([1, 2, 3])
+
+
+@pytest.mark.parametrize(
+    'cls,value,result',
+    (
+        (int, [1, 2, 3], deque([1, 2, 3])),
+        (int, (1, 2, 3), deque((1, 2, 3))),
+        (int, deque((1, 2, 3)), deque((1, 2, 3))),
+        (float, {1.0, 2.0, 3.0}, deque({1.0, 2.0, 3.0})),
+        (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
+        (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
+        (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
+        (int, frozenset([1, 2, 3]), deque([1, 2, 3])),
+    ),
+)
+def test_deque_generic_success(cls, value, result):
+    class Model(BaseModel):
+        v: Deque[cls]
+
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize(
+    'cls,value,errors',
+    (
+        (int, [1, 'a', 3], [{'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
+        (int, (1, 2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
+        (float, range(10), [{'loc': ('v',), 'msg': 'value is not a valid sequence', 'type': 'type_error.sequence'}]),
+        (float, ('a', 2.2, 3.3), [{'loc': ('v', 0), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
+        (float, (1.1, 2.2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
+        (
+            Set[int],
+            [{1, 2}, {2, 3}, {'d'}],
+            [{'loc': ('v', 2, 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}],
+        ),
+        (
+            Tuple[int, str],
+            ((1, 'a'), ('a', 'a'), (3, 'c')),
+            [{'loc': ('v', 1, 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}],
+        ),
+        (
+            List[int],
+            [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
+            [{'loc': ('v', 0), 'msg': 'value is not a valid list', 'type': 'type_error.list'}],
+        ),
+    ),
+)
+def test_deque_fails(cls, value, errors):
+    class Model(BaseModel):
+        v: Deque[cls]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=value)
+    assert exc_info.value.errors() == errors
+
+
+def test_deque_model():
+    class Model2(BaseModel):
+        x: int
+
+    class Model(BaseModel):
+        v: Deque[Model2]
+
+    seq = [Model2(x=1), Model2(x=2)]
+    assert Model(v=seq).v == deque(seq)
+
+
+def test_deque_json():
+    class Model(BaseModel):
+        v: Deque[int]
+
+    assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
