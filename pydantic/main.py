@@ -215,7 +215,6 @@ class ModelMetaclass(ABCMeta):
         fields: Dict[str, ModelField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
-        fields_defaults: Dict[str, Any] = {}
 
         pre_root_validators, post_root_validators = [], []
         for base in reversed(bases):
@@ -231,9 +230,6 @@ class ModelMetaclass(ABCMeta):
         vg = ValidatorGroup(validators)
 
         for f in fields.values():
-            if not f.required:
-                fields_defaults[f.name] = f.default
-
             f.set_config(config)
             extra_validators = vg.get_validators(f.name)
             if extra_validators:
@@ -267,8 +263,6 @@ class ModelMetaclass(ABCMeta):
                         class_validators=vg.get_validators(ann_name),
                         config=config,
                     )
-                    if not inferred.required:
-                        fields_defaults[ann_name] = inferred.default
 
             for var_name, value in namespace.items():
                 if (
@@ -291,8 +285,6 @@ class ModelMetaclass(ABCMeta):
                             f'if you wish to change the type of this field, please use a type annotation'
                         )
                     fields[var_name] = inferred
-                    if not inferred.required:
-                        fields_defaults[var_name] = inferred.default
 
         _custom_root_type = ROOT_KEY in fields
         if _custom_root_type:
@@ -307,7 +299,6 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
-            '__field_defaults__': fields_defaults,
             '__validators__': vg.validators,
             '__pre_root_validators__': unique_list(pre_root_validators + pre_rv_new),
             '__post_root_validators__': unique_list(post_root_validators + post_rv_new),
@@ -327,7 +318,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
-        __field_defaults__: Dict[str, Any] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
         __post_root_validators__: List[Tuple[bool, AnyCallable]]
@@ -528,7 +518,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         Default values are respected, but no other validation is performed.
         """
         m = cls.__new__(cls)
-        object.__setattr__(m, '__dict__', {**smart_deepcopy(cls.__field_defaults__), **values})
+        # default field values
+        fields_values = {name: field.get_default() for name, field in cls.__fields__.items() if not field.required}
+        fields_values.update(values)
+        object.__setattr__(m, '__dict__', fields_values)
         if _fields_set is None:
             _fields_set = set(values.keys())
         object.__setattr__(m, '__fields_set__', _fields_set)
@@ -718,7 +711,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             if (
                 (allowed_keys is not None and field_key not in allowed_keys)
                 or (exclude_none and v is None)
-                or (exclude_defaults and self.__field_defaults__.get(field_key, _missing) == v)
+                or (exclude_defaults and getattr(self.__fields__.get(field_key), 'default', _missing) == v)
             ):
                 continue
             if by_alias and field_key in self.__fields__:
