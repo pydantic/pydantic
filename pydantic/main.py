@@ -31,7 +31,7 @@ from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import SHAPE_MAPPING, ModelField, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
-from .schema import model_schema
+from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
 from .typing import AnyCallable, ForwardRef, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
@@ -562,19 +562,23 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return m
 
     @classmethod
-    def schema(cls, by_alias: bool = True) -> 'DictStrAny':
-        cached = cls.__schema_cache__.get(by_alias)
+    def schema(cls, by_alias: bool = True, ref_template: str = default_ref_template) -> 'DictStrAny':
+        cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
-        s = model_schema(cls, by_alias=by_alias)
-        cls.__schema_cache__[by_alias] = s
+        s = model_schema(cls, by_alias=by_alias, ref_template=ref_template)
+        cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
 
     @classmethod
-    def schema_json(cls, *, by_alias: bool = True, **dumps_kwargs: Any) -> str:
+    def schema_json(
+        cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
+    ) -> str:
         from .json import pydantic_encoder
 
-        return cls.__config__.json_dumps(cls.schema(by_alias=by_alias), default=pydantic_encoder, **dumps_kwargs)
+        return cls.__config__.json_dumps(
+            cls.schema(by_alias=by_alias, ref_template=ref_template), default=pydantic_encoder, **dumps_kwargs
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
