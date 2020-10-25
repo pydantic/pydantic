@@ -75,14 +75,12 @@ class BaseSettings(BaseModel):
                 elif path.is_dir():
                     warnings.warn(
                         f'attempted to load secret file for field "{field.name}" but found a directory instead.',
-                        UserWarning,
                         stacklevel=4,
                     )
                 elif path.is_file() and field.type_ not in (SecretStr, SecretBytes):
                     warnings.warn(
                         f'found secret file matching field "{field.name}" but the field was not '
                         'of type "SecretStr" or "SecretBytes". This secret file was not loaded.',
-                        UserWarning,
                         stacklevel=4,
                     )
 
