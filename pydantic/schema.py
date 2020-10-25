@@ -64,7 +64,7 @@ if TYPE_CHECKING:
     from .main import BaseModel  # noqa: F401
 
 default_prefix = '#/definitions/'
-
+default_ref_template = '#/definitions/{model}'
 
 TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
 TypeModelSet = Set[TypeModelOrEnum]
@@ -77,7 +77,7 @@ def schema(
     title: Optional[str] = None,
     description: Optional[str] = None,
     ref_prefix: Optional[str] = None,
-    ref_template: str = '#/definitions/{model}',
+    ref_template: str = default_ref_template,
 ) -> Dict[str, Any]:
     """
     Process a list of models and generate a single JSON Schema with all of them defined in the ``definitions``
@@ -92,7 +92,7 @@ def schema(
       else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
       top-level key ``definitions``, so you can extract them from there. But all the references will have the set
       prefix.
-    :param ref_template: Use a ``string.format()`` template`` for ``$ref`` instead of a prefix. This can be useful
+    :param ref_template: Use a ``string.format()`` template for ``$ref`` instead of a prefix. This can be useful
       for references that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For
       a sibling json file in a ``/schemas`` directory use ``"/schemas/${model}.json#"``.
     :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for
@@ -127,7 +127,7 @@ def model_schema(
     model: Union[Type['BaseModel'], Type['DataclassType']],
     by_alias: bool = True,
     ref_prefix: Optional[str] = None,
-    ref_template: str = '#/definitions/{model}',
+    ref_template: str = default_ref_template,
 ) -> Dict[str, Any]:
     """
     Generate a JSON Schema for one model. With all the sub-models defined in the ``definitions`` top-level
@@ -140,7 +140,7 @@ def model_schema(
       else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
       top-level key ``definitions``, so you can extract them from there. But all the references will have the set
       prefix.
-    :param ref_template: Use a ``string.format()`` template`` for ``$ref`` instead of a prefix. This can be useful for
+    :param ref_template: Use a ``string.format()`` template for ``$ref`` instead of a prefix. This can be useful for
       references that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a
       sibling json file in a ``/schemas`` directory use ``"/schemas/${model}.json#"``.
     :return: dict with the JSON Schema for the passed ``model``
@@ -150,7 +150,7 @@ def model_schema(
     model_name_map = get_model_name_map(flat_models)
     model_name = model_name_map[model]
     m_schema, m_definitions, nested_models = model_process_schema(
-        model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix
+        model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, ref_template=ref_template
     )
     if model_name in nested_models:
         # model_name is in Nested models, it has circular references
@@ -191,7 +191,7 @@ def field_schema(
     by_alias: bool = True,
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
-    ref_template: str = '#/definitions/{model}',
+    ref_template: str = default_ref_template,
     known_models: TypeModelSet = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -205,7 +205,7 @@ def field_schema(
     :param model_name_map: used to generate the JSON Schema references to other models included in the definitions
     :param ref_prefix: the JSON Pointer prefix to use for references to other schemas, if None, the default of
       #/definitions/ will be used
-    :param ref_template: Use a ``string.format()`` template`` for ``$ref`` instead of a prefix. This can be useful for
+    :param ref_template: Use a ``string.format()`` template for ``$ref`` instead of a prefix. This can be useful for
       references that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a
       sibling json file in a ``/schemas`` directory use ``"/schemas/${model}.json#"``.
     :param known_models: used to solve circular references
@@ -396,9 +396,9 @@ def field_type_schema(
     *,
     by_alias: bool,
     model_name_map: Dict[TypeModelOrEnum, str],
+    ref_template: str,
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
-    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -491,8 +491,8 @@ def model_process_schema(
     *,
     by_alias: bool = True,
     model_name_map: Dict[TypeModelOrEnum, str],
+    ref_template: str,
     ref_prefix: Optional[str] = None,
-    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -540,8 +540,8 @@ def model_type_schema(
     *,
     by_alias: bool,
     model_name_map: Dict[TypeModelOrEnum, str],
+    ref_template: str,
     ref_prefix: Optional[str] = None,
-    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -620,9 +620,9 @@ def field_singleton_sub_fields_schema(
     *,
     by_alias: bool,
     model_name_map: Dict[TypeModelOrEnum, str],
+    ref_template: str,
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
-    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -726,9 +726,9 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     *,
     by_alias: bool,
     model_name_map: Dict[TypeModelOrEnum, str],
+    ref_template: str,
     schema_overrides: bool = False,
     ref_prefix: Optional[str] = None,
-    ref_template: str = '#/definitions/{model}',
     known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """

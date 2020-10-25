@@ -17,6 +17,7 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
+    default_ref_template,
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
@@ -80,11 +81,9 @@ def test_key():
         'title': 'ApplePie',
         'description': 'This is a test.',
     }
-    assert True not in ApplePie.__schema_cache__
-    assert False not in ApplePie.__schema_cache__
+    assert ApplePie.__schema_cache__.keys() == set()
     assert ApplePie.schema() == s
-    assert True in ApplePie.__schema_cache__
-    assert False not in ApplePie.__schema_cache__
+    assert ApplePie.__schema_cache__.keys() == {(True, '#/definitions/{model}')}
     assert ApplePie.schema() == s
 
 
@@ -108,6 +107,35 @@ def test_by_alias():
     }
     assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
+
+
+def test_ref_template():
+    class KeyLimePie(BaseModel):
+        x: str = None
+
+    class ApplePie(BaseModel):
+        a: float = None
+        key_lime: KeyLimePie = None
+
+        class Config:
+            title = 'Apple Pie'
+
+    assert ApplePie.schema(ref_template='foobar/{model}.json') == {
+        'title': 'Apple Pie',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'number'}, 'key_lime': {'$ref': 'foobar/KeyLimePie.json'}},
+        'definitions': {
+            'KeyLimePie': {
+                'title': 'KeyLimePie',
+                'type': 'object',
+                'properties': {'x': {'title': 'X', 'type': 'string'}},
+            },
+        },
+    }
+    assert ApplePie.schema()['properties']['key_lime'] == {'$ref': '#/definitions/KeyLimePie'}
+    json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
+    assert 'foobar/KeyLimePie.json' in json_schema
+    assert '#/definitions/KeyLimePie' not in json_schema
 
 
 def test_by_alias_generator():
@@ -1958,8 +1986,7 @@ def test_model_process_schema_enum():
         foo = 'f'
         bar = 'b'
 
-    model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
-    print(model_schema)
+    model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={}, ref_template=default_ref_template)
     assert model_schema == {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']}
 
 
