@@ -135,8 +135,8 @@ Placing secret values in files is a common pattern to provide sensitive configur
 A secret file follows the same principal as a dotenv file except it only contains a single value and the file name 
 is used as the key. A secret file will look like the following:
 
-/var/run/db_password
-```bash
+`/var/run/db_password`:
+```
 super_secret_database_password
 ```
 
@@ -172,11 +172,14 @@ Even when using a secrets directory, *pydantic* will still read environment vari
 Passing a file path via the `_secrets_dir` keyword argument on instantiation (method 2) will override
 the value (if any) set on the `Config` class.
 
-## Use Case: Docker Secrets
-Docker Secrets can be used to provide sensitive configuration to an application running in a Docker container. To use these secrets in a *Pydantic* application the process is simple. More information regarding creating, managing and using secrets in Docker see the offical [Docker documentation](https://docs.docker.com/engine/swarm/secrets/)
+### Use Case: Docker Secrets
 
+Docker Secrets can be used to provide sensitive configuration to an application running in a Docker container.
+To use these secrets in a *pydantic* application the process is simple. More information regarding creating, managing
+and using secrets in Docker see the official
+[Docker documentation](https://docs.docker.com/engine/reference/commandline/secret/).
 
-**1.** Define your Settings
+First, define your Settings
 ```py
 class Settings(BaseSettings):
     my_secret_data: SecretStr
@@ -185,18 +188,18 @@ class Settings(BaseSettings):
         secrets_dir = '/run/secrets'
 ```
 !!! note
-    By default Docker uses `/run/secrets` as the target mount point. If you want to use a different location change `Config.secrets_dir` accordingly.
+    By default Docker uses `/run/secrets` as the target mount point. If you want to use a different location, change 
+    `Config.secrets_dir` accordingly.
 
-**2.** Create your secret via the Docker CLI
+Then, Create your secret via the Docker CLI
 ```bash
 printf "This is a secret" | docker secret create my_secret_data -
 ```
 
-**3.** Run your application inside a Docker container and supply your newly created secret
+Last, run your application inside a Docker container and supply your newly created secret
 ```bash
 docker service create --name pydantic-with-secrets --secret my_secret_data pydantic-app:latest
 ```
-
 
 ## Field value priority
 
