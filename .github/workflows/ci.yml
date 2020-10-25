@@ -11,9 +11,6 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    env:
-      PYTHON: ${{ matrix.python-version }}
-      OS: ubuntu
 
     steps:
       - uses: actions/checkout@v2
@@ -194,7 +191,7 @@ jobs:
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
     needs: [lint, test-linux, test-windows-mac, test-fastapi]
-#    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
+    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
       matrix:
@@ -260,7 +257,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-#    if: "success() && startsWith(github.ref, 'refs/tags/')"
+    if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
     steps:
@@ -284,23 +281,22 @@ jobs:
 
       - name: twine check
         run: |
-          ls -lh
           twine check dist/*
           ls -lh dist
 
       - name: build docs
         run: make docs
 
-#      - name: check tag
-#        run: ./tests/check_tag.py
+      - name: check tag
+        run: ./tests/check_tag.py
 
-#      - name: upload to pypi
-#        run: twine upload dist/*
-#        env:
-#          TWINE_USERNAME: __token__
-#          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+      - name: upload to pypi
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}
 
       - name: publish docs
         run: make publish-docs
-#        env:
-#          NETLIFY: ${{ secrets.netlify_token }}
+        env:
+          NETLIFY: ${{ secrets.netlify_token }}
