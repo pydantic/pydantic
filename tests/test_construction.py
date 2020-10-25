@@ -3,7 +3,7 @@ from typing import Any, List
 
 import pytest
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 
 
 class Model(BaseModel):
@@ -58,8 +58,7 @@ def test_simple_copy():
 
 
 class ModelTwo(BaseModel):
-    __slots__ = '__foo__'
-    __foo__ = {'private'}
+    __foo__ = PrivateAttr({'private'})
 
     a: float
     b: int = 10

@@ -45,7 +45,6 @@ __all__ = (
     'almost_equal_floats',
     'get_model',
     'to_camel',
-    'validate_private_attributes',
     'is_valid_field',
     'smart_deepcopy',
     'PyObjectStr',
@@ -604,13 +603,5 @@ def is_valid_field(name: str) -> bool:
     return ROOT_KEY == name
 
 
-def validate_private_attributes(private_attributes: Dict[str, Any]) -> None:
-    """
-    Ensure that private attributes may not be valid field names.
-    """
-    for name in private_attributes:
-        if is_valid_field(name):
-            raise NameError(
-                f'Private attributes "{name}" must not be a valid field name; '
-                f'Use sunder or dunder names, e. g. "_{name}" or "__{name}__"'
-            )
+def is_valid_private_name(name: str) -> bool:
+    return not is_valid_field(name) and name not in {'__annotations__', '__module__', '__annotations__', '__qualname__'}

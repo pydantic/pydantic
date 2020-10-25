@@ -12,6 +12,7 @@ from pydantic import (
     Field,
     NoneBytes,
     NoneStr,
+    PrivateAttr,
     Required,
     ValidationError,
     constr,
@@ -1280,11 +1281,11 @@ def test_private_attribute():
     default = {'a': {}}
 
     class Model(BaseModel):
-        __slots__ = '__foo__'
-        __foo__ = default
+        __foo__ = PrivateAttr(default)
 
+    assert Model.__slots__ == {'__foo__'}
     assert repr(Model.__foo__) == "<member '__foo__' of 'Model' objects>"
-    assert Model.__private_attributes__ == {'__foo__': default}
+    assert Model.__private_attributes__ == {'__foo__': PrivateAttr(default)}
 
     m = Model()
     assert m.__foo__ == default
@@ -1298,21 +1299,43 @@ def test_private_attribute():
     assert m.__dict__ == {}
 
 
+def test_underscore_attrs_are_private():
+    class Model(BaseModel):
+        __foo__: str = 'abc'
+        __bar__: ClassVar[str] = 'cba'
+
+        class Config:
+            underscore_attrs_are_private = True
+
+    assert Model.__slots__ == {'__foo__'}
+    assert repr(Model.__foo__) == "<member '__foo__' of 'Model' objects>"
+    assert Model.__bar__ == 'cba'
+    assert Model.__private_attributes__ == {'__foo__': PrivateAttr('abc')}
+
+    m = Model()
+    assert m.__foo__ == 'abc'
+    m.__foo__ = None
+    assert m.__foo__ is None
+
+    with pytest.raises(ValueError, match='"Model" object has no field "__bar__"'):
+        m.__bar__ = 1
+
+
 def test_private_attribute_intersection_with_extra_field():
     class Model(BaseModel):
-        __slots__ = '__foo__'
-        __foo__ = 'private_attribute'
+        __foo__ = PrivateAttr('private_attribute')
 
         class Config:
             extra = Extra.allow
 
+    assert Model.__slots__ == {'__foo__'}
     m = Model(__foo__='field')
     assert m.__foo__ == 'private_attribute'
     assert m.__dict__ == m.dict() == {'__foo__': 'field'}
 
     m.__foo__ = 'still_private'
-    assert m.__dict__ == m.dict() == {'__foo__': 'field'}
     assert m.__foo__ == 'still_private'
+    assert m.__dict__ == m.dict() == {'__foo__': 'field'}
 
 
 def test_private_attribute_invalid_name():
@@ -1323,12 +1346,25 @@ def test_private_attribute_invalid_name():
     ):
 
         class Model(BaseModel):
-            __slots__ = 'foo'
+            foo = PrivateAttr()
 
 
-def test_private_attribute_unfilled():
+def test_slots_are_ignored():
     class Model(BaseModel):
-        __slots__ = '_foo'
+        __slots__ = (
+            'foo',
+            '_bar',
+        )
 
-    with pytest.raises(AttributeError, match='private attribute "_foo" is unset'):
-        Model()
+        def __init__(self):
+            super().__init__()
+            for attr_ in self.__slots__:
+                object.__setattr__(self, attr_, 'spam')
+
+    assert Model.__private_attributes__ == {}
+    assert set(Model.__slots__) == {'foo', '_bar'}
+    m = Model()
+    for attr in Model.__slots__:
+        assert object.__getattribute__(m, attr) == 'spam'
+        with pytest.raises(ValueError, match=f'"Model" object has no field "{attr}"'):
+            setattr(m, attr, 'not spam')
