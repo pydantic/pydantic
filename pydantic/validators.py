@@ -1,5 +1,5 @@
 import re
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from collections.abc import Hashable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
@@ -10,6 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Deque,
     Dict,
     FrozenSet,
     Generator,
@@ -243,6 +244,15 @@ def frozenset_validator(v: Any) -> FrozenSet[Any]:
         return frozenset(v)
     else:
         raise errors.FrozenSetError()
+
+
+def deque_validator(v: Any) -> Deque[Any]:
+    if isinstance(v, deque):
+        return v
+    elif sequence_like(v):
+        return deque(v)
+    else:
+        raise errors.DequeError()
 
 
 def enum_member_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
@@ -548,6 +558,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
     (tuple, [tuple_validator]),
     (set, [set_validator]),
     (frozenset, [frozenset_validator]),
+    (deque, [deque_validator]),
     (UUID, [uuid_validator]),
     (Decimal, [decimal_validator]),
     (IPv4Interface, [ip_v4_interface_validator]),

@@ -1,8 +1,10 @@
 import warnings
+from collections import deque
 from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    Deque,
     Dict,
     FrozenSet,
     Generator,
@@ -207,6 +209,7 @@ SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
 SHAPE_ITERABLE = 9
 SHAPE_GENERIC = 10
+SHAPE_DEQUE = 11
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -214,6 +217,7 @@ SHAPE_NAME_LOOKUP = {
     SHAPE_SEQUENCE: 'Sequence[{}]',
     SHAPE_FROZENSET: 'FrozenSet[{}]',
     SHAPE_ITERABLE: 'Iterable[{}]',
+    SHAPE_DEQUE: 'Deque[{}]',
 }
 
 
@@ -477,6 +481,9 @@ class ModelField(Representation):
         elif issubclass(origin, FrozenSet):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_FROZENSET
+        elif issubclass(origin, Deque):
+            self.type_ = get_args(self.type_)[0]
+            self.shape = SHAPE_DEQUE
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
@@ -620,7 +627,7 @@ class ModelField(Representation):
         if errors:
             return v, errors
 
-        converted: Union[List[Any], Set[Any], FrozenSet[Any], Tuple[Any, ...], Iterator[Any]] = result
+        converted: Union[List[Any], Set[Any], FrozenSet[Any], Tuple[Any, ...], Iterator[Any], Deque[Any]] = result
 
         if self.shape == SHAPE_SET:
             converted = set(result)
@@ -628,6 +635,8 @@ class ModelField(Representation):
             converted = frozenset(result)
         elif self.shape == SHAPE_TUPLE_ELLIPSIS:
             converted = tuple(result)
+        elif self.shape == SHAPE_DEQUE:
+            converted = deque(result)
         elif self.shape == SHAPE_SEQUENCE:
             if isinstance(v, tuple):
                 converted = tuple(result)
@@ -635,6 +644,8 @@ class ModelField(Representation):
                 converted = set(result)
             elif isinstance(v, Generator):
                 converted = iter(result)
+            elif isinstance(v, deque):
+                converted = deque(result)
         return converted, None
 
     def _validate_iterable(
@@ -786,3 +797,31 @@ class ModelField(Representation):
         if self.alt_alias:
             args.append(('alias', self.alias))
         return args
+
+
+class PrivateAttr(Representation):
+    """
+    Indicates that attribute is only used internally and never mixed with regular fields.
+
+    Types or values of private attrs are not checked by pydantic and it's up to you to keep them relevant.
+
+    Private attrs are stored in model __slots__.
+    """
+
+    __slots__ = ('default', 'default_factory')
+
+    def __init__(self, default: Any = Undefined, *, default_factory: Optional[NoArgAnyCallable] = None) -> None:
+        if default is not Undefined and default_factory is not None:
+            raise TypeError('default and default_factory args can not be used together')
+
+        self.default = default
+        self.default_factory = default_factory
+
+    def get_default(self) -> Any:
+        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, self.__class__) and (self.default, self.default_factory) == (
+            other.default,
+            other.default_factory,
+        )

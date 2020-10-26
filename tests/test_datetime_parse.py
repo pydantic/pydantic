@@ -65,12 +65,20 @@ def test_date_parsing(value, result):
         (3610, time(1, 0, 10)),
         (3600.5, time(1, 0, 0, 500000)),
         (86400 - 1, time(23, 59, 59)),
+        ('11:05:00-05:30', time(11, 5, 0, tzinfo=create_tz(-330))),
+        ('11:05:00-0530', time(11, 5, 0, tzinfo=create_tz(-330))),
+        ('11:05:00Z', time(11, 5, 0, tzinfo=timezone.utc)),
+        ('11:05:00+00', time(11, 5, 0, tzinfo=timezone.utc)),
+        ('11:05-06', time(11, 5, 0, tzinfo=create_tz(-360))),
+        ('11:05+06', time(11, 5, 0, tzinfo=create_tz(360))),
         # Invalid inputs
         (86400, errors.TimeError),
         ('xxx', errors.TimeError),
         ('091500', errors.TimeError),
         (b'091500', errors.TimeError),
         ('09:15:90', errors.TimeError),
+        ('11:05:00Y', errors.TimeError),
+        ('11:05:00-25:00', errors.TimeError),
     ],
 )
 def test_time_parsing(value, result):
@@ -108,6 +116,7 @@ def test_time_parsing(value, result):
         # Invalid inputs
         ('x20120423091500', errors.DateTimeError),
         ('2012-04-56T09:15:90', errors.DateTimeError),
+        ('2012-04-23T11:05:00-25:00', errors.DateTimeError),
         (19_999_999_999, datetime(2603, 10, 11, 11, 33, 19, tzinfo=timezone.utc)),  # just before watershed
         (20_000_000_001, datetime(1970, 8, 20, 11, 33, 20, 1000, tzinfo=timezone.utc)),  # just after watershed
         (1_549_316_052, datetime(2019, 2, 4, 21, 34, 12, 0, tzinfo=timezone.utc)),  # nowish in s

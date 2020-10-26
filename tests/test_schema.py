@@ -80,11 +80,9 @@ def test_key():
         'title': 'ApplePie',
         'description': 'This is a test.',
     }
-    assert True not in ApplePie.__schema_cache__
-    assert False not in ApplePie.__schema_cache__
+    assert ApplePie.__schema_cache__.keys() == set()
     assert ApplePie.schema() == s
-    assert True in ApplePie.__schema_cache__
-    assert False not in ApplePie.__schema_cache__
+    assert ApplePie.__schema_cache__.keys() == {(True, '#/definitions/{model}')}
     assert ApplePie.schema() == s
 
 
@@ -108,6 +106,35 @@ def test_by_alias():
     }
     assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
+
+
+def test_ref_template():
+    class KeyLimePie(BaseModel):
+        x: str = None
+
+    class ApplePie(BaseModel):
+        a: float = None
+        key_lime: KeyLimePie = None
+
+        class Config:
+            title = 'Apple Pie'
+
+    assert ApplePie.schema(ref_template='foobar/{model}.json') == {
+        'title': 'Apple Pie',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'number'}, 'key_lime': {'$ref': 'foobar/KeyLimePie.json'}},
+        'definitions': {
+            'KeyLimePie': {
+                'title': 'KeyLimePie',
+                'type': 'object',
+                'properties': {'x': {'title': 'X', 'type': 'string'}},
+            },
+        },
+    }
+    assert ApplePie.schema()['properties']['key_lime'] == {'$ref': '#/definitions/KeyLimePie'}
+    json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
+    assert 'foobar/KeyLimePie.json' in json_schema
+    assert '#/definitions/KeyLimePie' not in json_schema
 
 
 def test_by_alias_generator():
@@ -1184,7 +1211,17 @@ def test_schema_from_models():
     }
 
 
-def test_schema_with_ref_prefix():
+@pytest.mark.parametrize(
+    'ref_prefix,ref_template',
+    [
+        # OpenAPI style
+        ('#/components/schemas/', None),
+        (None, '#/components/schemas/{model}'),
+        # ref_prefix takes priority
+        ('#/components/schemas/', '#/{model}/schemas/'),
+    ],
+)
+def test_schema_with_refs(ref_prefix, ref_template):
     class Foo(BaseModel):
         a: str
 
@@ -1194,7 +1231,7 @@ def test_schema_with_ref_prefix():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = schema([Bar, Baz], ref_prefix='#/components/schemas/')  # OpenAPI style
+    model_schema = schema([Bar, Baz], ref_prefix=ref_prefix, ref_template=ref_template)
     assert model_schema == {
         'definitions': {
             'Baz': {
@@ -1217,6 +1254,55 @@ def test_schema_with_ref_prefix():
             },
         }
     }
+
+
+def test_schema_with_custom_ref_template():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    model_schema = schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
+    assert model_schema == {
+        'definitions': {
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'$ref': '/schemas/Bar.json#/'}},
+                'required': ['c'],
+            },
+            'Bar': {
+                'title': 'Bar',
+                'type': 'object',
+                'properties': {'b': {'$ref': '/schemas/Foo.json#/'}},
+                'required': ['b'],
+            },
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+            },
+        }
+    }
+
+
+def test_schema_ref_template_key_error():
+    class Foo(BaseModel):
+        a: str
+
+    class Bar(BaseModel):
+        b: Foo
+
+    class Baz(BaseModel):
+        c: Bar
+
+    with pytest.raises(KeyError):
+        schema([Bar, Baz], ref_template='/schemas/{bad_name}.json#/')
 
 
 def test_schema_no_definitions():
@@ -1900,7 +1986,6 @@ def test_model_process_schema_enum():
         bar = 'b'
 
     model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
-    print(model_schema)
     assert model_schema == {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']}
 
 

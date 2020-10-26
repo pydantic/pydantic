@@ -601,6 +601,28 @@ def test_multiple_specification():
 
 
 @skip_36
+def test_generic_subclass_of_concrete_generic():
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    class GenericBaseModel(GenericModel, Generic[T]):
+        data: T
+
+    class GenericSub(GenericBaseModel[int], Generic[U]):
+        extra: U
+
+    ConcreteSub = GenericSub[int]
+
+    with pytest.raises(ValidationError):
+        ConcreteSub(data=2, extra='wrong')
+
+    with pytest.raises(ValidationError):
+        ConcreteSub(data='wrong', extra=2)
+
+    ConcreteSub(data=2, extra=3)
+
+
+@skip_36
 def test_generic_model_pickle(create_module):
     # Using create_module because pickle doesn't support
     # objects with <locals> in their __qualname__  (e. g. defined in function)
