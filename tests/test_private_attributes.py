@@ -96,3 +96,8 @@ def test_slots_are_ignored():
         assert object.__getattribute__(m, attr) == 'spam'
         with pytest.raises(ValueError, match=f'"Model" object has no field "{attr}"'):
             setattr(m, attr, 'not spam')
+
+
+def test_default_and_default_factory_used_error():
+    with pytest.raises(TypeError, match='default and default_factory args can not be used together'):
+        PrivateAttr(default=123, default_factory=lambda: 321)
