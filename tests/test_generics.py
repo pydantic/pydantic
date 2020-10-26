@@ -708,23 +708,10 @@ def test_generic_model_redefined_without_cache_fail(create_module):
         assert cause.args[0] == expected_message, f'{cause.args[0]} != {expected_message}'
 
 
-def test_get_caller_module_name_from_function():
-    def get_current_module_name():
-        return get_caller_module_name()
-
-    assert get_current_module_name() == __name__
-
-
-def test_get_caller_module_name_from_module(create_module):
+def test_get_caller_module_name(create_module):
     @create_module
     def module():
         from pydantic.generics import get_caller_module_name
-
-        def get_current_module_name():
-            return get_caller_module_name()
-
-        module_name = get_current_module_name()
-        assert module_name == __name__, f'{module_name} != {__name__}'
 
         def get_current_module_name():
             return get_caller_module_name()
@@ -757,31 +744,37 @@ def test_is_call_from_module(create_module):
         function()
 
 
-def test_is_call_from_module_called_in_module(run_as_module):
-    @run_as_module
+def test_is_call_from_module_called_in_module(create_module):
+    @create_module
     def module():
+        from unittest.mock import patch
+
         import pytest
 
         from pydantic.generics import is_call_from_module
 
         with pytest.raises(RuntimeError, match='This function must be used inside another function') as exc_info:
-            is_call_from_module()
+            with patch('inspect.stack', new=lambda: [..., ...]):
+                is_call_from_module()
 
         e = exc_info.value
-        assert isinstance(e.__cause__, IndexError), e.__cause__
-        assert isinstance(e.__context__, IndexError), e.__context__
+        assert isinstance(e.__cause__, IndexError)
+        assert isinstance(e.__context__, IndexError)
 
 
-def test_get_caller_module_called_from_module(run_as_module):
-    @run_as_module
+def test_get_caller_module_called_from_module(create_module):
+    @create_module
     def module():
+        from unittest.mock import patch
+
         import pytest
 
         from pydantic.generics import get_caller_module_name
 
         with pytest.raises(RuntimeError, match='This function must be used inside another function') as exc_info:
-            get_caller_module_name()
+            with patch('inspect.stack', new=lambda: [..., ...]):
+                get_caller_module_name()
 
         e = exc_info.value
-        assert isinstance(e.__cause__, IndexError), e.__cause__
-        assert isinstance(e.__context__, IndexError), e.__context__
+        assert isinstance(e.__cause__, IndexError)
+        assert isinstance(e.__context__, IndexError)

@@ -124,6 +124,7 @@ def test_var_args_kwargs():
 @skip_pre_38
 def test_positional_only(create_module):
     module = create_module(
+        # language=Python
         """
 from pydantic import validate_arguments
 
