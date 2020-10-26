@@ -128,6 +128,76 @@ Because python-dotenv is used to parse the file, bash-like semantics such as `ex
 (depending on your OS and environment) may allow your dotenv file to also be used with `source`,
 see [python-dotenv's documentation](https://saurabh-kumar.com/python-dotenv/#usages) for more details.
 
+## Secret Support
+
+Placing secret values in files is a common pattern to provide sensitive configuration to an application.
+
+A secret file follows the same principal as a dotenv file except it only contains a single value and the file name 
+is used as the key. A secret file will look like the following:
+
+`/var/run/db_password`:
+```
+super_secret_database_password
+```
+
+Once you have your secret files, *pydantic* supports loading it in two ways:
+
+**1.** setting `secrets_dir` on `Config` in a `BaseSettings` class to the directory where your secret files are stored:
+
+```py
+class Settings(BaseSettings):
+    ...
+    database_password: str
+
+    class Config:
+        secrets_dir = '/var/run'
+```
+
+**2.** instantiating a `BaseSettings` derived class with the `_secrets_dir` keyword argument:
+
+```py
+settings = Settings(_secrets_dir='/var/run')
+```
+
+In either case, the value of the passed argument can be any valid directory, either absolute or relative to the
+current working directory. From there, *pydantic* will handle everything for you by loading in your variables and
+validating them.
+
+Even when using a secrets directory, *pydantic* will still read environment variables from a dotenv file or the environment,
+**a dotenv file and environment variables will always take priority over values loaded from the secrets directory**.
+
+Passing a file path via the `_secrets_dir` keyword argument on instantiation (method 2) will override
+the value (if any) set on the `Config` class.
+
+### Use Case: Docker Secrets
+
+Docker Secrets can be used to provide sensitive configuration to an application running in a Docker container.
+To use these secrets in a *pydantic* application the process is simple. More information regarding creating, managing
+and using secrets in Docker see the official
+[Docker documentation](https://docs.docker.com/engine/reference/commandline/secret/).
+
+First, define your Settings
+```py
+class Settings(BaseSettings):
+    my_secret_data: str
+
+    class Config:
+        secrets_dir = '/run/secrets'
+```
+!!! note
+    By default Docker uses `/run/secrets` as the target mount point. If you want to use a different location, change 
+    `Config.secrets_dir` accordingly.
+
+Then, Create your secret via the Docker CLI
+```bash
+printf "This is a secret" | docker secret create my_secret_data -
+```
+
+Last, run your application inside a Docker container and supply your newly created secret
+```bash
+docker service create --name pydantic-with-secrets --secret my_secret_data pydantic-app:latest
+```
+
 ## Field value priority
 
 In the case where a value is specified for the same `Settings` field in multiple ways,
@@ -136,4 +206,5 @@ the selected value is determined as follows (in descending order of priority):
 1. Arguments passed to the `Settings` class initialiser.
 2. Environment variables, e.g. `my_prefix_special_function` as described above.
 3. Variables loaded from a dotenv (`.env`) file.
-4. The default field values for the `Settings` model.
+4. Variables loaded from the secrets directory.
+5. The default field values for the `Settings` model.
