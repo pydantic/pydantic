@@ -423,7 +423,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             if default is not Undefined:
                 object_setattr(self, name, default)
 
-
     def dict(
         self,
         *,
