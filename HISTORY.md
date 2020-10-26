@@ -1,4 +1,16 @@
-## v1.7a1 (2020-10-26)
+## v1.7 (2020-10-26)
+
+Thank you to pydantic's sponsors:
+@timdrijvers, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @jorgecarleitao, @koxudaxi, @primer-api 
+for their kind support.
+
+### Highlights
+
+* python 3.9 support, thanks @PrettyWood
+* [Private model attributes](https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes), thanks @MrMrRobat
+* ["secrets files" support in `BaseSettings`](https://pydantic-docs.helpmanual.io/usage/settings/#secret-support), thanks @mdgilene
+
+### Changes
 
 * **Breaking Change:** remove `__field_defaults__`, add `default_factory` support with `BaseModel.construct`.
   Use `.get_default()` method on fields in `__fields__` attribute instead, #1732 by @PrettyWood
@@ -15,7 +27,7 @@
 * add `deque` to field types, #1935 by @wozniakty
 * add basic support for python 3.9, #1832 by @PrettyWood
 * Fix typo in the anchor of exporting_models.md#modelcopy and incorrect description, #1821 by @KimMachineGun
-* Added ability for `BaseSettings` to load `SecretStr` and `SecretBytes` from files, #1820 by @mdgilene
+* Added ability for `BaseSettings` to read "secret files", #1820 by @mdgilene
 * add `parse_raw_as` utility function, #1812 by @PrettyWood
 * Support home directory relative paths for `dotenv` files (e.g. `~/.env`), #1803 by @PrettyWood
 * Clarify documentation for `parse_file` to show that the argument
@@ -29,7 +41,7 @@
 * Add stub `__init__` with python 3.6 signature for `ForwardRef`, #1738 by @sirtelemak
 * Fix behaviour with forward refs and optional fields in nested models, #1736 by @PrettyWood
 * add `Enum` and `IntEnum` as valid types for fields, #1735 by @PrettyWood
-* Change default value of ``__module__`` argument of ``create_model`` from ``None`` to ``'pydantic.main'``. 
+* Change default value of `__module__` argument of `create_model` from `None` to `'pydantic.main'`. 
   Set reference of created concrete model to it's module to allow pickling (not applied to models created in 
   functions), #1686 by @MrMrRobat
 * Add private attributes support, #1679 by @MrMrRobat
