@@ -810,7 +810,7 @@ class PrivateAttr(Representation):
 
     __slots__ = ('default', 'default_factory')
 
-    def __init__(self, default: Any = Undefined, default_factory: Optional[NoArgAnyCallable] = None) -> None:
+    def __init__(self, default: Any = Undefined, *, default_factory: Optional[NoArgAnyCallable] = None) -> None:
         if default is not Undefined and default_factory is not None:
             raise TypeError('default and default_factory args can not be used together')
 

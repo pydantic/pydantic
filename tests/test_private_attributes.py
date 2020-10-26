@@ -3,6 +3,7 @@ from typing import ClassVar
 import pytest
 
 from pydantic import BaseModel, Extra, PrivateAttr
+from pydantic.fields import Undefined
 
 
 def test_private_attribute():
@@ -22,6 +23,64 @@ def test_private_attribute():
 
     m.__foo__ = None
     assert m.__foo__ is None
+
+    assert m.dict() == {}
+    assert m.__dict__ == {}
+
+
+def test_private_attribute_factory():
+    default = {'a': {}}
+
+    def factory():
+        return default
+
+    class Model(BaseModel):
+        __foo__ = PrivateAttr(default_factory=factory)
+
+    assert Model.__slots__ == {'__foo__'}
+    assert repr(Model.__foo__) == "<member '__foo__' of 'Model' objects>"
+    assert Model.__private_attributes__ == {'__foo__': PrivateAttr(default_factory=factory)}
+
+    m = Model()
+    assert m.__foo__ == default
+    assert m.__foo__ is default
+    assert m.__foo__['a'] is default['a']
+
+    m.__foo__ = None
+    assert m.__foo__ is None
+
+    assert m.dict() == {}
+    assert m.__dict__ == {}
+
+
+def test_private_attribute_annotation():
+    class Model(BaseModel):
+        __foo__: str
+
+        class Config:
+            underscore_attrs_are_private = True
+
+    assert Model.__slots__ == {'__foo__'}
+    assert repr(Model.__foo__) == "<member '__foo__' of 'Model' objects>"
+    assert Model.__private_attributes__ == {'__foo__': PrivateAttr(Undefined)}
+
+    m = Model()
+    with pytest.raises(AttributeError):
+        m.__foo__
+
+    m.__foo__ = '123'
+    assert m.__foo__ == '123'
+
+    m.__foo__ = None
+    assert m.__foo__ is None
+
+    del m.__foo__
+
+    with pytest.raises(AttributeError):
+        m.__foo__
+
+    m.__foo__ = '123'
+    assert m.__foo__ == '123'
 
     assert m.dict() == {}
     assert m.__dict__ == {}
