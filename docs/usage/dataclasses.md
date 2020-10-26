@@ -1,4 +1,4 @@
-If you don't want to use pydantic's `BaseModel` you can instead get the same data validation on standard
+If you don't want to use _pydantic_'s `BaseModel` you can instead get the same data validation on standard
 [dataclasses](https://docs.python.org/3/library/dataclasses.html) (introduced in python 3.7).
 
 Dataclasses work in python 3.6 using the [dataclasses backport package](https://github.com/ericvsmith/dataclasses).
@@ -16,7 +16,7 @@ _(This script is complete, it should run "as is")_
     For more information and discussion see
     [samuelcolvin/pydantic#710](https://github.com/samuelcolvin/pydantic/issues/710).
 
-You can use all the standard pydantic field types, and the resulting dataclass will be identical to the one
+You can use all the standard _pydantic_ field types, and the resulting dataclass will be identical to the one
 created by the standard library `dataclass` decorator.
 
 The underlying model and its schema can be accessed through `__pydantic_model__`.
@@ -31,7 +31,7 @@ _(This script is complete, it should run "as is")_
 keyword argument `config` which has the same meaning as [Config](model_config.md).
 
 !!! warning
-    After v1.2, [The Mypy plugin](/mypy_plugin.md) must be installed to type check pydantic dataclasses.
+    After v1.2, [The Mypy plugin](/mypy_plugin.md) must be installed to type check _pydantic_ dataclasses.
 
 For more information about combining validators with dataclasses, see
 [dataclass validators](validators.md#dataclass-validators).
@@ -74,7 +74,7 @@ When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.da
 
 ## JSON Dumping
 
-Pydantic dataclasses do not feature a `.json()` function. To dump them as JSON, you will need to make use of the `pydantic_encoder` as follows:
+_Pydantic_ dataclasses do not feature a `.json()` function. To dump them as JSON, you will need to make use of the `pydantic_encoder` as follows:
 
 ```py
 {!.tmp_examples/dataclasses_json_dumps.py!}
