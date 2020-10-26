@@ -32,4 +32,7 @@
 185: error: Unexpected keyword argument "x" for "AliasGeneratorModel2"  [call-arg]
 186: error: Unexpected keyword argument "z" for "AliasGeneratorModel2"  [call-arg]
 189: error: Name 'Missing' is not defined  [name-defined]
-197: error: Argument "config" to "dataclass" has incompatible type "Dict[<nothing>, <nothing>]"; expected "Optional[Type[Any]]"  [arg-type]
+197: error: No overload variant of "dataclass" matches argument type "Dict[<nothing>, <nothing>]"  [call-overload]
+197: note: Possible overload variant:
+197: note:     def dataclass(*, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Callable[[Type[Any]], Type[Dataclass]]
+197: note:     <1 more non-matching overload not shown>

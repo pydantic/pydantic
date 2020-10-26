@@ -96,12 +96,12 @@ OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
-    from .dataclasses import DataclassType  # noqa: F401
+    from .dataclasses import Dataclass  # noqa: F401
     from .fields import ModelField
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .typing import CallableGenerator
 
-    ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
+    ModelOrDc = Type[Union['BaseModel', 'Dataclass']]
 
 
 class ConstrainedBytes(bytes):
