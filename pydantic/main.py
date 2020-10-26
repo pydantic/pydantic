@@ -417,7 +417,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             if value is not Undefined:
                 object_setattr(self, name, value)
 
-    def _set_default_private_attributes(self, source: Dict[str, PrivateAttr]) -> None:
+    def _init_private_attributes(self, source: Dict[str, PrivateAttr]) -> None:
         for name, private_attr in source.items():
             default = private_attr.get_default()
             if default is not Undefined:
