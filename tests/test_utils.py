@@ -1,6 +1,7 @@
 import os
 import re
 import string
+import sys
 from copy import copy, deepcopy
 from distutils.version import StrictVersion
 from enum import Enum
@@ -396,6 +397,7 @@ def test_smart_deepcopy_collection(collection, mocker):
 T = TypeVar('T')
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='get_args is only consistent for python >= 3.8')
 @pytest.mark.parametrize(
     'input_value,output_value',
     [
