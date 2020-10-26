@@ -797,3 +797,31 @@ class ModelField(Representation):
         if self.alt_alias:
             args.append(('alias', self.alias))
         return args
+
+
+class PrivateAttr(Representation):
+    """
+    Indicates that attribute is only used internally and never mixed with regular fields.
+
+    Types or values of private attrs are not checked by pydantic and it's up to you to keep them relevant.
+
+    Private attrs are stored in model __slots__.
+    """
+
+    __slots__ = ('default', 'default_factory')
+
+    def __init__(self, default: Any = Undefined, *, default_factory: Optional[NoArgAnyCallable] = None) -> None:
+        if default is not Undefined and default_factory is not None:
+            raise TypeError('default and default_factory args can not be used together')
+
+        self.default = default
+        self.default_factory = default_factory
+
+    def get_default(self) -> Any:
+        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, self.__class__) and (self.default, self.default_factory) == (
+            other.default,
+            other.default_factory,
+        )

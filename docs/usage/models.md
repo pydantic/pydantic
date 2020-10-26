@@ -319,6 +319,14 @@ To inherit from a GenericModel without replacing the `TypeVar` instance, a class
 ```
 _(This script is complete, it should run "as is")_
 
+You can also create a generic subclass of a `GenericModel` that partially or fully replaces the type 
+parameters in the superclass.
+
+```py
+{!.tmp_examples/models_generics_inheritance_extend.py!}
+```
+_(This script is complete, it should run "as is")_
+
 If the name of the concrete subclasses is important, you can also override the default behavior:
 
 ```py
@@ -522,6 +530,26 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
     The `default_factory` expects the field type to be set.
     Moreover if you want to validate default values with `validate_all`,
     *pydantic* will need to call the `default_factory`, which could lead to side effects!
+
+## Private model attributes
+
+If you need to use internal attributes excluded from model fields, you can declare them using `PrivateAttr`:
+
+```py
+{!.tmp_examples/private_attributes.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Private attribute names must start with underscore to prevent conflicts with model fields: both `_attr` and `__attr__` 
+are supported.
+
+If `Config.underscore_attrs_are_private` is `True`, any non-ClassVar underscore attribute will be treated as private:
+```py
+{!.tmp_examples/private_attributes_underscore_attrs_are_private.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Upon class creation pydantic constructs `__slots__` filled with private attributes.
 
 ## Parsing data into a specified type
 

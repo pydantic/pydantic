@@ -46,6 +46,8 @@ __all__ = (
     'almost_equal_floats',
     'get_model',
     'to_camel',
+    'is_valid_field',
+    'smart_deepcopy',
     'PyObjectStr',
     'Representation',
     'GetterDict',
@@ -53,8 +55,10 @@ __all__ = (
     'version_info',  # required here to match behaviour in v1.3
     'ClassAttribute',
     'path_type',
+    'ROOT_KEY',
 )
 
+ROOT_KEY = '__root__'
 # these are types that are returned unchanged by deepcopy
 IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
     int,
@@ -618,3 +622,13 @@ def smart_deepcopy(obj: Obj) -> Obj:
         # faster way for empty collections, no need to copy its members
         return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
     return deepcopy(obj)  # slowest way when we actually might need a deepcopy
+
+
+def is_valid_field(name: str) -> bool:
+    if not name.startswith('_'):
+        return True
+    return ROOT_KEY == name
+
+
+def is_valid_private_name(name: str) -> bool:
+    return not is_valid_field(name) and name not in {'__annotations__', '__module__', '__annotations__', '__qualname__'}

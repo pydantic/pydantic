@@ -38,7 +38,7 @@ jobs:
         run: make check-dist
 
   test-linux:
-    name: test py${{ matrix.python-version }} on ubuntu
+    name: test py${{ matrix.python-version }} on linux
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -195,15 +195,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-        - ubuntu
-        - macos
-        - windows
-        python-version:
-        - '6'
-        - '7'
-        - '8'
-        - '9'
+        os: [ubuntu , macos , windows]
+        python-version: ['6', '7', '8', '9']
         include:
         - os: ubuntu
           platform: linux
