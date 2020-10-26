@@ -525,14 +525,15 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 
 ## Private model attributes
 
-If you need to use internal attribute excluded from model fields, you can declare them using `PrivateAttr`:
+If you need to use internal attributes excluded from model fields, you can declare them using `PrivateAttr`:
 
 ```py
 {!.tmp_examples/private_attributes.py!}
 ```
 _(This script is complete, it should run "as is")_
 
-Private attributes names must start with underscore to prevent conflicts with model fields: both '_attr' and '__attr__' are options.
+Private attribute names must start with underscore to prevent conflicts with model fields: both `_attr` and `__attr__` 
+are supported.
 
 If `Config.underscore_attrs_are_private` is `True`, any non-ClassVar underscore attribute will be treated as private:
 ```py

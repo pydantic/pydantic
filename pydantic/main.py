@@ -407,13 +407,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return {
             '__dict__': self.__dict__,
             '__fields_set__': self.__fields_set__,
-            '__private_attributes_values__': {k: getattr(self, k, Undefined) for k in self.__private_attributes__},
+            '__private_attribute_values__': {k: getattr(self, k, Undefined) for k in self.__private_attributes__},
         }
 
     def __setstate__(self, state: 'DictAny') -> None:
         object_setattr(self, '__dict__', state['__dict__'])
         object_setattr(self, '__fields_set__', state['__fields_set__'])
-        for name, value in state.get('__private_attributes_values__', {}).items():
+        for name, value in state.get('__private_attribute_values__', {}).items():
             if value is not Undefined:
                 object_setattr(self, name, value)
 
