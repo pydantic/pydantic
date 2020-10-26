@@ -9,6 +9,7 @@ for their kind support.
 * python 3.9 support, thanks @PrettyWood
 * [Private model attributes](https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes), thanks @MrMrRobat
 * ["secrets files" support in `BaseSettings`](https://pydantic-docs.helpmanual.io/usage/settings/#secret-support), thanks @mdgilene
+* [convert stdlib dataclasses to pydantic dataclasses and use stdlib dataclasses in models](https://pydantic-docs.helpmanual.io/usage/dataclasses/#stdlib-dataclasses-and-pydantic-dataclasses), thanks @PrettyWood
 
 ### Changes
 
@@ -50,6 +51,9 @@ for their kind support.
   `env` in their `Config`. Previously only `env_prefix` configuration option was applicable, #1561 by @ojomio
 * Support `ref_template` when creating schema `$ref`s, #1479 by @kilo59
 * Add a `__call__` stub to `PyObject` so that mypy will know that it is callable, #1352 by @brianmaissy
+* `pydantic.dataclasses.dataclass` decorator now supports built-in `dataclasses.dataclass`.
+  It is hence possible to convert an existing `dataclass` easily to add *pydantic* validation.
+  Moreover nested dataclasses are also supported, #744 by @PrettyWood
 
 ## v1.6.1 (2020-07-15)
 
