@@ -23,8 +23,8 @@ from typing import (
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
 from .main import BaseModel, create_model
-from .typing import get_args, get_origin
-from .utils import lenient_issubclass
+from .typing import display_as_type, get_args, get_origin, typing_base
+from .utils import all_identical, lenient_issubclass
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
@@ -43,6 +43,16 @@ class GenericModel(BaseModel):
 
     # Setting the return type as Type[Any] instead of Type[BaseModel] prevents PyCharm warnings
     def __class_getitem__(cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]) -> Type[Any]:
+        """Instantiates a new class from a generic class `cls` and type variables `params`.
+
+        :param params: Tuple of types the class . Given a generic class
+            `Model` with 2 type variables and a concrete model `Model[str, int]`,
+            the value `(str, int)` would be passed to `params`.
+        :return: New model class inheriting from `cls` with instantiated
+            types described by `params`. If no parameters are given, `cls` is
+            returned as is.
+
+        """
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
             return cached
@@ -56,15 +66,21 @@ class GenericModel(BaseModel):
             raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
 
         check_parameters_count(cls, params)
+        # Build map from generic typevars to passed params
         typevars_map: Dict[TypeVarType, Type[Any]] = dict(zip(cls.__parameters__, params))
-        if is_identity_typevars_map(typevars_map):
+        if all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             return cls  # if arguments are equal to parameters it's the same object
+
+        # Recursively walk class type hints and replace generic typevars
+        # with concrete types that were passed.
         type_hints = get_type_hints(cls).items()
         instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}
         concrete_type_hints: Dict[str, Type[Any]] = {
-            k: resolve_type_hint(v, typevars_map) for k, v in instance_type_hints.items()
+            k: replace_types(v, typevars_map) for k, v in instance_type_hints.items()
         }
 
+        # Create new model with original model as parent inserting fields with
+        # updated type hints.
         model_name = cls.__concrete_name__(params)
         validators = gather_all_validators(cls)
         fields = _build_generic_fields(cls.__fields__, concrete_type_hints, typevars_map)
@@ -91,6 +107,10 @@ class GenericModel(BaseModel):
 
         created_model.Config = cls.Config
 
+        # Find any typevars that are still present in the model.
+        # If none are left, the model is fully "concrete", otherwise the new
+        # class is a generic class as well taking the found typevars as
+        # parameters.
         new_params = tuple(
             {param: None for param in iter_contained_typevars(typevars_map.values())}
         )  # use dict as ordered set
@@ -98,6 +118,8 @@ class GenericModel(BaseModel):
         if new_params:
             created_model.__parameters__ = new_params
 
+        # Save created model in cache so we don't end up creating duplicate
+        # models that should be identical.
         _generic_types_cache[(cls, params)] = created_model
         if len(params) == 1:
             _generic_types_cache[(cls, params[0])] = created_model
@@ -105,52 +127,76 @@ class GenericModel(BaseModel):
 
     @classmethod
     def __concrete_name__(cls: Type[Any], params: Tuple[Type[Any], ...]) -> str:
+        """Compute class name for child classes.
+
+        :param params: Tuple of types the class . Given a generic class
+            `Model` with 2 type variables and a concrete model `Model[str, int]`,
+            the value `(str, int)` would be passed to `params`.
+        :return: String representing a the new class where `params` are
+            passed to `cls` as type variables.
+
+        This method can be overridden to achieve a custom naming scheme for GenericModels.
         """
-        This method can be overridden to achieve a custom naming scheme for GenericModels
-        """
-        try:
-            GenericAlias = typing.GenericAlias  # type: ignore
-        except AttributeError:
-            GenericAlias = ()  # for all python < 3.9
-        param_names = [
-            param.__name__ if hasattr(param, '__name__') and not isinstance(param, GenericAlias) else str(param)
-            for param in params
-        ]
+        param_names: List[str] = []
+        param_names = [display_as_type(param) for param in params]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
 
 
-def is_identity_typevars_map(typevars_map: Dict[TypeVarType, Type[Any]]) -> bool:
-    return bool(typevars_map) and all(k is v for k, v in typevars_map.items())
+def replace_types(type_: Any, type_map: Dict[Any, Any]) -> Any:
+    """Return type with all occurances of `type_map` keys recursively replaced with their values.
 
+    :param type_: Any type, class or generic alias
+    :type_map: Mapping from `TypeVar` instance to concrete types.
+    :return: New type representing the basic structure of `type_` with all
+        `typevar_map` keys recursively replaced.
 
-def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Any:
+    >>> replace_types(Tuple[str, Union[List[str], float]], {str: int})
+    Tuple[int, Union[List[int], float]]
+
+    """
+    if not type_map:
+        return type_
+
     type_args = get_args(type_)
-    if type_args:
-        concrete_type_args = tuple(resolve_type_hint(arg, typevars_map) for arg in type_args)
-        origin_type = get_origin(type_)
-        if origin_type is not None:
-            try:
-                return origin_type[concrete_type_args]
-            except TypeError:
-                pass
-            try:
-                # finally try to get origin directly from typing module
-                # in particular this can happen for python < 3.9 where the origin
-                # is a builtin type, see https://www.python.org/dev/peps/pep-0585
-                origin_type = getattr(typing, type_._name)
-                return cast(Any, origin_type)[concrete_type_args]
-            except (TypeError, AttributeError):  # pragma: no cover
-                pass
-        # this should not be reached
-        raise TypeError(f'Could not resolve type origin: {type_}')  # pragma: no cover
+    origin_type = get_origin(type_)
 
-    if not get_origin(type_) and lenient_issubclass(type_, GenericModel) and not type_.__concrete__:
-        return type_[tuple(resolve_type_hint(t, typevars_map) for t in type_.__parameters__)]
+    # Having type args is a good indicator that this is a typing module
+    # class instantiation or a generic alias of some sort.
+    if type_args:
+        resolved_type_args = tuple(replace_types(arg, type_map) for arg in type_args)
+        if all_identical(type_args, resolved_type_args):
+            # If all arguments are the same, there is no need to modify the
+            # type or create a new object at all
+            return type_
+        if origin_type is not None:
+            # In python < 3.9 generic aliases don't exist so any of these like `list`,
+            # `type` or `collections.abc.Callable` need to be translated.
+            # See: https://www.python.org/dev/peps/pep-0585
+            if isinstance(type_, typing_base) and not isinstance(origin_type, typing_base):
+                origin_type = getattr(typing, type_._name)
+        return origin_type[resolved_type_args]
+
+    # We handle pydantic generic models separately as they don't have the same
+    # semantics as "typing" classes or generic aliases
+    if not origin_type and lenient_issubclass(type_, GenericModel) and not type_.__concrete__:
+        type_args = type_.__parameters__
+        resolved_type_args = tuple(replace_types(t, type_map) for t in type_args)
+        if all_identical(type_args, resolved_type_args):
+            return type_
+        return type_[resolved_type_args]
+
+    # Handle special case for typehints that can have lists as arguments.
+    # `typing.Callable[[int, str], int]` is an example for this.
     if isinstance(type_, (List, list)):
-        # handle special case for typehints that can have lists as arguments
-        return list(resolve_type_hint(element, typevars_map) for element in type_)
-    return typevars_map.get(type_, type_)
+        resolved_list = list(replace_types(element, type_map) for element in type_)
+        if all_identical(type_, resolved_list):
+            return type_
+        return resolved_list
+
+    # If all else fails, we try to resolve the type directly and otherwise just
+    # return the input with no modifications.
+    return type_map.get(type_, type_)
 
 
 def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...]) -> None:
@@ -162,7 +208,8 @@ def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...])
 
 
 def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
-    if isinstance(v, cast(type, TypeVar)):  # mypy < 0.790 needs this cast
+    """Recursively iterate through all subtypes and type args of `v` and yield any typevars that are found."""
+    if isinstance(v, TypeVar):
         yield v
     elif hasattr(v, '__parameters__') and not get_origin(v) and lenient_issubclass(v, GenericModel):
         yield from v.__parameters__

@@ -5,16 +5,15 @@ from typing import Any, Callable, ClassVar, Dict, Generic, List, Optional, Seque
 import pytest
 
 from pydantic import BaseModel, Field, ValidationError, root_validator, validator
-from pydantic.generics import GenericModel, _generic_types_cache, get_caller_module_name, iter_contained_typevars
+from pydantic.generics import (
+    GenericModel,
+    _generic_types_cache,
+    get_caller_module_name,
+    iter_contained_typevars,
+    replace_types,
+)
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
-
-if sys.version_info >= (3, 9):
-    CompatList = list
-    CompatDict = dict
-else:
-    CompatList = List
-    CompatDict = Dict
 
 
 @skip_36
@@ -26,7 +25,7 @@ def test_generic_name():
 
     if sys.version_info >= (3, 9):
         assert Result[list[int]].__name__ == 'Result[list[int]]'
-    assert Result[List[int]].__name__ == 'Result[typing.List[int]]'
+    assert Result[List[int]].__name__ == 'Result[List[int]]'
     assert Result[int].__name__ == 'Result[int]'
 
 
@@ -685,7 +684,7 @@ def test_generic_model_from_function_pickle_fail(create_module):
 def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
 
     # match identity checker otherwise we never get to the redefinition check
-    monkeypatch.setattr('pydantic.generics.is_identity_typevars_map', lambda _: False)
+    monkeypatch.setattr('pydantic.generics.all_identical', lambda left, right: False)
 
     @create_module
     def module():
@@ -813,6 +812,36 @@ def test_nested_identity_parameterization():
 
 
 @skip_36
+def test_replace_types():
+    T = TypeVar('T')
+
+    class Model(GenericModel, Generic[T]):
+        a: T
+
+    assert replace_types(T, {T: int}) is int
+    assert replace_types(List[Union[str, list, T]], {T: int}) == List[Union[str, list, int]]
+    assert replace_types(Callable, {T: int}) == Callable
+    assert replace_types(Callable[[int, str, T], T], {T: int}) == Callable[[int, str, int], int]
+    assert replace_types(T, {}) is T
+    assert replace_types(Model[List[T]], {T: int}) == Model[List[T]][int]
+
+    if sys.version_info >= (3, 9):
+        # Check generic aliases (subscripted builtin types) to make sure they
+        # resolve correctly (don't get translated to typing versions for
+        # example)
+        assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
+
+
+@skip_36
+def test_replace_types_identity_on_unchanged():
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    type_ = List[Union[str, Callable[[list], Optional[str]], U]]
+    assert replace_types(type_, {T: int}) is type_
+
+
+@skip_36
 def test_deep_generic():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -904,7 +933,7 @@ def test_deep_generic_with_referenced_inner_generic():
         InnerModel[int](a=['s', {'a': 'wrong'}])
     assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
 
-    assert InnerModel[int].__fields__['a'].outer_type_ == CompatList[Union[ReferencedModel[int], str]]
+    assert InnerModel[int].__fields__['a'].outer_type_ == List[Union[ReferencedModel[int], str]]
     assert (InnerModel[int].__fields__['a'].sub_fields[0].sub_fields[0].outer_type_.__fields__['a'].outer_type_) == int
 
 
@@ -920,7 +949,7 @@ def test_deep_generic_with_multiple_typevars():
         extra: U
 
     ConcreteInnerModel = InnerModel[int, float]
-    assert ConcreteInnerModel.__fields__['data'].outer_type_ == CompatList[float]
+    assert ConcreteInnerModel.__fields__['data'].outer_type_ == List[float]
     assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
 
     assert ConcreteInnerModel(data=['1'], extra='2').dict() == {'data': [1.0], 'extra': 2}
@@ -943,8 +972,8 @@ def test_deep_generic_with_multiple_inheritance():
 
     ConcreteInnerModel = InnerModel[int, float, str]
 
-    assert ConcreteInnerModel.__fields__['data'].outer_type_ == CompatDict[int, float]
-    assert ConcreteInnerModel.__fields__['stuff'].outer_type_ == CompatList[str]
+    assert ConcreteInnerModel.__fields__['data'].outer_type_ == Dict[int, float]
+    assert ConcreteInnerModel.__fields__['stuff'].outer_type_ == List[str]
     assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
 
     ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5).dict() == {
