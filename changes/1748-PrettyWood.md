@@ -1,1 +1,0 @@
-Support custom title, description and default in schema of enums

@@ -1,1 +1,0 @@
-Support home directory relative paths for `dotenv` files (e.g. `~/.env`).

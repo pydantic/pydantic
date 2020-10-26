@@ -1,3 +1,60 @@
+## v1.7 (2020-10-26)
+
+Thank you to pydantic's sponsors:
+@timdrijvers, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @jorgecarleitao, @koxudaxi, @primer-api 
+for their kind support.
+
+### Highlights
+
+* python 3.9 support, thanks @PrettyWood
+* [Private model attributes](https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes), thanks @MrMrRobat
+* ["secrets files" support in `BaseSettings`](https://pydantic-docs.helpmanual.io/usage/settings/#secret-support), thanks @mdgilene
+* [convert stdlib dataclasses to pydantic dataclasses and use stdlib dataclasses in models](https://pydantic-docs.helpmanual.io/usage/dataclasses/#stdlib-dataclasses-and-pydantic-dataclasses), thanks @PrettyWood
+
+### Changes
+
+* **Breaking Change:** remove `__field_defaults__`, add `default_factory` support with `BaseModel.construct`.
+  Use `.get_default()` method on fields in `__fields__` attribute instead, #1732 by @PrettyWood
+* Rearrange CI to run linting as a separate job, split install recipes for different tasks, #2020 by @samuelcolvin
+* Allows subclasses of generic models to make some, or all, of the superclass's type parameters concrete, while 
+  also defining new type parameters in the subclass, #2005 by @choogeboom
+* Call validator with the correct `values` parameter type in `BaseModel.__setattr__`,
+  when `validate_assignment = True` in model config, #1999 by @me-ransh
+* Force `fields.Undefined` to be a singleton object, fixing inherited generic model schemas, #1981 by @daviskirk
+* Include tests in source distributions, #1976 by @sbraz
+* Add ability to use `min_length/max_length` constraints with secret types, #1974 by @uriyyo
+* Also check `root_validators` when `validate_assignment` is on, #1971 by @PrettyWood
+* Fix const validators not running when custom validators are present, #1957 by @hmvp
+* add `deque` to field types, #1935 by @wozniakty
+* add basic support for python 3.9, #1832 by @PrettyWood
+* Fix typo in the anchor of exporting_models.md#modelcopy and incorrect description, #1821 by @KimMachineGun
+* Added ability for `BaseSettings` to read "secret files", #1820 by @mdgilene
+* add `parse_raw_as` utility function, #1812 by @PrettyWood
+* Support home directory relative paths for `dotenv` files (e.g. `~/.env`), #1803 by @PrettyWood
+* Clarify documentation for `parse_file` to show that the argument
+  should be a file *path* not a file-like object, #1794 by @mdavis-xyz
+* Fix false positive from mypy plugin when a class nested within a `BaseModel` is named `Model`, #1770 by @selimb
+* add basic support of Pattern type in schema generation, #1767 by @PrettyWood
+* Support custom title, description and default in schema of enums, #1748 by @PrettyWood
+* Properly represent `Literal` Enums when `use_enum_values` is True, #1747 by @noelevans
+* Allows timezone information to be added to strings to be formatted as time objects. Permitted formats are `Z` for UTC 
+  or an offset for absolute positive or negative time shifts. Or the timezone data can be omitted, #1744 by @noelevans
+* Add stub `__init__` with python 3.6 signature for `ForwardRef`, #1738 by @sirtelemak
+* Fix behaviour with forward refs and optional fields in nested models, #1736 by @PrettyWood
+* add `Enum` and `IntEnum` as valid types for fields, #1735 by @PrettyWood
+* Change default value of `__module__` argument of `create_model` from `None` to `'pydantic.main'`. 
+  Set reference of created concrete model to it's module to allow pickling (not applied to models created in 
+  functions), #1686 by @MrMrRobat
+* Add private attributes support, #1679 by @MrMrRobat
+* add `config` to `@validate_arguments`, #1663 by @samuelcolvin
+* Allow descendant Settings models to override env variable names for the fields defined in parent Settings models with 
+  `env` in their `Config`. Previously only `env_prefix` configuration option was applicable, #1561 by @ojomio
+* Support `ref_template` when creating schema `$ref`s, #1479 by @kilo59
+* Add a `__call__` stub to `PyObject` so that mypy will know that it is callable, #1352 by @brianmaissy
+* `pydantic.dataclasses.dataclass` decorator now supports built-in `dataclasses.dataclass`.
+  It is hence possible to convert an existing `dataclass` easily to add *pydantic* validation.
+  Moreover nested dataclasses are also supported, #744 by @PrettyWood
+
 ## v1.6.1 (2020-07-15)
 
 * fix validation and parsing of nested models with `default_factory`, #1710 by @PrettyWood

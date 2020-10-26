@@ -1,2 +1,0 @@
-Change default value of ``__module__`` argument of ``create_model`` from ``None`` to ``'pydantic.main'``. 
-Set reference of created concrete model to it's module to allow pickling (not applied to models created in functions)
