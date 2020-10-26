@@ -4,6 +4,7 @@ venv/
 env36/
 env37/
 env38/
+env39/
 Pipfile
 *.lock
 *.py[cod]
