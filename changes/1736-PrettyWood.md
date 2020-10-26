@@ -1,1 +1,0 @@
-Fix behaviour with forward refs and optional fields in nested models
