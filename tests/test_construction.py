@@ -68,6 +68,7 @@ class ModelTwo(BaseModel):
 
 def test_deep_copy():
     m = ModelTwo(a=24, d=Model(a='12'))
+    m.__foo__ = {'new value'}
     m2 = m.copy(deep=True)
 
     assert m.a == m2.a == 24

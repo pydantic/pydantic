@@ -362,7 +362,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             raise validation_error
         object_setattr(__pydantic_self__, '__dict__', values)
         object_setattr(__pydantic_self__, '__fields_set__', fields_set)
-        __pydantic_self__._init_private_attributes(__pydantic_self__.__private_attributes__)
+        __pydantic_self__._init_private_attributes()
 
     @no_type_check
     def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
@@ -417,11 +417,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             if value is not Undefined:
                 object_setattr(self, name, value)
 
-    def _init_private_attributes(self, source: Dict[str, PrivateAttr]) -> None:
-        for name, private_attr in source.items():
+    def _init_private_attributes(self) -> None:
+        for name, private_attr in self.__private_attributes__.items():
             default = private_attr.get_default()
             if default is not Undefined:
                 object_setattr(self, name, default)
+
 
     def dict(
         self,
@@ -562,7 +563,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             raise validation_error
         object_setattr(m, '__dict__', values)
         object_setattr(m, '__fields_set__', fields_set)
-        m._init_private_attributes(cls.__private_attributes__)
+        m._init_private_attributes()
         return m
 
     @classmethod
@@ -579,7 +580,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         if _fields_set is None:
             _fields_set = set(values.keys())
         object_setattr(m, '__fields_set__', _fields_set)
-        m._init_private_attributes(cls.__private_attributes__)
+        m._init_private_attributes()
         return m
 
     def copy(
@@ -614,7 +615,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         m = cls.__new__(cls)
         object_setattr(m, '__dict__', v)
         object_setattr(m, '__fields_set__', self.__fields_set__.copy())
-        m._init_private_attributes(cls.__private_attributes__)
+        for name in self.__private_attributes__:
+            value = getattr(self, name, Undefined)
+            if value is not Undefined:
+                if deep:
+                    value = deepcopy(value)
+                object_setattr(m, name, value)
+
         return m
 
     @classmethod
