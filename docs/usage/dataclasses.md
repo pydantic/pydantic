@@ -47,6 +47,24 @@ _(This script is complete, it should run "as is")_
 
 Dataclasses attributes can be populated by tuples, dictionaries or instances of the dataclass itself.
 
+## Stdlib dataclasses and _pydantic_ dataclasses
+
+Stdlib dataclasses (nested or not) can be easily converted into _pydantic_ dataclasses by just decorating
+them with `pydantic.dataclasses.dataclass`.
+
+```py
+{!.tmp_examples/dataclasses_stdlib_to_pydantic.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Bear in mind that stdlib dataclasses (nested or not) are **automatically converted** into _pydantic_ dataclasses
+when mixed with `BaseModel`!
+
+```py
+{!.tmp_examples/dataclasses_stdlib_with_basemodel.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Initialize hooks
 
 When you initialize a dataclass, it is possible to execute code *after* validation
