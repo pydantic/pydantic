@@ -1,13 +1,13 @@
+import importlib
 import inspect
 import os
 import secrets
-import subprocess
 import sys
 import textwrap
-from importlib.machinery import SourceFileLoader
 from types import FunctionType
 
 import pytest
+from _pytest.assertion.rewrite import AssertionRewritingHook
 
 
 def _extract_source_code_from_function(function):
@@ -26,11 +26,11 @@ def _extract_source_code_from_function(function):
     return textwrap.dedent(code_lines)
 
 
-def _create_module(code, tmp_path, name):
+def _create_module_file(code, tmp_path, name):
     name = f'{name}_{secrets.token_hex(5)}'
     path = tmp_path / f'{name}.py'
     path.write_text(code)
-    return name, path
+    return name, str(path)
 
 
 class SetEnv:
@@ -57,36 +57,31 @@ def env():
 
 @pytest.fixture
 def create_module(tmp_path, request):
-    def run(module_source_code=None):
+    def run(source_code_or_function, rewrite_assertions=True):
         """
-        Creates module and loads it with SourceFileLoader().load_module()
+        Create module object, execute it and return
+        Can be used as a decorator of the function from the source code of which the module will be constructed
+
+        :param source_code_or_function string or function with body as a source code for created module
+        :param rewrite_assertions: whether to rewrite assertions in module or not
+
         """
-        if isinstance(module_source_code, FunctionType):
-            module_source_code = _extract_source_code_from_function(module_source_code)
-        name, path = _create_module(module_source_code, tmp_path, request.node.name)
-        return SourceFileLoader(name, str(path)).load_module()
+        if isinstance(source_code_or_function, FunctionType):
+            source_code = _extract_source_code_from_function(source_code_or_function)
+        else:
+            source_code = source_code_or_function
 
-    return run
+        module_name, filename = _create_module_file(source_code, tmp_path, request.node.name)
 
+        if rewrite_assertions:
+            loader = AssertionRewritingHook(config=request.config)
+            loader.mark_rewrite(module_name)
+        else:
+            loader = None
 
-@pytest.fixture
-def run_as_module(tmp_path, request):
-    def run(module_source_code=None):
-        """
-        Creates module source and runs it in subprocess
-
-        This way is much slower than SourceFileLoader().load_module(),
-        but executes module as __main__ with a clear stack (https://docs.python.org/3/library/__main__.html)
-        """
-        if isinstance(module_source_code, FunctionType):
-            module_source_code = _extract_source_code_from_function(module_source_code)
-        _, path = _create_module(module_source_code, tmp_path, request.node.name)
-        result = subprocess.run([sys.executable, str(path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
-        if result.returncode != 0:
-            pytest.fail(
-                f'Running {path} failed with non-zero return code: {result.returncode}\n'
-                f'Captured stdout:\n{result.stdout.decode()}\n'
-                f'Captured stderr:\n{result.stderr.decode()}'
-            )
+        spec = importlib.util.spec_from_file_location(module_name, filename, loader=loader)
+        sys.modules[module_name] = module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
 
     return run
