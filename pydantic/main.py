@@ -362,7 +362,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             raise validation_error
         object_setattr(__pydantic_self__, '__dict__', values)
         object_setattr(__pydantic_self__, '__fields_set__', fields_set)
-        __pydantic_self__._set_default_private_attributes(__pydantic_self__.__private_attributes__)
+        __pydantic_self__._init_private_attributes(__pydantic_self__.__private_attributes__)
 
     @no_type_check
     def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
@@ -562,7 +562,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             raise validation_error
         object_setattr(m, '__dict__', values)
         object_setattr(m, '__fields_set__', fields_set)
-        m._set_default_private_attributes(cls.__private_attributes__)
+        m._init_private_attributes(cls.__private_attributes__)
         return m
 
     @classmethod
@@ -579,7 +579,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         if _fields_set is None:
             _fields_set = set(values.keys())
         object_setattr(m, '__fields_set__', _fields_set)
-        m._set_default_private_attributes(cls.__private_attributes__)
+        m._init_private_attributes(cls.__private_attributes__)
         return m
 
     def copy(
@@ -614,7 +614,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         m = cls.__new__(cls)
         object_setattr(m, '__dict__', v)
         object_setattr(m, '__fields_set__', self.__fields_set__.copy())
-        m._set_default_private_attributes(cls.__private_attributes__)
+        m._init_private_attributes(cls.__private_attributes__)
         return m
 
     @classmethod
