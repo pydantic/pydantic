@@ -833,7 +833,7 @@ def PrivateAttr(
       If both `default` and `default_factory` are set, an error is raised.
     """
     if default is not Undefined and default_factory is not None:
-        raise TypeError('cannot specify both default and default_factory')
+        raise ValueError('cannot specify both default and default_factory')
 
     return ModelPrivateAttr(
         default,
