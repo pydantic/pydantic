@@ -441,6 +441,9 @@ _(This script is complete, it should run "as is")_
 `PostgresDsn`
 : a postgres DSN style URL; see [URLs](#urls)
 
+`RabbitmqDsn`
+: a rabbitmq DSN style URL; see [URLs](#urls)
+
 `RedisDsn`
 : a redis DSN style URL; see [URLs](#urls)
 
@@ -526,6 +529,7 @@ For URI/URL validation the following types are available:
 - `AnyHttpUrl`: schema `http` or `https`, TLD not required
 - `HttpUrl`: schema `http` or `https`, TLD required, max length 2083
 - `PostgresDsn`: schema `postgres` or `postgresql`, user info required, TLD not required
+- `RabbitmqDsn`: schema `amqp`, user info required, TLD not required
 - `RedisDsn`: schema `redis`, user info not required, tld not required (CHANGED: user info not required from
   **v1.6** onwards)
 - `stricturl`, method with the following keyword arguments:
