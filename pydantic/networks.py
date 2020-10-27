@@ -96,6 +96,7 @@ class AnyUrl(str):
     allowed_schemes: Optional[Set[str]] = None
     tld_required: bool = False
     user_required: bool = False
+    host_required: bool = False
 
     __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
@@ -110,7 +111,7 @@ class AnyUrl(str):
         scheme: str,
         user: Optional[str] = None,
         password: Optional[str] = None,
-        host: str,
+        host: Optional[str] = None,
         tld: Optional[str] = None,
         host_type: str = 'domain',
         port: Optional[str] = None,
@@ -227,7 +228,8 @@ class AnyUrl(str):
                 break
 
         if host is None:
-            raise errors.UrlHostError()
+            if cls.host_required:
+                raise errors.UrlHostError()
         elif host_type == 'domain':
             is_international = False
             d = ascii_domain_regex().fullmatch(host)
@@ -269,17 +271,20 @@ class AnyHttpUrl(AnyUrl):
 class HttpUrl(AnyUrl):
     allowed_schemes = {'http', 'https'}
     tld_required = True
+    host_required = True
     # https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
     max_length = 2083
 
 
 class PostgresDsn(AnyUrl):
     allowed_schemes = {'postgres', 'postgresql'}
+    host_required = True
     user_required = True
 
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis'}
+    host_required = True
 
 
 def stricturl(
@@ -288,6 +293,7 @@ def stricturl(
     min_length: int = 1,
     max_length: int = 2 ** 16,
     tld_required: bool = True,
+    host_required: bool = True,
     allowed_schemes: Optional[Set[str]] = None,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
@@ -296,6 +302,7 @@ def stricturl(
         min_length=min_length,
         max_length=max_length,
         tld_required=tld_required,
+        host_required=host_required,
         allowed_schemes=allowed_schemes,
     )
     return type('UrlValue', (AnyUrl,), namespace)

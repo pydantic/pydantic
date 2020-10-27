@@ -19,6 +19,7 @@ except ImportError:
         'postgres://user:pass@localhost:5432/app',
         'postgres://just-user@localhost:5432/app',
         'postgresql+psycopg2://postgres:postgres@localhost:5432/hatch',
+        'file:///foo/bar',
         'foo-bar://example.org',
         'foo.bar://example.org',
         'foo0bar://example.org',
@@ -63,12 +64,9 @@ def test_any_url_success(value):
 @pytest.mark.parametrize(
     'value,err_type,err_msg,err_ctx',
     [
-        ('http:///example.com/', 'value_error.url.host', 'URL host invalid', None),
-        ('https:///example.com/', 'value_error.url.host', 'URL host invalid', None),
         ('http://.example.com:8000/foo', 'value_error.url.host', 'URL host invalid', None),
         ('https://example.org\\', 'value_error.url.host', 'URL host invalid', None),
         ('https://exampl$e.org', 'value_error.url.host', 'URL host invalid', None),
-        ('http://??', 'value_error.url.host', 'URL host invalid', None),
         ('http://.', 'value_error.url.host', 'URL host invalid', None),
         ('http://..', 'value_error.url.host', 'URL host invalid', None),
         (
@@ -243,6 +241,9 @@ def test_http_url_success(value):
             'ensure this value has at most 2083 characters',
             {'limit_value': 2083},
         ),
+        ('http:///example.com/', 'value_error.url.host', 'URL host invalid', None),
+        ('https:///example.com/', 'value_error.url.host', 'URL host invalid', None),
+        ('http://??', 'value_error.url.host', 'URL host invalid', None),
     ],
 )
 def test_http_url_invalid(value, err_type, err_msg, err_ctx):
@@ -316,6 +317,11 @@ def test_postgres_dsns():
     error = exc_info.value.errors()[0]
     assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
 
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='postgres://user@/foo/bar:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
+
 
 def test_redis_dsns():
     class Model(BaseModel):
@@ -336,6 +342,11 @@ def test_redis_dsns():
     assert m.a.user is None
     assert m.a.password is None
 
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='redis://user@/foo/bar:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
+
 
 def test_custom_schemes():
     class Model(BaseModel):
@@ -348,6 +359,9 @@ def test_custom_schemes():
 
     with pytest.raises(ValidationError):
         Model(v='ws://example.org  ')
+
+    with pytest.raises(ValidationError):
+        Model(v='ws:///foo/bar')
 
 
 @pytest.mark.parametrize(
