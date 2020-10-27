@@ -57,6 +57,14 @@ them with `pydantic.dataclasses.dataclass`.
 ```
 _(This script is complete, it should run "as is")_
 
+Stdlib dataclasses (nested or not) can also be inherited and _pydantic_ will automatically validate
+all the inherited fields.
+
+```py
+{!.tmp_examples/dataclasses_stdlib_inheritance.py!}
+```
+_(This script is complete, it should run "as is")_
+
 Bear in mind that stdlib dataclasses (nested or not) are **automatically converted** into _pydantic_ dataclasses
 when mixed with `BaseModel`!
 
