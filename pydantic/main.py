@@ -384,12 +384,16 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
             known_field = self.__fields__.get(name, None)
             if known_field:
-                original_value = self.__dict__[name]
-                value, error_ = known_field.validate(value, self.__dict__, loc=name, cls=self.__class__)
-                if error_:
+                original_value = self.__dict__.pop(name)
+                try:
+                    value, error_ = known_field.validate(value, self.__dict__, loc=name, cls=self.__class__)
+                    if error_:
+                        raise ValidationError([error_], self.__class__)
+                except Exception:
                     self.__dict__[name] = original_value
-                    raise ValidationError([error_], self.__class__)
-                new_values[name] = value
+                    raise
+                else:
+                    new_values[name] = value
 
             errors = []
             for skip_on_failure, validator in self.__post_root_validators__:
