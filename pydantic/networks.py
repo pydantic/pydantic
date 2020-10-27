@@ -45,6 +45,7 @@ NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, in
 __all__ = [
     'AnyUrl',
     'AnyHttpUrl',
+    'FileUrl',
     'HttpUrl',
     'stricturl',
     'EmailStr',
@@ -109,6 +110,7 @@ class AnyUrl(str):
     allowed_schemes: Optional[Set[str]] = None
     tld_required: bool = False
     user_required: bool = False
+    host_required: bool = True
 
     __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
@@ -123,7 +125,7 @@ class AnyUrl(str):
         scheme: str,
         user: Optional[str] = None,
         password: Optional[str] = None,
-        host: str,
+        host: Optional[str] = None,
         tld: Optional[str] = None,
         host_type: str = 'domain',
         port: Optional[str] = None,
@@ -251,7 +253,8 @@ class AnyUrl(str):
                 break
 
         if host is None:
-            raise errors.UrlHostError()
+            if cls.host_required:
+                raise errors.UrlHostError()
         elif host_type == 'domain':
             is_international = False
             d = ascii_domain_regex().fullmatch(host)
@@ -297,6 +300,11 @@ class HttpUrl(AnyUrl):
     max_length = 2083
 
 
+class FileUrl(AnyUrl):
+    allowed_schemes = {'file'}
+    host_required = False
+
+
 class PostgresDsn(AnyUrl):
     allowed_schemes = {'postgres', 'postgresql'}
     user_required = True
@@ -304,6 +312,7 @@ class PostgresDsn(AnyUrl):
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis', 'rediss'}
+    host_required = False
 
     @classmethod
     def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
@@ -324,6 +333,7 @@ def stricturl(
     min_length: int = 1,
     max_length: int = 2 ** 16,
     tld_required: bool = True,
+    host_required: bool = True,
     allowed_schemes: Optional[Union[FrozenSet[str], Set[str]]] = None,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
@@ -332,6 +342,7 @@ def stricturl(
         min_length=min_length,
         max_length=max_length,
         tld_required=tld_required,
+        host_required=host_required,
         allowed_schemes=allowed_schemes,
     )
     return type('UrlValue', (AnyUrl,), namespace)
