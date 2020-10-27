@@ -121,6 +121,7 @@ class WithField(BaseModel):
     first_name: str = Field('John', const=True)
 
 
+# simple decorator
 @validate_arguments
 def foo(a: int, *, c: str = 'x') -> str:
     return c * a
@@ -128,6 +129,16 @@ def foo(a: int, *, c: str = 'x') -> str:
 
 foo(1, c='thing')
 foo(1)
+
+
+# nested decorator should not produce an error
+@validate_arguments(config={'arbitrary_types_allowed': True})
+def bar(a: int, *, c: str = 'x') -> str:
+    return c * a
+
+
+bar(1, c='thing')
+bar(1)
 
 
 class Foo(BaseModel):

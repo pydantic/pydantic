@@ -24,13 +24,3 @@ def bar() -> str:
 
 # return type should be a string
 y: int = bar()
-
-
-# nested decorator should not produce an error
-@validate_arguments(config={'arbitrary_types_allowed': True})
-def baz(a: int, *, c: str = 'x') -> str:
-    return c * a
-
-
-# ok
-z: str = baz(1, c='hello')
