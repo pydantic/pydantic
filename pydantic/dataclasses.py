@@ -120,7 +120,9 @@ def _process_class(
     # ```
     # with the exact same fields as the base dataclass
     if is_builtin_dataclass(_cls):
-        _cls = type(_cls.__name__, (_cls,), {'__post_init__': _pydantic_post_init})
+        _cls = type(
+            _cls.__name__, (_cls,), {'__annotations__': _cls.__annotations__, '__post_init__': _pydantic_post_init}
+        )
     else:
         _cls.__post_init__ = _pydantic_post_init
     cls: Type['Dataclass'] = dataclasses.dataclass(  # type: ignore

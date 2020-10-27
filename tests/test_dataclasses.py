@@ -738,3 +738,22 @@ def test_override_builtin_dataclass_nested_schema():
         'title': 'File',
         'type': 'object',
     }
+
+
+def test_inherit_builtin_dataclass():
+    @dataclasses.dataclass
+    class Z:
+        z: int
+
+    @dataclasses.dataclass
+    class Y(Z):
+        y: int
+
+    @pydantic.dataclasses.dataclass
+    class X(Y):
+        x: int
+
+    pika = X(x='2', y='4', z='3')
+    assert pika.x == 2
+    assert pika.y == 4
+    assert pika.z == 3
