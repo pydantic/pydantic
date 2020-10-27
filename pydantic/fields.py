@@ -799,21 +799,10 @@ class ModelField(Representation):
         return args
 
 
-class PrivateAttr(Representation):
-    """
-    Indicates that attribute is only used internally and never mixed with regular fields.
-
-    Types or values of private attrs are not checked by pydantic and it's up to you to keep them relevant.
-
-    Private attrs are stored in model __slots__.
-    """
-
+class ModelPrivateAttr(Representation):
     __slots__ = ('default', 'default_factory')
 
     def __init__(self, default: Any = Undefined, *, default_factory: Optional[NoArgAnyCallable] = None) -> None:
-        if default is not Undefined and default_factory is not None:
-            raise TypeError('default and default_factory args can not be used together')
-
         self.default = default
         self.default_factory = default_factory
 
@@ -825,3 +814,28 @@ class PrivateAttr(Representation):
             other.default,
             other.default_factory,
         )
+
+
+def PrivateAttr(
+    default: Any = Undefined,
+    *,
+    default_factory: Optional[NoArgAnyCallable] = None,
+) -> Any:
+    """
+    Indicates that attribute is only used internally and never mixed with regular fields.
+
+    Types or values of private attrs are not checked by pydantic and it's up to you to keep them relevant.
+
+    Private attrs are stored in model __slots__.
+
+    :param default: the attribute’s default value
+    :param default_factory: callable that will be called when a default value is needed for this attribute
+      If both `default` and `default_factory` are set, an error is raised.
+    """
+    if default is not Undefined and default_factory is not None:
+        raise TypeError('cannot specify both default and default_factory')
+
+    return ModelPrivateAttr(
+        default,
+        default_factory=default_factory,
+    )
