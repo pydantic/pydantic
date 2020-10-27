@@ -1155,3 +1155,38 @@ def test_nested_literal_validator():
             'ctx': {'given': 'nope', 'permitted': ('foo', 'bar')},
         }
     ]
+
+
+def test_field_that_is_being_validated_is_excluded_from_validator_values():
+    validators_values = None
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+
+        @validator('foo')
+        def validate_foo(cls, v, values):
+            nonlocal validators_values
+            validators_values = values
+
+    Model(foo='foo_value', bar='bar_value')
+    assert validators_values == {'bar': 'bar_value'}
+
+
+def test_exceptions_in_field_validators_restore_original_field_value():
+    class Model(BaseModel):
+        foo: str
+
+        class Config:
+            validate_assignment = True
+
+        @validator('foo')
+        def validate_foo(cls, v):
+            if v == 'raise_exception':
+                raise Exception()
+            return v
+
+    model = Model(foo='foo')
+    with pytest.raises(Exception):
+        model.foo = 'raise_exception'
+    assert model.foo == 'foo'
