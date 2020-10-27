@@ -2,7 +2,7 @@ import dataclasses
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, Dict, FrozenSet, Optional
+from typing import ClassVar, Dict, FrozenSet, List, Optional
 
 import pytest
 
@@ -757,3 +757,23 @@ def test_inherit_builtin_dataclass():
     assert pika.x == 2
     assert pika.y == 4
     assert pika.z == 3
+
+
+def test_dataclass_arbitrary():
+    class ArbitraryType:
+        def __init__(self):
+            ...
+
+    @dataclasses.dataclass
+    class Test:
+        foo: ArbitraryType
+        bar: List[ArbitraryType]
+
+    class TestModel(BaseModel):
+        a: ArbitraryType
+        b: Test
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    TestModel(a=ArbitraryType(), b=(ArbitraryType(), [ArbitraryType()]))

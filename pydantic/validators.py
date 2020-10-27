@@ -593,7 +593,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield make_literal_validator(type_)
         return
     if is_builtin_dataclass(type_):
-        yield from make_dataclass_validator(type_)
+        yield from make_dataclass_validator(type_, config)
         return
     if type_ is Enum:
         yield enum_validator
