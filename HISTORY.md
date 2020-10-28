@@ -1,3 +1,12 @@
+## v1.7.1 (2020-10-28)
+
+* fix annotation of `validate_arguments` when passing configuration as argument, #2055 by @layday
+* Fix mypy assignment error when using `PrivateAttr`, #2048 by @aphedges
+* fix `underscore_attrs_are_private` causing `TypeError` when overriding `__init__`, #2047 by @samuelcolvin
+* Fixed regression introduced in v1.7 involving exception handling in field validators when `validate_assignment=True`, #2044 by @johnsabath
+* fix: _pydantic_ `dataclass` can inherit from stdlib `dataclass`
+  and `Config.arbitrary_types_allowed` is supported, #2042 by @PrettyWood
+
 ## v1.7 (2020-10-26)
 
 Thank you to pydantic's sponsors:
