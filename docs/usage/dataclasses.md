@@ -49,6 +49,8 @@ Dataclasses attributes can be populated by tuples, dictionaries or instances of 
 
 ## Stdlib dataclasses and _pydantic_ dataclasses
 
+### Convert stdlib dataclasses into _pydantic_ dataclasses
+
 Stdlib dataclasses (nested or not) can be easily converted into _pydantic_ dataclasses by just decorating
 them with `pydantic.dataclasses.dataclass`.
 
@@ -57,11 +59,34 @@ them with `pydantic.dataclasses.dataclass`.
 ```
 _(This script is complete, it should run "as is")_
 
+### Inherit from stdlib dataclasses
+
+Stdlib dataclasses (nested or not) can also be inherited and _pydantic_ will automatically validate
+all the inherited fields.
+
+```py
+{!.tmp_examples/dataclasses_stdlib_inheritance.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### Use of stdlib dataclasses with `BaseModel`
+
 Bear in mind that stdlib dataclasses (nested or not) are **automatically converted** into _pydantic_ dataclasses
 when mixed with `BaseModel`!
 
 ```py
 {!.tmp_examples/dataclasses_stdlib_with_basemodel.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### Use custom types
+
+Since stdlib dataclasses are automatically converted to add validation using
+custom types may cause some unexpected behaviour.
+In this case you can simply add `arbitrary_types_allowed` in the config!
+
+```py
+{!.tmp_examples/dataclasses_arbitrary_types_allowed.py!}
 ```
 _(This script is complete, it should run "as is")_
 

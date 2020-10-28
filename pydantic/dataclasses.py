@@ -8,7 +8,7 @@ from .main import create_model, validate_model
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
-    from .main import BaseModel  # noqa: F401
+    from .main import BaseConfig, BaseModel  # noqa: F401
     from .typing import CallableGenerator
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
@@ -120,7 +120,9 @@ def _process_class(
     # ```
     # with the exact same fields as the base dataclass
     if is_builtin_dataclass(_cls):
-        _cls = type(_cls.__name__, (_cls,), {'__post_init__': _pydantic_post_init})
+        _cls = type(
+            _cls.__name__, (_cls,), {'__annotations__': _cls.__annotations__, '__post_init__': _pydantic_post_init}
+        )
     else:
         _cls.__post_init__ = _pydantic_post_init
     cls: Type['Dataclass'] = dataclasses.dataclass(  # type: ignore
@@ -214,10 +216,10 @@ def dataclass(
     return wrap(_cls)
 
 
-def make_dataclass_validator(_cls: Type[Any], **kwargs: Any) -> 'CallableGenerator':
+def make_dataclass_validator(_cls: Type[Any], config: Type['BaseConfig']) -> 'CallableGenerator':
     """
     Create a pydantic.dataclass from a builtin dataclass to add type validation
     and yield the validators
     """
-    cls = dataclass(_cls, **kwargs)
+    cls = dataclass(_cls, config=config)
     yield from _get_validators(cls)
