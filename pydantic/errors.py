@@ -172,6 +172,10 @@ class DictError(PydanticTypeError):
     msg_template = 'value is not a valid dict'
 
 
+class DefaultDictFactoryError(PydanticTypeError):
+    msg_template = 'invalid default factory type, expected: {expected_factory}'
+
+
 class EmailError(PydanticValueError):
     msg_template = 'value is not a valid email address'
 

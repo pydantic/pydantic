@@ -4,6 +4,7 @@ from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    DefaultDict,
     Deque,
     Dict,
     FrozenSet,
@@ -40,7 +41,7 @@ from .typing import (
     new_type_supertype,
 )
 from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
-from .validators import constant_validator, dict_validator, find_validators, validate_json
+from .validators import constant_validator, defaultdict_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
 
@@ -488,6 +489,10 @@ class ModelField(Representation):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
         elif issubclass(origin, Mapping):
+            if issubclass(origin, DefaultDict):
+                # add a post-validator for DefaultDict: convert dict returned by "_validate_mapping" to defaultdict
+                self.class_validators['__defaultdict'] = Validator(defaultdict_validator, pre=False)
+
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
             self.shape = SHAPE_MAPPING

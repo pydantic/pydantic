@@ -1,7 +1,7 @@
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime
 from itertools import product
-from typing import Dict, List, Optional, Tuple
+from typing import DefaultDict, Dict, List, Optional, Tuple
 
 import pytest
 
@@ -85,6 +85,62 @@ def test_validate_whole():
             return v
 
     assert Model(a=[1, 2]).a == [1, 2, 123, 456]
+
+
+def test_defaultdict_validation():
+    class Model(BaseModel):
+        d: DefaultDict[str, str]
+
+    # base dict validation
+    with pytest.raises(ValidationError) as exc_info1:
+        Model(d='fake')
+    assert exc_info1.value.errors() == [{'loc': ('d',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
+
+    # default: dict data conversion validation
+    m = Model(d=defaultdict(int))
+    # defaultdict default_factory parameter silently changes to correct type (side-effect)
+    assert isinstance(m.d, defaultdict) and m.d.default_factory == str
+    m = Model(d=[('a', 1)])
+    assert isinstance(m.d, defaultdict) and m.d.default_factory == str and m.d == {'a': '1'} and m.d['missed'] == ''
+    m = Model(d=(('a', 1), (2, 'b')))
+    assert isinstance(m.d, defaultdict) and m.d.default_factory == str and m.d == {'a': '1', '2': 'b'}
+    m = Model(d={'a': '1', 2: 'b', 3.0: b'1234'})
+    assert isinstance(m.d, defaultdict) and m.d.default_factory == str and m.d == {'a': '1', '2': 'b', '3.0': '1234'}
+
+    # keep the following code for "strict mode" which may be added in the future:
+    # 1. defaultdict validation: default_factory check
+    class ModelForTestCoverage(BaseModel):
+        d: DefaultDict[str, str]
+
+        # "pre=True" - apply "default_dict_validator" before "ModelField._validate_mapping()", that silently convert
+        # any mapping value into regular dictionary class [dict()]
+        @validator('d', pre=True)
+        def run_default_dict_validator(cls, v, field):
+            from pydantic.validators import defaultdict_validator
+
+            return defaultdict_validator(v, field)
+
+    m = ModelForTestCoverage(d=defaultdict(str, {'a': 'b'}))  # ok
+    assert isinstance(m.d, defaultdict) and m.d.default_factory == str and m.d == {'a': 'b'} and m.d['missed'] == ''
+
+    with pytest.raises(ValidationError) as exc_info2:
+        ModelForTestCoverage(d=defaultdict(list, {'a': 'b'}))  # default_factory does not match field signature
+    assert len(exc_info2.value.errors()) == 1
+    err = exc_info2.value.errors()[0]
+    assert {'loc': err['loc'], 'msg': err['msg'], 'type': err['type']} == {
+        'loc': ('d',),
+        'msg': "invalid default factory type, expected: <class 'str'>",
+        'type': 'type_error.defaultdictfactory',
+    }
+
+    # 2. "default_dict_validator" with regular dictionary
+    m = ModelForTestCoverage(d={'a': 'c'})
+    assert isinstance(m.d, defaultdict) and m.d.default_factory == str and m.d == {'a': 'c'} and m.d['missed'] == ''
+
+    # 3. "default_dict_validator" with non-dict value
+    with pytest.raises(ValidationError) as exc_info3:
+        ModelForTestCoverage(d='fake')  # behaviour should be the same as the "dict_validator()"
+    assert exc_info3.value.errors() == [{'loc': ('d',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
 
 
 def test_validate_kwargs():

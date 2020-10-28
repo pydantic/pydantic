@@ -1,5 +1,5 @@
 import re
-from collections import OrderedDict, deque
+from collections import OrderedDict, defaultdict, deque
 from collections.abc import Hashable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
@@ -10,6 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    DefaultDict,
     Deque,
     Dict,
     FrozenSet,
@@ -198,6 +199,22 @@ def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
         return OrderedDict(v)
     except (TypeError, ValueError):
         raise errors.DictError()
+
+
+def defaultdict_validator(v: Any, field: 'ModelField') -> DefaultDict[Any, Any]:
+    # no test coverage for almost all of this function: ModelField._validate_mapping() always returns dict type.
+    # keep this code for "strict mode" that may be added in future
+    if isinstance(v, defaultdict):
+        if v.default_factory != field.type_:
+            raise errors.DefaultDictFactoryError(expected_factory=field.type_)
+        return v
+    elif not isinstance(v, dict):
+        try:
+            v = dict(v)
+        except (TypeError, ValueError):
+            raise errors.DictError()
+
+    return defaultdict(field.type_, v)  # right now "v" must be a dict
 
 
 def dict_validator(v: Any) -> Dict[Any, Any]:
