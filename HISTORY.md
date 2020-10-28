@@ -1,5 +1,9 @@
 ## v1.7.1 (2020-10-28)
 
+Thank you to pydantic's sponsors:
+@timdrijvers, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @jorgecarleitao, @koxudaxi, @primer-api, @mkeen
+for their kind support.
+
 * fix annotation of `validate_arguments` when passing configuration as argument, #2055 by @layday
 * Fix mypy assignment error when using `PrivateAttr`, #2048 by @aphedges
 * fix `underscore_attrs_are_private` causing `TypeError` when overriding `__init__`, #2047 by @samuelcolvin
