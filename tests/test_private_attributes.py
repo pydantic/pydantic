@@ -160,3 +160,20 @@ def test_slots_are_ignored():
 def test_default_and_default_factory_used_error():
     with pytest.raises(ValueError, match='cannot specify both default and default_factory'):
         PrivateAttr(default=123, default_factory=lambda: 321)
+
+
+def test_config_override_init():
+    class MyModel(BaseModel):
+        x: str
+        _private_attr: int
+
+        def __init__(self, **data) -> None:
+            super().__init__(**data)
+            self._private_attr = 123
+
+        class Config:
+            underscore_attrs_are_private = True
+
+    m = MyModel(x='hello')
+    assert m.dict() == {'x': 'hello'}
+    assert m._private_attr == 123
