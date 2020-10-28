@@ -170,13 +170,19 @@ class BaseConfig:
 
 
 def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'ConfigType':
+    namespace = {}
     if not self_config:
         base_classes = (parent_config,)
     elif self_config == parent_config:
         base_classes = (self_config,)
     else:
         base_classes = self_config, parent_config  # type: ignore
-    return type('Config', base_classes, {})
+        namespace['json_encoders'] = {
+            **getattr(parent_config, 'json_encoders', {}),
+            **getattr(self_config, 'json_encoders', {}),
+        }
+
+    return type('Config', base_classes, namespace)
 
 
 EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/usage/model_config/'
