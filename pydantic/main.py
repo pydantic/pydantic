@@ -29,7 +29,7 @@ from typing import (
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import SHAPE_MAPPING, ModelField, PrivateAttr, Undefined
+from .fields import SHAPE_MAPPING, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -215,7 +215,7 @@ class ModelMetaclass(ABCMeta):
         validators: 'ValidatorListDict' = {}
 
         pre_root_validators, post_root_validators = [], []
-        private_attributes: Dict[str, PrivateAttr] = {}
+        private_attributes: Dict[str, ModelPrivateAttr] = {}
         slots: Set[str] = namespace.get('__slots__', ())
         slots = {slots} if isinstance(slots, str) else set(slots)
 
@@ -271,7 +271,7 @@ class ModelMetaclass(ABCMeta):
 
             for var_name, value in namespace.items():
                 can_be_changed = var_name not in class_vars and not isinstance(value, untouched_types)
-                if isinstance(value, PrivateAttr):
+                if isinstance(value, ModelPrivateAttr):
                     if not is_valid_private_name(var_name):
                         raise NameError(
                             f'Private attributes "{var_name}" must not be a valid field name; '

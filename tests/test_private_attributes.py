@@ -158,5 +158,5 @@ def test_slots_are_ignored():
 
 
 def test_default_and_default_factory_used_error():
-    with pytest.raises(TypeError, match='default and default_factory args can not be used together'):
+    with pytest.raises(ValueError, match='cannot specify both default and default_factory'):
         PrivateAttr(default=123, default_factory=lambda: 321)
