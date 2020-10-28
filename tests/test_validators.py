@@ -1155,3 +1155,43 @@ def test_nested_literal_validator():
             'ctx': {'given': 'nope', 'permitted': ('foo', 'bar')},
         }
     ]
+
+
+def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker):
+    check_values = mocker.MagicMock()
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+
+        class Config:
+            validate_assignment = True
+
+        @validator('foo')
+        def validate_foo(cls, v, values):
+            check_values({**values})
+
+    model = Model(foo='foo_value', bar='bar_value')
+    check_values.reset_mock()
+
+    model.foo = 'new_foo_value'
+    check_values.assert_called_once_with({'bar': 'bar_value'})
+
+
+def test_exceptions_in_field_validators_restore_original_field_value():
+    class Model(BaseModel):
+        foo: str
+
+        class Config:
+            validate_assignment = True
+
+        @validator('foo')
+        def validate_foo(cls, v):
+            if v == 'raise_exception':
+                raise RuntimeError('test error')
+            return v
+
+    model = Model(foo='foo')
+    with pytest.raises(RuntimeError, match='test error'):
+        model.foo = 'raise_exception'
+    assert model.foo == 'foo'
