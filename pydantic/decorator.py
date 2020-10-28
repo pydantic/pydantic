@@ -1,5 +1,19 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Tuple, Type, TypeVar, Union, cast, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_type_hints,
+    overload,
+)
 
 from . import validator
 from .errors import ConfigError
@@ -11,16 +25,26 @@ __all__ = ('validate_arguments',)
 if TYPE_CHECKING:
     from .typing import AnyCallable
 
-    Callable = TypeVar('Callable', bound=AnyCallable)
+    AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
     ConfigType = Union[None, Type[Any], Dict[str, Any]]
 
 
-def validate_arguments(func: 'Callable' = None, *, config: 'ConfigType' = None) -> 'Callable':
+@overload
+def validate_arguments(func: None = None, *, config: 'ConfigType' = None) -> Callable[['AnyCallableT'], 'AnyCallableT']:
+    ...
+
+
+@overload
+def validate_arguments(func: 'AnyCallableT') -> 'AnyCallableT':
+    ...
+
+
+def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'ConfigType' = None) -> Any:
     """
     Decorator to validate the arguments passed to a function.
     """
 
-    def validate(_func: 'Callable') -> 'Callable':
+    def validate(_func: 'AnyCallable') -> 'AnyCallable':
         vd = ValidatedFunction(_func, config)
 
         @wraps(_func)
@@ -30,12 +54,12 @@ def validate_arguments(func: 'Callable' = None, *, config: 'ConfigType' = None) 
         wrapper_function.vd = vd  # type: ignore
         wrapper_function.raw_function = vd.raw_function  # type: ignore
         wrapper_function.model = vd.model  # type: ignore
-        return cast('Callable', wrapper_function)
+        return wrapper_function
 
     if func:
         return validate(func)
     else:
-        return cast('Callable', validate)
+        return validate
 
 
 ALT_V_ARGS = 'v__args'
@@ -44,7 +68,7 @@ V_POSITIONAL_ONLY_NAME = 'v__positional_only'
 
 
 class ValidatedFunction:
-    def __init__(self, function: 'Callable', config: 'ConfigType'):  # noqa C901
+    def __init__(self, function: 'AnyCallableT', config: 'ConfigType'):  # noqa C901
         from inspect import Parameter, signature
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
