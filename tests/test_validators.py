@@ -1188,10 +1188,10 @@ def test_exceptions_in_field_validators_restore_original_field_value():
         @validator('foo')
         def validate_foo(cls, v):
             if v == 'raise_exception':
-                raise Exception()
+                raise RuntimeError('test error')
             return v
 
     model = Model(foo='foo')
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError, match='test error'):
         model.foo = 'raise_exception'
     assert model.foo == 'foo'
