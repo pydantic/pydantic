@@ -747,34 +747,26 @@ def test_is_call_from_module(create_module):
 def test_is_call_from_module_called_in_module(create_module):
     @create_module
     def module():
-        from unittest.mock import patch
+        from unittest.mock import patch, Mock
 
         import pytest
 
         from pydantic.generics import is_call_from_module
 
         with pytest.raises(RuntimeError, match='This function must be used inside another function') as exc_info:
-            with patch('inspect.stack', new=lambda: [..., ...]):
+            with patch('sys._getframe', new=Mock(return_value=Mock(f_back=None))):
                 is_call_from_module()
-
-        e = exc_info.value
-        assert isinstance(e.__cause__, IndexError)
-        assert isinstance(e.__context__, IndexError)
 
 
 def test_get_caller_module_called_from_module(create_module):
     @create_module
     def module():
-        from unittest.mock import patch
+        from unittest.mock import patch, Mock
 
         import pytest
 
         from pydantic.generics import get_caller_module_name
 
         with pytest.raises(RuntimeError, match='This function must be used inside another function') as exc_info:
-            with patch('inspect.stack', new=lambda: [..., ...]):
+            with patch('sys._getframe', new=Mock(return_value=Mock(f_back=None))):
                 get_caller_module_name()
-
-        e = exc_info.value
-        assert isinstance(e.__cause__, IndexError)
-        assert isinstance(e.__context__, IndexError)

@@ -151,10 +151,9 @@ def get_caller_module_name() -> Optional[str]:
     """
     import inspect
 
-    try:
-        previous_caller_frame = inspect.stack()[2].frame
-    except IndexError as e:
-        raise RuntimeError('This function must be used inside another function') from e
+    previous_caller_frame = sys._getframe(1).f_back
+    if previous_caller_frame is None:
+        raise RuntimeError('This function must be used inside another function')
 
     getmodule = cast(Callable[[FrameType, str], Optional[ModuleType]], inspect.getmodule)
     previous_caller_module = getmodule(previous_caller_frame, previous_caller_frame.f_code.co_filename)
@@ -167,10 +166,7 @@ def is_call_from_module() -> bool:
 
     Will only work against non-compiled code, therefore used only in pydantic.generics
     """
-    import inspect
-
-    try:
-        previous_caller_frame = inspect.stack()[2].frame
-    except IndexError as e:
-        raise RuntimeError('This function must be used inside another function') from e
+    previous_caller_frame = sys._getframe(1).f_back
+    if previous_caller_frame is None:
+        raise RuntimeError('This function must be used inside another function')
     return previous_caller_frame.f_locals is previous_caller_frame.f_globals
