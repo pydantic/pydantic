@@ -887,13 +887,12 @@ def create_model(
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
         `<name>=<FieldInfo>`, e.g. `foo=Field(default_factory=datetime.utcnow, alias='bar')`
     """
-    __base__ = cast(Type['Model'], __base__)  # to make mypy happy
 
     if __base__ is not None:
         if __config__ is not None:
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
-        __base__ = BaseModel
+        __base__ = cast(Type['Model'], BaseModel)
 
     fields = {}
     annotations = {}
