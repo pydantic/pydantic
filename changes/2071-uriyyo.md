@@ -1,0 +1,1 @@
+Updated `create_model` return type annotation to return type which inherits from `__base__` argument.

@@ -870,11 +870,11 @@ def create_model(
     __model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
-    __base__: Type[BaseModel] = None,
+    __base__: Type['Model'] = None,
     __module__: str = __name__,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
-) -> Type[BaseModel]:
+) -> Type['Model']:
     """
     Dynamically create a model.
     :param __model_name: name of the created model
@@ -887,7 +887,9 @@ def create_model(
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
         `<name>=<FieldInfo>`, e.g. `foo=Field(default_factory=datetime.utcnow, alias='bar')`
     """
-    if __base__:
+    __base__ = cast(Type['Model'], __base__)  # to make mypy happy
+
+    if __base__ is not None:
         if __config__ is not None:
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
