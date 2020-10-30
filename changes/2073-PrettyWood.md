@@ -1,0 +1,1 @@
+fix: keep the order of the fields when `validate_assignment` is set
