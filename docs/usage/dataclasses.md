@@ -71,8 +71,9 @@ _(This script is complete, it should run "as is")_
 
 ### Use of stdlib dataclasses with `BaseModel`
 
-Bear in mind that stdlib dataclasses (nested or not) are **automatically converted** into _pydantic_ dataclasses
-when mixed with `BaseModel`!
+Bear in mind that stdlib dataclasses (nested or not) are **automatically converted** into _pydantic_
+dataclasses when mixed with `BaseModel`! Furthermore the generated _pydantic_ dataclass will have
+the **exact same configuration** (`order`, `frozen`, ...) as the original one.
 
 ```py
 {!.tmp_examples/dataclasses_stdlib_with_basemodel.py!}
