@@ -1,0 +1,1 @@
+fix slow `GenericModel` concrete model creation, allow `GenericModel` concrete name reusing in module 
