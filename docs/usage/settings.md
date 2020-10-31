@@ -135,7 +135,7 @@ Placing secret values in files is a common pattern to provide sensitive configur
 A secret file follows the same principal as a dotenv file except it only contains a single value and the file name 
 is used as the key. A secret file will look like the following:
 
-`/var/run/db_password`:
+`/var/run/database_password`:
 ```
 super_secret_database_password
 ```
