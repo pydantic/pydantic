@@ -23,7 +23,7 @@ def collect_marks(test_case):
             if isinstance(argnames, str):
                 argnames = argnames.split(',')
         elif mark.name == 'skipif':
-            skip_if = pytest.mark.skipif(*mark.args, **mark.kwargs)
+            skip_if = pytest.mark.skipif(*mark.args, **mark.kwargs)  # noqa (F811 redefinition of unused 'skip_if')
         else:
             raise ValueError(f'@pytest.mark.{mark.name} is unsupported')
 
@@ -34,7 +34,7 @@ def collect_marks(test_case):
 
 
 def create_tests(test_case, argnames, argvalues):
-    decoys: Dict[str, Callable[["Test", str], None]] = {}
+    decoys: Dict[str, Callable[['TestCase', str], None]] = {}
     tests_to_run: Dict[str, Callable[[], Coroutine]] = {}
     exceptions: Dict[str, Exception] = {}
 
