@@ -1,1 +1,0 @@
-fix: forward all the params of the stdlib `dataclass` when converted into _pydantic_ `dataclass`

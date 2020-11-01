@@ -1,3 +1,9 @@
+## v1.7.2 (2020-11-01)
+
+* fix slow `GenericModel` concrete model creation, allow `GenericModel` concrete name reusing in module, #2078 by @MrMrRobat
+* keep the order of the fields when `validate_assignment` is set, #2073 by @PrettyWood
+* forward all the params of the stdlib `dataclass` when converted into _pydantic_ `dataclass`, #2065 by @PrettyWood
+
 ## v1.7.1 (2020-10-28)
 
 Thank you to pydantic's sponsors:
