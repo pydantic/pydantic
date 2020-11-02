@@ -777,3 +777,21 @@ def test_dataclass_arbitrary():
             arbitrary_types_allowed = True
 
     TestModel(a=ArbitraryType(), b=(ArbitraryType(), [ArbitraryType()]))
+
+
+def test_forward_stdlib_dataclass_params():
+    @dataclasses.dataclass(frozen=True)
+    class Item:
+        name: str
+
+    class Example(BaseModel):
+        item: Item
+        other: str
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    e = Example(item=Item(name='pika'), other='bulbi')
+    e.other = 'bulbi2'
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        e.item.name = 'pika2'

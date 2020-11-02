@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, Extra, ValidationError, errors, validator
+from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, errors, validator
 from pydantic.class_validators import make_generic_validator, root_validator
 from pydantic.typing import Literal
 
@@ -1162,7 +1162,8 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker)
 
     class Model(BaseModel):
         foo: str
-        bar: str
+        bar: str = Field(alias='pika')
+        baz: str
 
         class Config:
             validate_assignment = True
@@ -1170,12 +1171,27 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker)
         @validator('foo')
         def validate_foo(cls, v, values):
             check_values({**values})
+            return v
 
-    model = Model(foo='foo_value', bar='bar_value')
+        @validator('bar')
+        def validate_bar(cls, v, values):
+            check_values({**values})
+            return v
+
+    model = Model(foo='foo_value', pika='bar_value', baz='baz_value')
     check_values.reset_mock()
 
+    assert list(dict(model).items()) == [('foo', 'foo_value'), ('bar', 'bar_value'), ('baz', 'baz_value')]
+
     model.foo = 'new_foo_value'
-    check_values.assert_called_once_with({'bar': 'bar_value'})
+    check_values.assert_called_once_with({'bar': 'bar_value', 'baz': 'baz_value'})
+    check_values.reset_mock()
+
+    model.bar = 'new_bar_value'
+    check_values.assert_called_once_with({'foo': 'new_foo_value', 'baz': 'baz_value'})
+
+    # ensure field order is the same
+    assert list(dict(model).items()) == [('foo', 'new_foo_value'), ('bar', 'new_bar_value'), ('baz', 'baz_value')]
 
 
 def test_exceptions_in_field_validators_restore_original_field_value():
