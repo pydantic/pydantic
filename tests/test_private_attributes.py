@@ -55,6 +55,8 @@ def test_private_attribute_factory():
 
 def test_private_attribute_annotation():
     class Model(BaseModel):
+        """The best model"""
+
         __foo__: str
 
         class Config:
@@ -63,6 +65,7 @@ def test_private_attribute_annotation():
     assert Model.__slots__ == {'__foo__'}
     assert repr(Model.__foo__) == "<member '__foo__' of 'Model' objects>"
     assert Model.__private_attributes__ == {'__foo__': PrivateAttr(Undefined)}
+    assert repr(Model.__doc__) == "'The best model'"
 
     m = Model()
     with pytest.raises(AttributeError):

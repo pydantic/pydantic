@@ -1,0 +1,1 @@
+Ignore `__doc__` as private attribute when `Config.underscore_attrs_are_private` is set
