@@ -1,0 +1,1 @@
+Fix mypy complaint about `FilePath` and `DirectoryPath`

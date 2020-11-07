@@ -6,9 +6,20 @@ Do a little skipping about with types to demonstrate its usage.
 import json
 import sys
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, NoneStr, PyObject, StrictBool, root_validator, validate_arguments, validator
+from pydantic import (
+    BaseModel,
+    DirectoryPath,
+    FilePath,
+    NoneStr,
+    PyObject,
+    StrictBool,
+    root_validator,
+    validate_arguments,
+    validator,
+)
 from pydantic.fields import Field, PrivateAttr
 from pydantic.generics import GenericModel
 from pydantic.typing import ForwardRef
@@ -160,3 +171,10 @@ var2: date = conf.callable_pyobject(2111, 1, 1)
 
 class MyPrivateAttr(BaseModel):
     _private_field: str = PrivateAttr()
+
+
+class PydanticPaths(BaseModel):
+    file_path: FilePath = Path('root') / 'myfile.txt'
+    file_path_str: FilePath = 'root/myfile.txt'
+    dir_path: DirectoryPath = Path('root') / 'mydir'
+    dir_path_str: DirectoryPath = 'root/mydir'

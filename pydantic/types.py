@@ -572,42 +572,46 @@ class UUID5(UUID1):
     _required_version = 5
 
 
-class FilePath(Path):
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(format='file-path')
+if TYPE_CHECKING:
+    FilePath = Union[Path, str]
+    DirectoryPath = Union[Path, str]
+else:
 
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield path_validator
-        yield path_exists_validator
-        yield cls.validate
+    class FilePath(Path):
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            field_schema.update(format='file-path')
 
-    @classmethod
-    def validate(cls, value: Path) -> Path:
-        if not value.is_file():
-            raise errors.PathNotAFileError(path=value)
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield path_validator
+            yield path_exists_validator
+            yield cls.validate
 
-        return value
+        @classmethod
+        def validate(cls, value: Path) -> Path:
+            if not value.is_file():
+                raise errors.PathNotAFileError(path=value)
 
+            return value
 
-class DirectoryPath(Path):
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(format='directory-path')
+    class DirectoryPath(Path):
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            field_schema.update(format='directory-path')
 
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield path_validator
-        yield path_exists_validator
-        yield cls.validate
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield path_validator
+            yield path_exists_validator
+            yield cls.validate
 
-    @classmethod
-    def validate(cls, value: Path) -> Path:
-        if not value.is_dir():
-            raise errors.PathNotADirectoryError(path=value)
+        @classmethod
+        def validate(cls, value: Path) -> Path:
+            if not value.is_dir():
+                raise errors.PathNotADirectoryError(path=value)
 
-        return value
+            return value
 
 
 class JsonWrapper:
