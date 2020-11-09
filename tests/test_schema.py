@@ -373,8 +373,8 @@ def test_enum_and_model_have_same_behaviour():
         'type': 'object',
     }
 
-def test_list_enum_schema_extras():
 
+def test_list_enum_schema_extras():
     class FoodChoice(str, Enum):
         spam = "spam"
         egg = "egg"
@@ -393,15 +393,7 @@ def test_list_enum_schema_extras():
             }
         },
         'properties': {
-            'foods': {
-                'type': 'array',
-                'items': {
-                    '$ref': '#/definitions/FoodChoice'
-                },
-                'examples': [
-                    ["spam", "egg"]
-                ]
-            },
+            'foods': {'type': 'array', 'items': {'$ref': '#/definitions/FoodChoice'}, 'examples': [["spam", "egg"]]},
         },
         'required': ['foods'],
         'title': "Model",
