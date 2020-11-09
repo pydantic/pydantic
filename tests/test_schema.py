@@ -376,28 +376,28 @@ def test_enum_and_model_have_same_behaviour():
 
 def test_list_enum_schema_extras():
     class FoodChoice(str, Enum):
-        spam = "spam"
-        egg = "egg"
-        chips = "chips"
+        spam = 'spam'
+        egg = 'egg'
+        chips = 'chips'
 
     class Model(BaseModel):
-        foods: List[FoodChoice] = Field(examples=[["spam", "egg"]])
+        foods: List[FoodChoice] = Field(examples=[['spam', 'egg']])
 
     assert Model.schema() == {
         'definitions': {
             'FoodChoice': {
                 'description': 'An enumeration.',
-                'enum': ["spam", "egg", "chips"],
+                'enum': ['spam', 'egg', 'chips'],
                 'title': 'FoodChoice',
                 'type': 'string',
             }
         },
         'properties': {
-            'foods': {'type': 'array', 'items': {'$ref': '#/definitions/FoodChoice'}, 'examples': [["spam", "egg"]]},
+            'foods': {'type': 'array', 'items': {'$ref': '#/definitions/FoodChoice'}, 'examples': [['spam', 'egg']]},
         },
         'required': ['foods'],
-        'title': "Model",
-        'type': "object",
+        'title': 'Model',
+        'type': 'object',
     }
 
 
