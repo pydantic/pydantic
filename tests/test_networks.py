@@ -321,26 +321,34 @@ def test_redis_dsns():
     class Model(BaseModel):
         a: RedisDsn
 
-    m = Model(a='redis://user:pass@localhost:5432/app')
-    assert m.a == 'redis://user:pass@localhost:5432/app'
+    m = Model(a='redis://user:pass@localhost:6379/app')
+    assert m.a == 'redis://user:pass@localhost:6379/app'
     assert m.a.user == 'user'
     assert m.a.password == 'pass'
 
-    m = Model(a='rediss://user:pass@localhost:5432/app')
-    assert m.a == 'rediss://user:pass@localhost:5432/app'
+    m = Model(a='rediss://user:pass@localhost:6379/app')
+    assert m.a == 'rediss://user:pass@localhost:6379/app'
 
-    m = Model(a='rediss://:pass@localhost')
-    assert m.a == 'rediss://:pass@localhost'
+    m = Model(a='rediss://:pass@localhost:6379')
+    assert m.a == 'rediss://:pass@localhost:6379/0'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
 
-    # password is not required for redis
-    m = Model(a='redis://localhost:5432/app')
-    assert m.a == 'redis://localhost:5432/app'
+    # Password is not required for Redis protocol
+    m = Model(a='redis://localhost:6379/app')
+    assert m.a == 'redis://localhost:6379/app'
     assert m.a.user is None
     assert m.a.password is None
+
+    # Only schema is required for Redis protocol. Otherwise it will be set to default
+    # https://www.iana.org/assignments/uri-schemes/prov/redis
+    m = Model(a='rediss://')
+    assert m.a.scheme == 'rediss'
+    assert m.a.host == 'localhost'
+    assert m.a.port == '6379'
+    assert m.a.path == '/0'
 
 
 def test_custom_schemes():

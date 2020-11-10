@@ -43,7 +43,6 @@ __all__ = [
     'validate_email',
 ]
 
-
 _url_regex_cache = None
 _ascii_domain_regex_cache = None
 _int_domain_regex_cache = None
@@ -184,6 +183,33 @@ class AnyUrl(str):
         assert m, 'URL regex failed unexpectedly'
 
         parts = m.groupdict()
+        parts = cls.validate_parts(parts)
+
+        host, tld, host_type, rebuild = cls.validate_host(parts)
+
+        if m.end() != len(url):
+            raise errors.UrlExtraError(extra=url[m.end():])
+
+        return cls(
+            None if rebuild else url,
+            scheme=parts['scheme'],
+            user=parts['user'],
+            password=parts['password'],
+            host=host,
+            tld=tld,
+            host_type=host_type,
+            port=parts['port'],
+            path=parts['path'],
+            query=parts['query'],
+            fragment=parts['fragment'],
+        )
+
+    @classmethod
+    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+        """
+        A method used to validate parts of an URL.
+        Could be overridden to set default values for parts if missing
+        """
         scheme = parts['scheme']
         if scheme is None:
             raise errors.UrlSchemeError()
@@ -199,24 +225,7 @@ class AnyUrl(str):
         if cls.user_required and user is None:
             raise errors.UrlUserInfoError()
 
-        host, tld, host_type, rebuild = cls.validate_host(parts)
-
-        if m.end() != len(url):
-            raise errors.UrlExtraError(extra=url[m.end() :])
-
-        return cls(
-            None if rebuild else url,
-            scheme=scheme,
-            user=user,
-            password=parts['password'],
-            host=host,
-            tld=tld,
-            host_type=host_type,
-            port=port,
-            path=parts['path'],
-            query=parts['query'],
-            fragment=parts['fragment'],
-        )
+        return parts
 
     @classmethod
     def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, Optional[str], str, bool]:
@@ -281,6 +290,16 @@ class PostgresDsn(AnyUrl):
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis', 'rediss'}
+
+    @classmethod
+    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+        defaults = {
+            'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else None,
+            'port': '6379',
+            'path': '/0'
+        }
+        parts = {k: v if v else defaults.get(k) for k, v in parts.items()}
+        return super().validate_parts(parts)
 
 
 def stricturl(
