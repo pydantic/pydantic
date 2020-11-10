@@ -296,7 +296,7 @@ class RedisDsn(AnyUrl):
         defaults = {
             'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else None,
             'port': '6379',
-            'path': '/0'
+            'path': '/0',
         }
         parts = {k: v if v else defaults.get(k) for k, v in parts.items()}
         return super().validate_parts(parts)
