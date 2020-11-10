@@ -188,7 +188,7 @@ class AnyUrl(str):
         host, tld, host_type, rebuild = cls.validate_host(parts)
 
         if m.end() != len(url):
-            raise errors.UrlExtraError(extra=url[m.end():])
+            raise errors.UrlExtraError(extra=url[m.end() :])
 
         return cls(
             None if rebuild else url,
@@ -296,7 +296,7 @@ class RedisDsn(AnyUrl):
         defaults = {
             'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else None,
             'port': '6379',
-            'path': '/0'
+            'path': '/0',
         }
         parts = {k: v if v else defaults.get(k) for k, v in parts.items()}
         return super().validate_parts(parts)
