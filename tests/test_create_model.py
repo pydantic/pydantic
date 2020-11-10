@@ -11,6 +11,7 @@ def test_create_model():
     assert model.__fields__.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
     assert model.__config__.__name__ == 'Config'
+    assert model.__module__ == 'pydantic.main'
 
 
 def test_create_model_usage():
@@ -22,6 +23,29 @@ def test_create_model_usage():
         model()
     with pytest.raises(ValidationError):
         model(foo='hello', bar='xxx')
+
+
+def test_create_model_pickle(create_module):
+    """
+    Pickle will work for dynamically created model only if it was defined globally with its class name
+    and module where it's defined was specified
+    """
+
+    @create_module
+    def module():
+        import pickle
+
+        from pydantic import create_model
+
+        FooModel = create_model('FooModel', foo=(str, ...), bar=123, __module__=__name__)
+
+        m = FooModel(foo='hello')
+        d = pickle.dumps(m)
+        m2 = pickle.loads(d)
+        assert m2.foo == m.foo == 'hello'
+        assert m2.bar == m.bar == 123
+        assert m2 == m
+        assert m2 is not m
 
 
 def test_invalid_name():

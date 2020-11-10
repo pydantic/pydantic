@@ -1,8 +1,23 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, TypeVar, Union, cast, get_type_hints
+import sys
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Generic,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    get_type_hints,
+)
 
 from .class_validators import gather_all_validators
 from .fields import FieldInfo, ModelField
 from .main import BaseModel, create_model
+from .typing import get_origin
 from .utils import lenient_issubclass
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
@@ -25,11 +40,11 @@ class GenericModel(BaseModel):
         cached = _generic_types_cache.get((cls, params))
         if cached is not None:
             return cached
-        if cls.__concrete__:
+        if cls.__concrete__ and Generic not in cls.__bases__:
             raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
             params = (params,)
-        if cls is GenericModel and any(isinstance(param, TypeVar) for param in params):  # type: ignore
+        if cls is GenericModel and any(isinstance(param, TypeVar) for param in params):
             raise TypeError('Type parameters should be placed on typing.Generic, not GenericModel')
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'Type {cls.__name__} must inherit from typing.Generic before being parameterized')
@@ -37,7 +52,7 @@ class GenericModel(BaseModel):
         check_parameters_count(cls, params)
         typevars_map: Dict[TypeVarType, Type[Any]] = dict(zip(cls.__parameters__, params))
         type_hints = get_type_hints(cls).items()
-        instance_type_hints = {k: v for k, v in type_hints if getattr(v, '__origin__', None) is not ClassVar}
+        instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}
         concrete_type_hints: Dict[str, Type[Any]] = {
             k: resolve_type_hint(v, typevars_map) for k, v in instance_type_hints.items()
         }
@@ -45,17 +60,27 @@ class GenericModel(BaseModel):
         model_name = cls.__concrete_name__(params)
         validators = gather_all_validators(cls)
         fields = _build_generic_fields(cls.__fields__, concrete_type_hints, typevars_map)
+        model_module, called_globally = get_caller_frame_info()
         created_model = cast(
             Type[GenericModel],  # casting ensures mypy is aware of the __concrete__ and __parameters__ attributes
             create_model(
                 model_name,
-                __module__=cls.__module__,
+                __module__=model_module or cls.__module__,
                 __base__=cls,
                 __config__=None,
                 __validators__=validators,
                 **fields,
             ),
         )
+
+        if called_globally:  # create global reference and therefore allow pickling
+            object_by_reference = None
+            reference_name = model_name
+            reference_module_globals = sys.modules[created_model.__module__].__dict__
+            while object_by_reference is not created_model:
+                object_by_reference = reference_module_globals.setdefault(reference_name, created_model)
+                reference_name += '_'
+
         created_model.Config = cls.Config
         concrete = all(not _is_typevar(v) for v in concrete_type_hints.values())
         created_model.__concrete__ = concrete
@@ -79,7 +104,7 @@ class GenericModel(BaseModel):
 
 
 def resolve_type_hint(type_: Any, typevars_map: Dict[Any, Any]) -> Type[Any]:
-    if hasattr(type_, '__origin__') and getattr(type_, '__parameters__', None):
+    if get_origin(type_) and getattr(type_, '__parameters__', None):
         concrete_type_args = tuple([typevars_map[x] for x in type_.__parameters__])
         return type_[concrete_type_args]
     return typevars_map.get(type_, type_)
@@ -113,4 +138,22 @@ def _parameterize_generic_field(field_type: Type[Any], typevars_map: Dict[TypeVa
 
 
 def _is_typevar(v: Any) -> bool:
-    return isinstance(v, TypeVar)  # type: ignore
+    return isinstance(v, TypeVar)
+
+
+def get_caller_frame_info() -> Tuple[Optional[str], bool]:
+    """
+    Used inside a function to check whether it was called globally
+
+    Will only work against non-compiled code, therefore used only in pydantic.generics
+
+    :returns Tuple[module_name, called_globally]
+    """
+    try:
+        previous_caller_frame = sys._getframe(2)
+    except ValueError as e:
+        raise RuntimeError('This function must be used inside another function') from e
+    except AttributeError:  # sys module does not have _getframe function, so there's nothing we can do about it
+        return None, False
+    frame_globals = previous_caller_frame.f_globals
+    return frame_globals.get('__name__'), previous_caller_frame.f_locals is frame_globals

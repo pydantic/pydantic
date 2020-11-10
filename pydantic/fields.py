@@ -1,8 +1,10 @@
 import warnings
+from collections import deque
 from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    Deque,
     Dict,
     FrozenSet,
     Generator,
@@ -31,6 +33,8 @@ from .typing import (
     NoArgAnyCallable,
     NoneType,
     display_as_type,
+    get_args,
+    get_origin,
     is_literal_type,
     is_new_type,
     new_type_supertype,
@@ -205,6 +209,7 @@ SHAPE_SEQUENCE = 7
 SHAPE_FROZENSET = 8
 SHAPE_ITERABLE = 9
 SHAPE_GENERIC = 10
+SHAPE_DEQUE = 11
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -212,6 +217,7 @@ SHAPE_NAME_LOOKUP = {
     SHAPE_SEQUENCE: 'Sequence[{}]',
     SHAPE_FROZENSET: 'FrozenSet[{}]',
     SHAPE_ITERABLE: 'Iterable[{}]',
+    SHAPE_DEQUE: 'Deque[{}]',
 }
 
 
@@ -390,7 +396,7 @@ class ModelField(Representation):
         elif lenient_issubclass(self.type_, Json):
             self.type_ = Any
             self.parse_json = True
-        elif isinstance(self.type_, TypeVar):  # type: ignore
+        elif isinstance(self.type_, TypeVar):
             if self.type_.__bound__:
                 self.type_ = self.type_.__bound__
             elif self.type_.__constraints__:
@@ -411,7 +417,7 @@ class ModelField(Representation):
         elif is_literal_type(self.type_):
             return
 
-        origin = getattr(self.type_, '__origin__', None)
+        origin = get_origin(self.type_)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable
@@ -422,7 +428,7 @@ class ModelField(Representation):
             return
         if origin is Union:
             types_ = []
-            for type_ in self.type_.__args__:
+            for type_ in get_args(self.type_):
                 if type_ is NoneType:
                     if self.required is Undefined:
                         self.required = False
@@ -444,9 +450,9 @@ class ModelField(Representation):
         if issubclass(origin, Tuple):  # type: ignore
             self.shape = SHAPE_TUPLE
             self.sub_fields = []
-            for i, t in enumerate(self.type_.__args__):
+            for i, t in enumerate(get_args(self.type_)):
                 if t is Ellipsis:
-                    self.type_ = self.type_.__args__[0]
+                    self.type_ = get_args(self.type_)[0]
                     self.shape = SHAPE_TUPLE_ELLIPSIS
                     return
                 self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
@@ -460,7 +466,7 @@ class ModelField(Representation):
                     {f'list_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
                 )
 
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_LIST
         elif issubclass(origin, Set):
             # Create self validators
@@ -470,22 +476,25 @@ class ModelField(Representation):
                     {f'set_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
                 )
 
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SET
         elif issubclass(origin, FrozenSet):
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_FROZENSET
+        elif issubclass(origin, Deque):
+            self.type_ = get_args(self.type_)[0]
+            self.shape = SHAPE_DEQUE
         elif issubclass(origin, Sequence):
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
         elif issubclass(origin, Mapping):
-            self.key_field = self._create_sub_type(self.type_.__args__[0], 'key_' + self.name, for_keys=True)
-            self.type_ = self.type_.__args__[1]
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
             self.shape = SHAPE_MAPPING
         # Equality check as almost everything inherits form Iterable, including str
         # check for Iterable and CollectionsIterable, as it could receive one even when declared with the other
         elif origin in {Iterable, CollectionsIterable}:
-            self.type_ = self.type_.__args__[0]
+            self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_ITERABLE
             self.sub_fields = [self._create_sub_type(self.type_, f'{self.name}_type')]
         elif issubclass(origin, Type):  # type: ignore
@@ -494,7 +503,7 @@ class ModelField(Representation):
             # Is a Pydantic-compatible generic that handles itself
             # or we have arbitrary_types_allowed = True
             self.shape = SHAPE_GENERIC
-            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(self.type_.__args__)]
+            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(get_args(self.type_))]
             self.type_ = origin
             return
         else:
@@ -618,7 +627,7 @@ class ModelField(Representation):
         if errors:
             return v, errors
 
-        converted: Union[List[Any], Set[Any], FrozenSet[Any], Tuple[Any, ...], Iterator[Any]] = result
+        converted: Union[List[Any], Set[Any], FrozenSet[Any], Tuple[Any, ...], Iterator[Any], Deque[Any]] = result
 
         if self.shape == SHAPE_SET:
             converted = set(result)
@@ -626,6 +635,8 @@ class ModelField(Representation):
             converted = frozenset(result)
         elif self.shape == SHAPE_TUPLE_ELLIPSIS:
             converted = tuple(result)
+        elif self.shape == SHAPE_DEQUE:
+            converted = deque(result)
         elif self.shape == SHAPE_SEQUENCE:
             if isinstance(v, tuple):
                 converted = tuple(result)
@@ -633,6 +644,8 @@ class ModelField(Representation):
                 converted = set(result)
             elif isinstance(v, Generator):
                 converted = iter(result)
+            elif isinstance(v, deque):
+                converted = deque(result)
         return converted, None
 
     def _validate_iterable(
@@ -784,3 +797,45 @@ class ModelField(Representation):
         if self.alt_alias:
             args.append(('alias', self.alias))
         return args
+
+
+class ModelPrivateAttr(Representation):
+    __slots__ = ('default', 'default_factory')
+
+    def __init__(self, default: Any = Undefined, *, default_factory: Optional[NoArgAnyCallable] = None) -> None:
+        self.default = default
+        self.default_factory = default_factory
+
+    def get_default(self) -> Any:
+        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, self.__class__) and (self.default, self.default_factory) == (
+            other.default,
+            other.default_factory,
+        )
+
+
+def PrivateAttr(
+    default: Any = Undefined,
+    *,
+    default_factory: Optional[NoArgAnyCallable] = None,
+) -> Any:
+    """
+    Indicates that attribute is only used internally and never mixed with regular fields.
+
+    Types or values of private attrs are not checked by pydantic and it's up to you to keep them relevant.
+
+    Private attrs are stored in model __slots__.
+
+    :param default: the attribute’s default value
+    :param default_factory: callable that will be called when a default value is needed for this attribute
+      If both `default` and `default_factory` are set, an error is raised.
+    """
+    if default is not Undefined and default_factory is not None:
+        raise ValueError('cannot specify both default and default_factory')
+
+    return ModelPrivateAttr(
+        default,
+        default_factory=default_factory,
+    )

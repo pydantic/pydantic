@@ -2,7 +2,7 @@ import dataclasses
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, Dict, FrozenSet, Optional
+from typing import ClassVar, Dict, FrozenSet, List, Optional
 
 import pytest
 
@@ -356,9 +356,9 @@ def test_nested_dataclass():
 
 
 def test_arbitrary_types_allowed():
-    @dataclasses.dataclass
     class Button:
-        href: str
+        def __init__(self, href: str):
+            self.href = href
 
     class Config:
         arbitrary_types_allowed = True
@@ -633,3 +633,165 @@ def test_hashable_optional(default):
 
     MyDataclass()
     MyDataclass(v=None)
+
+
+def test_override_builtin_dataclass():
+    @dataclasses.dataclass
+    class File:
+        hash: str
+        name: Optional[str]
+        size: int
+        content: Optional[bytes] = None
+
+    FileChecked = pydantic.dataclasses.dataclass(File)
+    f = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
+    assert f.name == 'whatever.txt'
+    assert f.size == 456
+
+    with pytest.raises(ValidationError) as e:
+        FileChecked(hash=[1], name='name', size=3)
+    assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
+
+
+def test_override_builtin_dataclass_2():
+    @dataclasses.dataclass
+    class Meta:
+        modified_date: Optional[datetime]
+        seen_count: int
+
+    @pydantic.dataclasses.dataclass
+    @dataclasses.dataclass
+    class File(Meta):
+        filename: str
+
+    f = File(filename=b'thefilename', modified_date='2020-01-01T00:00', seen_count='7')
+    assert f.filename == 'thefilename'
+    assert f.modified_date == datetime(2020, 1, 1, 0, 0)
+    assert f.seen_count == 7
+
+
+def test_override_builtin_dataclass_nested():
+    @dataclasses.dataclass
+    class Meta:
+        modified_date: Optional[datetime]
+        seen_count: int
+
+    @dataclasses.dataclass
+    class File:
+        filename: str
+        meta: Meta
+
+    class Foo(BaseModel):
+        file: File
+
+    FileChecked = pydantic.dataclasses.dataclass(File)
+    f = FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count='7'))
+    assert f.filename == 'thefilename'
+    assert f.meta.modified_date == datetime(2020, 1, 1, 0, 0)
+    assert f.meta.seen_count == 7
+
+    with pytest.raises(ValidationError) as e:
+        FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count=['7']))
+    assert e.value.errors() == [
+        {'loc': ('meta', 'seen_count'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+    foo = Foo.parse_obj(
+        {
+            'file': {
+                'filename': b'thefilename',
+                'meta': {'modified_date': '2020-01-01T00:00', 'seen_count': '7'},
+            },
+        }
+    )
+    assert foo.file.filename == 'thefilename'
+    assert foo.file.meta.modified_date == datetime(2020, 1, 1, 0, 0)
+    assert foo.file.meta.seen_count == 7
+
+
+def test_override_builtin_dataclass_nested_schema():
+    @dataclasses.dataclass
+    class Meta:
+        modified_date: Optional[datetime]
+        seen_count: int
+
+    @dataclasses.dataclass
+    class File:
+        filename: str
+        meta: Meta
+
+    FileChecked = pydantic.dataclasses.dataclass(File)
+    assert FileChecked.__pydantic_model__.schema() == {
+        'definitions': {
+            'Meta': {
+                'properties': {
+                    'modified_date': {'format': 'date-time', 'title': 'Modified ' 'Date', 'type': 'string'},
+                    'seen_count': {'title': 'Seen Count', 'type': 'integer'},
+                },
+                'required': ['modified_date', 'seen_count'],
+                'title': 'Meta',
+                'type': 'object',
+            }
+        },
+        'properties': {'filename': {'title': 'Filename', 'type': 'string'}, 'meta': {'$ref': '#/definitions/Meta'}},
+        'required': ['filename', 'meta'],
+        'title': 'File',
+        'type': 'object',
+    }
+
+
+def test_inherit_builtin_dataclass():
+    @dataclasses.dataclass
+    class Z:
+        z: int
+
+    @dataclasses.dataclass
+    class Y(Z):
+        y: int
+
+    @pydantic.dataclasses.dataclass
+    class X(Y):
+        x: int
+
+    pika = X(x='2', y='4', z='3')
+    assert pika.x == 2
+    assert pika.y == 4
+    assert pika.z == 3
+
+
+def test_dataclass_arbitrary():
+    class ArbitraryType:
+        def __init__(self):
+            ...
+
+    @dataclasses.dataclass
+    class Test:
+        foo: ArbitraryType
+        bar: List[ArbitraryType]
+
+    class TestModel(BaseModel):
+        a: ArbitraryType
+        b: Test
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    TestModel(a=ArbitraryType(), b=(ArbitraryType(), [ArbitraryType()]))
+
+
+def test_forward_stdlib_dataclass_params():
+    @dataclasses.dataclass(frozen=True)
+    class Item:
+        name: str
+
+    class Example(BaseModel):
+        item: Item
+        other: str
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    e = Example(item=Item(name='pika'), other='bulbi')
+    e.other = 'bulbi2'
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        e.item.name = 'pika2'
