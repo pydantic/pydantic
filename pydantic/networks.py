@@ -205,7 +205,7 @@ class AnyUrl(str):
         )
 
     @classmethod
-    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+    def validate_parts(cls, parts: Dict[str, Optional[str]]) -> Dict[str, Optional[str]]:
         """
         A method used to validate parts of an URL.
         Could be overridden to set default values for parts if missing
@@ -228,7 +228,7 @@ class AnyUrl(str):
         return parts
 
     @classmethod
-    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, Optional[str], str, bool]:
+    def validate_host(cls, parts: Dict[str, Optional[str]]) -> Tuple[str, Optional[str], str, bool]:
         host, tld, host_type, rebuild = None, None, None, False
         for f in ('domain', 'ipv4', 'ipv6'):
             host = parts[f]
@@ -292,7 +292,7 @@ class RedisDsn(AnyUrl):
     allowed_schemes = {'redis', 'rediss'}
 
     @classmethod
-    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+    def validate_parts(cls, parts: Dict[str, Optional[str]]) -> Dict[str, Optional[str]]:
         defaults = {
             'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else None,
             'port': '6379',
