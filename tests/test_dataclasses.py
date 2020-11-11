@@ -1,4 +1,5 @@
 import dataclasses
+import pickle
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
@@ -723,19 +724,22 @@ def test_override_builtin_dataclass_nested_schema():
     FileChecked = pydantic.dataclasses.dataclass(File)
     assert FileChecked.__pydantic_model__.schema() == {
         'definitions': {
-            'Meta': {
+            '_PydanticMeta': {
                 'properties': {
                     'modified_date': {'format': 'date-time', 'title': 'Modified ' 'Date', 'type': 'string'},
                     'seen_count': {'title': 'Seen Count', 'type': 'integer'},
                 },
                 'required': ['modified_date', 'seen_count'],
-                'title': 'Meta',
+                'title': '_PydanticMeta',
                 'type': 'object',
             }
         },
-        'properties': {'filename': {'title': 'Filename', 'type': 'string'}, 'meta': {'$ref': '#/definitions/Meta'}},
+        'properties': {
+            'filename': {'title': 'Filename', 'type': 'string'},
+            'meta': {'$ref': '#/definitions/_PydanticMeta'},
+        },
         'required': ['filename', 'meta'],
-        'title': 'File',
+        'title': '_PydanticFile',
         'type': 'object',
     }
 
@@ -795,3 +799,32 @@ def test_forward_stdlib_dataclass_params():
     e.other = 'bulbi2'
     with pytest.raises(dataclasses.FrozenInstanceError):
         e.item.name = 'pika2'
+
+
+def test_pickle_overriden_builtin_dataclass():
+    @dataclasses.dataclass
+    class BuiltInDataclass:
+        value: int
+
+    class PydanticModel(pydantic.BaseModel):
+        built_in_dataclass: BuiltInDataclass
+
+    # pickle can only work with instances of locally-defined classes
+    # if we promote them to top level.
+    PydanticModel.__qualname__ = PydanticModel.__name__
+    BuiltInDataclass.__qualname__ = BuiltInDataclass.__name__
+    globals().update(
+        {
+            PydanticModel.__name__: PydanticModel,
+            BuiltInDataclass.__name__: BuiltInDataclass,
+        }
+    )
+
+    value = 5
+    obj = PydanticModel(built_in_dataclass=BuiltInDataclass(value=value))
+
+    pickled_obj = pickle.dumps(obj)
+    restored_obj = pickle.loads(pickled_obj)
+
+    assert restored_obj.built_in_dataclass.value == value
+    assert restored_obj == obj

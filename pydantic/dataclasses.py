@@ -119,10 +119,19 @@ def _process_class(
     #   __post_init__ = _pydantic_post_init
     # ```
     # with the exact same fields as the base dataclass
+    # and register it on module level to address pickle problem:
+    # https://github.com/samuelcolvin/pydantic/issues/2111
     if is_builtin_dataclass(_cls):
+        class_name = f'_Pydantic{_cls.__name__}'
         _cls = type(
-            _cls.__name__, (_cls,), {'__annotations__': _cls.__annotations__, '__post_init__': _pydantic_post_init}
+            class_name,
+            (_cls,),
+            {
+                '__annotations__': _cls.__annotations__,
+                '__post_init__': _pydantic_post_init,
+            },
         )
+        globals()[class_name] = _cls
     else:
         _cls.__post_init__ = _pydantic_post_init
     cls: Type['Dataclass'] = dataclasses.dataclass(  # type: ignore
