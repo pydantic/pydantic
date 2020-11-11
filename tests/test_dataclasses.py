@@ -829,4 +829,4 @@ def test_pickle_overriden_builtin_dataclass():
 
     # ensure the restored dataclass is still a pydantic dataclass
     with pytest.raises(ValidationError):
-        restored_obj.dataclass.value = 'value of a wrong_type'
+        restored_obj.dataclass.value = 'value of a wrong type'
