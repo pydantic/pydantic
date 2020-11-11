@@ -122,16 +122,20 @@ def _process_class(
     # and register it on module level to address pickle problem:
     # https://github.com/samuelcolvin/pydantic/issues/2111
     if is_builtin_dataclass(_cls):
-        class_name = f'_Pydantic{_cls.__name__}'
+        uniq_class_name = f'_Pydantic_{_cls.__name__}_{id(_cls)}'
         _cls = type(
-            class_name,
+            # for pretty output new class will have the name as original
+            _cls.__name__,
             (_cls,),
             {
                 '__annotations__': _cls.__annotations__,
                 '__post_init__': _pydantic_post_init,
+                # attrs for pickle to find this class
+                '__module__': __name__,
+                '__qualname__': f'{uniq_class_name}',
             },
         )
-        globals()[class_name] = _cls
+        globals()[uniq_class_name] = _cls
     else:
         _cls.__post_init__ = _pydantic_post_init
     cls: Type['Dataclass'] = dataclasses.dataclass(  # type: ignore
