@@ -801,25 +801,21 @@ def test_forward_stdlib_dataclass_params():
         e.item.name = 'pika2'
 
 
+@dataclasses.dataclass
+class BuiltInDataclass:
+    value: int
+
+
+class PydanticModel(pydantic.BaseModel):
+    """
+    pickle can only work with instances of locally-defined classes
+    if we promote them to top level.
+    """
+
+    built_in_dataclass: BuiltInDataclass
+
+
 def test_pickle_overriden_builtin_dataclass():
-    @dataclasses.dataclass
-    class BuiltInDataclass:
-        value: int
-
-    class PydanticModel(pydantic.BaseModel):
-        built_in_dataclass: BuiltInDataclass
-
-    # pickle can only work with instances of locally-defined classes
-    # if we promote them to top level.
-    PydanticModel.__qualname__ = PydanticModel.__name__
-    BuiltInDataclass.__qualname__ = BuiltInDataclass.__name__
-    globals().update(
-        {
-            PydanticModel.__name__: PydanticModel,
-            BuiltInDataclass.__name__: BuiltInDataclass,
-        }
-    )
-
     value = 5
     obj = PydanticModel(built_in_dataclass=BuiltInDataclass(value=value))
 
