@@ -303,6 +303,8 @@ class ListMinLengthError(PydanticValueError):
     msg_template = 'ensure this value has at least {limit_value} items'
 
     def __init__(self, *, limit_value: int) -> None:
+        if limit_value == 1:
+            self.msg_template = 'ensure this value has at least {limit_value} item'
         super().__init__(limit_value=limit_value)
 
 
@@ -311,6 +313,8 @@ class ListMaxLengthError(PydanticValueError):
     msg_template = 'ensure this value has at most {limit_value} items'
 
     def __init__(self, *, limit_value: int) -> None:
+        if limit_value == 1:
+            self.msg_template = 'ensure this value has at most {limit_value} item'
         super().__init__(limit_value=limit_value)
 
 
@@ -319,6 +323,8 @@ class SetMinLengthError(PydanticValueError):
     msg_template = 'ensure this value has at least {limit_value} items'
 
     def __init__(self, *, limit_value: int) -> None:
+        if limit_value == 1:
+            self.msg_template = 'ensure this value has at least {limit_value} item'
         super().__init__(limit_value=limit_value)
 
 
@@ -327,6 +333,8 @@ class SetMaxLengthError(PydanticValueError):
     msg_template = 'ensure this value has at most {limit_value} items'
 
     def __init__(self, *, limit_value: int) -> None:
+        if limit_value == 1:
+            self.msg_template = 'ensure this value has at most {limit_value} item'
         super().__init__(limit_value=limit_value)
 
 
@@ -335,6 +343,8 @@ class AnyStrMinLengthError(PydanticValueError):
     msg_template = 'ensure this value has at least {limit_value} characters'
 
     def __init__(self, *, limit_value: int) -> None:
+        if limit_value == 1:
+            self.msg_template = 'ensure this value has at least {limit_value} character'
         super().__init__(limit_value=limit_value)
 
 
@@ -343,6 +353,8 @@ class AnyStrMaxLengthError(PydanticValueError):
     msg_template = 'ensure this value has at most {limit_value} characters'
 
     def __init__(self, *, limit_value: int) -> None:
+        if limit_value == 1:
+            self.msg_template = 'ensure this value has at most {limit_value} character'
         super().__init__(limit_value=limit_value)
 
 
