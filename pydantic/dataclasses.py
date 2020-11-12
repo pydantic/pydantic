@@ -132,7 +132,7 @@ def _process_class(
                 '__post_init__': _pydantic_post_init,
                 # attrs for pickle to find this class
                 '__module__': __name__,
-                '__qualname__': f'{uniq_class_name}',
+                '__qualname__': uniq_class_name,
             },
         )
         globals()[uniq_class_name] = _cls
