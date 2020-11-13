@@ -678,7 +678,7 @@ def test_root_validator_many_values_change():
             validate_assignment = True
 
         @root_validator
-        def set_ts_now(cls, values):
+        def set_area(cls, values):
             values['area'] = values['width'] * values['height']
             return values
 
