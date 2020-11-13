@@ -50,6 +50,7 @@ __all__ = [
     'IPvAnyNetwork',
     'PostgresDsn',
     'RedisDsn',
+    'MongoSrvDsn',
     'validate_email',
     # parse
     'Protocol',

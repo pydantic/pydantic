@@ -40,6 +40,7 @@ __all__ = [
     'IPvAnyNetwork',
     'PostgresDsn',
     'RedisDsn',
+    'MongoSrvDsn',
     'validate_email',
 ]
 
@@ -280,6 +281,10 @@ class PostgresDsn(AnyUrl):
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis'}
+
+
+class MongoSrvDsn(AnyUrl):
+    allowed_schemes = {'mongodb+srv'}
 
 
 def stricturl(

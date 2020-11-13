@@ -1,6 +1,17 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, EmailStr, HttpUrl, NameEmail, PostgresDsn, RedisDsn, ValidationError, stricturl
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    EmailStr,
+    HttpUrl,
+    MongoSrvDsn,
+    NameEmail,
+    PostgresDsn,
+    RedisDsn,
+    ValidationError,
+    stricturl,
+)
 from pydantic.networks import validate_email
 
 try:
@@ -335,6 +346,21 @@ def test_redis_dsns():
     assert m.a == 'redis://localhost:5432/app'
     assert m.a.user is None
     assert m.a.password is None
+
+
+def test_mongo_srv_dsns():
+    class Model(BaseModel):
+        a: MongoSrvDsn
+
+    m = Model(a='mongodb+srv://server.example.com/mydatabase?tls=false')
+    assert m.a == 'mongodb+srv://server.example.com/mydatabase?tls=false'
+    assert m.a.user is None
+    assert m.a.password is None
+    assert m.a.query == 'tls=false'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
 
 
 def test_custom_schemes():
