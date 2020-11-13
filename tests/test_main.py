@@ -666,6 +666,28 @@ def test_validating_assignment_post_root_validator_fail():
     ]
 
 
+def test_root_validator_many_values_change():
+    """It should run root_validator on assignment and update ALL concerned fields"""
+
+    class Rectangle(BaseModel):
+        width: float
+        height: float
+        area: float = None
+
+        class Config:
+            validate_assignment = True
+
+        @root_validator
+        def set_ts_now(cls, values):
+            values['area'] = values['width'] * values['height']
+            return values
+
+    r = Rectangle(width=1, height=1)
+    assert r.area == 1
+    r.height = 5
+    assert r.area == 5
+
+
 def test_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
 
