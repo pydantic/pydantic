@@ -93,6 +93,7 @@ __all__ = [
     'SecretStr',
     'SecretBytes',
     'StrictBool',
+    'StrictBytes',
     'StrictInt',
     'StrictFloat',
     'PaymentCardNumber',

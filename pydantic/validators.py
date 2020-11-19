@@ -82,6 +82,15 @@ def bytes_validator(v: Any) -> bytes:
         raise errors.BytesError()
 
 
+def strict_bytes_validator(v: Any) -> Union[bytes]:
+    if isinstance(v, bytes):
+        return v
+    elif isinstance(v, bytearray):
+        return bytes(v)
+    else:
+        raise errors.BytesError()
+
+
 BOOL_FALSE = {0, '0', 'off', 'f', 'false', 'n', 'no'}
 BOOL_TRUE = {1, '1', 'on', 't', 'true', 'y', 'yes'}
 

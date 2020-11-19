@@ -49,6 +49,7 @@ from pydantic import (
     SecretBytes,
     SecretStr,
     StrictBool,
+    StrictBytes,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -1266,6 +1267,34 @@ def test_float_validation():
             'ctx': {'multiple_of': 0.5},
         },
     ]
+
+
+def test_strict_bytes():
+    class Model(BaseModel):
+        v: StrictBytes
+
+    assert Model(v=b'foobar').v == b'foobar'
+
+    with pytest.raises(ValidationError):
+        Model(v='foostring')
+
+    with pytest.raises(ValidationError):
+        Model(v=bytearray('foo', 'utf-8'))
+
+    with pytest.raises(ValidationError):
+        Model(v=123)
+
+
+def test_strict_bytes_subclass():
+    class MyStrictBytes(StrictBytes):
+        pass
+
+    class Model(BaseModel):
+        v: MyStrictBytes
+
+    m = Model(v=MyStrictBytes(b'foobar'))
+    assert isinstance(m.v, MyStrictBytes)
+    assert m.v == b'foobar'
 
 
 def test_strict_str():
