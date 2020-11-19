@@ -1274,15 +1274,16 @@ def test_strict_bytes():
         v: StrictBytes
 
     assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
 
     with pytest.raises(ValidationError):
         Model(v='foostring')
 
     with pytest.raises(ValidationError):
-        Model(v=bytearray('foo', 'utf-8'))
+        Model(v=42)
 
     with pytest.raises(ValidationError):
-        Model(v=123)
+        Model(v=0.42)
 
 
 def test_strict_bytes_subclass():
@@ -1292,9 +1293,13 @@ def test_strict_bytes_subclass():
     class Model(BaseModel):
         v: MyStrictBytes
 
-    m = Model(v=MyStrictBytes(b'foobar'))
-    assert isinstance(m.v, MyStrictBytes)
-    assert m.v == b'foobar'
+    a = Model(v=MyStrictBytes(b'foobar'))
+    assert isinstance(a.v, MyStrictBytes)
+    assert a.v == b'foobar'
+
+    b = Model(v=MyStrictBytes(bytearray('foobar', 'utf-8')))
+    assert isinstance(b.v, MyStrictBytes)
+    assert b.v == 'foobar'.encode()
 
 
 def test_strict_str():
