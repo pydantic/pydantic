@@ -39,7 +39,7 @@ __all__ = [
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
-    'RabbitmqDsn'
+    'RabbitmqDsn',
     'RedisDsn',
     'validate_email',
 ]
