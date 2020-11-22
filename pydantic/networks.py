@@ -278,6 +278,7 @@ class PostgresDsn(AnyUrl):
     allowed_schemes = {'postgres', 'postgresql'}
     user_required = True
 
+
 class RabbitmqDsn(AnyUrl):
     allowed_schemes = {'amqp'}
     user_required = True

@@ -1,6 +1,9 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, EmailStr, HttpUrl, NameEmail, PostgresDsn, RabbitmqDsn, RedisDsn, ValidationError, stricturl
+from pydantic import (
+    AnyUrl, BaseModel, EmailStr, HttpUrl, NameEmail, PostgresDsn, RabbitmqDsn,
+    RedisDsn, ValidationError, stricturl
+)
 from pydantic.networks import validate_email
 
 try:
@@ -316,6 +319,7 @@ def test_postgres_dsns():
     error = exc_info.value.errors()[0]
     assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
 
+
 def test_rabbitmq_dsns():
     class Model(BaseModel):
         a: RabbitmqDsn
@@ -331,6 +335,7 @@ def test_rabbitmq_dsns():
         Model(a='amqp://localhost:5432/app')
     error = exc_info.value.errors()[0]
     assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
+
 
 def test_redis_dsns():
     class Model(BaseModel):
