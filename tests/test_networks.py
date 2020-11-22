@@ -1,8 +1,16 @@
 import pytest
 
 from pydantic import (
-    AnyUrl, BaseModel, EmailStr, HttpUrl, NameEmail, PostgresDsn, RabbitmqDsn,
-    RedisDsn, ValidationError, stricturl
+    AnyUrl,
+    BaseModel,
+    EmailStr,
+    HttpUrl,
+    NameEmail,
+    PostgresDsn,
+    RabbitmqDsn,
+    RedisDsn,
+    ValidationError,
+    stricturl
 )
 from pydantic.networks import validate_email
 
