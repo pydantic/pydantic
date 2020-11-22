@@ -10,7 +10,7 @@ from pydantic import (
     RabbitmqDsn,
     RedisDsn,
     ValidationError,
-    stricturl
+    stricturl,
 )
 from pydantic.networks import validate_email
 
