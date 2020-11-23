@@ -958,6 +958,35 @@ def test_dict_exclude_unset_populated_by_alias_with_extra():
     assert m.dict(exclude_unset=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
 
 
+def test_exclude_defaults():
+    class Model(BaseModel):
+        mandatory: str
+        nullable_mandatory: Optional[str] = ...
+        facultative: str = 'x'
+        nullable_facultative: Optional[str] = None
+
+    m = Model(mandatory='a', nullable_mandatory=None)
+    assert m.dict(exclude_defaults=True) == {
+        'mandatory': 'a',
+        'nullable_mandatory': None,
+    }
+
+    m = Model(mandatory='a', nullable_mandatory=None, facultative='y', nullable_facultative=None)
+    assert m.dict(exclude_defaults=True) == {
+        'mandatory': 'a',
+        'nullable_mandatory': None,
+        'facultative': 'y',
+    }
+
+    m = Model(mandatory='a', nullable_mandatory=None, facultative='y', nullable_facultative='z')
+    assert m.dict(exclude_defaults=True) == {
+        'mandatory': 'a',
+        'nullable_mandatory': None,
+        'facultative': 'y',
+        'nullable_facultative': 'z',
+    }
+
+
 def test_dir_fields():
     class MyModel(BaseModel):
         attribute_a: int
