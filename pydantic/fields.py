@@ -29,6 +29,7 @@ from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
     NONE_TYPES,
+    Annotated,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -423,6 +424,10 @@ class ModelField(Representation):
             # allow None for virtual superclasses of NoneType, e.g. Hashable
             if isinstance(self.type_, type) and isinstance(None, self.type_):
                 self.allow_none = True
+            return
+        if origin is Annotated:
+            self.type_ = get_args(self.type_)[0]
+            self._type_analysis()
             return
         if origin is Callable:
             return

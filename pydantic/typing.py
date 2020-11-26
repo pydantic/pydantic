@@ -160,6 +160,35 @@ else:
         return typing_get_args(tp) or getattr(tp, '__args__', ()) or generic_get_args(tp)
 
 
+if sys.version_info < (3, 9):
+    if TYPE_CHECKING:
+        from typing_extensions import Annotated, _AnnotatedAlias
+    else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
+        try:
+            from typing_extensions import Annotated, _AnnotatedAlias
+        except ImportError:
+            Annotated, _AnnotatedAlias = None, None
+
+    # Our custom get_{args,origin} for <3.8 and the builtin 3.8 get_{args,origin} don't recognize
+    # typing_extensions.Annotated, so wrap them to short-circuit. We still want to use our wrapped
+    # get_origins defined above for non-Annotated data.
+    _get_args, _get_origin = get_args, get_origin
+
+    def get_args(tp: Type[Any]) -> Type[Any]:
+        if _AnnotatedAlias is not None and isinstance(tp, _AnnotatedAlias):
+            return tp.__args__ + tp.__metadata__
+        return _get_args(tp)
+
+    def get_origin(tp: Type[Any]) -> Type[Any]:
+        if _AnnotatedAlias is not None and isinstance(tp, _AnnotatedAlias):
+            return Annotated
+        return _get_origin(tp)
+
+
+else:
+    from typing import Annotated
+
+
 if TYPE_CHECKING:
     from .fields import ModelField
 
@@ -178,6 +207,7 @@ if TYPE_CHECKING:
 __all__ = (
     'ForwardRef',
     'Callable',
+    'Annotated',
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',
