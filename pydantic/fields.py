@@ -370,7 +370,7 @@ class ModelField(Representation):
         when we want to validate the default value i.e. when `validate_all` is set to True.
         """
         if self.default_factory is not None:
-            if self.type_ is None:
+            if self.type_ is Undefined:
                 raise errors_.ConfigError(
                     f'you need to set the type of field {self.name!r} when using `default_factory`'
                 )
@@ -379,11 +379,11 @@ class ModelField(Representation):
 
         default_value = self.get_default()
 
-        if default_value is not None and self.type_ is None:
+        if default_value is not None and self.type_ is Undefined:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_
 
-        if self.type_ is None:
+        if self.type_ is Undefined:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
         if self.required is False and default_value is None:
