@@ -64,6 +64,7 @@ from pydantic import (
     errors,
     validator,
 )
+from pydantic.typing import Literal, NoneType
 
 try:
     import email_validator
@@ -2540,3 +2541,30 @@ def test_deque_json():
         v: Deque[int]
 
     assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
+
+
+@pytest.mark.parametrize('value_type', (None, NoneType, Literal[None]))
+def test_none(value_type):
+    class Model(BaseModel):
+        my_none_list: List[value_type]
+        my_none_dict: Dict[str, value_type]
+        my_json_none: Json[value_type]
+
+    Model(
+        my_none_list=[None] * 3,
+        my_none_dict={'a': None, 'b': None},
+        my_json_none='null',
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            my_none_list=[1, None, 'qwe'],
+            my_none_dict={'a': 1, 'b': None},
+            my_json_none='"a"',
+        )
+    assert exc_info.value.errors() == [
+        {'loc': ('my_none_list', 0), 'msg': 'value is not None', 'type': 'type_error.not_node'},
+        {'loc': ('my_none_list', 2), 'msg': 'value is not None', 'type': 'type_error.not_node'},
+        {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_node'},
+        {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_node'},
+    ]

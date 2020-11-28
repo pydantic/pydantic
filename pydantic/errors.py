@@ -469,6 +469,11 @@ class ClassError(PydanticTypeError):
     msg_template = 'a class is expected'
 
 
+class NotNoneError(PydanticTypeError):
+    code = 'not_node'
+    msg_template = 'value is not None'
+
+
 class SubclassError(PydanticTypeError):
     code = 'subclass'
     msg_template = 'subclass of {expected_class} expected'

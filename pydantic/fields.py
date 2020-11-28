@@ -30,6 +30,7 @@ from .types import Json, JsonWrapper
 from .typing import (
     Callable,
     ForwardRef,
+    Literal,
     NoArgAnyCallable,
     NoneType,
     display_as_type,
@@ -567,7 +568,10 @@ class ModelField(Representation):
                 return v, errors
 
         if v is None:
-            if self.allow_none:
+            if self.type_ in (None, NoneType, Literal[None]):
+                # keep validating
+                pass
+            elif self.allow_none:
                 if self.post_validators:
                     return self._apply_validators(v, values, loc, cls, self.post_validators)
                 else:
