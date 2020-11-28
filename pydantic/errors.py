@@ -470,7 +470,7 @@ class ClassError(PydanticTypeError):
 
 
 class NotNoneError(PydanticTypeError):
-    code = 'not_node'
+    code = 'not_none'
     msg_template = 'value is not None'
 
 

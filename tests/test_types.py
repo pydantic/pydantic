@@ -2566,9 +2566,9 @@ def test_none(value_type):
             my_json_none='"a"',
         )
     assert exc_info.value.errors() == [
-        {'loc': ('my_none',), 'msg': 'value is not None', 'type': 'type_error.not_node'},
-        {'loc': ('my_none_list', 0), 'msg': 'value is not None', 'type': 'type_error.not_node'},
-        {'loc': ('my_none_list', 2), 'msg': 'value is not None', 'type': 'type_error.not_node'},
-        {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_node'},
-        {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_node'},
+        {'loc': ('my_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_list', 0), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_list', 2), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
     ]
