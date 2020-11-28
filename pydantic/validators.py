@@ -29,7 +29,7 @@ from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_ti
 from .typing import (
     AnyCallable,
     ForwardRef,
-    Literal,
+    NoneLiteral,
     NoneType,
     all_literal_values,
     display_as_type,
@@ -504,7 +504,7 @@ def any_class_validator(v: Any) -> Type[T]:
     raise errors.ClassError()
 
 
-def none_validator(v: Any) -> Literal[None]:
+def none_validator(v: Any) -> NoneLiteral:
     if v is None:
         return v
     raise errors.NotNoneError()
@@ -588,7 +588,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
         return
-    if type_ in (None, NoneType, Literal[None]):
+    if type_ in (None, NoneType, NoneLiteral):
         yield none_validator
         return
     if type_ is Pattern:

@@ -77,11 +77,16 @@ else:
 if sys.version_info < (3, 8):
     if TYPE_CHECKING:
         from typing_extensions import Literal
+
+        NoneLiteral = Literal[None]
     else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
         try:
             from typing_extensions import Literal
+
+            NoneLiteral = Literal[None]
         except ImportError:
             Literal = None
+            NoneLiteral = None
 
     def get_args(t: Type[Any]) -> Tuple[Any, ...]:
         return getattr(t, '__args__', ())
@@ -92,6 +97,8 @@ if sys.version_info < (3, 8):
 
 else:
     from typing import Literal, get_args as typing_get_args, get_origin as typing_get_origin
+
+    NoneLiteral = Literal[None]
 
     def get_origin(tp: Type[Any]) -> Type[Any]:
         """
