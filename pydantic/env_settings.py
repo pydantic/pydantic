@@ -46,8 +46,7 @@ class BaseSettings(BaseModel):
     ) -> Dict[str, Any]:
         if self.__config__.env_has_priority:
             return deep_update(
-                init_kwargs, self._build_secrets_files(_secrets_dir),
-                self._build_environ(_env_file, _env_file_encoding)
+                init_kwargs, self._build_secrets_files(_secrets_dir), self._build_environ(_env_file, _env_file_encoding)
             )
         else:
             return deep_update(
