@@ -1,0 +1,1 @@
+Add `env_has_priority` config to `BaseSettings` for prioritizing environment variables and secrets. 
