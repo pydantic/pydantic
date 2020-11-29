@@ -852,3 +852,15 @@ def test_secrets_dotenv_precedence(tmp_path):
             secrets_dir = tmp_path
 
     assert Settings(_env_file=e).dict() == {'foo': 'foo_env_value_str'}
+
+
+def test_env_has_priority(env):
+    env.set('FOO', "abc")
+
+    class Settings(BaseSettings):
+        foo: str
+
+        class Config:
+            env_has_priority = True
+
+    assert Settings(foo="123").foo == "abc"
