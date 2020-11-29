@@ -198,8 +198,11 @@ def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
         raise ValueError('__root__ cannot be mixed with other fields')
 
 
-FIELD_DEFAULT_VALUE_UNTOUCHED_TYPES = property, type, classmethod, staticmethod
-UNTOUCHED_TYPES = (FunctionType,) + FIELD_DEFAULT_VALUE_UNTOUCHED_TYPES
+# Annotated fields can have many types like `str`, `int`, `List[str]`, `Callable`...
+# If a field is of type `Callable`, its default value should be a function and cannot to ignored.
+ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (property, type, classmethod, staticmethod)
+# When creating a `BaseModel` instance, we bypass all the methods, properties... added to the model
+UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_TYPES
 
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
 # (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
@@ -254,7 +257,7 @@ class ModelMetaclass(ABCMeta):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, Undefined)
                     if (
-                        isinstance(value, FIELD_DEFAULT_VALUE_UNTOUCHED_TYPES)
+                        isinstance(value, ANNOTATED_FIELD_UNTOUCHED_TYPES)
                         and ann_type != PyObject
                         and not lenient_issubclass(get_origin(ann_type), Type)
                     ):
