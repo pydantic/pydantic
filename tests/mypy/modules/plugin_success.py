@@ -1,6 +1,6 @@
 from typing import ClassVar, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
 from pydantic.dataclasses import dataclass
 
 
@@ -133,3 +133,9 @@ class NestedModel(BaseModel):
 
 
 _ = NestedModel.Model
+
+
+DynamicModel = create_model('DynamicModel', __base__=Model)
+
+dynamic_model = DynamicModel(x=1, y='y')
+dynamic_model.x = 2
