@@ -64,7 +64,7 @@ from pydantic import (
     errors,
     validator,
 )
-from pydantic.typing import NONE_TYPES, Literal
+from pydantic.typing import Literal, NoneType
 
 try:
     import email_validator
@@ -2538,7 +2538,12 @@ def test_deque_json():
     assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
 
 
-@pytest.mark.parametrize('value_type', NONE_TYPES)
+none_value_type_cases = (None, type(None), NoneType)
+if Literal:
+    none_value_type_cases += (Literal[None],)
+
+
+@pytest.mark.parametrize('value_type', none_value_type_cases)
 def test_none(value_type):
     class Model(BaseModel):
         my_none: value_type
