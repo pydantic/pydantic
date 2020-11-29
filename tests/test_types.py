@@ -71,11 +71,6 @@ try:
 except ImportError:
     email_validator = None
 
-try:
-    import typing_extensions
-except ImportError:
-    typing_extensions = None
-
 
 class ConBytesModel(BaseModel):
     v: conbytes(max_length=10) = b'foobar'
@@ -2328,10 +2323,10 @@ def test_generic_without_params_error():
     ]
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_single():
     class Model(BaseModel):
-        a: typing_extensions.Literal['a']
+        a: Literal['a']
 
     Model(a='a')
     with pytest.raises(ValidationError) as exc_info:
@@ -2346,10 +2341,10 @@ def test_literal_single():
     ]
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_multiple():
     class Model(BaseModel):
-        a_or_b: typing_extensions.Literal['a', 'b']
+        a_or_b: Literal['a', 'b']
 
     Model(a_or_b='a')
     Model(a_or_b='b')
