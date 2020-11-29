@@ -63,10 +63,14 @@ __all__ = [
     'conint',
     'PositiveInt',
     'NegativeInt',
+    'NonNegativeInt',
+    'NonPositiveInt',
     'ConstrainedFloat',
     'confloat',
     'PositiveFloat',
     'NegativeFloat',
+    'NonNegativeFloat',
+    'NonPositiveFloat',
     'ConstrainedDecimal',
     'condecimal',
     'UUID1',
@@ -379,6 +383,14 @@ class NegativeInt(ConstrainedInt):
     lt = 0
 
 
+class NonPositiveInt(ConstrainedInt):
+    le = 0
+
+
+class NonNegativeInt(ConstrainedInt):
+    ge = 0
+
+
 class StrictInt(ConstrainedInt):
     strict = True
 
@@ -438,6 +450,14 @@ class PositiveFloat(ConstrainedFloat):
 
 class NegativeFloat(ConstrainedFloat):
     lt = 0
+
+
+class NonPositiveFloat(ConstrainedFloat):
+    le = 0
+
+
+class NonNegativeFloat(ConstrainedFloat):
+    ge = 0
 
 
 class StrictFloat(ConstrainedFloat):
