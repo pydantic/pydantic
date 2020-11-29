@@ -17,6 +17,7 @@ __all__ = (
     'NoneIsNotAllowedError',
     'NoneIsAllowedError',
     'WrongConstantError',
+    'NotNoneError',
     'BoolError',
     'BytesError',
     'DictError',
@@ -158,6 +159,11 @@ class WrongConstantError(PydanticValueError):
     def __str__(self) -> str:
         permitted = ', '.join(repr(v) for v in self.permitted)  # type: ignore
         return f'unexpected value; permitted: {permitted}'
+
+
+class NotNoneError(PydanticTypeError):
+    code = 'not_none'
+    msg_template = 'value is not None'
 
 
 class BoolError(PydanticTypeError):
@@ -467,11 +473,6 @@ class ArbitraryTypeError(PydanticTypeError):
 class ClassError(PydanticTypeError):
     code = 'class'
     msg_template = 'a class is expected'
-
-
-class NotNoneError(PydanticTypeError):
-    code = 'not_none'
-    msg_template = 'value is not None'
 
 
 class SubclassError(PydanticTypeError):
