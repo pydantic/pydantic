@@ -27,10 +27,10 @@ from uuid import UUID
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
+    NONE_TYPES,
     AnyCallable,
     ForwardRef,
-    NoneLiteral,
-    NoneType,
+    Literal,
     all_literal_values,
     display_as_type,
     get_class,
@@ -504,7 +504,7 @@ def any_class_validator(v: Any) -> Type[T]:
     raise errors.ClassError()
 
 
-def none_validator(v: Any) -> NoneLiteral:
+def none_validator(v: Any) -> 'Literal[None]':
     if v is None:
         return v
     raise errors.NotNoneError()
@@ -588,7 +588,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
         return
-    if type_ in (None, NoneType, NoneLiteral):
+    if type_ in NONE_TYPES:
         yield none_validator
         return
     if type_ is Pattern:

@@ -28,10 +28,10 @@ from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
+    NONE_TYPES,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
-    NoneLiteral,
     NoneType,
     display_as_type,
     get_args,
@@ -568,7 +568,7 @@ class ModelField(Representation):
                 return v, errors
 
         if v is None:
-            if self.type_ in (None, NoneType, NoneLiteral):
+            if self.type_ in NONE_TYPES:
                 # keep validating
                 pass
             elif self.allow_none:
