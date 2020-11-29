@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := all
 isort = isort pydantic tests
-black = black -S -l 120 --target-version py38 pydantic tests
+black = black pydantic tests
 
 .PHONY: install-linting
 install-linting:
