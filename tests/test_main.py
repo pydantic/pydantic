@@ -1,5 +1,4 @@
 import sys
-from dataclasses import dataclass as stdlib_dataclass, field
 from enum import Enum
 from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
@@ -19,7 +18,6 @@ from pydantic import (
     root_validator,
     validator,
 )
-from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.typing import Literal
 
 
@@ -1376,47 +1374,3 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
-
-
-def foo(arg1, arg2):
-    return arg1, arg2
-
-
-@pydantic_dataclass
-class HasCallablesDC:
-    non_default_callable: Callable
-    default_callable: Callable = lambda x: foo(x, 'default')
-    default_callable_factory: Callable = field(default=lambda x: foo(x, 'factory'))
-
-
-class HasCallablesModel(BaseModel):
-    non_default_callable: Callable
-    default_callable: Callable = lambda x: foo(x, 'default')
-    default_callable_factory: Callable = Field(default_factory=lambda: lambda x: foo(x, 'factory'))
-
-
-@stdlib_dataclass
-class HasCallablesStdlibDC:
-    non_default_callable: Callable
-    default_callable: Callable = lambda x: foo(x, 'default')
-    default_callable_factory: Callable = field(default_factory=lambda: lambda x: foo(x, 'factory'))
-
-
-@pytest.mark.parametrize('cls', [HasCallablesModel, HasCallablesDC])
-def test_pydantic_callable_field(cls):
-    """pydantic callable fields behaviour should be the same as stdlib dataclass"""
-
-    def non_default_callable(x):
-        return foo(x, 'nondefault')
-
-    a1 = cls(non_default_callable=non_default_callable)
-    a2 = HasCallablesStdlibDC(non_default_callable=non_default_callable)
-
-    # call non_default
-    assert a1.non_default_callable('hello') == a2.non_default_callable('hello')
-
-    # call default_factory
-    assert a1.default_callable_factory('hello') == a2.default_callable_factory('hello')
-
-    # call default
-    assert a1.default_callable('hello') == a2.default_callable('hello')

@@ -2,12 +2,12 @@ import dataclasses
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, Dict, FrozenSet, List, Optional
+from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional
 
 import pytest
 
 import pydantic
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, Field, ValidationError, validator
 
 
 def test_simple():
@@ -795,3 +795,43 @@ def test_forward_stdlib_dataclass_params():
     e.other = 'bulbi2'
     with pytest.raises(dataclasses.FrozenInstanceError):
         e.item.name = 'pika2'
+
+
+def test_pydantic_callable_field():
+    """pydantic callable fields behaviour should be the same as stdlib dataclass"""
+
+    def foo(arg1, arg2):
+        return arg1, arg2
+
+    @pydantic.dataclasses.dataclass
+    class HasCallablesDC:
+        non_default_callable: Callable
+        default_callable: Callable = lambda x: foo(x, 'default')
+        default_callable_factory: Callable = dataclasses.field(default=lambda x: foo(x, 'factory'))
+
+    class HasCallablesModel(BaseModel):
+        non_default_callable: Callable
+        default_callable: Callable = lambda x: foo(x, 'default')
+        default_callable_factory: Callable = Field(default_factory=lambda: lambda x: foo(x, 'factory'))
+
+    @dataclasses.dataclass
+    class HasCallablesStdlibDC:
+        non_default_callable: Callable
+        default_callable: Callable = lambda x: foo(x, 'default')
+        default_callable_factory: Callable = dataclasses.field(default_factory=lambda: lambda x: foo(x, 'factory'))
+
+    def non_default_callable(x):
+        return foo(x, 'nondefault')
+
+    for cls in (HasCallablesModel, HasCallablesDC):
+        a1 = cls(non_default_callable=non_default_callable)
+        a2 = HasCallablesStdlibDC(non_default_callable=non_default_callable)
+
+        # call non_default
+        assert a1.non_default_callable('hello') == a2.non_default_callable('hello')
+
+        # call default_factory
+        assert a1.default_callable_factory('hello') == a2.default_callable_factory('hello')
+
+        # call default
+        assert a1.default_callable('hello') == a2.default_callable('hello')
