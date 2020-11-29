@@ -44,9 +44,15 @@ class BaseSettings(BaseModel):
         _env_file_encoding: Optional[str] = None,
         _secrets_dir: Union[Path, str, None] = None,
     ) -> Dict[str, Any]:
-        return deep_update(
-            self._build_secrets_files(_secrets_dir), self._build_environ(_env_file, _env_file_encoding), init_kwargs
-        )
+        if self.__config__.env_has_priority:
+            return deep_update(
+                init_kwargs, self._build_secrets_files(_secrets_dir),
+                self._build_environ(_env_file, _env_file_encoding)
+            )
+        else:
+            return deep_update(
+                self._build_secrets_files(_secrets_dir), self._build_environ(_env_file, _env_file_encoding), init_kwargs
+            )
 
     def _build_secrets_files(self, _secrets_dir: Union[Path, str, None] = None) -> Dict[str, Optional[str]]:
         """
@@ -130,6 +136,7 @@ class BaseSettings(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
         case_sensitive = False
+        env_has_priority = False
 
         @classmethod
         def prepare_field(cls, field: ModelField) -> None:
