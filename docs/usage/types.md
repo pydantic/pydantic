@@ -11,6 +11,9 @@ with custom properties and validation.
 [Strict Types](#strict-types); if you need to constrain the values allowed (e.g. to require a positive int) see
 [Constrained Types](#constrained-types).
 
+`None`, `type(None)` or `Literal[None]` (equivalent according to [PEP 484](https://www.python.org/dev/peps/pep-0484/#using-none))
+: allows only `None` value
+
 `bool`
 : see [Booleans](#booleans) below for details on how bools are validated and what values are permitted
 
