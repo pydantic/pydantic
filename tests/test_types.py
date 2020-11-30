@@ -2341,21 +2341,24 @@ def test_generic_without_params():
     class Model(BaseModel):
         generic_list: List
         generic_dict: Dict
+        generic_tuple: Tuple
 
-    m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0})
-    assert m.dict() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}}
+    m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0}, generic_tuple=(1, 'q'))
+    assert m.dict() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}, 'generic_tuple': (1, 'q')}
 
 
 def test_generic_without_params_error():
     class Model(BaseModel):
         generic_list: List
         generic_dict: Dict
+        generic_tuple: Tuple
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(generic_list=0, generic_dict=0)
+        Model(generic_list=0, generic_dict=0, generic_tuple=0)
     assert exc_info.value.errors() == [
         {'loc': ('generic_list',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
         {'loc': ('generic_dict',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'},
+        {'loc': ('generic_tuple',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'},
     ]
 
 
