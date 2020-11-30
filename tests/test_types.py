@@ -2558,6 +2558,26 @@ def test_none(value_type):
         my_json_none='null',
     )
 
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'my_none': {'title': 'My None', 'type': 'null'},
+            'my_none_list': {
+                'title': 'My None List',
+                'type': 'array',
+                'items': {'type': 'null'},
+            },
+            'my_none_dict': {
+                'title': 'My None Dict',
+                'type': 'object',
+                'additionalProperties': {'type': 'null'},
+            },
+            'my_json_none': {'title': 'My Json None', 'type': 'null'},
+        },
+        'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
+    }
+
     with pytest.raises(ValidationError) as exc_info:
         Model(
             my_none='qwe',
