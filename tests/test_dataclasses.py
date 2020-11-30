@@ -1,4 +1,5 @@
 import dataclasses
+import pickle
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
@@ -733,7 +734,10 @@ def test_override_builtin_dataclass_nested_schema():
                 'type': 'object',
             }
         },
-        'properties': {'filename': {'title': 'Filename', 'type': 'string'}, 'meta': {'$ref': '#/definitions/Meta'}},
+        'properties': {
+            'filename': {'title': 'Filename', 'type': 'string'},
+            'meta': {'$ref': '#/definitions/Meta'},
+        },
         'required': ['filename', 'meta'],
         'title': 'File',
         'type': 'object',
@@ -795,3 +799,37 @@ def test_forward_stdlib_dataclass_params():
     e.other = 'bulbi2'
     with pytest.raises(dataclasses.FrozenInstanceError):
         e.item.name = 'pika2'
+
+
+def test_pickle_overriden_builtin_dataclass(create_module):
+    module = create_module(
+        # language=Python
+        """\
+import dataclasses
+import pydantic
+
+
+@dataclasses.dataclass
+class BuiltInDataclassForPickle:
+    value: int
+
+class ModelForPickle(pydantic.BaseModel):
+    # pickle can only work with top level classes as it imports them
+
+    dataclass: BuiltInDataclassForPickle
+
+    class Config:
+        validate_assignment = True
+        """
+    )
+    obj = module.ModelForPickle(dataclass=module.BuiltInDataclassForPickle(value=5))
+
+    pickled_obj = pickle.dumps(obj)
+    restored_obj = pickle.loads(pickled_obj)
+
+    assert restored_obj.dataclass.value == 5
+    assert restored_obj == obj
+
+    # ensure the restored dataclass is still a pydantic dataclass
+    with pytest.raises(ValidationError, match='value\n +value is not a valid integer'):
+        restored_obj.dataclass.value = 'value of a wrong type'
