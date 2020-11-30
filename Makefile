@@ -25,7 +25,7 @@ install-benchmarks: install-pydantic
 	pip install -U -r benchmarks/requirements.txt
 
 .PHONY: install
-install: install-testing install-linting
+install: install-testing install-linting install-docs
 	@echo 'installed development requirements'
 
 .PHONY: build-trace
