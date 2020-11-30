@@ -45,13 +45,13 @@ class RGBA:
 # these are not compiled here to avoid import slowdown, they'll be compiled the first time they're used, then cached
 r_hex_short = r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?\s*'
 r_hex_long = r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?\s*'
-_r_255 = r'(\d{1,3}(?:\.\d+)?)'
+_r_255 = r'((?:\d|\d\d|[01]\d\d|2[0-4]\d|25[0-4])(?:\.\d+)?|255(?:\.0+)?)'
 _r_comma = r'\s*,\s*'
 r_rgb = fr'\s*rgb\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}\)\s*'
-_r_alpha = r'(\d(?:\.\d+)?|\.\d+|\d{1,2}%)'
+_r_alpha = r'(0(?:\.\d+)?|1(?:\.0+)?|\.\d+|\d{1,2}%)'
 r_rgba = fr'\s*rgba\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_alpha}\s*\)\s*'
 _r_h = r'(-?\d+(?:\.\d+)?|-?\.\d+)(deg|rad|turn)?'
-_r_sl = r'(\d{1,3}(?:\.\d+)?)%'
+_r_sl = r'(\d\d?(?:\.\d+)?|100(?:\.0+)?)%'
 r_hsl = fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}\s*\)\s*'
 r_hsla = fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}{_r_comma}{_r_alpha}\s*\)\s*'
 
