@@ -81,7 +81,7 @@ class GenericModel(BaseModel):
         # updated type hints.
         model_name = cls.__concrete_name__(params)
         validators = gather_all_validators(cls)
-        fields = _build_generic_fields(cls.__fields__, concrete_type_hints, typevars_map)
+        fields = _build_generic_fields(cls.__fields__, concrete_type_hints)
         model_module, called_globally = get_caller_frame_info()
         created_model = cast(
             Type[GenericModel],  # casting ensures mypy is aware of the __concrete__ and __parameters__ attributes
@@ -167,12 +167,11 @@ def replace_types(type_: Any, type_map: Dict[Any, Any]) -> Any:
             # If all arguments are the same, there is no need to modify the
             # type or create a new object at all
             return type_
-        if origin_type is not None:
+        if origin_type is not None and isinstance(type_, typing_base) and not isinstance(origin_type, typing_base):
             # In python < 3.9 generic aliases don't exist so any of these like `list`,
             # `type` or `collections.abc.Callable` need to be translated.
             # See: https://www.python.org/dev/peps/pep-0585
-            if isinstance(type_, typing_base) and not isinstance(origin_type, typing_base):
-                origin_type = getattr(typing, type_._name)
+            origin_type = getattr(typing, type_._name)
         return origin_type[resolved_type_args]
 
     # We handle pydantic generic models separately as they don't have the same
@@ -223,24 +222,8 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
 def _build_generic_fields(
     raw_fields: Dict[str, ModelField],
     concrete_type_hints: Dict[str, Type[Any]],
-    typevars_map: Dict[TypeVarType, Type[Any]],
 ) -> Dict[str, Tuple[Type[Any], FieldInfo]]:
-    return {
-        k: (_parameterize_generic_field(v, typevars_map), raw_fields[k].field_info)
-        for k, v in concrete_type_hints.items()
-        if k in raw_fields
-    }
-
-
-def _parameterize_generic_field(field_type: Type[Any], typevars_map: Dict[TypeVarType, Type[Any]]) -> Type[Any]:
-    try:
-        is_model = isinstance(field_type, GenericModel) and not field_type.__concrete__
-    except TypeError:
-        is_model = False
-    if is_model:
-        parameters = tuple(typevars_map.get(param, param) for param in field_type.__parameters__)
-        field_type = field_type[parameters]
-    return field_type
+    return {k: (v, raw_fields[k].field_info) for k, v in concrete_type_hints.items() if k in raw_fields}
 
 
 def get_caller_frame_info() -> Tuple[Optional[str], bool]:

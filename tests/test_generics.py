@@ -796,6 +796,9 @@ def test_replace_types():
     assert replace_types(Callable[[int, str, T], T], {T: int}) == Callable[[int, str, int], int]
     assert replace_types(T, {}) is T
     assert replace_types(Model[List[T]], {T: int}) == Model[List[T]][int]
+    assert replace_types(T, {}) is T
+    assert replace_types(Type[T], {T: int}) == Type[int]
+    assert replace_types(Model[T], {T: T}) == Model[T]
 
     if sys.version_info >= (3, 9):
         # Check generic aliases (subscripted builtin types) to make sure they
