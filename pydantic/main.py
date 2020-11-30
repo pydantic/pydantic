@@ -406,7 +406,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             if errors:
                 raise ValidationError(errors, self.__class__)
 
-        self.__dict__[name] = value
+            # update the whole __dict__ as other values than just `value`
+            # may be changed (e.g. with `root_validator`)
+            object_setattr(self, '__dict__', new_values)
+        else:
+            self.__dict__[name] = value
+
         self.__fields_set__.add(name)
 
     def __getstate__(self) -> 'DictAny':
