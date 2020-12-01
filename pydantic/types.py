@@ -39,6 +39,7 @@ from .validators import (
     path_validator,
     set_validator,
     str_validator,
+    strict_bytes_validator,
     strict_float_validator,
     strict_int_validator,
     strict_str_validator,
@@ -84,6 +85,7 @@ __all__ = [
     'SecretStr',
     'SecretBytes',
     'StrictBool',
+    'StrictBytes',
     'StrictInt',
     'StrictFloat',
     'PaymentCardNumber',
@@ -112,6 +114,7 @@ class ConstrainedBytes(bytes):
     strip_whitespace = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
+    strict: bool = False
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -119,9 +122,13 @@ class ConstrainedBytes(bytes):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield bytes_validator
+        yield strict_bytes_validator if cls.strict else bytes_validator
         yield constr_strip_whitespace
         yield constr_length_validator
+
+
+class StrictBytes(ConstrainedBytes):
+    strict = True
 
 
 def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_length: int = None) -> Type[bytes]:
