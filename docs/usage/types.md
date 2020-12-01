@@ -724,14 +724,16 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 
 ## Strict Types
 
-You can use the `StrictStr`, `StrictInt`, `StrictFloat`, and `StrictBool` types
+You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types 
 to prevent coercion from compatible types.
 These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
-This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedFloat` and
-`ConstrainedInt` classes and can be combined with a multitude of complex validation rules.
+This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedBytes`, 
+`ConstrainedFloat` and `ConstrainedInt` classes and can be combined with a multitude of complex validation rules.
 
 The following caveats apply:
 
+- `StrictBytes` (and the `strict` option of `ConstrainedBytes`) will accept both `bytes`,
+   and `bytearray` types. 
 - `StrictInt` (and the `strict` option of `ConstrainedInt`) will not accept `bool` types,
     even though `bool` is a subclass of `int` in Python. Other subclasses will work.
 - `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.

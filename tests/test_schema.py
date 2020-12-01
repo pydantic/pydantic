@@ -42,6 +42,10 @@ from pydantic.types import (
     NoneBytes,
     NoneStr,
     NoneStrBytes,
+    NonNegativeFloat,
+    NonNegativeInt,
+    NonPositiveFloat,
+    NonPositiveInt,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -370,6 +374,33 @@ def test_enum_and_model_have_same_behaviour():
         },
         'required': ['enum', 'titled_enum', 'model', 'titled_model'],
         'title': 'Foo',
+        'type': 'object',
+    }
+
+
+def test_list_enum_schema_extras():
+    class FoodChoice(str, Enum):
+        spam = 'spam'
+        egg = 'egg'
+        chips = 'chips'
+
+    class Model(BaseModel):
+        foods: List[FoodChoice] = Field(examples=[['spam', 'egg']])
+
+    assert Model.schema() == {
+        'definitions': {
+            'FoodChoice': {
+                'description': 'An enumeration.',
+                'enum': ['spam', 'egg', 'chips'],
+                'title': 'FoodChoice',
+                'type': 'string',
+            }
+        },
+        'properties': {
+            'foods': {'type': 'array', 'items': {'$ref': '#/definitions/FoodChoice'}, 'examples': [['spam', 'egg']]},
+        },
+        'required': ['foods'],
+        'title': 'Model',
         'type': 'object',
     }
 
@@ -754,6 +785,8 @@ def test_secret_types(field_type, inner_type):
         (conint(multiple_of=5), {'multipleOf': 5}),
         (PositiveInt, {'exclusiveMinimum': 0}),
         (NegativeInt, {'exclusiveMaximum': 0}),
+        (NonNegativeInt, {'minimum': 0}),
+        (NonPositiveInt, {'maximum': 0}),
     ],
 )
 def test_special_int_types(field_type, expected_schema):
@@ -780,6 +813,8 @@ def test_special_int_types(field_type, expected_schema):
         (confloat(multiple_of=5), {'multipleOf': 5}),
         (PositiveFloat, {'exclusiveMinimum': 0}),
         (NegativeFloat, {'exclusiveMaximum': 0}),
+        (NonNegativeFloat, {'minimum': 0}),
+        (NonPositiveFloat, {'maximum': 0}),
         (ConstrainedDecimal, {}),
         (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
