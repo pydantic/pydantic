@@ -110,6 +110,15 @@ def _process_class(
         if post_init_post_parse is not None:
             post_init_post_parse(self, *initvars)
 
+    def _converted_pydantic_dataclass_eq(self: 'Dataclass', other: Any) -> bool:
+        """
+        To still support equality between a stdlib dataclass and its converted pydantic dataclass
+        we add a custom `__eq__` method on the converted pydantic dataclass
+        """
+        stdlib_dc = self.__class__.__bases__[0]
+        dc_fields = {k: v for k, v in self.__dict__.items() if k != '__initialised__'}
+        return stdlib_dc(**dc_fields) == other
+
     # If the class is already a dataclass, __post_init__ will not be called automatically
     # so no validation will be added.
     # We hence create dynamically a new dataclass:
@@ -129,6 +138,7 @@ def _process_class(
             (_cls,),
             {
                 '__annotations__': _cls.__annotations__,
+                '__eq__': _converted_pydantic_dataclass_eq,
                 '__post_init__': _pydantic_post_init,
                 # attrs for pickle to find this class
                 '__module__': __name__,

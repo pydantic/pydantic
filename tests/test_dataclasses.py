@@ -3,7 +3,7 @@ import pickle
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, Dict, FrozenSet, List, Optional
+from typing import Any, ClassVar, Dict, FrozenSet, Generator, List, Optional, Tuple
 
 import pytest
 
@@ -833,3 +833,47 @@ class ModelForPickle(pydantic.BaseModel):
     # ensure the restored dataclass is still a pydantic dataclass
     with pytest.raises(ValidationError, match='value\n +value is not a valid integer'):
         restored_obj.dataclass.value = 'value of a wrong type'
+
+
+def gen_dataclasses_tuple() -> Generator[Tuple[Any, Any, bool], None, None]:
+    @dataclasses.dataclass(frozen=True)
+    class StdLibFoo:
+        a: str
+        b: int
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class PydanticFoo:
+        a: str
+        b: int
+
+    @dataclasses.dataclass(frozen=True)
+    class StdLibBar:
+        c: StdLibFoo
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class PydanticBar:
+        c: PydanticFoo
+
+    @dataclasses.dataclass(frozen=True)
+    class StdLibBaz:
+        c: PydanticFoo
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class PydanticBaz:
+        c: StdLibFoo
+
+    yield StdLibFoo, StdLibBar, True
+    yield PydanticFoo, PydanticBar, True
+    yield PydanticFoo, StdLibBaz, True
+    yield StdLibFoo, PydanticBaz, False
+
+
+@pytest.mark.parametrize('Dataclass1,Dataclass2,is_identical', gen_dataclasses_tuple())
+def test_dataclass_equality(Dataclass1, Dataclass2, is_identical):
+    foo = Dataclass1(a='Foo', b=1)
+    bar = Dataclass2(c=foo)
+
+    assert dataclasses.asdict(foo) == dataclasses.asdict(bar.c)
+    assert dataclasses.astuple(foo) == dataclasses.astuple(bar.c)
+    assert (foo is bar.c) is is_identical
+    assert foo == bar.c

@@ -1,0 +1,1 @@
+fix: stdlib `dataclass` converted into _pydantic_ `dataclass` still equals its stdlib `dataclass` equivalent
