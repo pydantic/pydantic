@@ -109,8 +109,13 @@ you can automatically generate aliases using `alias_generator`:
 _(This script is complete, it should run "as is")_
 
 Here camel case refers to ["upper camel case"](https://en.wikipedia.org/wiki/Camel_case) aka pascal case
-e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`,
-it should be trivial to modify the `to_camel` function above.
+e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`, an alternative version of `to_camel` might be:
+
+``` py
+def to_camel(string: str) -> str:
+    first, *rest = string.split("_")
+    return first + "".join(word.capitalize() for word in rest)
+```
 
 ## Alias Precedence
 
