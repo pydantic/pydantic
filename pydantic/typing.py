@@ -177,9 +177,9 @@ __all__ = (
 
 
 NoneType = None.__class__
-NONE_TYPES: Tuple[Any, ...] = (None, NoneType)
+NONE_TYPES: Set[Any] = {None, NoneType}
 if Literal:
-    NONE_TYPES += (Literal[None],)
+    NONE_TYPES.add(Literal[None])
 
 
 def display_as_type(v: Type[Any]) -> str:
