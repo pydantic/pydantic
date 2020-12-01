@@ -260,7 +260,9 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
     f_schema: Dict[str, Any] = {}
 
     if lenient_issubclass(field.type_, Enum):
-        # schema is already updated by `enum_process_schema`
+        # schema is already updated by `enum_process_schema`; just update with field extra
+        if field.field_info.extra:
+            f_schema.update(field.field_info.extra)
         return f_schema
 
     if lenient_issubclass(field.type_, (str, bytes)):

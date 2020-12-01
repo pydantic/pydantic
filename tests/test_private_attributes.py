@@ -1,9 +1,13 @@
-from typing import ClassVar
+import sys
+from typing import ClassVar, Generic, TypeVar
 
 import pytest
 
 from pydantic import BaseModel, Extra, PrivateAttr
 from pydantic.fields import Undefined
+from pydantic.generics import GenericModel
+
+skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 
 
 def test_private_attribute():
@@ -55,6 +59,8 @@ def test_private_attribute_factory():
 
 def test_private_attribute_annotation():
     class Model(BaseModel):
+        """The best model"""
+
         __foo__: str
 
         class Config:
@@ -63,6 +69,7 @@ def test_private_attribute_annotation():
     assert Model.__slots__ == {'__foo__'}
     assert repr(Model.__foo__) == "<member '__foo__' of 'Model' objects>"
     assert Model.__private_attributes__ == {'__foo__': PrivateAttr(Undefined)}
+    assert repr(Model.__doc__) == "'The best model'"
 
     m = Model()
     with pytest.raises(AttributeError):
@@ -177,3 +184,19 @@ def test_config_override_init():
     m = MyModel(x='hello')
     assert m.dict() == {'x': 'hello'}
     assert m._private_attr == 123
+
+
+@skip_36
+def test_generic_private_attribute():
+    T = TypeVar('T')
+
+    class Model(GenericModel, Generic[T]):
+        value: T
+        _private_value: T
+
+        class Config:
+            underscore_attrs_are_private = True
+
+    m = Model[int](value=1, _private_attr=3)
+    m._private_value = 3
+    assert m.dict() == {'value': 1}

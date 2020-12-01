@@ -666,6 +666,28 @@ def test_validating_assignment_post_root_validator_fail():
     ]
 
 
+def test_root_validator_many_values_change():
+    """It should run root_validator on assignment and update ALL concerned fields"""
+
+    class Rectangle(BaseModel):
+        width: float
+        height: float
+        area: float = None
+
+        class Config:
+            validate_assignment = True
+
+        @root_validator
+        def set_area(cls, values):
+            values['area'] = values['width'] * values['height']
+            return values
+
+    r = Rectangle(width=1, height=1)
+    assert r.area == 1
+    r.height = 5
+    assert r.area == 5
+
+
 def test_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
 
@@ -956,6 +978,35 @@ def test_dict_exclude_unset_populated_by_alias_with_extra():
 
     assert m.dict(exclude_unset=True) == {'a': 'a', 'c': 'c'}
     assert m.dict(exclude_unset=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
+
+
+def test_exclude_defaults():
+    class Model(BaseModel):
+        mandatory: str
+        nullable_mandatory: Optional[str] = ...
+        facultative: str = 'x'
+        nullable_facultative: Optional[str] = None
+
+    m = Model(mandatory='a', nullable_mandatory=None)
+    assert m.dict(exclude_defaults=True) == {
+        'mandatory': 'a',
+        'nullable_mandatory': None,
+    }
+
+    m = Model(mandatory='a', nullable_mandatory=None, facultative='y', nullable_facultative=None)
+    assert m.dict(exclude_defaults=True) == {
+        'mandatory': 'a',
+        'nullable_mandatory': None,
+        'facultative': 'y',
+    }
+
+    m = Model(mandatory='a', nullable_mandatory=None, facultative='y', nullable_facultative='z')
+    assert m.dict(exclude_defaults=True) == {
+        'mandatory': 'a',
+        'nullable_mandatory': None,
+        'facultative': 'y',
+        'nullable_facultative': 'z',
+    }
 
 
 def test_dir_fields():

@@ -39,6 +39,7 @@ from .validators import (
     path_validator,
     set_validator,
     str_validator,
+    strict_bytes_validator,
     strict_float_validator,
     strict_int_validator,
     strict_str_validator,
@@ -63,10 +64,14 @@ __all__ = [
     'conint',
     'PositiveInt',
     'NegativeInt',
+    'NonNegativeInt',
+    'NonPositiveInt',
     'ConstrainedFloat',
     'confloat',
     'PositiveFloat',
     'NegativeFloat',
+    'NonNegativeFloat',
+    'NonPositiveFloat',
     'ConstrainedDecimal',
     'condecimal',
     'UUID1',
@@ -80,6 +85,7 @@ __all__ = [
     'SecretStr',
     'SecretBytes',
     'StrictBool',
+    'StrictBytes',
     'StrictInt',
     'StrictFloat',
     'PaymentCardNumber',
@@ -108,6 +114,7 @@ class ConstrainedBytes(bytes):
     strip_whitespace = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
+    strict: bool = False
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -115,9 +122,13 @@ class ConstrainedBytes(bytes):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield bytes_validator
+        yield strict_bytes_validator if cls.strict else bytes_validator
         yield constr_strip_whitespace
         yield constr_length_validator
+
+
+class StrictBytes(ConstrainedBytes):
+    strict = True
 
 
 def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_length: int = None) -> Type[bytes]:
@@ -379,6 +390,14 @@ class NegativeInt(ConstrainedInt):
     lt = 0
 
 
+class NonPositiveInt(ConstrainedInt):
+    le = 0
+
+
+class NonNegativeInt(ConstrainedInt):
+    ge = 0
+
+
 class StrictInt(ConstrainedInt):
     strict = True
 
@@ -438,6 +457,14 @@ class PositiveFloat(ConstrainedFloat):
 
 class NegativeFloat(ConstrainedFloat):
     lt = 0
+
+
+class NonPositiveFloat(ConstrainedFloat):
+    le = 0
+
+
+class NonNegativeFloat(ConstrainedFloat):
+    ge = 0
 
 
 class StrictFloat(ConstrainedFloat):

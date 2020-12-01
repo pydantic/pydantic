@@ -307,7 +307,7 @@ class ModelField(Representation):
         required: 'BoolUndefined' = Undefined
         if value is Required:
             required = True
-            value = None
+            value = Ellipsis
         elif value is not Undefined:
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
@@ -346,7 +346,6 @@ class ModelField(Representation):
         Note: this method is **not** idempotent (because _type_analysis is not idempotent),
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
-
         self._set_default_and_type()
         if self.type_.__class__ == ForwardRef:
             # self.type_ is currently a ForwardRef and there's nothing we can do now,
@@ -448,14 +447,19 @@ class ModelField(Representation):
             return
 
         if issubclass(origin, Tuple):  # type: ignore
-            self.shape = SHAPE_TUPLE
-            self.sub_fields = []
-            for i, t in enumerate(get_args(self.type_)):
-                if t is Ellipsis:
-                    self.type_ = get_args(self.type_)[0]
-                    self.shape = SHAPE_TUPLE_ELLIPSIS
-                    return
-                self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
+            # origin == Tuple without item type
+            if not get_args(self.type_):
+                self.type_ = Any
+                self.shape = SHAPE_TUPLE_ELLIPSIS
+            else:
+                self.shape = SHAPE_TUPLE
+                self.sub_fields = []
+                for i, t in enumerate(get_args(self.type_)):
+                    if t is Ellipsis:
+                        self.type_ = get_args(self.type_)[0]
+                        self.shape = SHAPE_TUPLE_ELLIPSIS
+                        return
+                    self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
 
         if issubclass(origin, List):
@@ -605,6 +609,8 @@ class ModelField(Representation):
             e: errors_.PydanticTypeError
             if self.shape == SHAPE_LIST:
                 e = errors_.ListError()
+            elif self.shape in (SHAPE_TUPLE, SHAPE_TUPLE_ELLIPSIS):
+                e = errors_.TupleError()
             elif self.shape == SHAPE_SET:
                 e = errors_.SetError()
             elif self.shape == SHAPE_FROZENSET:

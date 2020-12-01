@@ -43,12 +43,17 @@ from pydantic import (
     NameEmail,
     NegativeFloat,
     NegativeInt,
+    NonNegativeFloat,
+    NonNegativeInt,
+    NonPositiveFloat,
+    NonPositiveInt,
     PositiveFloat,
     PositiveInt,
     PyObject,
     SecretBytes,
     SecretStr,
     StrictBool,
+    StrictBytes,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -1178,15 +1183,17 @@ def test_int_validation():
     class Model(BaseModel):
         a: PositiveInt = None
         b: NegativeInt = None
-        c: conint(gt=4, lt=10) = None
-        d: conint(ge=0, le=10) = None
-        e: conint(multiple_of=5) = None
+        c: NonNegativeInt = None
+        d: NonPositiveInt = None
+        e: conint(gt=4, lt=10) = None
+        f: conint(ge=0, le=10) = None
+        g: conint(multiple_of=5) = None
 
-    m = Model(a=5, b=-5, c=5, d=0, e=25)
-    assert m == {'a': 5, 'b': -5, 'c': 5, 'd': 0, 'e': 25}
+    m = Model(a=5, b=-5, c=0, d=0, e=5, f=0, g=25)
+    assert m == {'a': 5, 'b': -5, 'c': 0, 'd': 0, 'e': 5, 'f': 0, 'g': 25}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-5, b=5, c=-5, d=11, e=42)
+        Model(a=-5, b=5, c=-5, d=5, e=-5, f=11, g=42)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -1202,18 +1209,30 @@ def test_int_validation():
         },
         {
             'loc': ('c',),
+            'msg': 'ensure this value is greater than or equal to 0',
+            'type': 'value_error.number.not_ge',
+            'ctx': {'limit_value': 0},
+        },
+        {
+            'loc': ('d',),
+            'msg': 'ensure this value is less than or equal to 0',
+            'type': 'value_error.number.not_le',
+            'ctx': {'limit_value': 0},
+        },
+        {
+            'loc': ('e',),
             'msg': 'ensure this value is greater than 4',
             'type': 'value_error.number.not_gt',
             'ctx': {'limit_value': 4},
         },
         {
-            'loc': ('d',),
+            'loc': ('f',),
             'msg': 'ensure this value is less than or equal to 10',
             'type': 'value_error.number.not_le',
             'ctx': {'limit_value': 10},
         },
         {
-            'loc': ('e',),
+            'loc': ('g',),
             'msg': 'ensure this value is a multiple of 5',
             'type': 'value_error.number.not_multiple',
             'ctx': {'multiple_of': 5},
@@ -1225,15 +1244,17 @@ def test_float_validation():
     class Model(BaseModel):
         a: PositiveFloat = None
         b: NegativeFloat = None
-        c: confloat(gt=4, lt=12.2) = None
-        d: confloat(ge=0, le=9.9) = None
-        e: confloat(multiple_of=0.5) = None
+        c: NonNegativeFloat = None
+        d: NonPositiveFloat = None
+        e: confloat(gt=4, lt=12.2) = None
+        f: confloat(ge=0, le=9.9) = None
+        g: confloat(multiple_of=0.5) = None
 
-    m = Model(a=5.1, b=-5.2, c=5.3, d=9.9, e=2.5)
-    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 5.3, 'd': 9.9, 'e': 2.5}
+    m = Model(a=5.1, b=-5.2, c=0, d=0, e=5.3, f=9.9, g=2.5)
+    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 0, 'd': 0, 'e': 5.3, 'f': 9.9, 'g': 2.5}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-5.1, b=5.2, c=-5.3, d=9.91, e=4.2)
+        Model(a=-5.1, b=5.2, c=-5.1, d=5.1, e=-5.3, f=9.91, g=4.2)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -1249,23 +1270,68 @@ def test_float_validation():
         },
         {
             'loc': ('c',),
+            'msg': 'ensure this value is greater than or equal to 0',
+            'type': 'value_error.number.not_ge',
+            'ctx': {'limit_value': 0},
+        },
+        {
+            'loc': ('d',),
+            'msg': 'ensure this value is less than or equal to 0',
+            'type': 'value_error.number.not_le',
+            'ctx': {'limit_value': 0},
+        },
+        {
+            'loc': ('e',),
             'msg': 'ensure this value is greater than 4',
             'type': 'value_error.number.not_gt',
             'ctx': {'limit_value': 4},
         },
         {
-            'loc': ('d',),
+            'loc': ('f',),
             'msg': 'ensure this value is less than or equal to 9.9',
             'type': 'value_error.number.not_le',
             'ctx': {'limit_value': 9.9},
         },
         {
-            'loc': ('e',),
+            'loc': ('g',),
             'msg': 'ensure this value is a multiple of 0.5',
             'type': 'value_error.number.not_multiple',
             'ctx': {'multiple_of': 0.5},
         },
     ]
+
+
+def test_strict_bytes():
+    class Model(BaseModel):
+        v: StrictBytes
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+
+    with pytest.raises(ValidationError):
+        Model(v='foostring')
+
+    with pytest.raises(ValidationError):
+        Model(v=42)
+
+    with pytest.raises(ValidationError):
+        Model(v=0.42)
+
+
+def test_strict_bytes_subclass():
+    class MyStrictBytes(StrictBytes):
+        pass
+
+    class Model(BaseModel):
+        v: MyStrictBytes
+
+    a = Model(v=MyStrictBytes(b'foobar'))
+    assert isinstance(a.v, MyStrictBytes)
+    assert a.v == b'foobar'
+
+    b = Model(v=MyStrictBytes(bytearray('foobar', 'utf-8')))
+    assert isinstance(b.v, MyStrictBytes)
+    assert b.v == 'foobar'.encode()
 
 
 def test_strict_str():
@@ -2309,21 +2375,24 @@ def test_generic_without_params():
     class Model(BaseModel):
         generic_list: List
         generic_dict: Dict
+        generic_tuple: Tuple
 
-    m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0})
-    assert m.dict() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}}
+    m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0}, generic_tuple=(1, 'q'))
+    assert m.dict() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}, 'generic_tuple': (1, 'q')}
 
 
 def test_generic_without_params_error():
     class Model(BaseModel):
         generic_list: List
         generic_dict: Dict
+        generic_tuple: Tuple
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(generic_list=0, generic_dict=0)
+        Model(generic_list=0, generic_dict=0, generic_tuple=0)
     assert exc_info.value.errors() == [
         {'loc': ('generic_list',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
         {'loc': ('generic_dict',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'},
+        {'loc': ('generic_tuple',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'},
     ]
 
 
