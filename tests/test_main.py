@@ -18,8 +18,7 @@ from pydantic import (
     root_validator,
     validator,
 )
-from pydantic.fields import Undefined
-from pydantic.typing import Annotated, Literal
+from pydantic.typing import Literal
 
 
 def test_success():
@@ -1426,23 +1425,3 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
-
-
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
-@pytest.mark.parametrize(['value'], [(Undefined,), (Field(default=5),), (Field(default=5, ge=0),)])
-def test_annotated(value):
-    x_hint = Annotated[int, 5]
-
-    class M(BaseModel):
-        x: x_hint = value
-
-    assert M(x=5).x == 5
-
-    # get_type_hints doesn't recognize typing_extensions.Annotated, so will return the full
-    # annotation. 3.9 w/ stock Annotated will return the wrapped type by default, but return the
-    # full thing with the new include_extras flag.
-    if sys.version_info >= (3, 9):
-        assert get_type_hints(M)['x'] is int
-        assert get_type_hints(M, include_extras=True)['x'] == x_hint
-    else:
-        assert get_type_hints(M)['x'] == x_hint

@@ -72,6 +72,11 @@ with custom properties and validation.
 `typing.Any`
 : allows any value include `None`, thus an `Any` field is optional
 
+`typing.Annotated`
+: allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The
+  `Annotated` hint may contain a single call to the [`Field` function](schema.md#typingannotated-fields), but otherwise
+  the additional metadata is ignored and the root type is used.
+
 `typing.TypeVar`
 : constrains the values allowed based on `constraints` or `bound`, see [TypeVar](#typevar)
 

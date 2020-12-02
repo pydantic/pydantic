@@ -160,33 +160,54 @@ else:
         return typing_get_args(tp) or getattr(tp, '__args__', ()) or generic_get_args(tp)
 
 
-if sys.version_info < (3, 9):
+if sys.version_info >= (3, 9):
+    from typing import Annotated
+else:
     if TYPE_CHECKING:
         from typing_extensions import Annotated, _AnnotatedAlias
     else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
         try:
-            from typing_extensions import Annotated, _AnnotatedAlias
+            from typing_extensions import Annotated
+
+            try:
+                from typing_extensions import _AnnotatedAlias
+            except ImportError:
+                # py3.6 typing_extensions doesn't have _AnnotatedAlias, but has AnnotatedMeta, which
+                # will satisfy our `isinstance` checks.
+                from typing_extensions import AnnotatedMeta as _AnnotatedAlias
         except ImportError:
-            Annotated, _AnnotatedAlias = None, None
+            # Create mock Annotated/_AnnotatedAlias values distinct from `None`, which is a valid
+            # `get_origin` return value.
+            class _FalseMeta(type):
+                # Allow short circuiting with "Annotated[...] if Annotated else None".
+                def __bool__(cls):
+                    return False
+
+                # Give a nice suggestion for unguarded use
+                def __getitem__(cls, key):
+                    raise RuntimeError(
+                        'Annotated is not supported in this python version, please `pip install typing-extensions`.'
+                    )
+
+            class Annotated(metaclass=_FalseMeta):
+                pass
+
+            class _AnnotatedAlias(metaclass=_FalseMeta):
+                pass
 
     # Our custom get_{args,origin} for <3.8 and the builtin 3.8 get_{args,origin} don't recognize
     # typing_extensions.Annotated, so wrap them to short-circuit. We still want to use our wrapped
     # get_origins defined above for non-Annotated data.
-    _get_args, _get_origin = get_args, get_origin
 
-    def get_args(tp: Type[Any]) -> Type[Any]:
-        if _AnnotatedAlias is not None and isinstance(tp, _AnnotatedAlias):
+    def get_args(tp: Type[Any], _get_args=get_args) -> Type[Any]:
+        if isinstance(tp, _AnnotatedAlias):
             return tp.__args__ + tp.__metadata__
         return _get_args(tp)
 
-    def get_origin(tp: Type[Any]) -> Type[Any]:
-        if _AnnotatedAlias is not None and isinstance(tp, _AnnotatedAlias):
+    def get_origin(tp: Type[Any], _get_origin=get_origin) -> Type[Any]:
+        if isinstance(tp, _AnnotatedAlias):
             return Annotated
         return _get_origin(tp)
-
-
-else:
-    from typing import Annotated
 
 
 if TYPE_CHECKING:
