@@ -223,7 +223,7 @@ class EnumMemberError(PydanticTypeError):
 
     def __str__(self) -> str:
         permitted = ', '.join(repr(v.value) for v in self.enum_values)  # type: ignore
-        return f'value is not a valid enumeration member; permitted: {permitted}'
+        return f'Value <{self.attempted_value}> is not a valid enumeration member; permitted: {permitted}'
 
 
 class IntegerError(PydanticTypeError):
