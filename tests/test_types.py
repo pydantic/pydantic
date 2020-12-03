@@ -723,7 +723,7 @@ def test_enum_fails():
             'ctx': {'enum_values': [ToolEnum.spanner, ToolEnum.wrench], 'attempted_value': 3},
         }
     ]
-    assert len(exc_info.value.json()) == 217
+    assert len(exc_info.value.json()) == 249
 
 
 def test_int_enum_successful_for_str_int():
