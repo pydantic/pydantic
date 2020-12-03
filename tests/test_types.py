@@ -720,7 +720,8 @@ def test_enum_fails():
             'loc': ('tool',),
             'msg': 'value <3> is not a valid enumeration member; permitted: 1, 2',
             'type': 'type_error.enum',
-            'ctx': {'enum_values': [ToolEnum.spanner, ToolEnum.wrench]},
+            'ctx': {'enum_values': [ToolEnum.spanner, ToolEnum.wrench],
+                    'attempted_value': 3},
         }
     ]
     assert len(exc_info.value.json()) == 217
