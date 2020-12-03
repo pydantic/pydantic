@@ -718,7 +718,7 @@ def test_enum_fails():
     assert exc_info.value.errors() == [
         {
             'loc': ('tool',),
-            'msg': 'value is not a valid enumeration member; permitted: 1, 2',
+            'msg': 'value <3> is not a valid enumeration member; permitted: 1, 2',
             'type': 'type_error.enum',
             'ctx': {'enum_values': [ToolEnum.spanner, ToolEnum.wrench]},
         }
