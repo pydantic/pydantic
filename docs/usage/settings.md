@@ -208,3 +208,117 @@ the selected value is determined as follows (in descending order of priority):
 3. Variables loaded from a dotenv (`.env`) file.
 4. Variables loaded from the secrets directory.
 5. The default field values for the `Settings` model.
+
+### Customise settings sources priority
+
+If the default order of priority doesn't match your needs, it's possible to change it by overriding a config method:
+
+```py
+class Settings(BaseSettings):
+    ...
+    
+    class Config:
+        @classmethod
+        def customise_sources(
+            cls,
+            init_settings: SettingsSourceCallable,
+            env_settings: SettingsSourceCallable,
+            file_secret_settings: SettingsSourceCallable,
+        ) -> Tuple[SettingsSourceCallable, ...]:
+            return env_settings, init_settings, file_secret_settings
+```
+
+By flipping `env_settings` and `init_settings`, environment variables have now precedence on init kwargs.
+
+## Add and remove settings sources
+
+As explained earlier, *pydantic* ships with multiples built-in settings sources.
+However, changing the order of priority might not be enough in some complex environments, and you may need 
+to add a custom settings source:
+
+```py
+def json_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
+    """
+    A simple settings source that loads variables from a JSON file at the project's root.
+    """
+    return json.loads(Path('config.json').read_text().strip())
+
+
+class Settings(BaseSettings):
+    ...
+
+    class Config:
+        @classmethod
+        def customise_sources(
+            cls,
+            init_settings: SettingsSourceCallable,
+            env_settings: SettingsSourceCallable,
+            file_secret_settings: SettingsSourceCallable,
+        ) -> Tuple[SettingsSourceCallable, ...]:
+            return init_settings, env_settings, file_secret_settings, json_config_settings_source
+```
+
+If you want to create reusable and configurable settings source, you can also write a class based settings source:
+
+```py
+class RestSecretSettingsSource:
+    """
+    A configurable settings source that request settings variables on a REST server.
+    """
+    
+    def __init__(self, base_url: str, api_token: str):
+        self.base_url = base_url
+        self.api_token = api_token
+        
+    def retrieve_variable(self, var_name: str) -> Any:
+        response = httpx.get(
+            f'{self.base_url}/{var_name}',
+            headers={'Authorization': f'Bearer {self.api_token}'}
+        )
+        response.raise_for_status()
+        return response.json()['value']
+        
+    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
+        return {
+            field.alias: self.retrieve_variable(var_name=field.name)
+            for field in settings.__fields__.values()
+        }  
+
+
+class Settings(BaseSettings):
+    ...
+
+    class Config:
+        @classmethod
+        def customise_sources(
+            cls,
+            init_settings: SettingsSourceCallable,
+            env_settings: SettingsSourceCallable,
+            file_secret_settings: SettingsSourceCallable,
+        ) -> Tuple[SettingsSourceCallable, ...]:
+            return (
+                init_settings,
+                env_settings,
+                file_secret_settings,
+                RestSecretSettingsSource(api_token='TOKEN', base_url='https://env.lan')
+            )
+```
+
+You might also want to disable a source:
+
+```py
+class Settings(BaseSettings):
+    ...
+
+    class Config:
+        @classmethod
+        def customise_sources(
+            cls,
+            init_settings: SettingsSourceCallable,
+            env_settings: SettingsSourceCallable,
+            file_secret_settings: SettingsSourceCallable,
+        ) -> Tuple[SettingsSourceCallable, ...]:
+            # here we choose to disable entirely environ and .env file sources
+            return init_settings, file_secret_settings
+```
+

@@ -2,12 +2,12 @@ import os
 import sys
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 import pytest
 
 from pydantic import BaseModel, BaseSettings, Field, HttpUrl, NoneStr, SecretStr, ValidationError, dataclasses
-from pydantic.env_settings import SettingsError, read_env_file
+from pydantic.env_settings import SettingsError, SettingsSourceCallable, read_env_file
 
 try:
     import dotenv
@@ -424,8 +424,15 @@ def test_env_takes_precedence(env):
         foo: int
         bar: str
 
-        def _build_values(self, init_kwargs, _env_file, _env_file_encoding, _secrets_dir):
-            return {**init_kwargs, **self._build_environ()}
+        class Config:
+            @classmethod
+            def customise_sources(
+                cls,
+                init_settings: SettingsSourceCallable,
+                env_settings: SettingsSourceCallable,
+                file_secret_settings: SettingsSourceCallable,
+            ) -> Tuple[SettingsSourceCallable, ...]:
+                return env_settings, init_settings
 
     env.set('BAR', 'env setting')
 
@@ -446,7 +453,20 @@ def test_config_file_settings_nornir(env):
 
         def _build_values(self, init_kwargs, _env_file, _env_file_encoding, _secrets_dir):
             config_settings = init_kwargs.pop('__config_settings__')
-            return {**config_settings, **init_kwargs, **self._build_environ()}
+            return {
+                **config_settings,
+                **super()._build_values(init_kwargs, _env_file, _env_file_encoding, _secrets_dir),
+            }
+
+        class Config:
+            @classmethod
+            def customise_sources(
+                cls,
+                init_settings: SettingsSourceCallable,
+                env_settings: SettingsSourceCallable,
+                file_secret_settings: SettingsSourceCallable,
+            ) -> Tuple[SettingsSourceCallable, ...]:
+                return env_settings, init_settings
 
     env.set('PARAM_C', 'env setting c')
 
@@ -852,3 +872,67 @@ def test_secrets_dotenv_precedence(tmp_path):
             secrets_dir = tmp_path
 
     assert Settings(_env_file=e).dict() == {'foo': 'foo_env_value_str'}
+
+
+def test_external_settings_sources_precedence(env):
+    def external_source_0(settings: BaseSettings) -> Dict[str, str]:
+        return {'apple': 'value 0', 'banana': 'value 2'}
+
+    def external_source_1(settings: BaseSettings) -> Dict[str, str]:
+        return {'apple': 'value 1', 'raspberry': 'value 3'}
+
+    class Settings(BaseSettings):
+        apple: str
+        banana: str
+        raspberry: str
+
+        class Config:
+            @classmethod
+            def customise_sources(
+                cls,
+                init_settings: SettingsSourceCallable,
+                env_settings: SettingsSourceCallable,
+                file_secret_settings: SettingsSourceCallable,
+            ) -> Tuple[SettingsSourceCallable, ...]:
+                return init_settings, env_settings, file_secret_settings, external_source_0, external_source_1
+
+    env.set('banana', 'value 1')
+    assert Settings().dict() == {'apple': 'value 0', 'banana': 'value 1', 'raspberry': 'value 3'}
+
+
+def test_external_settings_sources_filter_env_vars():
+    vault_storage = {'user:password': {'apple': 'value 0', 'banana': 'value 2'}}
+
+    class VaultSettingsSource:
+        def __init__(self, user: str, password: str):
+            self.user = user
+            self.password = password
+
+        def __call__(self, settings: BaseSettings) -> Dict[str, str]:
+            vault_vars = vault_storage[f'{self.user}:{self.password}']
+            return {
+                field.alias: vault_vars[field.name]
+                for field in settings.__fields__.values()
+                if field.name in vault_vars
+            }
+
+    class Settings(BaseSettings):
+        apple: str
+        banana: str
+
+        class Config:
+            @classmethod
+            def customise_sources(
+                cls,
+                init_settings: SettingsSourceCallable,
+                env_settings: SettingsSourceCallable,
+                file_secret_settings: SettingsSourceCallable,
+            ) -> Tuple[SettingsSourceCallable, ...]:
+                return (
+                    init_settings,
+                    env_settings,
+                    file_secret_settings,
+                    VaultSettingsSource(user='user', password='password'),
+                )
+
+    assert Settings().dict() == {'apple': 'value 0', 'banana': 'value 2'}
