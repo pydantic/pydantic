@@ -16,7 +16,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Set,
     Tuple,
     Type,
     TypeVar,
@@ -216,8 +215,9 @@ class ModelMetaclass(ABCMeta):
 
         pre_root_validators, post_root_validators = [], []
         private_attributes: Dict[str, ModelPrivateAttr] = {}
-        slots: Set[str] = namespace.get('__slots__', ())
+        slots: SetStr = namespace.get('__slots__', ())
         slots = {slots} if isinstance(slots, str) else set(slots)
+        class_vars: SetStr = set()
 
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
@@ -227,6 +227,7 @@ class ModelMetaclass(ABCMeta):
                 pre_root_validators += base.__pre_root_validators__
                 post_root_validators += base.__post_root_validators__
                 private_attributes.update(base.__private_attributes__)
+                class_vars.update(base.__class_vars__)
 
         config = inherit_config(namespace.get('Config'), config)
         validators = inherit_validators(extract_validators(namespace), validators)
@@ -242,7 +243,6 @@ class ModelMetaclass(ABCMeta):
 
         prepare_config(config, name)
 
-        class_vars = set()
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
             untouched_types = UNTOUCHED_TYPES + config.keep_untouched
@@ -318,6 +318,7 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             '__private_attributes__': private_attributes,
             '__slots__': slots | private_attributes.keys(),
+            '__class_vars__': class_vars,
             **{n: v for n, v in namespace.items() if n not in exclude_from_namespace},
         }
 
@@ -344,6 +345,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __custom_root_type__: bool = False
         __signature__: 'Signature'
         __private_attributes__: Dict[str, Any]
+        __class_vars__: SetStr
         __fields_set__: SetStr = set()
 
     Config = BaseConfig

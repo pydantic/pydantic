@@ -908,6 +908,12 @@ def test_class_var():
 
     assert list(MyModel.__fields__.keys()) == ['c']
 
+    class MyOtherModel(MyModel):
+        a = ''
+        b = 2
+
+    assert list(MyOtherModel.__fields__.keys()) == ['c']
+
 
 def test_fields_set():
     class MyModel(BaseModel):
