@@ -445,11 +445,10 @@ def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     def literal_validator(v: Any) -> Any:
         # Ensure to return the value in `Literal`, not the passed value
         # In some cases they can indeed be different (see `test_literal_validator_str_enum`)
-        for x in allowed_choices_set:
-            if v == x:
-                return x
-        else:
+        intersection = {v} & allowed_choices_set  # order of operands matters
+        if not intersection:
             raise errors.WrongConstantError(given=v, permitted=permitted_choices)
+        return intersection.pop()
 
     return literal_validator
 
