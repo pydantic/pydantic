@@ -134,9 +134,13 @@ class StrictBytes(ConstrainedBytes):
     strict = True
 
 
-def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_length: int = None) -> Type[bytes]:
+def conbytes(
+    *, strip_whitespace: bool = False, lower_str: bool = False, min_length: int = None, max_length: int = None
+) -> Type[bytes]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(strip_whitespace=strip_whitespace, min_length=min_length, max_length=max_length)
+    namespace = dict(
+        strip_whitespace=strip_whitespace, lower_str=lower_str, min_length=min_length, max_length=max_length
+    )
     return type('ConstrainedBytesValue', (ConstrainedBytes,), namespace)
 
 
@@ -262,6 +266,7 @@ class ConstrainedStr(str):
 def constr(
     *,
     strip_whitespace: bool = False,
+    lower_str: bool = False,
     strict: bool = False,
     min_length: int = None,
     max_length: int = None,
@@ -271,6 +276,7 @@ def constr(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        lower_str=lower_str,
         strict=strict,
         min_length=min_length,
         max_length=max_length,

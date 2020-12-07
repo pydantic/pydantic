@@ -112,6 +112,22 @@ def test_constrained_bytes_too_long():
     ]
 
 
+def test_constrained_bytes_lower_enabled():
+    class Model(BaseModel):
+        v: conbytes(lower_str=True)
+
+    m = Model(v=b'ABCD')
+    assert m.v == b'abcd'
+
+
+def test_constrained_bytes_lower_disabled():
+    class Model(BaseModel):
+        v: conbytes(lower_str=False)
+
+    m = Model(v=b'ABCD')
+    assert m.v == b'ABCD'
+
+
 def test_constrained_list_good():
     class ConListModelMax(BaseModel):
         v: conlist(int) = []
@@ -444,6 +460,22 @@ def test_constrained_str_too_long():
             'ctx': {'limit_value': 10},
         }
     ]
+
+
+def test_constrained_str_lower_enabled():
+    class Model(BaseModel):
+        v: constr(lower_str=True)
+
+    m = Model(v='ABCD')
+    assert m.v == 'abcd'
+
+
+def test_constrained_str_lower_disabled():
+    class Model(BaseModel):
+        v: constr(lower_str=False)
+
+    m = Model(v='ABCD')
+    assert m.v == 'ABCD'
 
 
 def test_module_import():
