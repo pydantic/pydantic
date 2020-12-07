@@ -28,6 +28,7 @@ from .utils import import_string, update_not_none
 from .validators import (
     bytes_validator,
     constr_length_validator,
+    constr_lower,
     constr_strip_whitespace,
     decimal_validator,
     float_validator,
@@ -112,6 +113,7 @@ if TYPE_CHECKING:
 
 class ConstrainedBytes(bytes):
     strip_whitespace = False
+    lower_str = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
     strict: bool = False
@@ -124,6 +126,7 @@ class ConstrainedBytes(bytes):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield strict_bytes_validator if cls.strict else bytes_validator
         yield constr_strip_whitespace
+        yield constr_lower
         yield constr_length_validator
 
 
@@ -223,6 +226,7 @@ def conset(item_type: Type[T], *, min_items: int = None, max_items: int = None) 
 
 class ConstrainedStr(str):
     strip_whitespace = False
+    lower_str = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
     curtail_length: OptionalInt = None
@@ -239,6 +243,7 @@ class ConstrainedStr(str):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
+        yield constr_lower
         yield constr_length_validator
         yield cls.validate
 

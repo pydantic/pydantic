@@ -106,6 +106,7 @@ class Extra(str, Enum):
 
 class BaseConfig:
     title = None
+    anystr_lower = False
     anystr_strip_whitespace = False
     min_anystr_length = None
     max_anystr_length = None
