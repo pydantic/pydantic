@@ -562,6 +562,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         [
             bytes_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_lower, 'anystr_lower'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
         ],
     ),
