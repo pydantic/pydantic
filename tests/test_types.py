@@ -1521,6 +1521,34 @@ def test_anystr_strip_whitespace_disabled():
     assert m.bytes_check == b'  456  '
 
 
+def test_anystr_lower_enabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_lower = True
+
+    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+
+    assert m.str_check == 'abcdefg'
+    assert m.bytes_check == b'abcd1fg'
+
+
+def test_anystr_lower_disabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_lower = False
+
+    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+
+    assert m.str_check == 'ABCDefG'
+    assert m.bytes_check == b'abCD1Fg'
+
+
 @pytest.mark.parametrize(
     'type_,value,result',
     [
