@@ -1,5 +1,6 @@
 from collections import deque
 from datetime import datetime
+from enum import Enum
 from itertools import product
 from typing import Dict, List, Optional, Tuple
 
@@ -1133,6 +1134,21 @@ def test_literal_validator():
             'ctx': {'given': 'nope', 'permitted': ('foo',)},
         }
     ]
+
+
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
+def test_literal_validator_str_enum():
+    class Bar(str, Enum):
+        FIZ = 'fiz'
+        FUZ = 'fuz'
+
+    class Foo(BaseModel):
+        bar: Bar
+        barfiz: Literal[Bar.FIZ]
+
+    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz'})
+    assert my_foo.bar is Bar.FIZ
+    assert my_foo.barfiz is Bar.FIZ
 
 
 @pytest.mark.skipif(not Literal, reason='typing_extensions not installed')

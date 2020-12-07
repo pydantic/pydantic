@@ -443,9 +443,13 @@ def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     allowed_choices_set = set(permitted_choices)
 
     def literal_validator(v: Any) -> Any:
-        if v not in allowed_choices_set:
+        # Ensure to return the value in `Literal`, not the passed value
+        # In some cases they can indeed be different (see `test_literal_validator_str_enum`)
+        for x in allowed_choices_set:
+            if v == x:
+                return x
+        else:
             raise errors.WrongConstantError(given=v, permitted=permitted_choices)
-        return v
 
     return literal_validator
 
