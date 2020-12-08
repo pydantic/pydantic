@@ -294,7 +294,7 @@ class RedisDsn(AnyUrl):
     @classmethod
     def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
         defaults = {
-            'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else None,
+            'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
             'port': '6379',
             'path': '/0',
         }
