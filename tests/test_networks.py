@@ -190,6 +190,13 @@ def test_user_no_password():
     assert url.host == 'example.org'
 
 
+def test_user_info_no_user():
+    url = validate_url('http://:password@example.org')
+    assert url.user == ''
+    assert url.password == 'password'
+    assert url.host == 'example.org'
+
+
 def test_at_in_path():
     url = validate_url('https://twitter.com/@handle')
     assert url.scheme == 'https'
