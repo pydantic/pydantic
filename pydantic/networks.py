@@ -298,7 +298,9 @@ class RedisDsn(AnyUrl):
             'port': '6379',
             'path': '/0',
         }
-        parts = {k: v if v else defaults.get(k) for k, v in parts.items()}
+        for key, value in defaults.items():
+            if not parts[key]:
+                parts[key] = value
         return super().validate_parts(parts)
 
 
