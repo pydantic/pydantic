@@ -531,9 +531,15 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
     Moreover if you want to validate default values with `validate_all`,
     *pydantic* will need to call the `default_factory`, which could lead to side effects!
 
+## Automatically excluded attributes
+
+Class variables which begin with an underscore and attributes annotated with `typing.ClassVar` will be
+automatically excluded from the model.
+
 ## Private model attributes
 
-If you need to use internal attributes excluded from model fields, you can declare them using `PrivateAttr`:
+If you need to vary or manipulate internal attributes on instances of the model, you can declare them
+using `PrivateAttr`:
 
 ```py
 {!.tmp_examples/private_attributes.py!}
