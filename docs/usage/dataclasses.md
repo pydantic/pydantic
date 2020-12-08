@@ -59,6 +59,14 @@ them with `pydantic.dataclasses.dataclass`.
 ```
 _(This script is complete, it should run "as is")_
 
+!!! note
+    A _pydantic_ dataclass converted from a stdlib dataclass will still equal its stdlib dataclass equivalent
+
+```py
+{!.tmp_examples/dataclasses_stdlib_to_pydantic_equality.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ### Inherit from stdlib dataclasses
 
 Stdlib dataclasses (nested or not) can also be inherited and _pydantic_ will automatically validate
