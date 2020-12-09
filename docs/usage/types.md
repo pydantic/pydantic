@@ -465,6 +465,10 @@ _(This script is complete, it should run "as is")_
 `SecretStr`
 : string where the value is kept partially secret; see [Secrets](#secret-types)
 
+`Port`
+: type method for standard port numbers (between 0 and 65535 inclusive)
+  
+
 `IPvAnyAddress`
 : allows either an `IPv4Address` or an `IPv6Address`
 

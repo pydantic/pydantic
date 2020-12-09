@@ -46,6 +46,7 @@ from pydantic.types import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    Port,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -787,6 +788,7 @@ def test_secret_types(field_type, inner_type):
         (NegativeInt, {'exclusiveMaximum': 0}),
         (NonNegativeInt, {'minimum': 0}),
         (NonPositiveInt, {'maximum': 0}),
+        (Port, {'minimum': 0, 'maximum': 65535}),
     ],
 )
 def test_special_int_types(field_type, expected_schema):

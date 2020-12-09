@@ -62,6 +62,7 @@ __all__ = [
     'PyObject',
     'ConstrainedInt',
     'conint',
+    'Port',
     'PositiveInt',
     'NegativeInt',
     'NonNegativeInt',
@@ -384,6 +385,11 @@ def conint(
 
 class PositiveInt(ConstrainedInt):
     gt = 0
+
+
+class Port(ConstrainedInt):
+    ge = 0
+    le = 65535
 
 
 class NegativeInt(ConstrainedInt):

@@ -369,6 +369,13 @@ table = [
         'Any argument not passed to the function (not defined) will not be included in the schema.'
     ],
     [
+        'Port',
+        'integer',
+        {'minimum': 0, 'maximum': 65535},
+        'JSON Schema Validation',
+        ''
+    ],
+    [
         'PositiveInt',
         'integer',
         {'exclusiveMinimum': 0},

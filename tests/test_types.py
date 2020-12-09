@@ -47,6 +47,7 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    Port,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -1177,6 +1178,31 @@ def test_sequence_fails(cls, value, errors):
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
     assert exc_info.value.errors() == errors
+
+
+def test_port_validation():
+    class Model(BaseModel):
+        a: Port = None
+        b: Port = None
+
+    m = Model(a=0, b=65535)
+    assert m == {'a': 0, 'b': 65535}
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=-99999, b=99999)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'ensure this value is greater than or equal to 0',
+            'type': 'value_error.number.not_ge',
+            'ctx': {'limit_value': 0},
+        },
+        {
+            'loc': ('b',),
+            'msg': 'ensure this value is less than or equal to 65535',
+            'type': 'value_error.number.not_le',
+            'ctx': {'limit_value': 65535},
+        },
+    ]
 
 
 def test_int_validation():

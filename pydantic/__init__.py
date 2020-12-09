@@ -74,6 +74,7 @@ __all__ = [
     'PyObject',
     'ConstrainedInt',
     'conint',
+    'Port',
     'PositiveInt',
     'NegativeInt',
     'NonNegativeInt',
