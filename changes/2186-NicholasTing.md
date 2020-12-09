@@ -1,1 +1,1 @@
-feat: Added port validation
+feat: Added port validation 0 - 65535 inclusive
