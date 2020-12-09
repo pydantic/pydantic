@@ -66,7 +66,7 @@ class BaseSettings(BaseModel):
             raise SettingsError(f'secrets_dir must reference a directory, not a {path_type(secrets_path)}')
 
         for field in self.__fields__.values():
-            for env_name in field.field_info.extra['env_names']:
+            for env_name in {field.name}:
                 path = secrets_path / env_name
                 if path.is_file():
                     secrets[field.alias] = path.read_text().strip()

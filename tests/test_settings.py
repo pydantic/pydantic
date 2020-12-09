@@ -852,3 +852,20 @@ def test_secrets_dotenv_precedence(tmp_path):
             secrets_dir = tmp_path
 
     assert Settings(_env_file=e).dict() == {'foo': 'foo_env_value_str'}
+
+
+def test_mix_env_variables_secrets(tmp_path, env):
+    p = tmp_path / 'foo'
+    p.write_text('foo_secret_value_str')
+
+    class Settings(BaseSettings):
+        foo: str  # secret
+        bar: str  # env variable
+
+        class Config:
+            env_prefix = 'PIKA_'
+            secrets_dir = tmp_path
+
+    env.set('PIKA_BAR', 'bar_env_value_str')
+
+    assert Settings().dict() == {'foo': 'foo_secret_value_str', 'bar': 'bar_env_value_str'}
