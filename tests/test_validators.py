@@ -1145,10 +1145,17 @@ def test_literal_validator_str_enum():
     class Foo(BaseModel):
         bar: Bar
         barfiz: Literal[Bar.FIZ]
+        fizfuz: Literal[Bar.FIZ, Bar.FUZ]
 
-    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz'})
+    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fiz'})
     assert my_foo.bar is Bar.FIZ
     assert my_foo.barfiz is Bar.FIZ
+    assert my_foo.fizfuz is Bar.FIZ
+
+    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fuz'})
+    assert my_foo.bar is Bar.FIZ
+    assert my_foo.barfiz is Bar.FIZ
+    assert my_foo.fizfuz is Bar.FUZ
 
 
 @pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
