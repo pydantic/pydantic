@@ -128,6 +128,9 @@ class BaseConfig:
     json_encoders: Dict[Type[Any], AnyCallable] = {}
     underscore_attrs_are_private: bool = False
 
+    # Whether or not inherited models as fields should be reconstructed as base model
+    copy_on_model_validation: bool = False
+
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
         fields_value = cls.fields.get(name)
@@ -662,7 +665,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         if isinstance(value, dict):
             return cls(**value)
         elif isinstance(value, cls):
-            return value.copy()
+            return value.copy() if cls.__config__.copy_on_model_validation else value
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
         elif cls.__custom_root_type__:
