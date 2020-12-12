@@ -135,7 +135,6 @@ class GenericModel(BaseModel):
 
         This method can be overridden to achieve a custom naming scheme for GenericModels.
         """
-        param_names: List[str] = []
         param_names = [display_as_type(param) for param in params]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
