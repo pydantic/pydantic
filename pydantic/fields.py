@@ -94,6 +94,7 @@ class FieldInfo(Representation):
         'max_items',
         'min_length',
         'max_length',
+        'read_only',
         'regex',
         'extra',
     )
@@ -115,6 +116,7 @@ class FieldInfo(Representation):
         self.max_items = kwargs.pop('max_items', None)
         self.min_length = kwargs.pop('min_length', None)
         self.max_length = kwargs.pop('max_length', None)
+        self.read_only = kwargs.pop('read_only', None)
         self.regex = kwargs.pop('regex', None)
         self.extra = kwargs
 
@@ -136,6 +138,7 @@ def Field(
     max_items: int = None,
     min_length: int = None,
     max_length: int = None,
+    read_only: bool = None,
     regex: str = None,
     **extra: Any,
 ) -> Any:
@@ -165,6 +168,8 @@ def Field(
       schema will have a ``maximum`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
       schema will have a ``maxLength`` validation keyword
+    :param read_only: a boolean which defaults to False. When True, the field raises a TypeError if the field is
+      assigned on an instance.  The BaseModel Config must set validate_assignment to True
     :param regex: only applies to strings, requires the field match agains a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
     :param **extra: any additional keyword arguments will be added as is to the schema
@@ -188,6 +193,7 @@ def Field(
         max_items=max_items,
         min_length=min_length,
         max_length=max_length,
+        read_only=read_only,
         regex=regex,
         **extra,
     )
@@ -297,7 +303,7 @@ class ModelField(Representation):
         config: Type['BaseConfig'],
     ) -> 'ModelField':
         field_info_from_config = config.get_field_info(name)
-        from .schema import get_annotation_from_field_info
+        from .schema import check_unused_validation_assignment_constraints, get_annotation_from_field_info
 
         if isinstance(value, FieldInfo):
             field_info = value
@@ -312,6 +318,8 @@ class ModelField(Representation):
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
         annotation = get_annotation_from_field_info(annotation, field_info, name)
+        check_unused_validation_assignment_constraints(field_info, name, config.validate_assignment)
+
         return cls(
             name=name,
             type_=annotation,

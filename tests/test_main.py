@@ -1425,3 +1425,22 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
+
+
+def test_read_only_field():
+    """assigning a read_only field should raise a TypeError"""
+
+    class Entry(BaseModel):
+        id: float = Field(read_only=True)
+        val: float
+
+        class Config:
+            validate_assignment = True
+
+    r = Entry(id=1, val=100)
+    assert r.val == 100
+    r.val = 101
+    assert r.val == 101
+    assert r.id == 1
+    with pytest.raises(TypeError, match='"id" is read_only and cannot be assigned'):
+        r.id = 2

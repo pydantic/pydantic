@@ -862,6 +862,10 @@ _field_constraints = {
     'max_items',
 }
 
+_assignment_field_constraints = {
+    'read_only',
+}
+
 
 def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field_name: str) -> Type[Any]:  # noqa: C901
     """
@@ -946,6 +950,43 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
 
     ans = go(annotation)
 
+    check_unused_constraints(constraints, used_constraints, field_name)
+
+    return ans
+
+
+def check_unused_validation_assignment_constraints(
+    field_info: FieldInfo, field_name: str, validate_assignment: bool
+) -> None:
+    """
+    Checks for unused constraints for validation_assignment.
+
+    :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
+    :param field_name: name of the field for use in error messages
+    :param validate_assignment: validate_assignment value of the Config on the BaseModel
+    :return: None, raises ValueError if constraints are unused
+    """
+
+    constraints = {f for f in _assignment_field_constraints if getattr(field_info, f) is not None}
+    if not constraints:
+        return
+    used_constraints: Set[str] = set()
+
+    if validate_assignment:
+        used_constraints.update(('read_only',))
+
+    check_unused_constraints(constraints, used_constraints, field_name)
+
+
+def check_unused_constraints(constraints: Set[Any], used_constraints: Set[Any], field_name: str) -> None:
+    """
+    Compares constraints to used_constraints and raises a ValueError if there are unused constraints
+
+    :param constraints: a set of constraints on the field
+    :param used_constraints: a set of used_constraints on the field
+    :param field_name: name of the field for use in error messages
+    :return: None, raises ValueError if constraints are unused
+    """
     unused_constraints = constraints - used_constraints
     if unused_constraints:
         raise ValueError(
@@ -953,8 +994,6 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
             f'{", ".join(unused_constraints)}. '
             f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
         )
-
-    return ans
 
 
 def normalize_name(name: str) -> str:
