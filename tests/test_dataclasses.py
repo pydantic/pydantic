@@ -8,7 +8,7 @@ from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional
 import pytest
 
 import pydantic
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, Extra, ValidationError, validator
 
 
 def test_simple():
@@ -945,3 +945,15 @@ def test_keeps_custom_properties():
         instance = cls(a=test_string)
         assert instance._special_property == 1
         assert instance.a == test_string
+
+
+def test_allow_extra():
+    class C:
+        extra = Extra.ignore
+
+    @pydantic.dataclasses.dataclass(config=C)
+    class Foo:
+        a: str
+        b: str
+
+    Foo(**{"a": "bar", "b": "foo", "c": 1})

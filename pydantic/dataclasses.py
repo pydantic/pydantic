@@ -4,7 +4,7 @@ from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
-from .main import create_model, validate_model
+from .main import Extra, create_model, validate_model
 from .typing import resolve_annotations
 from .utils import ClassAttribute
 
@@ -187,6 +187,13 @@ def _process_class(
     cls.__pydantic_model__ = create_model(
         cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **field_definitions
     )
+
+    if getattr(config, 'extra', Extra.forbid) is not Extra.forbid:
+        def allow_extra_init(self, *args, **kwargs):
+            self.__original_init__(*args, **{k: v for k, v in kwargs.items() if k in self.__annotations__})
+
+        cls.__original_init__ = cls.__init__
+        cls.__init__ = allow_extra_init
 
     cls.__initialised__ = False
     cls.__validate__ = classmethod(_validate_dataclass)  # type: ignore[assignment]
