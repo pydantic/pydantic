@@ -277,6 +277,8 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
                 f_schema[keyword] = attr
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
+    if field.field_info is not None and field.field_info.read_only:
+        f_schema['readOnly'] = True
     if field.field_info.extra:
         f_schema.update(field.field_info.extra)
     modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
