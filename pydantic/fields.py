@@ -25,7 +25,7 @@ from typing import (
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
-from .errors import NoneIsNotAllowedError
+from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
     Callable,
@@ -563,6 +563,12 @@ class ModelField(Representation):
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
+
+        if self.type_.__class__ is ForwardRef:
+            error_msg = f'field "{self.name}" not yet prepared so type is still a ForwardRef'
+            if cls is not None:
+                error_msg += f', you might need to call {cls.__name__}.update_forward_refs().'
+            raise ConfigError(error_msg)
 
         errors: Optional['ErrorList']
         if self.pre_validators:
