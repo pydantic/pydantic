@@ -27,9 +27,13 @@ def test_success():
         a: float
         b: int = 10
 
+        def get_double_a(self) -> float:
+            return self.a * 2
+
     m = Model(a=10.2)
     assert m.a == 10.2
     assert m.b == 10
+    assert m.get_double_a() == 20.4
 
 
 class UltraSimpleModel(BaseModel):
