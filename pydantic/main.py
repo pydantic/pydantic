@@ -360,11 +360,15 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)
         if validation_error:
             raise validation_error
+        if values is None:
+            raise TypeError(
+                'BaseModel.__init__ received `None` values. Are you forgetting to return `values` in a root validator?'
+            )
         object_setattr(__pydantic_self__, '__dict__', values)
         object_setattr(__pydantic_self__, '__fields_set__', fields_set)
         __pydantic_self__._init_private_attributes()
 
-    @no_type_check
+    @no_type_check  # noqa: C901 (ignore complexity)
     def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
         if name in self.__private_attributes__:
             return object_setattr(self, name, value)
