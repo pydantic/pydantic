@@ -844,6 +844,20 @@ def test_dict():
         v: dict
 
     assert Model(v={1: 10, 2: 20}).v == {1: 10, 2: 20}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[(1, 2), (3, 4)])
+    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
+
+
+def test_dict_loose():
+    class Model(BaseModel):
+        v: dict
+
+        class Config:
+            loose_dict_validator = True
+
+    assert Model(v={1: 10, 2: 20}).v == {1: 10, 2: 20}
     assert Model(v=[(1, 2), (3, 4)]).v == {1: 2, 3: 4}
 
     with pytest.raises(ValidationError) as exc_info:

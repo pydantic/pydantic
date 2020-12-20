@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         __initialised__: bool
         __post_init_original__: Optional[Callable[..., None]]
         __processed__: Optional[ClassAttribute]
+        __config__: Type[BaseConfig]
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass
@@ -87,7 +88,7 @@ def _process_class(
     order: bool,
     unsafe_hash: bool,
     frozen: bool,
-    config: Optional[Type[Any]],
+    config: Optional[Type['BaseConfig']],
 ) -> Type['Dataclass']:
     import dataclasses
 
@@ -161,13 +162,15 @@ def _process_class(
         cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **fields
     )
 
+    cls.__config__ = cls.__pydantic_model__.__config__
+
     cls.__initialised__ = False
     cls.__validate__ = classmethod(_validate_dataclass)  # type: ignore[assignment]
     cls.__get_validators__ = classmethod(_get_validators)  # type: ignore[assignment]
     if post_init_original:
         cls.__post_init_original__ = post_init_original
 
-    if cls.__pydantic_model__.__config__.validate_assignment and not frozen:
+    if cls.__config__.validate_assignment and not frozen:
         cls.__setattr__ = setattr_validate_assignment  # type: ignore[assignment]
 
     return cls
@@ -197,7 +200,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Type[Any] = None,
+    config: Optional[Type['BaseConfig']] = None,
 ) -> Type['Dataclass']:
     ...
 
@@ -211,7 +214,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Type[Any] = None,
+    config: Optional[Type['BaseConfig']] = None,
 ) -> Union[Callable[[Type[Any]], Type['Dataclass']], Type['Dataclass']]:
     """
     Like the python standard lib dataclasses but with type validation.

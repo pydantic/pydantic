@@ -151,6 +151,9 @@ def test_typed_dict(value, result):
     class Model(BaseModel):
         v: Dict[str, int] = ...
 
+        class Config:
+            loose_dict_validator = True
+
     assert Model(v=value).v == result
 
 

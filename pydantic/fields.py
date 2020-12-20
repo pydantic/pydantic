@@ -703,7 +703,7 @@ class ModelField(Representation):
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         try:
-            v_iter = dict_validator(v)
+            v_iter = dict_validator(v, getattr(cls, '__config__', None))
         except TypeError as exc:
             return v, ErrorWrapper(exc, loc)
 

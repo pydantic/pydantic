@@ -128,6 +128,8 @@ class BaseConfig:
     json_encoders: Dict[Type[Any], AnyCallable] = {}
     underscore_attrs_are_private: bool = False
 
+    loose_dict_validator: bool = False
+
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
         fields_value = cls.fields.get(name)

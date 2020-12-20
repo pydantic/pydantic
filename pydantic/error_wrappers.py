@@ -46,10 +46,7 @@ class ValidationError(Representation, ValueError):
 
     def errors(self) -> List[Dict[str, Any]]:
         if self._error_cache is None:
-            try:
-                config = self.model.__config__  # type: ignore
-            except AttributeError:
-                config = self.model.__pydantic_model__.__config__  # type: ignore
+            config = self.model.__config__
             self._error_cache = list(flatten_errors(self.raw_errors, config))
         return self._error_cache
 

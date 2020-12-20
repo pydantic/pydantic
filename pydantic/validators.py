@@ -15,6 +15,7 @@ from typing import (
     FrozenSet,
     Generator,
     List,
+    Optional,
     Pattern,
     Set,
     Tuple,
@@ -209,13 +210,16 @@ def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
         raise errors.DictError()
 
 
-def dict_validator(v: Any) -> Dict[Any, Any]:
+def dict_validator(v: Any, config: Optional[Type['BaseConfig']]) -> Dict[Any, Any]:
     if isinstance(v, dict):
         return v
 
-    try:
-        return dict(v)
-    except (TypeError, ValueError):
+    if config is not None and config.loose_dict_validator:
+        try:
+            return dict(v)
+        except (TypeError, ValueError):
+            raise errors.DictError()
+    else:
         raise errors.DictError()
 
 
