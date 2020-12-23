@@ -50,6 +50,10 @@ if TYPE_CHECKING:
     Number = Union[int, float, Decimal]
     StrBytes = Union[str, bytes]
 
+    class TypedDict(Dict[str, Any]):
+        __annotations__: Dict[str, Type[Any]]
+        __total__: bool
+
 
 def str_validator(v: Any) -> Union[str]:
     if isinstance(v, str):
@@ -549,16 +553,16 @@ def make_named_tuple_validator(type_: Type[NamedTupleT]) -> Callable[[Tuple[Any,
     return named_tuple_validator
 
 
-def make_typed_dict_validator(type_: Type[Dict[str, Any]]) -> Callable[[Any], Dict[str, Any]]:
+def make_typed_dict_validator(type_: Type['TypedDict']) -> Callable[[Any], Dict[str, Any]]:
     from .main import create_model
 
     field_definitions: Dict[str, Any] = {
-        field_name: (field_type, ... if field_name in type_.__required_keys__ else None)
+        field_name: (field_type, ... if type_.__total__ else None)
         for field_name, field_type in type_.__annotations__.items()
     }
     TypedDictModel: Type['BaseModel'] = create_model('TypedDictModel', **field_definitions)
 
-    def typed_dict_validator(values: Dict[str, Any]) -> Dict[str, Any]:
+    def typed_dict_validator(values: 'TypedDict') -> Dict[str, Any]:
         return TypedDictModel(**values).dict(exclude_unset=True)
 
     return typed_dict_validator
