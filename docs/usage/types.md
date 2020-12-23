@@ -85,8 +85,16 @@ with custom properties and validation.
 `typing.Tuple`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
+`subclass of typing.NamedTuple (or collections.namedtuple)`
+: Same as `tuple` but instantiates with the given namedtuple.  
+ _pydantic_ will validate the tuple if you use `typing.NamedTuple` since fields are annotated.  
+  If you use `collections.namedtuple`, no validation will be done.
+
 `typing.Dict`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`subclass of typing.TypedDict`
+: Same as `dict` but _pydantic_ will validate the dictionary since keys are annotated
 
 `typing.Set`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation

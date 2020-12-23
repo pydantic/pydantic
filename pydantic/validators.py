@@ -15,6 +15,7 @@ from typing import (
     FrozenSet,
     Generator,
     List,
+    NamedTuple,
     Pattern,
     Set,
     Tuple,
@@ -34,12 +35,14 @@ from .typing import (
     get_class,
     is_callable_type,
     is_literal_type,
+    is_named_tuple_type,
+    is_typed_dict_type,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
     from .fields import ModelField
-    from .main import BaseConfig
+    from .main import BaseConfig, BaseModel
     from .types import ConstrainedDecimal, ConstrainedFloat, ConstrainedInt
 
     ConstrainedNumber = Union[ConstrainedDecimal, ConstrainedFloat, ConstrainedInt]
@@ -523,6 +526,43 @@ def pattern_validator(v: Any) -> Pattern[str]:
         raise errors.PatternError()
 
 
+NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
+
+
+def make_named_tuple_validator(type_: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
+    from .main import create_model
+
+    # A named tuple can be created with `typing,NamedTuple` with types
+    # but also with `collections.namedtuple` with just the fields
+    # in which case we consider the type to be `Any`
+    named_tuple_annotations: Dict[str, Type[Any]] = getattr(type_, '__annotations__', {k: Any for k in type_._fields})
+    field_definitions: Dict[str, Any] = {
+        field_name: (field_type, ...) for field_name, field_type in named_tuple_annotations.items()
+    }
+    NamedTupleModel: Type['BaseModel'] = create_model('NamedTupleModel', **field_definitions)
+
+    def named_tuple_validator(values: Tuple[Any, ...]) -> NamedTupleT:
+        dict_values: Dict[str, Any] = dict(zip(named_tuple_annotations, values))
+        validated_dict_values: Dict[str, Any] = dict(NamedTupleModel(**dict_values))
+        return type_(**validated_dict_values)
+
+    return named_tuple_validator
+
+
+def make_typed_dict_validator(type_: Type[Dict[str, Any]]) -> Callable[[Any], Dict[str, Any]]:
+    from .main import create_model
+
+    field_definitions: Dict[str, Any] = {
+        field_name: (field_type, ...) for field_name, field_type in type_.__annotations__.items()
+    }
+    TypedDictModel: Type['BaseModel'] = create_model('TypedDictModel', **field_definitions)
+
+    def typed_dict_validator(values: Dict[str, Any]) -> Dict[str, Any]:
+        return dict(TypedDictModel(**values))
+
+    return typed_dict_validator
+
+
 class IfConfig:
     def __init__(self, validator: AnyCallable, *config_attr_names: str) -> None:
         self.validator = validator
@@ -609,6 +649,13 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if type_ is IntEnum:
         yield int_enum_validator
+        return
+    if is_named_tuple_type(type_):
+        yield tuple_validator
+        yield make_named_tuple_validator(type_)
+        return
+    if is_typed_dict_type(type_):
+        yield make_typed_dict_validator(type_)
         return
 
     class_ = get_class(type_)

@@ -37,6 +37,7 @@ from .typing import (
     get_origin,
     is_literal_type,
     is_new_type,
+    is_typed_dict_type,
     new_type_supertype,
 )
 from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
@@ -414,6 +415,8 @@ class ModelField(Representation):
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
         elif is_literal_type(self.type_):
+            return
+        elif is_typed_dict_type(self.type_):
             return
 
         origin = get_origin(self.type_)

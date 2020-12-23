@@ -1,0 +1,1 @@
+add support for `NamedTuple` and `TypedDict` types
