@@ -1,9 +1,18 @@
 import sys
+from collections import namedtuple
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import Any, Callable, ClassVar, Dict, List, Mapping, NamedTuple, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
+
+if sys.version_info < (3, 8):
+    try:
+        from typing import TypedDict
+    except ImportError:
+        TypedDict = None
+else:
+    from typing import TypedDict
 
 from pydantic import (
     BaseModel,
@@ -1428,9 +1437,6 @@ def test_base_config_type_hinting():
 
 
 def test_named_tuple():
-    from collections import namedtuple
-    from typing import NamedTuple
-
     Position = namedtuple('Pos', 'x y')
 
     class Event(NamedTuple):
@@ -1462,9 +1468,8 @@ def test_named_tuple():
     ]
 
 
+@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
 def test_typed_dict():
-    from typing import TypedDict
-
     class TD(TypedDict):
         a: int
         b: int
@@ -1488,9 +1493,8 @@ def test_typed_dict():
     ]
 
 
+@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
 def test_typed_dict_non_total():
-    from typing import TypedDict
-
     class FullMovie(TypedDict, total=True):
         name: str
         year: int
