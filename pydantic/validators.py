@@ -553,12 +553,13 @@ def make_typed_dict_validator(type_: Type[Dict[str, Any]]) -> Callable[[Any], Di
     from .main import create_model
 
     field_definitions: Dict[str, Any] = {
-        field_name: (field_type, ...) for field_name, field_type in type_.__annotations__.items()
+        field_name: (field_type, ... if field_name in type_.__required_keys__ else None)
+        for field_name, field_type in type_.__annotations__.items()
     }
     TypedDictModel: Type['BaseModel'] = create_model('TypedDictModel', **field_definitions)
 
     def typed_dict_validator(values: Dict[str, Any]) -> Dict[str, Any]:
-        return dict(TypedDictModel(**values))
+        return TypedDictModel(**values).dict(exclude_unset=True)
 
     return typed_dict_validator
 

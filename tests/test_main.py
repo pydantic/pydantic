@@ -1486,3 +1486,34 @@ def test_typed_dict():
             'type': 'type_error.integer',
         }
     ]
+
+
+def test_typed_dict_non_total():
+    from typing import TypedDict
+
+    class FullMovie(TypedDict, total=True):
+        name: str
+        year: int
+
+    class Model(BaseModel):
+        movie: FullMovie
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(movie={'year': '2002'})
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('movie', 'name'),
+            'msg': 'field required',
+            'type': 'value_error.missing',
+        }
+    ]
+
+    class PartialMovie(TypedDict, total=False):
+        name: str
+        year: int
+
+    class Model(BaseModel):
+        movie: PartialMovie
+
+    m = Model(movie={'year': '2002'})
+    assert m.movie == {'year': 2002}
