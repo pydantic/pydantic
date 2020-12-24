@@ -1,0 +1,1 @@
+Resolve forward refs for inherited dataclasses
