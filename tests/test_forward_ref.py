@@ -482,7 +482,7 @@ def test_forward_ref_with_create_model(create_module):
 
 def test_nested_forward_ref():
     class NestedTuple(BaseModel):
-        x: Tuple[int, Optional['NestedTuple']]
+        x: Tuple[int, Optional['NestedTuple']]  # noqa: F821
 
     with pytest.raises(ConfigError) as exc_info:
         NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
