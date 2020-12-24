@@ -477,3 +477,28 @@ def test_forward_ref_with_create_model(create_module):
         Main = pydantic.create_model('Main', sub=('Sub', ...), __module__=__name__)
         instance = Main(sub={})
         assert instance.sub.dict() == {'foo': 'bar'}
+
+
+@skip_pre_37
+def test_resolve_forward_ref_dataclass(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Literal
+
+from pydantic import BaseModel
+
+@dataclass
+class Base:
+    literal: Literal[1, 2]
+
+class What(BaseModel):
+    base: Base
+        """
+    )
+
+    m = module.What(base=module.Base(literal=1))
+    assert m.base.literal == 1
