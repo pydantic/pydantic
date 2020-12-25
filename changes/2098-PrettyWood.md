@@ -1,1 +1,1 @@
-Fix mypy complaint about `FilePath` and `DirectoryPath`
+Fix mypy complaints about most custom _pydantic_ types

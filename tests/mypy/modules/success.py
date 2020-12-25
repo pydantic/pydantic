@@ -8,14 +8,33 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, TypeVar
+from uuid import UUID
 
 from pydantic import (
+    UUID1,
     BaseModel,
+    ByteSize,
     DirectoryPath,
     FilePath,
+    Json,
+    NegativeFloat,
+    NegativeInt,
     NoneStr,
+    NonNegativeFloat,
+    NonNegativeInt,
+    NonPositiveFloat,
+    NonPositiveInt,
+    PaymentCardNumber,
+    PositiveFloat,
+    PositiveInt,
     PyObject,
+    SecretBytes,
+    SecretStr,
     StrictBool,
+    StrictBytes,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
     root_validator,
     validate_arguments,
     validator,
@@ -173,8 +192,43 @@ class MyPrivateAttr(BaseModel):
     _private_field: str = PrivateAttr()
 
 
-class PydanticPaths(BaseModel):
-    file_path: FilePath = Path('root') / 'myfile.txt'
-    file_path_str: FilePath = 'root/myfile.txt'
-    dir_path: DirectoryPath = Path('root') / 'mydir'
-    dir_path_str: DirectoryPath = 'root/mydir'
+class PydanticTypes(BaseModel):
+    # Boolean
+    my_strict_bool: StrictBool = True
+    # Integer
+    my_positive_int: PositiveInt = 1
+    my_negative_int: NegativeInt = -1
+    my_non_positive_int: NonPositiveInt = -1
+    my_non_negative_int: NonNegativeInt = 1
+    my_strict_int: StrictInt = 1
+    # Float
+    my_positive_float: PositiveFloat = 1.1
+    my_negative_float: NegativeFloat = -1.1
+    my_non_positive_float: NonPositiveFloat = -1.1
+    my_non_negative_float: NonNegativeFloat = 1.1
+    my_strict_float: StrictFloat = 1.1
+    # Bytes
+    my_strict_bytes: StrictBytes = b'pika'
+    # String
+    my_strict_str: StrictStr = 'pika'
+    # PyObject
+    # TODO: my_pyobject_str: PyObject = 'datetime.date'
+    my_pyobject_callable: PyObject = date
+    # UUID
+    my_uuid1: UUID1 = UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
+    my_uuid1_str: UUID1 = 'a8098c1a-f86e-11da-bd1a-00112444be1e'
+    # Path
+    my_file_path: FilePath = Path('root') / 'myfile.txt'
+    my_file_path_str: FilePath = 'root/myfile.txt'
+    my_dir_path: DirectoryPath = Path('root') / 'mydir'
+    my_dir_path_str: DirectoryPath = 'root/mydir'
+    # Json
+    my_json: Json = '{"hello": "world"}'
+    # Secret
+    my_secret_str: SecretStr = 'my-precious'
+    my_secret_bytes: SecretBytes = b'my-precious'
+    # Payment card
+    my_payment_card_number: PaymentCardNumber = '4000000000000002'
+    # ByteSize
+    my_byte_size_int: ByteSize = 52000
+    my_byte_size_str: ByteSize = '3000 KiB'
