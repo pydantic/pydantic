@@ -565,10 +565,11 @@ class ModelField(Representation):
     ) -> 'ValidateReturn':
 
         if self.type_.__class__ is ForwardRef:
-            error_msg = f'field "{self.name}" not yet prepared so type is still a ForwardRef'
-            if cls is not None:
-                error_msg += f', you might need to call {cls.__name__}.update_forward_refs().'
-            raise ConfigError(error_msg)
+            assert cls is not None
+            raise ConfigError(
+                f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
+                f'you might need to call {cls.__name__}.update_forward_refs().'
+            )
 
         errors: Optional['ErrorList']
         if self.pre_validators:
