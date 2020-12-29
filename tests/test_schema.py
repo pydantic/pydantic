@@ -2097,3 +2097,19 @@ def test_new_type():
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
     }
+
+
+def test_multiple_nested_model_declarations_do_not_raise_error():
+    class ModelOne(BaseModel):
+        class NestedModel(BaseModel):
+            a: float
+
+        nested: NestedModel
+
+    class ModelTwo(BaseModel):
+        class NestedModel(BaseModel):
+            b: float
+
+        nested: NestedModel
+
+    schema([ModelOne, ModelTwo])
