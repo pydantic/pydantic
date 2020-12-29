@@ -781,7 +781,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema['const'] = literal_value
 
     if lenient_issubclass(field_type, Enum):
-        enum_name = normalize_name(field_type.__name__)
+        enum_name = model_name_map[field_type]
         f_schema, schema_overrides = get_field_info_schema(field)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
