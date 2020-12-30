@@ -328,24 +328,24 @@ def test_redis_dsns():
     class Model(BaseModel):
         a: RedisDsn
 
-    m = Model(a='redis://user:pass@localhost:6379/app')
-    assert m.a == 'redis://user:pass@localhost:6379/app'
+    m = Model(a='redis://user:pass@localhost:1234/app')
+    assert m.a == 'redis://user:pass@localhost:1234/app'
     assert m.a.user == 'user'
     assert m.a.password == 'pass'
 
-    m = Model(a='rediss://user:pass@localhost:6379/app')
-    assert m.a == 'rediss://user:pass@localhost:6379/app'
+    m = Model(a='rediss://user:pass@localhost:1234/app')
+    assert m.a == 'rediss://user:pass@localhost:1234/app'
 
-    m = Model(a='rediss://:pass@localhost:6379')
-    assert m.a == 'rediss://:pass@localhost:6379/0'
+    m = Model(a='rediss://:pass@localhost:1234')
+    assert m.a == 'rediss://:pass@localhost:1234/0'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
 
     # Password is not required for Redis protocol
-    m = Model(a='redis://localhost:6379/app')
-    assert m.a == 'redis://localhost:6379/app'
+    m = Model(a='redis://localhost:1234/app')
+    assert m.a == 'redis://localhost:1234/app'
     assert m.a.user is None
     assert m.a.password is None
 
