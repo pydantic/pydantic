@@ -20,6 +20,11 @@ from pydantic import (
 )
 from pydantic.fields import Field, Schema
 
+try:
+    import cython
+except ImportError:
+    cython = None
+
 
 def test_str_bytes():
     class Model(BaseModel):
@@ -1730,3 +1735,26 @@ def test_default_factory_validator_child():
         pass
 
     assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']
+
+
+@pytest.mark.skipif(cython is None, reason='cython not installed')
+def test_cython_function_untouched():
+    Model = cython.inline(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    a = 0.0
+    b = 10
+
+    def get_double_a(self) -> float:
+        return self.a + self.b
+
+return Model
+"""
+    )
+    model = Model(a=10.2)
+    assert model.a == 10.2
+    assert model.b == 10
+    return model.get_double_a() == 20.2
