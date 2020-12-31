@@ -29,9 +29,10 @@ As with the rest of *pydantic*, types can be coerced by the decorator before the
 _(This script is complete, it should run "as is")_
 
 A few notes:
-* through they're passed as strings `path` and `regex` are converted to a `Path` object and regex respectively,
-  by the decorator
-* `max` has no type annotation, so will be considered as `Any` by the decorator
+
+- though they're passed as strings, `path` and `regex` are converted to a `Path` object and regex respectively
+by the decorator
+- `max` has no type annotation, so will be considered as `Any` by the decorator
 
 Type coercion like this can be extremely helpful but also confusing or not desired,
 see [below](#coercion-and-strictness) for a discussion of `validate_arguments`'s limitations in this regard.
@@ -60,6 +61,17 @@ The `validate_arguments` decorator should work "out of the box" with [mypy](http
 defined to return a function with the same signature as the function it decorates. The only limitation is that
 since we trick mypy into thinking the function returned by the decorator is the same as the function being
 decorated; access to the [raw function](#raw-function) or other attributes will require `type: ignore`.
+
+## Validate without calling the function
+
+By default, arguments validation is done by directly calling the decorated function with parameters.
+But what if you wanted to validate them without *actually* calling the function?
+To do that you can call the `validate` method bound to the decorated function.
+
+```py
+{!.tmp_examples/validation_decorator_validate.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ## Raw function
 
