@@ -34,7 +34,15 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, ForwardRef, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
+from .typing import (
+    AnyCallable,
+    ForwardRef,
+    get_args,
+    get_origin,
+    is_classvar,
+    resolve_annotations,
+    update_field_forward_refs,
+)
 from .utils import (
     ROOT_KEY,
     ClassAttribute,
@@ -253,10 +261,13 @@ class ModelMetaclass(ABCMeta):
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, Undefined)
+                    allowed_types = get_args(ann_type) if get_origin(ann_type) is Union else (ann_type,)
                     if (
                         isinstance(value, untouched_types)
                         and ann_type != PyObject
-                        and not lenient_issubclass(get_origin(ann_type), Type)
+                        and not any(
+                            lenient_issubclass(get_origin(allowed_type), Type) for allowed_type in allowed_types
+                        )
                     ):
                         continue
                     fields[ann_name] = inferred = ModelField.infer(

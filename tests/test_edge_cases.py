@@ -2,7 +2,7 @@ import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, Generic, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -1122,8 +1122,11 @@ def test_type_on_annotation():
         d: FooBar = FooBar
         e: Type[FooBar]
         f: Type[FooBar] = FooBar
+        g: Sequence[Type[FooBar]] = [FooBar]
+        h: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
+        i: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
 
-    assert Model.__fields__.keys() == {'b', 'c', 'e', 'f'}
+    assert Model.__fields__.keys() == {'b', 'c', 'e', 'f', 'g', 'h', 'i'}
 
 
 def test_assign_type():
