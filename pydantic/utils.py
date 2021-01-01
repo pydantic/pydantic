@@ -646,7 +646,8 @@ _EMPTY = object()
 
 
 def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
-    """Check that the items of `left` are the same objects as those in `right`.
+    """
+    Check that the items of `left` are the same objects as those in `right`.
 
     >>> a, b = object(), object()
     >>> all_identical([a, b, a], [a, b, a])
