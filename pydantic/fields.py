@@ -308,7 +308,7 @@ class ModelField(Representation):
         required: 'BoolUndefined' = Undefined
         if value is Required:
             required = True
-            value = Ellipsis
+            value = None
         elif value is not Undefined:
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
