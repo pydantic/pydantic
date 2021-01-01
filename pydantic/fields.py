@@ -28,6 +28,7 @@ from .error_wrappers import ErrorWrapper
 from .errors import NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
+    NONE_TYPES,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -346,7 +347,6 @@ class ModelField(Representation):
         Note: this method is **not** idempotent (because _type_analysis is not idempotent),
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
-
         self._set_default_and_type()
         if self.type_.__class__ == ForwardRef:
             # self.type_ is currently a ForwardRef and there's nothing we can do now,
@@ -369,7 +369,7 @@ class ModelField(Representation):
         when we want to validate the default value i.e. when `validate_all` is set to True.
         """
         if self.default_factory is not None:
-            if self.type_ is None:
+            if self.type_ is Undefined:
                 raise errors_.ConfigError(
                     f'you need to set the type of field {self.name!r} when using `default_factory`'
                 )
@@ -378,11 +378,11 @@ class ModelField(Representation):
 
         default_value = self.get_default()
 
-        if default_value is not None and self.type_ is None:
+        if default_value is not None and self.type_ is Undefined:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_
 
-        if self.type_ is None:
+        if self.type_ is Undefined:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
         if self.required is False and default_value is None:
@@ -448,14 +448,19 @@ class ModelField(Representation):
             return
 
         if issubclass(origin, Tuple):  # type: ignore
-            self.shape = SHAPE_TUPLE
-            self.sub_fields = []
-            for i, t in enumerate(get_args(self.type_)):
-                if t is Ellipsis:
-                    self.type_ = get_args(self.type_)[0]
-                    self.shape = SHAPE_TUPLE_ELLIPSIS
-                    return
-                self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
+            # origin == Tuple without item type
+            if not get_args(self.type_):
+                self.type_ = Any
+                self.shape = SHAPE_TUPLE_ELLIPSIS
+            else:
+                self.shape = SHAPE_TUPLE
+                self.sub_fields = []
+                for i, t in enumerate(get_args(self.type_)):
+                    if t is Ellipsis:
+                        self.type_ = get_args(self.type_)[0]
+                        self.shape = SHAPE_TUPLE_ELLIPSIS
+                        return
+                    self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
             return
 
         if issubclass(origin, List):
@@ -567,7 +572,10 @@ class ModelField(Representation):
                 return v, errors
 
         if v is None:
-            if self.allow_none:
+            if self.type_ in NONE_TYPES:
+                # keep validating
+                pass
+            elif self.allow_none:
                 if self.post_validators:
                     return self._apply_validators(v, values, loc, cls, self.post_validators)
                 else:
@@ -605,6 +613,8 @@ class ModelField(Representation):
             e: errors_.PydanticTypeError
             if self.shape == SHAPE_LIST:
                 e = errors_.ListError()
+            elif self.shape in (SHAPE_TUPLE, SHAPE_TUPLE_ELLIPSIS):
+                e = errors_.TupleError()
             elif self.shape == SHAPE_SET:
                 e = errors_.SetError()
             elif self.shape == SHAPE_FROZENSET:
@@ -746,12 +756,6 @@ class ModelField(Representation):
             except (ValueError, TypeError, AssertionError) as exc:
                 return v, ErrorWrapper(exc, loc)
         return v, None
-
-    def include_in_schema(self) -> bool:
-        """
-        False if this is a simple field just allowing None as used in Unions/Optional.
-        """
-        return self.type_ != NoneType
 
     def is_complex(self) -> bool:
         """

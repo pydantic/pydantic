@@ -46,7 +46,7 @@ class SetEnv:
             os.environ.pop(n)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def env():
     setenv = SetEnv()
 

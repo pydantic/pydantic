@@ -1,11 +1,11 @@
 import sys
 from enum import Enum
-from typing import Any, ClassVar, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, ClassVar, Dict, Generic, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import pytest
 
 from pydantic import BaseModel, Field, ValidationError, root_validator, validator
-from pydantic.generics import GenericModel, _generic_types_cache
+from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 
@@ -17,7 +17,10 @@ def test_generic_name():
     class Result(GenericModel, Generic[data_type]):
         data: data_type
 
-    assert Result[List[int]].__name__ == 'Result[typing.List[int]]'
+    if sys.version_info >= (3, 9):
+        assert Result[list[int]].__name__ == 'Result[list[int]]'
+    assert Result[List[int]].__name__ == 'Result[List[int]]'
+    assert Result[int].__name__ == 'Result[int]'
 
 
 @skip_36
@@ -249,35 +252,6 @@ def test_generic_config():
 
 
 @skip_36
-def test_deep_generic():
-    T = TypeVar('T')
-    S = TypeVar('S')
-    R = TypeVar('R')
-
-    class OuterModel(GenericModel, Generic[T, S, R]):
-        a: Dict[R, Optional[List[T]]]
-        b: Optional[Union[S, R]]
-        c: R
-        d: float
-
-    class InnerModel(GenericModel, Generic[T, R]):
-        c: T
-        d: R
-
-    class NormalModel(BaseModel):
-        e: int
-        f: str
-
-    inner_model = InnerModel[int, str]
-    generic_model = OuterModel[inner_model, NormalModel, int]
-
-    inner_models = [inner_model(c=1, d='a')]
-    generic_model(a={1: inner_models, 2: None}, b=None, c=1, d=1.5)
-    generic_model(a={}, b=NormalModel(e=1, f='a'), c=1, d=1.5)
-    generic_model(a={}, b=1, c=1, d=1.5)
-
-
-@skip_36
 def test_enum_generic():
     T = TypeVar('T')
 
@@ -499,6 +473,26 @@ def test_partial_specification():
 
 
 @skip_36
+def test_partial_specification_with_inner_typevar():
+    AT = TypeVar('AT')
+    BT = TypeVar('BT')
+
+    class Model(GenericModel, Generic[AT, BT]):
+        a: List[AT]
+        b: List[BT]
+
+    partial_model = Model[str, BT]
+    assert partial_model.__concrete__ is False
+    concrete_model = partial_model[int]
+    assert concrete_model.__concrete__ is True
+
+    # nested resolution of partial models should work as expected
+    nested_resolved = concrete_model(a=[123], b=['456'])
+    assert nested_resolved.a == ['123']
+    assert nested_resolved.b == [456]
+
+
+@skip_36
 def test_partial_specification_name():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -681,7 +675,11 @@ def test_generic_model_from_function_pickle_fail(create_module):
 
 
 @skip_36
-def test_generic_model_redefined_without_cache_fail(create_module):
+def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
+
+    # match identity checker otherwise we never get to the redefinition check
+    monkeypatch.setattr('pydantic.generics.all_identical', lambda left, right: False)
+
     @create_module
     def module():
         from typing import Generic, TypeVar
@@ -756,3 +754,264 @@ def test_get_caller_frame_info_when_sys_getframe_undefined():
         assert get_caller_frame_info() == (None, False)
     finally:  # just to make sure we always setting original attribute back
         sys._getframe = getframe
+
+
+@skip_36
+def test_iter_contained_typevars():
+    T = TypeVar('T')
+    T2 = TypeVar('T2')
+
+    class Model(GenericModel, Generic[T]):
+        a: T
+
+    assert list(iter_contained_typevars(Model[T])) == [T]
+    assert list(iter_contained_typevars(Optional[List[Union[str, Model[T]]]])) == [T]
+    assert list(iter_contained_typevars(Optional[List[Union[str, Model[int]]]])) == []
+    assert list(iter_contained_typevars(Optional[List[Union[str, Model[T], Callable[[T2, T], str]]]])) == [T, T2, T]
+
+
+@skip_36
+def test_nested_identity_parameterization():
+    T = TypeVar('T')
+    T2 = TypeVar('T2')
+
+    class Model(GenericModel, Generic[T]):
+        a: T
+
+    assert Model[T][T][T] is Model
+    assert Model[T] is Model
+    assert Model[T2] is not Model
+
+
+@skip_36
+def test_replace_types():
+    T = TypeVar('T')
+
+    class Model(GenericModel, Generic[T]):
+        a: T
+
+    assert replace_types(T, {T: int}) is int
+    assert replace_types(List[Union[str, list, T]], {T: int}) == List[Union[str, list, int]]
+    assert replace_types(Callable, {T: int}) == Callable
+    assert replace_types(Callable[[int, str, T], T], {T: int}) == Callable[[int, str, int], int]
+    assert replace_types(T, {}) is T
+    assert replace_types(Model[List[T]], {T: int}) == Model[List[T]][int]
+    assert replace_types(T, {}) is T
+    assert replace_types(Type[T], {T: int}) == Type[int]
+    assert replace_types(Model[T], {T: T}) == Model[T]
+
+    if sys.version_info >= (3, 9):
+        # Check generic aliases (subscripted builtin types) to make sure they
+        # resolve correctly (don't get translated to typing versions for
+        # example)
+        assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
+
+
+@skip_36
+def test_replace_types_identity_on_unchanged():
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    type_ = List[Union[str, Callable[[list], Optional[str]], U]]
+    assert replace_types(type_, {T: int}) is type_
+
+
+@skip_36
+def test_deep_generic():
+    T = TypeVar('T')
+    S = TypeVar('S')
+    R = TypeVar('R')
+
+    class OuterModel(GenericModel, Generic[T, S, R]):
+        a: Dict[R, Optional[List[T]]]
+        b: Optional[Union[S, R]]
+        c: R
+        d: float
+
+    class InnerModel(GenericModel, Generic[T, R]):
+        c: T
+        d: R
+
+    class NormalModel(BaseModel):
+        e: int
+        f: str
+
+    inner_model = InnerModel[int, str]
+    generic_model = OuterModel[inner_model, NormalModel, int]
+
+    inner_models = [inner_model(c=1, d='a')]
+    generic_model(a={1: inner_models, 2: None}, b=None, c=1, d=1.5)
+    generic_model(a={}, b=NormalModel(e=1, f='a'), c=1, d=1.5)
+    generic_model(a={}, b=1, c=1, d=1.5)
+
+    assert InnerModel.__concrete__ is False
+    assert inner_model.__concrete__ is True
+
+
+@skip_36
+def test_deep_generic_with_inner_typevar():
+    T = TypeVar('T')
+
+    class OuterModel(GenericModel, Generic[T]):
+        a: List[T]
+
+    class InnerModel(OuterModel[T], Generic[T]):
+        pass
+
+    assert InnerModel[int].__concrete__ is True
+    assert InnerModel.__concrete__ is False
+
+    with pytest.raises(ValidationError):
+        InnerModel[int](a=['wrong'])
+    assert InnerModel[int](a=['1']).a == [1]
+
+
+@skip_36
+def test_deep_generic_with_referenced_generic():
+    T = TypeVar('T')
+    R = TypeVar('R')
+
+    class ReferencedModel(GenericModel, Generic[R]):
+        a: R
+
+    class OuterModel(GenericModel, Generic[T]):
+        a: ReferencedModel[T]
+
+    class InnerModel(OuterModel[T], Generic[T]):
+        pass
+
+    assert InnerModel[int].__concrete__ is True
+    assert InnerModel.__concrete__ is False
+
+    with pytest.raises(ValidationError):
+        InnerModel[int](a={'a': 'wrong'})
+    assert InnerModel[int](a={'a': 1}).a.a == 1
+
+
+@skip_36
+def test_deep_generic_with_referenced_inner_generic():
+    T = TypeVar('T')
+
+    class ReferencedModel(GenericModel, Generic[T]):
+        a: T
+
+    class OuterModel(GenericModel, Generic[T]):
+        a: Optional[List[Union[ReferencedModel[T], str]]]
+
+    class InnerModel(OuterModel[T], Generic[T]):
+        pass
+
+    assert InnerModel[int].__concrete__ is True
+    assert InnerModel.__concrete__ is False
+
+    with pytest.raises(ValidationError):
+        InnerModel[int](a=['s', {'a': 'wrong'}])
+    assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
+
+    assert InnerModel[int].__fields__['a'].outer_type_ == List[Union[ReferencedModel[int], str]]
+    assert (InnerModel[int].__fields__['a'].sub_fields[0].sub_fields[0].outer_type_.__fields__['a'].outer_type_) == int
+
+
+@skip_36
+def test_deep_generic_with_multiple_typevars():
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    class OuterModel(GenericModel, Generic[T]):
+        data: List[T]
+
+    class InnerModel(OuterModel[T], Generic[U, T]):
+        extra: U
+
+    ConcreteInnerModel = InnerModel[int, float]
+    assert ConcreteInnerModel.__fields__['data'].outer_type_ == List[float]
+    assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
+
+    assert ConcreteInnerModel(data=['1'], extra='2').dict() == {'data': [1.0], 'extra': 2}
+
+
+@skip_36
+def test_deep_generic_with_multiple_inheritance():
+    K = TypeVar('K')
+    V = TypeVar('V')
+    T = TypeVar('T')
+
+    class OuterModelA(GenericModel, Generic[K, V]):
+        data: Dict[K, V]
+
+    class OuterModelB(GenericModel, Generic[T]):
+        stuff: List[T]
+
+    class InnerModel(OuterModelA[K, V], OuterModelB[T], Generic[K, V, T]):
+        extra: int
+
+    ConcreteInnerModel = InnerModel[int, float, str]
+
+    assert ConcreteInnerModel.__fields__['data'].outer_type_ == Dict[int, float]
+    assert ConcreteInnerModel.__fields__['stuff'].outer_type_ == List[str]
+    assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
+
+    ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5).dict() == {
+        'data': {1: 5},
+        'stuff': ['123'],
+        'extra': 5,
+    }
+
+
+@skip_36
+def test_generic_with_referenced_generic_type_1():
+    T = TypeVar('T')
+
+    class ModelWithType(GenericModel, Generic[T]):
+        # Type resolves to type origin of "type" which is non-subscriptible for
+        # python < 3.9 so we want to make sure it works for other versions
+        some_type: Type[T]
+
+    class ReferenceModel(GenericModel, Generic[T]):
+        abstract_base_with_type: ModelWithType[T]
+
+    ReferenceModel[int]
+
+
+@skip_36
+def test_generic_with_referenced_nested_typevar():
+    T = TypeVar('T')
+
+    class ModelWithType(GenericModel, Generic[T]):
+        # Type resolves to type origin of "collections.abc.Sequence" which is
+        # non-subscriptible for
+        # python < 3.9 so we want to make sure it works for other versions
+        some_type: Sequence[T]
+
+    class ReferenceModel(GenericModel, Generic[T]):
+        abstract_base_with_type: ModelWithType[T]
+
+    ReferenceModel[int]
+
+
+@skip_36
+def test_generic_with_callable():
+    T = TypeVar('T')
+
+    class Model(GenericModel, Generic[T]):
+        # Callable is a test for any type that accepts a list as an argument
+        some_callable: Callable[[Optional[int], T], None]
+
+    Model[str].__concrete__ is True
+    Model.__concrete__ is False
+
+
+@skip_36
+def test_generic_with_partial_callable():
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    class Model(GenericModel, Generic[T, U]):
+        t: T
+        u: U
+        # Callable is a test for any type that accepts a list as an argument
+        some_callable: Callable[[Optional[int], str], None]
+
+    Model[str, U].__concrete__ is False
+    Model[str, U].__parameters__ == [U]
+    Model[str, int].__concrete__ is False

@@ -285,7 +285,7 @@ class ModelMetaclass(ABCMeta):
                     inferred = ModelField.infer(
                         name=var_name,
                         value=value,
-                        annotation=annotations.get(var_name),
+                        annotation=annotations.get(var_name, Undefined),
                         class_validators=vg.get_validators(var_name),
                         config=config,
                     )
@@ -875,11 +875,11 @@ def create_model(
     __model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
-    __base__: Type[BaseModel] = None,
+    __base__: Type['Model'] = None,
     __module__: str = __name__,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
-) -> Type[BaseModel]:
+) -> Type['Model']:
     """
     Dynamically create a model.
     :param __model_name: name of the created model
@@ -892,11 +892,12 @@ def create_model(
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
         `<name>=<FieldInfo>`, e.g. `foo=Field(default_factory=datetime.utcnow, alias='bar')`
     """
-    if __base__:
+
+    if __base__ is not None:
         if __config__ is not None:
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
     else:
-        __base__ = BaseModel
+        __base__ = cast(Type['Model'], BaseModel)
 
     fields = {}
     annotations = {}
