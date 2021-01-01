@@ -863,7 +863,7 @@ _field_constraints = {
 }
 
 _assignment_field_constraints = {
-    'read_only',
+    'allow_mutation',
 }
 
 
@@ -955,9 +955,7 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
     return ans
 
 
-def check_unused_validation_assignment_constraints(
-    field_info: FieldInfo, field_name: str, validate_assignment: bool
-) -> None:
+def check_unused_assignment_constraints(field_info: FieldInfo, field_name: str, validate_assignment: bool) -> None:
     """
     Checks for unused constraints for validation_assignment.
 
@@ -973,7 +971,7 @@ def check_unused_validation_assignment_constraints(
     used_constraints: Set[str] = set()
 
     if validate_assignment:
-        used_constraints.update(('read_only',))
+        used_constraints.update(('allow_mutation',))
 
     check_unused_constraints(constraints, used_constraints, field_name)
 

@@ -1427,11 +1427,11 @@ def test_base_config_type_hinting():
     get_type_hints(M.__config__)
 
 
-def test_read_only_field():
-    """assigning a read_only field should raise a TypeError"""
+def test_allow_mutation_field():
+    """assigning a allow_mutation=False field should raise a TypeError"""
 
     class Entry(BaseModel):
-        id: float = Field(read_only=True)
+        id: float = Field(allow_mutation=False)
         val: float
 
         class Config:
@@ -1442,5 +1442,5 @@ def test_read_only_field():
     r.val = 101
     assert r.val == 101
     assert r.id == 1
-    with pytest.raises(TypeError, match='"id" is read_only and cannot be assigned'):
+    with pytest.raises(TypeError, match='"id" has allow_mutation set to False and cannot be assigned'):
         r.id = 2

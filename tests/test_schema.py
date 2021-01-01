@@ -1423,7 +1423,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'max_length': 5}, int),
         ({'min_length': 2}, float),
         ({'max_length': 5}, Decimal),
-        ({'read_only': True}, bool),
+        ({'allow_mutation': False}, bool),
         ({'regex': '^foo$'}, int),
         ({'gt': 2}, str),
         ({'lt': 5}, bytes),
@@ -1484,11 +1484,11 @@ def test_constraints_schema_validation(kwargs, type_, value):
 @pytest.mark.parametrize(
     'kwargs,type_,value',
     [
-        ({'read_only': True}, str, 'foo'),
-        ({'read_only': False}, str, 'foo'),
+        ({'allow_mutation': True}, str, 'foo'),
+        ({'allow_mutation': False}, str, 'foo'),
     ],
 )
-def test_constraints_schema_validation_assignment(kwargs, type_, value):
+def test_schema_constraints_on_assignment(kwargs, type_, value):
     class Foo(BaseModel):
         a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 

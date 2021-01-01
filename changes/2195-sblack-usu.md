@@ -1,1 +1,1 @@
-add read_only constraint to Field
+add allow_mutation constraint to Field
