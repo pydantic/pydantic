@@ -34,15 +34,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
-from .typing import (
-    AnyCallable,
-    ForwardRef,
-    get_args,
-    get_origin,
-    is_classvar,
-    resolve_annotations,
-    update_field_forward_refs,
-)
+from .typing import AnyCallable, get_args, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
     ROOT_KEY,
     ClassAttribute,
