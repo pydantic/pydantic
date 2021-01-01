@@ -7,6 +7,7 @@ class MyModel(BaseModel):
 
 m = MyModel(url='http://www.example.com')
 print(m.url)
+
 try:
     MyModel(url='ftp://invalid.url')
 except ValidationError as e:
