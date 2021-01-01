@@ -223,22 +223,6 @@ def test_schema_class_by_alias():
     assert list(Model.schema(by_alias=False)['properties'].keys()) == ['foo']
 
 
-def test_schema_field_read_only():
-    class Model(BaseModel):
-        foo: int = Field(4, read_only=True)
-
-        class Config:
-            validate_assignment = True
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'foo': {'type': 'integer', 'readOnly': True, 'default': 4, 'title': 'Foo'},
-        },
-    }
-
-
 def test_choices():
     FooEnum = Enum('FooEnum', {'foo': 'f', 'bar': 'b'})
     BarEnum = IntEnum('BarEnum', {'foo': 1, 'bar': 2})
