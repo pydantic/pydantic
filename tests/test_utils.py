@@ -177,13 +177,55 @@ def test_value_items():
 
     sub_v = included['a']
     sub_vi = ValueItems(sub_v, vi.for_element('a'))
-    assert repr(sub_vi) == 'ValueItems({0, 2})'
+    assert repr(sub_vi) == 'ValueItems({0: Ellipsis, 2: Ellipsis})'
 
     assert sub_vi.is_excluded(2)
     assert [v_ for i, v_ in enumerate(sub_v) if not sub_vi.is_excluded(i)] == ['b']
 
     assert sub_vi.is_included(2)
     assert [v_ for i, v_ in enumerate(sub_v) if sub_vi.is_included(i)] == ['a', 'c']
+
+
+@pytest.mark.parametrize(
+    'base,override,intersect,expected',
+    [
+        # Check in default (union) mode
+        (..., ..., False, ...),
+        (None, None, False, None),
+        ({}, {}, False, {}),
+        (..., None, False, ...),
+        (None, ..., False, ...),
+        (None, {}, False, {}),
+        ({}, None, False, {}),
+        (..., {}, False, {}),
+        ({}, ..., False, ...),
+        ({'a'}, ..., False, ...),
+        ({'a'}, {}, False, {'a': ...}),
+        ({'a'}, {'b'}, False, {'a': ..., 'b': ...}),
+        ({'a': ...}, {'b': {'c'}}, False, {'a': ..., 'b': {'c': ...}}),
+        ({'a': ...}, {'a': {'c'}}, False, {'a': {'c': ...}}),
+        ({'a': {'c': ...}, 'b': {'d'}}, {'a': ...}, False, {'a': ..., 'b': {'d': ...}}),
+        # Check in intersection mode
+        (..., ..., True, ...),
+        (None, None, True, None),
+        ({}, {}, True, {}),
+        (..., None, True, ...),
+        (None, ..., True, ...),
+        (None, {}, True, {}),
+        ({}, None, True, {}),
+        (..., {}, True, {}),
+        ({}, ..., True, {}),
+        ({'a'}, ..., True, {'a': ...}),
+        ({'a'}, {}, True, {}),
+        ({'a'}, {'b'}, True, {}),
+        ({'a': ...}, {'b': {'c'}}, True, {}),
+        ({'a': ...}, {'a': {'c'}}, True, {'a': {'c': ...}}),
+        ({'a': {'c': ...}, 'b': {'d'}}, {'a': ...}, True, {'a': {'c': ...}}),
+    ],
+)
+def test_value_items_merge(base, override, intersect, expected):
+    actual = ValueItems.merge(base, override, intersect=intersect)
+    assert actual == expected
 
 
 def test_value_items_error():

@@ -1,10 +1,12 @@
 import sys
 from collections import defaultdict
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
+from pytest import param
 
 from pydantic import (
     BaseModel,
@@ -1348,7 +1350,72 @@ def test_model_iteration():
     assert dict(m) == {'c': 3, 'd': Foo()}
 
 
-def test_model_export_nested_list():
+@pytest.mark.parametrize(
+    'exclude,expected,raises_match',
+    [
+        param(
+            {'foos': {0: {'a'}, 1: {'a'}}},
+            {'c': 3, 'foos': [{'b': 2}, {'b': 4}]},
+            None,
+            id='excluding fields of indexed list items',
+        ),
+        param(
+            {'foos': {'a'}},
+            TypeError,
+            'expected integer keys',
+            id='should fail trying to exclude string keys on list field (1).',
+        ),
+        param(
+            {'foos': {0: ..., 'a': ...}},
+            TypeError,
+            'expected integer keys',
+            id='should fail trying to exclude string keys on list field (2).',
+        ),
+        param(
+            {'foos': {0: 1}},
+            TypeError,
+            'Unexpected type',
+            id='should fail using integer key to specify list item field name (1)',
+        ),
+        param(
+            {'foos': {'__all__': 1}},
+            TypeError,
+            'Unexpected type',
+            id='should fail using integer key to specify list item field name (2)',
+        ),
+        param(
+            {'foos': {'__all__': {'a'}}},
+            {'c': 3, 'foos': [{'b': 2}, {'b': 4}]},
+            None,
+            id='using "__all__" to exclude specific nested field',
+        ),
+        param(
+            {'foos': {0: {'b'}, '__all__': {'a'}}},
+            {'c': 3, 'foos': [{}, {'b': 4}]},
+            None,
+            id='using "__all__" to exclude specific nested field in combination with more specific exclude',
+        ),
+        param(
+            {'foos': {'__all__'}},
+            {'c': 3, 'foos': []},
+            None,
+            id='using "__all__" to exclude all list items',
+        ),
+        param(
+            {'foos': {1, '__all__'}},
+            {'c': 3, 'foos': []},
+            None,
+            id='using "__all__" and other items should get merged together, still excluding all list items',
+        ),
+        param(
+            {'foos': {1: {'a'}, -1: {'b'}}},
+            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {}]},
+            None,
+            id='using negative and positive indexes, referencing the same items should merge excludes',
+        ),
+    ],
+)
+def test_model_export_nested_list(exclude, expected, raises_match):
     class Foo(BaseModel):
         a: int = 1
         b: int = 2
@@ -1359,41 +1426,188 @@ def test_model_export_nested_list():
 
     m = Bar(c=3, foos=[Foo(a=1, b=2), Foo(a=3, b=4)])
 
-    assert m.dict(exclude={'foos': {0: {'a'}, 1: {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
-
-    with pytest.raises(TypeError, match='expected integer keys'):
-        m.dict(exclude={'foos': {'a'}})
-    with pytest.raises(TypeError, match='expected integer keys'):
-        m.dict(exclude={'foos': {0: ..., 'a': ...}})
-    with pytest.raises(TypeError, match='Unexpected type'):
-        m.dict(exclude={'foos': {0: 1}})
-    with pytest.raises(TypeError, match='Unexpected type'):
-        m.dict(exclude={'foos': {'__all__': 1}})
-
-    assert m.dict(exclude={'foos': {0: {'b'}, '__all__': {'a'}}}) == {'c': 3, 'foos': [{}, {'b': 4}]}
-    assert m.dict(exclude={'foos': {'__all__': {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
-    assert m.dict(exclude={'foos': {'__all__'}}) == {'c': 3, 'foos': []}
-
-    with pytest.raises(ValueError, match='set with keyword "__all__" must not contain other elements'):
-        m.dict(exclude={'foos': {1, '__all__'}})
+    if isinstance(expected, type) and issubclass(expected, Exception):
+        with pytest.raises(expected, match=raises_match):
+            m.dict(exclude=exclude)
+    else:
+        original_exclude = deepcopy(exclude)
+        assert m.dict(exclude=exclude) == expected
+        assert exclude == original_exclude
 
 
-def test_model_export_dict_exclusion():
+@pytest.mark.parametrize(
+    'excludes,expected',
+    [
+        param(
+            {'bars': {0}},
+            {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]},
+            id='excluding first item from list field using index',
+        ),
+        param({'bars': {'__all__'}}, {'a': 1, 'bars': []}, id='using "__all__" to exclude all list items'),
+        param(
+            {'bars': {'__all__': {'w'}}},
+            {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]},
+            id='exclude single dict key from all list items',
+        ),
+    ],
+)
+def test_model_export_dict_exclusion(excludes, expected):
     class Foo(BaseModel):
         a: int = 1
         bars: List[Dict[str, int]]
 
     m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
 
-    excludes = {'bars': {0}}
-    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]}
-    assert excludes == {'bars': {0}}
-    excludes = {'bars': {'__all__'}}
-    assert m.dict(exclude=excludes) == {'a': 1, 'bars': []}
-    assert excludes == {'bars': {'__all__'}}
-    excludes = {'bars': {'__all__': {'w'}}}
-    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]}
-    assert excludes == {'bars': {'__all__': {'w'}}}
+    original_excludes = deepcopy(excludes)
+    assert m.dict(exclude=excludes) == expected
+    assert excludes == original_excludes
+
+
+def test_model_exclude_config_field_merging():
+    """Test merging field exclude values from config."""
+
+    class Model(BaseModel):
+        b: int = Field(2, exclude=...)
+
+        class Config:
+            fields = {
+                'b': {'exclude': ...},
+            }
+
+    assert Model.__fields__['b'].field_info.exclude is ...
+
+    class Model(BaseModel):
+        b: int = Field(2, exclude={'a': {'test'}})
+
+        class Config:
+            fields = {
+                'b': {'exclude': ...},
+            }
+
+    assert Model.__fields__['b'].field_info.exclude == {'a': {'test'}}
+
+    class Model(BaseModel):
+        b: int = Field(2, exclude={'foo'})
+
+        class Config:
+            fields = {
+                'b': {'exclude': {'bar'}},
+            }
+
+    assert Model.__fields__['b'].field_info.exclude == {'foo': ..., 'bar': ...}
+
+
+@pytest.mark.parametrize(
+    'kinds',
+    [
+        {'sub_fields', 'model_fields', 'model_config', 'sub_config', 'combined_config'},
+        {'sub_fields', 'model_fields', 'combined_config'},
+        {'sub_fields', 'model_fields'},
+        {'combined_config'},
+        {'model_config', 'sub_config'},
+        {'model_config', 'sub_fields'},
+        {'model_fields', 'sub_config'},
+    ],
+)
+@pytest.mark.parametrize(
+    'exclude,expected',
+    [
+        (None, {'a': 0, 'c': {'a': [3, 5], 'c': 'foobar'}, 'd': {'c': 'foobar'}}),
+        ({'c', 'd'}, {'a': 0}),
+        ({'a': ..., 'c': ..., 'd': {'a': ..., 'c': ...}}, {'d': {}}),
+    ],
+)
+def test_model_export_exclusion_with_fields_and_config(kinds, exclude, expected):
+    """Test that exporting models with fields using the export parameter works."""
+
+    class ChildConfig:
+        pass
+
+    if 'sub_config' in kinds:
+        ChildConfig.fields = {'b': {'exclude': ...}, 'a': {'exclude': {1}}}
+
+    class ParentConfig:
+        pass
+
+    if 'combined_config' in kinds:
+        ParentConfig.fields = {
+            'b': {'exclude': ...},
+            'c': {'exclude': {'b': ..., 'a': {1}}},
+            'd': {'exclude': {'a': ..., 'b': ...}},
+        }
+
+    elif 'model_config' in kinds:
+        ParentConfig.fields = {'b': {'exclude': ...}, 'd': {'exclude': {'a'}}}
+
+    class Sub(BaseModel):
+        a: List[int] = Field([3, 4, 5], exclude={1} if 'sub_fields' in kinds else None)
+        b: int = Field(4, exclude=... if 'sub_fields' in kinds else None)
+        c: str = 'foobar'
+
+        Config = ChildConfig
+
+    class Model(BaseModel):
+        a: int = 0
+        b: int = Field(2, exclude=... if 'model_fields' in kinds else None)
+        c: Sub = Sub()
+        d: Sub = Field(Sub(), exclude={'a'} if 'model_fields' in kinds else None)
+
+        Config = ParentConfig
+
+    m = Model()
+    assert m.dict(exclude=exclude) == expected, 'Unexpected model export result'
+
+
+def test_model_export_exclusion_inheritance():
+    class Sub(BaseModel):
+        s1: str = 'v1'
+        s2: str = 'v2'
+        s3: str = 'v3'
+        s4: str = Field('v4', exclude=...)
+
+    class Parent(BaseModel):
+        a: int
+        b: int = Field(..., exclude=...)
+        c: int
+        d: int
+        s: Sub = Sub()
+
+        class Config:
+            fields = {'a': {'exclude': ...}, 's': {'exclude': {'s1'}}}
+
+    class Child(Parent):
+        class Config:
+            fields = {'c': {'exclude': ...}, 's': {'exclude': {'s2'}}}
+
+    actual = Child(a=0, b=1, c=2, d=3).dict()
+    expected = {'d': 3, 's': {'s3': 'v3'}}
+    assert actual == expected, 'Unexpected model export result'
+
+
+def test_model_export_inclusion():
+    class Sub(BaseModel):
+        s1: str = 'v1'
+        s2: str = 'v2'
+        s3: str = 'v3'
+        s4: str = 'v4'
+
+    class Model(BaseModel):
+        a: Sub = Sub()
+        b: Sub = Field(Sub(), include={'s1'})
+        c: Sub = Field(Sub(), include={'s1', 's2'})
+
+        class Config:
+            fields = {'a': {'include': {'s2', 's1', 's3'}}, 'b': {'include': {'s1', 's2', 's3', 's4'}}}
+
+    Model.__fields__['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
+    Model.__fields__['b'].field_info.include == {'s1': ...}
+    Model.__fields__['c'].field_info.include == {'s1': ..., 's2': ...}
+
+    actual = Model().dict(include={'a': {'s3', 's4'}, 'b': ..., 'c': ...})
+    # s1 included via field, s2 via config and s3 via .dict call:
+    expected = {'a': {'s3': 'v3'}, 'b': {'s1': 'v1'}, 'c': {'s1': 'v1', 's2': 'v2'}}
+
+    assert actual == expected, 'Unexpected model export result'
 
 
 def test_custom_init_subclass_params():

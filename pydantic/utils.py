@@ -21,7 +21,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    no_type_check,
 )
 
 from .typing import GenericAlias, NoneType, display_as_type
@@ -291,49 +290,6 @@ def unique_list(input_list: Union[List[T], Tuple[T, ...]]) -> List[T]:
     return result
 
 
-def update_normalized_all(
-    item: Union['AbstractSetIntStr', 'MappingIntStrAny'],
-    all_items: Union['AbstractSetIntStr', 'MappingIntStrAny'],
-) -> Union['AbstractSetIntStr', 'MappingIntStrAny']:
-    """
-    Update item based on what all items contains.
-
-    The update is done based on these cases:
-
-    - if both arguments are dicts then each key-value pair existing in ``all_items`` is merged into ``item``,
-      while the rest of the key-value pairs are updated recursively with this function.
-    - if both arguments are sets then they are just merged.
-    - if ``item`` is a dictionary and ``all_items`` is a set then all values of it are added to ``item`` as
-      ``key: ...``.
-    - if ``item`` is set and ``all_items`` is a dictionary, then ``item`` is converted to a dictionary and then the
-      key-value pairs of ``all_items`` are merged in it.
-
-    During recursive calls, there is a case where ``all_items`` can be an Ellipsis, in which case the ``item`` is
-    returned as is.
-    """
-    if not item:
-        return all_items
-    if isinstance(item, dict) and isinstance(all_items, dict):
-        item = dict(item)
-        item.update({k: update_normalized_all(item[k], v) for k, v in all_items.items() if k in item})
-        item.update({k: v for k, v in all_items.items() if k not in item})
-        return item
-    if isinstance(item, set) and isinstance(all_items, set):
-        item = set(item)
-        item.update(all_items)
-        return item
-    if isinstance(item, dict) and isinstance(all_items, set):
-        item = dict(item)
-        item.update({k: ... for k in all_items if k not in item})
-        return item
-    if isinstance(item, set) and isinstance(all_items, dict):
-        item = {k: ... for k in item}
-        item.update({k: v for k, v in all_items.items() if k not in item})
-        return item
-    # Case when item or all_items is ... (in recursive calls).
-    return item
-
-
 class PyObjectStr(str):
     """
     String class where repr doesn't include quotes. Useful with Representation when you want to return a string
@@ -467,23 +423,31 @@ class ValueItems(Representation):
 
     def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> None:
         if TYPE_CHECKING:
-            self._items: Union['AbstractSetIntStr', 'MappingIntStrAny']
-            self._type: Type[Union[set, dict]]  # type: ignore
+            self._items: 'MappingIntStrAny'
 
-        # For further type checks speed-up
-        if isinstance(items, Mapping):
-            self._type = dict
-        elif isinstance(items, AbstractSet):
-            self._type = set
-        else:
-            raise TypeError(f'Unexpected type of exclude value {items.__class__}')
+        items = self._coerce_items(items)
 
         if isinstance(value, (list, tuple)):
             items = self._normalize_indexes(items, len(value))
 
         self._items = items
 
-    @no_type_check
+    @classmethod
+    def _coerce_items(cls, items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> 'MappingIntStrAny':
+        if isinstance(items, Mapping):
+            pass
+        elif isinstance(items, AbstractSet):
+            items = dict.fromkeys(items, ...)
+        else:
+            raise TypeError(f'Unexpected type of exclude value {items.__class__}')
+        return items
+
+    @classmethod
+    def _coerce_value(cls, value: Any) -> Any:
+        if value is None or value is ...:
+            return value
+        return cls._coerce_items(value)
+
     def is_excluded(self, item: Any) -> bool:
         """
         Check if item is fully excluded
@@ -492,11 +456,8 @@ class ValueItems(Representation):
 
         :param item: key or index of a value
         """
-        if self._type is set:
-            return item in self._items
         return self._items.get(item) is ...
 
-    @no_type_check
     def is_included(self, item: Any) -> bool:
         """
         Check if value is contained in self._items
@@ -505,22 +466,16 @@ class ValueItems(Representation):
         """
         return item in self._items
 
-    @no_type_check
     def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
         :return: raw values for elemet if self._items is dict and contain needed element
         """
 
-        if self._type is dict:
-            item = self._items.get(e)
-            return item if item is not ... else None
-        return None
+        item = self._items.get(e)
+        return item if item is not ... else None
 
-    @no_type_check
-    def _normalize_indexes(
-        self, items: Union['AbstractSetIntStr', 'MappingIntStrAny'], v_length: int
-    ) -> Union['AbstractSetIntStr', 'DictIntStrAny']:
+    def _normalize_indexes(self, items: 'MappingIntStrAny', v_length: int) -> 'DictIntStrAny':
         """
         :param items: dict or set of indexes which will be normalized
         :param v_length: length of sequence indexes of which will be
@@ -530,38 +485,75 @@ class ValueItems(Representation):
         >>> self._normalize_indexes({'__all__'}, 4)
         {0, 1, 2, 3}
         """
-        if any(not isinstance(i, int) and i != '__all__' for i in items):
-            raise TypeError(
-                'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
-                'expected integer keys or keyword "__all__"'
-            )
-        if self._type is set:
-            if '__all__' in items:
-                if items != {'__all__'}:
-                    raise ValueError('set with keyword "__all__" must not contain other elements')
-                return {i for i in range(v_length)}
-            return {v_length + i if i < 0 else i for i in items}
-        else:
-            all_items = items.get('__all__')
-            for i, v in items.items():
-                if not (isinstance(v, Mapping) or isinstance(v, AbstractSet) or v is ...):
-                    raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
-            normalized_items = {v_length + i if i < 0 else i: v for i, v in items.items() if i != '__all__'}
-            if all_items:
-                default: Type[Union[Set[Any], Dict[Any, Any]]]
-                if isinstance(all_items, Mapping):
-                    default = dict
-                elif isinstance(all_items, AbstractSet):
-                    default = set
-                else:
-                    for i in range(v_length):
-                        normalized_items.setdefault(i, ...)
-                    return normalized_items
-                for i in range(v_length):
-                    normalized_item = normalized_items.setdefault(i, default())
-                    if normalized_item is not ...:
-                        normalized_items[i] = update_normalized_all(normalized_item, all_items)
+
+        if TYPE_CHECKING:
+            normalized_items: 'DictIntStrAny'
+        all_items = None
+        normalized_items = {}
+        for i, v in items.items():
+            if not (isinstance(v, Mapping) or isinstance(v, AbstractSet) or v is ...):
+                raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
+            if i == '__all__':
+                all_items = self._coerce_value(v)
+                continue
+            if not isinstance(i, int):
+                raise TypeError(
+                    'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
+                    'expected integer keys or keyword "__all__"'
+                )
+            if v is not None:
+                normalized_i = v_length + i if i < 0 else i
+                normalized_items[normalized_i] = self.merge(v, normalized_items.get(normalized_i))
+
+        if not all_items:
             return normalized_items
+        if all_items is ...:
+            for i in range(v_length):
+                normalized_items.setdefault(i, ...)
+            return normalized_items
+        for i in range(v_length):
+            normalized_item = normalized_items.setdefault(i, {})
+            if normalized_item is not ...:
+                normalized_items[i] = self.merge(all_items, normalized_item)
+        return normalized_items
+
+    @classmethod
+    def merge(cls, base: Any, override: Any, intersect: bool = False) -> Any:
+        """
+        Merge a ``base`` item with an ``override`` item.
+
+        Both ``base`` and ``override`` are converted to dictionaries if possible.
+        Sets are converted to dictionaries with the sets entries as keys and
+        Ellipsis as values.
+
+        Each key-value pair existing in ``base`` is merged with ``override``,
+        while the rest of the key-value pairs are updated recursively with this function.
+
+        Merging takes place based on the "union" of keys if ``intersect`` is
+        set to ``False`` (default) and on the intersection of keys if
+        ``intersect`` is set to ``True``.
+        """
+        override = cls._coerce_value(override)
+        base = cls._coerce_value(base)
+        if override is None:
+            return base
+        if base is ... or base is None:
+            return override
+        elif override is ...:
+            return base if intersect else override
+
+        if intersect:
+            merge_keys = override.keys() & base.keys()
+        else:
+            merge_keys = override.keys() | base.keys()
+
+        merged = {}
+        for k in merge_keys:
+            merged_item = cls.merge(base.get(k), override.get(k), intersect=intersect)
+            if merged_item is not None:
+                merged[k] = merged_item
+
+        return merged
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]

@@ -43,7 +43,7 @@ from .typing import (
     is_typeddict,
     new_type_supertype,
 )
-from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
+from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
@@ -72,7 +72,7 @@ if TYPE_CHECKING:
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
-    from .typing import ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
@@ -91,6 +91,8 @@ class FieldInfo(Representation):
         'alias_priority',
         'title',
         'description',
+        'exclude',
+        'include',
         'const',
         'gt',
         'ge',
@@ -128,6 +130,8 @@ class FieldInfo(Representation):
         self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
+        self.exclude = kwargs.pop('exclude', None)
+        self.include = kwargs.pop('include', None)
         self.const = kwargs.pop('const', None)
         self.gt = kwargs.pop('gt', None)
         self.ge = kwargs.pop('ge', None)
@@ -180,6 +184,8 @@ def Field(
     alias: str = None,
     title: str = None,
     description: str = None,
+    exclude: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
+    include: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
     const: bool = None,
     gt: float = None,
     ge: float = None,
@@ -205,6 +211,10 @@ def Field(
     :param alias: the public name of the field
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
+    :param exclude: exclude this field while dumping.
+      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
+    :param include: include this field while dumping.
+      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
     :param const: this field is required and *must* take it's default value
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
       will have an ``exclusiveMinimum`` validation keyword
@@ -232,6 +242,8 @@ def Field(
         alias=alias,
         title=title,
         description=description,
+        exclude=exclude,
+        include=include,
         const=const,
         gt=gt,
         ge=ge,
@@ -382,7 +394,8 @@ class ModelField(Representation):
             field_info.update_from_config(field_info_from_config)
         elif field_info is None:
             field_info = FieldInfo(value, **field_info_from_config)
-
+        field_info.exclude = ValueItems.merge(field_info_from_config.get('exclude'), field_info.exclude)
+        field_info.include = ValueItems.merge(field_info_from_config.get('include'), field_info.include, intersect=True)
         value = None if field_info.default_factory is not None else field_info.default
         field_info._validate()
         return field_info, value
@@ -407,6 +420,7 @@ class ModelField(Representation):
         elif value is not Undefined:
             required = False
         annotation = get_annotation_from_field_info(annotation, field_info, name, config.validate_assignment)
+
         return cls(
             name=name,
             type_=annotation,
@@ -429,6 +443,12 @@ class ModelField(Representation):
             self.field_info.alias = new_alias
             self.field_info.alias_priority = new_alias_priority
             self.alias = new_alias
+        new_exclude = info_from_config.get('exclude')
+        if new_exclude is not None:
+            self.field_info.exclude = ValueItems.merge(self.field_info.exclude, new_exclude)
+        new_include = info_from_config.get('include')
+        if new_include is not None:
+            self.field_info.include = ValueItems.merge(self.field_info.include, new_include, intersect=True)
 
     @property
     def alt_alias(self) -> bool:

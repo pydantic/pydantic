@@ -842,6 +842,16 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_none: bool = False,
     ) -> 'TupleGenerator':
 
+        # merge field set excludes with explicit exclude parameter with explicit overriding field set options.
+        field_exclude = {
+            k: v.field_info.exclude for k, v in self.__fields__.items() if v.field_info.exclude is not None
+        } or None
+        exclude = ValueItems.merge(field_exclude, exclude)
+        field_include = {
+            k: v.field_info.include for k, v in self.__fields__.items() if v.field_info.include is not None
+        } or None
+        include = ValueItems.merge(field_include, include, intersect=True)
+
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
         if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
             # huge boost for plain _iter()
