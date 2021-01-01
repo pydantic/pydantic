@@ -60,7 +60,7 @@ def url_regex() -> Pattern[str]:
             r'(?P<domain>[^\s/:?#]+)'  # domain, validation occurs later
             r')?'
             r'(?::(?P<port>\d+))?'  # port
-            r'(?P<path>/[^\s?]*)?'  # path
+            r'(?P<path>/[^\s?#]*)?'  # path
             r'(?:\?(?P<query>[^\s#]+))?'  # query
             r'(?:#(?P<fragment>\S+))?',  # fragment
             re.IGNORECASE,
