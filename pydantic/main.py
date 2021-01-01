@@ -285,7 +285,7 @@ class ModelMetaclass(ABCMeta):
                     inferred = ModelField.infer(
                         name=var_name,
                         value=value,
-                        annotation=annotations.get(var_name),
+                        annotation=annotations.get(var_name, Undefined),
                         class_validators=vg.get_validators(var_name),
                         config=config,
                     )

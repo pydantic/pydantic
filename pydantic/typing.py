@@ -181,6 +181,7 @@ __all__ = (
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',
+    'NONE_TYPES',
     'display_as_type',
     'resolve_annotations',
     'is_callable_type',
@@ -208,6 +209,9 @@ __all__ = (
 
 
 NoneType = None.__class__
+NONE_TYPES: Set[Any] = {None, NoneType}
+if Literal:
+    NONE_TYPES.add(Literal[None])
 
 
 def display_as_type(v: Type[Any]) -> str:
