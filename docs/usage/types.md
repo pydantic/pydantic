@@ -91,13 +91,15 @@ with custom properties and validation.
 `subclass of typing.NamedTuple (or collections.namedtuple)`
 : Same as `tuple` but instantiates with the given namedtuple.  
  _pydantic_ will validate the tuple if you use `typing.NamedTuple` since fields are annotated.  
-  If you use `collections.namedtuple`, no validation will be done.
+  If you use `collections.namedtuple`, no validation will be done.  
+  See [Annotated Types](#annotated-types) below for more detail on parsing and validation
 
 `typing.Dict`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
 `subclass of typing.TypedDict`
-: Same as `dict` but _pydantic_ will validate the dictionary since keys are annotated
+: Same as `dict` but _pydantic_ will validate the dictionary since keys are annotated.  
+  See [Annotated Types](#annotated-types) below for more detail on parsing and validation
 
 `typing.Set`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
@@ -400,6 +402,20 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
 
 ```py
 {!.tmp_examples/types_literal3.py!}
+```
+_(This script is complete, it should run "as is")_
+
+## Annotated Types
+
+### NamedTuple
+```py
+{!.tmp_examples/annotated_types_named_tuple.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### TypedDict
+```py
+{!.tmp_examples/annotated_types_typed_dict.py!}
 ```
 _(This script is complete, it should run "as is")_
 
