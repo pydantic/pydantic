@@ -116,7 +116,7 @@ class FieldInfo(Representation):
         self.max_items = kwargs.pop('max_items', None)
         self.min_length = kwargs.pop('min_length', None)
         self.max_length = kwargs.pop('max_length', None)
-        self.allow_mutation = kwargs.pop('allow_mutation', None)
+        self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
         self.extra = kwargs
 
@@ -138,7 +138,7 @@ def Field(
     max_items: int = None,
     min_length: int = None,
     max_length: int = None,
-    allow_mutation: bool = None,
+    allow_mutation: bool = True,
     regex: str = None,
     **extra: Any,
 ) -> Any:
@@ -303,7 +303,7 @@ class ModelField(Representation):
         config: Type['BaseConfig'],
     ) -> 'ModelField':
         field_info_from_config = config.get_field_info(name)
-        from .schema import check_unused_assignment_constraints, get_annotation_from_field_info
+        from .schema import check_unused_constraints, get_annotation_from_field_info, get_constraints
 
         if isinstance(value, FieldInfo):
             field_info = value
@@ -317,8 +317,17 @@ class ModelField(Representation):
         elif value is not Undefined:
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
-        annotation = get_annotation_from_field_info(annotation, field_info, name)
-        check_unused_assignment_constraints(field_info, name, config.validate_assignment)
+
+        constraints = get_constraints(field_info)
+
+        used_constraints: Set[str] = set()
+        if constraints:
+            annotation, used_constraints = get_annotation_from_field_info(annotation, field_info)
+
+        if config.validate_assignment:
+            used_constraints.update(('allow_mutation',))
+
+        check_unused_constraints(constraints, used_constraints, name)
 
         return cls(
             name=name,

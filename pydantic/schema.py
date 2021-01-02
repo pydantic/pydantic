@@ -849,36 +849,40 @@ def encode_default(dft: Any) -> Any:
 
 
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
-_field_constraints = {
-    'min_length',
-    'max_length',
-    'regex',
-    'gt',
-    'lt',
-    'ge',
-    'le',
-    'multiple_of',
-    'min_items',
-    'max_items',
-}
-
-_assignment_field_constraints = {
-    'allow_mutation',
+_field_constraints = {  # field constraints with the default value
+    ('min_length', None),
+    ('max_length', None),
+    ('regex', None),
+    ('gt', None),
+    ('lt', None),
+    ('ge', None),
+    ('le', None),
+    ('multiple_of', None),
+    ('min_items', None),
+    ('max_items', None),
+    ('allow_mutation', True),
 }
 
 
-def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field_name: str) -> Type[Any]:  # noqa: C901
+def get_constraints(field_info: FieldInfo) -> Set[str]:
+    """Gets the constraints set on the field by comparing the constraint value with it's default value
+
+    :param field_info: an instance of FieldInfo
+    :return: the constraints set on field_info
+    """
+    return {
+        f[0] for f in _field_constraints if getattr(field_info, f[0]) is not None and getattr(field_info, f[0]) != f[1]
+    }
+
+
+def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Tuple[Type[Any], Set[str]]:  # noqa: C901
     """
     Get an annotation with validation implemented for numbers and strings based on the field_info.
 
     :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
     :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
-    :param field_name: name of the field for use in error messages
-    :return: the same ``annotation`` if unmodified or a new annotation with validation in place
+    :return: the same ``annotation`` if unmodified or a new annotation along with the used constraints.
     """
-    constraints = {f for f in _field_constraints if getattr(field_info, f) is not None}
-    if not constraints:
-        return annotation
     used_constraints: Set[str] = set()
 
     def go(type_: Any) -> Type[Any]:
@@ -950,30 +954,7 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
 
     ans = go(annotation)
 
-    check_unused_constraints(constraints, used_constraints, field_name)
-
-    return ans
-
-
-def check_unused_assignment_constraints(field_info: FieldInfo, field_name: str, validate_assignment: bool) -> None:
-    """
-    Checks for unused constraints for validation_assignment.
-
-    :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
-    :param field_name: name of the field for use in error messages
-    :param validate_assignment: validate_assignment value of the Config on the BaseModel
-    :return: None, raises ValueError if constraints are unused
-    """
-
-    constraints = {f for f in _assignment_field_constraints if getattr(field_info, f) is not None}
-    if not constraints:
-        return
-    used_constraints: Set[str] = set()
-
-    if validate_assignment:
-        used_constraints.update(('allow_mutation',))
-
-    check_unused_constraints(constraints, used_constraints, field_name)
+    return ans, used_constraints
 
 
 def check_unused_constraints(constraints: Set[Any], used_constraints: Set[Any], field_name: str) -> None:

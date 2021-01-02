@@ -211,8 +211,8 @@ def test_schema_class():
 
 def test_schema_repr():
     s = Field(4, title='Foo is Great')
-    assert str(s) == "default=4 title='Foo is Great' extra={}"
-    assert repr(s) == "FieldInfo(default=4, title='Foo is Great', extra={})"
+    assert str(s) == "default=4 title='Foo is Great' allow_mutation=True extra={}"
+    assert repr(s) == "FieldInfo(default=4, title='Foo is Great', allow_mutation=True, extra={})"
 
 
 def test_schema_class_by_alias():

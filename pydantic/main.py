@@ -388,7 +388,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 # - make sure validators are called without the current value for this field inside `values`
                 # - keep other values (e.g. submodels) untouched (using `BaseModel.dict()` will change them into dicts)
                 # - keep the order of the fields
-                if known_field.field_info.allow_mutation is not None and not known_field.field_info.allow_mutation:
+                if not known_field.field_info.allow_mutation:
                     raise TypeError(f'"{known_field.name}" has allow_mutation set to False and cannot be assigned"')
                 dict_without_original_value = {k: v for k, v in self.__dict__.items() if k != name}
                 value, error_ = known_field.validate(value, dict_without_original_value, loc=name, cls=self.__class__)
