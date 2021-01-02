@@ -303,7 +303,7 @@ class ModelField(Representation):
         config: Type['BaseConfig'],
     ) -> 'ModelField':
         field_info_from_config = config.get_field_info(name)
-        from .schema import check_unused_constraints, get_annotation_from_field_info, get_constraints
+        from .schema import get_annotation_from_field_info
 
         if isinstance(value, FieldInfo):
             field_info = value
@@ -318,16 +318,7 @@ class ModelField(Representation):
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
 
-        constraints = get_constraints(field_info)
-
-        used_constraints: Set[str] = set()
-        if constraints:
-            annotation, used_constraints = get_annotation_from_field_info(annotation, field_info)
-
-        if config.validate_assignment:
-            used_constraints.update(('allow_mutation',))
-
-        check_unused_constraints(constraints, used_constraints, name)
+        annotation = get_annotation_from_field_info(annotation, field_info, name, config.validate_assignment)
 
         return cls(
             name=name,

@@ -875,9 +875,34 @@ def get_constraints(field_info: FieldInfo) -> Set[str]:
     }
 
 
-def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Tuple[Type[Any], Set[str]]:  # noqa: C901
+def get_annotation_from_field_info(
+    annotation: Any, field_info: FieldInfo, field_name: str, validate_assignment: bool = False
+) -> Type[Any]:  # noqa: C901
     """
     Get an annotation with validation implemented for numbers and strings based on the field_info.
+    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
+    :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
+    :param field_name: name of the field for use in error messages
+    :param validate_assignment: default False, flag for BaseModel Config value of validate_assignment
+    :return: the same ``annotation`` if unmodified or a new annotation with validation in place
+    """
+    constraints = get_constraints(field_info)
+
+    used_constraints: Set[str] = set()
+    if constraints:
+        annotation, used_constraints = get_annotation_with_constraints(annotation, field_info)
+
+    if validate_assignment:
+        used_constraints.update(('allow_mutation',))
+
+    check_unused_constraints(constraints, used_constraints, field_name)
+
+    return annotation
+
+
+def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> Tuple[Type[Any], Set[str]]:  # noqa: C901
+    """
+    Get an annotation with used constraints implemented for numbers and strings based on the field_info.
 
     :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
     :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
