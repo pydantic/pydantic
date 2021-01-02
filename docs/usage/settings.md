@@ -169,6 +169,11 @@ Even when using a secrets directory, *pydantic* will still read environment vari
 Passing a file path via the `_secrets_dir` keyword argument on instantiation (method 2) will override
 the value (if any) set on the `Config` class.
 
+!!! note
+    `env_prefix` is not used for secrets in `secrets_dir`!<br/>
+    If you have a field `mydb_password` with `env_prefix = 'mydb'` and `secrets_dir = '/run/secrets'`,
+    you should still have a file named `/run/secrets/mydb_password` and not only `/run/secrets/password`.
+
 ### Use Case: Docker Secrets
 
 Docker Secrets can be used to provide sensitive configuration to an application running in a Docker container.
