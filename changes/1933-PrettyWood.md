@@ -1,2 +1,2 @@
-Validate only sublevel items with `each_item` instead of all sublevels, which
-would happen when the sublevel items were also iterable.
+**Breaking Change:** always validate only first sublevel items with `each_item`.
+There were indeed some edge cases with some compound types where the validated items were the last sublevel ones.
