@@ -25,6 +25,12 @@ try:
 except ImportError:
     from typing import _Final as typing_base  # type: ignore
 
+try:
+    from typing import GenericAlias  # type: ignore
+except ImportError:
+    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
+    GenericAlias = ()
+
 
 if sys.version_info < (3, 7):
     if TYPE_CHECKING:
@@ -74,7 +80,7 @@ else:
     AnyCallable = TypingCallable[..., Any]
     NoArgAnyCallable = TypingCallable[[], Any]
 
-if sys.version_info < (3, 8):
+if sys.version_info < (3, 8):  # noqa: C901
     if TYPE_CHECKING:
         from typing_extensions import Literal
     else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
@@ -83,8 +89,34 @@ if sys.version_info < (3, 8):
         except ImportError:
             Literal = None
 
-    def get_args(t: Type[Any]) -> Tuple[Any, ...]:
-        return getattr(t, '__args__', ())
+    if sys.version_info < (3, 7):
+
+        def get_args(t: Type[Any]) -> Tuple[Any, ...]:
+            """Simplest get_args compatability layer possible.
+
+            The Python 3.6 typing module does not have `_GenericAlias` so
+            this won't work for everything. In particular this will not
+            support the `generics` module (we don't support generic models in
+            python 3.6).
+
+            """
+            return getattr(t, '__args__', ())
+
+    else:
+        from typing import _GenericAlias
+
+        def get_args(t: Type[Any]) -> Tuple[Any, ...]:
+            """Compatability version of get_args for python 3.7.
+
+            Mostly compatible with the python 3.8 `typing` module version
+            and able to handle almost all use cases.
+            """
+            if isinstance(t, _GenericAlias):
+                res = t.__args__
+                if t.__origin__ is Callable and res and res[0] is not Ellipsis:
+                    res = (list(res[:-1]), res[-1])
+                return res
+            return getattr(t, '__args__', ())
 
     def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
         return getattr(t, '__origin__', None)
@@ -149,6 +181,7 @@ __all__ = (
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',
+    'NONE_TYPES',
     'display_as_type',
     'resolve_annotations',
     'is_callable_type',
@@ -178,10 +211,13 @@ __all__ = (
 
 
 NoneType = None.__class__
+NONE_TYPES: Set[Any] = {None, NoneType}
+if Literal:
+    NONE_TYPES.add(Literal[None])
 
 
 def display_as_type(v: Type[Any]) -> str:
-    if not isinstance(v, typing_base) and not isinstance(v, type):
+    if not isinstance(v, typing_base) and not isinstance(v, GenericAlias) and not isinstance(v, type):
         v = v.__class__
 
     if isinstance(v, type) and issubclass(v, Enum):
@@ -191,6 +227,10 @@ def display_as_type(v: Type[Any]) -> str:
             return 'str'
         else:
             return 'enum'
+
+    if isinstance(v, GenericAlias):
+        # Generic alias are constructs like `list[int]`
+        return str(v).replace('typing.', '')
 
     try:
         return v.__name__

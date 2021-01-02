@@ -12,6 +12,13 @@ from pathlib import Path
 
 table = [
     [
+        'None',
+        'null',
+        '',
+        'JSON Schema Core',
+        'Same for `type(None)` or `Literal[None]`'
+    ],
+    [
         'bool',
         'boolean',
         '',

@@ -11,6 +11,9 @@ with custom properties and validation.
 [Strict Types](#strict-types); if you need to constrain the values allowed (e.g. to require a positive int) see
 [Constrained Types](#constrained-types).
 
+`None`, `type(None)` or `Literal[None]` (equivalent according to [PEP 484](https://www.python.org/dev/peps/pep-0484/#using-none))
+: allows only `None` value
+
 `bool`
 : see [Booleans](#booleans) below for details on how bools are validated and what values are permitted
 
@@ -534,8 +537,8 @@ For URI/URL validation the following types are available:
 - `AnyHttpUrl`: schema `http` or `https`, TLD not required
 - `HttpUrl`: schema `http` or `https`, TLD required, max length 2083
 - `PostgresDsn`: schema `postgres` or `postgresql`, user info required, TLD not required
-- `RedisDsn`: schema `redis`, user info not required, tld not required (CHANGED: user info not required from
-  **v1.6** onwards)
+- `RedisDsn`: schema `redis` or `rediss`, user info not required, tld not required (CHANGED: user info
+  not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`, method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`

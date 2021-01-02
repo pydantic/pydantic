@@ -1,0 +1,1 @@
+Do not ignore annotated fields when type is `Union[Type[...], ...]`
