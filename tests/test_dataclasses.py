@@ -8,7 +8,7 @@ from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional
 import pytest
 
 import pydantic
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, ValidationError, validator
 
 
 def test_simple():
@@ -807,38 +807,52 @@ def test_pydantic_callable_field():
     def foo(arg1, arg2):
         return arg1, arg2
 
-    @pydantic.dataclasses.dataclass
-    class HasCallablesDC:
-        non_default_callable: Callable
-        default_callable: Callable = lambda x: foo(x, 'default')
-        default_callable_factory: Callable = dataclasses.field(default=lambda x: foo(x, 'factory'))
+    def bar(x: int, y: float, z: str) -> bool:
+        return str(x + y) == z
 
-    class HasCallablesModel(BaseModel):
-        non_default_callable: Callable
-        default_callable: Callable = lambda x: foo(x, 'default')
-        default_callable_factory: Callable = Field(default_factory=lambda: lambda x: foo(x, 'factory'))
+    class PydanticModel(BaseModel):
+        required_callable: Callable
+        required_callable_2: Callable[[int, float, str], bool]
+
+        default_callable: Callable = foo
+        default_callable_2: Callable[[int, float, str], bool] = bar
+
+    @pydantic.dataclasses.dataclass
+    class PydanticDataclass:
+        required_callable: Callable
+        required_callable_2: Callable[[int, float, str], bool]
+
+        default_callable: Callable = foo
+        default_callable_2: Callable[[int, float, str], bool] = bar
 
     @dataclasses.dataclass
-    class HasCallablesStdlibDC:
-        non_default_callable: Callable
-        default_callable: Callable = lambda x: foo(x, 'default')
-        default_callable_factory: Callable = dataclasses.field(default_factory=lambda: lambda x: foo(x, 'factory'))
+    class StdlibDataclass:
+        required_callable: Callable
+        required_callable_2: Callable[[int, float, str], bool]
 
-    def non_default_callable(x):
-        return foo(x, 'nondefault')
+        default_callable: Callable = foo
+        default_callable_2: Callable[[int, float, str], bool] = bar
 
-    for cls in (HasCallablesModel, HasCallablesDC):
-        a1 = cls(non_default_callable=non_default_callable)
-        a2 = HasCallablesStdlibDC(non_default_callable=non_default_callable)
+    pyd_m = PydanticModel(required_callable=foo, required_callable_2=bar)
+    pyd_dc = PydanticDataclass(required_callable=foo, required_callable_2=bar)
+    std_dc = StdlibDataclass(required_callable=foo, required_callable_2=bar)
 
-        # call non_default
-        assert a1.non_default_callable('hello') == a2.non_default_callable('hello')
-
-        # call default_factory
-        assert a1.default_callable_factory('hello') == a2.default_callable_factory('hello')
-
-        # call default
-        assert a1.default_callable('hello') == a2.default_callable('hello')
+    assert (
+        pyd_m.required_callable
+        is pyd_m.default_callable
+        is pyd_dc.required_callable
+        is pyd_dc.default_callable
+        is std_dc.required_callable
+        is std_dc.default_callable
+    )
+    assert (
+        pyd_m.required_callable_2
+        is pyd_m.default_callable_2
+        is pyd_dc.required_callable_2
+        is pyd_dc.default_callable_2
+        is std_dc.required_callable_2
+        is std_dc.default_callable_2
+    )
 
 
 def test_pickle_overriden_builtin_dataclass(create_module):
