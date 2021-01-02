@@ -1484,23 +1484,6 @@ def test_constraints_schema_validation(kwargs, type_, value):
 @pytest.mark.parametrize(
     'kwargs,type_,value',
     [
-        ({'allow_mutation': True}, str, 'foo'),
-        ({'allow_mutation': False}, str, 'foo'),
-    ],
-)
-def test_schema_constraints_on_assignment(kwargs, type_, value):
-    class Foo(BaseModel):
-        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
-
-        class Config:
-            validate_assignment = True
-
-    assert Foo(a=value)
-
-
-@pytest.mark.parametrize(
-    'kwargs,type_,value',
-    [
         ({'max_length': 5}, str, 'foobar'),
         ({'min_length': 2}, str, 'f'),
         ({'regex': '^foo$'}, str, 'bar'),
