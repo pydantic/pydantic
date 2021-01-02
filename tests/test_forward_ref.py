@@ -1,8 +1,9 @@
 import sys
+from typing import Optional, Tuple
 
 import pytest
 
-from pydantic import ConfigError, ValidationError
+from pydantic import BaseModel, ConfigError, ValidationError
 
 skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
@@ -10,6 +11,7 @@ skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3
 @skip_pre_37
 def test_postponed_annotations(create_module):
     module = create_module(
+        # language=Python
         """
 from __future__ import annotations
 from pydantic import BaseModel
@@ -25,6 +27,7 @@ class Model(BaseModel):
 @skip_pre_37
 def test_postponed_annotations_optional(create_module):
     module = create_module(
+        # language=Python
         """
 from __future__ import annotations
 from typing import Optional
@@ -39,64 +42,60 @@ class Model(BaseModel):
 
 
 def test_basic_forward_ref(create_module):
-    module = create_module(
-        """
-from typing import Optional
-from pydantic import BaseModel
-from pydantic.typing import ForwardRef
+    @create_module
+    def module():
+        from typing import Optional
 
-class Foo(BaseModel):
-    a: int
+        from pydantic import BaseModel
+        from pydantic.typing import ForwardRef
 
-FooRef = ForwardRef('Foo')
+        class Foo(BaseModel):
+            a: int
 
-class Bar(BaseModel):
-    b: Optional[FooRef]
-"""
-    )
+        FooRef = ForwardRef('Foo')
+
+        class Bar(BaseModel):
+            b: Optional[FooRef]
 
     assert module.Bar().dict() == {'b': None}
     assert module.Bar(b={'a': '123'}).dict() == {'b': {'a': 123}}
 
 
 def test_self_forward_ref_module(create_module):
-    module = create_module(
-        """
-from pydantic import BaseModel
-from pydantic.typing import ForwardRef
+    @create_module
+    def module():
+        from pydantic import BaseModel
+        from pydantic.typing import ForwardRef
 
-Foo = ForwardRef('Foo')
+        Foo = ForwardRef('Foo')
 
-class Foo(BaseModel):
-    a: int = 123
-    b: 'Foo' = None
+        class Foo(BaseModel):
+            a: int = 123
+            b: 'Foo' = None
 
-Foo.update_forward_refs()
-    """
-    )
+        Foo.update_forward_refs()
 
     assert module.Foo().dict() == {'a': 123, 'b': None}
     assert module.Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
 def test_self_forward_ref_collection(create_module):
-    module = create_module(
-        """
-from typing import List, Dict
-from pydantic import BaseModel
-from pydantic.typing import ForwardRef
+    @create_module
+    def module():
+        from typing import Dict, List
 
-Foo = ForwardRef('Foo')
+        from pydantic import BaseModel
+        from pydantic.typing import ForwardRef
 
-class Foo(BaseModel):
-    a: int = 123
-    b: Foo = None
-    c: List[Foo] = []
-    d: Dict[str, Foo] = {}
+        Foo = ForwardRef('Foo')
 
-Foo.update_forward_refs()
-    """
-    )
+        class Foo(BaseModel):
+            a: int = 123
+            b: Foo = None
+            c: List[Foo] = []
+            d: Dict[str, Foo] = {}
+
+        Foo.update_forward_refs()
 
     assert module.Foo().dict() == {'a': 123, 'b': None, 'c': [], 'd': {}}
     assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).dict() == {
@@ -114,56 +113,53 @@ Foo.update_forward_refs()
 
 
 def test_self_forward_ref_local(create_module):
-    module = create_module(
-        """
-from pydantic import BaseModel
-from pydantic.typing import ForwardRef
+    @create_module
+    def module():
+        from pydantic import BaseModel
+        from pydantic.typing import ForwardRef
 
-def main():
-    Foo = ForwardRef('Foo')
+        def main():
+            Foo = ForwardRef('Foo')
 
-    class Foo(BaseModel):
-        a: int = 123
-        b: Foo = None
+            class Foo(BaseModel):
+                a: int = 123
+                b: Foo = None
 
-    Foo.update_forward_refs()
-    return Foo
-    """
-    )
+            Foo.update_forward_refs()
+            return Foo
+
     Foo = module.main()
     assert Foo().dict() == {'a': 123, 'b': None}
     assert Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
 def test_missing_update_forward_refs(create_module):
-    module = create_module(
-        """
-from pydantic import BaseModel
-from pydantic.typing import ForwardRef
+    @create_module
+    def module():
+        from pydantic import BaseModel
+        from pydantic.typing import ForwardRef
 
-Foo = ForwardRef('Foo')
+        Foo = ForwardRef('Foo')
 
-class Foo(BaseModel):
-    a: int = 123
-    b: Foo = None
-    """
-    )
+        class Foo(BaseModel):
+            a: int = 123
+            b: Foo = None
+
     with pytest.raises(ConfigError) as exc_info:
         module.Foo(b=123)
     assert str(exc_info.value).startswith('field "b" not yet prepared so type is still a ForwardRef')
 
 
 def test_forward_ref_dataclass(create_module):
-    module = create_module(
-        """
-from pydantic import AnyUrl
-from pydantic.dataclasses import dataclass
+    @create_module
+    def module():
+        from pydantic import AnyUrl
+        from pydantic.dataclasses import dataclass
 
-@dataclass
-class Dataclass:
-    url: AnyUrl
-    """
-    )
+        @dataclass
+        class Dataclass:
+            url: AnyUrl
+
     m = module.Dataclass('http://example.com  ')
     assert m.url == 'http://example.com'
 
@@ -171,6 +167,7 @@ class Dataclass:
 @skip_pre_37
 def test_forward_ref_dataclass_with_future_annotations(create_module):
     module = create_module(
+        # language=Python
         """
 from __future__ import annotations
 from pydantic import AnyUrl
@@ -186,28 +183,25 @@ class Dataclass:
 
 
 def test_forward_ref_sub_types(create_module):
-    module = create_module(
-        """
-from typing import Union
-from pydantic import BaseModel
-from pydantic.typing import ForwardRef
+    @create_module
+    def module():
+        from typing import Union
 
-class Leaf(BaseModel):
-    a: str
+        from pydantic import BaseModel
+        from pydantic.typing import ForwardRef
 
+        class Leaf(BaseModel):
+            a: str
 
-TreeType = Union[ForwardRef('Node'), Leaf]
+        TreeType = Union[ForwardRef('Node'), Leaf]
 
+        class Node(BaseModel):
+            value: int
+            left: TreeType
+            right: TreeType
 
-class Node(BaseModel):
-    value: int
-    left: TreeType
-    right: TreeType
+        Node.update_forward_refs()
 
-
-Node.update_forward_refs()
-    """
-    )
     Node = module.Node
     Leaf = module.Leaf
     data = {'value': 3, 'left': {'a': 'foo'}, 'right': {'value': 5, 'left': {'a': 'bar'}, 'right': {'a': 'buzz'}}}
@@ -218,28 +212,25 @@ Node.update_forward_refs()
 
 
 def test_forward_ref_nested_sub_types(create_module):
-    module = create_module(
-        """
-from typing import Tuple, Union
-from pydantic import BaseModel
-from pydantic.typing import ForwardRef
+    @create_module
+    def module():
+        from typing import Tuple, Union
 
-class Leaf(BaseModel):
-    a: str
+        from pydantic import BaseModel
+        from pydantic.typing import ForwardRef
 
+        class Leaf(BaseModel):
+            a: str
 
-TreeType = Union[Union[Tuple[ForwardRef('Node'), str], int], Leaf]
+        TreeType = Union[Union[Tuple[ForwardRef('Node'), str], int], Leaf]
 
+        class Node(BaseModel):
+            value: int
+            left: TreeType
+            right: TreeType
 
-class Node(BaseModel):
-    value: int
-    left: TreeType
-    right: TreeType
+        Node.update_forward_refs()
 
-
-Node.update_forward_refs()
-    """
-    )
     Node = module.Node
     Leaf = module.Leaf
     data = {
@@ -254,18 +245,18 @@ Node.update_forward_refs()
 
 
 def test_self_reference_json_schema(create_module):
-    module = create_module(
-        """
-from typing import List
-from pydantic import BaseModel
+    @create_module
+    def module():
+        from typing import List
 
-class Account(BaseModel):
-  name: str
-  subaccounts: List['Account'] = []
+        from pydantic import BaseModel
 
-Account.update_forward_refs()
-    """
-    )
+        class Account(BaseModel):
+            name: str
+            subaccounts: List['Account'] = []
+
+        Account.update_forward_refs()
+
     Account = module.Account
     assert Account.schema() == {
         '$ref': '#/definitions/Account',
@@ -291,6 +282,7 @@ Account.update_forward_refs()
 @skip_pre_37
 def test_self_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
+        # language=Python
         """
 from __future__ import annotations
 from typing import List
@@ -326,23 +318,23 @@ Account.update_forward_refs()
 
 
 def test_circular_reference_json_schema(create_module):
-    module = create_module(
-        """
-from typing import List
-from pydantic import BaseModel
+    @create_module
+    def module():
+        from typing import List
 
-class Owner(BaseModel):
-  account: 'Account'
+        from pydantic import BaseModel
 
-class Account(BaseModel):
-  name: str
-  owner: 'Owner'
-  subaccounts: List['Account'] = []
+        class Owner(BaseModel):
+            account: 'Account'
 
-Account.update_forward_refs()
-Owner.update_forward_refs()
-    """
-    )
+        class Account(BaseModel):
+            name: str
+            owner: 'Owner'
+            subaccounts: List['Account'] = []
+
+        Account.update_forward_refs()
+        Owner.update_forward_refs()
+
     Account = module.Account
     assert Account.schema() == {
         '$ref': '#/definitions/Account',
@@ -375,6 +367,7 @@ Owner.update_forward_refs()
 @skip_pre_37
 def test_circular_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
+        # language=Python
         """
 from __future__ import annotations
 from typing import List
@@ -422,28 +415,29 @@ Owner.update_forward_refs()
 
 
 def test_forward_ref_with_field(create_module):
-    create_module(
-        """
-from typing import List
-from pydantic import BaseModel, Field
-from pydantic.typing import ForwardRef
+    @create_module
+    def module():
+        from typing import List
 
-Foo = ForwardRef('Foo')
+        import pytest
 
-try:
-    class Foo(BaseModel):
-        c: List[Foo] = Field(..., gt=0)
-except ValueError:
-    pass
-else:
-    raise AssertionError('error not raised')
-    """
-    )
+        from pydantic import BaseModel, Field
+        from pydantic.typing import ForwardRef
+
+        Foo = ForwardRef('Foo')
+
+        with pytest.raises(
+            ValueError, match='On field "c" the following field constraints are set but not enforced: gt.'
+        ):
+
+            class Foo(BaseModel):
+                c: List[Foo] = Field(..., gt=0)
 
 
 @skip_pre_37
 def test_forward_ref_optional(create_module):
     module = create_module(
+        # language=Python
         """
 from __future__ import annotations
 from pydantic import BaseModel, Field
@@ -472,3 +466,31 @@ class Filter(BaseModel):
     )
     Filter = module.Filter
     assert isinstance(Filter(p={'sort': 'some_field:asc', 'fields': []}), Filter)
+
+
+def test_forward_ref_with_create_model(create_module):
+    @create_module
+    def module():
+        import pydantic
+
+        Sub = pydantic.create_model('Sub', foo='bar', __module__=__name__)
+        assert Sub  # get rid of "local variable 'Sub' is assigned to but never used"
+        Main = pydantic.create_model('Main', sub=('Sub', ...), __module__=__name__)
+        instance = Main(sub={})
+        assert instance.sub.dict() == {'foo': 'bar'}
+
+
+def test_nested_forward_ref():
+    class NestedTuple(BaseModel):
+        x: Tuple[int, Optional['NestedTuple']]  # noqa: F821
+
+    with pytest.raises(ConfigError) as exc_info:
+        NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
+    assert str(exc_info.value) == (
+        'field "x_1" not yet prepared so type is still a ForwardRef, '
+        'you might need to call NestedTuple.update_forward_refs().'
+    )
+
+    NestedTuple.update_forward_refs()
+    obj = NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
+    assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}

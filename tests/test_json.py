@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 import sys
 from dataclasses import dataclass as vanilla_dataclass
 from decimal import Decimal
@@ -51,6 +52,7 @@ class MyEnum(Enum):
         (Decimal('12.34'), '12.34'),
         (create_model('BarModel', a='b', c='d')(), '{"a": "b", "c": "d"}'),
         (MyEnum.foo, '"bar"'),
+        (re.compile('^regex$'), '"^regex$"'),
     ],
 )
 def test_encoding(input, output):

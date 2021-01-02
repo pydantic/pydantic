@@ -124,6 +124,7 @@ def test_var_args_kwargs():
 @skip_pre_38
 def test_positional_only(create_module):
     module = create_module(
+        # language=Python
         """
 from pydantic import validate_arguments
 
@@ -317,3 +318,17 @@ def test_config_arbitrary_types_allowed():
             'ctx': {'expected_arbitrary_type': 'EggBox'},
         },
     ]
+
+
+def test_validate(mocker):
+    stub = mocker.stub(name='on_something_stub')
+
+    @validate_arguments
+    def func(s: str, count: int, *, separator: bytes = b''):
+        stub(s, count, separator)
+
+    func.validate('qwe', 2)
+    with pytest.raises(ValidationError):
+        func.validate(['qwe'], 2)
+
+    stub.assert_not_called()

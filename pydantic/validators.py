@@ -1,5 +1,5 @@
 import re
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from collections.abc import Hashable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
@@ -10,6 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Deque,
     Dict,
     FrozenSet,
     Generator,
@@ -26,8 +27,10 @@ from uuid import UUID
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
+    NONE_TYPES,
     AnyCallable,
     ForwardRef,
+    Literal,
     all_literal_values,
     display_as_type,
     get_class,
@@ -77,6 +80,15 @@ def bytes_validator(v: Any) -> bytes:
         return v.encode()
     elif isinstance(v, (float, int, Decimal)):
         return str(v).encode()
+    else:
+        raise errors.BytesError()
+
+
+def strict_bytes_validator(v: Any) -> Union[bytes]:
+    if isinstance(v, bytes):
+        return v
+    elif isinstance(v, bytearray):
+        return bytes(v)
     else:
         raise errors.BytesError()
 
@@ -245,12 +257,21 @@ def frozenset_validator(v: Any) -> FrozenSet[Any]:
         raise errors.FrozenSetError()
 
 
-def enum_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
+def deque_validator(v: Any) -> Deque[Any]:
+    if isinstance(v, deque):
+        return v
+    elif sequence_like(v):
+        return deque(v)
+    else:
+        raise errors.DequeError()
+
+
+def enum_member_validator(v: Any, field: 'ModelField', config: 'BaseConfig') -> Enum:
     try:
         enum_v = field.type_(v)
     except ValueError:
         # field.type_ should be an enum, so will be iterable
-        raise errors.EnumError(enum_values=list(field.type_))
+        raise errors.EnumMemberError(enum_values=list(field.type_))
     return enum_v.value if config.use_enum_values else enum_v
 
 
@@ -405,14 +426,33 @@ def callable_validator(v: Any) -> AnyCallable:
     raise errors.CallableError(value=v)
 
 
+def enum_validator(v: Any) -> Enum:
+    if isinstance(v, Enum):
+        return v
+
+    raise errors.EnumError(value=v)
+
+
+def int_enum_validator(v: Any) -> IntEnum:
+    if isinstance(v, IntEnum):
+        return v
+
+    raise errors.IntEnumError(value=v)
+
+
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     permitted_choices = all_literal_values(type_)
-    allowed_choices_set = set(permitted_choices)
+
+    # To have a O(1) complexity and still return one of the values set inside the `Literal`,
+    # we create a dict with the set values (a set causes some problems with the way intersection works).
+    # In some cases the set value and checked value can indeed be different (see `test_literal_validator_str_enum`)
+    allowed_choices = {v: v for v in permitted_choices}
 
     def literal_validator(v: Any) -> Any:
-        if v not in allowed_choices_set:
+        try:
+            return allowed_choices[v]
+        except KeyError:
             raise errors.WrongConstantError(given=v, permitted=permitted_choices)
-        return v
 
     return literal_validator
 
@@ -478,6 +518,12 @@ def any_class_validator(v: Any) -> Type[T]:
     raise errors.ClassError()
 
 
+def none_validator(v: Any) -> 'Literal[None]':
+    if v is None:
+        return v
+    raise errors.NotNoneError()
+
+
 def pattern_validator(v: Any) -> Pattern[str]:
     if isinstance(v, Pattern):
         return v
@@ -502,8 +548,8 @@ class IfConfig:
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
 # IPv4Interface before IPv4Address, etc
 _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
-    (IntEnum, [int_validator, enum_validator]),
-    (Enum, [enum_validator]),
+    (IntEnum, [int_validator, enum_member_validator]),
+    (Enum, [enum_member_validator]),
     (
         str,
         [
@@ -534,6 +580,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
     (tuple, [tuple_validator]),
     (set, [set_validator]),
     (frozenset, [frozenset_validator]),
+    (deque, [deque_validator]),
     (UUID, [uuid_validator]),
     (Decimal, [decimal_validator]),
     (IPv4Interface, [ip_v4_interface_validator]),
@@ -548,10 +595,15 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
 def find_validators(  # noqa: C901 (ignore complexity)
     type_: Type[Any], config: Type['BaseConfig']
 ) -> Generator[AnyCallable, None, None]:
+    from .dataclasses import is_builtin_dataclass, make_dataclass_validator
+
     if type_ is Any:
         return
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
+        return
+    if type_ in NONE_TYPES:
+        yield none_validator
         return
     if type_ is Pattern:
         yield pattern_validator
@@ -564,6 +616,15 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if is_literal_type(type_):
         yield make_literal_validator(type_)
+        return
+    if is_builtin_dataclass(type_):
+        yield from make_dataclass_validator(type_, config)
+        return
+    if type_ is Enum:
+        yield enum_validator
+        return
+    if type_ is IntEnum:
+        yield int_enum_validator
         return
 
     class_ = get_class(type_)

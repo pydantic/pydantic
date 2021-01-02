@@ -93,6 +93,11 @@ Similarly, if using the `@dataclass` decorator:
 ```
 _(This script is complete, it should run "as is")_
 
+
+**`underscore_attrs_are_private`**
+: whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)
+
+
 ## Alias Generator
 
 If data source field names do not match your code style (e. g. CamelCase fields),

@@ -1,10 +1,11 @@
 import datetime
+from collections import deque
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, Pattern, Type, Union
 from uuid import UUID
 
 from .color import Color
@@ -27,6 +28,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     Decimal: float,
     Enum: lambda o: o.value,
     frozenset: list,
+    deque: list,
     GeneratorType: list,
     IPv4Address: str,
     IPv4Interface: str,
@@ -51,6 +53,9 @@ def pydantic_encoder(obj: Any) -> Any:
         return obj.dict()
     elif is_dataclass(obj):
         return asdict(obj)
+
+    if isinstance(obj, Pattern):
+        return obj.pattern
 
     # Check the class type and its superclasses for a matching encoder
     for base in obj.__class__.__mro__[:-1]:

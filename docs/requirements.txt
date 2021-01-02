@@ -1,10 +1,10 @@
-ansi2html==1.5.2
+ansi2html==1.6.0
+flake8==3.8.4
+flake8-quotes==3.2.0
 mkdocs==1.1.2
-markdown==3.3
 mkdocs-exclude==1.0.2
-mkdocs-material==6.0.2
+mkdocs-material==6.2.3
 markdown-include==0.6.0
-pygments==2.7.1
-sqlalchemy   # pyup: ignore
-orjson       # pyup: ignore
-ujson        # pyup: ignore
+sqlalchemy
+orjson
+ujson

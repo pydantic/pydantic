@@ -1,26 +1,38 @@
 import os
 import re
 import string
+import sys
 from copy import copy, deepcopy
 from distutils.version import StrictVersion
 from enum import Enum
-from typing import NewType, Union
+from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
 
 import pytest
 
-from pydantic import VERSION, BaseModel
+from pydantic import VERSION, BaseModel, ConstrainedList, conlist
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
-from pydantic.typing import Literal, all_literal_values, display_as_type, is_new_type, new_type_supertype
+from pydantic.typing import (
+    ForwardRef,
+    Literal,
+    all_literal_values,
+    display_as_type,
+    get_args,
+    is_new_type,
+    new_type_supertype,
+    resolve_annotations,
+)
 from pydantic.utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
     ValueItems,
+    all_identical,
     deep_update,
     get_model,
     import_string,
     lenient_issubclass,
+    path_type,
     smart_deepcopy,
     truncate,
     unique_list,
@@ -49,9 +61,16 @@ def test_import_no_attr():
     assert exc_info.value.args[0] == 'Module "os" does not define a "foobar" attribute'
 
 
-@pytest.mark.parametrize('value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'Union[str, int]')))
+@pytest.mark.parametrize(
+    'value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'Union[str, int]'), (list, 'list'))
+)
 def test_display_as_type(value, expected):
     assert display_as_type(value) == expected
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
+def test_display_as_type_generic_alias():
+    assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
 
 
 def test_display_as_type_enum():
@@ -357,6 +376,32 @@ def test_all_literal_values():
     assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
 
 
+def test_path_type(tmp_path):
+    assert path_type(tmp_path) == 'directory'
+    file = tmp_path / 'foobar.txt'
+    file.write_text('hello')
+    assert path_type(file) == 'file'
+
+
+def test_path_type_unknown(tmp_path):
+    p = type(
+        'FakePath',
+        (),
+        {
+            'exists': lambda: True,
+            'is_dir': lambda: False,
+            'is_file': lambda: False,
+            'is_mount': lambda: False,
+            'is_symlink': lambda: False,
+            'is_block_device': lambda: False,
+            'is_char_device': lambda: False,
+            'is_fifo': lambda: False,
+            'is_socket': lambda: False,
+        },
+    )
+    assert path_type(p) == 'unknown'
+
+
 @pytest.mark.parametrize(
     'obj',
     (1, 1.0, '1', b'1', int, None, test_all_literal_values, len, test_all_literal_values.__code__, lambda: ..., ...),
@@ -382,3 +427,45 @@ def test_smart_deepcopy_collection(collection, mocker):
     expected_value = object()
     mocker.patch('pydantic.utils.deepcopy', return_value=expected_value)
     assert smart_deepcopy(collection) is expected_value
+
+
+T = TypeVar('T')
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='get_args is only consistent for python >= 3.8')
+@pytest.mark.parametrize(
+    'input_value,output_value',
+    [
+        (conlist(str), (str,)),
+        (ConstrainedList, ()),
+        (List[str], (str,)),
+        (Dict[str, int], (str, int)),
+        (int, ()),
+        (Union[int, Union[T, int], str][int], (int, str)),
+        (Union[int, Tuple[T, int]][str], (int, Tuple[str, int])),
+        (Callable[[], T][int], ([], int)),
+    ],
+)
+def test_get_args(input_value, output_value):
+    assert get_args(input_value) == output_value
+
+
+def test_resolve_annotations_no_module():
+    # TODO: is there a better test for this, can this case really happen?
+    fr = ForwardRef('Foo')
+    assert resolve_annotations({'Foo': ForwardRef('Foo')}, None) == {'Foo': fr}
+
+
+def test_all_identical():
+    a, b = object(), object()
+    c = [b]
+    assert all_identical([a, b], [a, b]) is True
+    assert all_identical([a, b], [a, b]) is True
+    assert all_identical([a, b, b], [a, b, b]) is True
+    assert all_identical([a, c, b], [a, c, b]) is True
+
+    assert all_identical([], [a]) is False, 'Expected iterables with different lengths to evaluate to `False`'
+    assert all_identical([a], []) is False, 'Expected iterables with different lengths to evaluate to `False`'
+    assert (
+        all_identical([a, [b], b], [a, [b], b]) is False
+    ), 'New list objects are different objects and should therefor not be identical.'

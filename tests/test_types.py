@@ -3,12 +3,13 @@ import os
 import re
 import sys
 import uuid
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
 from typing import (
+    Deque,
     Dict,
     FrozenSet,
     Iterable,
@@ -42,12 +43,17 @@ from pydantic import (
     NameEmail,
     NegativeFloat,
     NegativeInt,
+    NonNegativeFloat,
+    NonNegativeInt,
+    NonPositiveFloat,
+    NonPositiveInt,
     PositiveFloat,
     PositiveInt,
     PyObject,
     SecretBytes,
     SecretStr,
     StrictBool,
+    StrictBytes,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -63,16 +69,12 @@ from pydantic import (
     errors,
     validator,
 )
+from pydantic.typing import Literal, NoneType
 
 try:
     import email_validator
 except ImportError:
     email_validator = None
-
-try:
-    import typing_extensions
-except ImportError:
-    typing_extensions = None
 
 
 class ConBytesModel(BaseModel):
@@ -726,6 +728,31 @@ def test_int_enum_successful_for_str_int():
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
 
+def test_enum_type():
+    """it should validate any Enum"""
+
+    class Model(BaseModel):
+        my_enum: Enum
+
+    Model(my_enum=FruitEnum.banana)
+    Model(my_enum=ToolEnum.wrench)
+    with pytest.raises(ValidationError):
+        Model(my_enum='banana')
+
+
+def test_int_enum_type():
+    """it should validate any IntEnum"""
+
+    class Model(BaseModel):
+        my_int_enum: IntEnum
+
+    Model(my_int_enum=ToolEnum.wrench)
+    with pytest.raises(ValidationError):
+        Model(my_int_enum=FruitEnum.banana)
+    with pytest.raises(ValidationError):
+        Model(my_int_enum=2)
+
+
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):
@@ -827,6 +854,7 @@ def test_dict():
         ((1, 2, '3'), [1, 2, '3']),
         ({1, 2, '3'}, list({1, 2, '3'})),
         ((i ** 2 for i in range(5)), [0, 1, 4, 9, 16]),
+        ((deque((1, 2, 3)), list(deque((1, 2, 3))))),
     ),
 )
 def test_list_success(value, result):
@@ -866,6 +894,7 @@ def test_ordered_dict():
         ((1, 2, '3'), (1, 2, '3')),
         ({1, 2, '3'}, tuple({1, 2, '3'})),
         ((i ** 2 for i in range(5)), (0, 1, 4, 9, 16)),
+        (deque([1, 2, 3]), (1, 2, 3)),
     ),
 )
 def test_tuple_success(value, result):
@@ -973,6 +1002,7 @@ def test_set_type_fails():
     (
         (int, [1, 2, 3], [1, 2, 3]),
         (int, (1, 2, 3), (1, 2, 3)),
+        (int, deque((1, 2, 3)), deque((1, 2, 3))),
         (float, {1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}),
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
@@ -1149,15 +1179,17 @@ def test_int_validation():
     class Model(BaseModel):
         a: PositiveInt = None
         b: NegativeInt = None
-        c: conint(gt=4, lt=10) = None
-        d: conint(ge=0, le=10) = None
-        e: conint(multiple_of=5) = None
+        c: NonNegativeInt = None
+        d: NonPositiveInt = None
+        e: conint(gt=4, lt=10) = None
+        f: conint(ge=0, le=10) = None
+        g: conint(multiple_of=5) = None
 
-    m = Model(a=5, b=-5, c=5, d=0, e=25)
-    assert m == {'a': 5, 'b': -5, 'c': 5, 'd': 0, 'e': 25}
+    m = Model(a=5, b=-5, c=0, d=0, e=5, f=0, g=25)
+    assert m == {'a': 5, 'b': -5, 'c': 0, 'd': 0, 'e': 5, 'f': 0, 'g': 25}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-5, b=5, c=-5, d=11, e=42)
+        Model(a=-5, b=5, c=-5, d=5, e=-5, f=11, g=42)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -1173,18 +1205,30 @@ def test_int_validation():
         },
         {
             'loc': ('c',),
+            'msg': 'ensure this value is greater than or equal to 0',
+            'type': 'value_error.number.not_ge',
+            'ctx': {'limit_value': 0},
+        },
+        {
+            'loc': ('d',),
+            'msg': 'ensure this value is less than or equal to 0',
+            'type': 'value_error.number.not_le',
+            'ctx': {'limit_value': 0},
+        },
+        {
+            'loc': ('e',),
             'msg': 'ensure this value is greater than 4',
             'type': 'value_error.number.not_gt',
             'ctx': {'limit_value': 4},
         },
         {
-            'loc': ('d',),
+            'loc': ('f',),
             'msg': 'ensure this value is less than or equal to 10',
             'type': 'value_error.number.not_le',
             'ctx': {'limit_value': 10},
         },
         {
-            'loc': ('e',),
+            'loc': ('g',),
             'msg': 'ensure this value is a multiple of 5',
             'type': 'value_error.number.not_multiple',
             'ctx': {'multiple_of': 5},
@@ -1196,15 +1240,17 @@ def test_float_validation():
     class Model(BaseModel):
         a: PositiveFloat = None
         b: NegativeFloat = None
-        c: confloat(gt=4, lt=12.2) = None
-        d: confloat(ge=0, le=9.9) = None
-        e: confloat(multiple_of=0.5) = None
+        c: NonNegativeFloat = None
+        d: NonPositiveFloat = None
+        e: confloat(gt=4, lt=12.2) = None
+        f: confloat(ge=0, le=9.9) = None
+        g: confloat(multiple_of=0.5) = None
 
-    m = Model(a=5.1, b=-5.2, c=5.3, d=9.9, e=2.5)
-    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 5.3, 'd': 9.9, 'e': 2.5}
+    m = Model(a=5.1, b=-5.2, c=0, d=0, e=5.3, f=9.9, g=2.5)
+    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 0, 'd': 0, 'e': 5.3, 'f': 9.9, 'g': 2.5}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-5.1, b=5.2, c=-5.3, d=9.91, e=4.2)
+        Model(a=-5.1, b=5.2, c=-5.1, d=5.1, e=-5.3, f=9.91, g=4.2)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -1220,23 +1266,68 @@ def test_float_validation():
         },
         {
             'loc': ('c',),
+            'msg': 'ensure this value is greater than or equal to 0',
+            'type': 'value_error.number.not_ge',
+            'ctx': {'limit_value': 0},
+        },
+        {
+            'loc': ('d',),
+            'msg': 'ensure this value is less than or equal to 0',
+            'type': 'value_error.number.not_le',
+            'ctx': {'limit_value': 0},
+        },
+        {
+            'loc': ('e',),
             'msg': 'ensure this value is greater than 4',
             'type': 'value_error.number.not_gt',
             'ctx': {'limit_value': 4},
         },
         {
-            'loc': ('d',),
+            'loc': ('f',),
             'msg': 'ensure this value is less than or equal to 9.9',
             'type': 'value_error.number.not_le',
             'ctx': {'limit_value': 9.9},
         },
         {
-            'loc': ('e',),
+            'loc': ('g',),
             'msg': 'ensure this value is a multiple of 0.5',
             'type': 'value_error.number.not_multiple',
             'ctx': {'multiple_of': 0.5},
         },
     ]
+
+
+def test_strict_bytes():
+    class Model(BaseModel):
+        v: StrictBytes
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+
+    with pytest.raises(ValidationError):
+        Model(v='foostring')
+
+    with pytest.raises(ValidationError):
+        Model(v=42)
+
+    with pytest.raises(ValidationError):
+        Model(v=0.42)
+
+
+def test_strict_bytes_subclass():
+    class MyStrictBytes(StrictBytes):
+        pass
+
+    class Model(BaseModel):
+        v: MyStrictBytes
+
+    a = Model(v=MyStrictBytes(b'foobar'))
+    assert isinstance(a.v, MyStrictBytes)
+    assert a.v == b'foobar'
+
+    b = Model(v=MyStrictBytes(bytearray('foobar', 'utf-8')))
+    assert isinstance(b.v, MyStrictBytes)
+    assert b.v == 'foobar'.encode()
 
 
 def test_strict_str():
@@ -2131,6 +2222,38 @@ def test_secretstr_error():
     assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 
 
+def test_secretstr_min_max_length():
+    class Foobar(BaseModel):
+        password: SecretStr = Field(min_length=6, max_length=10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(password='')
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('password',),
+            'msg': 'ensure this value has at least 6 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {'limit_value': 6},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(password='1' * 20)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('password',),
+            'msg': 'ensure this value has at most 10 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 10},
+        }
+    ]
+
+    value = '1' * 8
+    assert Foobar(password=value).password.get_secret_value() == value
+
+
 def test_secretbytes():
     class Foobar(BaseModel):
         password: SecretBytes
@@ -2187,32 +2310,92 @@ def test_secretbytes_error():
     assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'byte type expected', 'type': 'type_error.bytes'}]
 
 
+def test_secretbytes_min_max_length():
+    class Foobar(BaseModel):
+        password: SecretBytes = Field(min_length=6, max_length=10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(password=b'')
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('password',),
+            'msg': 'ensure this value has at least 6 characters',
+            'type': 'value_error.any_str.min_length',
+            'ctx': {'limit_value': 6},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(password=b'1' * 20)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('password',),
+            'msg': 'ensure this value has at most 10 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 10},
+        }
+    ]
+
+    value = b'1' * 8
+    assert Foobar(password=value).password.get_secret_value() == value
+
+
+@pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])
+@pytest.mark.parametrize(
+    'field_kw,schema_kw',
+    [
+        [{}, {}],
+        [{'min_length': 6}, {'minLength': 6}],
+        [{'max_length': 10}, {'maxLength': 10}],
+        [{'min_length': 6, 'max_length': 10}, {'minLength': 6, 'maxLength': 10}],
+    ],
+    ids=['no-constrains', 'min-constraint', 'max-constraint', 'min-max-constraints'],
+)
+def test_secrets_schema(secret_cls, field_kw, schema_kw):
+    class Foobar(BaseModel):
+        password: secret_cls = Field(**field_kw)
+
+    assert Foobar.schema() == {
+        'title': 'Foobar',
+        'type': 'object',
+        'properties': {
+            'password': {'title': 'Password', 'type': 'string', 'writeOnly': True, 'format': 'password', **schema_kw}
+        },
+        'required': ['password'],
+    }
+
+
 def test_generic_without_params():
     class Model(BaseModel):
         generic_list: List
         generic_dict: Dict
+        generic_tuple: Tuple
 
-    m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0})
-    assert m.dict() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}}
+    m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0}, generic_tuple=(1, 'q'))
+    assert m.dict() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}, 'generic_tuple': (1, 'q')}
 
 
 def test_generic_without_params_error():
     class Model(BaseModel):
         generic_list: List
         generic_dict: Dict
+        generic_tuple: Tuple
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(generic_list=0, generic_dict=0)
+        Model(generic_list=0, generic_dict=0, generic_tuple=0)
     assert exc_info.value.errors() == [
         {'loc': ('generic_list',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
         {'loc': ('generic_dict',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'},
+        {'loc': ('generic_tuple',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'},
     ]
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_single():
     class Model(BaseModel):
-        a: typing_extensions.Literal['a']
+        a: Literal['a']
 
     Model(a='a')
     with pytest.raises(ValidationError) as exc_info:
@@ -2227,10 +2410,10 @@ def test_literal_single():
     ]
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_multiple():
     class Model(BaseModel):
-        a_or_b: typing_extensions.Literal['a', 'b']
+        a_or_b: Literal['a', 'b']
 
     Model(a_or_b='a')
     Model(a_or_b='b')
@@ -2263,15 +2446,22 @@ def test_frozenset_field():
     assert object_under_test.set == test_set
 
 
-def test_frozenset_field_conversion():
+@pytest.mark.parametrize(
+    'value,result',
+    [
+        ([1, 2, 3], frozenset([1, 2, 3])),
+        ({1, 2, 3}, frozenset([1, 2, 3])),
+        ((1, 2, 3), frozenset([1, 2, 3])),
+        (deque([1, 2, 3]), frozenset([1, 2, 3])),
+    ],
+)
+def test_frozenset_field_conversion(value, result):
     class FrozenSetModel(BaseModel):
         set: FrozenSet[int]
 
-    test_list = [1, 2, 3]
-    test_set = frozenset(test_list)
-    object_under_test = FrozenSetModel(set=test_list)
+    object_under_test = FrozenSetModel(set=value)
 
-    assert object_under_test.set == test_set
+    assert object_under_test.set == result
 
 
 def test_frozenset_field_not_convertible():
@@ -2336,3 +2526,138 @@ def test_bytesize_raises():
     m = Model(size='1MB')
     with pytest.raises(errors.InvalidByteSizeUnit, match='byte unit'):
         m.size.to('bad_unit')
+
+
+def test_deque_success():
+    class Model(BaseModel):
+        v: deque
+
+    assert Model(v=[1, 2, 3]).v == deque([1, 2, 3])
+
+
+@pytest.mark.parametrize(
+    'cls,value,result',
+    (
+        (int, [1, 2, 3], deque([1, 2, 3])),
+        (int, (1, 2, 3), deque((1, 2, 3))),
+        (int, deque((1, 2, 3)), deque((1, 2, 3))),
+        (float, {1.0, 2.0, 3.0}, deque({1.0, 2.0, 3.0})),
+        (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
+        (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
+        (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
+        (int, frozenset([1, 2, 3]), deque([1, 2, 3])),
+    ),
+)
+def test_deque_generic_success(cls, value, result):
+    class Model(BaseModel):
+        v: Deque[cls]
+
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize(
+    'cls,value,errors',
+    (
+        (int, [1, 'a', 3], [{'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
+        (int, (1, 2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
+        (float, range(10), [{'loc': ('v',), 'msg': 'value is not a valid sequence', 'type': 'type_error.sequence'}]),
+        (float, ('a', 2.2, 3.3), [{'loc': ('v', 0), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
+        (float, (1.1, 2.2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
+        (
+            Set[int],
+            [{1, 2}, {2, 3}, {'d'}],
+            [{'loc': ('v', 2, 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}],
+        ),
+        (
+            Tuple[int, str],
+            ((1, 'a'), ('a', 'a'), (3, 'c')),
+            [{'loc': ('v', 1, 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}],
+        ),
+        (
+            List[int],
+            [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
+            [{'loc': ('v', 0), 'msg': 'value is not a valid list', 'type': 'type_error.list'}],
+        ),
+    ),
+)
+def test_deque_fails(cls, value, errors):
+    class Model(BaseModel):
+        v: Deque[cls]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=value)
+    assert exc_info.value.errors() == errors
+
+
+def test_deque_model():
+    class Model2(BaseModel):
+        x: int
+
+    class Model(BaseModel):
+        v: Deque[Model2]
+
+    seq = [Model2(x=1), Model2(x=2)]
+    assert Model(v=seq).v == deque(seq)
+
+
+def test_deque_json():
+    class Model(BaseModel):
+        v: Deque[int]
+
+    assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
+
+
+none_value_type_cases = (None, type(None), NoneType)
+if Literal:
+    none_value_type_cases += (Literal[None],)
+
+
+@pytest.mark.parametrize('value_type', none_value_type_cases)
+def test_none(value_type):
+    class Model(BaseModel):
+        my_none: value_type
+        my_none_list: List[value_type]
+        my_none_dict: Dict[str, value_type]
+        my_json_none: Json[value_type]
+
+    Model(
+        my_none=None,
+        my_none_list=[None] * 3,
+        my_none_dict={'a': None, 'b': None},
+        my_json_none='null',
+    )
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'my_none': {'title': 'My None', 'type': 'null'},
+            'my_none_list': {
+                'title': 'My None List',
+                'type': 'array',
+                'items': {'type': 'null'},
+            },
+            'my_none_dict': {
+                'title': 'My None Dict',
+                'type': 'object',
+                'additionalProperties': {'type': 'null'},
+            },
+            'my_json_none': {'title': 'My Json None', 'type': 'null'},
+        },
+        'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            my_none='qwe',
+            my_none_list=[1, None, 'qwe'],
+            my_none_dict={'a': 1, 'b': None},
+            my_json_none='"a"',
+        )
+    assert exc_info.value.errors() == [
+        {'loc': ('my_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_list', 0), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_list', 2), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+    ]

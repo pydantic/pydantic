@@ -17,6 +17,7 @@ __all__ = (
     'NoneIsNotAllowedError',
     'NoneIsAllowedError',
     'WrongConstantError',
+    'NotNoneError',
     'BoolError',
     'BytesError',
     'DictError',
@@ -30,6 +31,8 @@ __all__ = (
     'UrlPortError',
     'UrlExtraError',
     'EnumError',
+    'IntEnumError',
+    'EnumMemberError',
     'IntegerError',
     'FloatError',
     'PathError',
@@ -158,6 +161,11 @@ class WrongConstantError(PydanticValueError):
         return f'unexpected value; permitted: {permitted}'
 
 
+class NotNoneError(PydanticTypeError):
+    code = 'not_none'
+    msg_template = 'value is not None'
+
+
 class BoolError(PydanticTypeError):
     msg_template = 'value could not be parsed to a boolean'
 
@@ -216,7 +224,9 @@ class UrlExtraError(UrlError):
     msg_template = 'URL invalid, extra characters found after valid URL: {extra!r}'
 
 
-class EnumError(PydanticTypeError):
+class EnumMemberError(PydanticTypeError):
+    code = 'enum'
+
     def __str__(self) -> str:
         permitted = ', '.join(repr(v.value) for v in self.enum_values)  # type: ignore
         return f'value is not a valid enumeration member; permitted: {permitted}'
@@ -276,6 +286,10 @@ class SetError(PydanticTypeError):
 
 class FrozenSetError(PydanticTypeError):
     msg_template = 'value is not a valid frozenset'
+
+
+class DequeError(PydanticTypeError):
+    msg_template = 'value is not a valid deque'
 
 
 class TupleError(PydanticTypeError):
@@ -490,6 +504,16 @@ class DataclassTypeError(PydanticTypeError):
 
 class CallableError(PydanticTypeError):
     msg_template = '{value} is not callable'
+
+
+class EnumError(PydanticTypeError):
+    code = 'enum_instance'
+    msg_template = '{value} is not a valid Enum instance'
+
+
+class IntEnumError(PydanticTypeError):
+    code = 'int_enum_instance'
+    msg_template = '{value} is not a valid IntEnum instance'
 
 
 class IPvAnyAddressError(PydanticValueError):

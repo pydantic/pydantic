@@ -6,7 +6,7 @@ from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Union
 from .fields import ModelField
 from .main import BaseConfig, BaseModel, Extra
 from .typing import display_as_type
-from .utils import deep_update, sequence_like
+from .utils import deep_update, path_type, sequence_like
 
 env_file_sentinel = str(object())
 
@@ -27,11 +27,14 @@ class BaseSettings(BaseModel):
         __pydantic_self__,
         _env_file: Union[Path, str, None] = env_file_sentinel,
         _env_file_encoding: Optional[str] = None,
+        _secrets_dir: Union[Path, str, None] = None,
         **values: Any,
     ) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
         super().__init__(
-            **__pydantic_self__._build_values(values, _env_file=_env_file, _env_file_encoding=_env_file_encoding)
+            **__pydantic_self__._build_values(
+                values, _env_file=_env_file, _env_file_encoding=_env_file_encoding, _secrets_dir=_secrets_dir
+            )
         )
 
     def _build_values(
@@ -39,8 +42,41 @@ class BaseSettings(BaseModel):
         init_kwargs: Dict[str, Any],
         _env_file: Union[Path, str, None] = None,
         _env_file_encoding: Optional[str] = None,
+        _secrets_dir: Union[Path, str, None] = None,
     ) -> Dict[str, Any]:
-        return deep_update(self._build_environ(_env_file, _env_file_encoding), init_kwargs)
+        return deep_update(
+            self._build_secrets_files(_secrets_dir), self._build_environ(_env_file, _env_file_encoding), init_kwargs
+        )
+
+    def _build_secrets_files(self, _secrets_dir: Union[Path, str, None] = None) -> Dict[str, Optional[str]]:
+        """
+        Build fields from "secrets" files.
+        """
+        secrets: Dict[str, Optional[str]] = {}
+
+        secrets_dir = _secrets_dir or self.__config__.secrets_dir
+        if secrets_dir is None:
+            return secrets
+
+        secrets_path = Path(secrets_dir).expanduser()
+
+        if not secrets_path.exists():
+            raise SettingsError(f'directory "{secrets_path}" does not exist')
+        if not secrets_path.is_dir():
+            raise SettingsError(f'secrets_dir must reference a directory, not a {path_type(secrets_path)}')
+
+        for field in self.__fields__.values():
+            for env_name in field.field_info.extra['env_names']:
+                path = secrets_path / env_name
+                if path.is_file():
+                    secrets[field.alias] = path.read_text().strip()
+                elif path.exists():
+                    warnings.warn(
+                        f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
+                        stacklevel=4,
+                    )
+
+        return secrets
 
     def _build_environ(
         self, _env_file: Union[Path, str, None] = None, _env_file_encoding: Optional[str] = None
@@ -89,6 +125,7 @@ class BaseSettings(BaseModel):
         env_prefix = ''
         env_file = None
         env_file_encoding = None
+        secrets_dir = None
         validate_all = True
         extra = Extra.forbid
         arbitrary_types_allowed = True

@@ -12,6 +12,13 @@ from pathlib import Path
 
 table = [
     [
+        'None',
+        'null',
+        '',
+        'JSON Schema Core',
+        'Same for `type(None)` or `Literal[None]`'
+    ],
+    [
         'bool',
         'boolean',
         '',
@@ -383,6 +390,20 @@ table = [
         ''
     ],
     [
+        'NonNegativeInt',
+        'integer',
+        {'minimum': 0},
+        'JSON Schema Validation',
+        ''
+    ],
+    [
+        'NonPositiveInt',
+        'integer',
+        {'maximum': 0},
+        'JSON Schema Validation',
+        ''
+    ],
+    [
         'ConstrainedFloat',
         'number',
         '',
@@ -410,6 +431,20 @@ table = [
         'NegativeFloat',
         'number',
         {'exclusiveMaximum': 0},
+        'JSON Schema Validation',
+        ''
+    ],
+    [
+        'NonNegativeFloat',
+        'number',
+        {'minimum': 0},
+        'JSON Schema Validation',
+        ''
+    ],
+    [
+        'NonPositiveFloat',
+        'number',
+        {'maximum': 0},
         'JSON Schema Validation',
         ''
     ],

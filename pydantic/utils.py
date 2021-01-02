@@ -2,7 +2,7 @@ import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
-from itertools import islice
+from itertools import islice, zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import (
     TYPE_CHECKING,
@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -28,8 +29,9 @@ from .version import version_info
 
 if TYPE_CHECKING:
     from inspect import Signature
+    from pathlib import Path
 
-    from .dataclasses import DataclassType  # noqa: F401
+    from .dataclasses import Dataclass  # noqa: F401
     from .fields import ModelField  # noqa: F401
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
@@ -45,14 +47,19 @@ __all__ = (
     'almost_equal_floats',
     'get_model',
     'to_camel',
+    'is_valid_field',
+    'smart_deepcopy',
     'PyObjectStr',
     'Representation',
     'GetterDict',
     'ValueItems',
     'version_info',  # required here to match behaviour in v1.3
     'ClassAttribute',
+    'path_type',
+    'ROOT_KEY',
 )
 
+ROOT_KEY = '__root__'
 # these are types that are returned unchanged by deepcopy
 IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
     int,
@@ -126,7 +133,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
 
 
 def sequence_like(v: Type[Any]) -> bool:
-    return isinstance(v, (list, tuple, set, frozenset, GeneratorType))
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
 def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
@@ -160,13 +167,14 @@ def in_ipython() -> bool:
 KeyType = TypeVar('KeyType')
 
 
-def deep_update(mapping: Dict[KeyType, Any], updating_mapping: Dict[KeyType, Any]) -> Dict[KeyType, Any]:
+def deep_update(mapping: Dict[KeyType, Any], *updating_mappings: Dict[KeyType, Any]) -> Dict[KeyType, Any]:
     updated_mapping = mapping.copy()
-    for k, v in updating_mapping.items():
-        if k in mapping and isinstance(mapping[k], dict) and isinstance(v, dict):
-            updated_mapping[k] = deep_update(mapping[k], v)
-        else:
-            updated_mapping[k] = v
+    for updating_mapping in updating_mappings:
+        for k, v in updating_mapping.items():
+            if k in updated_mapping and isinstance(updated_mapping[k], dict) and isinstance(v, dict):
+                updated_mapping[k] = deep_update(updated_mapping[k], v)
+            else:
+                updated_mapping[k] = v
     return updated_mapping
 
 
@@ -244,7 +252,7 @@ def generate_model_signature(
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
-def get_model(obj: Union[Type['BaseModel'], Type['DataclassType']]) -> Type['BaseModel']:
+def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseModel']:
     from .main import BaseModel  # noqa: F811
 
     try:
@@ -436,10 +444,10 @@ class GetterDict(Representation):
         return item in self.keys()
 
     def __eq__(self, other: Any) -> bool:
-        return dict(self) == dict(other.items())  # type: ignore
+        return dict(self) == dict(other.items())
 
     def __repr_args__(self) -> 'ReprArgs':
-        return [(None, dict(self))]  # type: ignore
+        return [(None, dict(self))]
 
     def __repr_name__(self) -> str:
         return f'GetterDict[{display_as_type(self._obj)}]'
@@ -574,6 +582,30 @@ class ClassAttribute:
         raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
 
 
+path_types = {
+    'is_dir': 'directory',
+    'is_file': 'file',
+    'is_mount': 'mount point',
+    'is_symlink': 'symlink',
+    'is_block_device': 'block device',
+    'is_char_device': 'char device',
+    'is_fifo': 'FIFO',
+    'is_socket': 'socket',
+}
+
+
+def path_type(p: 'Path') -> str:
+    """
+    Find out what sort of thing a path is.
+    """
+    assert p.exists(), 'path does not exist'
+    for method, name in path_types.items():
+        if getattr(p, method)():
+            return name
+
+    return 'unknown'
+
+
 Obj = TypeVar('Obj')
 
 
@@ -591,3 +623,39 @@ def smart_deepcopy(obj: Obj) -> Obj:
         # faster way for empty collections, no need to copy its members
         return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
     return deepcopy(obj)  # slowest way when we actually might need a deepcopy
+
+
+def is_valid_field(name: str) -> bool:
+    if not name.startswith('_'):
+        return True
+    return ROOT_KEY == name
+
+
+def is_valid_private_name(name: str) -> bool:
+    return not is_valid_field(name) and name not in {
+        '__annotations__',
+        '__classcell__',
+        '__doc__',
+        '__module__',
+        '__orig_bases__',
+        '__qualname__',
+    }
+
+
+_EMPTY = object()
+
+
+def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
+    """
+    Check that the items of `left` are the same objects as those in `right`.
+
+    >>> a, b = object(), object()
+    >>> all_identical([a, b, a], [a, b, a])
+    True
+    >>> all_identical([a, b, [a]], [a, b, [a]])  # new list object, while "equal" is not "identical"
+    False
+    """
+    for left_item, right_item in zip_longest(left, right, fillvalue=_EMPTY):
+        if left_item is not right_item:
+            return False
+    return True

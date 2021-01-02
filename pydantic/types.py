@@ -15,6 +15,7 @@ from typing import (
     Optional,
     Pattern,
     Set,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -38,6 +39,7 @@ from .validators import (
     path_validator,
     set_validator,
     str_validator,
+    strict_bytes_validator,
     strict_float_validator,
     strict_int_validator,
     strict_str_validator,
@@ -62,10 +64,14 @@ __all__ = [
     'conint',
     'PositiveInt',
     'NegativeInt',
+    'NonNegativeInt',
+    'NonPositiveInt',
     'ConstrainedFloat',
     'confloat',
     'PositiveFloat',
     'NegativeFloat',
+    'NonNegativeFloat',
+    'NonPositiveFloat',
     'ConstrainedDecimal',
     'condecimal',
     'UUID1',
@@ -79,6 +85,7 @@ __all__ = [
     'SecretStr',
     'SecretBytes',
     'StrictBool',
+    'StrictBytes',
     'StrictInt',
     'StrictFloat',
     'PaymentCardNumber',
@@ -95,18 +102,19 @@ OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
-    from .dataclasses import DataclassType  # noqa: F401
+    from .dataclasses import Dataclass  # noqa: F401
     from .fields import ModelField
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .typing import CallableGenerator
 
-    ModelOrDc = Type[Union['BaseModel', 'DataclassType']]
+    ModelOrDc = Type[Union['BaseModel', 'Dataclass']]
 
 
 class ConstrainedBytes(bytes):
     strip_whitespace = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
+    strict: bool = False
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -114,9 +122,13 @@ class ConstrainedBytes(bytes):
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield bytes_validator
+        yield strict_bytes_validator if cls.strict else bytes_validator
         yield constr_strip_whitespace
         yield constr_length_validator
+
+
+class StrictBytes(ConstrainedBytes):
+    strict = True
 
 
 def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_length: int = None) -> Type[bytes]:
@@ -132,7 +144,7 @@ T = TypeVar('T')
 class ConstrainedList(list):  # type: ignore
     # Needed for pydantic to detect that this is a list
     __origin__ = list
-    __args__: List[Type[T]]  # type: ignore
+    __args__: Tuple[Type[T], ...]  # type: ignore
 
     min_items: Optional[int] = None
     max_items: Optional[int] = None
@@ -165,7 +177,7 @@ class ConstrainedList(list):  # type: ignore
 
 def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[List[T]]:
     # __args__ is needed to conform to typing generics api
-    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
+    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': (item_type,)}
     # We use new_class to be able to deal with Generic types
     return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
 
@@ -378,6 +390,14 @@ class NegativeInt(ConstrainedInt):
     lt = 0
 
 
+class NonPositiveInt(ConstrainedInt):
+    le = 0
+
+
+class NonNegativeInt(ConstrainedInt):
+    ge = 0
+
+
 class StrictInt(ConstrainedInt):
     strict = True
 
@@ -437,6 +457,14 @@ class PositiveFloat(ConstrainedFloat):
 
 class NegativeFloat(ConstrainedFloat):
     lt = 0
+
+
+class NonPositiveFloat(ConstrainedFloat):
+    le = 0
+
+
+class NonNegativeFloat(ConstrainedFloat):
+    ge = 0
 
 
 class StrictFloat(ConstrainedFloat):
@@ -598,13 +626,24 @@ class Json(metaclass=JsonMeta):
 
 
 class SecretStr:
+    min_length: OptionalInt = None
+    max_length: OptionalInt = None
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(type='string', writeOnly=True, format='password')
+        update_not_none(
+            field_schema,
+            type='string',
+            writeOnly=True,
+            format='password',
+            minLength=cls.min_length,
+            maxLength=cls.max_length,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
+        yield constr_length_validator
 
     @classmethod
     def validate(cls, value: Any) -> 'SecretStr':
@@ -625,6 +664,9 @@ class SecretStr:
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, SecretStr) and self.get_secret_value() == other.get_secret_value()
 
+    def __len__(self) -> int:
+        return len(self._secret_value)
+
     def display(self) -> str:
         warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)
         return str(self)
@@ -634,13 +676,24 @@ class SecretStr:
 
 
 class SecretBytes:
+    min_length: OptionalInt = None
+    max_length: OptionalInt = None
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(type='string', writeOnly=True, format='password')
+        update_not_none(
+            field_schema,
+            type='string',
+            writeOnly=True,
+            format='password',
+            minLength=cls.min_length,
+            maxLength=cls.max_length,
+        )
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
+        yield constr_length_validator
 
     @classmethod
     def validate(cls, value: Any) -> 'SecretBytes':
@@ -660,6 +713,9 @@ class SecretBytes:
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, SecretBytes) and self.get_secret_value() == other.get_secret_value()
+
+    def __len__(self) -> int:
+        return len(self._secret_value)
 
     def display(self) -> str:
         warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning)
