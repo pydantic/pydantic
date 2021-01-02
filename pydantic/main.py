@@ -265,7 +265,7 @@ class ModelMetaclass(ABCMeta):
                         )
                     ):
                         continue
-                    fields[ann_name] = inferred = ModelField.infer(
+                    fields[ann_name] = ModelField.infer(
                         name=ann_name,
                         value=value,
                         annotation=ann_type,
