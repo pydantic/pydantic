@@ -34,15 +34,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
-from .typing import (
-    AnyCallable,
-    ForwardRef,
-    get_args,
-    get_origin,
-    is_classvar,
-    resolve_annotations,
-    update_field_forward_refs,
-)
+from .typing import AnyCallable, get_args, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
     ROOT_KEY,
     ClassAttribute,
@@ -968,12 +960,6 @@ def validate_model(  # noqa: C901 (ignore complexity)
             return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_)
 
     for name, field in model.__fields__.items():
-        if field.type_.__class__ == ForwardRef:
-            raise ConfigError(
-                f'field "{field.name}" not yet prepared so type is still a ForwardRef, '
-                f'you might need to call {cls_.__name__}.update_forward_refs().'
-            )
-
         value = input_data.get(field.alias, _missing)
         using_name = False
         if value is _missing and config.allow_population_by_field_name and field.alt_alias:
