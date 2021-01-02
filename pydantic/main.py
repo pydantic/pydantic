@@ -129,7 +129,7 @@ class BaseConfig:
     underscore_attrs_are_private: bool = False
 
     # Whether or not inherited models as fields should be reconstructed as base model
-    copy_on_model_validation: bool = False
+    copy_on_model_validation: bool = True
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
