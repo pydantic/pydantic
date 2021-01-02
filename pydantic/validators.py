@@ -549,7 +549,7 @@ NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
 def make_named_tuple_validator(type_: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
     from .main import create_model
 
-    # A named tuple can be created with `typing,NamedTuple` with types
+    # A named tuple can be created with `typing.NamedTuple` with types
     # but also with `collections.namedtuple` with just the fields
     # in which case we consider the type to be `Any`
     named_tuple_annotations: Dict[str, Type[Any]] = getattr(type_, '__annotations__', {k: Any for k in type_._fields})
@@ -569,9 +569,9 @@ def make_named_tuple_validator(type_: Type[NamedTupleT]) -> Callable[[Tuple[Any,
 def make_typed_dict_validator(type_: Type['TypedDict']) -> Callable[[Any], Dict[str, Any]]:
     from .main import create_model
 
+    default_value = ... if type_.__total__ else None
     field_definitions: Dict[str, Any] = {
-        field_name: (field_type, ... if type_.__total__ else None)
-        for field_name, field_type in type_.__annotations__.items()
+        field_name: (field_type, default_value) for field_name, field_type in type_.__annotations__.items()
     }
     TypedDictModel: Type['BaseModel'] = create_model('TypedDictModel', **field_definitions)
 
