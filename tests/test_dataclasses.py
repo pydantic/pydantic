@@ -407,7 +407,7 @@ def test_fields():
     fields = user.__pydantic_model__.__fields__
 
     assert fields['id'].required is True
-    assert fields['id'].default is Ellipsis
+    assert fields['id'].default is None
 
     assert fields['name'].required is False
     assert fields['name'].default == 'John Doe'
@@ -426,7 +426,7 @@ def test_default_factory_field():
     fields = user.__pydantic_model__.__fields__
 
     assert fields['id'].required is True
-    assert fields['id'].default is Ellipsis
+    assert fields['id'].default is None
 
     assert fields['aliases'].required is False
     assert fields['aliases'].default == {'John': 'Joey'}

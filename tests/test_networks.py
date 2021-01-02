@@ -190,6 +190,13 @@ def test_user_no_password():
     assert url.host == 'example.org'
 
 
+def test_user_info_no_user():
+    url = validate_url('http://:password@example.org')
+    assert url.user == ''
+    assert url.password == 'password'
+    assert url.host == 'example.org'
+
+
 def test_at_in_path():
     url = validate_url('https://twitter.com/@handle')
     assert url.scheme == 'https'
@@ -197,6 +204,15 @@ def test_at_in_path():
     assert url.user is None
     assert url.password is None
     assert url.path == '/@handle'
+
+
+def test_fragment_without_query():
+    url = validate_url('https://pydantic-docs.helpmanual.io/usage/types/#constrained-types')
+    assert url.scheme == 'https'
+    assert url.host == 'pydantic-docs.helpmanual.io'
+    assert url.path == '/usage/types/'
+    assert url.query is None
+    assert url.fragment == 'constrained-types'
 
 
 @pytest.mark.parametrize(
@@ -321,20 +337,34 @@ def test_redis_dsns():
     class Model(BaseModel):
         a: RedisDsn
 
-    m = Model(a='redis://user:pass@localhost:5432/app')
-    assert m.a == 'redis://user:pass@localhost:5432/app'
+    m = Model(a='redis://user:pass@localhost:1234/app')
+    assert m.a == 'redis://user:pass@localhost:1234/app'
     assert m.a.user == 'user'
     assert m.a.password == 'pass'
+
+    m = Model(a='rediss://user:pass@localhost:1234/app')
+    assert m.a == 'rediss://user:pass@localhost:1234/app'
+
+    m = Model(a='rediss://:pass@localhost:1234')
+    assert m.a == 'rediss://:pass@localhost:1234/0'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
 
-    # password is not required for redis
-    m = Model(a='redis://localhost:5432/app')
-    assert m.a == 'redis://localhost:5432/app'
+    # Password is not required for Redis protocol
+    m = Model(a='redis://localhost:1234/app')
+    assert m.a == 'redis://localhost:1234/app'
     assert m.a.user is None
     assert m.a.password is None
+
+    # Only schema is required for Redis protocol. Otherwise it will be set to default
+    # https://www.iana.org/assignments/uri-schemes/prov/redis
+    m = Model(a='rediss://')
+    assert m.a.scheme == 'rediss'
+    assert m.a.host == 'localhost'
+    assert m.a.port == '6379'
+    assert m.a.path == '/0'
 
 
 def test_custom_schemes():

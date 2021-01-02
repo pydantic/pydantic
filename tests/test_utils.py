@@ -27,6 +27,7 @@ from pydantic.utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
     ValueItems,
+    all_identical,
     deep_update,
     get_model,
     import_string,
@@ -60,9 +61,16 @@ def test_import_no_attr():
     assert exc_info.value.args[0] == 'Module "os" does not define a "foobar" attribute'
 
 
-@pytest.mark.parametrize('value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'Union[str, int]')))
+@pytest.mark.parametrize(
+    'value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'Union[str, int]'), (list, 'list'))
+)
 def test_display_as_type(value, expected):
     assert display_as_type(value) == expected
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
+def test_display_as_type_generic_alias():
+    assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
 
 
 def test_display_as_type_enum():
@@ -446,3 +454,18 @@ def test_resolve_annotations_no_module():
     # TODO: is there a better test for this, can this case really happen?
     fr = ForwardRef('Foo')
     assert resolve_annotations({'Foo': ForwardRef('Foo')}, None) == {'Foo': fr}
+
+
+def test_all_identical():
+    a, b = object(), object()
+    c = [b]
+    assert all_identical([a, b], [a, b]) is True
+    assert all_identical([a, b], [a, b]) is True
+    assert all_identical([a, b, b], [a, b, b]) is True
+    assert all_identical([a, c, b], [a, c, b]) is True
+
+    assert all_identical([], [a]) is False, 'Expected iterables with different lengths to evaluate to `False`'
+    assert all_identical([a], []) is False, 'Expected iterables with different lengths to evaluate to `False`'
+    assert (
+        all_identical([a, [b], b], [a, [b], b]) is False
+    ), 'New list objects are different objects and should therefor not be identical.'
