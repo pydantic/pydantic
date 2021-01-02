@@ -1,1 +1,1 @@
-Stop using `Config.env_prefix` for secrets in `BaseSettings`
+**Breaking change:** Stop using `Config.env_prefix` for secrets in `BaseSettings`
