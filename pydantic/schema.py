@@ -188,7 +188,12 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
         schema['description'] = field.field_info.description
         schema_overrides = True
 
-    if not field.required and not field.field_info.const and field.default is not None:
+    if (
+        not field.required
+        and not field.field_info.const
+        and field.default is not None
+        and not is_callable_type(field.outer_type_)
+    ):
         schema['default'] = encode_default(field.default)
         schema_overrides = True
 
