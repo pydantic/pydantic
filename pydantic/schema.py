@@ -871,7 +871,9 @@ def get_constraints(field_info: FieldInfo) -> Set[str]:
     :return: the constraints set on field_info
     """
     return {
-        f[0] for f in _field_constraints if getattr(field_info, f[0]) is not None and getattr(field_info, f[0]) != f[1]
+        attr
+        for attr, default in _field_constraints
+        if getattr(field_info, attr) is not None and getattr(field_info, attr) != default
     }
 
 
