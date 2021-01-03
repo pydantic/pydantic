@@ -849,32 +849,6 @@ def encode_default(dft: Any) -> Any:
 
 
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
-_field_constraints = {  # field constraints with the default value
-    ('min_length', None),
-    ('max_length', None),
-    ('regex', None),
-    ('gt', None),
-    ('lt', None),
-    ('ge', None),
-    ('le', None),
-    ('multiple_of', None),
-    ('min_items', None),
-    ('max_items', None),
-    ('allow_mutation', True),
-}
-
-
-def get_constraints(field_info: FieldInfo) -> Set[str]:
-    """Gets the constraints set on the field by comparing the constraint value with it's default value
-
-    :param field_info: an instance of FieldInfo
-    :return: the constraints set on field_info
-    """
-    return {
-        attr
-        for attr, default in _field_constraints
-        if getattr(field_info, attr) is not None and getattr(field_info, attr) != default
-    }
 
 
 def get_annotation_from_field_info(
@@ -888,7 +862,7 @@ def get_annotation_from_field_info(
     :param validate_assignment: default False, flag for BaseModel Config value of validate_assignment
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
-    constraints = get_constraints(field_info)
+    constraints = field_info.get_constraints()
 
     used_constraints: Set[str] = set()
     if constraints:

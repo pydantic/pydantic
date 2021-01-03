@@ -99,6 +99,20 @@ class FieldInfo(Representation):
         'extra',
     )
 
+    __field_constraints__ = {  # field constraints with the default value
+        'min_length': None,
+        'max_length': None,
+        'regex': None,
+        'gt': None,
+        'lt': None,
+        'ge': None,
+        'le': None,
+        'multiple_of': None,
+        'min_items': None,
+        'max_items': None,
+        'allow_mutation': True,
+    }
+
     def __init__(self, default: Any = Undefined, **kwargs: Any) -> None:
         self.default = default
         self.default_factory = kwargs.pop('default_factory', None)
@@ -119,6 +133,17 @@ class FieldInfo(Representation):
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
         self.extra = kwargs
+
+    def __repr_args__(self) -> 'ReprArgs':
+        attrs = ((s, getattr(self, s)) for s in self.__slots__)
+        return [(a, v) for a, v in attrs if v != self.__field_constraints__.get(a, None)]
+
+    def get_constraints(self) -> Set[str]:
+        """Gets the constraints set on the field by comparing the constraint value with it's default value
+
+        :return: the constraints set on field_info
+        """
+        return {attr for attr, default in self.__field_constraints__.items() if getattr(self, attr) != default}
 
 
 def Field(
