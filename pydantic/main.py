@@ -2,6 +2,7 @@ import json
 import sys
 import warnings
 from abc import ABCMeta
+from collections import OrderedDict
 from copy import deepcopy
 from enum import Enum
 from functools import partial
@@ -71,6 +72,7 @@ if TYPE_CHECKING:
 
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
+    ModelFieldsDict = OrderedDict[str, ModelField]
 
     class SchemaExtraCallable(typing_extensions.Protocol):
         @overload
@@ -83,6 +85,14 @@ if TYPE_CHECKING:
 
 
 else:
+
+    class ModelFieldsDict(OrderedDict):
+        """Store fields in the order they were last updated"""
+
+        def __setitem__(self, field_name: str, field: ModelField) -> None:
+            super().__setitem__(field_name, field)
+            self.move_to_end(field_name)
+
     SchemaExtraCallable = Callable[..., None]
 
 try:
@@ -210,7 +220,7 @@ _is_base_model_class_defined = False
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
-        fields: Dict[str, ModelField] = {}
+        fields = ModelFieldsDict()
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
 
@@ -336,7 +346,7 @@ object_setattr = object.__setattr__
 class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
-        __fields__: Dict[str, ModelField] = {}
+        __fields__: ModelFieldsDict
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
         __post_root_validators__: List[Tuple[bool, AnyCallable]]
@@ -902,7 +912,7 @@ def create_model(
     else:
         __base__ = cast(Type['Model'], BaseModel)
 
-    fields = {}
+    fields = ModelFieldsDict()
     annotations = {}
 
     for f_name, f_def in field_definitions.items():

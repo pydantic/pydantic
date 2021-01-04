@@ -1,0 +1,1 @@
+Allow validating overwritten fields (in submodels) based on other fields by putting those overwritten fields at the end of `__fields__`.

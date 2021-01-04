@@ -336,7 +336,6 @@ def test_alias_priority():
             def alias_generator(x):
                 return f'{x}_generator_child'
 
-    # debug([f.alias for f in Parent.__fields__.values()], [f.alias for f in Child.__fields__.values()])
     assert [f.alias for f in Parent.__fields__.values()] == [
         'a_field_parent',
         'b_field_parent',
@@ -345,9 +344,9 @@ def test_alias_priority():
         'e_generator_parent',
     ]
     assert [f.alias for f in Child.__fields__.values()] == [
-        'a_field_child',
         'b_config_child',
         'c_field_parent',
         'd_config_parent',
         'e_generator_child',
+        'a_field_child',
     ]
