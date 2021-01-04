@@ -34,7 +34,7 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, ForwardRef, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
+from .typing import AnyCallable, get_args, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
 from .utils import (
     ROOT_KEY,
     ClassAttribute,
@@ -253,10 +253,13 @@ class ModelMetaclass(ABCMeta):
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, Undefined)
+                    allowed_types = get_args(ann_type) if get_origin(ann_type) is Union else (ann_type,)
                     if (
                         isinstance(value, untouched_types)
                         and ann_type != PyObject
-                        and not lenient_issubclass(get_origin(ann_type), Type)
+                        and not any(
+                            lenient_issubclass(get_origin(allowed_type), Type) for allowed_type in allowed_types
+                        )
                     ):
                         continue
                     fields[ann_name] = inferred = ModelField.infer(
@@ -285,7 +288,7 @@ class ModelMetaclass(ABCMeta):
                     inferred = ModelField.infer(
                         name=var_name,
                         value=value,
-                        annotation=annotations.get(var_name),
+                        annotation=annotations.get(var_name, Undefined),
                         class_validators=vg.get_validators(var_name),
                         config=config,
                     )
@@ -788,12 +791,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         value_include = ValueItems(self, include) if include else None
 
         for field_key, v in self.__dict__.items():
-            if (
-                (allowed_keys is not None and field_key not in allowed_keys)
-                or (exclude_none and v is None)
-                or (exclude_defaults and getattr(self.__fields__.get(field_key), 'default', _missing) == v)
-            ):
+            if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
                 continue
+            if exclude_defaults:
+                model_field = self.__fields__.get(field_key)
+                if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
+                    continue
             if by_alias and field_key in self.__fields__:
                 dict_key = self.__fields__[field_key].alias
             else:
@@ -957,12 +960,6 @@ def validate_model(  # noqa: C901 (ignore complexity)
             return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_)
 
     for name, field in model.__fields__.items():
-        if field.type_.__class__ == ForwardRef:
-            raise ConfigError(
-                f'field "{field.name}" not yet prepared so type is still a ForwardRef, '
-                f'you might need to call {cls_.__name__}.update_forward_refs().'
-            )
-
         value = input_data.get(field.alias, _missing)
         using_name = False
         if value is _missing and config.allow_population_by_field_name and field.alt_alias:

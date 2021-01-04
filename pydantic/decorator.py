@@ -52,6 +52,7 @@ def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'Config
             return vd.call(*args, **kwargs)
 
         wrapper_function.vd = vd  # type: ignore
+        wrapper_function.validate = vd.init_model_instance  # type: ignore
         wrapper_function.raw_function = vd.raw_function  # type: ignore
         wrapper_function.model = vd.model  # type: ignore
         return wrapper_function
@@ -134,9 +135,12 @@ class ValidatedFunction:
 
         self.create_model(fields, takes_args, takes_kwargs, config)
 
-    def call(self, *args: Any, **kwargs: Any) -> Any:
+    def init_model_instance(self, *args: Any, **kwargs: Any) -> BaseModel:
         values = self.build_values(args, kwargs)
-        m = self.model(**values)
+        return self.model(**values)
+
+    def call(self, *args: Any, **kwargs: Any) -> Any:
+        m = self.init_model_instance(*args, **kwargs)
         return self.execute(m)
 
     def build_values(self, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Dict[str, Any]:
