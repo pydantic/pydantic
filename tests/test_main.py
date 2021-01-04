@@ -383,6 +383,66 @@ def test_immutability(allow_mutation_, frozen_):
         assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
+def test_not_frozen_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'TestModel'" in exc_info.value.args[0]
+
+
+def test_frozen_with_hashable_fields_are_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    assert m.__hash__ is not None
+    assert isinstance(hash(m), int)
+
+
+def test_frozen_with_unhashable_fields_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+        y: List[int] = [1, 2, 3]
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'list'" in exc_info.value.args[0]
+
+
+def test_hash_function_give_different_result_for_different_object():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    m2 = TestModel()
+    m3 = TestModel(a=11)
+    assert hash(m) == hash(m2)
+    assert hash(m) != hash(m3)
+
+    # Redefined `TestModel`
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m4 = TestModel()
+    assert hash(m) != hash(m4)
+
+
 def test_const_validates():
     class Model(BaseModel):
         a: int = Field(3, const=True)
