@@ -114,7 +114,7 @@ def test_constrained_bytes_too_long():
 
 def test_constrained_bytes_lower_enabled():
     class Model(BaseModel):
-        v: conbytes(lower_str=True)
+        v: conbytes(to_lower=True)
 
     m = Model(v=b'ABCD')
     assert m.v == b'abcd'
@@ -122,7 +122,7 @@ def test_constrained_bytes_lower_enabled():
 
 def test_constrained_bytes_lower_disabled():
     class Model(BaseModel):
-        v: conbytes(lower_str=False)
+        v: conbytes(to_lower=False)
 
     m = Model(v=b'ABCD')
     assert m.v == b'ABCD'
@@ -464,7 +464,7 @@ def test_constrained_str_too_long():
 
 def test_constrained_str_lower_enabled():
     class Model(BaseModel):
-        v: constr(lower_str=True)
+        v: constr(to_lower=True)
 
     m = Model(v='ABCD')
     assert m.v == 'abcd'
@@ -472,7 +472,7 @@ def test_constrained_str_lower_enabled():
 
 def test_constrained_str_lower_disabled():
     class Model(BaseModel):
-        v: constr(lower_str=False)
+        v: constr(to_lower=False)
 
     m = Model(v='ABCD')
     assert m.v == 'ABCD'
