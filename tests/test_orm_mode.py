@@ -47,6 +47,35 @@ def test_getdict():
     assert repr(gd) == "GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})"
 
 
+def test_orm_mode_root():
+    class PokemonCls:
+        def __init__(self, *, en_name: str, jp_name: str):
+            self.en_name = en_name
+            self.jp_name = jp_name
+
+    class Pokemon(BaseModel):
+        en_name: str
+        jp_name: str
+
+        class Config:
+            orm_mode = True
+
+    class Pokemons(BaseModel):
+        __root__: List[Pokemon]
+
+        class Config:
+            orm_mode = True
+
+    pika = PokemonCls(en_name='Pikachu', jp_name='ピカチュウ')
+    bulbi = PokemonCls(en_name='Bulbasaur', jp_name='フシギダネ')
+
+    pokemons = Pokemons.from_orm([pika, bulbi])
+    assert pokemons.__root__ == [
+        Pokemon(en_name='Pikachu', jp_name='ピカチュウ'),
+        Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
+    ]
+
+
 def test_orm_mode():
     class PetCls:
         def __init__(self, *, name: str, species: str):
