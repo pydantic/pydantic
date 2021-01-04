@@ -1120,6 +1120,60 @@ def test_parse_obj_non_mapping_root():
     ]
 
 
+def test_parse_obj_nested_root():
+    class Pokemon(BaseModel):
+        name: str
+        level: int
+
+    class Pokemons(BaseModel):
+        __root__: List[Pokemon]
+
+    class Player(BaseModel):
+        rank: int
+        pokemons: Pokemons
+
+    class Players(BaseModel):
+        __root__: Dict[str, Player]
+
+    class Tournament(BaseModel):
+        players: Players
+        city: str
+
+    payload = {
+        'players': {
+            'Jane': {
+                'rank': 1,
+                'pokemons': [
+                    {
+                        'name': 'Pikachu',
+                        'level': 100,
+                    },
+                    {
+                        'name': 'Bulbasaur',
+                        'level': 13,
+                    },
+                ],
+            },
+            'Tarzan': {
+                'rank': 2,
+                'pokemons': [
+                    {
+                        'name': 'Jigglypuff',
+                        'level': 7,
+                    },
+                ],
+            },
+        },
+        'city': 'Qwerty',
+    }
+
+    tournament = Tournament.parse_obj(payload)
+    assert tournament.city == 'Qwerty'
+    assert len(tournament.players.__root__) == 2
+    assert len(tournament.players.__root__['Jane'].pokemons.__root__) == 2
+    assert tournament.players.__root__['Jane'].pokemons.__root__[0].name == 'Pikachu'
+
+
 def test_untouched_types():
     from pydantic import BaseModel
 
