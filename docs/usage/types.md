@@ -719,6 +719,25 @@ _(This script is complete, it should run "as is")_
 
 Where `Field` refers to the [field function](schema.md#field-customisation).
 
+### Arguments to `constr`
+The following arguments are available when using the `constr` type function
+
+-  `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_lower: bool = False`: turns all characters to lowercase
+- `strict: bool = False`: controls type coercion
+- `min_length: int = None`: minimum length of the string
+- `max_length`: maximum length of the string
+- `curtail_length`: restricts the strings length
+- `regex: str = None`: regex to validate the string against
+
+### Arguments to `conbytes`
+The following arguments are available when using the `conbytes` type function
+
+-  `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_lower: bool = False`: turns all characters to lowercase
+- `min_length: int = None`: minimum length of the byte string
+- `max_length`: maximum length of the byte string
+
 ## Strict Types
 
 You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types 
