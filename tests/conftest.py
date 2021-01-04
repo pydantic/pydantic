@@ -9,6 +9,9 @@ from types import FunctionType
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
+# See https://hypothesis.readthedocs.io/en/latest/strategies.html#interaction-with-pytest-cov
+pytest_plugins = ['hypothesis.extra.pytestplugin']
+
 
 def _extract_source_code_from_function(function):
     if function.__code__.co_argcount:
