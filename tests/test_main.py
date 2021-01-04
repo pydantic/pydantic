@@ -351,7 +351,7 @@ def test_required():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-def test_not_immutability():
+def test_not_immutability_when_allow_mutation_is_true():
     class TestModel(BaseModel):
         a: int = 10
 
@@ -368,12 +368,47 @@ def test_not_immutability():
     assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
-def test_immutability():
+def test_not_immutability_when_not_frozen():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = False
+            extra = Extra.forbid
+
+    m = TestModel()
+    assert m.a == 10
+    m.a = 11
+    assert m.a == 11
+    with pytest.raises(ValueError) as exc_info:
+        m.b = 11
+    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
+
+
+def test_immutability_when_allow_mutation_is_false():
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
             allow_mutation = False
+            extra = Extra.forbid
+
+    m = TestModel()
+    assert m.a == 10
+    with pytest.raises(TypeError) as exc_info:
+        m.a = 11
+    assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
+    with pytest.raises(ValueError) as exc_info:
+        m.b = 11
+    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
+
+
+def test_immutability_when_frozen():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
             extra = Extra.forbid
 
     m = TestModel()

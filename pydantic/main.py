@@ -112,6 +112,7 @@ class BaseConfig:
     validate_all = False
     extra = Extra.ignore
     allow_mutation = True
+    frozen = False
     allow_population_by_field_name = False
     use_enum_values = False
     fields: Dict[str, Union[str, Dict[str, str]]] = {}
@@ -374,7 +375,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-        elif not self.__config__.allow_mutation:
+        elif not self.__config__.allow_mutation or self.__config__.frozen:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.__config__.validate_assignment:
             new_values = {**self.__dict__, name: value}
