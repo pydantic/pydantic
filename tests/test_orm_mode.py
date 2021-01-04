@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Dict, List
 
 import pytest
 
@@ -60,7 +60,7 @@ def test_orm_mode_root():
         class Config:
             orm_mode = True
 
-    class Pokemons(BaseModel):
+    class PokemonList(BaseModel):
         __root__: List[Pokemon]
 
         class Config:
@@ -69,11 +69,23 @@ def test_orm_mode_root():
     pika = PokemonCls(en_name='Pikachu', jp_name='ピカチュウ')
     bulbi = PokemonCls(en_name='Bulbasaur', jp_name='フシギダネ')
 
-    pokemons = Pokemons.from_orm([pika, bulbi])
+    pokemons = PokemonList.from_orm([pika, bulbi])
     assert pokemons.__root__ == [
         Pokemon(en_name='Pikachu', jp_name='ピカチュウ'),
         Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
     ]
+
+    class PokemonDict(BaseModel):
+        __root__: Dict[str, Pokemon]
+
+        class Config:
+            orm_mode = True
+
+    pokemons = PokemonDict.from_orm({'pika': pika, 'bulbi': bulbi})
+    assert pokemons.__root__ == {
+        'pika': Pokemon(en_name='Pikachu', jp_name='ピカチュウ'),
+        'bulbi': Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
+    }
 
 
 def test_orm_mode():
