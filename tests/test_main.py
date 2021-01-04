@@ -351,74 +351,36 @@ def test_required():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-def test_not_immutability_when_allow_mutation_is_true():
+@pytest.mark.parametrize('allow_mutation_, frozen_', [(False, False), (True, False), (False, True), (True, True)])
+def test_immutability(allow_mutation_, frozen_):
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
-            allow_mutation = True
+            allow_mutation = allow_mutation_
             extra = Extra.forbid
+            frozen = frozen_
 
     m = TestModel()
-    assert m.a == 10
-    m.a = 11
-    assert m.a == 11
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
+    immutable = allow_mutation_ is False or frozen_ is True
 
-def test_not_immutability_when_not_frozen():
-    class TestModel(BaseModel):
-        a: int = 10
+    if immutable:
+        assert m.a == 10
+        with pytest.raises(TypeError) as exc_info:
+            m.a = 11
+        assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
+        with pytest.raises(ValueError) as exc_info:
+            m.b = 11
+        assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
-        class Config:
-            frozen = False
-            extra = Extra.forbid
-
-    m = TestModel()
-    assert m.a == 10
-    m.a = 11
-    assert m.a == 11
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
-
-
-def test_immutability_when_allow_mutation_is_false():
-    class TestModel(BaseModel):
-        a: int = 10
-
-        class Config:
-            allow_mutation = False
-            extra = Extra.forbid
-
-    m = TestModel()
-    assert m.a == 10
-    with pytest.raises(TypeError) as exc_info:
+    else:
+        assert m.a == 10
         m.a = 11
-    assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
-
-
-def test_immutability_when_frozen():
-    class TestModel(BaseModel):
-        a: int = 10
-
-        class Config:
-            frozen = True
-            extra = Extra.forbid
-
-    m = TestModel()
-    assert m.a == 10
-    with pytest.raises(TypeError) as exc_info:
-        m.a = 11
-    assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
+        assert m.a == 11
+        with pytest.raises(ValueError) as exc_info:
+            m.b = 11
+        assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
 def test_const_validates():
