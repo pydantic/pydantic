@@ -727,7 +727,7 @@ The following arguments are available when using the `constr` type function
 - `strict: bool = False`: controls type coercion
 - `min_length: int = None`: minimum length of the string
 - `max_length`: maximum length of the string
-- `curtail_length`: restricts the strings length
+- `curtail_length`: shrinks the string length to the set value when it is longer than the set value
 - `regex: str = None`: regex to validate the string against
 
 ### Arguments to `conbytes`
