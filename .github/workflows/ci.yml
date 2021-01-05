@@ -37,6 +37,106 @@ jobs:
       - name: check dist
         run: make check-dist
 
+  test-linux-aarch64:
+    name: test py3.${{ matrix.python-version }} on centos aarch64
+    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [6, 7, 8, 9]
+    env:
+      PYTHON: /opt/python/cp3${{ matrix.python-version }}-*/bin/python
+      IMG: quay.io/pypa/manylinux2014_aarch64
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up QEMU
+      id: qemu
+      uses: docker/setup-qemu-action@v1
+
+    - name: Available platforms
+      run: echo ${{ steps.qemu.outputs.platforms }}
+
+    - name: install
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+        ${{ env.IMG }} bash -c \
+        '
+        ${{ env.PYTHON }} -m venv .pyenv
+        source .pyenv/bin/activate
+        pip install -U pip
+        make install-testing
+        pip freeze
+        deactivate
+        '
+
+    - name: compile
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+        ${{ env.IMG }} bash -c \
+        '
+        source .pyenv/bin/activate
+        make build-trace
+        python -c "import sys, pydantic; print(pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+        ls -alh
+        ls -alh pydantic/
+        deactivate
+        '
+
+    - name: test compiled and deps
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+        ${{ env.IMG }} bash -c \
+        '
+        source .pyenv/bin/activate
+        make test
+        deactivate
+        '
+
+    - name: uninstall deps
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+        ${{ env.IMG }} bash -c \
+        '
+        source .pyenv/bin/activate
+        pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+        deactivate
+        '
+
+    - name: test compiled without deps
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+        ${{ env.IMG }} bash -c \
+        '
+        source .pyenv/bin/activate
+        make test
+        deactivate
+        '
+
+    - name: remove compiled binaries
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+        ${{ env.IMG }} bash -c \
+        '
+        source .pyenv/bin/activate
+        rm -r pydantic/*.so pydantic/*.c pydantic/__pycache__
+        ls -alh
+        ls -alh pydantic/
+        deactivate
+        '
+
+    - name: test uncompiled without deps
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+        ${{ env.IMG }} bash -c \
+        '
+        source .pyenv/bin/activate
+        make test
+        deactivate
+        '
+
   test-linux:
     name: test py${{ matrix.python-version }} on linux
     runs-on: ubuntu-latest
@@ -247,9 +347,87 @@ jobs:
         name: pypi_files
         path: dist
 
+  build-aarch64:
+    name: build py3.${{ matrix.python-version }} on centos aarch64
+    needs: [lint, test-linux-aarch64]
+    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
+    strategy:
+      matrix:
+        python-version: [6, 7, 8, 9]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    env:
+      PYTHON: /opt/python/cp3${{ matrix.python-version }}-*/bin/python
+      IMG: quay.io/pypa/manylinux2014_aarch64
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up QEMU
+      id: qemu
+      uses: docker/setup-qemu-action@v1
+
+    - name: Available platforms
+      run: echo ${{ steps.qemu.outputs.platforms }}
+
+    - name: Install tools
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+          ${{ env.IMG }} bash -c \
+          '
+          ${{ env.PYTHON }} -m venv .pyenv
+          source .pyenv/bin/activate
+          pip install -U pip
+          pip install -U setuptools wheel cython twine
+          deactivate
+          '
+
+    - name: Make wheel
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+          ${{ env.IMG }} bash -c \
+          '
+          source .pyenv/bin/activate
+          python setup.py bdist_wheel
+          deactivate
+          '
+
+    - name: Repair wheel wheel
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+          ${{ env.IMG }} auditwheel repair dist/*.whl --wheel-dir wheelhouse/
+
+    - name: list dist files
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+          ${{ env.IMG }} bash -c \
+          '
+          source .pyenv/bin/activate
+          ${{ matrix.ls || 'ls -lh' }} wheelhouse/
+          twine check wheelhouse/*
+          deactivate
+          '
+
+    - name: Test
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+          ${{ env.IMG }} bash -c \
+          '
+          source .pyenv/bin/activate
+          pip install pytest==6.1.1 pytest-mock==3.3.1
+          pip install wheelhouse/*whl
+          pytest tests
+          deactivate
+          '
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: pypi_files
+        path: wheelhouse
+
   deploy:
     name: Deploy
-    needs: build
+    needs: [build, build-aarch64]
     if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
