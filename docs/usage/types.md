@@ -722,6 +722,56 @@ _(This script is complete, it should run "as is")_
 
 Where `Field` refers to the [field function](schema.md#field-customisation).
 
+
+### Arguments to `conlist`
+The following arguments are available when using the `conlist` type function
+
+- `item_type: Type[T]`: type of the list items
+- `min_items: int = None`: minimum number of items in the list
+- `max_items: int = None`: maximum number of items in the list
+
+### Arguments to `conset`
+The following arguments are available when using the `conset` type function
+
+- `item_type: Type[T]`: type of the set items
+- `min_items: int = None`: minimum number of items in the set
+- `max_items: int = None`: maximum number of items in the set
+
+### Arguments to `conint`
+The following arguments are available when using the `conint` type function
+
+- `strict: bool = False`: controls type coercion
+- `gt: int = None`: enforces integer to be greater than the set value
+- `ge: int = None`: enforces integer to be greater than or equal to the set value
+- `lt: int = None`: enforces integer to be less than the set value
+- `le: int = None`: enforces integer to be less than or equal to the set value
+- `multiple_of: int = None`: enforces integer to be a multiple of the set value
+
+### Arguments to `confloat`
+The following arguments are available when using the `confloat` type function
+
+- `strict: bool = False`: controls type coercion
+- `gt: float = None`: enforces float to be greater than the set value
+- `ge: float = None`: enforces float to be greater than or equal to the set value
+- `lt: float = None`: enforces float to be less than the set value
+- `le: float = None`: enforces float to be less than or equal to the set value
+- `multiple_of: float = None`: enforces float to be a multiple of the set value
+
+### Arguments to `condecimal`
+The following arguments are available when using the `condecimal` type function
+
+- `gt: Decimal = None`: enforces decimal to be greater than the set value
+- `ge: Decimal = None`: enforces decimal to be greater than or equal to the set value
+- `lt: Decimal = None`: enforces decimal to be less than the set value
+- `le: Decimal = None`: enforces decimal to be less than or equal to the set value
+- `max_digits: int = None`: maximum number of digits within the decimal. it does not include a zero before the decimal point or trailing decimal zeroes
+- `decimal_places: int = None`: max number of decimal places allowed. it does not include trailing decimal zeroes
+- `multiple_of: Decimal = None`: enforces decimal to be a multiple of the set value
+
+
+
+
+
 ## Strict Types
 
 You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types 
