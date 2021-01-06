@@ -2113,3 +2113,55 @@ def test_multiple_nested_model_declarations_do_not_raise_error():
         nested: NestedModel
 
     schema([ModelOne, ModelTwo])
+
+
+def test_multiple_enums_with_same_name(create_module):
+    module_1 = create_module(
+        # language=Python
+        """
+from enum import Enum
+
+from pydantic import BaseModel
+
+
+class MyEnum(str, Enum):
+    a = 'a'
+    b = 'b'
+    c = 'c'
+
+
+class MyModel(BaseModel):
+    my_enum_1: MyEnum
+        """
+    )
+
+    module_2 = create_module(
+        # language=Python
+        """
+from enum import Enum
+
+from pydantic import BaseModel
+
+
+class MyEnum(str, Enum):
+    d = 'd'
+    e = 'e'
+    f = 'f'
+
+
+class MyModel(BaseModel):
+    my_enum_2: MyEnum
+        """
+    )
+
+    class Model(BaseModel):
+        my_model_1: module_1.MyModel
+        my_model_2: module_2.MyModel
+
+    assert len(Model.schema()['definitions']) == 4
+    assert set(Model.schema()['definitions']) == {
+        f'{module_1.__name__}__MyEnum',
+        f'{module_1.__name__}__MyModel',
+        f'{module_2.__name__}__MyEnum',
+        f'{module_2.__name__}__MyModel',
+    }
