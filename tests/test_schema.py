@@ -2163,7 +2163,7 @@ from pydantic import BaseModel
 
 
 class External:
-    
+
     class Model(BaseModel):
         pass
 
