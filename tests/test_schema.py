@@ -2132,7 +2132,7 @@ class NestedModel(BaseModel):
         'ModelTwo',
         f'{module.__name__}__ModelOne__NestedModel',
         f'{module.__name__}__ModelTwo__NestedModel',
-        f'{module.__name__}__NestedModel'
+        f'{module.__name__}__NestedModel',
     }
     assert model_names == expected_model_names
 
