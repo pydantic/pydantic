@@ -2125,8 +2125,8 @@ class NestedModel(BaseModel):
     models = [module.ModelOne, module.ModelTwo, module.NestedModel]
     model_names = set(schema(models)['definitions'].keys())
     expected_model_names = {
-        f'ModelOne',
-        f'ModelTwo',
+        'ModelOne',
+        'ModelTwo',
         f'{module.__name__}__ModelOne__NestedModel',
         f'{module.__name__}__ModelTwo__NestedModel',
         f'{module.__name__}__NestedModel'
