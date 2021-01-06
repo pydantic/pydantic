@@ -1,1 +1,1 @@
-add documentation for con* types
+add documentation for con* type functions
