@@ -2105,11 +2105,13 @@ def test_multiple_models_with_same_name(create_module):
         """
 from pydantic import BaseModel
 
+
 class ModelOne(BaseModel):
     class NestedModel(BaseModel):
         a: float
 
     nested: NestedModel
+
 
 class ModelTwo(BaseModel):
     class NestedModel(BaseModel):
@@ -2117,9 +2119,10 @@ class ModelTwo(BaseModel):
 
     nested: NestedModel
 
+
 class NestedModel(BaseModel):
     c: float
- """
+        """
     )
 
     models = [module.ModelOne, module.ModelTwo, module.NestedModel]
