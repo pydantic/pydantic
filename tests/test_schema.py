@@ -2151,7 +2151,11 @@ class MyModel(BaseModel):
     }
 
 
-def test_multiple_models_with_same_name_but_different_qualname(create_module):
+def test_model_name_map_clash_different_qualname(create_module):
+    """Test that get_model_name_map can handle Models that share
+    a name and are in the same module but have different fully
+    qualified names.
+    """
     module = create_module(
         # language=Python
         """
@@ -2170,4 +2174,4 @@ class Model(BaseModel):
     )
     unique_models = {module.External.Model, module.Model}
     res = get_model_name_map(unique_models)
-    assert res.keys() == unique_models
+    assert set(res.keys()) == unique_models
