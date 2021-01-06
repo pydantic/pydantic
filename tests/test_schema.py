@@ -2149,3 +2149,25 @@ class MyModel(BaseModel):
         f'{module_2.__name__}__MyEnum',
         f'{module_2.__name__}__MyModel',
     }
+
+
+def test_multiple_models_with_same_name_but_different_qualname(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+
+class External:
+    
+    class Model(BaseModel):
+        pass
+
+
+class Model(BaseModel):
+    pass
+        """
+    )
+    unique_models = {module.External.Model, module.Model}
+    res = get_model_name_map(unique_models)
+    assert res.keys() == unique_models
