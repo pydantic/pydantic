@@ -33,22 +33,35 @@ class Fragment(GenericModel, Generic[T]):
     attributes to be set.
     """
 
+    model_: Type[T]
+
     class Config:
         extra = 'allow'  # essentially everything is extra.
         allow_mutation = False
 
-    def __init__(__pydantic_self__, **data: Any):
+    def __init__(__pydantic_self__, __model__: Optional[Type[T]] = None, **data: Any):
         """Initialises the Fragment by validating against __model__'s fields.
         Args:
             __model__: The model this is a fragment of - positional only.
             **data: The fields expected by the __model__.
         """
 
-        if __pydantic_self__.__concrete__:
-            expected_model_type = type(__pydantic_self__)
+        model = __model__  # __model__ is underscored in the method arguments to prevent a name clash.
+
+        if model is None and __pydantic_self__.__concrete__:
+            expected_model_type = __pydantic_self__.__fields__['model_'].type_.__args__[0]
             model = expected_model_type
-        else:
+
+        elif model and not __pydantic_self__.__concrete__:
+            # Still generic
+            expected_model_type = model
+
+        elif model is None and not __pydantic_self__.__concrete__:
             raise TypeError('Fragments must be of another model.')
+
+        else:
+            if model != expected_model_type:
+                raise TypeError(f'Expected a fragment of {expected_model_type}.')
 
         values: Dict[str, Any] = {}
         errors = []
@@ -98,7 +111,7 @@ class Fragment(GenericModel, Generic[T]):
             #       and because classmethod can't use __pydantic_self__.model_
             return {}
 
-    def dict(self, *args: Any, **kwargs: Any) -> DictStrAny:
+    def dict(__pydantic_self__, *args: Any, **kwargs: Any) -> DictStrAny:
         """Overrides the standard BaseModel dict to exclude 'model_'."""
         exclude = {
             'model_',

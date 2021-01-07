@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, ValidationError, conint
 from pydantic.fragments import Fragment
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
@@ -25,6 +25,13 @@ def test_fragment_of_model(OriginalModel):
 
 
 @skip_36
+def test_invalid_fragment(OriginalModel):
+    """Test that a validation error is raised when it should be."""
+    with pytest.raises(ValidationError):
+        Fragment[OriginalModel](strength=11)
+
+
+@skip_36
 def test_dict_export_of_fragment(OriginalModel):
     """Test that exporting a fragment instance includes only set fields."""
     expected = {'name': 'Stilton'}
@@ -33,15 +40,25 @@ def test_dict_export_of_fragment(OriginalModel):
 
 
 @skip_36
+def test_fragment_container(OriginalModel):
+    class Platter(BaseModel):
+        biscuit: str
+        cheese: Fragment[OriginalModel]
+
+    p = Platter(biscuit='digestive', cheese={'strength': 4})
+    assert p == {'biscuit': 'digestive', 'cheese': {'strength': 4}}
+
+
+@skip_36
 def test_schema_of_fragment(OriginalModel):
     """Test that the only differences to original schema are title and required."""
     fragment_schema = Fragment[OriginalModel].schema()
     title = fragment_schema.pop('title')
     required = fragment_schema.pop('required')
-    title == 'CheeseFragment'
-    required == []
+    assert title == 'CheeseFragment'
+    assert required == []
 
     original_schema = OriginalModel.schema()
     original_schema.pop('title')
-    original_schema.pop('required')
+    original_schema.pop('required', [])
     assert str(fragment_schema) == str(original_schema)
