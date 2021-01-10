@@ -2,7 +2,7 @@ import os
 import sys
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pytest
 
@@ -446,17 +446,13 @@ def test_config_file_settings_nornir(env):
     See https://github.com/samuelcolvin/pydantic/pull/341#issuecomment-450378771
     """
 
+    def nornir_settings_source(settings: BaseSettings) -> Dict[str, Any]:
+        return {'param_a': 'config a', 'param_b': 'config b', 'param_c': 'config c'}
+
     class Settings(BaseSettings):
         param_a: str
         param_b: str
         param_c: str
-
-        def _build_values(self, init_kwargs, _env_file, _env_file_encoding, _secrets_dir):
-            config_settings = init_kwargs.pop('__config_settings__')
-            return {
-                **config_settings,
-                **super()._build_values(init_kwargs, _env_file, _env_file_encoding, _secrets_dir),
-            }
 
         class Config:
             @classmethod
@@ -466,12 +462,11 @@ def test_config_file_settings_nornir(env):
                 env_settings: SettingsSourceCallable,
                 file_secret_settings: SettingsSourceCallable,
             ) -> Tuple[SettingsSourceCallable, ...]:
-                return env_settings, init_settings
+                return env_settings, init_settings, nornir_settings_source
 
     env.set('PARAM_C', 'env setting c')
 
-    config = {'param_a': 'config a', 'param_b': 'config b', 'param_c': 'config c'}
-    s = Settings(__config_settings__=config, param_b='argument b', param_c='argument c')
+    s = Settings(param_b='argument b', param_c='argument c')
     assert s.param_a == 'config a'
     assert s.param_b == 'argument b'
     assert s.param_c == 'env setting c'

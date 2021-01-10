@@ -120,6 +120,9 @@ class InitSettingsSource:
     def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
         return self.init_kwargs
 
+    def __repr__(self) -> str:
+        return f'InitSettingsSource(init_kwargs={self.init_kwargs!r})'
+
 
 class EnvSettingsSource:
     __slots__ = ('env_file', 'env_file_encoding')
@@ -167,6 +170,9 @@ class EnvSettingsSource:
             d[field.alias] = env_val
         return d
 
+    def __repr__(self) -> str:
+        return f'EnvSettingsSource(env_file={self.env_file!r}, env_file_encoding={self.env_file_encoding!r})'
+
 
 class SecretsSettingsSource:
     __slots__ = ('secrets_dir',)
@@ -202,6 +208,9 @@ class SecretsSettingsSource:
                     )
 
         return secrets
+
+    def __repr__(self) -> str:
+        return f'SecretsSettingsSource(secrets_dir={self.secrets_dir!r})'
 
 
 def read_env_file(file_path: Path, *, encoding: str = None, case_sensitive: bool = False) -> Dict[str, Optional[str]]:
