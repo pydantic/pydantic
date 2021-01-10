@@ -161,8 +161,9 @@ class ValidatedFunction:
 
         var_kwargs = {}
         wrong_positional_args = []
+        non_var_fields = set(self.model.__fields__) - {self.v_kwargs_name}
         for k, v in kwargs.items():
-            if k in self.model.__fields__:
+            if k in non_var_fields:
                 if k in self.positional_only_args:
                     wrong_positional_args.append(k)
                 values[k] = v
