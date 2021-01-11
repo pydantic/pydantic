@@ -55,6 +55,8 @@ if TYPE_CHECKING:
     class TypedDict(Dict[str, Any]):
         __annotations__: Dict[str, Type[Any]]
         __total__: bool
+        __required_keys__: Set[str]
+        __optional_keys__: Set[str]
 
 
 def str_validator(v: Any) -> Union[str]:
@@ -569,10 +571,28 @@ def make_named_tuple_validator(type_: Type[NamedTupleT]) -> Callable[[Tuple[Any,
 def make_typed_dict_validator(type_: Type['TypedDict']) -> Callable[[Any], Dict[str, Any]]:
     from .main import create_model
 
-    default_value = ... if type_.__total__ else None
-    field_definitions: Dict[str, Any] = {
-        field_name: (field_type, default_value) for field_name, field_type in type_.__annotations__.items()
-    }
+    field_definitions: Dict[str, Any]
+
+    # Best case scenario: with python 3.9+ or when used with typing_extensions
+    if hasattr(type_, '__required_keys__'):
+        field_definitions = {
+            field_name: (field_type, ... if field_name in type_.__required_keys__ else None)
+            for field_name, field_type in type_.__annotations__.items()
+        }
+    else:
+        import warnings
+
+        warnings.warn(
+            'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` for better support! '
+            'Without it, there is no way to differentiate required and optional fields. '
+            'All fields will therefore be considered required.',
+            UserWarning,
+        )
+        default_value = ... if type_.__total__ else None
+        field_definitions = {
+            field_name: (field_type, default_value) for field_name, field_type in type_.__annotations__.items()
+        }
+
     TypedDictModel: Type['BaseModel'] = create_model('TypedDictModel', **field_definitions)
 
     def typed_dict_validator(values: 'TypedDict') -> Dict[str, Any]:

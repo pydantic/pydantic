@@ -7,13 +7,20 @@ import sys
 from collections import namedtuple
 from typing import List, NamedTuple
 
-if sys.version_info < (3, 8):
+if sys.version_info < (3, 9):
     try:
-        from typing import TypedDict
+        from typing import TypedDict as LegacyTypedDict
+    except ImportError:
+        LegacyTypedDict = None
+
+    try:
+        from typing_extensions import TypedDict
     except ImportError:
         TypedDict = None
 else:
     from typing import TypedDict
+
+    LegacyTypedDict = None
 
 import pytest
 
@@ -105,3 +112,45 @@ def test_typed_dict_non_total():
 
     m = Model(movie={'year': '2002'})
     assert m.movie == {'year': 2002}
+
+
+@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
+def test_partial_new_typed_dict():
+    class OptionalUser(TypedDict, total=False):
+        name: str
+
+    class User(OptionalUser):
+        id: int
+
+    class Model(BaseModel):
+        user: User
+
+    m = Model(user={'id': 1})
+    assert m.user == {'id': 1}
+
+
+@pytest.mark.skipif(not LegacyTypedDict, reason='python 3.9+ is used or typing_extensions is installed')
+def test_partial_legacy_typed_dict():
+    class OptionalUser(LegacyTypedDict, total=False):
+        name: str
+
+    class User(OptionalUser):
+        id: int
+
+    with pytest.warns(
+        UserWarning,
+        match='You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` for better support!',
+    ):
+
+        class Model(BaseModel):
+            user: User
+
+        with pytest.raises(ValidationError) as exc_info:
+            Model(user={'id': 1})
+        assert exc_info.value.errors() == [
+            {
+                'loc': ('user', 'name'),
+                'msg': 'field required',
+                'type': 'value_error.missing',
+            }
+        ]
