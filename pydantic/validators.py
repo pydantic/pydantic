@@ -584,8 +584,8 @@ def make_typed_dict_validator(type_: Type['TypedDict']) -> Callable[[Any], Dict[
 
         warnings.warn(
             'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` for better support! '
-            'Without it, there is no way to differentiate required and optional fields. '
-            'All fields will therefore be considered required.',
+            'Without it, there is no way to differentiate required and optional fields when subclassed. '
+            'Fields will therefore be considered all required or all optional depending on class totality.',
             UserWarning,
         )
         default_value = ... if type_.__total__ else None
