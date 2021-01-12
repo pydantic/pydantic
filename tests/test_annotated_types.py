@@ -154,3 +154,22 @@ def test_partial_legacy_typed_dict():
                 'type': 'value_error.missing',
             }
         ]
+
+
+@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
+def test_typed_dict_extra():
+    class User(TypedDict):
+        name: str
+        age: int
+
+    class Model(BaseModel):
+        u: User
+
+        class Config:
+            extra = 'forbid'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(u={'name': 'pika', 'age': 7, 'rank': 1})
+    assert exc_info.value.errors() == [
+        {'loc': ('u', 'rank'), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+    ]

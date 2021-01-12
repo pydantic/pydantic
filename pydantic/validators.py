@@ -568,7 +568,7 @@ def make_named_tuple_validator(type_: Type[NamedTupleT]) -> Callable[[Tuple[Any,
     return named_tuple_validator
 
 
-def make_typed_dict_validator(type_: Type['TypedDict']) -> Callable[[Any], Dict[str, Any]]:
+def make_typed_dict_validator(type_: Type['TypedDict'], config: Type['BaseConfig']) -> Callable[[Any], Dict[str, Any]]:
     from .main import create_model
 
     field_definitions: Dict[str, Any]
@@ -593,7 +593,7 @@ def make_typed_dict_validator(type_: Type['TypedDict']) -> Callable[[Any], Dict[
             field_name: (field_type, default_value) for field_name, field_type in type_.__annotations__.items()
         }
 
-    TypedDictModel: Type['BaseModel'] = create_model('TypedDictModel', **field_definitions)
+    TypedDictModel: Type['BaseModel'] = create_model('TypedDictModel', __config__=config, **field_definitions)
 
     def typed_dict_validator(values: 'TypedDict') -> Dict[str, Any]:
         return TypedDictModel(**values).dict(exclude_unset=True)
@@ -696,7 +696,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield make_named_tuple_validator(type_)
         return
     if is_typed_dict_type(type_):
-        yield make_typed_dict_validator(type_)
+        yield make_typed_dict_validator(type_, config)
         return
 
     class_ = get_class(type_)
