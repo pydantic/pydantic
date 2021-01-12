@@ -195,7 +195,7 @@ def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
 
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
-        raise ValueError('__root__ cannot be mixed with other fields')
+        raise ValueError(f'{ROOT_KEY} cannot be mixed with other fields')
 
 
 UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
@@ -569,7 +569,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
         if not cls.__config__.orm_mode:
             raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
-        obj = {'__root__': obj} if cls.__custom_root_type__ else cls._decompose_class(obj)
+        obj = {ROOT_KEY: obj} if cls.__custom_root_type__ else cls._decompose_class(obj)
         m = cls.__new__(cls)
         values, fields_set, validation_error = validate_model(cls, obj)
         if validation_error:
@@ -705,8 +705,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude=exclude,
                     exclude_none=exclude_none,
                 )
-                if '__root__' in v_dict:
-                    return v_dict['__root__']
+                if ROOT_KEY in v_dict:
+                    return v_dict[ROOT_KEY]
                 return v_dict
             else:
                 return v.copy(include=include, exclude=exclude)
