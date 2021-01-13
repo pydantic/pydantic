@@ -80,6 +80,22 @@ else:
     AnyCallable = TypingCallable[..., Any]
     NoArgAnyCallable = TypingCallable[[], Any]
 
+
+if sys.version_info >= (3, 9):
+    from typing import Annotated
+else:
+    if TYPE_CHECKING:
+        from typing_extensions import Annotated
+    else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
+        try:
+            from typing_extensions import Annotated
+        except ImportError:
+            Annotated = None
+# Annotated[...] is implemented by returning an instance of one of these classes, depending on
+# python/typing_extensions version.
+AnnotatedTypeNames = ('AnnotatedMeta', '_AnnotatedAlias')
+
+
 if sys.version_info < (3, 8):  # noqa: C901
     if TYPE_CHECKING:
         from typing_extensions import Literal
@@ -100,6 +116,8 @@ if sys.version_info < (3, 8):  # noqa: C901
             python 3.6).
 
             """
+            if Annotated is not None and type(t).__name__ in AnnotatedTypeNames:
+                return t.__args__ + t.__metadata__
             return getattr(t, '__args__', ())
 
     else:
@@ -111,6 +129,8 @@ if sys.version_info < (3, 8):  # noqa: C901
             Mostly compatible with the python 3.8 `typing` module version
             and able to handle almost all use cases.
             """
+            if Annotated is not None and type(t).__name__ in AnnotatedTypeNames:
+                return t.__args__ + t.__metadata__
             if isinstance(t, _GenericAlias):
                 res = t.__args__
                 if t.__origin__ is Callable and res and res[0] is not Ellipsis:
@@ -119,6 +139,8 @@ if sys.version_info < (3, 8):  # noqa: C901
             return getattr(t, '__args__', ())
 
     def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
+        if Annotated is not None and type(t).__name__ in AnnotatedTypeNames:
+            return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm in py3.6
         return getattr(t, '__origin__', None)
 
 
@@ -132,6 +154,8 @@ else:
         It should be useless once https://github.com/cython/cython/issues/3537 is
         solved and https://github.com/samuelcolvin/pydantic/pull/1753 is merged.
         """
+        if Annotated is not None and type(tp).__name__ in AnnotatedTypeNames:
+            return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm
         return typing_get_origin(tp) or getattr(tp, '__origin__', None)
 
     def generic_get_args(tp: Type[Any]) -> Tuple[Any, ...]:
@@ -156,58 +180,10 @@ else:
             get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
             get_args(Callable[[], T][int]) == ([], int)
         """
+        if Annotated is not None and type(tp).__name__ in AnnotatedTypeNames:
+            return tp.__args__ + tp.__metadata__
         # the fallback is needed for the same reasons as `get_origin` (see above)
         return typing_get_args(tp) or getattr(tp, '__args__', ()) or generic_get_args(tp)
-
-
-if sys.version_info >= (3, 9):
-    from typing import Annotated
-else:
-    if TYPE_CHECKING:
-        from typing_extensions import Annotated, _AnnotatedAlias
-    else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
-        try:
-            from typing_extensions import Annotated
-
-            try:
-                from typing_extensions import _AnnotatedAlias
-            except ImportError:
-                # py3.6 typing_extensions doesn't have _AnnotatedAlias, but has AnnotatedMeta, which
-                # will satisfy our `isinstance` checks.
-                from typing_extensions import AnnotatedMeta as _AnnotatedAlias
-        except ImportError:
-            # Create mock Annotated/_AnnotatedAlias values distinct from `None`, which is a valid
-            # `get_origin` return value.
-            class _FalseMeta(type):
-                # Allow short circuiting with "Annotated[...] if Annotated else None".
-                def __bool__(cls):
-                    return False
-
-                # Give a nice suggestion for unguarded use
-                def __getitem__(cls, key):
-                    raise RuntimeError(
-                        'Annotated is not supported in this python version, please `pip install typing-extensions`.'
-                    )
-
-            class Annotated(metaclass=_FalseMeta):
-                pass
-
-            class _AnnotatedAlias(metaclass=_FalseMeta):
-                pass
-
-    # Our custom get_{args,origin} for <3.8 and the builtin 3.8 get_{args,origin} don't recognize
-    # typing_extensions.Annotated, so wrap them to short-circuit. We still want to use our wrapped
-    # get_origins defined above for non-Annotated data.
-
-    def get_args(tp: Type[Any], _get_args=get_args) -> Type[Any]:
-        if isinstance(tp, _AnnotatedAlias):
-            return tp.__args__ + tp.__metadata__
-        return _get_args(tp)
-
-    def get_origin(tp: Type[Any], _get_origin=get_origin) -> Type[Any]:
-        if isinstance(tp, _AnnotatedAlias):
-            return Annotated
-        return _get_origin(tp)
 
 
 if TYPE_CHECKING:
