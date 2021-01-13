@@ -35,6 +35,7 @@ from .fields import (
     SHAPE_SINGLETON,
     SHAPE_TUPLE,
     SHAPE_TUPLE_ELLIPSIS,
+    SHAPE_GENERIC,
     FieldInfo,
     ModelField,
 )
@@ -481,7 +482,7 @@ def field_type_schema(
             sub_schema = sub_schema[0]  # type: ignore
         f_schema = {'type': 'array', 'items': sub_schema}
     else:
-        assert field.shape == SHAPE_SINGLETON, field.shape
+        assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
@@ -496,7 +497,10 @@ def field_type_schema(
 
     # check field type to avoid repeated calls to the same __modify_schema__ method
     if field.type_ != field.outer_type_:
-        modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
+        if field.shape == SHAPE_GENERIC:
+            modify_schema = getattr(field.type_, '__modify_schema__', None)
+        else:
+            modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
         if modify_schema:
             modify_schema(f_schema)
     return f_schema, definitions, nested_models

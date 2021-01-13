@@ -92,7 +92,7 @@ if sys.version_info < (3, 8):  # noqa: C901
     if sys.version_info < (3, 7):
 
         def get_args(t: Type[Any]) -> Tuple[Any, ...]:
-            """Simplest get_args compatability layer possible.
+            """Simplest get_args compatibility layer possible.
 
             The Python 3.6 typing module does not have `_GenericAlias` so
             this won't work for everything. In particular this will not
@@ -106,7 +106,7 @@ if sys.version_info < (3, 8):  # noqa: C901
         from typing import _GenericAlias
 
         def get_args(t: Type[Any]) -> Tuple[Any, ...]:
-            """Compatability version of get_args for python 3.7.
+            """Compatibility version of get_args for python 3.7.
 
             Mostly compatible with the python 3.8 `typing` module version
             and able to handle almost all use cases.

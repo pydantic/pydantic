@@ -772,7 +772,7 @@ def test_assert_raises_validation_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    injected_by_pytest = "\nassert 'snap' == 'a'\n  - a\n  + snap"
+    injected_by_pytest = "\nassert 'snap' == 'a'"
     assert exc_info.value.errors() == [
         {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
     ]
