@@ -7,7 +7,7 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NewType, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, FrozenSet, Generic, Iterable, List, NewType, Optional, Set, Tuple, TypeVar, Union
 from uuid import UUID
 
 import pytest
@@ -15,6 +15,7 @@ import pytest
 from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
+from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
     get_flat_models_from_model,
@@ -66,6 +67,9 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
+
+
+T = TypeVar("T")
 
 
 def test_key():
@@ -2149,3 +2153,42 @@ class MyModel(BaseModel):
         f'{module_2.__name__}__MyEnum',
         f'{module_2.__name__}__MyModel',
     }
+
+
+def test_nested_generic():
+    """
+    Test a nested BaseModel that is also a Generic
+    """
+
+    class Ref(BaseModel, Generic[T]):
+        uuid: str
+
+        def resolve(self) -> T: ...
+
+    class Model(BaseModel):
+        ref: Ref["Model"]
+
+    schema = Model.schema()
+
+    assert "Ref" in schema["definitions"]
+    assert schema["properties"]["ref"]["$ref"] == "#/definitions/Ref"
+
+
+def test_nested_generic_model():
+    """
+    Test a nested GenericModel
+    """
+
+    class Box(GenericModel, Generic[T]):
+        uuid: str
+        data: T
+
+    class Model(BaseModel):
+        box_str: Box[str]
+        box_int: Box[int]
+
+    schema = Model.schema()
+
+    assert "Box_str_" in schema["definitions"]
+    assert "Box_int_" in schema["definitions"]
+    assert schema["properties"]["box_str"]["$ref"] == "#/definitions/Box_str_"
