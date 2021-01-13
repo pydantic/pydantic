@@ -22,6 +22,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    Generic,
 )
 from uuid import UUID
 
@@ -66,7 +67,7 @@ from .typing import (
     get_origin,
     is_callable_type,
     is_literal_type,
-    literal_values,
+    literal_values
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
@@ -82,13 +83,13 @@ TypeModelSet = Set[TypeModelOrEnum]
 
 
 def schema(
-    models: Sequence[Union[Type['BaseModel'], Type['Dataclass']]],
-    *,
-    by_alias: bool = True,
-    title: Optional[str] = None,
-    description: Optional[str] = None,
-    ref_prefix: Optional[str] = None,
-    ref_template: str = default_ref_template,
+        models: Sequence[Union[Type['BaseModel'], Type['Dataclass']]],
+        *,
+        by_alias: bool = True,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        ref_prefix: Optional[str] = None,
+        ref_template: str = default_ref_template,
 ) -> Dict[str, Any]:
     """
     Process a list of models and generate a single JSON Schema with all of them defined in the ``definitions``
@@ -135,10 +136,10 @@ def schema(
 
 
 def model_schema(
-    model: Union[Type['BaseModel'], Type['Dataclass']],
-    by_alias: bool = True,
-    ref_prefix: Optional[str] = None,
-    ref_template: str = default_ref_template,
+        model: Union[Type['BaseModel'], Type['Dataclass']],
+        by_alias: bool = True,
+        ref_prefix: Optional[str] = None,
+        ref_template: str = default_ref_template,
 ) -> Dict[str, Any]:
     """
     Generate a JSON Schema for one model. With all the sub-models defined in the ``definitions`` top-level
@@ -197,13 +198,13 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
 
 
 def field_schema(
-    field: ModelField,
-    *,
-    by_alias: bool = True,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_prefix: Optional[str] = None,
-    ref_template: str = default_ref_template,
-    known_models: TypeModelSet = None,
+        field: ModelField,
+        *,
+        by_alias: bool = True,
+        model_name_map: Dict[TypeModelOrEnum, str],
+        ref_prefix: Optional[str] = None,
+        ref_template: str = default_ref_template,
+        known_models: TypeModelSet = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     Process a Pydantic field and return a tuple with a JSON Schema for it as the first item.
@@ -409,14 +410,14 @@ def get_long_model_name(model: TypeModelOrEnum) -> str:
 
 
 def field_type_schema(
-    field: ModelField,
-    *,
-    by_alias: bool,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_template: str,
-    schema_overrides: bool = False,
-    ref_prefix: Optional[str] = None,
-    known_models: TypeModelSet,
+        field: ModelField,
+        *,
+        by_alias: bool,
+        model_name_map: Dict[TypeModelOrEnum, str],
+        ref_template: str,
+        schema_overrides: bool = False,
+        ref_prefix: Optional[str] = None,
+        known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     Used by ``field_schema()``, you probably should be using that function.
@@ -507,13 +508,13 @@ def field_type_schema(
 
 
 def model_process_schema(
-    model: TypeModelOrEnum,
-    *,
-    by_alias: bool = True,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_prefix: Optional[str] = None,
-    ref_template: str = default_ref_template,
-    known_models: TypeModelSet = None,
+        model: TypeModelOrEnum,
+        *,
+        by_alias: bool = True,
+        model_name_map: Dict[TypeModelOrEnum, str],
+        ref_prefix: Optional[str] = None,
+        ref_template: str = default_ref_template,
+        known_models: TypeModelSet = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     Used by ``model_schema()``, you probably should be using that function.
@@ -556,13 +557,13 @@ def model_process_schema(
 
 
 def model_type_schema(
-    model: Type['BaseModel'],
-    *,
-    by_alias: bool,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_template: str,
-    ref_prefix: Optional[str] = None,
-    known_models: TypeModelSet,
+        model: Type['BaseModel'],
+        *,
+        by_alias: bool,
+        model_name_map: Dict[TypeModelOrEnum, str],
+        ref_template: str,
+        ref_prefix: Optional[str] = None,
+        known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     You probably should be using ``model_schema()``, this function is indirectly used by that function.
@@ -636,14 +637,14 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
 
 
 def field_singleton_sub_fields_schema(
-    sub_fields: Sequence[ModelField],
-    *,
-    by_alias: bool,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_template: str,
-    schema_overrides: bool = False,
-    ref_prefix: Optional[str] = None,
-    known_models: TypeModelSet,
+        sub_fields: Sequence[ModelField],
+        *,
+        by_alias: bool,
+        model_name_map: Dict[TypeModelOrEnum, str],
+        ref_template: str,
+        schema_overrides: bool = False,
+        ref_prefix: Optional[str] = None,
+        known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     This function is indirectly used by ``field_schema()``, you probably should be using that function.
@@ -741,14 +742,14 @@ def get_schema_ref(name: str, ref_prefix: Optional[str], ref_template: str, sche
 
 
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
-    field: ModelField,
-    *,
-    by_alias: bool,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_template: str,
-    schema_overrides: bool = False,
-    ref_prefix: Optional[str] = None,
-    known_models: TypeModelSet,
+        field: ModelField,
+        *,
+        by_alias: bool,
+        model_name_map: Dict[TypeModelOrEnum, str],
+        ref_template: str,
+        schema_overrides: bool = False,
+        ref_prefix: Optional[str] = None,
+        known_models: TypeModelSet,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     This function is indirectly used by ``field_schema()``, you should probably be using that function.
@@ -832,6 +833,9 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         schema_ref = get_schema_ref(model_name, ref_prefix, ref_template, schema_overrides)
         return schema_ref, definitions, nested_models
 
+    if not len(get_args(field_type)) and field_type.__base__ is Generic:
+        return f_schema, definitions, nested_models
+
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
 
@@ -893,9 +897,9 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
 
     def go(type_: Any) -> Type[Any]:
         if (
-            is_literal_type(annotation)
-            or isinstance(type_, ForwardRef)
-            or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet))
+                is_literal_type(annotation)
+                or isinstance(type_, ForwardRef)
+                or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet))
         ):
             return type_
         origin = get_origin(type_)
@@ -939,7 +943,7 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = conbytes
             elif issubclass(type_, numeric_types) and not issubclass(
-                type_, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, ConstrainedSet, bool)
+                    type_, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, ConstrainedSet, bool)
             ):
                 # Is numeric type
                 attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')

@@ -2182,6 +2182,7 @@ def test_schema_for_generic_field():
 
     class Model(BaseModel):
         data: GenModel[str]
+        data1: GenModel
 
     assert Model.schema() == {
         'title': 'Model',
@@ -2190,9 +2191,12 @@ def test_schema_for_generic_field():
             'data': {
                 'title': 'Data',
                 'type': 'string'
+            },
+            'data1': {
+                'title': 'Data1',
             }
         },
-        'required': ['data']
+        'required': ['data', 'data1']
     }
 
     class GenModelModified(GenModel, Generic[T]):
@@ -2209,6 +2213,7 @@ def test_schema_for_generic_field():
 
     class ModelModified(BaseModel):
         data: GenModelModified[str]
+        data1: GenModelModified
 
     assert ModelModified.schema() == {
         'title': 'ModelModified',
@@ -2220,7 +2225,14 @@ def test_schema_for_generic_field():
                     {'type': 'string'},
                     {'type': 'array', 'items': {'type': 'string'}}
                 ]
-            }
+            },
+            'data1': {
+                'title': 'Data1',
+                'anyOf': [
+                    {'type': 'string'},
+                    {'type': 'array', 'items': {'type': 'string'}}
+                ]
+            },
         },
-        'required': ['data']
+        'required': ['data', 'data1']
     }
