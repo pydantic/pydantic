@@ -28,6 +28,7 @@ from uuid import UUID
 from .fields import (
     SHAPE_FROZENSET,
     SHAPE_ITERABLE,
+    SHAPE_GENERIC,
     SHAPE_LIST,
     SHAPE_MAPPING,
     SHAPE_SEQUENCE,
@@ -480,8 +481,7 @@ def field_type_schema(
         if len(sub_schema) == 1:
             sub_schema = sub_schema[0]  # type: ignore
         f_schema = {'type': 'array', 'items': sub_schema}
-    else:
-        assert field.shape == SHAPE_SINGLETON, field.shape
+    elif field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}:
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
@@ -493,6 +493,8 @@ def field_type_schema(
         )
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
+    else:
+        raise AssertionError("Unknown shape: %i" % field.shape)
 
     # check field type to avoid repeated calls to the same __modify_schema__ method
     if field.type_ != field.outer_type_:
