@@ -757,6 +757,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
+    field_type = field.type_
     if field.sub_fields:
         return field_singleton_sub_fields_schema(
             field.sub_fields,
@@ -767,16 +768,15 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_template=ref_template,
             known_models=known_models,
         )
-    if field.type_ is Any or field.type_.__class__ == TypeVar:
+    if field_type is Any or field_type.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
-    if field.type_ in NONE_TYPES:
+    if field_type in NONE_TYPES:
         return {'type': 'null'}, definitions, nested_models
-    if is_callable_type(field.type_):
+    if is_callable_type(field_type):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
-    field_type = field.type_
     if is_literal_type(field_type):
         values = literal_values(field_type)
         if len(values) > 1:
