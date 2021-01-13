@@ -2192,3 +2192,30 @@ def test_nested_generic_model():
     assert "Box_str_" in schema["definitions"]
     assert "Box_int_" in schema["definitions"]
     assert schema["properties"]["box_str"]["$ref"] == "#/definitions/Box_str_"
+
+
+def test_complex_nested_generic():
+    """
+    Handle a union of a generic.
+    """
+
+    class Ref(BaseModel, Generic[T]):
+        uuid: str
+
+        def resolve(self) -> T: ...
+
+    class Model(BaseModel):
+        model: Union[Ref["Model"], "Model"]
+
+        def resolve(self) -> "Model": ...
+
+    Model.update_forward_refs()
+
+    schema = Model.schema()
+
+    assert "Ref" in schema["definitions"]
+    assert schema["$ref"] == "#/definitions/Model"
+    assert schema["definitions"]["Model"]["properties"]["model"]["anyOf"] == [
+        { "$ref": "#/definitions/Ref" },  # we don't care about the ref type
+        { "$ref": "#/definitions/Model" },
+    ]
