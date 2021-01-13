@@ -365,7 +365,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
-    if field.sub_fields:
+    if field.sub_fields and not lenient_issubclass(field_type, BaseModel):
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
     elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
         flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
@@ -758,7 +758,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
     field_type = field.type_
-    if field.sub_fields:
+    if field.sub_fields and not lenient_issubclass(field_type, BaseModel):
         return field_singleton_sub_fields_schema(
             field.sub_fields,
             by_alias=by_alias,
