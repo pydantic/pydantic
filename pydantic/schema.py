@@ -27,8 +27,8 @@ from uuid import UUID
 
 from .fields import (
     SHAPE_FROZENSET,
-    SHAPE_ITERABLE,
     SHAPE_GENERIC,
+    SHAPE_ITERABLE,
     SHAPE_LIST,
     SHAPE_MAPPING,
     SHAPE_SEQUENCE,
@@ -758,7 +758,15 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
     field_type = field.type_
-    if field.sub_fields and not lenient_issubclass(field_type, BaseModel):
+
+    # Recurse into this field if it contains sub_fields and is NOT a
+    # BaseModel OR that BaseModel is a const
+    recurse = field.sub_fields and (
+        (field.field_info and field.field_info.const)
+        or not lenient_issubclass(field_type, BaseModel)
+    )
+
+    if recurse:
         return field_singleton_sub_fields_schema(
             field.sub_fields,
             by_alias=by_alias,
