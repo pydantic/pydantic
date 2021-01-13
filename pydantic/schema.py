@@ -494,7 +494,7 @@ def field_type_schema(
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
     else:
-        raise AssertionError("Unknown shape: %i" % field.shape)
+        raise AssertionError('Unknown shape: %i' % field.shape)
 
     # check field type to avoid repeated calls to the same __modify_schema__ method
     if field.type_ != field.outer_type_:

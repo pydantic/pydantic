@@ -7,7 +7,21 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Generic, Iterable, List, NewType, Optional, Set, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Generic,
+    Iterable,
+    List,
+    NewType,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 from uuid import UUID
 
 import pytest
@@ -69,7 +83,7 @@ except ImportError:
     email_validator = None
 
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 def test_key():
@@ -2163,15 +2177,16 @@ def test_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T: ...
+        def resolve(self) -> T:
+            ...
 
     class Model(BaseModel):
-        ref: Ref["Model"]
+        ref: Ref['Model']  # noqa
 
     schema = Model.schema()
 
-    assert "Ref" in schema["definitions"]
-    assert schema["properties"]["ref"]["$ref"] == "#/definitions/Ref"
+    assert 'Ref' in schema['definitions']
+    assert schema['properties']['ref']['$ref'] == '#/definitions/Ref'
 
 
 def test_nested_generic_model():
@@ -2189,9 +2204,9 @@ def test_nested_generic_model():
 
     schema = Model.schema()
 
-    assert "Box_str_" in schema["definitions"]
-    assert "Box_int_" in schema["definitions"]
-    assert schema["properties"]["box_str"]["$ref"] == "#/definitions/Box_str_"
+    assert 'Box_str_' in schema['definitions']
+    assert 'Box_int_' in schema['definitions']
+    assert schema['properties']['box_str']['$ref'] == '#/definitions/Box_str_'
 
 
 def test_complex_nested_generic():
@@ -2202,20 +2217,23 @@ def test_complex_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T: ...
+        def resolve(self) -> T:
+            ...
 
     class Model(BaseModel):
-        model: Union[Ref["Model"], "Model"]
+        uuid: str
+        model: Union[Ref['Model'], 'Model']  # noqa
 
-        def resolve(self) -> "Model": ...
+        def resolve(self) -> 'Model':  # noqa
+            ...
 
     Model.update_forward_refs()
 
     schema = Model.schema()
 
-    assert "Ref" in schema["definitions"]
-    assert schema["$ref"] == "#/definitions/Model"
-    assert schema["definitions"]["Model"]["properties"]["model"]["anyOf"] == [
-        { "$ref": "#/definitions/Ref" },  # we don't care about the ref type
-        { "$ref": "#/definitions/Model" },
+    assert 'Ref' in schema['definitions']
+    assert schema['$ref'] == '#/definitions/Model'
+    assert schema['definitions']['Model']['properties']['model']['anyOf'] == [
+        {'$ref': '#/definitions/Ref'},  # we don't care about the ref type
+        {'$ref': '#/definitions/Model'},
     ]
