@@ -121,7 +121,7 @@ class FieldInfo(Representation):
         self.extra = kwargs
 
     def _validate(self) -> None:
-        if self.default is not Undefined and self.default_factory is not None:
+        if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
 
 
