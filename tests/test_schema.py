@@ -2196,11 +2196,10 @@ def test_schema_for_generic_field():
                 'title': 'Data1',
             },
         },
-        'required': ['data', 'data1']
+        'required': ['data', 'data1'],
     }
 
     class GenModelModified(GenModel, Generic[T]):
-
         @classmethod
         def __modify_schema__(cls, field_schema):
             field_schema.pop('type', None)
