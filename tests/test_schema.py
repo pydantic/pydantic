@@ -2217,5 +2217,5 @@ def test_schema_for_generic_field():
             'data': {'title': 'Data', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
             'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
         },
-        'required': ['data', 'data1']
+        'required': ['data', 'data1'],
     }
