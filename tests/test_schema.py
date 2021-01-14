@@ -2166,8 +2166,7 @@ class MyModel(BaseModel):
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 7),
-    reason='schema generation for generic fields is not available in python < 3.7'
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
 )
 def test_schema_for_generic_field():
     T = TypeVar('T')
@@ -2192,13 +2191,10 @@ def test_schema_for_generic_field():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'data': {
-                'title': 'Data',
-                'type': 'string'
-            },
+            'data': {'title': 'Data', 'type': 'string'},
             'data1': {
                 'title': 'Data1',
-            }
+            },
         },
         'required': ['data', 'data1']
     }
@@ -2208,12 +2204,7 @@ def test_schema_for_generic_field():
         @classmethod
         def __modify_schema__(cls, field_schema):
             field_schema.pop('type', None)
-            field_schema.update(
-                anyOf=[
-                    {'type': 'string'},
-                    {'type': 'array', 'items': {'type': 'string'}}
-                ]
-            )
+            field_schema.update(anyOf=[{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}])
 
     class ModelModified(BaseModel):
         data: GenModelModified[str]
@@ -2223,20 +2214,8 @@ def test_schema_for_generic_field():
         'title': 'ModelModified',
         'type': 'object',
         'properties': {
-            'data': {
-                'title': 'Data',
-                'anyOf': [
-                    {'type': 'string'},
-                    {'type': 'array', 'items': {'type': 'string'}}
-                ]
-            },
-            'data1': {
-                'title': 'Data1',
-                'anyOf': [
-                    {'type': 'string'},
-                    {'type': 'array', 'items': {'type': 'string'}}
-                ]
-            },
+            'data': {'title': 'Data', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+            'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
         },
         'required': ['data', 'data1']
     }
