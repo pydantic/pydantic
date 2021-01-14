@@ -439,7 +439,7 @@ T = TypeVar('T')
 @pytest.mark.parametrize(
     'input_value,output_value',
     [
-        (Annotated[int, 10] if Annotated is not None else None, Annotated),
+        (Annotated[int, 10] if Annotated else None, Annotated),
         (Callable[[], T][int], collections.abc.Callable),
         (Dict[str, int], dict),
         (List[str], list),
@@ -465,7 +465,7 @@ def test_get_origin(input_value, output_value):
         (Union[int, Union[T, int], str][int], (int, str)),
         (Union[int, Tuple[T, int]][str], (int, Tuple[str, int])),
         (Callable[[], T][int], ([], int)),
-        (Annotated[int, 10] if Annotated is not None else None, (int, 10)),
+        (Annotated[int, 10] if Annotated else None, (int, 10)),
     ],
 )
 def test_get_args(input_value, output_value):
