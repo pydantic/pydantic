@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
+    Generic,
     Iterable,
     List,
     Optional,
@@ -22,12 +23,12 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    Generic,
 )
 from uuid import UUID
 
 from .fields import (
     SHAPE_FROZENSET,
+    SHAPE_GENERIC,
     SHAPE_ITERABLE,
     SHAPE_LIST,
     SHAPE_MAPPING,
@@ -36,7 +37,6 @@ from .fields import (
     SHAPE_SINGLETON,
     SHAPE_TUPLE,
     SHAPE_TUPLE_ELLIPSIS,
-    SHAPE_GENERIC,
     FieldInfo,
     ModelField,
 )

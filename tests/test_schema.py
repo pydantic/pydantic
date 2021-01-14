@@ -12,15 +12,15 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
+    Generic,
     Iterable,
     List,
     NewType,
     Optional,
     Set,
     Tuple,
+    TypeVar,
     Union,
-    Generic,
-    TypeVar
 )
 from uuid import UUID
 
