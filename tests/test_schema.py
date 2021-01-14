@@ -2165,6 +2165,10 @@ class MyModel(BaseModel):
     }
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 7),
+    reason='schema generation for generic fields is not available in python < 3.7'
+)
 def test_schema_for_generic_field():
     T = TypeVar('T')
 
