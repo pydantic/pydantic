@@ -835,7 +835,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     # For generics with no args
     args = get_args(field_type)
-    if args is not None and not len(args) and Generic in field_type.__bases__:
+    if args is not None and not args and Generic in field_type.__bases__:
         return f_schema, definitions, nested_models
 
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
