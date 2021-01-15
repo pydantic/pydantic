@@ -813,12 +813,10 @@ def test_secrets_invalid_secrets_dir(tmp_path):
 @pytest.mark.skipif(sys.platform.startswith('win'), reason='windows paths break regex')
 def test_secrets_missing_location(tmp_path):
     class Settings(BaseSettings):
-        foo: str
-
         class Config:
             secrets_dir = tmp_path / 'does_not_exist'
 
-    with pytest.raises(SettingsError, match=f'directory "{tmp_path}/does_not_exist" does not exist'):
+    with pytest.warns(UserWarning, match=f'directory "{tmp_path}/does_not_exist" does not exist'):
         Settings()
 
 

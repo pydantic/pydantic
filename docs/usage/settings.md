@@ -160,8 +160,8 @@ settings = Settings(_secrets_dir='/var/run')
 ```
 
 In either case, the value of the passed argument can be any valid directory, either absolute or relative to the
-current working directory. From there, *pydantic* will handle everything for you by loading in your variables and
-validating them.
+current working directory. **Note that a non existent directory will only generate a warning**.
+From there, *pydantic* will handle everything for you by loading in your variables and validating them.
 
 Even when using a secrets directory, *pydantic* will still read environment variables from a dotenv file or the environment,
 **a dotenv file and environment variables will always take priority over values loaded from the secrets directory**.

@@ -61,8 +61,10 @@ class BaseSettings(BaseModel):
         secrets_path = Path(secrets_dir).expanduser()
 
         if not secrets_path.exists():
-            raise SettingsError(f'directory "{secrets_path}" does not exist')
-        if not secrets_path.is_dir():
+            warnings.warn(f'directory "{secrets_path}" does not exist')
+            return secrets
+
+        if secrets_path.exists() and not secrets_path.is_dir():
             raise SettingsError(f'secrets_dir must reference a directory, not a {path_type(secrets_path)}')
 
         for field in self.__fields__.values():
