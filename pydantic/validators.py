@@ -43,20 +43,15 @@ from .typing import (
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
+    from .annotated_types import TypedDict
     from .fields import ModelField
-    from .main import BaseConfig, BaseModel
+    from .main import BaseConfig
     from .types import ConstrainedDecimal, ConstrainedFloat, ConstrainedInt
 
     ConstrainedNumber = Union[ConstrainedDecimal, ConstrainedFloat, ConstrainedInt]
     AnyOrderedDict = OrderedDict[Any, Any]
     Number = Union[int, float, Decimal]
     StrBytes = Union[str, bytes]
-
-    class TypedDict(Dict[str, Any]):
-        __annotations__: Dict[str, Type[Any]]
-        __total__: bool
-        __required_keys__: Set[str]
-        __optional_keys__: Set[str]
 
 
 def str_validator(v: Any) -> Union[str]:
@@ -548,52 +543,25 @@ def pattern_validator(v: Any) -> Pattern[str]:
 NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
 
 
-def make_named_tuple_validator(type_: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
-    from .main import create_model
+def make_named_tuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
+    from .annotated_types import namedtuple_to_model
 
-    # A named tuple can be created with `typing.NamedTuple` with types
-    # but also with `collections.namedtuple` with just the fields
-    # in which case we consider the type to be `Any`
-    named_tuple_annotations: Dict[str, Type[Any]] = getattr(type_, '__annotations__', {k: Any for k in type_._fields})
-    field_definitions: Dict[str, Any] = {
-        field_name: (field_type, ...) for field_name, field_type in named_tuple_annotations.items()
-    }
-    NamedTupleModel: Type['BaseModel'] = create_model('NamedTupleModel', **field_definitions)
+    NamedTupleModel = namedtuple_to_model(namedtuple_cls)
 
     def named_tuple_validator(values: Tuple[Any, ...]) -> NamedTupleT:
-        dict_values: Dict[str, Any] = dict(zip(named_tuple_annotations, values))
+        dict_values: Dict[str, Any] = dict(zip(NamedTupleModel.__annotations__, values))
         validated_dict_values: Dict[str, Any] = dict(NamedTupleModel(**dict_values))
-        return type_(**validated_dict_values)
+        return namedtuple_cls(**validated_dict_values)
 
     return named_tuple_validator
 
 
-def make_typed_dict_validator(type_: Type['TypedDict'], config: Type['BaseConfig']) -> Callable[[Any], Dict[str, Any]]:
-    from .main import create_model
+def make_typed_dict_validator(
+    typeddict_cls: Type['TypedDict'], config: Type['BaseConfig']
+) -> Callable[[Any], Dict[str, Any]]:
+    from .annotated_types import typeddict_to_model
 
-    field_definitions: Dict[str, Any]
-
-    # Best case scenario: with python 3.9+ or when used with typing_extensions
-    if hasattr(type_, '__required_keys__'):
-        field_definitions = {
-            field_name: (field_type, ... if field_name in type_.__required_keys__ else None)
-            for field_name, field_type in type_.__annotations__.items()
-        }
-    else:
-        import warnings
-
-        warnings.warn(
-            'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` for better support! '
-            'Without it, there is no way to differentiate required and optional fields when subclassed. '
-            'Fields will therefore be considered all required or all optional depending on class totality.',
-            UserWarning,
-        )
-        default_value = ... if type_.__total__ else None
-        field_definitions = {
-            field_name: (field_type, default_value) for field_name, field_type in type_.__annotations__.items()
-        }
-
-    TypedDictModel: Type['BaseModel'] = create_model('TypedDictModel', __config__=config, **field_definitions)
+    TypedDictModel = typeddict_to_model(typeddict_cls, config=config)
 
     def typed_dict_validator(values: 'TypedDict') -> Dict[str, Any]:
         return TypedDictModel(**values).dict(exclude_unset=True)
