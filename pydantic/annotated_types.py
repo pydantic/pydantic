@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, NamedTuple, Type
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, NamedTuple, Optional, Type
 
 from .fields import Required
 from .main import BaseConfig, BaseModel, create_model
@@ -12,7 +12,9 @@ if TYPE_CHECKING:
         __optional_keys__: FrozenSet[str]
 
 
-def typeddict_to_model(typeddict_cls: Type['TypedDict'], *, config: Type['BaseConfig']) -> Type['BaseModel']:
+def typeddict_to_model(
+    typeddict_cls: Type['TypedDict'], *, config: Optional[Type['BaseConfig']] = None
+) -> Type['BaseModel']:
     """
     Convert a `TypedDict` to a `BaseModel`
     Since `typing.TypedDict` in Python 3.8 does not store runtime information about optional keys,
@@ -40,9 +42,7 @@ def typeddict_to_model(typeddict_cls: Type['TypedDict'], *, config: Type['BaseCo
             field_name: (field_type, default_value) for field_name, field_type in typeddict_cls.__annotations__.items()
         }
 
-    return create_model(
-        f'{typeddict_cls.__name__}Model', __config__=config, **field_definitions
-    )
+    return create_model(f'{typeddict_cls.__name__}Model', __config__=config, **field_definitions)
 
 
 def namedtuple_to_model(namedtuple_cls: Type['NamedTuple']) -> Type['BaseModel']:
