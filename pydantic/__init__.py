@@ -1,6 +1,6 @@
 # flake8: noqa
 from . import dataclasses
-from .annotated_types import namedtuple_to_model, typeddict_to_model
+from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
 from .class_validators import root_validator, validator
 from .decorator import validate_arguments
 from .env_settings import BaseSettings
@@ -18,8 +18,8 @@ from .version import VERSION
 # please use "from pydantic.errors import ..." instead
 __all__ = [
     # annotated types utils
-    'namedtuple_to_model',
-    'typeddict_to_model',
+    'create_model_from_namedtuple',
+    'create_model_from_typeddict',
     # dataclasses
     'dataclasses',
     # class_validators

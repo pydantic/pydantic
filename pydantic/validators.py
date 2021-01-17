@@ -544,9 +544,9 @@ NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
 
 
 def make_named_tuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
-    from .annotated_types import namedtuple_to_model
+    from .annotated_types import create_model_from_namedtuple
 
-    NamedTupleModel = namedtuple_to_model(namedtuple_cls)
+    NamedTupleModel = create_model_from_namedtuple(namedtuple_cls)
 
     def named_tuple_validator(values: Tuple[Any, ...]) -> NamedTupleT:
         dict_values: Dict[str, Any] = dict(zip(NamedTupleModel.__annotations__, values))
@@ -559,9 +559,9 @@ def make_named_tuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[T
 def make_typeddict_validator(
     typeddict_cls: Type['TypedDict'], config: Type['BaseConfig']
 ) -> Callable[[Any], Dict[str, Any]]:
-    from .annotated_types import typeddict_to_model
+    from .annotated_types import create_model_from_typeddict
 
-    TypedDictModel = typeddict_to_model(typeddict_cls, config=config)
+    TypedDictModel = create_model_from_typeddict(typeddict_cls, __config__=config)
 
     def typeddict_validator(values: 'TypedDict') -> Dict[str, Any]:
         return TypedDictModel(**values).dict(exclude_unset=True)

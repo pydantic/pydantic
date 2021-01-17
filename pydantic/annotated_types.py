@@ -1,7 +1,7 @@
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, NamedTuple, Type
 
 from .fields import Required
-from .main import BaseConfig, BaseModel, create_model
+from .main import BaseModel, create_model
 
 if TYPE_CHECKING:
 
@@ -12,9 +12,7 @@ if TYPE_CHECKING:
         __optional_keys__: FrozenSet[str]
 
 
-def typeddict_to_model(
-    typeddict_cls: Type['TypedDict'], *, config: Optional[Type['BaseConfig']] = None
-) -> Type['BaseModel']:
+def create_model_from_typeddict(typeddict_cls: Type['TypedDict'], **kwargs: Any) -> Type['BaseModel']:
     """
     Convert a `TypedDict` to a `BaseModel`
     Since `typing.TypedDict` in Python 3.8 does not store runtime information about optional keys,
@@ -42,10 +40,10 @@ def typeddict_to_model(
             field_name: (field_type, default_value) for field_name, field_type in typeddict_cls.__annotations__.items()
         }
 
-    return create_model(f'{typeddict_cls.__name__}Model', __config__=config, **field_definitions)
+    return create_model(f'{typeddict_cls.__name__}Model', **kwargs, **field_definitions)
 
 
-def namedtuple_to_model(namedtuple_cls: Type['NamedTuple']) -> Type['BaseModel']:
+def create_model_from_namedtuple(namedtuple_cls: Type['NamedTuple'], **kwargs: Any) -> Type['BaseModel']:
     """
     Convert a named tuple to a `BaseModel`
     A named tuple can be created with `typing.NamedTuple` and declared annotations
@@ -58,4 +56,4 @@ def namedtuple_to_model(namedtuple_cls: Type['NamedTuple']) -> Type['BaseModel']
     field_definitions: Dict[str, Any] = {
         field_name: (field_type, Required) for field_name, field_type in named_tuple_annotations.items()
     }
-    return create_model(f'{namedtuple_cls.__name__}Model', **field_definitions)
+    return create_model(f'{namedtuple_cls.__name__}Model', **kwargs, **field_definitions)
