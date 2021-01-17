@@ -33,10 +33,11 @@ def test_is_namedtuple():
     assert is_namedtuple(Employee) is True
     assert is_namedtuple(NamedTuple('Employee', [('name', str), ('id', int)])) is True
 
-    class SubTuple(tuple):
-        ...
+    class Other(tuple):
+        name: str
+        id: int
 
-    assert is_namedtuple(SubTuple) is False
+    assert is_namedtuple(Other) is False
 
 
 @pytest.mark.parametrize('TypedDict', (t for t in ALL_TYPEDDICT_KINDS if t is not None))
