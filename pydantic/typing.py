@@ -188,8 +188,8 @@ __all__ = (
     'is_literal_type',
     'literal_values',
     'Literal',
-    'is_named_tuple_type',
-    'is_typed_dict_type',
+    'is_namedtuple',
+    'is_typeddict',
     'is_new_type',
     'new_type_supertype',
     'is_classvar',
@@ -300,13 +300,20 @@ def all_literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
     return tuple(x for value in values for x in all_literal_values(value))
 
 
-def is_named_tuple_type(type_: Type[Any]) -> bool:
+def is_namedtuple(type_: Type[Any]) -> bool:
+    """
+    Check if a given class is a `NamedTuple`
+    """
     from .utils import lenient_issubclass
 
     return lenient_issubclass(type_, tuple) and hasattr(type_, '_fields')
 
 
-def is_typed_dict_type(type_: Type[Any]) -> bool:
+def is_typeddict(type_: Type[Any]) -> bool:
+    """
+    Check if a given class is a `TypedDict`
+    In 3.10, there will be a public method (https://docs.python.org/3.10/library/typing.html#typing.is_typeddict)
+    """
     from .utils import lenient_issubclass
 
     return lenient_issubclass(type_, dict) and getattr(type_, '__annotations__', None)

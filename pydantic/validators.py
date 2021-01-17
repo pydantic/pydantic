@@ -37,8 +37,8 @@ from .typing import (
     get_class,
     is_callable_type,
     is_literal_type,
-    is_named_tuple_type,
-    is_typed_dict_type,
+    is_namedtuple,
+    is_typeddict,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
@@ -556,17 +556,17 @@ def make_named_tuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[T
     return named_tuple_validator
 
 
-def make_typed_dict_validator(
+def make_typeddict_validator(
     typeddict_cls: Type['TypedDict'], config: Type['BaseConfig']
 ) -> Callable[[Any], Dict[str, Any]]:
     from .annotated_types import typeddict_to_model
 
     TypedDictModel = typeddict_to_model(typeddict_cls, config=config)
 
-    def typed_dict_validator(values: 'TypedDict') -> Dict[str, Any]:
+    def typeddict_validator(values: 'TypedDict') -> Dict[str, Any]:
         return TypedDictModel(**values).dict(exclude_unset=True)
 
-    return typed_dict_validator
+    return typeddict_validator
 
 
 class IfConfig:
@@ -659,12 +659,12 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if type_ is IntEnum:
         yield int_enum_validator
         return
-    if is_named_tuple_type(type_):
+    if is_namedtuple(type_):
         yield tuple_validator
         yield make_named_tuple_validator(type_)
         return
-    if is_typed_dict_type(type_):
-        yield make_typed_dict_validator(type_, config)
+    if is_typeddict(type_):
+        yield make_typeddict_validator(type_, config)
         return
 
     class_ = get_class(type_)
