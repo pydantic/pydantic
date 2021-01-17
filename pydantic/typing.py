@@ -302,7 +302,8 @@ def all_literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
 
 def is_namedtuple(type_: Type[Any]) -> bool:
     """
-    Check if a given class is a `NamedTuple`
+    Check if a given class is a named tuple.
+    It can be either a `typing.NamedTuple` or `collections.namedtuple`
     """
     from .utils import lenient_issubclass
 
@@ -311,12 +312,12 @@ def is_namedtuple(type_: Type[Any]) -> bool:
 
 def is_typeddict(type_: Type[Any]) -> bool:
     """
-    Check if a given class is a `TypedDict`
+    Check if a given class is a typed dict (from `typing` or `typing_extensions`)
     In 3.10, there will be a public method (https://docs.python.org/3.10/library/typing.html#typing.is_typeddict)
     """
     from .utils import lenient_issubclass
 
-    return lenient_issubclass(type_, dict) and getattr(type_, '__annotations__', None)
+    return lenient_issubclass(type_, dict) and hasattr(type_, '__total__')
 
 
 test_type = NewType('test_type', str)
