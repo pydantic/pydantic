@@ -119,3 +119,17 @@ def test_annotated_instance_exceptions(hint_fn, value, empty_init_ctx):
 
     with empty_init_ctx:
         assert M().x == 5
+
+
+def test_field_reuse():
+    field = Field(description='Long description')
+
+    class Model(BaseModel):
+        one: int = field
+
+    assert Model(one=1).dict() == {"one": 1}
+
+    class AnnotatedModel(BaseModel):
+        one: Annotated[int, field]
+
+    assert AnnotatedModel(one=1).dict() == {"one": 1}

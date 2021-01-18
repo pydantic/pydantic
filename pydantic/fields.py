@@ -316,9 +316,9 @@ class ModelField(Representation):
                 raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
             field_info = next(iter(field_infos), None)
             if field_info is not None:
-                if field_info.default is not Undefined:
+                if field_info.default not in (Undefined, Ellipsis):
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
-                if value is not Undefined:
+                if value not in (Undefined, Ellipsis):
                     field_info.default = value
         if isinstance(value, FieldInfo):
             if field_info is not None:
