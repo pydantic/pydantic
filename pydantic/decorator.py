@@ -178,7 +178,7 @@ class ValidatedFunction:
 
     def execute(self, m: BaseModel) -> Any:
         d = {k: v for k, v in m._iter() if k in m.__fields_set__}
-        var_kwargs = d.pop(self.v_kwargs_name, None) or {}
+        var_kwargs = d.pop(self.v_kwargs_name, {})
 
         if self.v_args_name in d:
             args_: List[Any] = []
