@@ -869,9 +869,15 @@ def get_annotation_from_field_info(
         annotation, used_constraints = get_annotation_with_constraints(annotation, field_info)
 
     if validate_assignment:
-        used_constraints.update(('allow_mutation',))
+        used_constraints.add('allow_mutation')
 
-    check_unused_constraints(constraints, used_constraints, field_name)
+    unused_constraints = constraints - used_constraints
+    if unused_constraints:
+        raise ValueError(
+            f'On field "{field_name}" the following field constraints are set but not enforced: '
+            f'{", ".join(unused_constraints)}. '
+            f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
+        )
 
     return annotation
 
@@ -956,24 +962,6 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
     ans = go(annotation)
 
     return ans, used_constraints
-
-
-def check_unused_constraints(constraints: Set[Any], used_constraints: Set[Any], field_name: str) -> None:
-    """
-    Compares constraints to used_constraints and raises a ValueError if there are unused constraints
-
-    :param constraints: a set of constraints on the field
-    :param used_constraints: a set of used_constraints on the field
-    :param field_name: name of the field for use in error messages
-    :return: None, raises ValueError if constraints are unused
-    """
-    unused_constraints = constraints - used_constraints
-    if unused_constraints:
-        raise ValueError(
-            f'On field "{field_name}" the following field constraints are set but not enforced: '
-            f'{", ".join(unused_constraints)}. '
-            f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
-        )
 
 
 def normalize_name(name: str) -> str:
