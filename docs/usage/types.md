@@ -768,10 +768,6 @@ The following arguments are available when using the `condecimal` type function
 - `decimal_places: int = None`: max number of decimal places allowed. it does not include trailing decimal zeroes
 - `multiple_of: Decimal = None`: enforces decimal to be a multiple of the set value
 
-
-
-
-
 ## Strict Types
 
 You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types 
