@@ -978,7 +978,7 @@ def test_root_validator_returns_none_exception():
         def root_validator_repeated(cls, values):
             return None
 
-    with pytest.raises(TypeError, match='Did you return a valid dict in your root validators?'):
+    with pytest.raises(TypeError, match='Model values must be a dict'):
         Model()
 
 
