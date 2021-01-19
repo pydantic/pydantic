@@ -1,1 +1,1 @@
-Resolve forward refs for inherited dataclasses
+Resolve forward refs for stdlib dataclasses converted into _pydantic_ ones
