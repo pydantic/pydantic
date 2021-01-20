@@ -1,0 +1,1 @@
+Add the ability to customize settings source (add / disable / change priority order).

@@ -7,7 +7,14 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import pytest
 
 from pydantic import BaseModel, BaseSettings, Field, HttpUrl, NoneStr, SecretStr, ValidationError, dataclasses
-from pydantic.env_settings import SettingsError, SettingsSourceCallable, read_env_file
+from pydantic.env_settings import (
+    EnvSettingsSource,
+    InitSettingsSource,
+    SecretsSettingsSource,
+    SettingsError,
+    SettingsSourceCallable,
+    read_env_file,
+)
 
 try:
     import dotenv
@@ -931,3 +938,15 @@ def test_external_settings_sources_filter_env_vars():
                 )
 
     assert Settings().dict() == {'apple': 'value 0', 'banana': 'value 2'}
+
+
+def test_builtins_settings_source_repr():
+    assert (
+        repr(InitSettingsSource(init_kwargs={'apple': 'value 0', 'banana': 'value 1'}))
+        == "InitSettingsSource(init_kwargs={'apple': 'value 0', 'banana': 'value 1'})"
+    )
+    assert (
+        repr(EnvSettingsSource(env_file='.env', env_file_encoding='utf-8'))
+        == "EnvSettingsSource(env_file='.env', env_file_encoding='utf-8')"
+    )
+    assert repr(SecretsSettingsSource(secrets_dir='/secrets')) == "SecretsSettingsSource(secrets_dir='/secrets')"
