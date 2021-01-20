@@ -1,1 +1,1 @@
-fix: Change non-existent secrets dir from exception to warning
+Allow non-existent secrets directory by only issuing a warning
