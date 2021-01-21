@@ -499,9 +499,10 @@ def field_type_schema(
     # check field type to avoid repeated calls to the same __modify_schema__ method
     if field.type_ != field.outer_type_:
         if field.shape == SHAPE_GENERIC:
-            modify_schema = getattr(field.type_, '__modify_schema__', None)
+            field_type = field.type_
         else:
-            modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
+            field_type = field.outer_type_
+        modify_schema = getattr(field_type, '__modify_schema__', None)
         if modify_schema:
             modify_schema(f_schema)
     return f_schema, definitions, nested_models
