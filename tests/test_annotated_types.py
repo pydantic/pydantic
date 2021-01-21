@@ -5,7 +5,7 @@ Tests for annotated types that _pydantic_ can validate like
 """
 import sys
 from collections import namedtuple
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Tuple
 
 if sys.version_info < (3, 9):
     try:
@@ -57,6 +57,51 @@ def test_namedtuple():
             'type': 'type_error.integer',
         }
     ]
+
+
+def test_namedtuple_schema():
+    class Position1(NamedTuple):
+        x: int
+        y: int
+
+    Position2 = namedtuple('Position2', 'x y')
+
+    class Model(BaseModel):
+        pos1: Position1
+        pos2: Position2
+        pos3: Tuple[int, int]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'pos1': {
+                'title': 'Pos1',
+                'type': 'array',
+                'items': [
+                    {'title': 'X', 'type': 'integer'},
+                    {'title': 'Y', 'type': 'integer'},
+                ],
+            },
+            'pos2': {
+                'title': 'Pos2',
+                'type': 'array',
+                'items': [
+                    {'title': 'X'},
+                    {'title': 'Y'},
+                ],
+            },
+            'pos3': {
+                'title': 'Pos3',
+                'type': 'array',
+                'items': [
+                    {'type': 'integer'},
+                    {'type': 'integer'},
+                ],
+            },
+        },
+        'required': ['pos1', 'pos2', 'pos3'],
+    }
 
 
 @pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')

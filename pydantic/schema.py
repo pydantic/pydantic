@@ -65,6 +65,7 @@ from .typing import (
     get_origin,
     is_callable_type,
     is_literal_type,
+    is_namedtuple,
     literal_values,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
@@ -795,6 +796,16 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema, schema_overrides = get_field_info_schema(field)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
+    elif is_namedtuple(field_type):
+        sub_schema, *_ = model_process_schema(
+            field_type.__pydantic_model__,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            ref_template=ref_template,
+            known_models=known_models,
+        )
+        f_schema.update({'type': 'array', 'items': list(sub_schema['properties'].values())})
     elif not hasattr(field_type, '__pydantic_model__'):
         add_field_type_to_schema(field_type, f_schema)
 

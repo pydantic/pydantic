@@ -547,6 +547,7 @@ def make_namedtuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tu
     from .annotated_types import create_model_from_namedtuple
 
     NamedTupleModel = create_model_from_namedtuple(namedtuple_cls)
+    namedtuple_cls.__pydantic_model__ = NamedTupleModel  # type: ignore[attr-defined]
 
     def namedtuple_validator(values: Tuple[Any, ...]) -> NamedTupleT:
         dict_values: Dict[str, Any] = dict(zip(NamedTupleModel.__annotations__, values))

@@ -56,4 +56,4 @@ def create_model_from_namedtuple(namedtuple_cls: Type['NamedTuple'], **kwargs: A
     field_definitions: Dict[str, Any] = {
         field_name: (field_type, Required) for field_name, field_type in namedtuple_annotations.items()
     }
-    return create_model(f'{namedtuple_cls.__name__}Model', **kwargs, **field_definitions)
+    return create_model(namedtuple_cls.__name__, **kwargs, **field_definitions)
