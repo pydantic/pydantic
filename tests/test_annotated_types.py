@@ -27,7 +27,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 
-def test_named_tuple():
+def test_namedtuple():
     Position = namedtuple('Pos', 'x y')
 
     class Event(NamedTuple):
@@ -60,7 +60,7 @@ def test_named_tuple():
 
 
 @pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
-def test_typed_dict():
+def test_typeddict():
     class TD(TypedDict):
         a: int
         b: int
@@ -85,7 +85,7 @@ def test_typed_dict():
 
 
 @pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
-def test_typed_dict_non_total():
+def test_typeddict_non_total():
     class FullMovie(TypedDict, total=True):
         name: str
         year: int
@@ -115,7 +115,7 @@ def test_typed_dict_non_total():
 
 
 @pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
-def test_partial_new_typed_dict():
+def test_partial_new_typeddict():
     class OptionalUser(TypedDict, total=False):
         name: str
 
@@ -130,7 +130,7 @@ def test_partial_new_typed_dict():
 
 
 @pytest.mark.skipif(not LegacyTypedDict, reason='python 3.9+ is used or typing_extensions is installed')
-def test_partial_legacy_typed_dict():
+def test_partial_legacy_typeddict():
     class OptionalUser(LegacyTypedDict, total=False):
         name: str
 
@@ -157,7 +157,7 @@ def test_partial_legacy_typed_dict():
 
 
 @pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
-def test_typed_dict_extra():
+def test_typeddict_extra():
     class User(TypedDict):
         name: str
         age: int

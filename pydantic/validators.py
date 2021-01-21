@@ -543,17 +543,17 @@ def pattern_validator(v: Any) -> Pattern[str]:
 NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
 
 
-def make_named_tuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
+def make_namedtuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
     from .annotated_types import create_model_from_namedtuple
 
     NamedTupleModel = create_model_from_namedtuple(namedtuple_cls)
 
-    def named_tuple_validator(values: Tuple[Any, ...]) -> NamedTupleT:
+    def namedtuple_validator(values: Tuple[Any, ...]) -> NamedTupleT:
         dict_values: Dict[str, Any] = dict(zip(NamedTupleModel.__annotations__, values))
         validated_dict_values: Dict[str, Any] = dict(NamedTupleModel(**dict_values))
         return namedtuple_cls(**validated_dict_values)
 
-    return named_tuple_validator
+    return namedtuple_validator
 
 
 def make_typeddict_validator(
@@ -661,7 +661,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if is_namedtuple(type_):
         yield tuple_validator
-        yield make_named_tuple_validator(type_)
+        yield make_namedtuple_validator(type_)
         return
     if is_typeddict(type_):
         yield make_typeddict_validator(type_, config)

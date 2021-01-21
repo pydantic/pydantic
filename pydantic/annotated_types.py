@@ -50,10 +50,10 @@ def create_model_from_namedtuple(namedtuple_cls: Type['NamedTuple'], **kwargs: A
     but also with `collections.namedtuple` without any, in which case we consider the type
     of all the fields to be `Any`
     """
-    named_tuple_annotations: Dict[str, Type[Any]] = getattr(
+    namedtuple_annotations: Dict[str, Type[Any]] = getattr(
         namedtuple_cls, '__annotations__', {k: Any for k in namedtuple_cls._fields}
     )
     field_definitions: Dict[str, Any] = {
-        field_name: (field_type, Required) for field_name, field_type in named_tuple_annotations.items()
+        field_name: (field_type, Required) for field_name, field_type in namedtuple_annotations.items()
     }
     return create_model(f'{namedtuple_cls.__name__}Model', **kwargs, **field_definitions)
