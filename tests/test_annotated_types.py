@@ -3,6 +3,7 @@ Tests for annotated types that _pydantic_ can validate like
 - NamedTuple
 - TypedDict
 """
+import json
 import sys
 from collections import namedtuple
 from typing import List, NamedTuple, Tuple
@@ -47,6 +48,7 @@ def test_namedtuple():
     assert model.pos == Position('1', 2)
     assert model.events[0] == Event(1, 2, 3, 'qwe')
     assert repr(model) == "Model(pos=Pos(x='1', y=2), events=[Event(a=1, b=2, c=3, d='qwe')])"
+    assert model.json() == json.dumps(model.dict()) == '{"pos": ["1", 2], "events": [[1, 2, 3, "qwe"]]}'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(pos=('1', 2), events=[['qwe', '2', 3, 'qwe']])
