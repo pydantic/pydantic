@@ -173,3 +173,37 @@ def test_typeddict_extra():
     assert exc_info.value.errors() == [
         {'loc': ('u', 'rank'), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
     ]
+
+
+@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
+def test_typeddict_schema():
+    class Data(BaseModel):
+        a: int
+
+    class DataTD(TypedDict):
+        a: int
+
+    class Model(BaseModel):
+        data: Data
+        data_td: DataTD
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'data': {'$ref': '#/definitions/Data'}, 'data_td': {'$ref': '#/definitions/DataTD'}},
+        'required': ['data', 'data_td'],
+        'definitions': {
+            'Data': {
+                'type': 'object',
+                'title': 'Data',
+                'properties': {'a': {'title': 'A', 'type': 'integer'}},
+                'required': ['a'],
+            },
+            'DataTD': {
+                'type': 'object',
+                'title': 'DataTD',
+                'properties': {'a': {'title': 'A', 'type': 'integer'}},
+                'required': ['a'],
+            },
+        },
+    }

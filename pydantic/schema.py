@@ -795,7 +795,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema, schema_overrides = get_field_info_schema(field)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
-    else:
+    elif not hasattr(field_type, '__pydantic_model__'):
         add_field_type_to_schema(field_type, f_schema)
 
         modify_schema = getattr(field_type, '__modify_schema__', None)

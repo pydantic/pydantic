@@ -40,7 +40,7 @@ def create_model_from_typeddict(typeddict_cls: Type['TypedDict'], **kwargs: Any)
             field_name: (field_type, default_value) for field_name, field_type in typeddict_cls.__annotations__.items()
         }
 
-    return create_model(f'{typeddict_cls.__name__}Model', **kwargs, **field_definitions)
+    return create_model(typeddict_cls.__name__, **kwargs, **field_definitions)
 
 
 def create_model_from_namedtuple(namedtuple_cls: Type['NamedTuple'], **kwargs: Any) -> Type['BaseModel']:
