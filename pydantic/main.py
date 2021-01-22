@@ -586,9 +586,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         Default values are respected, but no other validation is performed.
         """
         m = cls.__new__(cls)
-        # default field values
-        fields_values = {name: field.get_default() for name, field in cls.__fields__.items() if not field.required}
-        fields_values.update(values)
+        fields_values: Dict[str, Any] = {}
+        for name, field in cls.__fields__.items():
+            if name in values:
+                fields_values[name] = values[name]
+            elif not field.required:
+                fields_values[name] = field.get_default()
         object_setattr(m, '__dict__', fields_values)
         if _fields_set is None:
             _fields_set = set(values.keys())

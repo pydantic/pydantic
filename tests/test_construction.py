@@ -35,6 +35,19 @@ def test_construct_fields_set():
     assert m.dict() == {'a': 3, 'b': -1}
 
 
+def test_construct_keep_order():
+    class Foo(BaseModel):
+        a: int
+        b: int = 42
+        c: float
+
+    instance = Foo(a=1, b=321, c=3.14)
+    instance_construct = Foo.construct(**instance.dict())
+    assert instance == instance_construct
+    assert instance.dict() == instance_construct.dict()
+    assert instance.json() == instance_construct.json()
+
+
 def test_large_any_str():
     class Model(BaseModel):
         a: bytes
