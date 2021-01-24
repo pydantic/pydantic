@@ -35,6 +35,15 @@ def test_construct_fields_set():
     assert m.dict() == {'a': 3, 'b': -1}
 
 
+def test_construct_allow_extra():
+    """construct() should allow extra fields"""
+
+    class Foo(BaseModel):
+        x: int
+
+    assert Foo.construct(x=1, y=2).dict() == {'x': 1, 'y': 2}
+
+
 def test_construct_keep_order():
     class Foo(BaseModel):
         a: int

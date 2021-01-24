@@ -584,6 +584,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         """
         Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
+        Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
         """
         m = cls.__new__(cls)
         fields_values: Dict[str, Any] = {}
@@ -592,6 +593,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 fields_values[name] = values[name]
             elif not field.required:
                 fields_values[name] = field.get_default()
+        fields_values.update(values)
         object_setattr(m, '__dict__', fields_values)
         if _fields_set is None:
             _fields_set = set(values.keys())
