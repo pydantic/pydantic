@@ -799,10 +799,13 @@ class PaymentCardNumber(str):
         Validate length based on BIN for major brands:
         https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
         """
-        required_length: Optional[int] = None
-        if card_number.brand in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}:
+        required_length: Optional[Union[int, str]] = None
+        if card_number.brand in PaymentCardBrand.mastercard:
             required_length = 16
             valid = len(card_number) == required_length
+        elif card_number.brand == PaymentCardBrand.visa:
+            required_length = '13, 16 or 19'
+            valid = len(card_number) in {13, 16, 19}
         elif card_number.brand == PaymentCardBrand.amex:
             required_length = 15
             valid = len(card_number) == required_length

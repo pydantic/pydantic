@@ -9,7 +9,9 @@ from pydantic.types import PaymentCardBrand, PaymentCardNumber
 
 VALID_AMEX = '370000000000002'
 VALID_MC = '5100000000000003'
-VALID_VISA = '4050000000000001'
+VALID_VISA_16 = '4050000000000001'
+VALID_VISA_13 = '4050000000001'
+VALID_VISA_19 = '4050000000001'
 VALID_OTHER = '2000000000000000008'
 LUHN_INVALID = '4000000000000000'
 LEN_INVALID = '40000000000000006'
@@ -73,7 +75,9 @@ def test_validate_luhn_check_digit(card_number: str, valid: bool):
 @pytest.mark.parametrize(
     'card_number, brand, valid',
     [
-        (VALID_VISA, PaymentCardBrand.visa, True),
+        (VALID_VISA_13, PaymentCardBrand.visa, True),
+        (VALID_VISA_16, PaymentCardBrand.visa, True),
+        (VALID_VISA_19, PaymentCardBrand.visa, True),
         (VALID_MC, PaymentCardBrand.mastercard, True),
         (VALID_AMEX, PaymentCardBrand.amex, True),
         (VALID_OTHER, PaymentCardBrand.other, True),
@@ -95,7 +99,7 @@ def test_length_for_brand(card_number: str, brand: PaymentCardBrand, valid: bool
     [
         (VALID_AMEX, PaymentCardBrand.amex),
         (VALID_MC, PaymentCardBrand.mastercard),
-        (VALID_VISA, PaymentCardBrand.visa),
+        (VALID_VISA_16, PaymentCardBrand.visa),
         (VALID_OTHER, PaymentCardBrand.other),
     ],
 )
@@ -104,8 +108,8 @@ def test_get_brand(card_number: str, brand: PaymentCardBrand):
 
 
 def test_valid():
-    card = PaymentCard(card_number=VALID_VISA)
-    assert str(card.card_number) == VALID_VISA
+    card = PaymentCard(card_number=VALID_VISA_16)
+    assert str(card.card_number) == VALID_VISA_16
     assert card.card_number.masked == '405000******0001'
 
 
