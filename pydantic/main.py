@@ -199,9 +199,9 @@ def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
         raise ValueError('__root__ cannot be mixed with other fields')
 
 
-def generate_hash_function(frozen: bool, super_class: Any) -> Optional[Callable[[Any], int]]:
+def generate_hash_function(frozen: bool) -> Optional[Callable[[Any], int]]:
     def hash_function(self_: Any) -> int:
-        return hash(super_class) + hash(tuple(self_.__dict__.values()))
+        return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
 
     return hash_function if frozen else None
 
@@ -329,7 +329,7 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             '__private_attributes__': private_attributes,
             '__slots__': slots | private_attributes.keys(),
-            '__hash__': generate_hash_function(config.frozen, super()),
+            '__hash__': generate_hash_function(config.frozen),
             **{n: v for n, v in namespace.items() if n not in exclude_from_namespace},
         }
 
