@@ -188,7 +188,7 @@ class Settings(BaseSettings):
     By default Docker uses `/run/secrets` as the target mount point. If you want to use a different location, change 
     `Config.secrets_dir` accordingly.
 
-Then, Create your secret via the Docker CLI
+Then, create your secret via the Docker CLI
 ```bash
 printf "This is a secret" | docker secret create my_secret_data -
 ```
