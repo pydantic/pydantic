@@ -124,7 +124,7 @@ setup(
     license='MIT',
     packages=['pydantic'],
     package_data={'pydantic': ['py.typed']},
-    python_requires='>=3.6',
+    python_requires='>=3.6.1',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html
     install_requires=[
         'dataclasses>=0.6;python_version<"3.7"'
