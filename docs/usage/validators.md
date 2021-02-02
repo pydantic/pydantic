@@ -5,6 +5,11 @@ Custom validation and complex relationships between objects can be achieved usin
 ```
 _(This script is complete, it should run "as is")_
 
+!!! warning
+  Validators should not overwrite `BaseModel.validate()`. Instead, give the validator function a unique name.
+  
+  This may be fixed in v2 - see [samuelcolvin/pydantic#1001](https://github.com/samuelcolvin/pydantic/issues/1001).
+
 A few things to note on validators:
 
 * validators are "class methods", so the first argument value they receive is the `UserModel` class, not an instance
