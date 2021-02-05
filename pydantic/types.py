@@ -103,7 +103,6 @@ StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass  # noqa: F401
-    from .fields import ModelField
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .typing import CallableGenerator
 
@@ -159,8 +158,8 @@ class ConstrainedList(list):  # type: ignore
         update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
 
     @classmethod
-    def list_length_validator(cls, v: 'Optional[List[T]]', field: 'ModelField') -> 'Optional[List[T]]':
-        if v is None and not field.required:
+    def list_length_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
+        if v is None:
             return None
 
         v = list_validator(v)
@@ -201,7 +200,10 @@ class ConstrainedSet(set):  # type: ignore
         update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
 
     @classmethod
-    def set_length_validator(cls, v: 'Optional[Set[T]]', field: 'ModelField') -> 'Optional[Set[T]]':
+    def set_length_validator(cls, v: 'Optional[Set[T]]') -> 'Optional[Set[T]]':
+        if v is None:
+            return None
+
         v = set_validator(v)
         v_len = len(v)
 
