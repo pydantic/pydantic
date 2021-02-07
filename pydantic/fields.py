@@ -736,10 +736,13 @@ class ModelField(Representation):
             result[key_result] = value_result
         if errors:
             return v, errors
-
-        mtype = type(v)
-        if issubclass(mtype, Mapping):
-            return mtype(result), None
+        elif isinstance(v, Mapping):
+            same_mapping_type_res = _get_same_mapping_type_res(v, result)
+            if same_mapping_type_res is not None:
+                return same_mapping_type_res, None
+            else:
+                warnings.warn(f'Could not keep {v.__class__.__name__} when validating. Fallback done on dict...')
+                return result, None
         else:
             return result, None
 
@@ -854,3 +857,19 @@ def PrivateAttr(
         default,
         default_factory=default_factory,
     )
+
+
+def _get_same_mapping_type_res(mapping: Mapping, converted: dict) -> Optional[Mapping]:
+    """Try to return the same object as `mapping` but with `converted` values"""
+
+    # First option: keep the same object and update in place
+    if hasattr(mapping, 'clear') and hasattr(mapping, 'update'):
+        mapping.clear()
+        mapping.update(converted)
+        return mapping
+
+    # Second option: try to create a new object
+    try:
+        return type(mapping)(**converted)
+    except TypeError:
+        return None
