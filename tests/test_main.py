@@ -1425,3 +1425,16 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
+
+
+def test_mapping_subclass_retains_type():
+    class Map(dict):
+        pass
+
+    class Model(BaseModel):
+        field: Mapping[str, Mapping[str, int]]
+
+    m = Model(field=Map(outer=Map(inner=42)))
+    assert isinstance(m.field, Map)
+    assert isinstance(m.field['outer'], Map)
+    assert m.field['outer']['inner'] == 42

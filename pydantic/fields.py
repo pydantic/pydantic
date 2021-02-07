@@ -736,6 +736,10 @@ class ModelField(Representation):
             result[key_result] = value_result
         if errors:
             return v, errors
+
+        mtype = type(v)
+        if issubclass(mtype, Mapping):
+            return mtype(result), None
         else:
             return result, None
 
