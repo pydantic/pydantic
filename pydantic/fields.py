@@ -1,5 +1,5 @@
 import warnings
-from collections import deque
+from collections import defaultdict, deque
 from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
@@ -859,17 +859,18 @@ def PrivateAttr(
     )
 
 
-def _get_same_mapping_type_res(mapping: Mapping[Any, Any], converted: Dict[Any, Any]) -> Optional[Mapping[Any, Any]]:
-    """Try to return the same object as `mapping` but with `converted` values"""
-
-    # First option: keep the same object and update in place
-    if hasattr(mapping, 'clear') and hasattr(mapping, 'update'):
-        mapping.clear()
-        mapping.update(converted)
-        return mapping
-
-    # Second option: try to create a new object
-    try:
-        return type(mapping)(**converted)
-    except TypeError:
-        return None
+def _get_same_mapping_type_res(mapping: T, converted: Dict[Any, Any]) -> Optional[T]:
+    """
+    Try to return the same object as `mapping` but with `converted` values
+    """
+    mapping_type = type(mapping)
+    if mapping_type is dict:
+        return converted  # type: ignore
+    elif mapping_type is defaultdict:
+        return defaultdict(mapping.default_factory, **converted)  # type: ignore
+    else:
+        try:
+            # Counter, OrderedDict, UserDict, ...
+            return mapping_type(**converted)  # type: ignore
+        except TypeError:
+            return None
