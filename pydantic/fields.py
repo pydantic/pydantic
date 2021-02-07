@@ -859,7 +859,7 @@ def PrivateAttr(
     )
 
 
-def _get_same_mapping_type_res(mapping: Mapping, converted: dict) -> Optional[Mapping]:
+def _get_same_mapping_type_res(mapping: Mapping[Any, Any], converted: Dict[Any, Any]) -> Optional[Mapping[Any, Any]]:
     """Try to return the same object as `mapping` but with `converted` values"""
 
     # First option: keep the same object and update in place
