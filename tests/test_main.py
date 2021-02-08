@@ -1,4 +1,5 @@
 import sys
+from collections import ChainMap, defaultdict
 from enum import Enum
 from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
@@ -1427,7 +1428,7 @@ def test_base_config_type_hinting():
     get_type_hints(M.__config__)
 
 
-def test_mapping_subclass_retains_type():
+def test_mapping_retains_type_subclass():
     class Map(dict):
         pass
 
@@ -1438,3 +1439,29 @@ def test_mapping_subclass_retains_type():
     assert isinstance(m.field, Map)
     assert isinstance(m.field['outer'], Map)
     assert m.field['outer']['inner'] == 42
+
+
+def test_mapping_retains_type_defaultdict():
+    class Model(BaseModel):
+        field: Mapping[str, int]
+
+    d = defaultdict(int)
+    d[1] = '2'
+    d['3']
+
+    m = Model(field=d)
+    assert isinstance(m.field, defaultdict)
+    assert m.field['1'] == 2
+    assert m.field['3'] == 0
+
+
+def test_mapping_retains_type_dict_fallback():
+    class Model(BaseModel):
+        field: Mapping[str, int]
+
+    with pytest.warns(UserWarning, match='Could not keep ChainMap when validating. Fallback done on dict...'):
+        m = Model(field=ChainMap({'one': 1}, {'two': 2}))
+
+    assert isinstance(m.field, dict)
+    assert m.field['one'] == 1
+    assert m.field['two'] == 2
