@@ -1459,9 +1459,7 @@ def test_mapping_retains_type_dict_fallback():
     class Model(BaseModel):
         field: Mapping[str, int]
 
-    with pytest.warns(UserWarning, match='Could not keep ChainMap when validating. Fallback done on dict...'):
-        m = Model(field=ChainMap({'one': 1}, {'two': 2}))
-
+    m = Model(field=ChainMap({'one': 1}, {'two': 2}))
     assert isinstance(m.field, dict)
     assert m.field['one'] == 1
     assert m.field['two'] == 2

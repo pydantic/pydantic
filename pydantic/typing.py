@@ -186,6 +186,7 @@ __all__ = (
     'resolve_annotations',
     'is_callable_type',
     'is_literal_type',
+    'is_mapping_type',
     'literal_values',
     'Literal',
     'is_new_type',
@@ -268,6 +269,10 @@ def is_callable_type(type_: Type[Any]) -> bool:
 
 
 if sys.version_info >= (3, 7):
+    from collections.abc import Mapping as CollectionsMapping
+
+    def is_mapping_type(type_: Type[Any]) -> bool:
+        return type_ is CollectionsMapping
 
     def is_literal_type(type_: Type[Any]) -> bool:
         return Literal is not None and get_origin(type_) is Literal
@@ -277,6 +282,9 @@ if sys.version_info >= (3, 7):
 
 
 else:
+
+    def is_mapping_type(type_: Type[Any]) -> bool:
+        return type_ is Mapping
 
     def is_literal_type(type_: Type[Any]) -> bool:
         return Literal is not None and hasattr(type_, '__values__') and type_ == Literal[type_.__values__]

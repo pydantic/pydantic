@@ -37,6 +37,7 @@ from .typing import (
     get_args,
     get_origin,
     is_literal_type,
+    is_mapping_type,
     is_new_type,
     new_type_supertype,
 )
@@ -736,15 +737,26 @@ class ModelField(Representation):
             result[key_result] = value_result
         if errors:
             return v, errors
-        elif isinstance(v, Mapping):
-            same_mapping_type_res = _get_same_mapping_type_res(v, result)
-            if same_mapping_type_res is not None:
-                return same_mapping_type_res, None
-            else:
-                warnings.warn(f'Could not keep {v.__class__.__name__} when validating. Fallback done on dict...')
-                return result, None
         else:
-            return result, None
+            return self._get_mapping_value(v, result), None
+
+    def _get_mapping_value(self, original: T, converted: Dict[Any, Any]) -> Union[T, Dict[Any, Any]]:
+        target_type = get_origin(self.outer_type_)
+        original_type = type(original)
+
+        if is_mapping_type(target_type):
+            target_type = original_type
+
+        if target_type is dict:
+            return converted
+        elif target_type is defaultdict:
+            return defaultdict(getattr(original, 'default_factory', None), **converted)
+        else:
+            try:
+                # Counter, OrderedDict, UserDict, ...
+                return target_type(**converted)
+            except TypeError:
+                return converted
 
     def _validate_singleton(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
@@ -857,20 +869,3 @@ def PrivateAttr(
         default,
         default_factory=default_factory,
     )
-
-
-def _get_same_mapping_type_res(mapping: T, converted: Dict[Any, Any]) -> Optional[T]:
-    """
-    Try to return the same object as `mapping` but with `converted` values
-    """
-    mapping_type = type(mapping)
-    if mapping_type is dict:
-        return converted  # type: ignore
-    elif mapping_type is defaultdict:
-        return defaultdict(mapping.default_factory, **converted)  # type: ignore
-    else:
-        try:
-            # Counter, OrderedDict, UserDict, ...
-            return mapping_type(**converted)  # type: ignore
-        except TypeError:
-            return None
