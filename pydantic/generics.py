@@ -9,6 +9,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
     Tuple,
     Type,
@@ -19,7 +20,7 @@ from typing import (
 )
 
 from .class_validators import gather_all_validators
-from .fields import FieldInfo, ModelField
+from .fields import DeferredType
 from .main import BaseModel, create_model
 from .typing import display_as_type, get_args, get_origin, typing_base
 from .utils import all_identical, lenient_issubclass
@@ -69,19 +70,15 @@ class GenericModel(BaseModel):
         if all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             return cls  # if arguments are equal to parameters it's the same object
 
-        # Recursively walk class type hints and replace generic typevars
-        # with concrete types that were passed.
-        type_hints = get_type_hints(cls).items()
-        instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}
-        concrete_type_hints: Dict[str, Type[Any]] = {
-            k: replace_types(v, typevars_map) for k, v in instance_type_hints.items()
-        }
-
-        # Create new model with original model as parent inserting fields with
-        # updated type hints.
+        # Create new model with original model as parent inserting fields with DeferredType.
         model_name = cls.__concrete_name__(params)
         validators = gather_all_validators(cls)
-        fields = _build_generic_fields(cls.__fields__, concrete_type_hints)
+
+        type_hints = get_type_hints(cls).items()
+        instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}
+
+        fields = {k: (DeferredType(), cls.__fields__[k].field_info) for k in instance_type_hints if k in cls.__fields__}
+
         model_module, called_globally = get_caller_frame_info()
         created_model = cast(
             Type[GenericModel],  # casting ensures mypy is aware of the __concrete__ and __parameters__ attributes
@@ -121,6 +118,11 @@ class GenericModel(BaseModel):
         _generic_types_cache[(cls, params)] = created_model
         if len(params) == 1:
             _generic_types_cache[(cls, params[0])] = created_model
+
+        # Recursively walk class type hints and replace generic typevars
+        # with concrete types that were passed.
+        _prepare_model_fields(created_model, fields, instance_type_hints, typevars_map)
+
         return created_model
 
     @classmethod
@@ -140,11 +142,11 @@ class GenericModel(BaseModel):
         return f'{cls.__name__}[{params_component}]'
 
 
-def replace_types(type_: Any, type_map: Dict[Any, Any]) -> Any:
+def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     """Return type with all occurances of `type_map` keys recursively replaced with their values.
 
     :param type_: Any type, class or generic alias
-    :type_map: Mapping from `TypeVar` instance to concrete types.
+    :param type_map: Mapping from `TypeVar` instance to concrete types.
     :return: New type representing the basic structure of `type_` with all
         `typevar_map` keys recursively replaced.
 
@@ -218,13 +220,6 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
             yield from iter_contained_typevars(arg)
 
 
-def _build_generic_fields(
-    raw_fields: Dict[str, ModelField],
-    concrete_type_hints: Dict[str, Type[Any]],
-) -> Dict[str, Tuple[Type[Any], FieldInfo]]:
-    return {k: (v, raw_fields[k].field_info) for k, v in concrete_type_hints.items() if k in raw_fields}
-
-
 def get_caller_frame_info() -> Tuple[Optional[str], bool]:
     """
     Used inside a function to check whether it was called globally
@@ -241,3 +236,29 @@ def get_caller_frame_info() -> Tuple[Optional[str], bool]:
         return None, False
     frame_globals = previous_caller_frame.f_globals
     return frame_globals.get('__name__'), previous_caller_frame.f_locals is frame_globals
+
+
+def _prepare_model_fields(
+    created_model: Type[GenericModel],
+    fields: Mapping[str, Any],
+    instance_type_hints: Mapping[str, type],
+    typevars_map: Mapping[Any, type],
+) -> None:
+    """
+    Replace DeferredType fields with concrete type hints and prepare them.
+    """
+
+    for key, field in created_model.__fields__.items():
+        if key not in fields:
+            assert field.type_.__class__ is not DeferredType
+            # https://github.com/nedbat/coveragepy/issues/198
+            continue  # pragma: no cover
+
+        assert field.type_.__class__ is DeferredType, field.type_.__class__
+
+        field_type_hint = instance_type_hints[key]
+        concrete_type = replace_types(field_type_hint, typevars_map)
+        field.type_ = concrete_type
+        field.outer_type_ = concrete_type
+        field.prepare()
+        created_model.__annotations__[key] = concrete_type
