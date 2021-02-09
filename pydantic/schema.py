@@ -247,6 +247,22 @@ def field_schema(
         ref_template=ref_template,
         known_models=known_models or set(),
     )
+
+    # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminator-object
+    if field.discriminator_config is not None:
+        discriminator_key, discriminator_mapping = field.discriminator_config
+
+        discriminator_models_refs: Dict[str, str] = {}
+        for discriminator_value, field in discriminator_mapping.items():
+            discriminator_model_name = model_name_map[field.outer_type_]
+            discriminator_model_ref = get_schema_ref(discriminator_model_name, ref_prefix, ref_template, False)
+            discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
+
+        s['discriminator'] = {
+            'propertyName': discriminator_key,
+            'mapping': discriminator_models_refs,
+        }
+
     # $ref will only be returned when there are no schema_overrides
     if '$ref' in f_schema:
         return f_schema, f_definitions, f_nested_models
