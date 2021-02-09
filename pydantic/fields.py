@@ -936,13 +936,13 @@ class ModelField(Representation):
                 try:
                     discriminator_value = v[discriminator_key]
                 except KeyError:
-                    return v, ErrorWrapper(KeyError(f'Discriminator {discriminator_key!r} is missing in value'), loc)
+                    return v, ErrorWrapper(ValueError(f'Discriminator {discriminator_key!r} is missing in value'), loc)
 
                 try:
                     sub_field = discriminator_mapping[discriminator_value]
                 except KeyError:
                     msg_err = f'No match for discriminator {discriminator_key!r} and value {discriminator_value!r}'
-                    return v, ErrorWrapper(KeyError(msg_err), loc)
+                    return v, ErrorWrapper(ValueError(msg_err), loc)
                 else:
                     return sub_field.validate(v, values, loc=loc, cls=cls)
 

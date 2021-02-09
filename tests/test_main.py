@@ -1,7 +1,7 @@
 import sys
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Optional, Type, Union, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
@@ -1734,3 +1734,75 @@ def test_class_kwargs_config_and_attr_conflict():
 
             class Config:
                 extra = 'forbid'
+
+
+def test_discriminated_union_defined_discriminator():
+    with pytest.raises(KeyError, match="Model 'Cat' needs a discriminator field for key 'pet_type'"):
+
+        class Cat(BaseModel):
+            c: str
+
+        class Dog(BaseModel):
+            pet_type: Literal['dog']
+            d: str
+
+        class Model(BaseModel):
+            pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+            number: int
+
+
+def test_discriminated_union_literal_discriminator():
+    with pytest.raises(TypeError, match="Field 'pet_type' of model 'Cat' needs to be a `Literal`"):
+
+        class Cat(BaseModel):
+            pet_type: int
+            c: str
+
+        class Dog(BaseModel):
+            pet_type: Literal['dog']
+            d: str
+
+        class Model(BaseModel):
+            pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+            number: int
+
+
+def test_discriminated_union_validation():
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+        c: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        d: str
+
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+        l: str
+
+    class Model(BaseModel):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+        number: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
+    assert exc_info.value.errors() == [
+        {'loc': ('pet',), 'msg': "Discriminator 'pet_type' is missing in value", 'type': 'value_error'},
+        {'loc': ('number',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj({'pet': {'pet_type': 'fish'}, 'number': 2})
+    assert exc_info.value.errors() == [
+        {'loc': ('pet',), 'msg': "No match for discriminator 'pet_type' and value 'fish'", 'type': 'value_error'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj({'pet': {'pet_type': 'lizard'}, 'number': 2})
+    assert exc_info.value.errors() == [
+        {'loc': ('pet', 'l'), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+    m = Model.parse_obj({'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2})
+    assert isinstance(m.pet, Lizard)
+    assert m.dict() == {'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2}
