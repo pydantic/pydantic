@@ -35,6 +35,7 @@ from .typing import (
     ForwardRef,
     NoArgAnyCallable,
     NoneType,
+    all_literal_values,
     display_as_type,
     get_args,
     get_origin,
@@ -284,6 +285,7 @@ class ModelField(Representation):
         'type_',
         'outer_type_',
         'sub_fields',
+        'discriminator_config',
         'key_field',
         'validators',
         'pre_validators',
@@ -332,6 +334,7 @@ class ModelField(Representation):
         self.allow_none: bool = False
         self.validate_always: bool = False
         self.sub_fields: Optional[List[ModelField]] = None
+        self.discriminator_config: Optional[Tuple[str, Dict[str, ModelField]]] = None
         self.key_field: Optional[ModelField] = None
         self.validators: 'ValidatorsList' = []
         self.pre_validators: Optional['ValidatorsList'] = None
@@ -544,7 +547,38 @@ class ModelField(Representation):
                 # re-run to correctly interpret the new self.type_
                 self._type_analysis()
             else:
-                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
+                self.sub_fields = []
+
+                # Discriminated Union
+                if 'discriminator' in self.field_info.extra:
+                    discriminator_key = self.field_info.extra['discriminator']
+                    discriminator_mapping: Dict[str, 'ModelField'] = {}
+                    self.sub_fields = []
+
+                    for t in types_:
+                        sub_field = self._create_sub_type(t, f'{self.name}_{display_as_type(t)}')
+
+                        try:
+                            t_discriminator_type = t.__fields__[discriminator_key].outer_type_
+                        except KeyError:
+                            raise KeyError(
+                                f'Model {t.__name__!r} needs a discriminator field for key {discriminator_key!r}'
+                            )
+
+                        if not is_literal_type(t_discriminator_type):
+                            raise TypeError(
+                                f'Field {discriminator_key!r} of model {t.__name__!r} needs to be a `Literal`'
+                            )
+
+                        for discriminator_value in all_literal_values(t_discriminator_type):
+                            discriminator_mapping[discriminator_value] = sub_field
+
+                        self.sub_fields.append(sub_field)
+
+                    self.discriminator_config = (discriminator_key, discriminator_mapping)
+                else:
+                    self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
+
             return
 
         if issubclass(origin, Tuple):  # type: ignore
@@ -895,6 +929,23 @@ class ModelField(Representation):
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
+
+            if get_origin(self.type_) is Union and self.discriminator_config is not None:
+                discriminator_key, discriminator_mapping = self.discriminator_config
+
+                try:
+                    discriminator_value = v[discriminator_key]
+                except KeyError:
+                    return v, ErrorWrapper(KeyError(f'Discriminator {discriminator_key!r} is missing in value'), loc)
+
+                try:
+                    sub_field = discriminator_mapping[discriminator_value]
+                except KeyError:
+                    msg_err = f'No match for discriminator {discriminator_key!r} and value {discriminator_value!r}'
+                    return v, ErrorWrapper(KeyError(msg_err), loc)
+                else:
+                    return sub_field.validate(v, values, loc=loc, cls=cls)
+
             for field in self.sub_fields:
                 value, error = field.validate(v, values, loc=loc, cls=cls)
                 if error:
