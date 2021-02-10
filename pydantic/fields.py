@@ -213,6 +213,8 @@ SHAPE_FROZENSET = 8
 SHAPE_ITERABLE = 9
 SHAPE_GENERIC = 10
 SHAPE_DEQUE = 11
+SHAPE_DICT = 12
+SHAPE_DEFAULTDICT = 13
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -494,6 +496,14 @@ class ModelField(Representation):
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
+        elif issubclass(origin, Dict):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DICT
+        elif issubclass(origin, DefaultDict):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DEFAULTDICT
         elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -742,17 +752,17 @@ class ModelField(Representation):
             return self._get_mapping_value(v, result), None
 
     def _get_mapping_value(self, original: T, converted: Dict[Any, Any]) -> Union[T, Dict[Any, Any]]:
-        target_type = get_origin(self.outer_type_)
-        original_type = type(original)
-
-        if is_mapping_type(target_type):
-            target_type = original_type
-
-        if target_type in {dict, Dict}:
+        if self.shape == SHAPE_DICT:
             return converted
-        elif target_type in {defaultdict, DefaultDict}:
+        elif self.shape == SHAPE_DEFAULTDICT:
             return defaultdict(getattr(original, 'default_factory', None), converted)
         else:
+            target_type = get_origin(self.outer_type_)
+            original_type = type(original)
+
+            if is_mapping_type(target_type):
+                target_type = original_type
+
             try:
                 # Counter, OrderedDict, UserDict, ...
                 return target_type(converted)
