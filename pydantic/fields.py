@@ -4,6 +4,7 @@ from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    DefaultDict,
     Deque,
     Dict,
     FrozenSet,
@@ -747,14 +748,14 @@ class ModelField(Representation):
         if is_mapping_type(target_type):
             target_type = original_type
 
-        if target_type is dict:
+        if target_type in {dict, Dict}:
             return converted
-        elif target_type is defaultdict:
-            return defaultdict(getattr(original, 'default_factory', None), **converted)
+        elif target_type in {defaultdict, DefaultDict}:
+            return defaultdict(getattr(original, 'default_factory', None), converted)
         else:
             try:
                 # Counter, OrderedDict, UserDict, ...
-                return target_type(**converted)
+                return target_type(converted)
             except TypeError:
                 return converted
 

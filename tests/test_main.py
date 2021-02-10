@@ -1,5 +1,5 @@
 import sys
-from collections import ChainMap, defaultdict
+from collections import defaultdict
 from enum import Enum
 from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
@@ -1456,10 +1456,20 @@ def test_mapping_retains_type_defaultdict():
 
 
 def test_mapping_retains_type_dict_fallback():
+    class Map(dict):
+        def __init__(self, *args, **kwargs):
+            if args or kwargs:
+                raise TypeError('test')
+            super().__init__(*args, **kwargs)
+
     class Model(BaseModel):
         field: Mapping[str, int]
 
-    m = Model(field=ChainMap({'one': 1}, {'two': 2}))
+    d = Map()
+    d['one'] = 1
+    d['two'] = 2
+
+    m = Model(field=d)
     assert isinstance(m.field, dict)
     assert m.field['one'] == 1
     assert m.field['two'] == 2
