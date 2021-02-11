@@ -59,7 +59,7 @@ else:
         try:
             email_validator.validate_email(s, check_deliverability=False)
             return True
-        except email_validator.EmailNotValidError:
+        except email_validator.EmailNotValidError:  # pragma: no cover
             return False
 
     # Note that these strategies deliberately stay away from any tricky Unicode
@@ -217,7 +217,7 @@ def resolves(
 def resolve_json(cls):  # type: ignore[no-untyped-def]
     try:
         inner = st.none() if cls.inner_type is None else st.from_type(cls.inner_type)
-    except Exception:
+    except Exception:  # pragma: no cover
         finite = st.floats(allow_infinity=False, allow_nan=False)
         inner = st.recursive(
             base=st.one_of(st.none(), st.booleans(), st.integers(), finite, st.text()),
