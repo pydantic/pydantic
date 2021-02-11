@@ -420,7 +420,7 @@ _(This script is complete, it should run "as is")_
     This is a new feature of the python standard library as of python 3.8.
     Prior to python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
     But required and optional fields are properly differentiated only since python 3.9.
-    It is hence recommanded using [typing-extensions](https://pypi.org/project/typing-extensions/) with python 3.8 as well.
+    We therefore recommend using [typing-extensions](https://pypi.org/project/typing-extensions/) with python 3.8 as well.
 
 
 ```py

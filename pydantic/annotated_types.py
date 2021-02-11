@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 def create_model_from_typeddict(typeddict_cls: Type['TypedDict'], **kwargs: Any) -> Type['BaseModel']:
     """
-    Convert a `TypedDict` to a `BaseModel`
+    Create a `BaseModel` based on the fields of a `TypedDict`.
     Since `typing.TypedDict` in Python 3.8 does not store runtime information about optional keys,
-    we warn the user if that's the case (see https://bugs.python.org/issue38834)
+    we warn the user if that's the case (see https://bugs.python.org/issue38834).
     """
     field_definitions: Dict[str, Any]
 
@@ -45,10 +45,10 @@ def create_model_from_typeddict(typeddict_cls: Type['TypedDict'], **kwargs: Any)
 
 def create_model_from_namedtuple(namedtuple_cls: Type['NamedTuple'], **kwargs: Any) -> Type['BaseModel']:
     """
-    Convert a named tuple to a `BaseModel`
+    Create a `BaseModel` based on the fields of a named tuple.
     A named tuple can be created with `typing.NamedTuple` and declared annotations
-    but also with `collections.namedtuple` without any, in which case we consider the type
-    of all the fields to be `Any`
+    but also with `collections.namedtuple`, in this case we consider all fields
+    to have type `Any`.
     """
     namedtuple_annotations: Dict[str, Type[Any]] = getattr(
         namedtuple_cls, '__annotations__', {k: Any for k in namedtuple_cls._fields}
