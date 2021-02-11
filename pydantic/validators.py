@@ -566,7 +566,7 @@ def make_typeddict_validator(
     typeddict_cls.__pydantic_model__ = TypedDictModel  # type: ignore[attr-defined]
 
     def typeddict_validator(values: 'TypedDict') -> Dict[str, Any]:
-        return TypedDictModel(**values).dict(exclude_unset=True)
+        return TypedDictModel.parse_obj(values).dict(exclude_unset=True)
 
     return typeddict_validator
 
