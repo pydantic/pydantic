@@ -20,8 +20,10 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 from uuid import UUID
+from weakref import WeakSet
 
 from . import errors
 from .utils import import_string, update_not_none
@@ -109,6 +111,30 @@ if TYPE_CHECKING:
 
     ModelOrDc = Type[Union['BaseModel', 'Dataclass']]
 
+T = TypeVar('T')
+_DEFINED_TYPES: 'WeakSet[type]' = WeakSet()
+
+
+@overload
+def _registered(typ: Type[T]) -> Type[T]:
+    pass
+
+
+@overload
+def _registered(typ: 'ConstrainedNumberMeta') -> 'ConstrainedNumberMeta':
+    pass
+
+
+def _registered(typ: Union[Type[T], 'ConstrainedNumberMeta']) -> Union[Type[T], 'ConstrainedNumberMeta']:
+    # In order to generate valid examples of constrained types, Hypothesis needs
+    # to inspect the type object - so we keep a weakref to each contype object
+    # until it can be registered.  When (or if) our Hypothesis plugin is loaded,
+    # it monkeypatches this function.
+    # If Hypothesis is never used, the total effect is to keep a weak reference
+    # which has minimal memory usage and doesn't even affect garbage collection.
+    _DEFINED_TYPES.add(typ)
+    return typ
+
 
 class ConstrainedBytes(bytes):
     strip_whitespace = False
@@ -134,10 +160,7 @@ class StrictBytes(ConstrainedBytes):
 def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_length: int = None) -> Type[bytes]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(strip_whitespace=strip_whitespace, min_length=min_length, max_length=max_length)
-    return type('ConstrainedBytesValue', (ConstrainedBytes,), namespace)
-
-
-T = TypeVar('T')
+    return _registered(type('ConstrainedBytesValue', (ConstrainedBytes,), namespace))
 
 
 # This types superclass should be List[T], but cython chokes on that...
@@ -272,7 +295,7 @@ def constr(
         curtail_length=curtail_length,
         regex=regex and re.compile(regex),
     )
-    return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
+    return _registered(type('ConstrainedStrValue', (ConstrainedStr,), namespace))
 
 
 class StrictStr(ConstrainedStr):
@@ -344,7 +367,7 @@ class ConstrainedNumberMeta(type):
         if new_cls.lt is not None and new_cls.le is not None:
             raise errors.ConfigError('bounds lt and le cannot be specified at the same time')
 
-        return new_cls
+        return _registered(new_cls)  # type: ignore
 
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
@@ -616,7 +639,7 @@ class JsonWrapper:
 
 class JsonMeta(type):
     def __getitem__(self, t: Type[Any]) -> Type[JsonWrapper]:
-        return type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t})
+        return _registered(type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t}))
 
 
 class Json(metaclass=JsonMeta):
@@ -726,6 +749,8 @@ class SecretBytes:
 
 
 class PaymentCardBrand(str, Enum):
+    # If you add another card type, please also add it to the
+    # Hypothesis strategy in `pydantic._hypothesis_plugin`.
     amex = 'American Express'
     mastercard = 'Mastercard'
     visa = 'Visa'
