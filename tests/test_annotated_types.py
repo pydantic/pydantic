@@ -106,6 +106,28 @@ def test_namedtuple_schema():
     }
 
 
+def test_namedtuple_right_length():
+    class Point(NamedTuple):
+        x: int
+        y: int
+
+    class Model(BaseModel):
+        p: Point
+
+    assert isinstance(Model(p=(1, 2)), Model)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(p=(1, 2, 3))
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('p',),
+            'msg': 'ensure this value has at most 2 items',
+            'type': 'value_error.list.max_items',
+            'ctx': {'limit_value': 2},
+        }
+    ]
+
+
 @pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
 def test_typeddict():
     class TD(TypedDict):

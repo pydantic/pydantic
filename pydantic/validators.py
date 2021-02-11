@@ -550,7 +550,12 @@ def make_namedtuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tu
     namedtuple_cls.__pydantic_model__ = NamedTupleModel  # type: ignore[attr-defined]
 
     def namedtuple_validator(values: Tuple[Any, ...]) -> NamedTupleT:
-        dict_values: Dict[str, Any] = dict(zip(NamedTupleModel.__annotations__, values))
+        annotations = NamedTupleModel.__annotations__
+
+        if len(values) > len(annotations):
+            raise errors.ListMaxLengthError(limit_value=len(annotations))
+
+        dict_values: Dict[str, Any] = dict(zip(annotations, values))
         validated_dict_values: Dict[str, Any] = dict(NamedTupleModel(**dict_values))
         return namedtuple_cls(**validated_dict_values)
 
