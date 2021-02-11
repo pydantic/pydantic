@@ -1,3 +1,16 @@
+## v1.7.3 (2020-11-30)
+
+Thank you to pydantic's sponsors:
+@timdrijvers, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @jorgecarleitao, @koxudaxi, @primer-api,
+@mkeen, @meadsteve for their kind support.
+
+* fix: set right default value for required (optional) fields, #2142 by @PrettyWood
+* fix: support `underscore_attrs_are_private` with generic models, #2138 by @PrettyWood
+* fix: update all modified field values in `root_validator` when `validate_assignment` is on, #2116 by @PrettyWood
+* Allow pickling of `pydantic.dataclasses.dataclass` dynamically created from a built-in `dataclasses.dataclass`, #2111 by @aimestereo
+* Fix a regression where Enum fields would not propagate keyword arguments to the schema, #2109 by @bm424
+* Ignore `__doc__` as private attribute when `Config.underscore_attrs_are_private` is set, #2090 by @PrettyWood
+
 ## v1.7.2 (2020-11-01)
 
 * fix slow `GenericModel` concrete model creation, allow `GenericModel` concrete name reusing in module, #2078 by @MrMrRobat

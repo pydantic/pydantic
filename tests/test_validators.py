@@ -1,5 +1,6 @@
 from collections import deque
 from datetime import datetime
+from enum import Enum
 from itertools import product
 from typing import Dict, List, Optional, Tuple
 
@@ -574,6 +575,19 @@ def test_validation_each_item():
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
+def test_validation_each_item_one_sublevel():
+    class Model(BaseModel):
+        foobar: List[Tuple[int, int]]
+
+        @validator('foobar', each_item=True)
+        def check_foobar(cls, v: Tuple[int, int]) -> Tuple[int, int]:
+            v1, v2 = v
+            assert v1 == v2
+            return v
+
+    assert Model(foobar=[(1, 1), (2, 2)]).foobar == [(1, 1), (2, 2)]
+
+
 def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
@@ -1133,6 +1147,28 @@ def test_literal_validator():
             'ctx': {'given': 'nope', 'permitted': ('foo',)},
         }
     ]
+
+
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
+def test_literal_validator_str_enum():
+    class Bar(str, Enum):
+        FIZ = 'fiz'
+        FUZ = 'fuz'
+
+    class Foo(BaseModel):
+        bar: Bar
+        barfiz: Literal[Bar.FIZ]
+        fizfuz: Literal[Bar.FIZ, Bar.FUZ]
+
+    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fiz'})
+    assert my_foo.bar is Bar.FIZ
+    assert my_foo.barfiz is Bar.FIZ
+    assert my_foo.fizfuz is Bar.FIZ
+
+    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fuz'})
+    assert my_foo.bar is Bar.FIZ
+    assert my_foo.barfiz is Bar.FIZ
+    assert my_foo.fizfuz is Bar.FUZ
 
 
 @pytest.mark.skipif(not Literal, reason='typing_extensions not installed')

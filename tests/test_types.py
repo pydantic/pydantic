@@ -69,16 +69,12 @@ from pydantic import (
     errors,
     validator,
 )
+from pydantic.typing import Literal, NoneType
 
 try:
     import email_validator
 except ImportError:
     email_validator = None
-
-try:
-    import typing_extensions
-except ImportError:
-    typing_extensions = None
 
 
 class ConBytesModel(BaseModel):
@@ -2456,10 +2452,10 @@ def test_generic_without_params_error():
     ]
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_single():
     class Model(BaseModel):
-        a: typing_extensions.Literal['a']
+        a: Literal['a']
 
     Model(a='a')
     with pytest.raises(ValidationError) as exc_info:
@@ -2474,10 +2470,10 @@ def test_literal_single():
     ]
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_multiple():
     class Model(BaseModel):
-        a_or_b: typing_extensions.Literal['a', 'b']
+        a_or_b: Literal['a', 'b']
 
     Model(a_or_b='a')
     Model(a_or_b='b')
@@ -2669,3 +2665,59 @@ def test_deque_json():
         v: Deque[int]
 
     assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
+
+
+none_value_type_cases = (None, type(None), NoneType)
+if Literal:
+    none_value_type_cases += (Literal[None],)
+
+
+@pytest.mark.parametrize('value_type', none_value_type_cases)
+def test_none(value_type):
+    class Model(BaseModel):
+        my_none: value_type
+        my_none_list: List[value_type]
+        my_none_dict: Dict[str, value_type]
+        my_json_none: Json[value_type]
+
+    Model(
+        my_none=None,
+        my_none_list=[None] * 3,
+        my_none_dict={'a': None, 'b': None},
+        my_json_none='null',
+    )
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'my_none': {'title': 'My None', 'type': 'null'},
+            'my_none_list': {
+                'title': 'My None List',
+                'type': 'array',
+                'items': {'type': 'null'},
+            },
+            'my_none_dict': {
+                'title': 'My None Dict',
+                'type': 'object',
+                'additionalProperties': {'type': 'null'},
+            },
+            'my_json_none': {'title': 'My Json None', 'type': 'null'},
+        },
+        'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            my_none='qwe',
+            my_none_list=[1, None, 'qwe'],
+            my_none_dict={'a': 1, 'b': None},
+            my_json_none='"a"',
+        )
+    assert exc_info.value.errors() == [
+        {'loc': ('my_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_list', 0), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_list', 2), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+    ]

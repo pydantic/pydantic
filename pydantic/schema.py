@@ -57,7 +57,16 @@ from .types import (
     conset,
     constr,
 )
-from .typing import ForwardRef, Literal, get_args, get_origin, is_callable_type, is_literal_type, literal_values
+from .typing import (
+    NONE_TYPES,
+    ForwardRef,
+    Literal,
+    get_args,
+    get_origin,
+    is_callable_type,
+    is_literal_type,
+    literal_values,
+)
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
@@ -179,7 +188,12 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
         schema['description'] = field.field_info.description
         schema_overrides = True
 
-    if not field.required and not field.field_info.const and field.default is not None:
+    if (
+        not field.required
+        and not field.field_info.const
+        and field.default is not None
+        and not is_callable_type(field.outer_type_)
+    ):
         schema['default'] = encode_default(field.default)
         schema_overrides = True
 
@@ -395,7 +409,7 @@ def get_flat_models_from_models(models: Sequence[Type['BaseModel']]) -> TypeMode
 
 
 def get_long_model_name(model: TypeModelOrEnum) -> str:
-    return f'{model.__module__}__{model.__name__}'.replace('.', '__')
+    return f'{model.__module__}__{model.__qualname__}'.replace('.', '__')
 
 
 def field_type_schema(
@@ -640,7 +654,6 @@ def field_singleton_sub_fields_schema(
     """
     definitions = {}
     nested_models: Set[str] = set()
-    sub_fields = [sf for sf in sub_fields if sf.include_in_schema()]
     if len(sub_fields) == 1:
         return field_type_schema(
             sub_fields[0],
@@ -759,6 +772,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         )
     if field.type_ is Any or field.type_.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
+    if field.type_ in NONE_TYPES:
+        return {'type': 'null'}, definitions, nested_models
     if is_callable_type(field.type_):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}
@@ -781,7 +796,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema['const'] = literal_value
 
     if lenient_issubclass(field_type, Enum):
-        enum_name = normalize_name(field_type.__name__)
+        enum_name = model_name_map[field_type]
         f_schema, schema_overrides = get_field_info_schema(field)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)

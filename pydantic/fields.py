@@ -25,9 +25,10 @@ from typing import (
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
-from .errors import NoneIsNotAllowedError
+from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
+    NONE_TYPES,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -307,7 +308,7 @@ class ModelField(Representation):
         required: 'BoolUndefined' = Undefined
         if value is Required:
             required = True
-            value = Ellipsis
+            value = None
         elif value is not Undefined:
             required = False
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
@@ -368,7 +369,7 @@ class ModelField(Representation):
         when we want to validate the default value i.e. when `validate_all` is set to True.
         """
         if self.default_factory is not None:
-            if self.type_ is None:
+            if self.type_ is Undefined:
                 raise errors_.ConfigError(
                     f'you need to set the type of field {self.name!r} when using `default_factory`'
                 )
@@ -377,11 +378,11 @@ class ModelField(Representation):
 
         default_value = self.get_default()
 
-        if default_value is not None and self.type_ is None:
+        if default_value is not None and self.type_ is Undefined:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_
 
-        if self.type_ is None:
+        if self.type_ is Undefined:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
 
         if self.required is False and default_value is None:
@@ -517,10 +518,26 @@ class ModelField(Representation):
         self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
+        if for_keys:
+            class_validators = None
+        else:
+            # validators for sub items should not have `each_item` as we want to check only the first sublevel
+            class_validators = {
+                k: Validator(
+                    func=v.func,
+                    pre=v.pre,
+                    each_item=False,
+                    always=v.always,
+                    check_fields=v.check_fields,
+                    skip_on_failure=v.skip_on_failure,
+                )
+                for k, v in self.class_validators.items()
+                if v.each_item
+            }
         return self.__class__(
             type_=type_,
             name=name,
-            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if v.each_item},
+            class_validators=class_validators,
             model_config=self.model_config,
         )
 
@@ -564,6 +581,13 @@ class ModelField(Representation):
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
 
+        if self.type_.__class__ is ForwardRef:
+            assert cls is not None
+            raise ConfigError(
+                f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
+                f'you might need to call {cls.__name__}.update_forward_refs().'
+            )
+
         errors: Optional['ErrorList']
         if self.pre_validators:
             v, errors = self._apply_validators(v, values, loc, cls, self.pre_validators)
@@ -571,7 +595,10 @@ class ModelField(Representation):
                 return v, errors
 
         if v is None:
-            if self.allow_none:
+            if self.type_ in NONE_TYPES:
+                # keep validating
+                pass
+            elif self.allow_none:
                 if self.post_validators:
                     return self._apply_validators(v, values, loc, cls, self.post_validators)
                 else:
@@ -752,12 +779,6 @@ class ModelField(Representation):
             except (ValueError, TypeError, AssertionError) as exc:
                 return v, ErrorWrapper(exc, loc)
         return v, None
-
-    def include_in_schema(self) -> bool:
-        """
-        False if this is a simple field just allowing None as used in Unions/Optional.
-        """
-        return self.type_ != NoneType
 
     def is_complex(self) -> bool:
         """

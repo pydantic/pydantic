@@ -27,8 +27,10 @@ from uuid import UUID
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
+    NONE_TYPES,
     AnyCallable,
     ForwardRef,
+    Literal,
     all_literal_values,
     display_as_type,
     get_class,
@@ -444,12 +446,17 @@ def int_enum_validator(v: Any) -> IntEnum:
 
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     permitted_choices = all_literal_values(type_)
-    allowed_choices_set = set(permitted_choices)
+
+    # To have a O(1) complexity and still return one of the values set inside the `Literal`,
+    # we create a dict with the set values (a set causes some problems with the way intersection works).
+    # In some cases the set value and checked value can indeed be different (see `test_literal_validator_str_enum`)
+    allowed_choices = {v: v for v in permitted_choices}
 
     def literal_validator(v: Any) -> Any:
-        if v not in allowed_choices_set:
+        try:
+            return allowed_choices[v]
+        except KeyError:
             raise errors.WrongConstantError(given=v, permitted=permitted_choices)
-        return v
 
     return literal_validator
 
@@ -520,6 +527,12 @@ def any_class_validator(v: Any) -> Type[T]:
     if isinstance(v, type):
         return v
     raise errors.ClassError()
+
+
+def none_validator(v: Any) -> 'Literal[None]':
+    if v is None:
+        return v
+    raise errors.NotNoneError()
 
 
 def pattern_validator(v: Any) -> Pattern[str]:
@@ -601,6 +614,9 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
+        return
+    if type_ in NONE_TYPES:
+        yield none_validator
         return
     if type_ is Pattern:
         yield pattern_validator
