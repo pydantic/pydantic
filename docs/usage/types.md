@@ -261,6 +261,25 @@ _(This script is complete, it should run "as is")_
     `Optional[x]` can also be used to specify a required field that can take `None` as a value.
 
     See more details in [Required Fields](models.md#required-fields).
+    
+#### Discriminated Unions
+
+When `Union` is used with multiple submodels, you sometimes know exactly which submodel needs to
+be checked and validated and want to enforce this.
+To do that you can set the same field - let's call it `my_discriminator` - in each of the submodels
+with a discriminated value, which is one (or many) `Literal` value(s).
+For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
+
+Setting a discriminated union has many benefits:
+
+- validation is faster since it is only attempted against one model
+- only one explicit error is raised in case of failure
+- the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminatorObject)
+
+```py
+{!.tmp_examples/types_union_discriminated.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ### Enums and Choices
 
