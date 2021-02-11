@@ -198,7 +198,11 @@ def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
         raise ValueError('__root__ cannot be mixed with other fields')
 
 
-UNTOUCHED_TYPES = FunctionType, property, type, classmethod, staticmethod
+# Annotated fields can have many types like `str`, `int`, `List[str]`, `Callable`...
+# If a field is of type `Callable`, its default value should be a function and cannot to ignored.
+ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (property, type, classmethod, staticmethod)
+# When creating a `BaseModel` instance, we bypass all the methods, properties... added to the model
+UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_TYPES
 
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
 # (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
@@ -245,7 +249,6 @@ class ModelMetaclass(ABCMeta):
         class_vars = set()
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
-            untouched_types = UNTOUCHED_TYPES + config.keep_untouched
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
@@ -255,14 +258,14 @@ class ModelMetaclass(ABCMeta):
                     value = namespace.get(ann_name, Undefined)
                     allowed_types = get_args(ann_type) if get_origin(ann_type) is Union else (ann_type,)
                     if (
-                        isinstance(value, untouched_types)
+                        isinstance(value, ANNOTATED_FIELD_UNTOUCHED_TYPES)
                         and ann_type != PyObject
                         and not any(
                             lenient_issubclass(get_origin(allowed_type), Type) for allowed_type in allowed_types
                         )
                     ):
                         continue
-                    fields[ann_name] = inferred = ModelField.infer(
+                    fields[ann_name] = ModelField.infer(
                         name=ann_name,
                         value=value,
                         annotation=ann_type,
@@ -272,6 +275,7 @@ class ModelMetaclass(ABCMeta):
                 elif ann_name not in namespace and config.underscore_attrs_are_private:
                     private_attributes[ann_name] = PrivateAttr()
 
+            untouched_types = UNTOUCHED_TYPES + config.keep_untouched
             for var_name, value in namespace.items():
                 can_be_changed = var_name not in class_vars and not isinstance(value, untouched_types)
                 if isinstance(value, ModelPrivateAttr):

@@ -8,8 +8,7 @@ install-linting:
 
 .PHONY: install-pydantic
 install-pydantic:
-	@echo 'temporarily pin pip to 20.2 while the issues with 20.3 get ironed out'
-	python -m pip install -U wheel pip==20.2
+	python -m pip install -U wheel pip
 	pip install -r requirements.txt
 	SKIP_CYTHON=1 pip install -e .
 

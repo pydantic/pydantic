@@ -205,6 +205,7 @@ __all__ = (
     'CallableGenerator',
     'get_args',
     'get_origin',
+    'typing_base',
 )
 
 
