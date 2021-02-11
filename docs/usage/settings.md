@@ -209,29 +209,45 @@ the selected value is determined as follows (in descending order of priority):
 4. Variables loaded from the secrets directory.
 5. The default field values for the `Settings` model.
 
-### Customise settings sources priority
+## Customise settings sources
 
-If the default order of priority doesn't match your needs, it's possible to change it by overriding a config method:
+If the default order of priority doesn't match your needs, it's possible to change it by overriding
+the `customise_sources` method on the `Config` class of your `Settings` .
+
+`customise_sources` takes three callables as arguments and returns any number of callables as a tuple. In turn these
+callables are called to build the inputs to the fields of the settings class.
+
+Each callable should take an instance of the settings class as its sole argument and return a `dict`.
+
+### Changing Priority
+
+The order of the returned callables decides the priority of inputs; first item is the highest priority.
 
 ```py
 {!.tmp_examples/settings_env_priority.py!}
 ```
+_(This script is complete, it should run "as is")_
 
-By flipping `env_settings` and `init_settings`, environment variables have now precedence on init kwargs.
+By flipping `env_settings` and `init_settings`, environment variables now have precedence over `__init__` kwargs.
 
-## Add and remove settings sources
+### Adding sources
 
-As explained earlier, *pydantic* ships with multiples built-in settings sources.
-However, changing the order of priority might not be enough in some complex environments, and you may need 
-to add a custom settings source:
+As explained earlier, *pydantic* ships with multiples built-in settings sources. However, you may occationally
+need to add your own custom sources, `customise_sources` makes this very easy:
 
 ```py
 {!.tmp_examples/settings_add_custom_source.py!}
 ```
+_(This script is complete, it should run "as is")_
+
+### Removing sources
 
 You might also want to disable a source:
 
 ```py
 {!.tmp_examples/settings_disable_source.py!}
 ```
+_(This script is complete, it should run "as is", here you might need to set the `my_api_key` environment variable)_
 
+Because of the callables approach of `customise_sources`, evaluation of sources is lazy so unused sources don't
+have an adverse effect on performance.

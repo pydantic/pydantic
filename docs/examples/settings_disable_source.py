@@ -1,11 +1,11 @@
 from typing import Tuple
 
-from pydantic import BaseSettings, PostgresDsn
+from pydantic import BaseSettings
 from pydantic.env_settings import SettingsSourceCallable
 
 
 class Settings(BaseSettings):
-    database_dsn: PostgresDsn
+    my_api_key: str
 
     class Config:
         @classmethod
@@ -15,5 +15,8 @@ class Settings(BaseSettings):
             env_settings: SettingsSourceCallable,
             file_secret_settings: SettingsSourceCallable,
         ) -> Tuple[SettingsSourceCallable, ...]:
-            # here we choose to disable entirely environ and .env file sources
-            return init_settings, file_secret_settings
+            # here we choose to ignore arguments from init_settings
+            return env_settings, file_secret_settings
+
+
+print(Settings(my_api_key='this is ignored'))

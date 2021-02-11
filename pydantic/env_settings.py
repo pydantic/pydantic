@@ -59,7 +59,12 @@ class BaseSettings(BaseModel):
         sources = self.__config__.customise_sources(
             init_settings=init_settings, env_settings=env_settings, file_secret_settings=file_secret_settings
         )
-        return deep_update(*reversed([source(self) for source in sources]))
+        if sources:
+            return deep_update(*reversed([source(self) for source in sources]))
+        else:
+            # no one should mean to do this, but I think returning an empty dict is marginally preferable
+            # to an informative error and much better than a confusing error
+            return {}
 
     class Config(BaseConfig):
         env_prefix = ''

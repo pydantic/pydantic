@@ -940,6 +940,20 @@ def test_external_settings_sources_filter_env_vars():
     assert Settings().dict() == {'apple': 'value 0', 'banana': 'value 2'}
 
 
+def test_customise_sources_empty():
+    class Settings(BaseSettings):
+        apple: str = 'default'
+        banana: str = 'default'
+
+        class Config:
+            @classmethod
+            def customise_sources(cls, *args):
+                return ()
+
+    assert Settings().dict() == {'apple': 'default', 'banana': 'default'}
+    assert Settings(apple='xxx').dict() == {'apple': 'default', 'banana': 'default'}
+
+
 def test_builtins_settings_source_repr():
     assert (
         repr(InitSettingsSource(init_kwargs={'apple': 'value 0', 'banana': 'value 1'}))
