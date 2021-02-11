@@ -9,7 +9,7 @@ import subprocess
 import sys
 import textwrap
 import traceback
-from pathlib import Path
+from pathlib import Path, PosixPath
 from typing import Any, List, Tuple
 from unittest.mock import patch
 
@@ -62,8 +62,15 @@ class MockPrint:
         self.statements.append((frame.f_lineno, s))
 
 
-def mock_read_text(*args, **kwargs) -> str:
-    return '{"foobar": "spam"}'
+class MockPath(PosixPath):
+    def __new__(cls, name, *args, **kwargs):
+        if name == 'config.json':
+            return cls._from_parts(name, *args, **kwargs)
+        else:
+            return Path.__new__(cls, name, *args, **kwargs)
+
+    def read_text(self, *args, **kwargs) -> str:
+        return '{"foobar": "spam"}'
 
 
 def build_print_lines(s: str, max_len_reduction: int = 0):
@@ -181,8 +188,7 @@ def exec_examples():
                 del sys.modules[file.stem]
             mp = MockPrint(file)
             mod = None
-            with patch('pathlib.Path.read_text') as patch_read_text:
-                patch_read_text.side_effect = mock_read_text
+            with patch('pathlib.Path', MockPath):
                 with patch('builtins.print') as patch_print:
                     if print_intercept:
                         patch_print.side_effect = mp
