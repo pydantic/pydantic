@@ -9,7 +9,21 @@ from ipaddress import (
     _BaseAddress,
     _BaseNetwork,
 )
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Pattern, Set, Tuple, Type, Union, cast, no_type_check
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    FrozenSet,
+    Generator,
+    Optional,
+    Pattern,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+    no_type_check,
+)
 
 from . import errors
 from .utils import Representation, update_not_none
@@ -310,7 +324,7 @@ def stricturl(
     min_length: int = 1,
     max_length: int = 2 ** 16,
     tld_required: bool = True,
-    allowed_schemes: Optional[Set[str]] = None,
+    allowed_schemes: Optional[Union[FrozenSet[str], Set[str]]] = None,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(

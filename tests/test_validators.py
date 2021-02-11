@@ -575,6 +575,19 @@ def test_validation_each_item():
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
+def test_validation_each_item_one_sublevel():
+    class Model(BaseModel):
+        foobar: List[Tuple[int, int]]
+
+        @validator('foobar', each_item=True)
+        def check_foobar(cls, v: Tuple[int, int]) -> Tuple[int, int]:
+            v1, v2 = v
+            assert v1 == v2
+            return v
+
+    assert Model(foobar=[(1, 1), (2, 2)]).foobar == [(1, 1), (2, 2)]
+
+
 def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
