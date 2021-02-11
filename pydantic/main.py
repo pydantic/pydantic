@@ -369,7 +369,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         object_setattr(__pydantic_self__, '__fields_set__', fields_set)
         __pydantic_self__._init_private_attributes()
 
-    @no_type_check  # noqa: C901 (ignore complexity)
+    @no_type_check
     def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
         if name in self.__private_attributes__:
             return object_setattr(self, name, value)
