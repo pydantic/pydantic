@@ -101,18 +101,11 @@ _(This script is complete, it should run "as is")_
 : whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
 
 ## Change behaviour globally
-If you wish to change the behaviour of _pydantic_ globally, you can either
 
-- create your own custom `BaseModel` with custom `Config` as the config is inherited
+If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
+with custom `Config` since the config is inherited
 ```py
 {!.tmp_examples/model_config_change_globally_custom.py!}
-```
-_(This script is complete, it should run "as is")_
-
-
-- directly set the expected value to `pydantic.BaseConfig`, which all `Config` classes inherit from
-```py
-{!.tmp_examples/model_config_change_globally_baseconfig.py!}
 ```
 _(This script is complete, it should run "as is")_
 
