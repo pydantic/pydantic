@@ -1,10 +1,20 @@
 import typing
 
 import pytest
-from hypothesis import given, strategies as st
 
 import pydantic
 from pydantic.networks import import_email_validator
+
+try:
+    from hypothesis import given, strategies as st
+except ImportError:
+
+    def given(*args, **kwargs):
+        return lambda f: f
+
+    st = type('st', (), {'data': lambda: None})
+
+    pytestmark = pytest.mark.skipif(True, reason='"hypothesis" not installed')
 
 
 def gen_models():
