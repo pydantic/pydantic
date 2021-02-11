@@ -947,7 +947,7 @@ def test_customise_sources_empty():
 
         class Config:
             @classmethod
-            def customise_sources(cls, *args):
+            def customise_sources(cls, *args, **kwargs):
                 return ()
 
     assert Settings().dict() == {'apple': 'default', 'banana': 'default'}
