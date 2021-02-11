@@ -518,10 +518,26 @@ class ModelField(Representation):
         self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
+        if for_keys:
+            class_validators = None
+        else:
+            # validators for sub items should not have `each_item` as we want to check only the first sublevel
+            class_validators = {
+                k: Validator(
+                    func=v.func,
+                    pre=v.pre,
+                    each_item=False,
+                    always=v.always,
+                    check_fields=v.check_fields,
+                    skip_on_failure=v.skip_on_failure,
+                )
+                for k, v in self.class_validators.items()
+                if v.each_item
+            }
         return self.__class__(
             type_=type_,
             name=name,
-            class_validators=None if for_keys else {k: v for k, v in self.class_validators.items() if v.each_item},
+            class_validators=class_validators,
             model_config=self.model_config,
         )
 
