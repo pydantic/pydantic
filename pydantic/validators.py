@@ -201,6 +201,10 @@ def anystr_strip_whitespace(v: 'StrBytes') -> 'StrBytes':
     return v.strip()
 
 
+def anystr_lower(v: 'StrBytes') -> 'StrBytes':
+    return v.lower()
+
+
 def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
     if isinstance(v, OrderedDict):
         return v
@@ -479,6 +483,13 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseCon
     return v
 
 
+def constr_lower(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
+    lower = field.type_.to_lower or config.anystr_lower
+    if lower:
+        v = v.lower()
+    return v
+
+
 def validate_json(v: Any, config: 'BaseConfig') -> Any:
     if v is None:
         # pass None through to other validators
@@ -555,6 +566,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         [
             str_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_lower, 'anystr_lower'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
         ],
     ),
@@ -563,6 +575,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         [
             bytes_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_lower, 'anystr_lower'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
         ],
     ),

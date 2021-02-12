@@ -575,6 +575,19 @@ def test_validation_each_item():
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
+def test_validation_each_item_one_sublevel():
+    class Model(BaseModel):
+        foobar: List[Tuple[int, int]]
+
+        @validator('foobar', each_item=True)
+        def check_foobar(cls, v: Tuple[int, int]) -> Tuple[int, int]:
+            v1, v2 = v
+            assert v1 == v2
+            return v
+
+    assert Model(foobar=[(1, 1), (2, 2)]).foobar == [(1, 1), (2, 2)]
+
+
 def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
@@ -969,6 +982,18 @@ def test_root_validator_inheritance():
     assert len(Child.__pre_root_validators__) == 0
     assert Child(a=123).dict() == {'extra2': 2, 'extra1': 1, 'a': 123}
     assert calls == ["parent validator: {'a': 123}", "child validator: {'extra1': 1, 'a': 123}"]
+
+
+def test_root_validator_returns_none_exception():
+    class Model(BaseModel):
+        a: int = 1
+
+        @root_validator
+        def root_validator_repeated(cls, values):
+            return None
+
+    with pytest.raises(TypeError, match='Model values must be a dict'):
+        Model()
 
 
 def reusable_validator(num):
