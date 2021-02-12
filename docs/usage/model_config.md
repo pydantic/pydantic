@@ -1,4 +1,4 @@
-Behaviour of pydantic can be controlled via the `Config` class on a model.
+Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
 
 Options:
 
@@ -100,6 +100,17 @@ _(This script is complete, it should run "as is")_
 **`underscore_attrs_are_private`**
 : whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)
 
+**`copy_on_model_validation`**
+: whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
+
+## Change behaviour globally
+
+If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
+with custom `Config` since the config is inherited
+```py
+{!.tmp_examples/model_config_change_globally_custom.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ## Alias Generator
 
