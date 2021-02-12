@@ -1449,7 +1449,6 @@ def test_inherited_model_field_copy():
     assert id(image_2) != id(item.images[1])
 
 
-@pytest.mark.xfail(reason='see https://github.com/samuelcolvin/pydantic/pull/2193#issuecomment-778345456')
 def test_inherited_model_field_untouched():
     """It should not copy models used as fields if explicitly asked"""
 
@@ -1468,7 +1467,7 @@ def test_inherited_model_field_untouched():
     image_1 = Image(path='my_image1.png')
     image_2 = Image(path='my_image2.png')
 
-    item = Item(images={image_1, image_2})
+    item = Item(images=(image_1, image_2))
     assert image_1 in item.images
 
     assert id(image_1) == id(item.images[0])
