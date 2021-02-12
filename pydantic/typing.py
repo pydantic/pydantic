@@ -187,6 +187,7 @@ __all__ = (
     'is_callable_type',
     'is_literal_type',
     'literal_values',
+    'all_literal_values',
     'Literal',
     'is_new_type',
     'new_type_supertype',
