@@ -10,7 +10,12 @@ import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
 # See https://hypothesis.readthedocs.io/en/latest/strategies.html#interaction-with-pytest-cov
-pytest_plugins = ['hypothesis.extra.pytestplugin']
+try:
+    import hypothesis  # noqa
+except ImportError:
+    pytest_plugins = []
+else:
+    pytest_plugins = ['hypothesis.extra.pytestplugin']
 
 
 def _extract_source_code_from_function(function):
