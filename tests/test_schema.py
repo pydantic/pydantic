@@ -1745,14 +1745,21 @@ def test_literal_schema():
         a: Literal[1]
         b: Literal['a']
         c: Literal['a', 1]
+        d: Literal['a', Literal['b'], 1, 2]
 
     assert Model.schema() == {
         'properties': {
             'a': {'title': 'A', 'type': 'integer', 'const': 1},
             'b': {'title': 'B', 'type': 'string', 'const': 'a'},
-            'c': {'anyOf': [{'type': 'string', 'const': 'a'}, {'type': 'integer', 'const': 1}], 'title': 'C'},
+            'c': {'title': 'C', 'anyOf': [{'type': 'string', 'const': 'a'}, {'type': 'integer', 'const': 1}]},
+            'd': {'title': 'D', 'anyOf': [
+                {'const': 'a', 'type': 'string'},
+                {'const': Literal['b']},
+                {'const': 1, 'type': 'integer'},
+                {'const': 2, 'type': 'integer'}
+            ]},
         },
-        'required': ['a', 'b', 'c'],
+        'required': ['a', 'b', 'c', 'd'],
         'title': 'Model',
         'type': 'object',
     }
