@@ -984,6 +984,18 @@ def test_root_validator_inheritance():
     assert calls == ["parent validator: {'a': 123}", "child validator: {'extra1': 1, 'a': 123}"]
 
 
+def test_root_validator_returns_none_exception():
+    class Model(BaseModel):
+        a: int = 1
+
+        @root_validator
+        def root_validator_repeated(cls, values):
+            return None
+
+    with pytest.raises(TypeError, match='Model values must be a dict'):
+        Model()
+
+
 def reusable_validator(num):
     return num * 2
 

@@ -371,7 +371,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)
         if validation_error:
             raise validation_error
-        object_setattr(__pydantic_self__, '__dict__', values)
+        try:
+            object_setattr(__pydantic_self__, '__dict__', values)
+        except TypeError as e:
+            raise TypeError(
+                'Model values must be a dict; you may not have returned a dictionary from a root validator'
+            ) from e
         object_setattr(__pydantic_self__, '__fields_set__', fields_set)
         __pydantic_self__._init_private_attributes()
 
