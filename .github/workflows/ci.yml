@@ -190,8 +190,8 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux, test-windows-mac, test-fastapi]
-    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
+#    needs: [lint, test-linux, test-windows-mac, test-fastapi]
+#    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
       matrix:
@@ -221,6 +221,12 @@ jobs:
       env:
         SKIP_CYTHON: 1
 
+    - name: Set up QEMU
+      if: matrix.os == 'ubuntu'
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
     - name: build ${{ matrix.platform || matrix.os }} binaries
       run: cibuildwheel --output-dir dist
       env:
@@ -233,6 +239,7 @@ jobs:
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
         CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
+        CIBW_ARCHS_LINUX: 'auto aarch64'
 
     # TODO build windows 32bit binaries
 
