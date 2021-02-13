@@ -172,6 +172,34 @@ def test_constrained_list_too_short():
     ]
 
 
+def test_constrained_list_optional():
+    class Model(BaseModel):
+        req: Optional[conlist(str, min_items=1)] = ...
+        opt: Optional[conlist(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=[], opt=[])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req=['a'], opt=['a']).dict() == {'req': ['a'], 'opt': ['a']}
+
+
 def test_constrained_list_constraints():
     class ConListModelBoth(BaseModel):
         v: conlist(int, min_items=7, max_items=11)
@@ -321,6 +349,34 @@ def test_constrained_set_too_short():
             'ctx': {'limit_value': 1},
         }
     ]
+
+
+def test_constrained_set_optional():
+    class Model(BaseModel):
+        req: Optional[conset(str, min_items=1)] = ...
+        opt: Optional[conset(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=set(), opt=set())
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
 
 
 def test_constrained_set_constraints():

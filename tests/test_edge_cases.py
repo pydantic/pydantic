@@ -20,6 +20,11 @@ from pydantic import (
 )
 from pydantic.fields import Field, Schema
 
+try:
+    import cython
+except ImportError:
+    cython = None
+
 
 def test_str_bytes():
     class Model(BaseModel):
@@ -194,26 +199,38 @@ def test_tuple():
 
 def test_tuple_more():
     class Model(BaseModel):
+        empty_tuple: Tuple[()]
         simple_tuple: tuple = None
         tuple_of_different_types: Tuple[int, float, str, bool] = None
 
-    m = Model(simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[4, 3, 2, 1])
-    assert m.dict() == {'simple_tuple': (1, 2, 3, 4), 'tuple_of_different_types': (4, 3.0, '2', True)}
+    m = Model(empty_tuple=[], simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[4, 3, 2, 1])
+    assert m.dict() == {
+        'empty_tuple': (),
+        'simple_tuple': (1, 2, 3, 4),
+        'tuple_of_different_types': (4, 3.0, '2', True),
+    }
 
 
 def test_tuple_length_error():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
+        w: Tuple[()]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=[1, 2])
+        Model(v=[1, 2], w=[1])
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'wrong tuple length 2, expected 3',
             'type': 'value_error.tuple.length',
             'ctx': {'actual_length': 2, 'expected_length': 3},
-        }
+        },
+        {
+            'loc': ('w',),
+            'msg': 'wrong tuple length 1, expected 0',
+            'type': 'value_error.tuple.length',
+            'ctx': {'actual_length': 1, 'expected_length': 0},
+        },
     ]
 
 
@@ -1733,3 +1750,26 @@ def test_default_factory_validator_child():
         pass
 
     assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']
+
+
+@pytest.mark.skipif(cython is None, reason='cython not installed')
+def test_cython_function_untouched():
+    Model = cython.inline(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    a = 0.0
+    b = 10
+
+    def get_double_a(self) -> float:
+        return self.a + self.b
+
+return Model
+"""
+    )
+    model = Model(a=10.2)
+    assert model.a == 10.2
+    assert model.b == 10
+    return model.get_double_a() == 20.2

@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+- name: Question
+  url: https://github.com/samuelcolvin/pydantic/discussions/new
+  about: Ask a question about how to use pydantic using github discussions
+
+- name: Feature Request
+  url: https://github.com/samuelcolvin/pydantic/discussions/new
+  about: >
+    If you think we should add a new feature to pydantic, please start a discussion, once it attracts
+    wider support, it can be migrated to an issue
