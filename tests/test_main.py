@@ -1532,7 +1532,7 @@ def test_typing_coercion_dict():
     assert repr(m) == "Model(x={'one': 1, 'two': 2})"
 
 
-def test_typing_coercion_default_dict():
+def test_typing_coercion_defaultdict():
     class Model(BaseModel):
         x: DefaultDict[int, str]
 
