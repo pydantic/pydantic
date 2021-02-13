@@ -452,18 +452,20 @@ class ModelField(Representation):
 
         if issubclass(origin, Tuple):  # type: ignore
             # origin == Tuple without item type
-            if not get_args(self.type_):
+            args = get_args(self.type_)
+            if not args:  # plain tuple
                 self.type_ = Any
                 self.shape = SHAPE_TUPLE_ELLIPSIS
+            elif len(args) == 2 and args[1] is Ellipsis:  # e.g. Tuple[int, ...]
+                self.type_ = args[0]
+                self.shape = SHAPE_TUPLE_ELLIPSIS
+            elif args == ((),):  # Tuple[()] means empty tuple
+                self.shape = SHAPE_TUPLE
+                self.type_ = Any
+                self.sub_fields = []
             else:
                 self.shape = SHAPE_TUPLE
-                self.sub_fields = []
-                for i, t in enumerate(get_args(self.type_)):
-                    if t is Ellipsis:
-                        self.type_ = get_args(self.type_)[0]
-                        self.shape = SHAPE_TUPLE_ELLIPSIS
-                        return
-                    self.sub_fields.append(self._create_sub_type(t, f'{self.name}_{i}'))
+                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(args)]
             return
 
         if issubclass(origin, List):
