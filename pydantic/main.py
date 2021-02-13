@@ -628,9 +628,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         m = cls.__new__(cls)
         object_setattr(m, '__dict__', v)
         # new `__fields_set__` can have unset optional fields with a set value in `update` kwarg
-        object_setattr(
-            m, '__fields_set__', {k for k in self.__fields__ if k in self.__fields_set__ | set(update or {})}
-        )
+        if update:
+            fields_set = self.__fields_set__ | update.keys()
+        else:
+            fields_set = set(self.__fields_set__)
+        object_setattr(m, '__fields_set__', fields_set)
         for name in self.__private_attributes__:
             value = getattr(self, name, Undefined)
             if value is not Undefined:
