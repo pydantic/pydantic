@@ -15,6 +15,7 @@ from typing import (
     FrozenSet,
     Generator,
     List,
+    NamedTuple,
     Pattern,
     Set,
     Tuple,
@@ -27,17 +28,22 @@ from uuid import UUID
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
+    NONE_TYPES,
     AnyCallable,
     ForwardRef,
+    Literal,
     all_literal_values,
     display_as_type,
     get_class,
     is_callable_type,
     is_literal_type,
+    is_namedtuple,
+    is_typeddict,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
+    from .annotated_types import TypedDict
     from .fields import ModelField
     from .main import BaseConfig
     from .types import ConstrainedDecimal, ConstrainedFloat, ConstrainedInt
@@ -197,6 +203,10 @@ def anystr_length_validator(v: 'StrBytes', config: 'BaseConfig') -> 'StrBytes':
 
 def anystr_strip_whitespace(v: 'StrBytes') -> 'StrBytes':
     return v.strip()
+
+
+def anystr_lower(v: 'StrBytes') -> 'StrBytes':
+    return v.lower()
 
 
 def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
@@ -440,12 +450,17 @@ def int_enum_validator(v: Any) -> IntEnum:
 
 def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     permitted_choices = all_literal_values(type_)
-    allowed_choices_set = set(permitted_choices)
+
+    # To have a O(1) complexity and still return one of the values set inside the `Literal`,
+    # we create a dict with the set values (a set causes some problems with the way intersection works).
+    # In some cases the set value and checked value can indeed be different (see `test_literal_validator_str_enum`)
+    allowed_choices = {v: v for v in permitted_choices}
 
     def literal_validator(v: Any) -> Any:
-        if v not in allowed_choices_set:
+        try:
+            return allowed_choices[v]
+        except KeyError:
             raise errors.WrongConstantError(given=v, permitted=permitted_choices)
-        return v
 
     return literal_validator
 
@@ -469,6 +484,13 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseCon
     if strip_whitespace:
         v = v.strip()
 
+    return v
+
+
+def constr_lower(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
+    lower = field.type_.to_lower or config.anystr_lower
+    if lower:
+        v = v.lower()
     return v
 
 
@@ -511,6 +533,12 @@ def any_class_validator(v: Any) -> Type[T]:
     raise errors.ClassError()
 
 
+def none_validator(v: Any) -> 'Literal[None]':
+    if v is None:
+        return v
+    raise errors.NotNoneError()
+
+
 def pattern_validator(v: Any) -> Pattern[str]:
     if isinstance(v, Pattern):
         return v
@@ -521,6 +549,42 @@ def pattern_validator(v: Any) -> Pattern[str]:
         return re.compile(str_value)
     except re.error:
         raise errors.PatternError()
+
+
+NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
+
+
+def make_namedtuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
+    from .annotated_types import create_model_from_namedtuple
+
+    NamedTupleModel = create_model_from_namedtuple(namedtuple_cls)
+    namedtuple_cls.__pydantic_model__ = NamedTupleModel  # type: ignore[attr-defined]
+
+    def namedtuple_validator(values: Tuple[Any, ...]) -> NamedTupleT:
+        annotations = NamedTupleModel.__annotations__
+
+        if len(values) > len(annotations):
+            raise errors.ListMaxLengthError(limit_value=len(annotations))
+
+        dict_values: Dict[str, Any] = dict(zip(annotations, values))
+        validated_dict_values: Dict[str, Any] = dict(NamedTupleModel(**dict_values))
+        return namedtuple_cls(**validated_dict_values)
+
+    return namedtuple_validator
+
+
+def make_typeddict_validator(
+    typeddict_cls: Type['TypedDict'], config: Type['BaseConfig']
+) -> Callable[[Any], Dict[str, Any]]:
+    from .annotated_types import create_model_from_typeddict
+
+    TypedDictModel = create_model_from_typeddict(typeddict_cls, __config__=config)
+    typeddict_cls.__pydantic_model__ = TypedDictModel  # type: ignore[attr-defined]
+
+    def typeddict_validator(values: 'TypedDict') -> Dict[str, Any]:
+        return TypedDictModel.parse_obj(values).dict(exclude_unset=True)
+
+    return typeddict_validator
 
 
 class IfConfig:
@@ -542,6 +606,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         [
             str_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_lower, 'anystr_lower'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
         ],
     ),
@@ -550,6 +615,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         [
             bytes_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_lower, 'anystr_lower'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
         ],
     ),
@@ -589,6 +655,9 @@ def find_validators(  # noqa: C901 (ignore complexity)
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
         return
+    if type_ in NONE_TYPES:
+        yield none_validator
+        return
     if type_ is Pattern:
         yield pattern_validator
         return
@@ -609,6 +678,13 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if type_ is IntEnum:
         yield int_enum_validator
+        return
+    if is_namedtuple(type_):
+        yield tuple_validator
+        yield make_namedtuple_validator(type_)
+        return
+    if is_typeddict(type_):
+        yield make_typeddict_validator(type_, config)
         return
 
     class_ = get_class(type_)

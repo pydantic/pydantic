@@ -114,6 +114,7 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Environment :: Console',
         'Environment :: MacOS X',
+        'Framework :: Hypothesis',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Internet',
     ],
@@ -130,8 +131,9 @@ setup(
     ],
     extras_require={
         'email': ['email-validator>=1.0.3'],
-        'typing_extensions': ['typing-extensions>=3.7.2'],
+        'typing_extensions': ['typing-extensions>=3.7.4'],
         'dotenv': ['python-dotenv>=0.10.4'],
     },
     ext_modules=ext_modules,
+    entry_points={'hypothesis': ['_ = pydantic._hypothesis_plugin']},
 )

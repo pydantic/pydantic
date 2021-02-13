@@ -108,6 +108,21 @@ to `Field()` with the raw schema attribute name:
 ```
 _(This script is complete, it should run "as is")_
 
+### typing.Annotated Fields
+
+Rather than assigning a `Field` value, it can be specified in the type hint with `typing.Annotated`:
+
+```py
+{!.tmp_examples/schema_annotated.py!}
+```
+_(This script is complete, it should run "as is")_
+
+`Field` can only be supplied once per field - an error will be raised if used in `Annotated` and as the assigned value.
+Defaults can be set outside `Annotated` as the assigned value or with `Field.default_factory` inside `Annotated` - the
+`Field.default` argument is not supported inside `Annotated`.
+
+For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
+
 ## Modifying schema in custom fields
 
 Custom field types can customise the schema generated for them using the `__modify_schema__` class method;
