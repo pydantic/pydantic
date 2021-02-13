@@ -164,8 +164,9 @@ class ValidatedFunction:
         var_kwargs = {}
         wrong_positional_args = []
         duplicate_kwargs = []
+        non_var_fields = set(self.model.__fields__) - {self.v_args_name, self.v_kwargs_name}
         for k, v in kwargs.items():
-            if k in self.model.__fields__:
+            if k in non_var_fields:
                 if k in self.positional_only_args:
                     wrong_positional_args.append(k)
                 if k in values:
@@ -184,9 +185,7 @@ class ValidatedFunction:
 
     def execute(self, m: BaseModel) -> Any:
         d = {k: v for k, v in m._iter() if k in m.__fields_set__}
-        kwargs = d.pop(self.v_kwargs_name, None)
-        if kwargs:
-            d.update(kwargs)
+        var_kwargs = d.pop(self.v_kwargs_name, {})
 
         if self.v_args_name in d:
             args_: List[Any] = []
@@ -200,7 +199,7 @@ class ValidatedFunction:
                     in_kwargs = True
                 else:
                     args_.append(value)
-            return self.raw_function(*args_, **kwargs)
+            return self.raw_function(*args_, **kwargs, **var_kwargs)
         elif self.positional_only_args:
             args_ = []
             kwargs = {}
@@ -209,9 +208,9 @@ class ValidatedFunction:
                     args_.append(value)
                 else:
                     kwargs[name] = value
-            return self.raw_function(*args_, **kwargs)
+            return self.raw_function(*args_, **kwargs, **var_kwargs)
         else:
-            return self.raw_function(**d)
+            return self.raw_function(**d, **var_kwargs)
 
     def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)

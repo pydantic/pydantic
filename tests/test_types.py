@@ -108,6 +108,22 @@ def test_constrained_bytes_too_long():
     ]
 
 
+def test_constrained_bytes_lower_enabled():
+    class Model(BaseModel):
+        v: conbytes(to_lower=True)
+
+    m = Model(v=b'ABCD')
+    assert m.v == b'abcd'
+
+
+def test_constrained_bytes_lower_disabled():
+    class Model(BaseModel):
+        v: conbytes(to_lower=False)
+
+    m = Model(v=b'ABCD')
+    assert m.v == b'ABCD'
+
+
 def test_constrained_list_good():
     class ConListModelMax(BaseModel):
         v: conlist(int) = []
@@ -440,6 +456,22 @@ def test_constrained_str_too_long():
             'ctx': {'limit_value': 10},
         }
     ]
+
+
+def test_constrained_str_lower_enabled():
+    class Model(BaseModel):
+        v: constr(to_lower=True)
+
+    m = Model(v='ABCD')
+    assert m.v == 'abcd'
+
+
+def test_constrained_str_lower_disabled():
+    class Model(BaseModel):
+        v: constr(to_lower=False)
+
+    m = Model(v='ABCD')
+    assert m.v == 'ABCD'
 
 
 def test_module_import():
@@ -1515,6 +1547,34 @@ def test_anystr_strip_whitespace_disabled():
     m = Model(str_check='  123  ', bytes_check=b'  456  ')
     assert m.str_check == '  123  '
     assert m.bytes_check == b'  456  '
+
+
+def test_anystr_lower_enabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_lower = True
+
+    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+
+    assert m.str_check == 'abcdefg'
+    assert m.bytes_check == b'abcd1fg'
+
+
+def test_anystr_lower_disabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_lower = False
+
+    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+
+    assert m.str_check == 'ABCDefG'
+    assert m.bytes_check == b'abCD1Fg'
 
 
 @pytest.mark.parametrize(
