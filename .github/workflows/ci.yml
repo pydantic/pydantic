@@ -221,7 +221,7 @@ jobs:
       env:
         SKIP_CYTHON: 1
 
-    - name: Set up QEMU
+    - name: set up qemu
       if: matrix.os == 'ubuntu'
       uses: docker/setup-qemu-action@v1
       with:
