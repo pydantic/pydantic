@@ -194,26 +194,38 @@ def test_tuple():
 
 def test_tuple_more():
     class Model(BaseModel):
+        empty_tuple: Tuple[()]
         simple_tuple: tuple = None
         tuple_of_different_types: Tuple[int, float, str, bool] = None
 
-    m = Model(simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[4, 3, 2, 1])
-    assert m.dict() == {'simple_tuple': (1, 2, 3, 4), 'tuple_of_different_types': (4, 3.0, '2', True)}
+    m = Model(empty_tuple=[], simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[4, 3, 2, 1])
+    assert m.dict() == {
+        'empty_tuple': (),
+        'simple_tuple': (1, 2, 3, 4),
+        'tuple_of_different_types': (4, 3.0, '2', True),
+    }
 
 
 def test_tuple_length_error():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
+        w: Tuple[()]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=[1, 2])
+        Model(v=[1, 2], w=[1])
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'wrong tuple length 2, expected 3',
             'type': 'value_error.tuple.length',
             'ctx': {'actual_length': 2, 'expected_length': 3},
-        }
+        },
+        {
+            'loc': ('w',),
+            'msg': 'wrong tuple length 1, expected 0',
+            'type': 'value_error.tuple.length',
+            'ctx': {'actual_length': 1, 'expected_length': 0},
+        },
     ]
 
 
