@@ -46,6 +46,7 @@ nav:
 - benchmarks.md
 - 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md
+- 'Hypothesis plugin': hypothesis_plugin.md
 - 'Code Generation': datamodel_code_generator.md
 - changelog.md
 

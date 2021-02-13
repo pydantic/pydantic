@@ -1,0 +1,1 @@
+Add a `FrozenSet[str]` type annotation to the `allowed_schemes` argument on the `strict_url` field type.

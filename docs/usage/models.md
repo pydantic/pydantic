@@ -384,6 +384,18 @@ You can also add validators by passing a dict to the `__validators__` argument.
 {!.tmp_examples/models_dynamic_validators.py!}
 ```
 
+## Model creation from `NamedTuple` or `TypedDict`
+
+Sometimes you already use in your application classes that inherit from `NamedTuple` or `TypedDict`
+and you don't want to duplicate all your information to have a `BaseModel`.
+For this _pydantic_ provides `create_model_from_namedtuple` and `create_model_from_typeddict` methods.
+Those methods have the exact same keyword arguments as `create_model`.
+
+
+```py
+{!.tmp_examples/models_from_typeddict.py!}
+```
+
 ## Custom Root Types
 
 Pydantic models can be defined with a custom root type by declaring the `__root__` field. 
@@ -531,9 +543,15 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
     Moreover if you want to validate default values with `validate_all`,
     *pydantic* will need to call the `default_factory`, which could lead to side effects!
 
+## Automatically excluded attributes
+
+Class variables which begin with an underscore and attributes annotated with `typing.ClassVar` will be
+automatically excluded from the model.
+
 ## Private model attributes
 
-If you need to use internal attributes excluded from model fields, you can declare them using `PrivateAttr`:
+If you need to vary or manipulate internal attributes on instances of the model, you can declare them
+using `PrivateAttr`:
 
 ```py
 {!.tmp_examples/private_attributes.py!}

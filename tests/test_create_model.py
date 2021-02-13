@@ -182,3 +182,15 @@ def test_repeat_base_usage():
     assert model.__fields__.keys() == {'a', 'b'}
     assert model2.__fields__.keys() == {'a', 'c'}
     assert model3.__fields__.keys() == {'a', 'b', 'd'}
+
+
+def test_dynamic_and_static():
+    class A(BaseModel):
+        x: int
+        y: float
+        z: str
+
+    DynamicA = create_model('A', x=(int, ...), y=(float, ...), z=(str, ...))
+
+    for field_name in ('x', 'y', 'z'):
+        assert A.__fields__[field_name].default == DynamicA.__fields__[field_name].default
