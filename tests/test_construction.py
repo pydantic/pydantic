@@ -1,5 +1,5 @@
 import pickle
-from typing import Any, List
+from typing import Any, List, Optional
 
 import pytest
 
@@ -211,6 +211,14 @@ def test_copy_update():
     assert set(m.dict().keys()) == set(m2.dict().keys()) == {'a', 'b', 'c', 'd'}
 
     assert m != m2
+
+
+def test_copy_update_unset():
+    class Foo(BaseModel):
+        foo: Optional[str]
+        bar: Optional[str]
+
+    assert Foo(foo='hello').copy(update={'bar': 'world'}).json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
 
 
 def test_copy_set_fields():
