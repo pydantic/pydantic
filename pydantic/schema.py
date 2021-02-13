@@ -59,6 +59,7 @@ from .types import (
 )
 from .typing import (
     NONE_TYPES,
+    Annotated,
     ForwardRef,
     Literal,
     get_args,
@@ -917,6 +918,8 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
                 # forward refs cause infinite recursion below
                 return type_
 
+            if origin is Annotated:
+                return go(args[0])
             if origin is Union:
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 

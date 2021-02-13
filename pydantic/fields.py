@@ -29,6 +29,7 @@ from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
     NONE_TYPES,
+    Annotated,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -120,6 +121,10 @@ class FieldInfo(Representation):
         self.regex = kwargs.pop('regex', None)
         self.extra = kwargs
 
+    def _validate(self) -> None:
+        if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
+            raise ValueError('cannot specify both default and default_factory')
+
 
 def Field(
     default: Any = Undefined,
@@ -171,10 +176,7 @@ def Field(
       pattern string. The schema will have a ``pattern`` validation keyword
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
-    if default is not Undefined and default_factory is not None:
-        raise ValueError('cannot specify both default and default_factory')
-
-    return FieldInfo(
+    field_info = FieldInfo(
         default,
         default_factory=default_factory,
         alias=alias,
@@ -193,6 +195,8 @@ def Field(
         regex=regex,
         **extra,
     )
+    field_info._validate()
+    return field_info
 
 
 def Schema(default: Any, **kwargs: Any) -> Any:
@@ -288,6 +292,46 @@ class ModelField(Representation):
     def get_default(self) -> Any:
         return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
 
+    @staticmethod
+    def _get_field_info(
+        field_name: str, annotation: Any, value: Any, config: Type['BaseConfig']
+    ) -> Tuple[FieldInfo, Any]:
+        """
+        Get a FieldInfo from a root typing.Annotated annotation, value, or config default.
+
+        The FieldInfo may be set in typing.Annotated or the value, but not both. If neither contain
+        a FieldInfo, a new one will be created using the config.
+
+        :param field_name: name of the field for use in error messages
+        :param annotation: a type hint such as `str` or `Annotated[str, Field(..., min_length=5)]`
+        :param value: the field's assigned value
+        :param config: the model's config object
+        :return: the FieldInfo contained in the `annotation`, the value, or a new one from the config.
+        """
+        field_info_from_config = config.get_field_info(field_name)
+
+        field_info = None
+        if get_origin(annotation) is Annotated:
+            field_infos = [arg for arg in get_args(annotation)[1:] if isinstance(arg, FieldInfo)]
+            if len(field_infos) > 1:
+                raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
+            field_info = next(iter(field_infos), None)
+            if field_info is not None:
+                if field_info.default not in (Undefined, Ellipsis):
+                    raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
+                if value not in (Undefined, Ellipsis):
+                    field_info.default = value
+        if isinstance(value, FieldInfo):
+            if field_info is not None:
+                raise ValueError(f'cannot specify `Annotated` and value `Field`s together for {field_name!r}')
+            field_info = value
+        if field_info is None:
+            field_info = FieldInfo(value, **field_info_from_config)
+        field_info.alias = field_info.alias or field_info_from_config.get('alias')
+        value = None if field_info.default_factory is not None else field_info.default
+        field_info._validate()
+        return field_info, value
+
     @classmethod
     def infer(
         cls,
@@ -298,21 +342,15 @@ class ModelField(Representation):
         class_validators: Optional[Dict[str, Validator]],
         config: Type['BaseConfig'],
     ) -> 'ModelField':
-        field_info_from_config = config.get_field_info(name)
         from .schema import get_annotation_from_field_info
 
-        if isinstance(value, FieldInfo):
-            field_info = value
-            value = None if field_info.default_factory is not None else field_info.default
-        else:
-            field_info = FieldInfo(value, **field_info_from_config)
+        field_info, value = cls._get_field_info(name, annotation, value, config)
         required: 'BoolUndefined' = Undefined
         if value is Required:
             required = True
             value = None
         elif value is not Undefined:
             required = False
-        field_info.alias = field_info.alias or field_info_from_config.get('alias')
         annotation = get_annotation_from_field_info(annotation, field_info, name)
         return cls(
             name=name,
@@ -426,6 +464,10 @@ class ModelField(Representation):
             # allow None for virtual superclasses of NoneType, e.g. Hashable
             if isinstance(self.type_, type) and isinstance(None, self.type_):
                 self.allow_none = True
+            return
+        if origin is Annotated:
+            self.type_ = get_args(self.type_)[0]
+            self._type_analysis()
             return
         if origin is Callable:
             return
