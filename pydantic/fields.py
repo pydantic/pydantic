@@ -383,8 +383,6 @@ class ModelField(Representation):
             value = None
         elif value is not Undefined:
             required = False
-        field_info.alias = field_info.alias or field_info_from_config.get('alias')
-
         annotation = get_annotation_from_field_info(annotation, field_info, name, config.validate_assignment)
         return cls(
             name=name,
