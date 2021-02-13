@@ -139,7 +139,8 @@ class FieldInfo(Representation):
         return [(a, v) for a, v in attrs if v != self.__field_constraints__.get(a, None)]
 
     def get_constraints(self) -> Set[str]:
-        """Gets the constraints set on the field by comparing the constraint value with its default value
+        """
+        Gets the constraints set on the field by comparing the constraint value with its default value
 
         :return: the constraints set on field_info
         """

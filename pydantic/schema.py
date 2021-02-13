@@ -853,7 +853,7 @@ _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: con
 
 def get_annotation_from_field_info(
     annotation: Any, field_info: FieldInfo, field_name: str, validate_assignment: bool = False
-) -> Type[Any]:  # noqa: C901
+) -> Type[Any]:
     """
     Get an annotation with validation implemented for numbers and strings based on the field_info.
     :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``

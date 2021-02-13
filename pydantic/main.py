@@ -389,7 +389,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 # - keep other values (e.g. submodels) untouched (using `BaseModel.dict()` will change them into dicts)
                 # - keep the order of the fields
                 if not known_field.field_info.allow_mutation:
-                    raise TypeError(f'"{known_field.name}" has allow_mutation set to False and cannot be assigned"')
+                    raise TypeError(f'"{known_field.name}" has allow_mutation set to False and cannot be assigned')
                 dict_without_original_value = {k: v for k, v in self.__dict__.items() if k != name}
                 value, error_ = known_field.validate(value, dict_without_original_value, loc=name, cls=self.__class__)
                 if error_:
