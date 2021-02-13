@@ -88,8 +88,19 @@ with custom properties and validation.
 `typing.Tuple`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
+`subclass of typing.NamedTuple`
+: Same as `tuple` but instantiates with the given namedtuple and validates fields since they are annotated.
+  See [Annotated Types](#annotated-types) below for more detail on parsing and validation
+
+`subclass of collections.namedtuple`
+: Same as `subclass of typing.NamedTuple` but all fields will have type `Any` since they are not annotated
+
 `typing.Dict`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`subclass of typing.TypedDict`
+: Same as `dict` but _pydantic_ will validate the dictionary since keys are annotated.  
+  See [Annotated Types](#annotated-types) below for more detail on parsing and validation
 
 `typing.Set`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
@@ -392,6 +403,29 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
 
 ```py
 {!.tmp_examples/types_literal3.py!}
+```
+_(This script is complete, it should run "as is")_
+
+## Annotated Types
+
+### NamedTuple
+
+```py
+{!.tmp_examples/annotated_types_named_tuple.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### TypedDict
+
+!!! note
+    This is a new feature of the python standard library as of python 3.8.
+    Prior to python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
+    But required and optional fields are properly differentiated only since python 3.9.
+    We therefore recommend using [typing-extensions](https://pypi.org/project/typing-extensions/) with python 3.8 as well.
+
+
+```py
+{!.tmp_examples/annotated_types_typed_dict.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -722,7 +756,6 @@ _(This script is complete, it should run "as is")_
 
 Where `Field` refers to the [field function](schema.md#field-customisation).
 
-
 ### Arguments to `conlist`
 The following arguments are available when using the `conlist` type function
 
@@ -767,6 +800,26 @@ The following arguments are available when using the `condecimal` type function
 - `max_digits: int = None`: maximum number of digits within the decimal. it does not include a zero before the decimal point or trailing decimal zeroes
 - `decimal_places: int = None`: max number of decimal places allowed. it does not include trailing decimal zeroes
 - `multiple_of: Decimal = None`: enforces decimal to be a multiple of the set value
+
+### Arguments to `constr`
+The following arguments are available when using the `constr` type function
+
+- `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_lower: bool = False`: turns all characters to lowercase
+- `strict: bool = False`: controls type coercion
+- `min_length: int = None`: minimum length of the string
+- `max_length: int = None`: maximum length of the string
+- `curtail_length: int = None`: shrinks the string length to the set value when it is longer than the set value
+- `regex: str = None`: regex to validate the string against
+
+### Arguments to `conbytes`
+The following arguments are available when using the `conbytes` type function
+
+- `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_lower: bool = False`: turns all characters to lowercase
+- `min_length: int = None`: minimum length of the byte string
+- `max_length: int = None`: maximum length of the byte string
+
 
 ## Strict Types
 

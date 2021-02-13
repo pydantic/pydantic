@@ -65,6 +65,7 @@ from .typing import (
     get_origin,
     is_callable_type,
     is_literal_type,
+    is_namedtuple,
     literal_values,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
@@ -188,7 +189,12 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
         schema['description'] = field.field_info.description
         schema_overrides = True
 
-    if not field.required and not field.field_info.const and field.default is not None:
+    if (
+        not field.required
+        and not field.field_info.const
+        and field.default is not None
+        and not is_callable_type(field.outer_type_)
+    ):
         schema['default'] = encode_default(field.default)
         schema_overrides = True
 
@@ -404,7 +410,7 @@ def get_flat_models_from_models(models: Sequence[Type['BaseModel']]) -> TypeMode
 
 
 def get_long_model_name(model: TypeModelOrEnum) -> str:
-    return f'{model.__module__}__{model.__name__}'.replace('.', '__')
+    return f'{model.__module__}__{model.__qualname__}'.replace('.', '__')
 
 
 def field_type_schema(
@@ -795,7 +801,17 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema, schema_overrides = get_field_info_schema(field)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
-    else:
+    elif is_namedtuple(field_type):
+        sub_schema, *_ = model_process_schema(
+            field_type.__pydantic_model__,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            ref_template=ref_template,
+            known_models=known_models,
+        )
+        f_schema.update({'type': 'array', 'items': list(sub_schema['properties'].values())})
+    elif not hasattr(field_type, '__pydantic_model__'):
         add_field_type_to_schema(field_type, f_schema)
 
         modify_schema = getattr(field_type, '__modify_schema__', None)

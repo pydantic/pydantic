@@ -1120,6 +1120,60 @@ def test_parse_obj_non_mapping_root():
     ]
 
 
+def test_parse_obj_nested_root():
+    class Pokemon(BaseModel):
+        name: str
+        level: int
+
+    class Pokemons(BaseModel):
+        __root__: List[Pokemon]
+
+    class Player(BaseModel):
+        rank: int
+        pokemons: Pokemons
+
+    class Players(BaseModel):
+        __root__: Dict[str, Player]
+
+    class Tournament(BaseModel):
+        players: Players
+        city: str
+
+    payload = {
+        'players': {
+            'Jane': {
+                'rank': 1,
+                'pokemons': [
+                    {
+                        'name': 'Pikachu',
+                        'level': 100,
+                    },
+                    {
+                        'name': 'Bulbasaur',
+                        'level': 13,
+                    },
+                ],
+            },
+            'Tarzan': {
+                'rank': 2,
+                'pokemons': [
+                    {
+                        'name': 'Jigglypuff',
+                        'level': 7,
+                    },
+                ],
+            },
+        },
+        'city': 'Qwerty',
+    }
+
+    tournament = Tournament.parse_obj(payload)
+    assert tournament.city == 'Qwerty'
+    assert len(tournament.players.__root__) == 2
+    assert len(tournament.players.__root__['Jane'].pokemons.__root__) == 2
+    assert tournament.players.__root__['Jane'].pokemons.__root__[0].name == 'Pikachu'
+
+
 def test_untouched_types():
     from pydantic import BaseModel
 
@@ -1425,3 +1479,51 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
+
+
+def test_inherited_model_field_copy():
+    """It should copy models used as fields by default"""
+
+    class Image(BaseModel):
+        path: str
+
+        def __hash__(self):
+            return id(self)
+
+    class Item(BaseModel):
+        images: List[Image]
+
+    image_1 = Image(path='my_image1.png')
+    image_2 = Image(path='my_image2.png')
+
+    item = Item(images={image_1, image_2})
+    assert image_1 in item.images
+
+    assert id(image_1) != id(item.images[0])
+    assert id(image_2) != id(item.images[1])
+
+
+@pytest.mark.xfail(reason='see https://github.com/samuelcolvin/pydantic/pull/2193#issuecomment-778345456')
+def test_inherited_model_field_untouched():
+    """It should not copy models used as fields if explicitly asked"""
+
+    class Image(BaseModel):
+        path: str
+
+        def __hash__(self):
+            return id(self)
+
+        class Config:
+            copy_on_model_validation = False
+
+    class Item(BaseModel):
+        images: List[Image]
+
+    image_1 = Image(path='my_image1.png')
+    image_2 = Image(path='my_image2.png')
+
+    item = Item(images={image_1, image_2})
+    assert image_1 in item.images
+
+    assert id(image_1) == id(item.images[0])
+    assert id(image_2) == id(item.images[1])
