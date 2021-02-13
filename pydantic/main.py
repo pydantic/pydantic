@@ -34,7 +34,15 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, get_args, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
+from .typing import (
+    AnyCallable,
+    get_args,
+    get_origin,
+    is_classvar,
+    is_namedtuple,
+    resolve_annotations,
+    update_field_forward_refs,
+)
 from .utils import (
     ROOT_KEY,
     ClassAttribute,
@@ -745,7 +753,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             }
 
         elif sequence_like(v):
-            return v.__class__(
+            seq_args = (
                 cls._get_value(
                     v_,
                     to_dict=to_dict,
@@ -760,6 +768,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 if (not value_exclude or not value_exclude.is_excluded(i))
                 and (not value_include or value_include.is_included(i))
             )
+
+            return v.__class__(*seq_args) if is_namedtuple(v.__class__) else v.__class__(seq_args)
 
         elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
             return v.value
