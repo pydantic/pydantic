@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Dict, List
 
 import pytest
 
@@ -45,6 +45,47 @@ def test_getdict():
     assert len(gd) == 3
     assert str(gd) == "{'a': 1, 'c': 3, 'd': 4}"
     assert repr(gd) == "GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})"
+
+
+def test_orm_mode_root():
+    class PokemonCls:
+        def __init__(self, *, en_name: str, jp_name: str):
+            self.en_name = en_name
+            self.jp_name = jp_name
+
+    class Pokemon(BaseModel):
+        en_name: str
+        jp_name: str
+
+        class Config:
+            orm_mode = True
+
+    class PokemonList(BaseModel):
+        __root__: List[Pokemon]
+
+        class Config:
+            orm_mode = True
+
+    pika = PokemonCls(en_name='Pikachu', jp_name='ピカチュウ')
+    bulbi = PokemonCls(en_name='Bulbasaur', jp_name='フシギダネ')
+
+    pokemons = PokemonList.from_orm([pika, bulbi])
+    assert pokemons.__root__ == [
+        Pokemon(en_name='Pikachu', jp_name='ピカチュウ'),
+        Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
+    ]
+
+    class PokemonDict(BaseModel):
+        __root__: Dict[str, Pokemon]
+
+        class Config:
+            orm_mode = True
+
+    pokemons = PokemonDict.from_orm({'pika': pika, 'bulbi': bulbi})
+    assert pokemons.__root__ == {
+        'pika': Pokemon(en_name='Pikachu', jp_name='ピカチュウ'),
+        'bulbi': Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
+    }
 
 
 def test_orm_mode():
