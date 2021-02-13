@@ -259,6 +259,11 @@ class ModelMetaclass(ABCMeta):
 
         prepare_config(config, name)
 
+        untouched_types = ANNOTATED_FIELD_UNTOUCHED_TYPES
+
+        def is_untouched(v: Any) -> bool:
+            return isinstance(v, untouched_types) or v.__class__.__name__ == 'cython_function_or_method'
+
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
             # annotation only fields need to come first in fields
@@ -270,7 +275,7 @@ class ModelMetaclass(ABCMeta):
                     value = namespace.get(ann_name, Undefined)
                     allowed_types = get_args(ann_type) if get_origin(ann_type) is Union else (ann_type,)
                     if (
-                        isinstance(value, ANNOTATED_FIELD_UNTOUCHED_TYPES)
+                        is_untouched(value)
                         and ann_type != PyObject
                         and not any(
                             lenient_issubclass(get_origin(allowed_type), Type) for allowed_type in allowed_types
@@ -289,7 +294,7 @@ class ModelMetaclass(ABCMeta):
 
             untouched_types = UNTOUCHED_TYPES + config.keep_untouched
             for var_name, value in namespace.items():
-                can_be_changed = var_name not in class_vars and not isinstance(value, untouched_types)
+                can_be_changed = var_name not in class_vars and not is_untouched(value)
                 if isinstance(value, ModelPrivateAttr):
                     if not is_valid_private_name(var_name):
                         raise NameError(
