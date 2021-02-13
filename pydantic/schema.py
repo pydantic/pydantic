@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
+    Generic,
     Iterable,
     List,
     Optional,
@@ -27,6 +28,7 @@ from uuid import UUID
 
 from .fields import (
     SHAPE_FROZENSET,
+    SHAPE_GENERIC,
     SHAPE_ITERABLE,
     SHAPE_LIST,
     SHAPE_MAPPING,
@@ -488,7 +490,7 @@ def field_type_schema(
             sub_schema = sub_schema[0]  # type: ignore
         f_schema = {'type': 'array', 'items': sub_schema}
     else:
-        assert field.shape == SHAPE_SINGLETON, field.shape
+        assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
@@ -503,7 +505,11 @@ def field_type_schema(
 
     # check field type to avoid repeated calls to the same __modify_schema__ method
     if field.type_ != field.outer_type_:
-        modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
+        if field.shape == SHAPE_GENERIC:
+            field_type = field.type_
+        else:
+            field_type = field.outer_type_
+        modify_schema = getattr(field_type, '__modify_schema__', None)
         if modify_schema:
             modify_schema(f_schema)
     return f_schema, definitions, nested_models
@@ -844,6 +850,11 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             nested_models.add(model_name)
         schema_ref = get_schema_ref(model_name, ref_prefix, ref_template, schema_overrides)
         return schema_ref, definitions, nested_models
+
+    # For generics with no args
+    args = get_args(field_type)
+    if args is not None and not args and Generic in field_type.__bases__:
+        return f_schema, definitions, nested_models
 
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 

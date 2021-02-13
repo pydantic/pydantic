@@ -7,7 +7,21 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NewType, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Generic,
+    Iterable,
+    List,
+    NewType,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 from uuid import UUID
 
 import pytest
@@ -2194,4 +2208,59 @@ class MyModel(BaseModel):
         f'{module_1.__name__}__MyModel',
         f'{module_2.__name__}__MyEnum',
         f'{module_2.__name__}__MyModel',
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_schema_for_generic_field():
+    T = TypeVar('T')
+
+    class GenModel(Generic[T]):
+        def __init__(self, data: Any):
+            self.data = data
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return v
+
+    class Model(BaseModel):
+        data: GenModel[str]
+        data1: GenModel
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'data': {'title': 'Data', 'type': 'string'},
+            'data1': {
+                'title': 'Data1',
+            },
+        },
+        'required': ['data', 'data1'],
+    }
+
+    class GenModelModified(GenModel, Generic[T]):
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.pop('type', None)
+            field_schema.update(anyOf=[{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}])
+
+    class ModelModified(BaseModel):
+        data: GenModelModified[str]
+        data1: GenModelModified
+
+    assert ModelModified.schema() == {
+        'title': 'ModelModified',
+        'type': 'object',
+        'properties': {
+            'data': {'title': 'Data', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+            'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+        },
+        'required': ['data', 'data1'],
     }
