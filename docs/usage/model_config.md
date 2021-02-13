@@ -1,4 +1,4 @@
-Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
+Behaviour of _pydantic_ can be controlled via the `Config` class on a model, model class kwargs, or a _pydantic_ dataclass.
 
 Options:
 
@@ -89,8 +89,13 @@ not be included in the model schemas. **Note**: this means that attributes on th
 ```
 _(This script is complete, it should run "as is")_
 
-Similarly, if using the `@dataclass` decorator:
+Also, you can specify config options as model class kwargs:
+```py
+{!.tmp_examples/model_config_class_kwargs.py!}
+```
+_(This script is complete, it should run "as is")_
 
+Similarly, if using the `@dataclass` decorator:
 ```py
 {!.tmp_examples/model_config_dataclass.py!}
 ```
