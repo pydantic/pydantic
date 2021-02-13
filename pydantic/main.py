@@ -530,12 +530,18 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+    def _enforce_dict_if_root(cls, obj: Any) -> Any:
         if cls.__custom_root_type__ and (
             not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
         ):
-            obj = {ROOT_KEY: obj}
-        elif not isinstance(obj, dict):
+            return {ROOT_KEY: obj}
+        else:
+            return obj
+
+    @classmethod
+    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+        obj = cls._enforce_dict_if_root(obj)
+        if not isinstance(obj, dict):
             try:
                 obj = dict(obj)
             except (TypeError, ValueError) as e:
@@ -683,14 +689,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
+        value = cls._enforce_dict_if_root(value)
         if isinstance(value, dict):
             return cls(**value)
         elif isinstance(value, cls):
             return value.copy() if cls.__config__.copy_on_model_validation else value
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
-        elif cls.__custom_root_type__:
-            return cls.parse_obj(value)
         else:
             try:
                 value_as_dict = dict(value)
