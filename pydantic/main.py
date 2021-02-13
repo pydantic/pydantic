@@ -161,14 +161,14 @@ class BaseConfig:
         pass
 
 
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'ConfigType':
+def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **config_kwargs: Any) -> 'ConfigType':
     if not self_config:
         base_classes = (parent_config,)
     elif self_config == parent_config:
         base_classes = (self_config,)
     else:
         base_classes = self_config, parent_config  # type: ignore
-    return type('Config', base_classes, {})
+    return type('Config', base_classes, config_kwargs)
 
 
 EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/usage/model_config/'
@@ -236,7 +236,12 @@ class ModelMetaclass(ABCMeta):
                 post_root_validators += base.__post_root_validators__
                 private_attributes.update(base.__private_attributes__)
 
-        config = inherit_config(namespace.get('Config'), config)
+        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & BaseConfig.__dict__.keys()}
+        config_from_namespace = namespace.get('Config')
+        if config_kwargs and config_from_namespace:
+            raise TypeError('Specifying config in two places is ambiguous, use either Config attribute or class kwargs')
+        config = inherit_config(config_from_namespace, config, **config_kwargs)
+
         validators = inherit_validators(extract_validators(namespace), validators)
         vg = ValidatorGroup(validators)
 
