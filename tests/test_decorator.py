@@ -110,15 +110,22 @@ def test_untyped():
     assert foo(1, {'x': 2}, c='3', d='4') == "1, {'x': 2}, 3, 4"
 
 
-def test_var_args_kwargs():
-    @validate_arguments
+@pytest.mark.parametrize('validated', (True, False))
+def test_var_args_kwargs(validated):
     def foo(a, b, *args, d=3, **kwargs):
         return f'a={a!r}, b={b!r}, args={args!r}, d={d!r}, kwargs={kwargs!r}'
+
+    if validated:
+        foo = validate_arguments(foo)
 
     assert foo(1, 2) == 'a=1, b=2, args=(), d=3, kwargs={}'
     assert foo(1, 2, 3, d=4) == 'a=1, b=2, args=(3,), d=4, kwargs={}'
     assert foo(*[1, 2, 3], d=4) == 'a=1, b=2, args=(3,), d=4, kwargs={}'
+    assert foo(1, 2, args=(10, 11)) == "a=1, b=2, args=(), d=3, kwargs={'args': (10, 11)}"
+    assert foo(1, 2, 3, args=(10, 11)) == "a=1, b=2, args=(3,), d=3, kwargs={'args': (10, 11)}"
     assert foo(1, 2, 3, e=10) == "a=1, b=2, args=(3,), d=3, kwargs={'e': 10}"
+    assert foo(1, 2, kwargs=4) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4}"
+    assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
 
 
 @skip_pre_38
