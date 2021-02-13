@@ -86,6 +86,7 @@ def test_default_factory_no_type_field():
         return 1
 
     with pytest.raises(ConfigError) as e:
+
         class Model(BaseModel):
             a = Field(default_factory=myfunc)
 
@@ -802,6 +803,7 @@ def test_arbitrary_type_allowed_validation_fails():
 
 def test_arbitrary_types_not_allowed():
     with pytest.raises(RuntimeError) as exc_info:
+
         class ArbitraryTypeNotAllowedModel(BaseModel):
             t: ArbitraryType
 
@@ -893,6 +895,7 @@ def test_annotation_field_name_shadows_attribute():
 def test_value_field_name_shadows_attribute():
     # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
     with pytest.raises(NameError):
+
         class BadModel(BaseModel):
             schema = 'abc'  # This conflicts with the BaseModel's schema() class method
 
@@ -1071,6 +1074,7 @@ def test_encode_nested_root():
 
 def test_root_failed():
     with pytest.raises(ValueError, match='__root__ cannot be mixed with other fields'):
+
         class MyModel(BaseModel):
             __root__: str
             a: str
@@ -1153,6 +1157,7 @@ def test_custom_types_fail_without_keep_untouched():
     classproperty = _ClassPropertyDescriptor
 
     with pytest.raises(RuntimeError) as e:
+
         class Model(BaseModel):
             @classproperty
             def class_name(cls) -> str:
@@ -1268,6 +1273,7 @@ def test_update_forward_refs_does_not_modify_module_dict():
 
 def test_two_defaults():
     with pytest.raises(ValueError, match='^cannot specify both default and default_factory$'):
+
         class Model(BaseModel):
             a: int = Field(default=3, default_factory=lambda: 3)
 
@@ -1490,6 +1496,7 @@ def test_class_kwargs_config_and_attr_conflict():
     with pytest.raises(
         TypeError, match='Specifying config in two places is ambiguous, use either Config attribute or class kwargs'
     ):
+
         class Model(BaseModel, extra='allow'):
             b: int
 
