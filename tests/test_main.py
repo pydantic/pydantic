@@ -1487,6 +1487,25 @@ def test_base_config_type_hinting():
     get_type_hints(M.__config__)
 
 
+def test_allow_mutation_field():
+    """assigning a allow_mutation=False field should raise a TypeError"""
+
+    class Entry(BaseModel):
+        id: float = Field(allow_mutation=False)
+        val: float
+
+        class Config:
+            validate_assignment = True
+
+    r = Entry(id=1, val=100)
+    assert r.val == 100
+    r.val = 101
+    assert r.val == 101
+    assert r.id == 1
+    with pytest.raises(TypeError, match='"id" has allow_mutation set to False and cannot be assigned'):
+        r.id = 2
+
+
 def test_inherited_model_field_copy():
     """It should copy models used as fields by default"""
 

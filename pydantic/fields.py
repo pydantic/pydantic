@@ -97,9 +97,24 @@ class FieldInfo(Representation):
         'max_items',
         'min_length',
         'max_length',
+        'allow_mutation',
         'regex',
         'extra',
     )
+
+    __field_constraints__ = {  # field constraints with the default value
+        'min_length': None,
+        'max_length': None,
+        'regex': None,
+        'gt': None,
+        'lt': None,
+        'ge': None,
+        'le': None,
+        'multiple_of': None,
+        'min_items': None,
+        'max_items': None,
+        'allow_mutation': True,
+    }
 
     def __init__(self, default: Any = Undefined, **kwargs: Any) -> None:
         self.default = default
@@ -118,8 +133,21 @@ class FieldInfo(Representation):
         self.max_items = kwargs.pop('max_items', None)
         self.min_length = kwargs.pop('min_length', None)
         self.max_length = kwargs.pop('max_length', None)
+        self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
         self.extra = kwargs
+
+    def __repr_args__(self) -> 'ReprArgs':
+        attrs = ((s, getattr(self, s)) for s in self.__slots__)
+        return [(a, v) for a, v in attrs if v != self.__field_constraints__.get(a, None)]
+
+    def get_constraints(self) -> Set[str]:
+        """
+        Gets the constraints set on the field by comparing the constraint value with its default value
+
+        :return: the constraints set on field_info
+        """
+        return {attr for attr, default in self.__field_constraints__.items() if getattr(self, attr) != default}
 
     def _validate(self) -> None:
         if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
@@ -143,6 +171,7 @@ def Field(
     max_items: int = None,
     min_length: int = None,
     max_length: int = None,
+    allow_mutation: bool = True,
     regex: str = None,
     **extra: Any,
 ) -> Any:
@@ -172,6 +201,8 @@ def Field(
       schema will have a ``maximum`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
       schema will have a ``maxLength`` validation keyword
+    :param allow_mutation: a boolean which defaults to True. When False, the field raises a TypeError if the field is
+      assigned on an instance.  The BaseModel Config must set validate_assignment to True
     :param regex: only applies to strings, requires the field match agains a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
     :param **extra: any additional keyword arguments will be added as is to the schema
@@ -192,6 +223,7 @@ def Field(
         max_items=max_items,
         min_length=min_length,
         max_length=max_length,
+        allow_mutation=allow_mutation,
         regex=regex,
         **extra,
     )
@@ -351,7 +383,7 @@ class ModelField(Representation):
             value = None
         elif value is not Undefined:
             required = False
-        annotation = get_annotation_from_field_info(annotation, field_info, name)
+        annotation = get_annotation_from_field_info(annotation, field_info, name, config.validate_assignment)
         return cls(
             name=name,
             type_=annotation,

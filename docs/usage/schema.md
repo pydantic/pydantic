@@ -71,6 +71,8 @@ It has the following arguments:
   JSON Schema
 * `max_length`: for string values, this adds a corresponding validation and an annotation of `maxLength` to the
   JSON Schema
+* `allow_mutation`: a boolean which defaults to `True`. When False, the field raises a `TypeError` if the field is 
+  assigned on an instance.  The model config must set `validate_assignment` to `True` for this check to be performed.
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
   annotation of `pattern` to the JSON Schema
 

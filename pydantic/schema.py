@@ -887,32 +887,47 @@ def encode_default(dft: Any) -> Any:
 
 
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
-_field_constraints = {
-    'min_length',
-    'max_length',
-    'regex',
-    'gt',
-    'lt',
-    'ge',
-    'le',
-    'multiple_of',
-    'min_items',
-    'max_items',
-}
 
 
-def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field_name: str) -> Type[Any]:  # noqa: C901
+def get_annotation_from_field_info(
+    annotation: Any, field_info: FieldInfo, field_name: str, validate_assignment: bool = False
+) -> Type[Any]:
     """
     Get an annotation with validation implemented for numbers and strings based on the field_info.
-
     :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
     :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
     :param field_name: name of the field for use in error messages
+    :param validate_assignment: default False, flag for BaseModel Config value of validate_assignment
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
-    constraints = {f for f in _field_constraints if getattr(field_info, f) is not None}
-    if not constraints:
-        return annotation
+    constraints = field_info.get_constraints()
+
+    used_constraints: Set[str] = set()
+    if constraints:
+        annotation, used_constraints = get_annotation_with_constraints(annotation, field_info)
+
+    if validate_assignment:
+        used_constraints.add('allow_mutation')
+
+    unused_constraints = constraints - used_constraints
+    if unused_constraints:
+        raise ValueError(
+            f'On field "{field_name}" the following field constraints are set but not enforced: '
+            f'{", ".join(unused_constraints)}. '
+            f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
+        )
+
+    return annotation
+
+
+def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> Tuple[Type[Any], Set[str]]:  # noqa: C901
+    """
+    Get an annotation with used constraints implemented for numbers and strings based on the field_info.
+
+    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
+    :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
+    :return: the same ``annotation`` if unmodified or a new annotation along with the used constraints.
+    """
     used_constraints: Set[str] = set()
 
     def go(type_: Any) -> Type[Any]:
@@ -986,15 +1001,7 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
 
     ans = go(annotation)
 
-    unused_constraints = constraints - used_constraints
-    if unused_constraints:
-        raise ValueError(
-            f'On field "{field_name}" the following field constraints are set but not enforced: '
-            f'{", ".join(unused_constraints)}. '
-            f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
-        )
-
-    return ans
+    return ans, used_constraints
 
 
 def normalize_name(name: str) -> str:
