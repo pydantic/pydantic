@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 import pytest
 
 from pydantic import BaseModel, ConfigError, ValidationError
+from pydantic.typing import Literal
 
 skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
@@ -478,6 +479,32 @@ def test_forward_ref_with_create_model(create_module):
         Main = pydantic.create_model('Main', sub=('Sub', ...), __module__=__name__)
         instance = Main(sub={})
         assert instance.sub.dict() == {'foo': 'bar'}
+
+
+@skip_pre_37
+@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
+def test_resolve_forward_ref_dataclass(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from pydantic import BaseModel
+from pydantic.typing import Literal
+
+@dataclass
+class Base:
+    literal: Literal[1, 2]
+
+class What(BaseModel):
+    base: Base
+        """
+    )
+
+    m = module.What(base=module.Base(literal=1))
+    assert m.base.literal == 1
 
 
 def test_nested_forward_ref():

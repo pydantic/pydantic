@@ -5,6 +5,7 @@ from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Required
 from .main import create_model, validate_model
+from .typing import resolve_annotations
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
@@ -128,7 +129,7 @@ def _process_class(
             _cls.__name__,
             (_cls,),
             {
-                '__annotations__': _cls.__annotations__,
+                '__annotations__': resolve_annotations(_cls.__annotations__, _cls.__module__),
                 '__post_init__': _pydantic_post_init,
                 # attrs for pickle to find this class
                 '__module__': __name__,
