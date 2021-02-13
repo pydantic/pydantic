@@ -26,10 +26,10 @@ from typing import (
 from uuid import UUID
 
 from .fields import (
+    MAPPING_LIKE_SHAPES,
     SHAPE_FROZENSET,
     SHAPE_ITERABLE,
     SHAPE_LIST,
-    SHAPE_MAPPING,
     SHAPE_SEQUENCE,
     SHAPE_SET,
     SHAPE_SINGLETON,
@@ -446,7 +446,7 @@ def field_type_schema(
         if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
             f_schema['uniqueItems'] = True
 
-    elif field.shape == SHAPE_MAPPING:
+    elif field.shape in MAPPING_LIKE_SHAPES:
         f_schema = {'type': 'object'}
         key_field = cast(ModelField, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)

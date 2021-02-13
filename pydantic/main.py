@@ -29,7 +29,7 @@ from typing import (
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import SHAPE_MAPPING, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import MAPPING_LIKE_SHAPES, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -524,7 +524,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
         if cls.__custom_root_type__ and (
-            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
+            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY})
+            or cls.__fields__[ROOT_KEY].shape in MAPPING_LIKE_SHAPES
         ):
             obj = {ROOT_KEY: obj}
         elif not isinstance(obj, dict):

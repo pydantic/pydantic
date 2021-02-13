@@ -1,7 +1,7 @@
 import sys
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
@@ -1516,7 +1516,28 @@ def test_mapping_retains_type_dict_fallback():
     d['one'] = 1
     d['two'] = 2
 
-    m = Model(field=d)
+    with pytest.warns(UserWarning, match="Could not convert dictionary to 'Map'"):
+        m = Model(field=d)
+
     assert isinstance(m.field, dict)
     assert m.field['one'] == 1
     assert m.field['two'] == 2
+
+
+def test_typing_coercion_dict():
+    class Model(BaseModel):
+        x: Dict[str, int]
+
+    m = Model(x={'one': 1, 'two': 2})
+    assert repr(m) == "Model(x={'one': 1, 'two': 2})"
+
+
+def test_typing_coercion_default_dict():
+    class Model(BaseModel):
+        x: DefaultDict[int, str]
+
+    d = defaultdict(str)
+    d['1']
+    m = Model(x=d)
+    m.x['a']
+    assert repr(m) == "Model(x=defaultdict(<class 'str'>, {1: '', 'a': ''}))"
