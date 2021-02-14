@@ -1476,52 +1476,48 @@ def test_inherited_model_field_untouched():
 
 
 def test_mapping_retains_type_subclass():
-    class Map(dict):
+    class CustomMap(dict):
         pass
 
     class Model(BaseModel):
-        field: Mapping[str, Mapping[str, int]]
+        x: Mapping[str, Mapping[str, int]]
 
-    m = Model(field=Map(outer=Map(inner=42)))
-    assert isinstance(m.field, Map)
-    assert isinstance(m.field['outer'], Map)
-    assert m.field['outer']['inner'] == 42
+    m = Model(x=CustomMap(outer=CustomMap(inner=42)))
+    assert isinstance(m.x, CustomMap)
+    assert isinstance(m.x['outer'], CustomMap)
+    assert m.x['outer']['inner'] == 42
 
 
 def test_mapping_retains_type_defaultdict():
     class Model(BaseModel):
-        field: Mapping[str, int]
+        x: Mapping[str, int]
 
     d = defaultdict(int)
     d[1] = '2'
     d['3']
 
-    m = Model(field=d)
-    assert isinstance(m.field, defaultdict)
-    assert m.field['1'] == 2
-    assert m.field['3'] == 0
+    m = Model(x=d)
+    assert isinstance(m.x, defaultdict)
+    assert m.x['1'] == 2
+    assert m.x['3'] == 0
 
 
-def test_mapping_retains_type_dict_fallback():
-    class Map(dict):
+def test_mapping_retains_type_fallback_error():
+    class CustomMap(dict):
         def __init__(self, *args, **kwargs):
             if args or kwargs:
                 raise TypeError('test')
             super().__init__(*args, **kwargs)
 
     class Model(BaseModel):
-        field: Mapping[str, int]
+        x: Mapping[str, int]
 
-    d = Map()
+    d = CustomMap()
     d['one'] = 1
     d['two'] = 2
 
-    with pytest.warns(UserWarning, match="Could not convert dictionary to 'Map'"):
-        m = Model(field=d)
-
-    assert isinstance(m.field, dict)
-    assert m.field['one'] == 1
-    assert m.field['two'] == 2
+    with pytest.raises(RuntimeError, match="Could not convert dictionary to 'CustomMap'"):
+        Model(x=d)
 
 
 def test_typing_coercion_dict():

@@ -790,8 +790,7 @@ class ModelField(Representation):
                 # Counter, OrderedDict, UserDict, ...
                 return original_cls(converted)  # type: ignore
             except TypeError:
-                warnings.warn(f'Could not convert dictionary to {original_cls.__name__!r}', UserWarning)
-                return converted
+                raise RuntimeError(f'Could not convert dictionary to {original_cls.__name__!r}') from None
 
     def _validate_singleton(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
