@@ -90,21 +90,7 @@ else:
         try:
             from typing_extensions import Annotated
         except ImportError:
-            # Create mock Annotated values distinct from `None`, which is a valid `get_origin`
-            # return value.
-            class _FalseMeta(type):
-                # Allow short circuiting with "Annotated[...] if Annotated else None".
-                def __bool__(cls):
-                    return False
-
-                # Give a nice suggestion for unguarded use
-                def __getitem__(cls, key):
-                    raise RuntimeError(
-                        'Annotated is not supported in this python version, please `pip install typing-extensions`.'
-                    )
-
-            class Annotated(metaclass=_FalseMeta):
-                pass
+            Annotated = None
 
 
 # Annotated[...] is implemented by returning an instance of one of these classes, depending on
