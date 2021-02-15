@@ -16,7 +16,7 @@ from pydantic import BaseModel, create_model
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
-from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
+from pydantic.types import ConstrainedDecimal, DirectoryPath, FilePath, SecretBytes, SecretStr
 
 
 class MyEnum(Enum):
@@ -168,6 +168,29 @@ def test_custom_iso_timedelta():
 
     m = Model(x=123)
     assert m.json() == '{"x": "P0DT0H2M3.000000S"}'
+
+
+def test_con_decimal_encode() -> None:
+    """
+    Makes sure a decimal with decimal_places = 0, as well as one with places
+    can handle a encode/decode roundtrip.
+    """
+
+    class Id(ConstrainedDecimal):
+        max_digits = 22
+        decimal_places = 0
+        ge = 0
+
+    ObjId = Id
+
+    class Obj(BaseModel):
+        id: ObjId
+        name: str
+        price: Decimal = Decimal('0.01')
+
+    test_obj = Obj(id=1, name='Test Obj')
+    cycled_obj = Obj.parse_raw(test_obj.json())
+    assert test_obj == cycled_obj
 
 
 def test_custom_encoder_arg():
