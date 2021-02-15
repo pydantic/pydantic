@@ -52,6 +52,20 @@ def test_args():
         {'loc': ('kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'}
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        foo(1, 2, a=3)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('v__duplicate_kwargs',), 'msg': "multiple values for argument: 'a'", 'type': 'type_error'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        foo(1, 2, a=3, b=4)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('v__duplicate_kwargs',), 'msg': "multiple values for arguments: 'a', 'b'", 'type': 'type_error'}
+    ]
+
 
 def test_wrap():
     @validate_arguments
@@ -68,7 +82,7 @@ def test_wrap():
     assert foo_bar.vd.arg_mapping == {0: 'a', 1: 'b'}
     assert foo_bar.vd.positional_only_args == set()
     assert issubclass(foo_bar.model, BaseModel)
-    assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs'}
+    assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs', 'v__duplicate_kwargs'}
     assert foo_bar.model.__name__ == 'FooBar'
     assert foo_bar.model.schema()['title'] == 'FooBar'
     # signature is slightly different on 3.6
@@ -110,15 +124,22 @@ def test_untyped():
     assert foo(1, {'x': 2}, c='3', d='4') == "1, {'x': 2}, 3, 4"
 
 
-def test_var_args_kwargs():
-    @validate_arguments
+@pytest.mark.parametrize('validated', (True, False))
+def test_var_args_kwargs(validated):
     def foo(a, b, *args, d=3, **kwargs):
         return f'a={a!r}, b={b!r}, args={args!r}, d={d!r}, kwargs={kwargs!r}'
+
+    if validated:
+        foo = validate_arguments(foo)
 
     assert foo(1, 2) == 'a=1, b=2, args=(), d=3, kwargs={}'
     assert foo(1, 2, 3, d=4) == 'a=1, b=2, args=(3,), d=4, kwargs={}'
     assert foo(*[1, 2, 3], d=4) == 'a=1, b=2, args=(3,), d=4, kwargs={}'
+    assert foo(1, 2, args=(10, 11)) == "a=1, b=2, args=(), d=3, kwargs={'args': (10, 11)}"
+    assert foo(1, 2, 3, args=(10, 11)) == "a=1, b=2, args=(3,), d=3, kwargs={'args': (10, 11)}"
     assert foo(1, 2, 3, e=10) == "a=1, b=2, args=(3,), d=3, kwargs={'e': 10}"
+    assert foo(1, 2, kwargs=4) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4}"
+    assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
 
 
 @skip_pre_38
@@ -161,7 +182,7 @@ def test_args_name():
     def foo(args: int, kwargs: int):
         return f'args={args!r}, kwargs={kwargs!r}'
 
-    assert foo.model.__fields__.keys() == {'args', 'kwargs', 'v__args', 'v__kwargs'}
+    assert foo.model.__fields__.keys() == {'args', 'kwargs', 'v__args', 'v__kwargs', 'v__duplicate_kwargs'}
     assert foo(1, 2) == 'args=1, kwargs=2'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -184,10 +205,36 @@ def test_args_name():
 
 
 def test_v_args():
-    with pytest.raises(ConfigError, match='"v__args", "v__kwargs" and "v__positional_only" are not permitted'):
+    with pytest.raises(
+        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+    ):
 
         @validate_arguments
-        def foo(v__args: int):
+        def foo1(v__args: int):
+            pass
+
+    with pytest.raises(
+        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+    ):
+
+        @validate_arguments
+        def foo2(v__kwargs: int):
+            pass
+
+    with pytest.raises(
+        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+    ):
+
+        @validate_arguments
+        def foo3(v__positional_only: int):
+            pass
+
+    with pytest.raises(
+        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+    ):
+
+        @validate_arguments
+        def foo4(v__duplicate_kwargs: int):
             pass
 
 

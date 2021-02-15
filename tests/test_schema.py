@@ -7,7 +7,21 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NewType, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Generic,
+    Iterable,
+    List,
+    NewType,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 from uuid import UUID
 
 import pytest
@@ -1006,10 +1020,18 @@ def test_ipvanynetwork_type():
     }
 
 
-@pytest.mark.parametrize('annotation', [Callable, Callable[[int], int]])
-def test_callable_type(annotation):
+@pytest.mark.parametrize(
+    'type_,default_value',
+    (
+        (Callable, ...),
+        (Callable, lambda x: x),
+        (Callable[[int], int], ...),
+        (Callable[[int], int], lambda x: x),
+    ),
+)
+def test_callable_type(type_, default_value):
     class Model(BaseModel):
-        callback: annotation
+        callback: type_ = default_value
         foo: int
 
     with pytest.warns(UserWarning):
@@ -1423,6 +1445,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'max_length': 5}, int),
         ({'min_length': 2}, float),
         ({'max_length': 5}, Decimal),
+        ({'allow_mutation': False}, bool),
         ({'regex': '^foo$'}, int),
         ({'gt': 2}, str),
         ({'lt': 5}, bytes),
@@ -2099,6 +2122,44 @@ def test_new_type():
     }
 
 
+def test_multiple_models_with_same_name(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+
+class ModelOne(BaseModel):
+    class NestedModel(BaseModel):
+        a: float
+
+    nested: NestedModel
+
+
+class ModelTwo(BaseModel):
+    class NestedModel(BaseModel):
+        b: float
+
+    nested: NestedModel
+
+
+class NestedModel(BaseModel):
+    c: float
+        """
+    )
+
+    models = [module.ModelOne, module.ModelTwo, module.NestedModel]
+    model_names = set(schema(models)['definitions'].keys())
+    expected_model_names = {
+        'ModelOne',
+        'ModelTwo',
+        f'{module.__name__}__ModelOne__NestedModel',
+        f'{module.__name__}__ModelTwo__NestedModel',
+        f'{module.__name__}__NestedModel',
+    }
+    assert model_names == expected_model_names
+
+
 def test_multiple_enums_with_same_name(create_module):
     module_1 = create_module(
         # language=Python
@@ -2148,4 +2209,59 @@ class MyModel(BaseModel):
         f'{module_1.__name__}__MyModel',
         f'{module_2.__name__}__MyEnum',
         f'{module_2.__name__}__MyModel',
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_schema_for_generic_field():
+    T = TypeVar('T')
+
+    class GenModel(Generic[T]):
+        def __init__(self, data: Any):
+            self.data = data
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return v
+
+    class Model(BaseModel):
+        data: GenModel[str]
+        data1: GenModel
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'data': {'title': 'Data', 'type': 'string'},
+            'data1': {
+                'title': 'Data1',
+            },
+        },
+        'required': ['data', 'data1'],
+    }
+
+    class GenModelModified(GenModel, Generic[T]):
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.pop('type', None)
+            field_schema.update(anyOf=[{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}])
+
+    class ModelModified(BaseModel):
+        data: GenModelModified[str]
+        data1: GenModelModified
+
+    assert ModelModified.schema() == {
+        'title': 'ModelModified',
+        'type': 'object',
+        'properties': {
+            'data': {'title': 'Data', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+            'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+        },
+        'required': ['data', 'data1'],
     }

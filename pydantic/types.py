@@ -20,14 +20,17 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 from uuid import UUID
+from weakref import WeakSet
 
 from . import errors
 from .utils import import_string, update_not_none
 from .validators import (
     bytes_validator,
     constr_length_validator,
+    constr_lower,
     constr_strip_whitespace,
     decimal_validator,
     float_validator,
@@ -103,15 +106,39 @@ StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass  # noqa: F401
-    from .fields import ModelField
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .typing import CallableGenerator
 
     ModelOrDc = Type[Union['BaseModel', 'Dataclass']]
 
+T = TypeVar('T')
+_DEFINED_TYPES: 'WeakSet[type]' = WeakSet()
+
+
+@overload
+def _registered(typ: Type[T]) -> Type[T]:
+    pass
+
+
+@overload
+def _registered(typ: 'ConstrainedNumberMeta') -> 'ConstrainedNumberMeta':
+    pass
+
+
+def _registered(typ: Union[Type[T], 'ConstrainedNumberMeta']) -> Union[Type[T], 'ConstrainedNumberMeta']:
+    # In order to generate valid examples of constrained types, Hypothesis needs
+    # to inspect the type object - so we keep a weakref to each contype object
+    # until it can be registered.  When (or if) our Hypothesis plugin is loaded,
+    # it monkeypatches this function.
+    # If Hypothesis is never used, the total effect is to keep a weak reference
+    # which has minimal memory usage and doesn't even affect garbage collection.
+    _DEFINED_TYPES.add(typ)
+    return typ
+
 
 class ConstrainedBytes(bytes):
     strip_whitespace = False
+    to_lower = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
     strict: bool = False
@@ -124,6 +151,7 @@ class ConstrainedBytes(bytes):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield strict_bytes_validator if cls.strict else bytes_validator
         yield constr_strip_whitespace
+        yield constr_lower
         yield constr_length_validator
 
 
@@ -131,13 +159,12 @@ class StrictBytes(ConstrainedBytes):
     strict = True
 
 
-def conbytes(*, strip_whitespace: bool = False, min_length: int = None, max_length: int = None) -> Type[bytes]:
+def conbytes(
+    *, strip_whitespace: bool = False, to_lower: bool = False, min_length: int = None, max_length: int = None
+) -> Type[bytes]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(strip_whitespace=strip_whitespace, min_length=min_length, max_length=max_length)
-    return type('ConstrainedBytesValue', (ConstrainedBytes,), namespace)
-
-
-T = TypeVar('T')
+    namespace = dict(strip_whitespace=strip_whitespace, to_lower=to_lower, min_length=min_length, max_length=max_length)
+    return _registered(type('ConstrainedBytesValue', (ConstrainedBytes,), namespace))
 
 
 # This types superclass should be List[T], but cython chokes on that...
@@ -159,8 +186,8 @@ class ConstrainedList(list):  # type: ignore
         update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
 
     @classmethod
-    def list_length_validator(cls, v: 'Optional[List[T]]', field: 'ModelField') -> 'Optional[List[T]]':
-        if v is None and not field.required:
+    def list_length_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
+        if v is None:
             return None
 
         v = list_validator(v)
@@ -201,7 +228,10 @@ class ConstrainedSet(set):  # type: ignore
         update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
 
     @classmethod
-    def set_length_validator(cls, v: 'Optional[Set[T]]', field: 'ModelField') -> 'Optional[Set[T]]':
+    def set_length_validator(cls, v: 'Optional[Set[T]]') -> 'Optional[Set[T]]':
+        if v is None:
+            return None
+
         v = set_validator(v)
         v_len = len(v)
 
@@ -223,6 +253,7 @@ def conset(item_type: Type[T], *, min_items: int = None, max_items: int = None) 
 
 class ConstrainedStr(str):
     strip_whitespace = False
+    to_lower = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
     curtail_length: OptionalInt = None
@@ -239,6 +270,7 @@ class ConstrainedStr(str):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
+        yield constr_lower
         yield constr_length_validator
         yield cls.validate
 
@@ -257,6 +289,7 @@ class ConstrainedStr(str):
 def constr(
     *,
     strip_whitespace: bool = False,
+    to_lower: bool = False,
     strict: bool = False,
     min_length: int = None,
     max_length: int = None,
@@ -266,13 +299,14 @@ def constr(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        to_lower=to_lower,
         strict=strict,
         min_length=min_length,
         max_length=max_length,
         curtail_length=curtail_length,
         regex=regex and re.compile(regex),
     )
-    return type('ConstrainedStrValue', (ConstrainedStr,), namespace)
+    return _registered(type('ConstrainedStrValue', (ConstrainedStr,), namespace))
 
 
 class StrictStr(ConstrainedStr):
@@ -344,7 +378,7 @@ class ConstrainedNumberMeta(type):
         if new_cls.lt is not None and new_cls.le is not None:
             raise errors.ConfigError('bounds lt and le cannot be specified at the same time')
 
-        return new_cls
+        return _registered(new_cls)  # type: ignore
 
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
@@ -616,7 +650,7 @@ class JsonWrapper:
 
 class JsonMeta(type):
     def __getitem__(self, t: Type[Any]) -> Type[JsonWrapper]:
-        return type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t})
+        return _registered(type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t}))
 
 
 class Json(metaclass=JsonMeta):
@@ -726,6 +760,8 @@ class SecretBytes:
 
 
 class PaymentCardBrand(str, Enum):
+    # If you add another card type, please also add it to the
+    # Hypothesis strategy in `pydantic._hypothesis_plugin`.
     amex = 'American Express'
     mastercard = 'Mastercard'
     visa = 'Visa'

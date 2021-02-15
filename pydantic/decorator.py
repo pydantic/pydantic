@@ -66,6 +66,7 @@ def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'Config
 ALT_V_ARGS = 'v__args'
 ALT_V_KWARGS = 'v__kwargs'
 V_POSITIONAL_ONLY_NAME = 'v__positional_only'
+V_DUPLICATE_KWARGS = 'v__duplicate_kwargs'
 
 
 class ValidatedFunction:
@@ -74,10 +75,10 @@ class ValidatedFunction:
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
 
-        if parameters.keys() & {ALT_V_ARGS, ALT_V_KWARGS, V_POSITIONAL_ONLY_NAME}:
+        if parameters.keys() & {ALT_V_ARGS, ALT_V_KWARGS, V_POSITIONAL_ONLY_NAME, V_DUPLICATE_KWARGS}:
             raise ConfigError(
-                f'"{ALT_V_ARGS}", "{ALT_V_KWARGS}" and "{V_POSITIONAL_ONLY_NAME}" are not permitted as argument '
-                f'names when using the "{validate_arguments.__name__}" decorator'
+                f'"{ALT_V_ARGS}", "{ALT_V_KWARGS}", "{V_POSITIONAL_ONLY_NAME}" and "{V_DUPLICATE_KWARGS}" '
+                f'are not permitted as argument names when using the "{validate_arguments.__name__}" decorator'
             )
 
         self.raw_function = function
@@ -105,6 +106,7 @@ class ValidatedFunction:
             elif p.kind == Parameter.POSITIONAL_OR_KEYWORD:
                 self.arg_mapping[i] = name
                 fields[name] = annotation, default
+                fields[V_DUPLICATE_KWARGS] = List[str], None
             elif p.kind == Parameter.KEYWORD_ONLY:
                 fields[name] = annotation, default
             elif p.kind == Parameter.VAR_POSITIONAL:
@@ -161,10 +163,14 @@ class ValidatedFunction:
 
         var_kwargs = {}
         wrong_positional_args = []
+        duplicate_kwargs = []
+        non_var_fields = set(self.model.__fields__) - {self.v_args_name, self.v_kwargs_name}
         for k, v in kwargs.items():
-            if k in self.model.__fields__:
+            if k in non_var_fields:
                 if k in self.positional_only_args:
                     wrong_positional_args.append(k)
+                if k in values:
+                    duplicate_kwargs.append(k)
                 values[k] = v
             else:
                 var_kwargs[k] = v
@@ -173,13 +179,13 @@ class ValidatedFunction:
             values[self.v_kwargs_name] = var_kwargs
         if wrong_positional_args:
             values[V_POSITIONAL_ONLY_NAME] = wrong_positional_args
+        if duplicate_kwargs:
+            values[V_DUPLICATE_KWARGS] = duplicate_kwargs
         return values
 
     def execute(self, m: BaseModel) -> Any:
         d = {k: v for k, v in m._iter() if k in m.__fields_set__}
-        kwargs = d.pop(self.v_kwargs_name, None)
-        if kwargs:
-            d.update(kwargs)
+        var_kwargs = d.pop(self.v_kwargs_name, {})
 
         if self.v_args_name in d:
             args_: List[Any] = []
@@ -193,7 +199,7 @@ class ValidatedFunction:
                     in_kwargs = True
                 else:
                     args_.append(value)
-            return self.raw_function(*args_, **kwargs)
+            return self.raw_function(*args_, **kwargs, **var_kwargs)
         elif self.positional_only_args:
             args_ = []
             kwargs = {}
@@ -202,9 +208,9 @@ class ValidatedFunction:
                     args_.append(value)
                 else:
                     kwargs[name] = value
-            return self.raw_function(*args_, **kwargs)
+            return self.raw_function(*args_, **kwargs, **var_kwargs)
         else:
-            return self.raw_function(**d)
+            return self.raw_function(**d, **var_kwargs)
 
     def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
@@ -246,6 +252,12 @@ class ValidatedFunction:
                 plural = '' if len(v) == 1 else 's'
                 keys = ', '.join(map(repr, v))
                 raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
+
+            @validator(V_DUPLICATE_KWARGS, check_fields=False, allow_reuse=True)
+            def check_duplicate_kwargs(cls, v: List[str]) -> None:
+                plural = '' if len(v) == 1 else 's'
+                keys = ', '.join(map(repr, v))
+                raise TypeError(f'multiple values for argument{plural}: {keys}')
 
             class Config(CustomConfig):
                 extra = Extra.forbid

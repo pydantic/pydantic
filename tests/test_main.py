@@ -908,6 +908,12 @@ def test_class_var():
 
     assert list(MyModel.__fields__.keys()) == ['c']
 
+    class MyOtherModel(MyModel):
+        a = ''
+        b = 2
+
+    assert list(MyOtherModel.__fields__.keys()) == ['c']
+
 
 def test_fields_set():
     class MyModel(BaseModel):
@@ -1118,6 +1124,60 @@ def test_parse_obj_non_mapping_root():
     assert exc_info.value.errors() == [
         {'loc': ('__root__',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}
     ]
+
+
+def test_parse_obj_nested_root():
+    class Pokemon(BaseModel):
+        name: str
+        level: int
+
+    class Pokemons(BaseModel):
+        __root__: List[Pokemon]
+
+    class Player(BaseModel):
+        rank: int
+        pokemons: Pokemons
+
+    class Players(BaseModel):
+        __root__: Dict[str, Player]
+
+    class Tournament(BaseModel):
+        players: Players
+        city: str
+
+    payload = {
+        'players': {
+            'Jane': {
+                'rank': 1,
+                'pokemons': [
+                    {
+                        'name': 'Pikachu',
+                        'level': 100,
+                    },
+                    {
+                        'name': 'Bulbasaur',
+                        'level': 13,
+                    },
+                ],
+            },
+            'Tarzan': {
+                'rank': 2,
+                'pokemons': [
+                    {
+                        'name': 'Jigglypuff',
+                        'level': 7,
+                    },
+                ],
+            },
+        },
+        'city': 'Qwerty',
+    }
+
+    tournament = Tournament.parse_obj(payload)
+    assert tournament.city == 'Qwerty'
+    assert len(tournament.players.__root__) == 2
+    assert len(tournament.players.__root__['Jane'].pokemons.__root__) == 2
+    assert tournament.players.__root__['Jane'].pokemons.__root__[0].name == 'Pikachu'
 
 
 def test_untouched_types():
@@ -1425,3 +1485,69 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
+
+
+def test_allow_mutation_field():
+    """assigning a allow_mutation=False field should raise a TypeError"""
+
+    class Entry(BaseModel):
+        id: float = Field(allow_mutation=False)
+        val: float
+
+        class Config:
+            validate_assignment = True
+
+    r = Entry(id=1, val=100)
+    assert r.val == 100
+    r.val = 101
+    assert r.val == 101
+    assert r.id == 1
+    with pytest.raises(TypeError, match='"id" has allow_mutation set to False and cannot be assigned'):
+        r.id = 2
+
+
+def test_inherited_model_field_copy():
+    """It should copy models used as fields by default"""
+
+    class Image(BaseModel):
+        path: str
+
+        def __hash__(self):
+            return id(self)
+
+    class Item(BaseModel):
+        images: List[Image]
+
+    image_1 = Image(path='my_image1.png')
+    image_2 = Image(path='my_image2.png')
+
+    item = Item(images={image_1, image_2})
+    assert image_1 in item.images
+
+    assert id(image_1) != id(item.images[0])
+    assert id(image_2) != id(item.images[1])
+
+
+def test_inherited_model_field_untouched():
+    """It should not copy models used as fields if explicitly asked"""
+
+    class Image(BaseModel):
+        path: str
+
+        def __hash__(self):
+            return id(self)
+
+        class Config:
+            copy_on_model_validation = False
+
+    class Item(BaseModel):
+        images: List[Image]
+
+    image_1 = Image(path='my_image1.png')
+    image_2 = Image(path='my_image2.png')
+
+    item = Item(images=(image_1, image_2))
+    assert image_1 in item.images
+
+    assert id(image_1) == id(item.images[0])
+    assert id(image_2) == id(item.images[1])

@@ -193,6 +193,35 @@ def test_con_decimal_encode() -> None:
     assert test_obj == cycled_obj
 
 
+def test_json_encoder_simple_inheritance():
+    class Parent(BaseModel):
+        dt: datetime.datetime = datetime.datetime.now()
+        timedt: datetime.timedelta = datetime.timedelta(hours=100)
+
+        class Config:
+            json_encoders = {datetime.datetime: lambda _: 'parent_encoder'}
+
+    class Child(Parent):
+        class Config:
+            json_encoders = {datetime.timedelta: lambda _: 'child_encoder'}
+
+    assert Child().json() == '{"dt": "parent_encoder", "timedt": "child_encoder"}'
+
+
+def test_json_encoder_inheritance_override():
+    class Parent(BaseModel):
+        dt: datetime.datetime = datetime.datetime.now()
+
+        class Config:
+            json_encoders = {datetime.datetime: lambda _: 'parent_encoder'}
+
+    class Child(Parent):
+        class Config:
+            json_encoders = {datetime.datetime: lambda _: 'child_encoder'}
+
+    assert Child().json() == '{"dt": "child_encoder"}'
+
+
 def test_custom_encoder_arg():
     class Model(BaseModel):
         x: datetime.timedelta

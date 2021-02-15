@@ -1,3 +1,4 @@
+import collections.abc
 import os
 import re
 import string
@@ -14,11 +15,13 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import (
+    Annotated,
     ForwardRef,
     Literal,
     all_literal_values,
     display_as_type,
     get_args,
+    get_origin,
     is_new_type,
     new_type_supertype,
     resolve_annotations,
@@ -432,6 +435,24 @@ def test_smart_deepcopy_collection(collection, mocker):
 T = TypeVar('T')
 
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='get_origin is only consistent for python >= 3.7')
+@pytest.mark.parametrize(
+    'input_value,output_value',
+    [
+        (Annotated[int, 10] if Annotated else None, Annotated),
+        (Callable[[], T][int], collections.abc.Callable),
+        (Dict[str, int], dict),
+        (List[str], list),
+        (Union[int, str], Union),
+        (int, None),
+    ],
+)
+def test_get_origin(input_value, output_value):
+    if input_value is None:
+        pytest.skip('Skipping undefined hint for this python version')
+    assert get_origin(input_value) is output_value
+
+
 @pytest.mark.skipif(sys.version_info < (3, 8), reason='get_args is only consistent for python >= 3.8')
 @pytest.mark.parametrize(
     'input_value,output_value',
@@ -444,9 +465,12 @@ T = TypeVar('T')
         (Union[int, Union[T, int], str][int], (int, str)),
         (Union[int, Tuple[T, int]][str], (int, Tuple[str, int])),
         (Callable[[], T][int], ([], int)),
+        (Annotated[int, 10] if Annotated else None, (int, 10)),
     ],
 )
 def test_get_args(input_value, output_value):
+    if input_value is None:
+        pytest.skip('Skipping undefined hint for this python version')
     assert get_args(input_value) == output_value
 
 
