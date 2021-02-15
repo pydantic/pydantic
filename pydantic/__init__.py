@@ -1,5 +1,6 @@
 # flake8: noqa
 from . import dataclasses
+from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
 from .class_validators import root_validator, validator
 from .decorator import validate_arguments
 from .env_settings import BaseSettings
@@ -16,6 +17,9 @@ from .version import VERSION
 # WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
 __all__ = [
+    # annotated types utils
+    'create_model_from_namedtuple',
+    'create_model_from_typeddict',
     # dataclasses
     'dataclasses',
     # class_validators

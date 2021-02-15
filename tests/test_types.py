@@ -108,6 +108,22 @@ def test_constrained_bytes_too_long():
     ]
 
 
+def test_constrained_bytes_lower_enabled():
+    class Model(BaseModel):
+        v: conbytes(to_lower=True)
+
+    m = Model(v=b'ABCD')
+    assert m.v == b'abcd'
+
+
+def test_constrained_bytes_lower_disabled():
+    class Model(BaseModel):
+        v: conbytes(to_lower=False)
+
+    m = Model(v=b'ABCD')
+    assert m.v == b'ABCD'
+
+
 def test_constrained_list_good():
     class ConListModelMax(BaseModel):
         v: conlist(int) = []
@@ -154,6 +170,34 @@ def test_constrained_list_too_short():
             'ctx': {'limit_value': 1},
         }
     ]
+
+
+def test_constrained_list_optional():
+    class Model(BaseModel):
+        req: Optional[conlist(str, min_items=1)] = ...
+        opt: Optional[conlist(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=[], opt=[])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req=['a'], opt=['a']).dict() == {'req': ['a'], 'opt': ['a']}
 
 
 def test_constrained_list_constraints():
@@ -307,6 +351,34 @@ def test_constrained_set_too_short():
     ]
 
 
+def test_constrained_set_optional():
+    class Model(BaseModel):
+        req: Optional[conset(str, min_items=1)] = ...
+        opt: Optional[conset(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=set(), opt=set())
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
+
+
 def test_constrained_set_constraints():
     class ConSetModelBoth(BaseModel):
         v: conset(int, min_items=7, max_items=11)
@@ -440,6 +512,22 @@ def test_constrained_str_too_long():
             'ctx': {'limit_value': 10},
         }
     ]
+
+
+def test_constrained_str_lower_enabled():
+    class Model(BaseModel):
+        v: constr(to_lower=True)
+
+    m = Model(v='ABCD')
+    assert m.v == 'abcd'
+
+
+def test_constrained_str_lower_disabled():
+    class Model(BaseModel):
+        v: constr(to_lower=False)
+
+    m = Model(v='ABCD')
+    assert m.v == 'ABCD'
 
 
 def test_module_import():
@@ -1515,6 +1603,34 @@ def test_anystr_strip_whitespace_disabled():
     m = Model(str_check='  123  ', bytes_check=b'  456  ')
     assert m.str_check == '  123  '
     assert m.bytes_check == b'  456  '
+
+
+def test_anystr_lower_enabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_lower = True
+
+    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+
+    assert m.str_check == 'abcdefg'
+    assert m.bytes_check == b'abcd1fg'
+
+
+def test_anystr_lower_disabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_lower = False
+
+    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+
+    assert m.str_check == 'ABCDefG'
+    assert m.bytes_check == b'abCD1Fg'
 
 
 @pytest.mark.parametrize(

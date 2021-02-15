@@ -114,6 +114,7 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Environment :: Console',
         'Environment :: MacOS X',
+        'Framework :: Hypothesis',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Internet',
     ],
@@ -123,15 +124,16 @@ setup(
     license='MIT',
     packages=['pydantic'],
     package_data={'pydantic': ['py.typed']},
-    python_requires='>=3.6',
+    python_requires='>=3.6.1',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html
     install_requires=[
         'dataclasses>=0.6;python_version<"3.7"'
     ],
     extras_require={
         'email': ['email-validator>=1.0.3'],
-        'typing_extensions': ['typing-extensions>=3.7.2'],
+        'typing_extensions': ['typing-extensions>=3.7.4'],
         'dotenv': ['python-dotenv>=0.10.4'],
     },
     ext_modules=ext_modules,
+    entry_points={'hypothesis': ['_ = pydantic._hypothesis_plugin']},
 )

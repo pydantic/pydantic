@@ -1,0 +1,1 @@
+Support empty tuple type
