@@ -225,7 +225,7 @@ jobs:
       if: matrix.os == 'ubuntu'
       uses: docker/setup-qemu-action@v1
       with:
-        platforms: all
+        platforms: arm64
 
     - name: build ${{ matrix.platform || matrix.os }} binaries
       run: cibuildwheel --output-dir dist
