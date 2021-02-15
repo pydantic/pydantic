@@ -944,7 +944,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 # forward refs cause infinite recursion below
                 return type_
 
-            if origin is Annotated:
+            if Annotated and origin is Annotated:
                 return go(args[0])
             if origin is Union:
                 return Union[tuple(go(a) for a in args)]  # type: ignore

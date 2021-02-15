@@ -343,7 +343,7 @@ class ModelField(Representation):
         field_info_from_config = config.get_field_info(field_name)
 
         field_info = None
-        if get_origin(annotation) is Annotated:
+        if Annotated and get_origin(annotation) is Annotated:
             field_infos = [arg for arg in get_args(annotation)[1:] if isinstance(arg, FieldInfo)]
             if len(field_infos) > 1:
                 raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
@@ -497,7 +497,7 @@ class ModelField(Representation):
             if isinstance(self.type_, type) and isinstance(None, self.type_):
                 self.allow_none = True
             return
-        if origin is Annotated:
+        if Annotated and origin is Annotated:
             self.type_ = get_args(self.type_)[0]
             self._type_analysis()
             return
