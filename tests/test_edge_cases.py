@@ -1,5 +1,5 @@
-import sys
 import importlib.util
+import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
@@ -1780,12 +1780,14 @@ def test_resolve_annotations_module_missing(tmp_path):
     # see https://github.com/samuelcolvin/pydantic/issues/2363
     file_path = tmp_path / 'module_to_load.py'
     # language=Python
-    file_path.write_text("""
+    file_path.write_text(
+        """
 from pydantic import BaseModel
 class User(BaseModel):
     id: int
     name = 'Jane Doe'
-""")
+"""
+    )
 
     spec = importlib.util.spec_from_file_location('my_test_module', file_path)
     module = importlib.util.module_from_spec(spec)
