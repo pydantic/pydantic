@@ -449,7 +449,6 @@ def field_type_schema(
         f_schema = {'type': 'array', 'items': items_schema}
         if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
             f_schema['uniqueItems'] = True
-
     elif field.shape == SHAPE_MAPPING:
         f_schema = {'type': 'object'}
         key_field = cast(ModelField, field.key_field)
@@ -471,7 +470,7 @@ def field_type_schema(
         elif items_schema:
             # The dict values are not simply Any, so they need a schema
             f_schema['additionalProperties'] = items_schema
-    elif field.shape == SHAPE_TUPLE:
+    elif field.shape in {SHAPE_TUPLE, SHAPE_GENERIC}:
         sub_schema = []
         sub_fields = cast(List[ModelField], field.sub_fields)
         for sf in sub_fields:
@@ -487,10 +486,15 @@ def field_type_schema(
             nested_models.update(sf_nested_models)
             sub_schema.append(sf_schema)
         if len(sub_schema) == 1:
-            sub_schema = sub_schema[0]  # type: ignore
-        f_schema = {'type': 'array', 'items': sub_schema}
+            sub_single_schema = sub_schema[0]
+            if field.shape == SHAPE_GENERIC:
+                f_schema = sub_single_schema if 'type' in sub_single_schema else {'allOf': sub_single_schema}
+            else:
+                f_schema = {'type': 'array', 'items': sub_single_schema}
+        else:
+            f_schema = {'type': 'array', 'items': sub_schema}
     else:
-        assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
+        assert field.shape == SHAPE_SINGLETON, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,

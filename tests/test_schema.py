@@ -2265,3 +2265,108 @@ def test_schema_for_generic_field():
         },
         'required': ['data', 'data1'],
     }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_advanced_generic_schema():
+    T = TypeVar('T')
+    K = TypeVar('K')
+
+    class Gen(Generic[T]):
+        def __init__(self, data: Any):
+            self.data = data
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return v
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            the_type = field_schema.pop('type', None)
+            if not the_type:
+                the_type = field_schema.pop('allOf', 'string')
+            if isinstance(the_type, str):
+                the_type = {'type': the_type}
+            field_schema.update(title='Gen title', anyOf=[the_type, {'type': 'array', 'items': the_type}])
+
+    class GenTwoParams(Generic[T, K]):
+        def __init__(self, x: str, y: Any):
+            self.x = x
+            self.y = y
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return cls(*v)
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.update(examples='examples')
+
+    class CustomType(Enum):
+        A = 'a'
+        B = 'b'
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.update(title='CustomType title', type='string')
+
+    class Model(BaseModel):
+        data0: Gen
+        data1: Gen[CustomType] = Field(title='Data1 title', description='Data 1 description')
+        data2: GenTwoParams[CustomType, UUID4] = Field(title='Data2 title', description='Data 2')
+        # check Tuple because changes in code touch that type
+        data3: Tuple
+        data4: Tuple[CustomType]
+        data5: Tuple[CustomType, str]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'data0': {
+                'anyOf': [{'type': 'string'}, {'items': {'type': 'string'}, 'type': 'array'}],
+                'title': 'Gen title',
+            },
+            'data1': {
+                'title': 'Gen title',
+                'description': 'Data 1 description',
+                'anyOf': [
+                    {'$ref': '#/definitions/CustomType'},
+                    {'type': 'array', 'items': {'$ref': '#/definitions/CustomType'}},
+                ],
+            },
+            'data2': {
+                'title': 'Data2 title',
+                'description': 'Data 2',
+                'type': 'array',
+                'items': [{'$ref': '#/definitions/CustomType'}, {'type': 'string', 'format': 'uuid4'}],
+                'examples': 'examples',
+            },
+            'data3': {'title': 'Data3', 'type': 'array', 'items': {}},
+            'data4': {'title': 'Data4', 'type': 'array', 'items': {'$ref': '#/definitions/CustomType'}},
+            'data5': {
+                'title': 'Data5',
+                'type': 'array',
+                'items': [{'$ref': '#/definitions/CustomType'}, {'type': 'string'}],
+            },
+        },
+        'required': ['data0', 'data1', 'data2', 'data3', 'data4', 'data5'],
+        'definitions': {
+            'CustomType': {
+                'title': 'CustomType title',
+                'description': 'An enumeration.',
+                'enum': ['a', 'b'],
+                'type': 'string',
+            }
+        },
+    }
