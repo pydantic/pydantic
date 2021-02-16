@@ -71,6 +71,8 @@ It has the following arguments:
   JSON Schema
 * `max_length`: for string values, this adds a corresponding validation and an annotation of `maxLength` to the
   JSON Schema
+* `allow_mutation`: a boolean which defaults to `True`. When False, the field raises a `TypeError` if the field is 
+  assigned on an instance.  The model config must set `validate_assignment` to `True` for this check to be performed.
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
   annotation of `pattern` to the JSON Schema
 
@@ -105,6 +107,21 @@ to `Field()` with the raw schema attribute name:
 {!.tmp_examples/schema_unenforced_constraints.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+### typing.Annotated Fields
+
+Rather than assigning a `Field` value, it can be specified in the type hint with `typing.Annotated`:
+
+```py
+{!.tmp_examples/schema_annotated.py!}
+```
+_(This script is complete, it should run "as is")_
+
+`Field` can only be supplied once per field - an error will be raised if used in `Annotated` and as the assigned value.
+Defaults can be set outside `Annotated` as the assigned value or with `Field.default_factory` inside `Annotated` - the
+`Field.default` argument is not supported inside `Annotated`.
+
+For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 
 ## Modifying schema in custom fields
 
