@@ -2238,7 +2238,10 @@ def test_schema_for_generic_field():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'data': {'title': 'Data', 'type': 'string'},
+            'data': {
+                'allOf': [{'type': 'string'}],
+                'title': 'Data'
+            },
             'data1': {
                 'title': 'Data1',
             },
@@ -2249,7 +2252,7 @@ def test_schema_for_generic_field():
     class GenModelModified(GenModel, Generic[T]):
         @classmethod
         def __modify_schema__(cls, field_schema):
-            field_schema.pop('type', None)
+            field_schema.pop('allOf', None)
             field_schema.update(anyOf=[{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}])
 
     class ModelModified(BaseModel):
