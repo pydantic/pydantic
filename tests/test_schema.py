@@ -2238,10 +2238,7 @@ def test_schema_for_generic_field():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'data': {
-                'allOf': [{'type': 'string'}],
-                'title': 'Data'
-            },
+            'data': {'allOf': [{'type': 'string'}], 'title': 'Data'},
             'data1': {
                 'title': 'Data1',
             },
