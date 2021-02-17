@@ -83,6 +83,29 @@ else:
     NoArgAnyCallable = TypingCallable[[], Any]
 
 
+if sys.version_info < (3, 8):
+
+    def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
+        if Annotated and type(t).__name__ in AnnotatedTypeNames:
+            return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm in py3.6
+        return getattr(t, '__origin__', None)
+
+
+else:
+    from typing import get_origin as _typing_get_origin
+
+    def get_origin(tp: Type[Any]) -> Type[Any]:
+        """
+        We can't directly use `typing.get_origin` since we need a fallback to support
+        custom generic classes like `ConstrainedList`
+        It should be useless once https://github.com/cython/cython/issues/3537 is
+        solved and https://github.com/samuelcolvin/pydantic/pull/1753 is merged.
+        """
+        if Annotated and type(tp).__name__ in AnnotatedTypeNames:
+            return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm
+        return _typing_get_origin(tp) or getattr(tp, '__origin__', None)
+
+
 # Annotated[...] is implemented by returning an instance of one of these classes, depending on
 # python/typing_extensions version.
 AnnotatedTypeNames = {'AnnotatedMeta', '_AnnotatedAlias'}
@@ -122,27 +145,11 @@ elif sys.version_info < (3, 8):  # noqa: C901
             return res
         return getattr(t, '__args__', ())
 
-    def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
-        if Annotated and type(t).__name__ in AnnotatedTypeNames:
-            return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm in py3.6
-        return getattr(t, '__origin__', None)
-
 
 else:
-    from typing import get_args as typing_get_args, get_origin as typing_get_origin
+    from typing import get_args as _typing_get_args
 
-    def get_origin(tp: Type[Any]) -> Type[Any]:
-        """
-        We can't directly use `typing.get_origin` since we need a fallback to support
-        custom generic classes like `ConstrainedList`
-        It should be useless once https://github.com/cython/cython/issues/3537 is
-        solved and https://github.com/samuelcolvin/pydantic/pull/1753 is merged.
-        """
-        if Annotated and type(tp).__name__ in AnnotatedTypeNames:
-            return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm
-        return typing_get_origin(tp) or getattr(tp, '__origin__', None)
-
-    def generic_get_args(tp: Type[Any]) -> Tuple[Any, ...]:
+    def _generic_get_args(tp: Type[Any]) -> Tuple[Any, ...]:
         """
         In python 3.9, `typing.Dict`, `typing.List`, ...
         do have an empty `__args__` by default (instead of the generic ~T for example).
@@ -167,7 +174,7 @@ else:
         if Annotated and type(tp).__name__ in AnnotatedTypeNames:
             return tp.__args__ + tp.__metadata__
         # the fallback is needed for the same reasons as `get_origin` (see above)
-        return typing_get_args(tp) or getattr(tp, '__args__', ()) or generic_get_args(tp)
+        return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
 
 
 if TYPE_CHECKING:
