@@ -5,10 +5,10 @@ from itertools import product
 from typing import Dict, List, Optional, Tuple
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, errors, validator
 from pydantic.class_validators import make_generic_validator, root_validator
-from pydantic.typing import Literal
 
 
 def test_simple():
@@ -1142,7 +1142,6 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1161,7 +1160,6 @@ def test_literal_validator():
     ]
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_validator_str_enum():
     class Bar(str, Enum):
         FIZ = 'fiz'
@@ -1183,7 +1181,6 @@ def test_literal_validator_str_enum():
     assert my_foo.fizfuz is Bar.FUZ
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_nested_literal_validator():
     L1 = Literal['foo']
     L2 = Literal['bar']

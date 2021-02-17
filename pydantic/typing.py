@@ -88,7 +88,7 @@ else:
 AnnotatedTypeNames = {'AnnotatedMeta', '_AnnotatedAlias'}
 
 
-if sys.version_info < (3, 7):
+if sys.version_info < (3, 7):  # noqa: C901 (ignore complexity)
 
     def get_args(t: Type[Any]) -> Tuple[Any, ...]:
         """Simplest get_args compatibility layer possible.

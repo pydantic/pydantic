@@ -4,11 +4,11 @@ from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import UUID1, BaseConfig, BaseModel, PydanticTypeError, ValidationError, conint, errors, validator
 from pydantic.error_wrappers import flatten_errors, get_exc_type
 from pydantic.errors import StrRegexError
-from pydantic.typing import Literal
 
 
 def test_pydantic_error():
@@ -35,7 +35,6 @@ def test_pydantic_error_pickable():
     assert error.pattern == 'pika'
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_interval_validation_error():
     class Foo(BaseModel):
         model_type: Literal['foo']

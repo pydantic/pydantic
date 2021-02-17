@@ -61,7 +61,7 @@ from .utils import (
 if TYPE_CHECKING:
     from inspect import Signature
 
-    from typing_extensions import Protocol
+    import typing_extensions
 
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
@@ -79,7 +79,7 @@ if TYPE_CHECKING:
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
 
-    class SchemaExtraCallable(Protocol):
+    class SchemaExtraCallable(typing_extensions.Protocol):
         @overload
         def __call__(self, schema: Dict[str, Any]) -> None:
             pass

@@ -2,7 +2,6 @@ import sys
 from typing import Optional, Tuple
 
 import pytest
-from typing_extensions import Literal
 
 from pydantic import BaseModel, ConfigError, ValidationError
 
