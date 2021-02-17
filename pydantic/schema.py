@@ -26,6 +26,8 @@ from typing import (
 )
 from uuid import UUID
 
+from typing_extensions import Annotated, Literal
+
 from .fields import (
     SHAPE_FROZENSET,
     SHAPE_GENERIC,
@@ -61,9 +63,7 @@ from .types import (
 )
 from .typing import (
     NONE_TYPES,
-    Annotated,
     ForwardRef,
-    Literal,
     get_args,
     get_origin,
     is_callable_type,
@@ -944,7 +944,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 # forward refs cause infinite recursion below
                 return type_
 
-            if Annotated and origin is Annotated:
+            if origin is Annotated:
                 return go(args[0])
             if origin is Union:
                 return Union[tuple(go(a) for a in args)]  # type: ignore

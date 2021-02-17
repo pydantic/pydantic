@@ -10,11 +10,6 @@ try:
 except ImportError:
     mypy_api = None
 
-try:
-    import typing_extensions
-except ImportError:
-    typing_extensions = None
-
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
 
@@ -33,7 +28,7 @@ cases = [
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
 
-@pytest.mark.skipif(not (typing_extensions and mypy_api), reason='typing_extensions or mypy are not installed')
+@pytest.mark.skipif(not mypy_api, reason='mypy is not installed')
 @pytest.mark.parametrize('config_filename,python_filename,output_filename', cases)
 def test_mypy_results(config_filename, python_filename, output_filename):
     full_config_filename = f'tests/mypy/configs/{config_filename}'

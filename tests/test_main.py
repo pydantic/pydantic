@@ -703,7 +703,6 @@ def test_enum_values():
     assert m.foo == 'foo'
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
 

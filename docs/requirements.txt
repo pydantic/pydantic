@@ -7,6 +7,5 @@ mkdocs-exclude==1.0.2
 mkdocs-material==6.2.8
 markdown-include==0.6.0
 sqlalchemy
-typing-extensions==3.7.4.3
 orjson
 ujson
