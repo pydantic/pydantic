@@ -2288,11 +2288,7 @@ def test_advanced_generic_schema():
 
         @classmethod
         def __modify_schema__(cls, field_schema):
-            the_type = field_schema.pop('type', None)
-            if not the_type:
-                the_type = field_schema.pop('allOf', 'string')
-            if isinstance(the_type, str):
-                the_type = {'type': the_type}
+            the_type = field_schema.pop('allOf', [{'type': 'string'}])[0]
             field_schema.update(title='Gen title', anyOf=[the_type, {'type': 'array', 'items': the_type}])
 
     class GenTwoParams(Generic[T, K]):
@@ -2346,10 +2342,14 @@ def test_advanced_generic_schema():
                 ],
             },
             'data2': {
+                'allOf': [
+                    {
+                        'items': [{'$ref': '#/definitions/CustomType'}, {'format': 'uuid4', 'type': 'string'}],
+                        'type': 'array',
+                    }
+                ],
                 'title': 'Data2 title',
                 'description': 'Data 2',
-                'type': 'array',
-                'items': [{'$ref': '#/definitions/CustomType'}, {'type': 'string', 'format': 'uuid4'}],
                 'examples': 'examples',
             },
             'data3': {'title': 'Data3', 'type': 'array', 'items': {}},
