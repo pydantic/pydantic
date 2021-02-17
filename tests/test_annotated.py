@@ -7,8 +7,9 @@ from pydantic import BaseModel, Field
 from pydantic.fields import Undefined
 from pydantic.typing import Annotated
 
+pytestmark = pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
+
 @pytest.mark.parametrize(
     ['hint_fn', 'value'],
     [
@@ -55,7 +56,6 @@ def test_annotated(hint_fn, value):
         assert get_type_hints(M)['x'] == hint
 
 
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 @pytest.mark.parametrize(
     ['hint_fn', 'value', 'subclass_ctx'],
     [
@@ -93,7 +93,6 @@ def test_annotated_model_exceptions(hint_fn, value, subclass_ctx):
             x: hint = value
 
 
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 @pytest.mark.parametrize(
     ['hint_fn', 'value', 'empty_init_ctx'],
     [
@@ -121,7 +120,6 @@ def test_annotated_instance_exceptions(hint_fn, value, empty_init_ctx):
         assert M().x == 5
 
 
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 def test_field_reuse():
     field = Field(description='Long description')
 

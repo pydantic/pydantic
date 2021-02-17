@@ -9,15 +9,14 @@ from enum import Enum
 from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
 
 import pytest
+from typing_extensions import Annotated, Literal
 
 from pydantic import VERSION, BaseModel, ConstrainedList, conlist
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import (
-    Annotated,
     ForwardRef,
-    Literal,
     all_literal_values,
     display_as_type,
     get_args,
@@ -366,7 +365,6 @@ def test_class_attribute():
     assert f.attr == 'not foo'
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_all_literal_values():
     L1 = Literal['1']
     assert all_literal_values(L1) == ('1',)

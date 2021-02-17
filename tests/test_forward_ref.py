@@ -4,7 +4,6 @@ from typing import Optional, Tuple
 import pytest
 
 from pydantic import BaseModel, ConfigError, ValidationError
-from pydantic.typing import Literal
 
 skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
@@ -482,7 +481,6 @@ def test_forward_ref_with_create_model(create_module):
 
 
 @skip_pre_37
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_resolve_forward_ref_dataclass(create_module):
     module = create_module(
         # language=Python

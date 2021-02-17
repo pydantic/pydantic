@@ -22,6 +22,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Annotated
+
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
@@ -29,7 +31,6 @@ from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
     NONE_TYPES,
-    Annotated,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
