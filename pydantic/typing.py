@@ -86,7 +86,7 @@ else:
 if sys.version_info < (3, 8):
 
     def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
-        if Annotated and type(t).__name__ in AnnotatedTypeNames:
+        if type(t).__name__ in AnnotatedTypeNames:
             return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm in py3.6
         return getattr(t, '__origin__', None)
 
@@ -101,7 +101,7 @@ else:
         It should be useless once https://github.com/cython/cython/issues/3537 is
         solved and https://github.com/samuelcolvin/pydantic/pull/1753 is merged.
         """
-        if Annotated and type(tp).__name__ in AnnotatedTypeNames:
+        if type(tp).__name__ in AnnotatedTypeNames:
             return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm
         return _typing_get_origin(tp) or getattr(tp, '__origin__', None)
 
@@ -122,7 +122,7 @@ if sys.version_info < (3, 7):  # noqa: C901 (ignore complexity)
         python 3.6).
 
         """
-        if Annotated and type(t).__name__ in AnnotatedTypeNames:
+        if type(t).__name__ in AnnotatedTypeNames:
             return t.__args__ + t.__metadata__
         return getattr(t, '__args__', ())
 
@@ -136,7 +136,7 @@ elif sys.version_info < (3, 8):  # noqa: C901
         Mostly compatible with the python 3.8 `typing` module version
         and able to handle almost all use cases.
         """
-        if Annotated and type(t).__name__ in AnnotatedTypeNames:
+        if type(t).__name__ in AnnotatedTypeNames:
             return t.__args__ + t.__metadata__
         if isinstance(t, _GenericAlias):
             res = t.__args__
@@ -171,7 +171,7 @@ else:
             get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
             get_args(Callable[[], T][int]) == ([], int)
         """
-        if Annotated and type(tp).__name__ in AnnotatedTypeNames:
+        if type(tp).__name__ in AnnotatedTypeNames:
             return tp.__args__ + tp.__metadata__
         # the fallback is needed for the same reasons as `get_origin` (see above)
         return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
