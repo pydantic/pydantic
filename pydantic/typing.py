@@ -83,6 +83,11 @@ else:
     NoArgAnyCallable = TypingCallable[[], Any]
 
 
+# Annotated[...] is implemented by returning an instance of one of these classes, depending on
+# python/typing_extensions version.
+AnnotatedTypeNames = {'AnnotatedMeta', '_AnnotatedAlias'}
+
+
 if sys.version_info < (3, 8):
 
     def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
@@ -104,11 +109,6 @@ else:
         if type(tp).__name__ in AnnotatedTypeNames:
             return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm
         return _typing_get_origin(tp) or getattr(tp, '__origin__', None)
-
-
-# Annotated[...] is implemented by returning an instance of one of these classes, depending on
-# python/typing_extensions version.
-AnnotatedTypeNames = {'AnnotatedMeta', '_AnnotatedAlias'}
 
 
 if sys.version_info < (3, 7):  # noqa: C901 (ignore complexity)
