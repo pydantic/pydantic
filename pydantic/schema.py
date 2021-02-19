@@ -27,6 +27,8 @@ from typing import (
 )
 from uuid import UUID
 
+from typing_extensions import Annotated, Literal
+
 from .fields import (
     SHAPE_FROZENSET,
     SHAPE_GENERIC,
@@ -62,9 +64,7 @@ from .types import (
 )
 from .typing import (
     NONE_TYPES,
-    Annotated,
     ForwardRef,
-    Literal,
     all_literal_values,
     get_args,
     get_origin,

@@ -1,3 +1,4 @@
+import importlib.util
 import sys
 from collections.abc import Hashable
 from decimal import Decimal
@@ -1773,3 +1774,22 @@ return Model
     assert model.a == 10.2
     assert model.b == 10
     return model.get_double_a() == 20.2
+
+
+def test_resolve_annotations_module_missing(tmp_path):
+    # see https://github.com/samuelcolvin/pydantic/issues/2363
+    file_path = tmp_path / 'module_to_load.py'
+    # language=Python
+    file_path.write_text(
+        """
+from pydantic import BaseModel
+class User(BaseModel):
+    id: int
+    name = 'Jane Doe'
+"""
+    )
+
+    spec = importlib.util.spec_from_file_location('my_test_module', file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.User(id=12).dict() == {'id': 12, 'name': 'Jane Doe'}
