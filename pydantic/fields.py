@@ -280,12 +280,27 @@ SHAPE_NAME_LOOKUP = {
 MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
 
 
+class DiscriminatedUnionConfig(Representation):
+    __slots__ = (
+        'discriminator_key',
+        'sub_fields_mapping',
+        'union_types',
+        'has_forward_refs',
+    )
+
+    def __init__(self, *, discriminator_key: str, union_types: Sequence[Type[Any]]) -> None:
+        self.discriminator_key: str = discriminator_key
+        self.sub_fields_mapping: Dict[str, 'ModelField'] = {}
+        self.union_types: Sequence[Any] = union_types
+        self.has_forward_refs: bool = False
+
+
 class ModelField(Representation):
     __slots__ = (
         'type_',
         'outer_type_',
         'sub_fields',
-        'discriminator_config',
+        'discriminated_union_config',
         'key_field',
         'validators',
         'pre_validators',
@@ -334,7 +349,7 @@ class ModelField(Representation):
         self.allow_none: bool = False
         self.validate_always: bool = False
         self.sub_fields: Optional[List[ModelField]] = None
-        self.discriminator_config: Optional[Tuple[str, Dict[str, ModelField]]] = None
+        self.discriminated_union_config: Optional[DiscriminatedUnionConfig] = None
         self.key_field: Optional[ModelField] = None
         self.validators: 'ValidatorsList' = []
         self.pre_validators: Optional['ValidatorsList'] = None
@@ -546,38 +561,15 @@ class ModelField(Representation):
                 self.outer_type_ = self.type_
                 # re-run to correctly interpret the new self.type_
                 self._type_analysis()
+            elif 'discriminator' in self.field_info.extra:
+                self.discriminated_union_config = DiscriminatedUnionConfig(
+                    discriminator_key=self.field_info.extra['discriminator'],
+                    union_types=types_,
+                )
+
+                self.prepare_discriminated_union_sub_fields()
             else:
-                self.sub_fields = []
-
-                # Discriminated Union
-                if 'discriminator' in self.field_info.extra:
-                    discriminator_key = self.field_info.extra['discriminator']
-                    discriminator_mapping: Dict[str, 'ModelField'] = {}
-                    self.sub_fields = []
-
-                    for t in types_:
-                        sub_field = self._create_sub_type(t, f'{self.name}_{display_as_type(t)}')
-
-                        try:
-                            t_discriminator_type = t.__fields__[discriminator_key].outer_type_
-                        except KeyError:
-                            raise KeyError(
-                                f'Model {t.__name__!r} needs a discriminator field for key {discriminator_key!r}'
-                            )
-
-                        if not is_literal_type(t_discriminator_type):
-                            raise TypeError(
-                                f'Field {discriminator_key!r} of model {t.__name__!r} needs to be a `Literal`'
-                            )
-
-                        for discriminator_value in all_literal_values(t_discriminator_type):
-                            discriminator_mapping[discriminator_value] = sub_field
-
-                        self.sub_fields.append(sub_field)
-
-                    self.discriminator_config = (discriminator_key, discriminator_mapping)
-                else:
-                    self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
+                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
 
             return
 
@@ -661,6 +653,46 @@ class ModelField(Representation):
 
         # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
         self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
+
+    def prepare_discriminated_union_sub_fields(self) -> None:
+        """
+        Prepare the mapping <discriminator key> -> <ModelField> and update `sub_fields`
+        Note that this process can be aborted if a `ForwardRef` is encountered
+        """
+        assert self.discriminated_union_config is not None
+
+        discriminator_key = self.discriminated_union_config.discriminator_key
+        sub_fields: List['ModelField'] = []
+        sub_fields_mapping: Dict[str, 'ModelField'] = {}
+
+        for t in self.discriminated_union_config.union_types:
+            sub_field = self._create_sub_type(t, f'{self.name}_{display_as_type(t)}')
+
+            if t.__class__ is ForwardRef:
+                # Stopping everything...will need to call `update_forward_refs`
+                self.discriminated_union_config.has_forward_refs = True
+                self.sub_fields = [
+                    self._create_sub_type(t, f'{self.name}_{display_as_type(t)}')
+                    for t in self.discriminated_union_config.union_types
+                ]
+                return
+
+            try:
+                t_discriminator_type = t.__fields__[discriminator_key].outer_type_
+            except KeyError:
+                raise KeyError(f'Model {t.__name__!r} needs a discriminator field for key {discriminator_key!r}')
+
+            if not is_literal_type(t_discriminator_type):
+                raise TypeError(f'Field {discriminator_key!r} of model {t.__name__!r} needs to be a `Literal`')
+
+            for discriminator_value in all_literal_values(t_discriminator_type):
+                sub_fields_mapping[discriminator_value] = sub_field
+
+            sub_fields.append(sub_field)
+
+        self.sub_fields = sub_fields
+        self.discriminated_union_config.has_forward_refs = False
+        self.discriminated_union_config.sub_fields_mapping = sub_fields_mapping
 
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
         if for_keys:
@@ -930,8 +962,15 @@ class ModelField(Representation):
         if self.sub_fields:
             errors = []
 
-            if get_origin(self.type_) is Union and self.discriminator_config is not None:
-                discriminator_key, discriminator_mapping = self.discriminator_config
+            if get_origin(self.type_) is Union and self.discriminated_union_config is not None:
+                if self.discriminated_union_config.has_forward_refs:
+                    assert cls is not None
+                    raise ConfigError(
+                        f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
+                        f'you might need to call {cls.__name__}.update_forward_refs().'
+                    )
+
+                discriminator_key = self.discriminated_union_config.discriminator_key
 
                 try:
                     discriminator_value = v[discriminator_key]
@@ -939,7 +978,7 @@ class ModelField(Representation):
                     return v, ErrorWrapper(ValueError(f'Discriminator {discriminator_key!r} is missing in value'), loc)
 
                 try:
-                    sub_field = discriminator_mapping[discriminator_value]
+                    sub_field = self.discriminated_union_config.sub_fields_mapping[discriminator_value]
                 except KeyError:
                     msg_err = f'No match for discriminator {discriminator_key!r} and value {discriminator_value!r}'
                     return v, ErrorWrapper(ValueError(msg_err), loc)

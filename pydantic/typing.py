@@ -376,9 +376,17 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
     if field.type_.__class__ == ForwardRef:
         field.type_ = evaluate_forwardref(field.type_, globalns, localns or None)
         field.prepare()
+
     if field.sub_fields:
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
+
+    if field.discriminated_union_config is not None and field.discriminated_union_config.has_forward_refs:
+        field.discriminated_union_config.union_types = [
+            evaluate_forwardref(type_, globalns, localns or None)
+            for type_ in field.discriminated_union_config.union_types
+        ]
+        field.prepare_discriminated_union_sub_fields()
 
 
 def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
