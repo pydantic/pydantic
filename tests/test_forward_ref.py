@@ -531,7 +531,7 @@ def test_discriminated_union_forward_ref(create_module):
         from pydantic import BaseModel, Field
 
         class Pet(BaseModel):
-            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')
+            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')  # noqa: F821
 
         class Cat(BaseModel):
             type: Literal['cat']
