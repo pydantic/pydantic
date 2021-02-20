@@ -2219,6 +2219,70 @@ class MyModel(BaseModel):
     }
 
 
+def test_discriminated_union():
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+
+    class Model(BaseModel):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'pet': {
+                'title': 'Pet',
+                'anyOf': [
+                    {'$ref': '#/definitions/Cat'},
+                    {'$ref': '#/definitions/Dog'},
+                    {'$ref': '#/definitions/Lizard'},
+                ],
+                'discriminator': {
+                    'propertyName': 'pet_type',
+                    'mapping': {
+                        'cat': '#/definitions/Cat',
+                        'dog': '#/definitions/Dog',
+                        'lizard': '#/definitions/Lizard',
+                        'reptile': '#/definitions/Lizard',
+                    },
+                },
+            }
+        },
+        'required': ['pet'],
+        'definitions': {
+            'Cat': {
+                'title': 'Cat',
+                'type': 'object',
+                'properties': {'pet_type': {'const': 'cat', 'title': 'Pet Type', 'type': 'string'}},
+                'required': ['pet_type'],
+            },
+            'Dog': {
+                'title': 'Dog',
+                'type': 'object',
+                'properties': {'pet_type': {'const': 'dog', 'title': 'Pet Type', 'type': 'string'}},
+                'required': ['pet_type'],
+            },
+            'Lizard': {
+                'title': 'Lizard',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {
+                        'anyOf': [{'const': 'reptile', 'type': 'string'}, {'const': 'lizard', 'type': 'string'}],
+                        'title': 'Pet Type',
+                    }
+                },
+                'required': ['pet_type'],
+            },
+        },
+    }
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
 )
