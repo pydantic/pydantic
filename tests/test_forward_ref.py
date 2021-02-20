@@ -519,3 +519,30 @@ def test_nested_forward_ref():
     NestedTuple.update_forward_refs()
     obj = NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
     assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
+
+
+def test_discriminated_union_forward_ref(create_module):
+    @create_module
+    def module():
+        from typing import Union
+
+        from typing_extensions import Literal
+
+        from pydantic import BaseModel, Field
+
+        class Pet(BaseModel):
+            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')
+
+        class Cat(BaseModel):
+            type: Literal['cat']
+
+        class Dog(BaseModel):
+            type: Literal['dog']
+
+    with pytest.raises(ConfigError, match='you might need to call Pet.update_forward_refs()'):
+        module.Pet.parse_obj({'type': 'pika'})
+
+    module.Pet.update_forward_refs()
+
+    with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
+        module.Pet.parse_obj({'type': 'pika'})
