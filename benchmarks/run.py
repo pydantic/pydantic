@@ -58,6 +58,12 @@ except Exception as e:
     print('WARNING: unable to import TestVoluptuous')
     TestVoluptuous = None
 
+try:
+    from test_schematics import TestSchematics
+except Exception as e:
+    print('WARNING: unable to import TestSchematics')
+    TestSchematics = None
+
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
 UNICODE = '\xa0\xad¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
@@ -65,7 +71,7 @@ ALL = PUNCTUATION * 5 + LETTERS * 20 + UNICODE
 random = random.SystemRandom()
 
 # in order of performance for csv
-other_tests = [TestCAttrs, TestValideer, TestMarshmallow, TestVoluptuous, TestTrafaret, TestDRF, TestCerberus]
+other_tests = [TestCAttrs, TestValideer, TestMarshmallow, TestVoluptuous, TestTrafaret, TestDRF, TestCerberus, TestSchematics]
 active_other_tests = [t for t in other_tests if t is not None]
 
 

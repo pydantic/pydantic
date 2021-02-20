@@ -11,3 +11,4 @@ attr
 cattrs
 cerberus
 voluptuous
+schematics
