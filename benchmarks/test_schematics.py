@@ -48,6 +48,3 @@ class TestSchematics:
             return True, obj.validate()
         except Exception as e:
             return False, e
-
-    def to_json(self, model):
-        return json.dumps(model.to_primitive())
