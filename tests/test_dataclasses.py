@@ -429,7 +429,7 @@ def test_default_factory_field():
     assert fields['id'].default is None
 
     assert fields['aliases'].required is False
-    assert fields['aliases'].default == {'John': 'Joey'}
+    assert fields['aliases'].default_factory() == {'John': 'Joey'}
 
 
 def test_default_factory_singleton_field():
@@ -456,6 +456,10 @@ def test_schema():
         name: str = 'John Doe'
         aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
         signup_ts: datetime = None
+        age: Optional[int] = dataclasses.field(
+            default=None, metadata=dict(title='The age of the user', description='do not lie!')
+        )
+        height: Optional[int] = pydantic.Field(None, title='The height in cm', ge=50, le=300)
 
     user = User(id=123)
     assert user.__pydantic_model__.schema() == {
@@ -466,11 +470,21 @@ def test_schema():
             'name': {'title': 'Name', 'default': 'John Doe', 'type': 'string'},
             'aliases': {
                 'title': 'Aliases',
-                'default': {'John': 'Joey'},
                 'type': 'object',
                 'additionalProperties': {'type': 'string'},
             },
             'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
+            'age': {
+                'title': 'The age of the user',
+                'description': 'do not lie!',
+                'type': 'integer',
+            },
+            'height': {
+                'title': 'The height in cm',
+                'minimum': 50,
+                'maximum': 300,
+                'type': 'integer',
+            },
         },
         'required': ['id'],
     }

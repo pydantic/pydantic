@@ -3,14 +3,14 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, 
 from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
-from .fields import Required
+from .fields import Field, FieldInfo, Required, Undefined
 from .main import create_model, validate_model
 from .typing import resolve_annotations
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
     from .main import BaseConfig, BaseModel  # noqa: F401
-    from .typing import CallableGenerator
+    from .typing import CallableGenerator, NoArgAnyCallable
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
 
@@ -103,7 +103,11 @@ def _process_class(
     def _pydantic_post_init(self: 'Dataclass', *initvars: Any) -> None:
         if post_init_original is not None:
             post_init_original(self, *initvars)
-        d, _, validation_error = validate_model(self.__pydantic_model__, self.__dict__, cls=self.__class__)
+
+        # We need to remove `FieldInfo` values since they are not valid as input
+        # It's ok since they are obviously the default values
+        input_data = {k: v for k, v in self.__dict__.items() if not isinstance(v, FieldInfo)}
+        d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
         if validation_error:
             raise validation_error
         object.__setattr__(self, '__dict__', d)
@@ -144,22 +148,30 @@ def _process_class(
     )
     cls.__processed__ = ClassAttribute('__processed__', True)
 
-    fields: Dict[str, Any] = {}
+    field_definitions: Dict[str, Any] = {}
     for field in dataclasses.fields(cls):
+        default: Any = Undefined
+        default_factory: Optional['NoArgAnyCallable'] = None
+        field_info: FieldInfo
 
-        if field.default != dataclasses.MISSING:
-            field_value = field.default
+        if field.default is not dataclasses.MISSING:
+            default = field.default
         # mypy issue 7020 and 708
-        elif field.default_factory != dataclasses.MISSING:  # type: ignore
-            field_value = field.default_factory()  # type: ignore
+        elif field.default_factory is not dataclasses.MISSING:  # type: ignore
+            default_factory = field.default_factory  # type: ignore
         else:
-            field_value = Required
+            default = Required
 
-        fields[field.name] = (field.type, field_value)
+        if isinstance(default, FieldInfo):
+            field_info = default
+        else:
+            field_info = Field(default=default, default_factory=default_factory, **field.metadata)
+
+        field_definitions[field.name] = (field.type, field_info)
 
     validators = gather_all_validators(cls)
     cls.__pydantic_model__ = create_model(
-        cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **fields
+        cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **field_definitions
     )
 
     cls.__initialised__ = False
