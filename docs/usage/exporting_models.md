@@ -174,3 +174,30 @@ member of a list or tuple, the dictionary key `'__all__'` can be used as follows
 ```
 
 The same holds for the `json` and `copy` methods.
+
+### Model and field level include and exclude
+
+In addition to the explicit arguments `exclude` and `include` passed to `dict`, `json` and `copy` methods, we can also pass the `include`/`exclude` arguments directly to the `Field` constructor or the equivilant `field` entry in the models `Config` class:
+
+```py
+{!.tmp_examples/exporting_models_exclude3.py!}
+```
+
+In the case where multiple strategies are used, `exclude`/`include` fields are merged according to the following rules:
+
+* First, model config level settings (via `"fields"` entry) are merged per field with the field constructor settings (i.e. `Field(..., exclude=...)`), with the field constructor taking priority.
+* The resulting settings are merged per class with the excplicit settings on `dict`, `json`, `copy` calls with the exclicit settings taking priority.
+
+Note that while merging settings, `exclude` entries are merged by computing the "union" of keys, while `include` entries are merged by computing the "intersection" of keys.
+
+The resulting merged exlude settings:
+
+```py
+{!.tmp_examples/exporting_models_exclude4.py!}
+```
+
+are the same as using merged include settings as follows:
+
+```py
+{!.tmp_examples/exporting_models_exclude5.py!}
+```
