@@ -852,9 +852,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_none: bool = False,
     ) -> 'TupleGenerator':
 
-        # merge field set excludes with explicit exclude parameter with explicit overriding field set options.
-        exclude = ValueItems.merge(self.__exclude_fields__, exclude)
-        include = ValueItems.merge(self.__include_fields__, include, intersect=True)
+        # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
+        # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
+        if exclude is not None or self.__exclude_fields__ is not None:
+            exclude = ValueItems.merge(self.__exclude_fields__, exclude)
+
+        if include is not None or self.__include_fields__ is not None:
+            include = ValueItems.merge(self.__include_fields__, include, intersect=True)
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
         if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
@@ -862,8 +866,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             yield from self.__dict__.items()
             return
 
-        value_exclude = ValueItems(self, exclude) if exclude else None
-        value_include = ValueItems(self, include) if include else None
+        value_exclude = ValueItems(self, exclude) if exclude is not None else None
+        value_include = ValueItems(self, include) if include is not None else None
 
         for field_key, v in self.__dict__.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
