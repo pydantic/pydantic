@@ -345,6 +345,14 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
+            '__exclude_fields__': {
+                name: field.field_info.exclude for name, field in fields.items() if field.field_info.exclude is not None
+            }
+            or None,
+            '__include_fields__': {
+                name: field.field_info.include for name, field in fields.items() if field.field_info.include is not None
+            }
+            or None,
             '__validators__': vg.validators,
             '__pre_root_validators__': unique_list(pre_root_validators + pre_rv_new),
             '__post_root_validators__': unique_list(post_root_validators + post_rv_new),
@@ -371,6 +379,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
+        __include_fields__: Optional[Mapping[str, Any]] = None
+        __exclude_fields__: Optional[Mapping[str, Any]] = None
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
         __post_root_validators__: List[Tuple[bool, AnyCallable]]
@@ -843,14 +853,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     ) -> 'TupleGenerator':
 
         # merge field set excludes with explicit exclude parameter with explicit overriding field set options.
-        field_exclude = {
-            k: v.field_info.exclude for k, v in self.__fields__.items() if v.field_info.exclude is not None
-        } or None
-        exclude = ValueItems.merge(field_exclude, exclude)
-        field_include = {
-            k: v.field_info.include for k, v in self.__fields__.items() if v.field_info.include is not None
-        } or None
-        include = ValueItems.merge(field_include, include, intersect=True)
+        exclude = ValueItems.merge(self.__exclude_fields__, exclude)
+        include = ValueItems.merge(self.__include_fields__, include, intersect=True)
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
         if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
@@ -890,8 +894,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def _calculate_keys(
         self,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+        include: Optional['MappingIntStrAny'],
+        exclude: Optional['MappingIntStrAny'],
         exclude_unset: bool,
         update: Optional['DictStrAny'] = None,
     ) -> Optional[AbstractSet[str]]:
@@ -905,19 +909,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             keys = self.__dict__.keys()
 
         if include is not None:
-            if isinstance(include, Mapping):
-                keys &= include.keys()
-            else:
-                keys &= include
+            keys &= include.keys()
 
         if update:
             keys -= update.keys()
 
         if exclude:
-            if isinstance(exclude, Mapping):
-                keys -= {k for k, v in exclude.items() if v is ...}
-            else:
-                keys -= exclude
+            keys -= {k for k, v in exclude.items() if v is ...}
 
         return keys
 

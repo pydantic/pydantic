@@ -21,6 +21,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 from .typing import GenericAlias, NoneType, display_as_type
@@ -432,22 +433,6 @@ class ValueItems(Representation):
 
         self._items = items
 
-    @classmethod
-    def _coerce_items(cls, items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> 'MappingIntStrAny':
-        if isinstance(items, Mapping):
-            pass
-        elif isinstance(items, AbstractSet):
-            items = dict.fromkeys(items, ...)
-        else:
-            raise TypeError(f'Unexpected type of exclude value {items.__class__}')
-        return items
-
-    @classmethod
-    def _coerce_value(cls, value: Any) -> Any:
-        if value is None or value is ...:
-            return value
-        return cls._coerce_items(value)
-
     def is_excluded(self, item: Any) -> bool:
         """
         Check if item is fully excluded
@@ -501,9 +486,8 @@ class ValueItems(Representation):
                     'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
                     'expected integer keys or keyword "__all__"'
                 )
-            if v is not None:
-                normalized_i = v_length + i if i < 0 else i
-                normalized_items[normalized_i] = self.merge(v, normalized_items.get(normalized_i))
+            normalized_i = v_length + i if i < 0 else i
+            normalized_items[normalized_i] = self.merge(v, normalized_items.get(normalized_i))
 
         if not all_items:
             return normalized_items
@@ -516,6 +500,30 @@ class ValueItems(Representation):
             if normalized_item is not ...:
                 normalized_items[i] = self.merge(all_items, normalized_item)
         return normalized_items
+
+    @overload
+    @classmethod
+    def merge(
+        cls, base: Union['AbstractSetIntStr', 'MappingIntStrAny'], override: Optional[Any], intersect: bool = False
+    ) -> 'MappingIntStrAny':
+        ...
+
+    @overload
+    @classmethod
+    def merge(
+        cls, base: Optional[Any], override: Union['AbstractSetIntStr', 'MappingIntStrAny'], intersect: bool = False
+    ) -> 'MappingIntStrAny':
+        ...
+
+    @overload
+    @classmethod
+    def merge(cls, base: None, override: None, intersect: bool = False) -> None:
+        ...
+
+    @overload
+    @classmethod
+    def merge(cls, base: Optional[Any], override: Optional[Any], intersect: bool = False) -> Optional[Any]:
+        ...
 
     @classmethod
     def merge(cls, base: Any, override: Any, intersect: bool = False) -> Any:
@@ -554,6 +562,22 @@ class ValueItems(Representation):
                 merged[k] = merged_item
 
         return merged
+
+    @staticmethod
+    def _coerce_items(items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> 'MappingIntStrAny':
+        if isinstance(items, Mapping):
+            pass
+        elif isinstance(items, AbstractSet):
+            items = dict.fromkeys(items, ...)
+        else:
+            raise TypeError(f'Unexpected type of exclude value {items.__class__}')
+        return items
+
+    @classmethod
+    def _coerce_value(cls, value: Any) -> Any:
+        if value is None or value is ...:
+            return value
+        return cls._coerce_items(value)
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]

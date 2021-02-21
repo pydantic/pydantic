@@ -1610,6 +1610,35 @@ def test_model_export_inclusion():
     assert actual == expected, 'Unexpected model export result'
 
 
+def test_model_export_inclusion_inheritance():
+    class Sub(BaseModel):
+        s1: str = Field('v1', include=...)
+        s2: str = Field('v2', include=...)
+        s3: str = Field('v3', include=...)
+        s4: str = 'v4'
+
+    class Parent(BaseModel):
+        a: int
+        b: int
+        c: int
+        s: Sub = Field(Sub(), include={'s1', 's2'})  # overrides includes set in Sub model
+
+        class Config:
+            # b will be included since fields are set idependently
+            fields = {'b': {'include': ...}}
+
+    class Child(Parent):
+        class Config:
+            # b is still included even if it doesn't occur here since fields
+            # are still considered separately.
+            # s however, is merged, resulting in only s1 being included.
+            fields = {'a': {'include': ...}, 's': {'include': {'s1'}}}
+
+    actual = Child(a=0, b=1, c=2).dict()
+    expected = {'a': 0, 'b': 1, 's': {'s1': 'v1'}}
+    assert actual == expected, 'Unexpected model export result'
+
+
 def test_custom_init_subclass_params():
     class DerivedModel(BaseModel):
         def __init_subclass__(cls, something):
