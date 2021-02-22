@@ -1,4 +1,4 @@
-Behaviour of _pydantic_ can be controlled via the `Config` class on a model, model class kwargs, or a _pydantic_ dataclass.
+Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
 
 Options:
 
