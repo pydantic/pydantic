@@ -6,13 +6,12 @@ import pydantic
 from pydantic.networks import import_email_validator
 
 try:
-    from hypothesis import given, strategies as st
+    from hypothesis import HealthCheck, given, settings, strategies as st
 except ImportError:
+    from unittest import mock
 
-    def given(*args, **kwargs):
-        return lambda f: f
-
-    st = type('st', (), {'data': lambda: None})
+    given = settings = lambda *a, **kw: (lambda f: f)  # pass-through decorator
+    HealthCheck = st = mock.Mock()
 
     pytestmark = pytest.mark.skipif(True, reason='"hypothesis" not installed')
 
@@ -105,6 +104,7 @@ def gen_models():
 
 
 @pytest.mark.parametrize('model', gen_models())
+@settings(suppress_health_check={HealthCheck.too_slow})
 @given(data=st.data())
 def test_can_construct_models_with_all_fields(data, model):
     # The value of this test is to confirm that Hypothesis knows how to provide
