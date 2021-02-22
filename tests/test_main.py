@@ -1550,3 +1550,32 @@ def test_inherited_model_field_untouched():
 
     assert id(image_1) == id(item.images[0])
     assert id(image_2) == id(item.images[1])
+
+
+def test_class_kwargs_config():
+    class Base(BaseModel, extra='forbid', alias_generator=str.upper):
+        a: int
+
+    assert Base.__config__.extra is Extra.forbid
+    assert Base.__config__.alias_generator is str.upper
+    assert Base.__fields__['a'].alias == 'A'
+
+    class Model(Base, extra='allow'):
+        b: int
+
+    assert Model.__config__.extra is Extra.allow  # overwritten as intended
+    assert Model.__config__.alias_generator is str.upper  # inherited as intended
+    assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
+
+
+def test_class_kwargs_config_and_attr_conflict():
+
+    with pytest.raises(
+        TypeError, match='Specifying config in two places is ambiguous, use either Config attribute or class kwargs'
+    ):
+
+        class Model(BaseModel, extra='allow'):
+            b: int
+
+            class Config:
+                extra = 'forbid'
