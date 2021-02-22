@@ -520,7 +520,6 @@ if TYPE_CHECKING:
     # TODO: add `str` and support it thanks to the plugin
     # PyObject = Union[str, Callable[..., Any]]
     PyObject = Callable[..., Any]
-
 else:
 
     class PyObject:
@@ -532,7 +531,7 @@ else:
 
         @classmethod
         def validate(cls, value: Any) -> Any:
-            if isinstance(value, Callable):
+            if isinstance(value, Callable):  # type: ignore
                 return value
 
             try:
@@ -724,108 +723,105 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-if TYPE_CHECKING:  # noqa: C901 (ignore complexity)
-    SecretStr = str
-    SecretBytes = bytes
-else:
 
-    class SecretStr:
-        min_length: OptionalInt = None
-        max_length: OptionalInt = None
+class SecretStr:
+    min_length: OptionalInt = None
+    max_length: OptionalInt = None
 
-        @classmethod
-        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-            update_not_none(
-                field_schema,
-                type='string',
-                writeOnly=True,
-                format='password',
-                minLength=cls.min_length,
-                maxLength=cls.max_length,
-            )
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema,
+            type='string',
+            writeOnly=True,
+            format='password',
+            minLength=cls.min_length,
+            maxLength=cls.max_length,
+        )
 
-        @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield cls.validate
-            yield constr_length_validator
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+        yield constr_length_validator
 
-        @classmethod
-        def validate(cls, value: Any) -> 'SecretStr':
-            if isinstance(value, cls):
-                return value
-            value = str_validator(value)
-            return cls(value)
+    @classmethod
+    def validate(cls, value: Any) -> 'SecretStr':
+        if isinstance(value, cls):
+            return value
+        value = str_validator(value)
+        return cls(value)
 
-        def __init__(self, value: str):
-            self._secret_value = value
+    def __init__(self, value: str):
+        self._secret_value = value
 
-        def __repr__(self) -> str:
-            return f"SecretStr('{self}')"
+    def __repr__(self) -> str:
+        return f"SecretStr('{self}')"
 
-        def __str__(self) -> str:
-            return '**********' if self._secret_value else ''
+    def __str__(self) -> str:
+        return '**********' if self._secret_value else ''
 
-        def __eq__(self, other: Any) -> bool:
-            return isinstance(other, SecretStr) and self.get_secret_value() == other.get_secret_value()
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, SecretStr) and self.get_secret_value() == other.get_secret_value()
 
-        def __len__(self) -> int:
-            return len(self._secret_value)
+    def __len__(self) -> int:
+        return len(self._secret_value)
 
-        def display(self) -> str:
-            warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)
-            return str(self)
+    def display(self) -> str:
+        warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)
+        return str(self)
 
-        def get_secret_value(self) -> str:
-            return self._secret_value
+    def get_secret_value(self) -> str:
+        return self._secret_value
 
-    class SecretBytes:
-        min_length: OptionalInt = None
-        max_length: OptionalInt = None
 
-        @classmethod
-        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-            update_not_none(
-                field_schema,
-                type='string',
-                writeOnly=True,
-                format='password',
-                minLength=cls.min_length,
-                maxLength=cls.max_length,
-            )
+class SecretBytes:
+    min_length: OptionalInt = None
+    max_length: OptionalInt = None
 
-        @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield cls.validate
-            yield constr_length_validator
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema,
+            type='string',
+            writeOnly=True,
+            format='password',
+            minLength=cls.min_length,
+            maxLength=cls.max_length,
+        )
 
-        @classmethod
-        def validate(cls, value: Any) -> 'SecretBytes':
-            if isinstance(value, cls):
-                return value
-            value = bytes_validator(value)
-            return cls(value)
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+        yield constr_length_validator
 
-        def __init__(self, value: bytes):
-            self._secret_value = value
+    @classmethod
+    def validate(cls, value: Any) -> 'SecretBytes':
+        if isinstance(value, cls):
+            return value
+        value = bytes_validator(value)
+        return cls(value)
 
-        def __repr__(self) -> str:
-            return f"SecretBytes(b'{self}')"
+    def __init__(self, value: bytes):
+        self._secret_value = value
 
-        def __str__(self) -> str:
-            return '**********' if self._secret_value else ''
+    def __repr__(self) -> str:
+        return f"SecretBytes(b'{self}')"
 
-        def __eq__(self, other: Any) -> bool:
-            return isinstance(other, SecretBytes) and self.get_secret_value() == other.get_secret_value()
+    def __str__(self) -> str:
+        return '**********' if self._secret_value else ''
 
-        def __len__(self) -> int:
-            return len(self._secret_value)
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, SecretBytes) and self.get_secret_value() == other.get_secret_value()
 
-        def display(self) -> str:
-            warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning)
-            return str(self)
+    def __len__(self) -> int:
+        return len(self._secret_value)
 
-        def get_secret_value(self) -> bytes:
-            return self._secret_value
+    def display(self) -> str:
+        warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning)
+        return str(self)
+
+    def get_secret_value(self) -> bytes:
+        return self._secret_value
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -843,98 +839,94 @@ class PaymentCardBrand(str, Enum):
         return self.value
 
 
-if TYPE_CHECKING:  # noqa: C901 (ignore complexity)
-    PaymentCardNumber = str
-else:
+class PaymentCardNumber(str):
+    """
+    Based on: https://en.wikipedia.org/wiki/Payment_card_number
+    """
 
-    class PaymentCardNumber(str):
+    strip_whitespace: ClassVar[bool] = True
+    min_length: ClassVar[int] = 12
+    max_length: ClassVar[int] = 19
+    bin: str
+    last4: str
+    brand: PaymentCardBrand
+
+    def __init__(self, card_number: str):
+        self.bin = card_number[:6]
+        self.last4 = card_number[-4:]
+        self.brand = self._get_brand(card_number)
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield str_validator
+        yield constr_strip_whitespace
+        yield constr_length_validator
+        yield cls.validate_digits
+        yield cls.validate_luhn_check_digit
+        yield cls
+        yield cls.validate_length_for_brand
+
+    @property
+    def masked(self) -> str:
+        num_masked = len(self) - 10  # len(bin) + len(last4) == 10
+        return f'{self.bin}{"*" * num_masked}{self.last4}'
+
+    @classmethod
+    def validate_digits(cls, card_number: str) -> str:
+        if not card_number.isdigit():
+            raise errors.NotDigitError
+        return card_number
+
+    @classmethod
+    def validate_luhn_check_digit(cls, card_number: str) -> str:
         """
-        Based on: https://en.wikipedia.org/wiki/Payment_card_number
+        Based on: https://en.wikipedia.org/wiki/Luhn_algorithm
         """
+        sum_ = int(card_number[-1])
+        length = len(card_number)
+        parity = length % 2
+        for i in range(length - 1):
+            digit = int(card_number[i])
+            if i % 2 == parity:
+                digit *= 2
+            if digit > 9:
+                digit -= 9
+            sum_ += digit
+        valid = sum_ % 10 == 0
+        if not valid:
+            raise errors.LuhnValidationError
+        return card_number
 
-        strip_whitespace: ClassVar[bool] = True
-        min_length: ClassVar[int] = 12
-        max_length: ClassVar[int] = 19
-        bin: str
-        last4: str
-        brand: PaymentCardBrand
+    @classmethod
+    def validate_length_for_brand(cls, card_number: 'PaymentCardNumber') -> 'PaymentCardNumber':
+        """
+        Validate length based on BIN for major brands:
+        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
+        """
+        required_length: Optional[int] = None
+        if card_number.brand in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}:
+            required_length = 16
+            valid = len(card_number) == required_length
+        elif card_number.brand == PaymentCardBrand.amex:
+            required_length = 15
+            valid = len(card_number) == required_length
+        else:
+            valid = True
+        if not valid:
+            raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
+        return card_number
 
-        def __init__(self, card_number: str):
-            self.bin = card_number[:6]
-            self.last4 = card_number[-4:]
-            self.brand = self._get_brand(card_number)
-
-        @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield str_validator
-            yield constr_strip_whitespace
-            yield constr_length_validator
-            yield cls.validate_digits
-            yield cls.validate_luhn_check_digit
-            yield cls
-            yield cls.validate_length_for_brand
-
-        @property
-        def masked(self) -> str:
-            num_masked = len(self) - 10  # len(bin) + len(last4) == 10
-            return f'{self.bin}{"*" * num_masked}{self.last4}'
-
-        @classmethod
-        def validate_digits(cls, card_number: str) -> str:
-            if not card_number.isdigit():
-                raise errors.NotDigitError
-            return card_number
-
-        @classmethod
-        def validate_luhn_check_digit(cls, card_number: str) -> str:
-            """
-            Based on: https://en.wikipedia.org/wiki/Luhn_algorithm
-            """
-            sum_ = int(card_number[-1])
-            length = len(card_number)
-            parity = length % 2
-            for i in range(length - 1):
-                digit = int(card_number[i])
-                if i % 2 == parity:
-                    digit *= 2
-                if digit > 9:
-                    digit -= 9
-                sum_ += digit
-            valid = sum_ % 10 == 0
-            if not valid:
-                raise errors.LuhnValidationError
-            return card_number
-
-        @classmethod
-        def validate_length_for_brand(cls, card_number: 'PaymentCardNumber') -> 'PaymentCardNumber':
-            """
-            Validate length based on BIN for major brands:
-            https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
-            """
-            required_length: Optional[int] = None
-            if card_number.brand in {PaymentCardBrand.visa, PaymentCardBrand.mastercard}:
-                required_length = 16
-                valid = len(card_number) == required_length
-            elif card_number.brand == PaymentCardBrand.amex:
-                required_length = 15
-                valid = len(card_number) == required_length
-            else:
-                valid = True
-            if not valid:
-                raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
-            return card_number
-
-        @staticmethod
-        def _get_brand(card_number: str) -> PaymentCardBrand:
-            if card_number[0] == '4':
-                brand = PaymentCardBrand.visa
-            elif 51 <= int(card_number[:2]) <= 55:
-                brand = PaymentCardBrand.mastercard
-            elif card_number[:2] in {'34', '37'}:
-                brand = PaymentCardBrand.amex
-            else:
-                brand = PaymentCardBrand.other
-            return brand
+    @staticmethod
+    def _get_brand(card_number: str) -> PaymentCardBrand:
+        if card_number[0] == '4':
+            brand = PaymentCardBrand.visa
+        elif 51 <= int(card_number[:2]) <= 55:
+            brand = PaymentCardBrand.mastercard
+        elif card_number[:2] in {'34', '37'}:
+            brand = PaymentCardBrand.amex
+        else:
+            brand = PaymentCardBrand.other
+        return brand
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTE SIZE TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -957,62 +949,59 @@ BYTE_SIZES = {
 BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
 byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
-if TYPE_CHECKING:  # noqa: C901 (ignore complexity)
-    ByteSize = Union[int, str]
-else:
 
-    class ByteSize(int):
-        @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield cls.validate
+class ByteSize(int):
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
 
-        @classmethod
-        def validate(cls, v: StrIntFloat) -> 'ByteSize':
+    @classmethod
+    def validate(cls, v: StrIntFloat) -> 'ByteSize':
 
-            try:
-                return cls(int(v))
-            except ValueError:
-                pass
+        try:
+            return cls(int(v))
+        except ValueError:
+            pass
 
-            str_match = byte_string_re.match(str(v))
-            if str_match is None:
-                raise errors.InvalidByteSize()
+        str_match = byte_string_re.match(str(v))
+        if str_match is None:
+            raise errors.InvalidByteSize()
 
-            scalar, unit = str_match.groups()
-            if unit is None:
-                unit = 'b'
+        scalar, unit = str_match.groups()
+        if unit is None:
+            unit = 'b'
 
-            try:
-                unit_mult = BYTE_SIZES[unit.lower()]
-            except KeyError:
-                raise errors.InvalidByteSizeUnit(unit=unit)
+        try:
+            unit_mult = BYTE_SIZES[unit.lower()]
+        except KeyError:
+            raise errors.InvalidByteSizeUnit(unit=unit)
 
-            return cls(int(float(scalar) * unit_mult))
+        return cls(int(float(scalar) * unit_mult))
 
-        def human_readable(self, decimal: bool = False) -> str:
+    def human_readable(self, decimal: bool = False) -> str:
 
-            if decimal:
-                divisor = 1000
-                units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-                final_unit = 'EB'
-            else:
-                divisor = 1024
-                units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
-                final_unit = 'EiB'
+        if decimal:
+            divisor = 1000
+            units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+            final_unit = 'EB'
+        else:
+            divisor = 1024
+            units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+            final_unit = 'EiB'
 
-            num = float(self)
-            for unit in units:
-                if abs(num) < divisor:
-                    return f'{num:0.1f}{unit}'
-                num /= divisor
+        num = float(self)
+        for unit in units:
+            if abs(num) < divisor:
+                return f'{num:0.1f}{unit}'
+            num /= divisor
 
-            return f'{num:0.1f}{final_unit}'
+        return f'{num:0.1f}{final_unit}'
 
-        def to(self, unit: str) -> float:
+    def to(self, unit: str) -> float:
 
-            try:
-                unit_div = BYTE_SIZES[unit.lower()]
-            except KeyError:
-                raise errors.InvalidByteSizeUnit(unit=unit)
+        try:
+            unit_div = BYTE_SIZES[unit.lower()]
+        except KeyError:
+            raise errors.InvalidByteSizeUnit(unit=unit)
 
-            return self / unit_div
+        return self / unit_div

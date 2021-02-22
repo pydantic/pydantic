@@ -13,7 +13,6 @@ from uuid import UUID
 from pydantic import (
     UUID1,
     BaseModel,
-    ByteSize,
     DirectoryPath,
     FilePath,
     Json,
@@ -24,12 +23,9 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
-    PaymentCardNumber,
     PositiveFloat,
     PositiveInt,
     PyObject,
-    SecretBytes,
-    SecretStr,
     StrictBool,
     StrictBytes,
     StrictFloat,
@@ -224,11 +220,3 @@ class PydanticTypes(BaseModel):
     my_dir_path_str: DirectoryPath = 'root/mydir'
     # Json
     my_json: Json = '{"hello": "world"}'
-    # Secret
-    my_secret_str: SecretStr = 'my-precious'
-    my_secret_bytes: SecretBytes = b'my-precious'
-    # Payment card
-    my_payment_card_number: PaymentCardNumber = '4000000000000002'
-    # ByteSize
-    my_byte_size_int: ByteSize = 52000
-    my_byte_size_str: ByteSize = '3000 KiB'
