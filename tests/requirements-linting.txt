@@ -3,7 +3,7 @@ flake8==3.8.4
 flake8-quotes==3.2.0
 hypothesis==5.44.0
 isort==5.7.0
-mypy==0.800
+mypy==0.812
 pycodestyle==2.6.0
 pyflakes==2.2.0
 twine==3.3.0
