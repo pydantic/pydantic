@@ -3,7 +3,7 @@ import pickle
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, Dict, FrozenSet, List, Optional
+from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional
 
 import pytest
 
@@ -407,7 +407,7 @@ def test_fields():
     fields = user.__pydantic_model__.__fields__
 
     assert fields['id'].required is True
-    assert fields['id'].default is Ellipsis
+    assert fields['id'].default is None
 
     assert fields['name'].required is False
     assert fields['name'].default == 'John Doe'
@@ -426,7 +426,7 @@ def test_default_factory_field():
     fields = user.__pydantic_model__.__fields__
 
     assert fields['id'].required is True
-    assert fields['id'].default is Ellipsis
+    assert fields['id'].default is None
 
     assert fields['aliases'].required is False
     assert fields['aliases'].default == {'John': 'Joey'}
@@ -799,6 +799,60 @@ def test_forward_stdlib_dataclass_params():
     e.other = 'bulbi2'
     with pytest.raises(dataclasses.FrozenInstanceError):
         e.item.name = 'pika2'
+
+
+def test_pydantic_callable_field():
+    """pydantic callable fields behaviour should be the same as stdlib dataclass"""
+
+    def foo(arg1, arg2):
+        return arg1, arg2
+
+    def bar(x: int, y: float, z: str) -> bool:
+        return str(x + y) == z
+
+    class PydanticModel(BaseModel):
+        required_callable: Callable
+        required_callable_2: Callable[[int, float, str], bool]
+
+        default_callable: Callable = foo
+        default_callable_2: Callable[[int, float, str], bool] = bar
+
+    @pydantic.dataclasses.dataclass
+    class PydanticDataclass:
+        required_callable: Callable
+        required_callable_2: Callable[[int, float, str], bool]
+
+        default_callable: Callable = foo
+        default_callable_2: Callable[[int, float, str], bool] = bar
+
+    @dataclasses.dataclass
+    class StdlibDataclass:
+        required_callable: Callable
+        required_callable_2: Callable[[int, float, str], bool]
+
+        default_callable: Callable = foo
+        default_callable_2: Callable[[int, float, str], bool] = bar
+
+    pyd_m = PydanticModel(required_callable=foo, required_callable_2=bar)
+    pyd_dc = PydanticDataclass(required_callable=foo, required_callable_2=bar)
+    std_dc = StdlibDataclass(required_callable=foo, required_callable_2=bar)
+
+    assert (
+        pyd_m.required_callable
+        is pyd_m.default_callable
+        is pyd_dc.required_callable
+        is pyd_dc.default_callable
+        is std_dc.required_callable
+        is std_dc.default_callable
+    )
+    assert (
+        pyd_m.required_callable_2
+        is pyd_m.default_callable_2
+        is pyd_dc.required_callable_2
+        is pyd_dc.default_callable_2
+        is std_dc.required_callable_2
+        is std_dc.default_callable_2
+    )
 
 
 def test_pickle_overriden_builtin_dataclass(create_module):

@@ -9,7 +9,21 @@ from ipaddress import (
     _BaseAddress,
     _BaseNetwork,
 )
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Pattern, Set, Tuple, Type, Union, cast, no_type_check
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    FrozenSet,
+    Generator,
+    Optional,
+    Pattern,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+    no_type_check,
+)
 
 from . import errors
 from .utils import Representation, update_not_none
@@ -43,7 +57,6 @@ __all__ = [
     'validate_email',
 ]
 
-
 _url_regex_cache = None
 _ascii_domain_regex_cache = None
 _int_domain_regex_cache = None
@@ -54,14 +67,14 @@ def url_regex() -> Pattern[str]:
     if _url_regex_cache is None:
         _url_regex_cache = re.compile(
             r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
-            r'(?:(?P<user>[^\s:/]+)(?::(?P<password>[^\s/]*))?@)?'  # user info
+            r'(?:(?P<user>[^\s:/]*)(?::(?P<password>[^\s/]*))?@)?'  # user info
             r'(?:'
             r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})|'  # ipv4
             r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])|'  # ipv6
             r'(?P<domain>[^\s/:?#]+)'  # domain, validation occurs later
             r')?'
             r'(?::(?P<port>\d+))?'  # port
-            r'(?P<path>/[^\s?]*)?'  # path
+            r'(?P<path>/[^\s?#]*)?'  # path
             r'(?:\?(?P<query>[^\s#]+))?'  # query
             r'(?:#(?P<fragment>\S+))?',  # fragment
             re.IGNORECASE,
@@ -147,8 +160,9 @@ class AnyUrl(str):
         url = scheme + '://'
         if user:
             url += user
-            if password:
-                url += ':' + password
+        if password:
+            url += ':' + password
+        if user or password:
             url += '@'
         url += host
         if port:
@@ -183,6 +197,33 @@ class AnyUrl(str):
         assert m, 'URL regex failed unexpectedly'
 
         parts = m.groupdict()
+        parts = cls.validate_parts(parts)
+
+        host, tld, host_type, rebuild = cls.validate_host(parts)
+
+        if m.end() != len(url):
+            raise errors.UrlExtraError(extra=url[m.end() :])
+
+        return cls(
+            None if rebuild else url,
+            scheme=parts['scheme'],
+            user=parts['user'],
+            password=parts['password'],
+            host=host,
+            tld=tld,
+            host_type=host_type,
+            port=parts['port'],
+            path=parts['path'],
+            query=parts['query'],
+            fragment=parts['fragment'],
+        )
+
+    @classmethod
+    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+        """
+        A method used to validate parts of an URL.
+        Could be overridden to set default values for parts if missing
+        """
         scheme = parts['scheme']
         if scheme is None:
             raise errors.UrlSchemeError()
@@ -198,24 +239,7 @@ class AnyUrl(str):
         if cls.user_required and user is None:
             raise errors.UrlUserInfoError()
 
-        host, tld, host_type, rebuild = cls.validate_host(parts)
-
-        if m.end() != len(url):
-            raise errors.UrlExtraError(extra=url[m.end() :])
-
-        return cls(
-            None if rebuild else url,
-            scheme=scheme,
-            user=user,
-            password=parts['password'],
-            host=host,
-            tld=tld,
-            host_type=host_type,
-            port=port,
-            path=parts['path'],
-            query=parts['query'],
-            fragment=parts['fragment'],
-        )
+        return parts
 
     @classmethod
     def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, Optional[str], str, bool]:
@@ -279,7 +303,19 @@ class PostgresDsn(AnyUrl):
 
 
 class RedisDsn(AnyUrl):
-    allowed_schemes = {'redis'}
+    allowed_schemes = {'redis', 'rediss'}
+
+    @classmethod
+    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+        defaults = {
+            'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
+            'port': '6379',
+            'path': '/0',
+        }
+        for key, value in defaults.items():
+            if not parts[key]:
+                parts[key] = value
+        return super().validate_parts(parts)
 
 
 def stricturl(
@@ -288,7 +324,7 @@ def stricturl(
     min_length: int = 1,
     max_length: int = 2 ** 16,
     tld_required: bool = True,
-    allowed_schemes: Optional[Set[str]] = None,
+    allowed_schemes: Optional[Union[FrozenSet[str], Set[str]]] = None,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(

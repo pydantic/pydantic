@@ -26,6 +26,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import (
     UUID1,
@@ -69,16 +70,12 @@ from pydantic import (
     errors,
     validator,
 )
+from pydantic.typing import NoneType
 
 try:
     import email_validator
 except ImportError:
     email_validator = None
-
-try:
-    import typing_extensions
-except ImportError:
-    typing_extensions = None
 
 
 class ConBytesModel(BaseModel):
@@ -110,6 +107,22 @@ def test_constrained_bytes_too_long():
             'ctx': {'limit_value': 10},
         }
     ]
+
+
+def test_constrained_bytes_lower_enabled():
+    class Model(BaseModel):
+        v: conbytes(to_lower=True)
+
+    m = Model(v=b'ABCD')
+    assert m.v == b'abcd'
+
+
+def test_constrained_bytes_lower_disabled():
+    class Model(BaseModel):
+        v: conbytes(to_lower=False)
+
+    m = Model(v=b'ABCD')
+    assert m.v == b'ABCD'
 
 
 def test_constrained_list_good():
@@ -158,6 +171,34 @@ def test_constrained_list_too_short():
             'ctx': {'limit_value': 1},
         }
     ]
+
+
+def test_constrained_list_optional():
+    class Model(BaseModel):
+        req: Optional[conlist(str, min_items=1)] = ...
+        opt: Optional[conlist(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=[], opt=[])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req=['a'], opt=['a']).dict() == {'req': ['a'], 'opt': ['a']}
 
 
 def test_constrained_list_constraints():
@@ -311,6 +352,34 @@ def test_constrained_set_too_short():
     ]
 
 
+def test_constrained_set_optional():
+    class Model(BaseModel):
+        req: Optional[conset(str, min_items=1)] = ...
+        opt: Optional[conset(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=set(), opt=set())
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
+
+
 def test_constrained_set_constraints():
     class ConSetModelBoth(BaseModel):
         v: conset(int, min_items=7, max_items=11)
@@ -444,6 +513,22 @@ def test_constrained_str_too_long():
             'ctx': {'limit_value': 10},
         }
     ]
+
+
+def test_constrained_str_lower_enabled():
+    class Model(BaseModel):
+        v: constr(to_lower=True)
+
+    m = Model(v='ABCD')
+    assert m.v == 'abcd'
+
+
+def test_constrained_str_lower_disabled():
+    class Model(BaseModel):
+        v: constr(to_lower=False)
+
+    m = Model(v='ABCD')
+    assert m.v == 'ABCD'
 
 
 def test_module_import():
@@ -1521,6 +1606,34 @@ def test_anystr_strip_whitespace_disabled():
     assert m.bytes_check == b'  456  '
 
 
+def test_anystr_lower_enabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_lower = True
+
+    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+
+    assert m.str_check == 'abcdefg'
+    assert m.bytes_check == b'abcd1fg'
+
+
+def test_anystr_lower_disabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_lower = False
+
+    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+
+    assert m.str_check == 'ABCDefG'
+    assert m.bytes_check == b'abCD1Fg'
+
+
 @pytest.mark.parametrize(
     'type_,value,result',
     [
@@ -2396,10 +2509,9 @@ def test_generic_without_params_error():
     ]
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
 def test_literal_single():
     class Model(BaseModel):
-        a: typing_extensions.Literal['a']
+        a: Literal['a']
 
     Model(a='a')
     with pytest.raises(ValidationError) as exc_info:
@@ -2414,10 +2526,9 @@ def test_literal_single():
     ]
 
 
-@pytest.mark.skipif(not typing_extensions, reason='typing_extensions not installed')
 def test_literal_multiple():
     class Model(BaseModel):
-        a_or_b: typing_extensions.Literal['a', 'b']
+        a_or_b: Literal['a', 'b']
 
     Model(a_or_b='a')
     Model(a_or_b='b')
@@ -2609,3 +2720,57 @@ def test_deque_json():
         v: Deque[int]
 
     assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
+
+
+none_value_type_cases = None, type(None), NoneType, Literal[None]
+
+
+@pytest.mark.parametrize('value_type', none_value_type_cases)
+def test_none(value_type):
+    class Model(BaseModel):
+        my_none: value_type
+        my_none_list: List[value_type]
+        my_none_dict: Dict[str, value_type]
+        my_json_none: Json[value_type]
+
+    Model(
+        my_none=None,
+        my_none_list=[None] * 3,
+        my_none_dict={'a': None, 'b': None},
+        my_json_none='null',
+    )
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'my_none': {'title': 'My None', 'type': 'null'},
+            'my_none_list': {
+                'title': 'My None List',
+                'type': 'array',
+                'items': {'type': 'null'},
+            },
+            'my_none_dict': {
+                'title': 'My None Dict',
+                'type': 'object',
+                'additionalProperties': {'type': 'null'},
+            },
+            'my_json_none': {'title': 'My Json None', 'type': 'null'},
+        },
+        'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            my_none='qwe',
+            my_none_list=[1, None, 'qwe'],
+            my_none_dict={'a': 1, 'b': None},
+            my_json_none='"a"',
+        )
+    assert exc_info.value.errors() == [
+        {'loc': ('my_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_list', 0), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_list', 2), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+    ]

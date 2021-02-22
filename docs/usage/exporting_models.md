@@ -7,8 +7,8 @@ This is the primary way of converting a model to a dictionary. Sub-models will b
 
 Arguments:
 
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-exclude)
+* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
+* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
 * `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
 * `exclude_unset`: whether fields which were not explicitly set when creating the model should
   be excluded from the returned dictionary; default `False`.
@@ -44,8 +44,8 @@ _(This script is complete, it should run "as is")_
 
 Arguments:
 
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-exclude)
+* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
+* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
 * `update`: a dictionary of values to change when creating the copied model
 * `deep`: whether to make a deep copy of the new model; default `False`
 
@@ -64,8 +64,8 @@ only the value for the `__root__` key is serialised)
 
 Arguments:
 
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-exclude)
+* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
+* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
 * `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
 * `exclude_unset`: whether fields which were not set when creating the model and have their default values should
   be excluded from the returned dictionary; default `False`.
@@ -99,11 +99,19 @@ _(This script is complete, it should run "as is")_
 By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
 as an optional alternative which implements ISO 8601 time diff encoding.
 
+The `json_encoders` are also merged during the models inheritance with the child
+encoders taking precedence over the parent one.
+
+```py
+{!.tmp_examples/exporting_models_json_encoders_merge.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ### Serialising subclasses
 
 !!! note
     New in version **v1.5**.
-    
+
     Subclasses of common types were not automatically serialised to JSON before **v1.5**.
 
 Subclasses of common types are automatically encoded like their super-classes:

@@ -160,8 +160,8 @@ settings = Settings(_secrets_dir='/var/run')
 ```
 
 In either case, the value of the passed argument can be any valid directory, either absolute or relative to the
-current working directory. From there, *pydantic* will handle everything for you by loading in your variables and
-validating them.
+current working directory. **Note that a non existent directory will only generate a warning**.
+From there, *pydantic* will handle everything for you by loading in your variables and validating them.
 
 Even when using a secrets directory, *pydantic* will still read environment variables from a dotenv file or the environment,
 **a dotenv file and environment variables will always take priority over values loaded from the secrets directory**.
@@ -188,7 +188,7 @@ class Settings(BaseSettings):
     By default Docker uses `/run/secrets` as the target mount point. If you want to use a different location, change 
     `Config.secrets_dir` accordingly.
 
-Then, Create your secret via the Docker CLI
+Then, create your secret via the Docker CLI
 ```bash
 printf "This is a secret" | docker secret create my_secret_data -
 ```
@@ -208,3 +208,46 @@ the selected value is determined as follows (in descending order of priority):
 3. Variables loaded from a dotenv (`.env`) file.
 4. Variables loaded from the secrets directory.
 5. The default field values for the `Settings` model.
+
+## Customise settings sources
+
+If the default order of priority doesn't match your needs, it's possible to change it by overriding
+the `customise_sources` method on the `Config` class of your `Settings` .
+
+`customise_sources` takes three callables as arguments and returns any number of callables as a tuple. In turn these
+callables are called to build the inputs to the fields of the settings class.
+
+Each callable should take an instance of the settings class as its sole argument and return a `dict`.
+
+### Changing Priority
+
+The order of the returned callables decides the priority of inputs; first item is the highest priority.
+
+```py
+{!.tmp_examples/settings_env_priority.py!}
+```
+_(This script is complete, it should run "as is")_
+
+By flipping `env_settings` and `init_settings`, environment variables now have precedence over `__init__` kwargs.
+
+### Adding sources
+
+As explained earlier, *pydantic* ships with multiples built-in settings sources. However, you may occationally
+need to add your own custom sources, `customise_sources` makes this very easy:
+
+```py
+{!.tmp_examples/settings_add_custom_source.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### Removing sources
+
+You might also want to disable a source:
+
+```py
+{!.tmp_examples/settings_disable_source.py!}
+```
+_(This script is complete, it should run "as is", here you might need to set the `my_api_key` environment variable)_
+
+Because of the callables approach of `customise_sources`, evaluation of sources is lazy so unused sources don't
+have an adverse effect on performance.
