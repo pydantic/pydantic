@@ -63,7 +63,6 @@ def gen_models():
         nonnegfloat: pydantic.NonNegativeFloat
 
     class JsonModel(pydantic.BaseModel):
-        json_any: pydantic.Json
         json_int: pydantic.Json[int]
         json_float: pydantic.Json[float]
         json_str: pydantic.Json[str]
