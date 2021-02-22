@@ -531,7 +531,7 @@ else:
 
         @classmethod
         def validate(cls, value: Any) -> Any:
-            if isinstance(value, Callable):  # type: ignore
+            if isinstance(value, Callable):
                 return value
 
             try:
