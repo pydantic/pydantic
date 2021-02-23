@@ -1,4 +1,4 @@
-Behaviour of pydantic can be controlled via the `Config` class on a model.
+Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
 
 Options:
 
@@ -7,6 +7,9 @@ Options:
 
 **`anystr_strip_whitespace`**
 : whether to strip leading and trailing whitespace for str & byte types (default: `False`)
+
+**`anystr_lower`**
+: whether to make all characters lowercase for str & byte types (default: `False`)
 
 **`min_anystr_length`**
 : the min length for str & byte types (default: `0`)
@@ -94,8 +97,13 @@ not be included in the model schemas. **Note**: this means that attributes on th
 ```
 _(This script is complete, it should run "as is")_
 
-Similarly, if using the `@dataclass` decorator:
+Also, you can specify config options as model class kwargs:
+```py
+{!.tmp_examples/model_config_class_kwargs.py!}
+```
+_(This script is complete, it should run "as is")_
 
+Similarly, if using the `@dataclass` decorator:
 ```py
 {!.tmp_examples/model_config_dataclass.py!}
 ```
@@ -105,6 +113,17 @@ _(This script is complete, it should run "as is")_
 **`underscore_attrs_are_private`**
 : whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)
 
+**`copy_on_model_validation`**
+: whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
+
+## Change behaviour globally
+
+If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
+with custom `Config` since the config is inherited
+```py
+{!.tmp_examples/model_config_change_globally_custom.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ## Alias Generator
 

@@ -1,5 +1,5 @@
 import pickle
-from typing import Any, List
+from typing import Any, List, Optional
 
 import pytest
 
@@ -33,6 +33,28 @@ def test_construct_fields_set():
     assert m.b == -1
     assert m.__fields_set__ == {'a'}
     assert m.dict() == {'a': 3, 'b': -1}
+
+
+def test_construct_allow_extra():
+    """construct() should allow extra fields"""
+
+    class Foo(BaseModel):
+        x: int
+
+    assert Foo.construct(x=1, y=2).dict() == {'x': 1, 'y': 2}
+
+
+def test_construct_keep_order():
+    class Foo(BaseModel):
+        a: int
+        b: int = 42
+        c: float
+
+    instance = Foo(a=1, b=321, c=3.14)
+    instance_construct = Foo.construct(**instance.dict())
+    assert instance == instance_construct
+    assert instance.dict() == instance_construct.dict()
+    assert instance.json() == instance_construct.json()
 
 
 def test_large_any_str():
@@ -189,6 +211,14 @@ def test_copy_update():
     assert set(m.dict().keys()) == set(m2.dict().keys()) == {'a', 'b', 'c', 'd'}
 
     assert m != m2
+
+
+def test_copy_update_unset():
+    class Foo(BaseModel):
+        foo: Optional[str]
+        bar: Optional[str]
+
+    assert Foo(foo='hello').copy(update={'bar': 'world'}).json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
 
 
 def test_copy_set_fields():

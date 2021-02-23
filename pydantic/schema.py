@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
+    Generic,
     Iterable,
     List,
     Optional,
@@ -25,8 +26,11 @@ from typing import (
 )
 from uuid import UUID
 
+from typing_extensions import Annotated, Literal
+
 from .fields import (
     SHAPE_FROZENSET,
+    SHAPE_GENERIC,
     SHAPE_ITERABLE,
     SHAPE_LIST,
     SHAPE_MAPPING,
@@ -60,11 +64,11 @@ from .types import (
 from .typing import (
     NONE_TYPES,
     ForwardRef,
-    Literal,
     get_args,
     get_origin,
     is_callable_type,
     is_literal_type,
+    is_namedtuple,
     literal_values,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
@@ -188,7 +192,12 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
         schema['description'] = field.field_info.description
         schema_overrides = True
 
-    if not field.required and not field.field_info.const and field.default is not None:
+    if (
+        not field.required
+        and not field.field_info.const
+        and field.default is not None
+        and not is_callable_type(field.outer_type_)
+    ):
         schema['default'] = encode_default(field.default)
         schema_overrides = True
 
@@ -404,7 +413,7 @@ def get_flat_models_from_models(models: Sequence[Type['BaseModel']]) -> TypeMode
 
 
 def get_long_model_name(model: TypeModelOrEnum) -> str:
-    return f'{model.__module__}__{model.__name__}'.replace('.', '__')
+    return f'{model.__module__}__{model.__qualname__}'.replace('.', '__')
 
 
 def field_type_schema(
@@ -481,7 +490,7 @@ def field_type_schema(
             sub_schema = sub_schema[0]  # type: ignore
         f_schema = {'type': 'array', 'items': sub_schema}
     else:
-        assert field.shape == SHAPE_SINGLETON, field.shape
+        assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
@@ -496,7 +505,11 @@ def field_type_schema(
 
     # check field type to avoid repeated calls to the same __modify_schema__ method
     if field.type_ != field.outer_type_:
-        modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
+        if field.shape == SHAPE_GENERIC:
+            field_type = field.type_
+        else:
+            field_type = field.outer_type_
+        modify_schema = getattr(field_type, '__modify_schema__', None)
         if modify_schema:
             modify_schema(f_schema)
     return f_schema, definitions, nested_models
@@ -795,7 +808,17 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema, schema_overrides = get_field_info_schema(field)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
-    else:
+    elif is_namedtuple(field_type):
+        sub_schema, *_ = model_process_schema(
+            field_type.__pydantic_model__,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            ref_template=ref_template,
+            known_models=known_models,
+        )
+        f_schema.update({'type': 'array', 'items': list(sub_schema['properties'].values())})
+    elif not hasattr(field_type, '__pydantic_model__'):
         add_field_type_to_schema(field_type, f_schema)
 
         modify_schema = getattr(field_type, '__modify_schema__', None)
@@ -828,6 +851,11 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         schema_ref = get_schema_ref(model_name, ref_prefix, ref_template, schema_overrides)
         return schema_ref, definitions, nested_models
 
+    # For generics with no args
+    args = get_args(field_type)
+    if args is not None and not args and Generic in field_type.__bases__:
+        return f_schema, definitions, nested_models
+
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
 
@@ -859,32 +887,47 @@ def encode_default(dft: Any) -> Any:
 
 
 _map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
-_field_constraints = {
-    'min_length',
-    'max_length',
-    'regex',
-    'gt',
-    'lt',
-    'ge',
-    'le',
-    'multiple_of',
-    'min_items',
-    'max_items',
-}
 
 
-def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field_name: str) -> Type[Any]:  # noqa: C901
+def get_annotation_from_field_info(
+    annotation: Any, field_info: FieldInfo, field_name: str, validate_assignment: bool = False
+) -> Type[Any]:
     """
     Get an annotation with validation implemented for numbers and strings based on the field_info.
-
     :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
     :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
     :param field_name: name of the field for use in error messages
+    :param validate_assignment: default False, flag for BaseModel Config value of validate_assignment
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
-    constraints = {f for f in _field_constraints if getattr(field_info, f) is not None}
-    if not constraints:
-        return annotation
+    constraints = field_info.get_constraints()
+
+    used_constraints: Set[str] = set()
+    if constraints:
+        annotation, used_constraints = get_annotation_with_constraints(annotation, field_info)
+
+    if validate_assignment:
+        used_constraints.add('allow_mutation')
+
+    unused_constraints = constraints - used_constraints
+    if unused_constraints:
+        raise ValueError(
+            f'On field "{field_name}" the following field constraints are set but not enforced: '
+            f'{", ".join(unused_constraints)}. '
+            f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
+        )
+
+    return annotation
+
+
+def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> Tuple[Type[Any], Set[str]]:  # noqa: C901
+    """
+    Get an annotation with used constraints implemented for numbers and strings based on the field_info.
+
+    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
+    :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
+    :return: the same ``annotation`` if unmodified or a new annotation along with the used constraints.
+    """
     used_constraints: Set[str] = set()
 
     def go(type_: Any) -> Type[Any]:
@@ -901,6 +944,8 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
                 # forward refs cause infinite recursion below
                 return type_
 
+            if origin is Annotated:
+                return go(args[0])
             if origin is Union:
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
@@ -956,15 +1001,7 @@ def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo, field
 
     ans = go(annotation)
 
-    unused_constraints = constraints - used_constraints
-    if unused_constraints:
-        raise ValueError(
-            f'On field "{field_name}" the following field constraints are set but not enforced: '
-            f'{", ".join(unused_constraints)}. '
-            f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
-        )
-
-    return ans
+    return ans, used_constraints
 
 
 def normalize_name(name: str) -> str:

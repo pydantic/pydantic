@@ -1,0 +1,1 @@
+Add a [Hypothesis](https://hypothesis.readthedocs.io/) plugin for easier [property-based testing](https://increment.com/testing/in-praise-of-property-based-testing/) with Pydantic's custom types - [usage details here](https://pydantic-docs.helpmanual.io/hypothesis_plugin/)
