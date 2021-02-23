@@ -1,6 +1,7 @@
 import json
 
 from schematics import __version__
+from schematics.exceptions import DataError, ValidationError
 from schematics.models import Model as PModel
 from schematics.types import IntType, StringType
 from schematics.types.base import DateType, FloatType
@@ -46,5 +47,7 @@ class TestSchematics:
         try:
             obj = self.model(data)
             return True, obj.validate()
-        except Exception as e:
+        except DataError as e:
+            return False, e
+        except ValidationError as e:
             return False, e
