@@ -351,39 +351,98 @@ def test_required():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-def test_not_immutability():
+def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
             allow_mutation = True
             extra = Extra.forbid
+            frozen = False
 
     m = TestModel()
+
     assert m.a == 10
     m.a = 11
     assert m.a == 11
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
-def test_immutability():
+@pytest.mark.parametrize('allow_mutation_, frozen_', [(False, False), (False, True), (True, True)])
+def test_immutability(allow_mutation_, frozen_):
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
-            allow_mutation = False
+            allow_mutation = allow_mutation_
             extra = Extra.forbid
+            frozen = frozen_
 
     m = TestModel()
+
     assert m.a == 10
     with pytest.raises(TypeError) as exc_info:
         m.a = 11
     assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
+
+
+def test_not_frozen_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'TestModel'" in exc_info.value.args[0]
+
+
+def test_frozen_with_hashable_fields_are_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    assert m.__hash__ is not None
+    assert isinstance(hash(m), int)
+
+
+def test_frozen_with_unhashable_fields_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+        y: List[int] = [1, 2, 3]
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'list'" in exc_info.value.args[0]
+
+
+def test_hash_function_give_different_result_for_different_object():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    m2 = TestModel()
+    m3 = TestModel(a=11)
+    assert hash(m) == hash(m2)
+    assert hash(m) != hash(m3)
+
+    # Redefined `TestModel`
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m4 = TestModel()
+    assert hash(m) != hash(m4)
 
 
 def test_const_validates():

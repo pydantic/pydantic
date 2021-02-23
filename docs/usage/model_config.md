@@ -29,6 +29,14 @@ Options:
 **`allow_mutation`**
 : whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed (default: `True`)
 
+**`frozen`**
+
+!!! warning
+    This parameter is in beta
+
+: setting `frozen=True` does everything that `allow_mutation=False` does, and also generates a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the attributes are hashable. (default: `False`)
+
+
 **`use_enum_values`**
 : whether to populate models with the `value` property of enums, rather than the raw enum.
   This may be useful if you want to serialise `model.dict()` later (default: `False`)
