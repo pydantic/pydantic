@@ -351,7 +351,27 @@ def test_required():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-@pytest.mark.parametrize('allow_mutation_, frozen_', [(False, False), (True, False), (False, True), (True, True)])
+@pytest.mark.parametrize('allow_mutation_, frozen_', [(True, False)])
+def test_mutability(allow_mutation_, frozen_):
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            allow_mutation = allow_mutation_
+            extra = Extra.forbid
+            frozen = frozen_
+
+    m = TestModel()
+
+    assert m.a == 10
+    m.a = 11
+    assert m.a == 11
+    with pytest.raises(ValueError) as exc_info:
+        m.b = 11
+    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
+
+
+@pytest.mark.parametrize('allow_mutation_, frozen_', [(False, False), (False, True), (True, True)])
 def test_immutability(allow_mutation_, frozen_):
     class TestModel(BaseModel):
         a: int = 10
@@ -363,24 +383,13 @@ def test_immutability(allow_mutation_, frozen_):
 
     m = TestModel()
 
-    immutable = allow_mutation_ is False or frozen_ is True
-
-    if immutable:
-        assert m.a == 10
-        with pytest.raises(TypeError) as exc_info:
-            m.a = 11
-        assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
-        with pytest.raises(ValueError) as exc_info:
-            m.b = 11
-        assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
-
-    else:
-        assert m.a == 10
+    assert m.a == 10
+    with pytest.raises(TypeError) as exc_info:
         m.a = 11
-        assert m.a == 11
-        with pytest.raises(ValueError) as exc_info:
-            m.b = 11
-        assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
+    assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
+    with pytest.raises(ValueError) as exc_info:
+        m.b = 11
+    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
 def test_not_frozen_are_not_hashable():
