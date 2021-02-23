@@ -351,15 +351,14 @@ def test_required():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-@pytest.mark.parametrize('allow_mutation_, frozen_', [(True, False)])
-def test_mutability(allow_mutation_, frozen_):
+def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
-            allow_mutation = allow_mutation_
+            allow_mutation = True
             extra = Extra.forbid
-            frozen = frozen_
+            frozen = False
 
     m = TestModel()
 
