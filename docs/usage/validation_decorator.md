@@ -55,6 +55,18 @@ To demonstrate all the above parameter types:
 ```
 _(This script is complete, it should run "as is")_
 
+## Using Field to describe function arguments
+
+[Field](schema.md#field-customisation) can also be used with `validate_arguments` to provide extra information about
+the field and validations. In general it should be used in a type hint with
+[Annotated](schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
+as the default value of the field:
+
+```py
+{!.tmp_examples/validation_decorator_field.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Usage with mypy
 
 The `validate_arguments` decorator should work "out of the box" with [mypy](http://mypy-lang.org/) since it's
@@ -93,13 +105,13 @@ _(This script is complete, it should run "as is")_
 
 ## Custom Config
 
-The model behind `validate_arguments` can be customised using a config setting which is equivalent to 
+The model behind `validate_arguments` can be customised using a config setting which is equivalent to
 setting the `Config` sub-class in normal models.
 
 !!! warning
     The `fields` and `alias_generator` properties of `Config` which allow aliases to be configured are not supported
     yet with `@validate_arguments`, using them will raise an error.
-    
+
 Configuration is set using the `config` keyword argument to the decorator, it may be either a config class
 or a dict of properties which are converted to a class later.
 
@@ -154,7 +166,7 @@ in future.
 ### Config and Validators
 
 `fields` and `alias_generator` on custom [`Config`](model_config.md) are not supported, see [above](#custom-config).
- 
+
 Neither are [validators](validators.md).
 
 ### Model fields and reserved arguments
