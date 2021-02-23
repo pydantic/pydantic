@@ -1800,7 +1800,7 @@ def test_discriminated_union_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({'pet': {'pet_type': 'lizard'}, 'number': 2})
     assert exc_info.value.errors() == [
-        {'loc': ('pet', 'l'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('pet (Lizard)', 'l'), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
 
     m = Model.parse_obj({'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2})

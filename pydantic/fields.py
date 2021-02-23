@@ -983,7 +983,7 @@ class ModelField(Representation):
                     msg_err = f'No match for discriminator {discriminator_key!r} and value {discriminator_value!r}'
                     return v, ErrorWrapper(ValueError(msg_err), loc)
                 else:
-                    return sub_field.validate(v, values, loc=loc, cls=cls)
+                    return sub_field.validate(v, values, loc=f'{loc} ({sub_field.outer_type_.__name__})', cls=cls)
 
             for field in self.sub_fields:
                 value, error = field.validate(v, values, loc=loc, cls=cls)
