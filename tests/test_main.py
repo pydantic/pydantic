@@ -365,9 +365,6 @@ def test_mutability():
     assert m.a == 10
     m.a = 11
     assert m.a == 11
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
 @pytest.mark.parametrize('allow_mutation_, frozen_', [(False, False), (False, True), (True, True)])
@@ -386,9 +383,6 @@ def test_immutability(allow_mutation_, frozen_):
     with pytest.raises(TypeError) as exc_info:
         m.a = 11
     assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
 def test_not_frozen_are_not_hashable():
