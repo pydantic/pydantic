@@ -76,7 +76,7 @@ else:
 
 # PyObject - dotted names, in this case taken from the math module.
 st.register_type_strategy(
-    pydantic.PyObject,
+    pydantic.PyObject,  # type: ignore[arg-type]
     st.sampled_from(
         [cast(pydantic.PyObject, f'math.{name}') for name in sorted(vars(math)) if not name.startswith('_')]
     ),
@@ -163,7 +163,7 @@ st.register_type_strategy(
 # so here we only have to register subclasses for other constrained types which
 # don't go via those mechanisms.  Then there are the registration hooks below.
 st.register_type_strategy(pydantic.StrictBool, st.booleans())
-st.register_type_strategy(pydantic.StrictStr, st.text())  # type: ignore[arg-type]
+st.register_type_strategy(pydantic.StrictStr, st.text())
 
 
 # Constrained-type resolver functions
