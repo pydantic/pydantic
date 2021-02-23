@@ -209,23 +209,14 @@ class FrozenModel(BaseModel):
     x: int
     y: str
 
-    def method(self) -> None:
-        pass
-
     class Config:
         alias_generator = None
         frozen = True
         extra = Extra.forbid
 
-        def config_method(self) -> None:
-            ...
 
-
-frozenmodel = FrozenModel(x=1, y='y', z='z')
-frozenmodel = FrozenModel(x=1)
+frozenmodel = FrozenModel(x=1, y='b')
 frozenmodel.y = 'a'
-FrozenModel.from_orm({})
-FrozenModel.from_orm({})  # type: ignore[pydantic-orm]  # noqa F821
 
 
 class InheritingModel2(FrozenModel):
@@ -233,6 +224,5 @@ class InheritingModel2(FrozenModel):
         frozen = False
 
 
-inheriting2 = InheritingModel2(x='1', y='1')
-Settings(x='1')
-FrozenModel(x='1', y='2')
+inheriting2 = InheritingModel2(x=1, y='c')
+inheriting2.y = 'd'

@@ -36,10 +36,4 @@
 197: note: Possible overload variant:
 197: note:     def dataclass(*, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Callable[[Type[Any]], Type[Dataclass]]
 197: note:     <1 more non-matching overload not shown>
-224: error: Unexpected keyword argument "z" for "FrozenModel"  [call-arg]
-225: error: Missing named argument "y" for "FrozenModel"  [call-arg]
-226: error: Property "y" defined in "FrozenModel" is read-only  [misc]
-227: error: "FrozenModel" does not have orm_mode=True  [pydantic-orm]
-236: error: Argument "x" to "InheritingModel2" has incompatible type "str"; expected "int"  [arg-type]
-237: error: Argument "x" to "Settings" has incompatible type "str"; expected "int"  [arg-type]
-238: error: Argument "x" to "FrozenModel" has incompatible type "str"; expected "int"  [arg-type]
+219: error: Property "y" defined in "FrozenModel" is read-only  [misc]

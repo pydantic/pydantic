@@ -25,7 +25,4 @@
 197: note: Possible overload variant:
 197: note:     def dataclass(*, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Callable[[Type[Any]], Type[Dataclass]]
 197: note:     <1 more non-matching overload not shown>
-224: error: Unexpected keyword argument "z" for "FrozenModel"  [call-arg]
-225: error: Missing named argument "y" for "FrozenModel"  [call-arg]
-226: error: Property "y" defined in "FrozenModel" is read-only  [misc]
-227: error: "FrozenModel" does not have orm_mode=True  [pydantic-orm]
+219: error: Property "y" defined in "FrozenModel" is read-only  [misc]

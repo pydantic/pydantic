@@ -149,7 +149,7 @@ class FrozenModel(BaseModel):
 
 
 class NotFrozenModel(FrozenModel):
-    a = 1
+    a: int = 1
 
     class Config:
         frozen = False
