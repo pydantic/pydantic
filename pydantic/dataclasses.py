@@ -19,6 +19,7 @@ if TYPE_CHECKING:
         __initialised__: bool
         __post_init_original__: Optional[Callable[..., None]]
         __processed__: Optional[ClassAttribute]
+        __has_field_info_default__: bool  # whether or not a `pydantic.Field` is used as default value
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass
@@ -104,9 +105,12 @@ def _process_class(
         if post_init_original is not None:
             post_init_original(self, *initvars)
 
-        # We need to remove `FieldInfo` values since they are not valid as input
-        # It's ok since they are obviously the default values
-        input_data = {k: v for k, v in self.__dict__.items() if not isinstance(v, FieldInfo)}
+        if getattr(self, '__has_field_info_default__', False):
+            # We need to remove `FieldInfo` values since they are not valid as input
+            # It's ok to do that because they are obviously the default values!
+            input_data = {k: v for k, v in self.__dict__.items() if not isinstance(v, FieldInfo)}
+        else:
+            input_data = self.__dict__
         d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
         if validation_error:
             raise validation_error
@@ -164,6 +168,7 @@ def _process_class(
 
         if isinstance(default, FieldInfo):
             field_info = default
+            cls.__has_field_info_default__ = True
         else:
             field_info = Field(default=default, default_factory=default_factory, **field.metadata)
 
