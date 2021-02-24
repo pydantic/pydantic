@@ -15,6 +15,7 @@ from typing import (
     FrozenSet,
     Generator,
     List,
+    NamedTuple,
     Pattern,
     Set,
     Tuple,
@@ -24,22 +25,26 @@ from typing import (
 )
 from uuid import UUID
 
+from typing_extensions import Literal
+
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
     NONE_TYPES,
     AnyCallable,
     ForwardRef,
-    Literal,
     all_literal_values,
     display_as_type,
     get_class,
     is_callable_type,
     is_literal_type,
+    is_namedtuple,
+    is_typeddict,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
+    from .annotated_types import TypedDict
     from .fields import ModelField
     from .main import BaseConfig
     from .types import ConstrainedDecimal, ConstrainedFloat, ConstrainedInt
@@ -547,6 +552,42 @@ def pattern_validator(v: Any) -> Pattern[str]:
         raise errors.PatternError()
 
 
+NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
+
+
+def make_namedtuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
+    from .annotated_types import create_model_from_namedtuple
+
+    NamedTupleModel = create_model_from_namedtuple(namedtuple_cls)
+    namedtuple_cls.__pydantic_model__ = NamedTupleModel  # type: ignore[attr-defined]
+
+    def namedtuple_validator(values: Tuple[Any, ...]) -> NamedTupleT:
+        annotations = NamedTupleModel.__annotations__
+
+        if len(values) > len(annotations):
+            raise errors.ListMaxLengthError(limit_value=len(annotations))
+
+        dict_values: Dict[str, Any] = dict(zip(annotations, values))
+        validated_dict_values: Dict[str, Any] = dict(NamedTupleModel(**dict_values))
+        return namedtuple_cls(**validated_dict_values)
+
+    return namedtuple_validator
+
+
+def make_typeddict_validator(
+    typeddict_cls: Type['TypedDict'], config: Type['BaseConfig']
+) -> Callable[[Any], Dict[str, Any]]:
+    from .annotated_types import create_model_from_typeddict
+
+    TypedDictModel = create_model_from_typeddict(typeddict_cls, __config__=config)
+    typeddict_cls.__pydantic_model__ = TypedDictModel  # type: ignore[attr-defined]
+
+    def typeddict_validator(values: 'TypedDict') -> Dict[str, Any]:
+        return TypedDictModel.parse_obj(values).dict(exclude_unset=True)
+
+    return typeddict_validator
+
+
 class IfConfig:
     def __init__(self, validator: AnyCallable, *config_attr_names: str) -> None:
         self.validator = validator
@@ -638,6 +679,13 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if type_ is IntEnum:
         yield int_enum_validator
+        return
+    if is_namedtuple(type_):
+        yield tuple_validator
+        yield make_namedtuple_validator(type_)
+        return
+    if is_typeddict(type_):
+        yield make_typeddict_validator(type_, config)
         return
 
     class_ = get_class(type_)

@@ -1,5 +1,5 @@
 import pickle
-from typing import Any, List
+from typing import Any, List, Optional
 
 import pytest
 
@@ -33,6 +33,28 @@ def test_construct_fields_set():
     assert m.b == -1
     assert m.__fields_set__ == {'a'}
     assert m.dict() == {'a': 3, 'b': -1}
+
+
+def test_construct_allow_extra():
+    """construct() should allow extra fields"""
+
+    class Foo(BaseModel):
+        x: int
+
+    assert Foo.construct(x=1, y=2).dict() == {'x': 1, 'y': 2}
+
+
+def test_construct_keep_order():
+    class Foo(BaseModel):
+        a: int
+        b: int = 42
+        c: float
+
+    instance = Foo(a=1, b=321, c=3.14)
+    instance_construct = Foo.construct(**instance.dict())
+    assert instance == instance_construct
+    assert instance.dict() == instance_construct.dict()
+    assert instance.json() == instance_construct.json()
 
 
 def test_large_any_str():
@@ -191,6 +213,14 @@ def test_copy_update():
     assert m != m2
 
 
+def test_copy_update_unset():
+    class Foo(BaseModel):
+        foo: Optional[str]
+        bar: Optional[str]
+
+    assert Foo(foo='hello').copy(update={'bar': 'world'}).json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
+
+
 def test_copy_set_fields():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy()
@@ -223,13 +253,30 @@ def test_recursive_pickle():
     assert m.__foo__ == m2.__foo__
 
 
-def test_immutable_copy():
+def test_immutable_copy_with_allow_mutation():
     class Model(BaseModel):
         a: int
         b: int
 
         class Config:
             allow_mutation = False
+
+    m = Model(a=40, b=10)
+    assert m == m.copy()
+
+    m2 = m.copy(update={'b': 12})
+    assert repr(m2) == 'Model(a=40, b=12)'
+    with pytest.raises(TypeError):
+        m2.b = 13
+
+
+def test_immutable_copy_with_frozen():
+    class Model(BaseModel):
+        a: int
+        b: int
+
+        class Config:
+            frozen = True
 
     m = Model(a=40, b=10)
     assert m == m.copy()

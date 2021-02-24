@@ -1,0 +1,1 @@
+Allow configuring models through class kwargs

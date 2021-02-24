@@ -26,6 +26,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import (
     UUID1,
@@ -69,7 +70,7 @@ from pydantic import (
     errors,
     validator,
 )
-from pydantic.typing import Literal, NoneType
+from pydantic.typing import NoneType
 
 try:
     import email_validator
@@ -170,6 +171,34 @@ def test_constrained_list_too_short():
             'ctx': {'limit_value': 1},
         }
     ]
+
+
+def test_constrained_list_optional():
+    class Model(BaseModel):
+        req: Optional[conlist(str, min_items=1)] = ...
+        opt: Optional[conlist(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=[], opt=[])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.list.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req=['a'], opt=['a']).dict() == {'req': ['a'], 'opt': ['a']}
 
 
 def test_constrained_list_constraints():
@@ -321,6 +350,34 @@ def test_constrained_set_too_short():
             'ctx': {'limit_value': 1},
         }
     ]
+
+
+def test_constrained_set_optional():
+    class Model(BaseModel):
+        req: Optional[conset(str, min_items=1)] = ...
+        opt: Optional[conset(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=set(), opt=set())
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.set.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
 
 
 def test_constrained_set_constraints():
@@ -2452,7 +2509,6 @@ def test_generic_without_params_error():
     ]
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_single():
     class Model(BaseModel):
         a: Literal['a']
@@ -2470,7 +2526,6 @@ def test_literal_single():
     ]
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_multiple():
     class Model(BaseModel):
         a_or_b: Literal['a', 'b']
@@ -2667,9 +2722,7 @@ def test_deque_json():
     assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
 
 
-none_value_type_cases = (None, type(None), NoneType)
-if Literal:
-    none_value_type_cases += (Literal[None],)
+none_value_type_cases = None, type(None), NoneType, Literal[None]
 
 
 @pytest.mark.parametrize('value_type', none_value_type_cases)

@@ -99,11 +99,19 @@ _(This script is complete, it should run "as is")_
 By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
 as an optional alternative which implements ISO 8601 time diff encoding.
 
+The `json_encoders` are also merged during the models inheritance with the child
+encoders taking precedence over the parent one.
+
+```py
+{!.tmp_examples/exporting_models_json_encoders_merge.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ### Serialising subclasses
 
 !!! note
     New in version **v1.5**.
-    
+
     Subclasses of common types were not automatically serialised to JSON before **v1.5**.
 
 Subclasses of common types are automatically encoded like their super-classes:

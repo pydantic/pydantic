@@ -1,0 +1,1 @@
+fix: `python_requires` metadata to require >=3.6.1

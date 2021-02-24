@@ -352,39 +352,98 @@ def test_required():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-def test_not_immutability():
+def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
             allow_mutation = True
             extra = Extra.forbid
+            frozen = False
 
     m = TestModel()
+
     assert m.a == 10
     m.a = 11
     assert m.a == 11
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
-def test_immutability():
+@pytest.mark.parametrize('allow_mutation_, frozen_', [(False, False), (False, True), (True, True)])
+def test_immutability(allow_mutation_, frozen_):
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
-            allow_mutation = False
+            allow_mutation = allow_mutation_
             extra = Extra.forbid
+            frozen = frozen_
 
     m = TestModel()
+
     assert m.a == 10
     with pytest.raises(TypeError) as exc_info:
         m.a = 11
     assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
+
+
+def test_not_frozen_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'TestModel'" in exc_info.value.args[0]
+
+
+def test_frozen_with_hashable_fields_are_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    assert m.__hash__ is not None
+    assert isinstance(hash(m), int)
+
+
+def test_frozen_with_unhashable_fields_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+        y: List[int] = [1, 2, 3]
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'list'" in exc_info.value.args[0]
+
+
+def test_hash_function_give_different_result_for_different_object():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    m2 = TestModel()
+    m3 = TestModel(a=11)
+    assert hash(m) == hash(m2)
+    assert hash(m) != hash(m3)
+
+    # Redefined `TestModel`
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m4 = TestModel()
+    assert hash(m) != hash(m4)
 
 
 def test_const_validates():
@@ -704,7 +763,6 @@ def test_enum_values():
     assert m.foo == 'foo'
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
 
@@ -908,6 +966,12 @@ def test_class_var():
         c: int = 2
 
     assert list(MyModel.__fields__.keys()) == ['c']
+
+    class MyOtherModel(MyModel):
+        a = ''
+        b = 2
+
+    assert list(MyOtherModel.__fields__.keys()) == ['c']
 
 
 def test_fields_set():
@@ -1119,6 +1183,60 @@ def test_parse_obj_non_mapping_root():
     assert exc_info.value.errors() == [
         {'loc': ('__root__',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}
     ]
+
+
+def test_parse_obj_nested_root():
+    class Pokemon(BaseModel):
+        name: str
+        level: int
+
+    class Pokemons(BaseModel):
+        __root__: List[Pokemon]
+
+    class Player(BaseModel):
+        rank: int
+        pokemons: Pokemons
+
+    class Players(BaseModel):
+        __root__: Dict[str, Player]
+
+    class Tournament(BaseModel):
+        players: Players
+        city: str
+
+    payload = {
+        'players': {
+            'Jane': {
+                'rank': 1,
+                'pokemons': [
+                    {
+                        'name': 'Pikachu',
+                        'level': 100,
+                    },
+                    {
+                        'name': 'Bulbasaur',
+                        'level': 13,
+                    },
+                ],
+            },
+            'Tarzan': {
+                'rank': 2,
+                'pokemons': [
+                    {
+                        'name': 'Jigglypuff',
+                        'level': 7,
+                    },
+                ],
+            },
+        },
+        'city': 'Qwerty',
+    }
+
+    tournament = Tournament.parse_obj(payload)
+    assert tournament.city == 'Qwerty'
+    assert len(tournament.players.__root__) == 2
+    assert len(tournament.players.__root__['Jane'].pokemons.__root__) == 2
+    assert tournament.players.__root__['Jane'].pokemons.__root__[0].name == 'Pikachu'
 
 
 def test_untouched_types():
@@ -1428,6 +1546,25 @@ def test_base_config_type_hinting():
     get_type_hints(M.__config__)
 
 
+def test_allow_mutation_field():
+    """assigning a allow_mutation=False field should raise a TypeError"""
+
+    class Entry(BaseModel):
+        id: float = Field(allow_mutation=False)
+        val: float
+
+        class Config:
+            validate_assignment = True
+
+    r = Entry(id=1, val=100)
+    assert r.val == 100
+    r.val = 101
+    assert r.val == 101
+    assert r.id == 1
+    with pytest.raises(TypeError, match='"id" has allow_mutation set to False and cannot be assigned'):
+        r.id = 2
+
+
 def test_inherited_model_field_copy():
     """It should copy models used as fields by default"""
 
@@ -1468,7 +1605,7 @@ def test_inherited_model_field_untouched():
     image_1 = Image(path='my_image1.png')
     image_2 = Image(path='my_image2.png')
 
-    item = Item(images={image_1, image_2})
+    item = Item(images=(image_1, image_2))
     assert image_1 in item.images
 
     assert id(image_1) == id(item.images[0])
@@ -1537,3 +1674,32 @@ def test_typing_coercion_defaultdict():
     m = Model(x=d)
     m.x['a']
     assert repr(m) == "Model(x=defaultdict(<class 'str'>, {1: '', 'a': ''}))"
+
+
+def test_class_kwargs_config():
+    class Base(BaseModel, extra='forbid', alias_generator=str.upper):
+        a: int
+
+    assert Base.__config__.extra is Extra.forbid
+    assert Base.__config__.alias_generator is str.upper
+    assert Base.__fields__['a'].alias == 'A'
+
+    class Model(Base, extra='allow'):
+        b: int
+
+    assert Model.__config__.extra is Extra.allow  # overwritten as intended
+    assert Model.__config__.alias_generator is str.upper  # inherited as intended
+    assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
+
+
+def test_class_kwargs_config_and_attr_conflict():
+
+    with pytest.raises(
+        TypeError, match='Specifying config in two places is ambiguous, use either Config attribute or class kwargs'
+    ):
+
+        class Model(BaseModel, extra='allow'):
+            b: int
+
+            class Config:
+                extra = 'forbid'

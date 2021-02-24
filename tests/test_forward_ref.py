@@ -480,6 +480,31 @@ def test_forward_ref_with_create_model(create_module):
         assert instance.sub.dict() == {'foo': 'bar'}
 
 
+@skip_pre_37
+def test_resolve_forward_ref_dataclass(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from pydantic import BaseModel
+from pydantic.typing import Literal
+
+@dataclass
+class Base:
+    literal: Literal[1, 2]
+
+class What(BaseModel):
+    base: Base
+        """
+    )
+
+    m = module.What(base=module.Base(literal=1))
+    assert m.base.literal == 1
+
+
 def test_nested_forward_ref():
     class NestedTuple(BaseModel):
         x: Tuple[int, Optional['NestedTuple']]  # noqa: F821

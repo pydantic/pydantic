@@ -20,6 +20,8 @@ from typing import (  # type: ignore
     cast,
 )
 
+from typing_extensions import Annotated, Literal
+
 try:
     from typing import _TypingBase as typing_base  # type: ignore
 except ImportError:
@@ -80,50 +82,22 @@ else:
     AnyCallable = TypingCallable[..., Any]
     NoArgAnyCallable = TypingCallable[[], Any]
 
-if sys.version_info < (3, 8):  # noqa: C901
-    if TYPE_CHECKING:
-        from typing_extensions import Literal
-    else:  # due to different mypy warnings raised during CI for python 3.7 and 3.8
-        try:
-            from typing_extensions import Literal
-        except ImportError:
-            Literal = None
 
-    if sys.version_info < (3, 7):
+# Annotated[...] is implemented by returning an instance of one of these classes, depending on
+# python/typing_extensions version.
+AnnotatedTypeNames = {'AnnotatedMeta', '_AnnotatedAlias'}
 
-        def get_args(t: Type[Any]) -> Tuple[Any, ...]:
-            """Simplest get_args compatability layer possible.
 
-            The Python 3.6 typing module does not have `_GenericAlias` so
-            this won't work for everything. In particular this will not
-            support the `generics` module (we don't support generic models in
-            python 3.6).
-
-            """
-            return getattr(t, '__args__', ())
-
-    else:
-        from typing import _GenericAlias
-
-        def get_args(t: Type[Any]) -> Tuple[Any, ...]:
-            """Compatability version of get_args for python 3.7.
-
-            Mostly compatible with the python 3.8 `typing` module version
-            and able to handle almost all use cases.
-            """
-            if isinstance(t, _GenericAlias):
-                res = t.__args__
-                if t.__origin__ is Callable and res and res[0] is not Ellipsis:
-                    res = (list(res[:-1]), res[-1])
-                return res
-            return getattr(t, '__args__', ())
+if sys.version_info < (3, 8):
 
     def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
+        if type(t).__name__ in AnnotatedTypeNames:
+            return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm in py3.6
         return getattr(t, '__origin__', None)
 
 
 else:
-    from typing import Literal, get_args as typing_get_args, get_origin as typing_get_origin
+    from typing import get_origin as _typing_get_origin
 
     def get_origin(tp: Type[Any]) -> Type[Any]:
         """
@@ -132,9 +106,50 @@ else:
         It should be useless once https://github.com/cython/cython/issues/3537 is
         solved and https://github.com/samuelcolvin/pydantic/pull/1753 is merged.
         """
-        return typing_get_origin(tp) or getattr(tp, '__origin__', None)
+        if type(tp).__name__ in AnnotatedTypeNames:
+            return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm
+        return _typing_get_origin(tp) or getattr(tp, '__origin__', None)
 
-    def generic_get_args(tp: Type[Any]) -> Tuple[Any, ...]:
+
+if sys.version_info < (3, 7):  # noqa: C901 (ignore complexity)
+
+    def get_args(t: Type[Any]) -> Tuple[Any, ...]:
+        """Simplest get_args compatibility layer possible.
+
+        The Python 3.6 typing module does not have `_GenericAlias` so
+        this won't work for everything. In particular this will not
+        support the `generics` module (we don't support generic models in
+        python 3.6).
+
+        """
+        if type(t).__name__ in AnnotatedTypeNames:
+            return t.__args__ + t.__metadata__
+        return getattr(t, '__args__', ())
+
+
+elif sys.version_info < (3, 8):  # noqa: C901
+    from typing import _GenericAlias
+
+    def get_args(t: Type[Any]) -> Tuple[Any, ...]:
+        """Compatibility version of get_args for python 3.7.
+
+        Mostly compatible with the python 3.8 `typing` module version
+        and able to handle almost all use cases.
+        """
+        if type(t).__name__ in AnnotatedTypeNames:
+            return t.__args__ + t.__metadata__
+        if isinstance(t, _GenericAlias):
+            res = t.__args__
+            if t.__origin__ is Callable and res and res[0] is not Ellipsis:
+                res = (list(res[:-1]), res[-1])
+            return res
+        return getattr(t, '__args__', ())
+
+
+else:
+    from typing import get_args as _typing_get_args
+
+    def _generic_get_args(tp: Type[Any]) -> Tuple[Any, ...]:
         """
         In python 3.9, `typing.Dict`, `typing.List`, ...
         do have an empty `__args__` by default (instead of the generic ~T for example).
@@ -156,8 +171,10 @@ else:
             get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
             get_args(Callable[[], T][int]) == ([], int)
         """
+        if type(tp).__name__ in AnnotatedTypeNames:
+            return tp.__args__ + tp.__metadata__
         # the fallback is needed for the same reasons as `get_origin` (see above)
-        return typing_get_args(tp) or getattr(tp, '__args__', ()) or generic_get_args(tp)
+        return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
 
 
 if TYPE_CHECKING:
@@ -187,7 +204,8 @@ __all__ = (
     'is_callable_type',
     'is_literal_type',
     'literal_values',
-    'Literal',
+    'is_namedtuple',
+    'is_typeddict',
     'is_new_type',
     'new_type_supertype',
     'is_classvar',
@@ -210,9 +228,7 @@ __all__ = (
 
 
 NoneType = None.__class__
-NONE_TYPES: Set[Any] = {None, NoneType}
-if Literal:
-    NONE_TYPES.add(Literal[None])
+NONE_TYPES: Set[Any] = {None, NoneType, Literal[None]}
 
 
 def display_as_type(v: Type[Any]) -> str:
@@ -244,10 +260,16 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
 
     Resolve string or ForwardRef annotations into type objects if possible.
     """
+    base_globals: Optional[Dict[str, Any]] = None
     if module_name:
-        base_globals: Optional[Dict[str, Any]] = sys.modules[module_name].__dict__
-    else:
-        base_globals = None
+        try:
+            module = sys.modules[module_name]
+        except KeyError:
+            # happens occasionally, see https://github.com/samuelcolvin/pydantic/issues/2363
+            pass
+        else:
+            base_globals = module.__dict__
+
     annotations = {}
     for name, value in raw_annotations.items():
         if isinstance(value, str):
@@ -297,6 +319,26 @@ def all_literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
 
     values = literal_values(type_)
     return tuple(x for value in values for x in all_literal_values(value))
+
+
+def is_namedtuple(type_: Type[Any]) -> bool:
+    """
+    Check if a given class is a named tuple.
+    It can be either a `typing.NamedTuple` or `collections.namedtuple`
+    """
+    from .utils import lenient_issubclass
+
+    return lenient_issubclass(type_, tuple) and hasattr(type_, '_fields')
+
+
+def is_typeddict(type_: Type[Any]) -> bool:
+    """
+    Check if a given class is a typed dict (from `typing` or `typing_extensions`)
+    In 3.10, there will be a public method (https://docs.python.org/3.10/library/typing.html#typing.is_typeddict)
+    """
+    from .utils import lenient_issubclass
+
+    return lenient_issubclass(type_, dict) and hasattr(type_, '__total__')
 
 
 test_type = NewType('test_type', str)

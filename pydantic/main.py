@@ -16,7 +16,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Set,
     Tuple,
     Type,
     TypeVar,
@@ -34,7 +33,15 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
-from .typing import AnyCallable, get_args, get_origin, is_classvar, resolve_annotations, update_field_forward_refs
+from .typing import (
+    AnyCallable,
+    get_args,
+    get_origin,
+    is_classvar,
+    is_namedtuple,
+    resolve_annotations,
+    update_field_forward_refs,
+)
 from .utils import (
     ROOT_KEY,
     ClassAttribute,
@@ -113,6 +120,7 @@ class BaseConfig:
     validate_all = False
     extra = Extra.ignore
     allow_mutation = True
+    frozen = False
     allow_population_by_field_name = False
     use_enum_values = False
     fields: Dict[str, Union[str, Dict[str, str]]] = {}
@@ -161,14 +169,20 @@ class BaseConfig:
         pass
 
 
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'ConfigType':
+def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
     if not self_config:
-        base_classes = (parent_config,)
+        base_classes: Tuple['ConfigType', ...] = (parent_config,)
     elif self_config == parent_config:
         base_classes = (self_config,)
     else:
-        base_classes = self_config, parent_config  # type: ignore
-    return type('Config', base_classes, {})
+        base_classes = self_config, parent_config
+
+    namespace['json_encoders'] = {
+        **getattr(parent_config, 'json_encoders', {}),
+        **getattr(self_config, 'json_encoders', {}),
+    }
+
+    return type('Config', base_classes, namespace)
 
 
 EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/usage/model_config/'
@@ -199,15 +213,20 @@ def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
 
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
-        raise ValueError('__root__ cannot be mixed with other fields')
+        raise ValueError(f'{ROOT_KEY} cannot be mixed with other fields')
 
 
-# Annotated fields can have many types like `str`, `int`, `List[str]`, `Callable`...
+def generate_hash_function(frozen: bool) -> Optional[Callable[[Any], int]]:
+    def hash_function(self_: Any) -> int:
+        return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
+
+    return hash_function if frozen else None
+
+
 # If a field is of type `Callable`, its default value should be a function and cannot to ignored.
 ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (property, type, classmethod, staticmethod)
 # When creating a `BaseModel` instance, we bypass all the methods, properties... added to the model
 UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_TYPES
-
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
 # (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
 # safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
@@ -224,8 +243,9 @@ class ModelMetaclass(ABCMeta):
 
         pre_root_validators, post_root_validators = [], []
         private_attributes: Dict[str, ModelPrivateAttr] = {}
-        slots: Set[str] = namespace.get('__slots__', ())
+        slots: SetStr = namespace.get('__slots__', ())
         slots = {slots} if isinstance(slots, str) else set(slots)
+        class_vars: SetStr = set()
 
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
@@ -235,8 +255,14 @@ class ModelMetaclass(ABCMeta):
                 pre_root_validators += base.__pre_root_validators__
                 post_root_validators += base.__post_root_validators__
                 private_attributes.update(base.__private_attributes__)
+                class_vars.update(base.__class_vars__)
 
-        config = inherit_config(namespace.get('Config'), config)
+        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & BaseConfig.__dict__.keys()}
+        config_from_namespace = namespace.get('Config')
+        if config_kwargs and config_from_namespace:
+            raise TypeError('Specifying config in two places is ambiguous, use either Config attribute or class kwargs')
+        config = inherit_config(config_from_namespace, config, **config_kwargs)
+
         validators = inherit_validators(extract_validators(namespace), validators)
         vg = ValidatorGroup(validators)
 
@@ -250,7 +276,11 @@ class ModelMetaclass(ABCMeta):
 
         prepare_config(config, name)
 
-        class_vars = set()
+        untouched_types = ANNOTATED_FIELD_UNTOUCHED_TYPES
+
+        def is_untouched(v: Any) -> bool:
+            return isinstance(v, untouched_types) or v.__class__.__name__ == 'cython_function_or_method'
+
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
             # annotation only fields need to come first in fields
@@ -262,7 +292,7 @@ class ModelMetaclass(ABCMeta):
                     value = namespace.get(ann_name, Undefined)
                     allowed_types = get_args(ann_type) if get_origin(ann_type) is Union else (ann_type,)
                     if (
-                        isinstance(value, ANNOTATED_FIELD_UNTOUCHED_TYPES)
+                        is_untouched(value)
                         and ann_type != PyObject
                         and not any(
                             lenient_issubclass(get_origin(allowed_type), Type) for allowed_type in allowed_types
@@ -281,7 +311,7 @@ class ModelMetaclass(ABCMeta):
 
             untouched_types = UNTOUCHED_TYPES + config.keep_untouched
             for var_name, value in namespace.items():
-                can_be_changed = var_name not in class_vars and not isinstance(value, untouched_types)
+                can_be_changed = var_name not in class_vars and not is_untouched(value)
                 if isinstance(value, ModelPrivateAttr):
                     if not is_valid_private_name(var_name):
                         raise NameError(
@@ -329,6 +359,8 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             '__private_attributes__': private_attributes,
             '__slots__': slots | private_attributes.keys(),
+            '__hash__': generate_hash_function(config.frozen),
+            '__class_vars__': class_vars,
             **{n: v for n, v in namespace.items() if n not in exclude_from_namespace},
         }
 
@@ -355,6 +387,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __custom_root_type__: bool = False
         __signature__: 'Signature'
         __private_attributes__: Dict[str, Any]
+        __class_vars__: SetStr
         __fields_set__: SetStr = set()
 
     Config = BaseConfig
@@ -387,7 +420,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-        elif not self.__config__.allow_mutation:
+        elif not self.__config__.allow_mutation or self.__config__.frozen:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.__config__.validate_assignment:
             new_values = {**self.__dict__, name: value}
@@ -404,6 +437,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 # - make sure validators are called without the current value for this field inside `values`
                 # - keep other values (e.g. submodels) untouched (using `BaseModel.dict()` will change them into dicts)
                 # - keep the order of the fields
+                if not known_field.field_info.allow_mutation:
+                    raise TypeError(f'"{known_field.name}" has allow_mutation set to False and cannot be assigned')
                 dict_without_original_value = {k: v for k, v in self.__dict__.items() if k != name}
                 value, error_ = known_field.validate(value, dict_without_original_value, loc=name, cls=self.__class__)
                 if error_:
@@ -522,13 +557,19 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+    def _enforce_dict_if_root(cls, obj: Any) -> Any:
         if cls.__custom_root_type__ and (
             not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY})
             or cls.__fields__[ROOT_KEY].shape in MAPPING_LIKE_SHAPES
         ):
-            obj = {ROOT_KEY: obj}
-        elif not isinstance(obj, dict):
+            return {ROOT_KEY: obj}
+        else:
+            return obj
+
+    @classmethod
+    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+        obj = cls._enforce_dict_if_root(obj)
+        if not isinstance(obj, dict):
             try:
                 obj = dict(obj)
             except (TypeError, ValueError) as e:
@@ -583,7 +624,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
         if not cls.__config__.orm_mode:
             raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
-        obj = cls._decompose_class(obj)
+        obj = {ROOT_KEY: obj} if cls.__custom_root_type__ else cls._decompose_class(obj)
         m = cls.__new__(cls)
         values, fields_set, validation_error = validate_model(cls, obj)
         if validation_error:
@@ -598,10 +639,15 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         """
         Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
+        Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
         """
         m = cls.__new__(cls)
-        # default field values
-        fields_values = {name: field.get_default() for name, field in cls.__fields__.items() if not field.required}
+        fields_values: Dict[str, Any] = {}
+        for name, field in cls.__fields__.items():
+            if name in values:
+                fields_values[name] = values[name]
+            elif not field.required:
+                fields_values[name] = field.get_default()
         fields_values.update(values)
         object_setattr(m, '__dict__', fields_values)
         if _fields_set is None:
@@ -641,7 +687,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         cls = self.__class__
         m = cls.__new__(cls)
         object_setattr(m, '__dict__', v)
-        object_setattr(m, '__fields_set__', self.__fields_set__.copy())
+        # new `__fields_set__` can have unset optional fields with a set value in `update` kwarg
+        if update:
+            fields_set = self.__fields_set__ | update.keys()
+        else:
+            fields_set = set(self.__fields_set__)
+        object_setattr(m, '__fields_set__', fields_set)
         for name in self.__private_attributes__:
             value = getattr(self, name, Undefined)
             if value is not Undefined:
@@ -676,14 +727,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
+        value = cls._enforce_dict_if_root(value)
         if isinstance(value, dict):
             return cls(**value)
         elif isinstance(value, cls):
             return value.copy() if cls.__config__.copy_on_model_validation else value
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
-        elif cls.__custom_root_type__:
-            return cls.parse_obj(value)
         else:
             try:
                 value_as_dict = dict(value)
@@ -719,8 +769,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude=exclude,
                     exclude_none=exclude_none,
                 )
-                if '__root__' in v_dict:
-                    return v_dict['__root__']
+                if ROOT_KEY in v_dict:
+                    return v_dict[ROOT_KEY]
                 return v_dict
             else:
                 return v.copy(include=include, exclude=exclude)
@@ -746,7 +796,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             }
 
         elif sequence_like(v):
-            return v.__class__(
+            seq_args = (
                 cls._get_value(
                     v_,
                     to_dict=to_dict,
@@ -761,6 +811,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 if (not value_exclude or not value_exclude.is_excluded(i))
                 and (not value_include or value_include.is_included(i))
             )
+
+            return v.__class__(*seq_args) if is_namedtuple(v.__class__) else v.__class__(seq_args)
 
         elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
             return v.value

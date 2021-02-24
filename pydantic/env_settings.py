@@ -197,7 +197,9 @@ class SecretsSettingsSource:
         secrets_path = Path(self.secrets_dir).expanduser()
 
         if not secrets_path.exists():
-            raise SettingsError(f'directory "{secrets_path}" does not exist')
+            warnings.warn(f'directory "{secrets_path}" does not exist')
+            return secrets
+
         if not secrets_path.is_dir():
             raise SettingsError(f'secrets_dir must reference a directory, not a {path_type(secrets_path)}')
 
