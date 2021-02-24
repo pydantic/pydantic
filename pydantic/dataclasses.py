@@ -81,6 +81,30 @@ def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     return not hasattr(_cls, '__processed__') and dataclasses.is_dataclass(_cls)
 
 
+def _generate_pydantic_post_init(
+    post_init_original: Optional[Callable[..., None]], post_init_post_parse: Optional[Callable[..., None]]
+) -> Callable[..., None]:
+    def _pydantic_post_init(self: 'Dataclass', *initvars: Any) -> None:
+        if post_init_original is not None:
+            post_init_original(self, *initvars)
+
+        if getattr(self, '__has_field_info_default__', False):
+            # We need to remove `FieldInfo` values since they are not valid as input
+            # It's ok to do that because they are obviously the default values!
+            input_data = {k: v for k, v in self.__dict__.items() if not isinstance(v, FieldInfo)}
+        else:
+            input_data = self.__dict__
+        d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
+        if validation_error:
+            raise validation_error
+        object.__setattr__(self, '__dict__', d)
+        object.__setattr__(self, '__initialised__', True)
+        if post_init_post_parse is not None:
+            post_init_post_parse(self, *initvars)
+
+    return _pydantic_post_init
+
+
 def _process_class(
     _cls: Type[Any],
     init: bool,
@@ -101,23 +125,7 @@ def _process_class(
 
     post_init_post_parse = getattr(_cls, '__post_init_post_parse__', None)
 
-    def _pydantic_post_init(self: 'Dataclass', *initvars: Any) -> None:
-        if post_init_original is not None:
-            post_init_original(self, *initvars)
-
-        if getattr(self, '__has_field_info_default__', False):
-            # We need to remove `FieldInfo` values since they are not valid as input
-            # It's ok to do that because they are obviously the default values!
-            input_data = {k: v for k, v in self.__dict__.items() if not isinstance(v, FieldInfo)}
-        else:
-            input_data = self.__dict__
-        d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
-        if validation_error:
-            raise validation_error
-        object.__setattr__(self, '__dict__', d)
-        object.__setattr__(self, '__initialised__', True)
-        if post_init_post_parse is not None:
-            post_init_post_parse(self, *initvars)
+    _pydantic_post_init = _generate_pydantic_post_init(post_init_original, post_init_post_parse)
 
     # If the class is already a dataclass, __post_init__ will not be called automatically
     # so no validation will be added.
