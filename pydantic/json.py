@@ -18,6 +18,27 @@ def isoformat(o: Union[datetime.date, datetime.time]) -> str:
     return o.isoformat()
 
 
+def decimal_encoder(dec_value: Decimal) -> Union[int, float]:
+    """
+    Encodes a Decimal as int of there's no exponent, otherwise float
+
+    This is useful when we use ConstrainedDecimal to represent Numeric(x,0)
+    where a integer (but not int typed) is used. Encoding this as a float
+    results in failed round-tripping between encode and prase.
+    Our Id type is a prime example of this.
+
+    >>> decimal_encoder(Decimal("1.0"))
+    1.0
+
+    >>> decimal_encoder(Decimal("1"))
+    1
+    """
+    if dec_value.as_tuple().exponent >= 0:
+        return int(dec_value)
+    else:
+        return float(dec_value)
+
+
 ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     bytes: lambda o: o.decode(),
     Color: str,
@@ -25,7 +46,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     datetime.datetime: isoformat,
     datetime.time: isoformat,
     datetime.timedelta: lambda td: td.total_seconds(),
-    Decimal: float,
+    Decimal: decimal_encoder,
     Enum: lambda o: o.value,
     frozenset: list,
     deque: list,
