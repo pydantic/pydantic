@@ -221,6 +221,7 @@ __all__ = (
     'CallableGenerator',
     'ReprArgs',
     'CallableGenerator',
+    'GenericAlias',
     'get_args',
     'get_origin',
     'typing_base',
