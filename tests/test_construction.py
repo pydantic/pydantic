@@ -253,13 +253,30 @@ def test_recursive_pickle():
     assert m.__foo__ == m2.__foo__
 
 
-def test_immutable_copy():
+def test_immutable_copy_with_allow_mutation():
     class Model(BaseModel):
         a: int
         b: int
 
         class Config:
             allow_mutation = False
+
+    m = Model(a=40, b=10)
+    assert m == m.copy()
+
+    m2 = m.copy(update={'b': 12})
+    assert repr(m2) == 'Model(a=40, b=12)'
+    with pytest.raises(TypeError):
+        m2.b = 13
+
+
+def test_immutable_copy_with_frozen():
+    class Model(BaseModel):
+        a: int
+        b: int
+
+        class Config:
+            frozen = True
 
     m = Model(a=40, b=10)
     assert m == m.copy()

@@ -76,7 +76,7 @@ else:
 
 # PyObject - dotted names, in this case taken from the math module.
 st.register_type_strategy(
-    pydantic.PyObject,
+    pydantic.PyObject,  # type: ignore[arg-type]
     st.sampled_from(
         [cast(pydantic.PyObject, f'math.{name}') for name in sorted(vars(math)) if not name.startswith('_')]
     ),
@@ -152,18 +152,18 @@ st.register_type_strategy(pydantic.SecretStr, st.text().map(pydantic.SecretStr))
 st.register_type_strategy(pydantic.IPvAnyAddress, st.ip_addresses())
 st.register_type_strategy(
     pydantic.IPvAnyInterface,
-    st.from_type(ipaddress.IPv4Interface) | st.from_type(ipaddress.IPv6Interface),
+    st.from_type(ipaddress.IPv4Interface) | st.from_type(ipaddress.IPv6Interface),  # type: ignore[arg-type]
 )
 st.register_type_strategy(
     pydantic.IPvAnyNetwork,
-    st.from_type(ipaddress.IPv4Network) | st.from_type(ipaddress.IPv6Network),
+    st.from_type(ipaddress.IPv4Network) | st.from_type(ipaddress.IPv6Network),  # type: ignore[arg-type]
 )
 
 # We hook into the con***() functions and the ConstrainedNumberMeta metaclass,
 # so here we only have to register subclasses for other constrained types which
 # don't go via those mechanisms.  Then there are the registration hooks below.
 st.register_type_strategy(pydantic.StrictBool, st.booleans())
-st.register_type_strategy(pydantic.StrictStr, st.text())  # type: ignore[arg-type]
+st.register_type_strategy(pydantic.StrictStr, st.text())
 
 
 # Constrained-type resolver functions
@@ -212,7 +212,6 @@ def resolves(
 # Type-to-strategy resolver functions
 
 
-@resolves(pydantic.Json)
 @resolves(pydantic.JsonWrapper)
 def resolve_json(cls):  # type: ignore[no-untyped-def]
     try:
@@ -221,7 +220,7 @@ def resolve_json(cls):  # type: ignore[no-untyped-def]
         finite = st.floats(allow_infinity=False, allow_nan=False)
         inner = st.recursive(
             base=st.one_of(st.none(), st.booleans(), st.integers(), finite, st.text()),
-            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),
+            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),  # type: ignore
         )
     return st.builds(
         json.dumps,
@@ -347,3 +346,4 @@ def resolve_constr(cls):  # type: ignore[no-untyped-def]  # pragma: no cover
 for typ in pydantic.types._DEFINED_TYPES:
     _registered(typ)
 pydantic.types._registered = _registered
+st.register_type_strategy(pydantic.Json, resolve_json)

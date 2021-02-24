@@ -120,6 +120,7 @@ class BaseConfig:
     validate_all = False
     extra = Extra.ignore
     allow_mutation = True
+    frozen = False
     allow_population_by_field_name = False
     use_enum_values = False
     fields: Dict[str, Union[str, Dict[str, str]]] = {}
@@ -168,18 +169,18 @@ class BaseConfig:
         pass
 
 
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'ConfigType':
-    namespace = {}
+def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
     if not self_config:
-        base_classes = (parent_config,)
+        base_classes: Tuple['ConfigType', ...] = (parent_config,)
     elif self_config == parent_config:
         base_classes = (self_config,)
     else:
-        base_classes = self_config, parent_config  # type: ignore
-        namespace['json_encoders'] = {
-            **getattr(parent_config, 'json_encoders', {}),
-            **getattr(self_config, 'json_encoders', {}),
-        }
+        base_classes = self_config, parent_config
+
+    namespace['json_encoders'] = {
+        **getattr(parent_config, 'json_encoders', {}),
+        **getattr(self_config, 'json_encoders', {}),
+    }
 
     return type('Config', base_classes, namespace)
 
@@ -215,12 +216,17 @@ def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
         raise ValueError(f'{ROOT_KEY} cannot be mixed with other fields')
 
 
-# Annotated fields can have many types like `str`, `int`, `List[str]`, `Callable`...
+def generate_hash_function(frozen: bool) -> Optional[Callable[[Any], int]]:
+    def hash_function(self_: Any) -> int:
+        return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
+
+    return hash_function if frozen else None
+
+
 # If a field is of type `Callable`, its default value should be a function and cannot to ignored.
 ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (property, type, classmethod, staticmethod)
 # When creating a `BaseModel` instance, we bypass all the methods, properties... added to the model
 UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_TYPES
-
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
 # (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
 # safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
@@ -251,7 +257,12 @@ class ModelMetaclass(ABCMeta):
                 private_attributes.update(base.__private_attributes__)
                 class_vars.update(base.__class_vars__)
 
-        config = inherit_config(namespace.get('Config'), config)
+        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & BaseConfig.__dict__.keys()}
+        config_from_namespace = namespace.get('Config')
+        if config_kwargs and config_from_namespace:
+            raise TypeError('Specifying config in two places is ambiguous, use either Config attribute or class kwargs')
+        config = inherit_config(config_from_namespace, config, **config_kwargs)
+
         validators = inherit_validators(extract_validators(namespace), validators)
         vg = ValidatorGroup(validators)
 
@@ -348,6 +359,7 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             '__private_attributes__': private_attributes,
             '__slots__': slots | private_attributes.keys(),
+            '__hash__': generate_hash_function(config.frozen),
             '__class_vars__': class_vars,
             **{n: v for n, v in namespace.items() if n not in exclude_from_namespace},
         }
@@ -408,7 +420,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-        elif not self.__config__.allow_mutation:
+        elif not self.__config__.allow_mutation or self.__config__.frozen:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.__config__.validate_assignment:
             new_values = {**self.__dict__, name: value}

@@ -202,3 +202,27 @@ class AddProject:
 
 
 p = AddProject(name='x', slug='y', description='z')
+
+
+# Same as Model, but with frozen = True
+class FrozenModel(BaseModel):
+    x: int
+    y: str
+
+    class Config:
+        alias_generator = None
+        frozen = True
+        extra = Extra.forbid
+
+
+frozenmodel = FrozenModel(x=1, y='b')
+frozenmodel.y = 'a'
+
+
+class InheritingModel2(FrozenModel):
+    class Config:
+        frozen = False
+
+
+inheriting2 = InheritingModel2(x=1, y='c')
+inheriting2.y = 'd'
