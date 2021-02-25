@@ -1,5 +1,3 @@
-import json
-
 from schematics import __version__
 from schematics.exceptions import DataError, ValidationError
 from schematics.models import Model as PModel
@@ -10,7 +8,7 @@ from schematics.types.compound import ListType, ModelType
 
 class TestSchematics:
     package = 'schematics'
-    version = str(__version__)
+    version = __version__
 
     def __init__(self, allow_extra):
         class Model(PModel):
@@ -28,7 +26,7 @@ class TestSchematics:
             contractor = IntType(min_value=1, default=None)
             upstream_http_referrer = StringType(max_length=1023, default=None)
             grecaptcha_response = StringType(min_length=20, max_length=1000, required=True)
-            last_updated = DateType(formats=('%Y-%m-%dT%H:%M:%S'))
+            last_updated = DateType(formats='%Y-%m-%dT%H:%M:%S')
 
             class Skill(PModel):
                 subject = StringType(required=True)
@@ -39,7 +37,6 @@ class TestSchematics:
                 qual_level_ranking = FloatType(default=0, required=True)
 
             skills = ListType(ModelType(Skill), default=[])
-
 
         self.model = Model
 

@@ -71,7 +71,16 @@ ALL = PUNCTUATION * 5 + LETTERS * 20 + UNICODE
 random = random.SystemRandom()
 
 # in order of performance for csv
-other_tests = [TestCAttrs, TestValideer, TestMarshmallow, TestVoluptuous, TestTrafaret, TestDRF, TestCerberus, TestSchematics]
+other_tests = [
+    TestCAttrs,
+    TestValideer,
+    TestMarshmallow,
+    TestVoluptuous,
+    TestTrafaret,
+    TestSchematics,
+    TestDRF,
+    TestCerberus,
+]
 active_other_tests = [t for t in other_tests if t is not None]
 
 
