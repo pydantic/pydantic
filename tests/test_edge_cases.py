@@ -19,7 +19,7 @@ from pydantic import (
     validate_model,
     validator,
 )
-from pydantic.fields import Field, Schema
+from pydantic.fields import Field
 
 try:
     import cython
@@ -1107,16 +1107,6 @@ def test_nested_init(model):
     assert m.nest.modified_number == 1
 
 
-def test_values_attr_deprecation():
-    class Model(BaseModel):
-        foo: int
-        bar: str
-
-    m = Model(foo=4, bar='baz')
-    with pytest.warns(DeprecationWarning, match='`__values__` attribute is deprecated, use `__dict__` instead'):
-        assert m.__values__ == m.__dict__
-
-
 def test_init_inspection():
     class Foobar(BaseModel):
         x: int
@@ -1217,25 +1207,6 @@ def test_not_optional_subfields():
     assert Model().a is None
     assert Model(a=None).a is None
     assert Model(a=12).a == 12
-
-
-def test_scheme_deprecated():
-
-    with pytest.warns(DeprecationWarning, match='`Schema` is deprecated, use `Field` instead'):
-
-        class Model(BaseModel):
-            foo: int = Schema(4)
-
-
-def test_fields_deprecated():
-    class Model(BaseModel):
-        v: str = 'x'
-
-    with pytest.warns(DeprecationWarning, match='`fields` attribute is deprecated, use `__fields__` instead'):
-        assert Model().fields.keys() == {'v'}
-
-    assert Model().__fields__.keys() == {'v'}
-    assert Model.__fields__.keys() == {'v'}
 
 
 def test_optional_field_constraints():

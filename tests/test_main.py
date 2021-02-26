@@ -62,8 +62,7 @@ def test_ultra_simple_repr():
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
     assert m.json() == '{"a": 10.2, "b": 10}'
-    with pytest.raises(DeprecationWarning, match=r'`model.to_string\(\)` method is deprecated'):
-        assert m.to_string() == 'a=10.2 b=10'
+    assert str(m) == 'a=10.2 b=10'
 
 
 def test_default_factory_field():

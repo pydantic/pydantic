@@ -28,7 +28,6 @@ extra_javascript:
 nav:
 - Overview: index.md
 - install.md
-- 'Version 1 release notes': version_1_release_notes.md
 - Usage:
   - usage/models.md
   - 'Field Types': usage/types.md

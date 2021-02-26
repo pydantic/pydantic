@@ -394,22 +394,6 @@ def test_case_sensitive(monkeypatch):
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-def test_case_insensitive(monkeypatch):
-    class Settings1(BaseSettings):
-        foo: str
-
-    with pytest.warns(DeprecationWarning, match='Settings2: "case_insensitive" is deprecated on BaseSettings'):
-
-        class Settings2(BaseSettings):
-            foo: str
-
-            class Config:
-                case_insensitive = False
-
-    assert Settings1.__config__.case_sensitive is False
-    assert Settings2.__config__.case_sensitive is True
-
-
 def test_nested_dataclass(env):
     @dataclasses.dataclass
     class MyDataclass:

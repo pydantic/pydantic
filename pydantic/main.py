@@ -195,21 +195,6 @@ def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
         except ValueError:
             raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
 
-    if hasattr(config, 'allow_population_by_alias'):
-        warnings.warn(
-            f'{cls_name}: "allow_population_by_alias" is deprecated and replaced by "allow_population_by_field_name"',
-            DeprecationWarning,
-        )
-        config.allow_population_by_field_name = config.allow_population_by_alias  # type: ignore
-
-    if hasattr(config, 'case_insensitive') and any('BaseSettings.Config' in c.__qualname__ for c in config.__mro__):
-        warnings.warn(
-            f'{cls_name}: "case_insensitive" is deprecated on BaseSettings config and replaced by '
-            f'"case_sensitive" (default False)',
-            DeprecationWarning,
-        )
-        config.case_sensitive = not config.case_insensitive  # type: ignore
-
 
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
@@ -921,20 +906,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def __repr_args__(self) -> 'ReprArgs':
         return self.__dict__.items()  # type: ignore
-
-    @property
-    def fields(self) -> Dict[str, ModelField]:
-        warnings.warn('`fields` attribute is deprecated, use `__fields__` instead', DeprecationWarning)
-        return self.__fields__
-
-    def to_string(self, pretty: bool = False) -> str:
-        warnings.warn('`model.to_string()` method is deprecated, use `str(model)` instead', DeprecationWarning)
-        return str(self)
-
-    @property
-    def __values__(self) -> 'DictStrAny':
-        warnings.warn('`__values__` attribute is deprecated, use `__dict__` instead', DeprecationWarning)
-        return self.__dict__
 
 
 _is_base_model_class_defined = True
