@@ -264,6 +264,16 @@ def test_pickle_undefined():
     assert not hasattr(m3, '__foo__')
 
 
+def test_copy_undefined():
+    m = ModelTwo(a=24, d=Model(a='123.45'))
+    m2 = m.copy()
+    assert m2.__foo__ == {'private'}
+
+    m.__foo__ = Undefined
+    m3 = m.copy()
+    assert not hasattr(m3, '__foo__')
+
+
 def test_immutable_copy_with_allow_mutation():
     class Model(BaseModel):
         a: int
