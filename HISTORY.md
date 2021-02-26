@@ -15,6 +15,14 @@ for their kind support.
 
 ### Changes
 
+* **Breaking Change:**, remove old deprecation aliases from v1, #2415 by @samuelcolvin:
+  * notes on migrating to v1
+  * `Schema` which was replaced by `Field`
+  * `Config.case_insensitive` which was replaced by `Config. case_sensitive` (default `False`)
+  * `Config.allow_population_by_alias` which was replaced by `Config.allow_population_by_field_name`
+  * `model.fields` which was replaced by `model.__fields__`
+  * `model.to_string()` which was replaced by `str(model)`
+  * `model.__values__` which was replaced by `model.__dict__`
 * **Breaking Change:** always validate only first sublevel items with `each_item`.
   There were indeed some edge cases with some compound types where the validated items were the last sublevel ones, #1933 by @PrettyWood
 * Update docs extensions to fix local syntax highlighting, #2400 by @daviskirk
