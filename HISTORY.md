@@ -1,4 +1,4 @@
-## v1.8.0 (2021-02-26)
+## v1.8 (2021-02-26)
 
 Thank you to pydantic's sponsors:
 @jorgecarleitao, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @koxudaxi, @timdrijvers, @mkeen, @meadsteve, 
