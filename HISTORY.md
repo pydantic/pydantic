@@ -61,22 +61,16 @@ for their kind support.
 * fix URL regex to parse fragment without query string, #2168 by @andrewmwhite
 * fix: ensure to always return one of the values in `Literal` field type, #2166 by @PrettyWood
 * Support `typing.Annotated` hints on model fields. A `Field` may now be set in the type hint with `Annotated[..., Field(...)`; all other annotations are ignored but still visible with `get_type_hints(..., include_extras=True)`, #2147 by @JacobHayes
-* fix: set right default value for required (optional) fields, #2142 by @PrettyWood
-* fix: support `underscore_attrs_are_private` with generic models, #2138 by @PrettyWood
 * Added `StrictBytes` type as well as `strict=False` option to `ConstrainedBytes`, #2136 by @rlizzo
 * added `Config.anystr_lower` and `to_lower` kwarg to `constr` and `conbytes`, #2134 by @tayoogunbiyi
 * Support plain `typing.Tuple` type, #2132 by @PrettyWood
 * Add a bound method `validate` to functions decorated with `validate_arguments`
   to validate parameters without actually calling the function, #2127 by @PrettyWood
-* fix: update all modified field values in `root_validator` when `validate_assignment` is on, #2116 by @PrettyWood
-* Allow pickling of `pydantic.dataclasses.dataclass` dynamically created from a built-in `dataclasses.dataclass`, #2111 by @aimestereo
-* Fix a regression where Enum fields would not propagate keyword arguments to the schema, #2109 by @bm424
 * Add the ability to customize settings sources (add / disable / change priority order), #2107 by @kozlek
 * Fix mypy complaints about most custom _pydantic_ types, #2098 by @PrettyWood
 * Add a [Hypothesis](https://hypothesis.readthedocs.io/) plugin for easier [property-based testing](https://increment.com/testing/in-praise-of-property-based-testing/) with Pydantic's custom types - [usage details here](https://pydantic-docs.helpmanual.io/hypothesis_plugin/), #2097 by @Zac-HD
 * add validator for `None`, `NoneType` or `Literal[None]`, #2095 by @PrettyWood
 * Handle properly fields of type `Callable` with a default value, #2094 by @PrettyWood
-* Ignore `__doc__` as private attribute when `Config.underscore_attrs_are_private` is set, #2090 by @PrettyWood
 * Updated `create_model` return type annotation to return type which inherits from `__base__` argument, #2071 by @uriyyo
 * Add merged `json_encoders` inheritance, #2064 by @art049
 * allow overwriting `ClassVar`s in sub-models without having to re-annotate them, #2061 by @layday
