@@ -8,21 +8,21 @@ for their kind support.
 
 ### Highlights
 
-* [Hypothesis plugin](https://pydantic-docs.helpmanual.io/hypothesis_plugin/) for testing, thanks @Zac-HD
-* support for [`NamedTuple` and `TypedDict`](https://pydantic-docs.helpmanual.io/usage/types/#annotated-types), thanks @PrettyWood
-* Support [`Annotated` hints on model fields](https://pydantic-docs.helpmanual.io/usage/schema/#typingannotated-fields), thanks @JacobHayes
-* [`frozen` parameter on `Config`](https://pydantic-docs.helpmanual.io/usage/model_config/) to allow models to be hashed, thanks @rhuille
+* [Hypothesis plugin](https://pydantic-docs.helpmanual.io/hypothesis_plugin/) for testing, #2097 by @Zac-HD
+* support for [`NamedTuple` and `TypedDict`](https://pydantic-docs.helpmanual.io/usage/types/#annotated-types), #2216 by @PrettyWood
+* Support [`Annotated` hints on model fields](https://pydantic-docs.helpmanual.io/usage/schema/#typingannotated-fields), #2147 by @JacobHayes
+* [`frozen` parameter on `Config`](https://pydantic-docs.helpmanual.io/usage/model_config/) to allow models to be hashed, #1880 by @rhuille
 
 ### Changes
 
 * **Breaking Change:**, remove old deprecation aliases from v1, #2415 by @samuelcolvin:
-  * notes on migrating to v1
-  * `Schema` which was replaced by `Field`
-  * `Config.case_insensitive` which was replaced by `Config. case_sensitive` (default `False`)
-  * `Config.allow_population_by_alias` which was replaced by `Config.allow_population_by_field_name`
-  * `model.fields` which was replaced by `model.__fields__`
-  * `model.to_string()` which was replaced by `str(model)`
-  * `model.__values__` which was replaced by `model.__dict__`
+  * remove notes on migrating to v1 in docs
+  * remove `Schema` which was replaced by `Field`
+  * remove `Config.case_insensitive` which was replaced by `Config.case_sensitive` (default `False`)
+  * remove `Config.allow_population_by_alias` which was replaced by `Config.allow_population_by_field_name`
+  * remove `model.fields` which was replaced by `model.__fields__`
+  * remove `model.to_string()` which was replaced by `str(model)`
+  * remove `model.__values__` which was replaced by `model.__dict__`
 * **Breaking Change:** always validate only first sublevel items with `each_item`.
   There were indeed some edge cases with some compound types where the validated items were the last sublevel ones, #1933 by @PrettyWood
 * Update docs extensions to fix local syntax highlighting, #2400 by @daviskirk
