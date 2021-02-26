@@ -427,7 +427,7 @@ class ModelField(Representation):
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
         self._set_default_and_type()
-        if self.type_.__class__ == ForwardRef:
+        if self.type_.__class__ is ForwardRef or self.type_.__class__ is DeferredType:
             # self.type_ is currently a ForwardRef and there's nothing we can do now,
             # user will need to call model.update_forward_refs()
             return
@@ -675,6 +675,8 @@ class ModelField(Representation):
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
+
+        assert self.type_.__class__ is not DeferredType
 
         if self.type_.__class__ is ForwardRef:
             assert cls is not None
@@ -983,3 +985,9 @@ def PrivateAttr(
         default,
         default_factory=default_factory,
     )
+
+
+class DeferredType:
+    """
+    Used to postpone field preparation, while creating recursive generic models.
+    """
