@@ -1,4 +1,3 @@
-import warnings
 from collections import defaultdict, deque
 from collections.abc import Iterable as CollectionsIterable
 from typing import (
@@ -58,6 +57,9 @@ class UndefinedType:
 
     def __copy__(self: T) -> T:
         return self
+
+    def __reduce__(self) -> str:
+        return 'Undefined'
 
     def __deepcopy__(self: T, _: Any) -> T:
         return self
@@ -231,11 +233,6 @@ def Field(
     )
     field_info._validate()
     return field_info
-
-
-def Schema(default: Any, **kwargs: Any) -> Any:
-    warnings.warn('`Schema` is deprecated, use `Field` instead', DeprecationWarning)
-    return Field(default, **kwargs)
 
 
 # used to be an enum but changed to int's for small performance improvement as less access overhead

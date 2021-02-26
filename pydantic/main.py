@@ -195,21 +195,6 @@ def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
         except ValueError:
             raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
 
-    if hasattr(config, 'allow_population_by_alias'):
-        warnings.warn(
-            f'{cls_name}: "allow_population_by_alias" is deprecated and replaced by "allow_population_by_field_name"',
-            DeprecationWarning,
-        )
-        config.allow_population_by_field_name = config.allow_population_by_alias  # type: ignore
-
-    if hasattr(config, 'case_insensitive') and any('BaseSettings.Config' in c.__qualname__ for c in config.__mro__):
-        warnings.warn(
-            f'{cls_name}: "case_insensitive" is deprecated on BaseSettings config and replaced by '
-            f'"case_sensitive" (default False)',
-            DeprecationWarning,
-        )
-        config.case_sensitive = not config.case_insensitive  # type: ignore
-
 
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
@@ -466,18 +451,18 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         self.__fields_set__.add(name)
 
     def __getstate__(self) -> 'DictAny':
+        private_attrs = ((k, getattr(self, k, Undefined)) for k in self.__private_attributes__)
         return {
             '__dict__': self.__dict__,
             '__fields_set__': self.__fields_set__,
-            '__private_attribute_values__': {k: getattr(self, k, Undefined) for k in self.__private_attributes__},
+            '__private_attribute_values__': {k: v for k, v in private_attrs if v is not Undefined},
         }
 
     def __setstate__(self, state: 'DictAny') -> None:
         object_setattr(self, '__dict__', state['__dict__'])
         object_setattr(self, '__fields_set__', state['__fields_set__'])
         for name, value in state.get('__private_attribute_values__', {}).items():
-            if value is not Undefined:
-                object_setattr(self, name, value)
+            object_setattr(self, name, value)
 
     def _init_private_attributes(self) -> None:
         for name, private_attr in self.__private_attributes__.items():
@@ -859,14 +844,17 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         for field_key, v in self.__dict__.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
                 continue
+
             if exclude_defaults:
                 model_field = self.__fields__.get(field_key)
                 if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
                     continue
+
             if by_alias and field_key in self.__fields__:
                 dict_key = self.__fields__[field_key].alias
             else:
                 dict_key = field_key
+
             if to_dict or value_include or value_exclude:
                 v = self._get_value(
                     v,
@@ -921,20 +909,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def __repr_args__(self) -> 'ReprArgs':
         return self.__dict__.items()  # type: ignore
-
-    @property
-    def fields(self) -> Dict[str, ModelField]:
-        warnings.warn('`fields` attribute is deprecated, use `__fields__` instead', DeprecationWarning)
-        return self.__fields__
-
-    def to_string(self, pretty: bool = False) -> str:
-        warnings.warn('`model.to_string()` method is deprecated, use `str(model)` instead', DeprecationWarning)
-        return str(self)
-
-    @property
-    def __values__(self) -> 'DictStrAny':
-        warnings.warn('`__values__` attribute is deprecated, use `__dict__` instead', DeprecationWarning)
-        return self.__dict__
 
 
 _is_base_model_class_defined = True

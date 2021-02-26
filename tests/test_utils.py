@@ -1,5 +1,6 @@
 import collections.abc
 import os
+import pickle
 import re
 import string
 import sys
@@ -499,3 +500,8 @@ def test_all_identical():
     assert (
         all_identical([a, [b], b], [a, [b], b]) is False
     ), 'New list objects are different objects and should therefor not be identical.'
+
+
+def test_undefined_pickle():
+    undefined2 = pickle.loads(pickle.dumps(Undefined))
+    assert undefined2 is Undefined

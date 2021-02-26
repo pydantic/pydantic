@@ -4,6 +4,7 @@ from typing import Any, List, Optional
 import pytest
 
 from pydantic import BaseModel, Field, PrivateAttr
+from pydantic.fields import Undefined
 
 
 class Model(BaseModel):
@@ -251,6 +252,26 @@ def test_recursive_pickle():
     assert m2.d.a == 123.45
     assert m.__fields__ == m2.__fields__
     assert m.__foo__ == m2.__foo__
+
+
+def test_pickle_undefined():
+    m = ModelTwo(a=24, d=Model(a='123.45'))
+    m2 = pickle.loads(pickle.dumps(m))
+    assert m2.__foo__ == {'private'}
+
+    m.__foo__ = Undefined
+    m3 = pickle.loads(pickle.dumps(m))
+    assert not hasattr(m3, '__foo__')
+
+
+def test_copy_undefined():
+    m = ModelTwo(a=24, d=Model(a='123.45'))
+    m2 = m.copy()
+    assert m2.__foo__ == {'private'}
+
+    m.__foo__ = Undefined
+    m3 = m.copy()
+    assert not hasattr(m3, '__foo__')
 
 
 def test_immutable_copy_with_allow_mutation():
