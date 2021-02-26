@@ -57,6 +57,7 @@ markdown_extensions:
 - admonition
 - pymdownx.highlight
 - pymdownx.extra
+- mdx_truly_sane_lists
 
 plugins:
 - search
