@@ -844,14 +844,17 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         for field_key, v in self.__dict__.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
                 continue
+
             if exclude_defaults:
                 model_field = self.__fields__.get(field_key)
                 if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
                     continue
+
             if by_alias and field_key in self.__fields__:
                 dict_key = self.__fields__[field_key].alias
             else:
                 dict_key = field_key
+
             if to_dict or value_include or value_exclude:
                 v = self._get_value(
                     v,

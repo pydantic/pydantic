@@ -1764,3 +1764,11 @@ class User(BaseModel):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     assert module.User(id=12).dict() == {'id': 12, 'name': 'Jane Doe'}
+
+
+def test_iter_coverage():
+    class MyModel(BaseModel):
+        x: int = 1
+        y: str = 'a'
+
+    assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
