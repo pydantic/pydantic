@@ -15,7 +15,7 @@ for their kind support.
 
 ### Changes
 
-* **Breaking Change:**, remove old deprecation aliases from v1, #2415 by @samuelcolvin:
+* **Breaking Change**, remove old deprecation aliases from v1, #2415 by @samuelcolvin:
   * remove notes on migrating to v1 in docs
   * remove `Schema` which was replaced by `Field`
   * remove `Config.case_insensitive` which was replaced by `Config.case_sensitive` (default `False`)
