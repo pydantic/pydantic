@@ -1,1 +1,0 @@
-Handle properly fields of type `Callable` with a default value

@@ -1,2 +1,0 @@
-Add a new `frozen` boolean parameter to `Config` (default: `False`).
-Setting `frozen=True` does everything that `allow_mutation=False` does, and also generates a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the attributes are hashable.

@@ -1,1 +1,0 @@
-Fix mypy complaints about most custom _pydantic_ types

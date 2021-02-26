@@ -1,1 +1,0 @@
-Support plain `typing.Tuple` type
