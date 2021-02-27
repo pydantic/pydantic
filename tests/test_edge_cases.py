@@ -203,12 +203,19 @@ def test_tuple_more():
         empty_tuple: Tuple[()]
         simple_tuple: tuple = None
         tuple_of_different_types: Tuple[int, float, str, bool] = None
+        tuple_of_single_tuples: Tuple[Tuple[int], ...] = ()
 
-    m = Model(empty_tuple=[], simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[4, 3, 2, 1])
+    m = Model(
+        empty_tuple=[],
+        simple_tuple=[1, 2, 3, 4],
+        tuple_of_different_types=[4, 3, 2, 1],
+        tuple_of_single_tuples=(('1',), (2,)),
+    )
     assert m.dict() == {
         'empty_tuple': (),
         'simple_tuple': (1, 2, 3, 4),
         'tuple_of_different_types': (4, 3.0, '2', True),
+        'tuple_of_single_tuples': ((1,), (2,)),
     }
 
 
