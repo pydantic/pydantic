@@ -395,6 +395,27 @@ def test_not_frozen_are_not_hashable():
     assert "unhashable type: 'TestModel'" in exc_info.value.args[0]
 
 
+def test_with_declared_hash():
+    class Foo(BaseModel):
+        x: int
+
+        def __hash__(self):
+            return self.x ** 2
+
+    class Bar(Foo):
+        y: int
+
+        def __hash__(self):
+            return self.y ** 3
+
+    class Buz(Bar):
+        z: int
+
+    assert hash(Foo(x=2)) == 4
+    assert hash(Bar(x=2, y=3)) == 27
+    assert hash(Buz(x=2, y=3, z=4)) == 27
+
+
 def test_frozen_with_hashable_fields_are_hashable():
     class TestModel(BaseModel):
         a: int = 10

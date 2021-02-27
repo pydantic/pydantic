@@ -231,6 +231,7 @@ class ModelMetaclass(ABCMeta):
         slots: SetStr = namespace.get('__slots__', ())
         slots = {slots} if isinstance(slots, str) else set(slots)
         class_vars: SetStr = set()
+        hash_func: Optional[Callable[[Any], int]] = None
 
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
@@ -241,6 +242,7 @@ class ModelMetaclass(ABCMeta):
                 post_root_validators += base.__post_root_validators__
                 private_attributes.update(base.__private_attributes__)
                 class_vars.update(base.__class_vars__)
+                hash_func = base.__hash__
 
         config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & BaseConfig.__dict__.keys()}
         config_from_namespace = namespace.get('Config')
@@ -332,6 +334,9 @@ class ModelMetaclass(ABCMeta):
             json_encoder = pydantic_encoder
         pre_rv_new, post_rv_new = extract_root_validators(namespace)
 
+        if hash_func is None:
+            hash_func = generate_hash_function(config.frozen)
+
         exclude_from_namespace = fields | private_attributes.keys() | {'__slots__'}
         new_namespace = {
             '__config__': config,
@@ -344,7 +349,7 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             '__private_attributes__': private_attributes,
             '__slots__': slots | private_attributes.keys(),
-            '__hash__': generate_hash_function(config.frozen),
+            '__hash__': hash_func,
             '__class_vars__': class_vars,
             **{n: v for n, v in namespace.items() if n not in exclude_from_namespace},
         }
