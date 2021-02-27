@@ -139,10 +139,10 @@ st.register_type_strategy(
 )
 
 # UUIDs
-st.register_type_strategy(pydantic.UUID1, st.uuids(version=1))  # type: ignore[arg-type]
-st.register_type_strategy(pydantic.UUID3, st.uuids(version=3))  # type: ignore[arg-type]
-st.register_type_strategy(pydantic.UUID4, st.uuids(version=4))  # type: ignore[arg-type]
-st.register_type_strategy(pydantic.UUID5, st.uuids(version=5))  # type: ignore[arg-type]
+st.register_type_strategy(pydantic.UUID1, st.uuids(version=1))
+st.register_type_strategy(pydantic.UUID3, st.uuids(version=3))
+st.register_type_strategy(pydantic.UUID4, st.uuids(version=4))
+st.register_type_strategy(pydantic.UUID5, st.uuids(version=5))
 
 # Secrets
 st.register_type_strategy(pydantic.SecretBytes, st.binary().map(pydantic.SecretBytes))
