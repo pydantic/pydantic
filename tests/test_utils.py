@@ -223,6 +223,11 @@ def test_value_items():
         ({'a': ...}, {'b': {'c'}}, True, {}),
         ({'a': ...}, {'a': {'c'}}, True, {'a': {'c': ...}}),
         ({'a': {'c': ...}, 'b': {'d'}}, {'a': ...}, True, {'a': {'c': ...}}),
+        # Check usage of `True` instead of `...`
+        (..., True, False, True),
+        (True, ..., False, ...),
+        (True, None, False, True),
+        ({'a': {'c': True}, 'b': {'d'}}, {'a': True}, False, {'a': True, 'b': {'d': ...}}),
     ],
 )
 def test_value_items_merge(base, override, intersect, expected):

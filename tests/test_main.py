@@ -1584,6 +1584,23 @@ def test_model_export_exclusion_inheritance():
     assert actual == expected, 'Unexpected model export result'
 
 
+def test_model_export_with_true_instead_of_ellipsis():
+    class Sub(BaseModel):
+        s1: int = 1
+
+    class Model(BaseModel):
+        a: int = 2
+        b: int = Field(3, exclude=True)
+        c: int = Field(4)
+        s: Sub = Sub()
+
+        class Config:
+            fields = {'c': {'exclude': True}}
+
+    m = Model()
+    assert m.dict(exclude={'s': True}) == {'a': 2}
+
+
 def test_model_export_inclusion():
     class Sub(BaseModel):
         s1: str = 'v1'

@@ -21,7 +21,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    overload,
 )
 
 from .typing import GenericAlias, NoneType, display_as_type
@@ -423,25 +422,20 @@ class ValueItems(Representation):
     __slots__ = ('_items', '_type')
 
     def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> None:
-        if TYPE_CHECKING:
-            self._items: 'MappingIntStrAny'
-
         items = self._coerce_items(items)
 
         if isinstance(value, (list, tuple)):
             items = self._normalize_indexes(items, len(value))
 
-        self._items = items
+        self._items: 'MappingIntStrAny' = items
 
     def is_excluded(self, item: Any) -> bool:
         """
-        Check if item is fully excluded
-        (value considered excluded if self._type is set and item contained in self._items
-         or self._type is dict and self._items.get(item) is ...
+        Check if item is fully excluded.
 
         :param item: key or index of a value
         """
-        return self._items.get(item) is ...
+        return self.is_true(self._items.get(item))
 
     def is_included(self, item: Any) -> bool:
         """
@@ -458,25 +452,23 @@ class ValueItems(Representation):
         """
 
         item = self._items.get(e)
-        return item if item is not ... else None
+        return item if not self.is_true(item) else None
 
     def _normalize_indexes(self, items: 'MappingIntStrAny', v_length: int) -> 'DictIntStrAny':
         """
         :param items: dict or set of indexes which will be normalized
         :param v_length: length of sequence indexes of which will be
 
-        >>> self._normalize_indexes({0, -2, -1}, 4)
-        {0, 2, 3}
-        >>> self._normalize_indexes({'__all__'}, 4)
-        {0, 1, 2, 3}
+        >>> self._normalize_indexes({0: True, -2: True, -1: True}, 4)
+        {0: True, 2: True, 3: True}
+        >>> self._normalize_indexes({'__all__': True}, 4)
+        {0: True, 1: True, 2: True, 3: True}
         """
 
-        if TYPE_CHECKING:
-            normalized_items: 'DictIntStrAny'
+        normalized_items: 'DictIntStrAny' = {}
         all_items = None
-        normalized_items = {}
         for i, v in items.items():
-            if not (isinstance(v, Mapping) or isinstance(v, AbstractSet) or v is ...):
+            if not (isinstance(v, Mapping) or isinstance(v, AbstractSet) or self.is_true(v)):
                 raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
             if i == '__all__':
                 all_items = self._coerce_value(v)
@@ -491,39 +483,15 @@ class ValueItems(Representation):
 
         if not all_items:
             return normalized_items
-        if all_items is ...:
+        if self.is_true(all_items):
             for i in range(v_length):
                 normalized_items.setdefault(i, ...)
             return normalized_items
         for i in range(v_length):
             normalized_item = normalized_items.setdefault(i, {})
-            if normalized_item is not ...:
+            if not self.is_true(normalized_item):
                 normalized_items[i] = self.merge(all_items, normalized_item)
         return normalized_items
-
-    @overload
-    @classmethod
-    def merge(
-        cls, base: Union['AbstractSetIntStr', 'MappingIntStrAny'], override: Optional[Any], intersect: bool = False
-    ) -> 'MappingIntStrAny':
-        ...
-
-    @overload
-    @classmethod
-    def merge(
-        cls, base: Optional[Any], override: Union['AbstractSetIntStr', 'MappingIntStrAny'], intersect: bool = False
-    ) -> 'MappingIntStrAny':
-        ...
-
-    @overload
-    @classmethod
-    def merge(cls, base: None, override: None, intersect: bool = False) -> None:
-        ...
-
-    @overload
-    @classmethod
-    def merge(cls, base: Optional[Any], override: Optional[Any], intersect: bool = False) -> Optional[Any]:
-        ...
 
     @classmethod
     def merge(cls, base: Any, override: Any, intersect: bool = False) -> Any:
@@ -545,17 +513,18 @@ class ValueItems(Representation):
         base = cls._coerce_value(base)
         if override is None:
             return base
-        if base is ... or base is None:
+        if cls.is_true(base) or base is None:
             return override
-        elif override is ...:
+        if cls.is_true(override):
             return base if intersect else override
 
+        # intersection or union of keys while preserving ordering:
         if intersect:
-            merge_keys = override.keys() & base.keys()
+            merge_keys = [k for k in base if k in override] + [k for k in override if k in base]
         else:
-            merge_keys = override.keys() | base.keys()
+            merge_keys = list(base) + [k for k in override if k not in base]
 
-        merged = {}
+        merged: 'DictIntStrAny' = {}
         for k in merge_keys:
             merged_item = cls.merge(base.get(k), override.get(k), intersect=intersect)
             if merged_item is not None:
@@ -575,9 +544,13 @@ class ValueItems(Representation):
 
     @classmethod
     def _coerce_value(cls, value: Any) -> Any:
-        if value is None or value is ...:
+        if value is None or cls.is_true(value):
             return value
         return cls._coerce_items(value)
+
+    @staticmethod
+    def is_true(v: Any) -> bool:
+        return v is True or v is ...
 
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]

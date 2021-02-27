@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, SecretStr
 class User(BaseModel):
     id: int
     username: str
-    password: SecretStr = Field(..., exclude=...)
+    password: SecretStr = Field(..., exclude=True)
 
 
 class Transaction(BaseModel):
@@ -13,7 +13,7 @@ class Transaction(BaseModel):
     value: int
 
     class Config:
-        fields = {'value': {'exclude': ...}}
+        fields = {'value': {'exclude': True}}
 
 
 t = Transaction(

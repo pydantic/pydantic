@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, SecretStr
 class User(BaseModel):
     id: int
     username: str  # overridden by explicit exclude
-    password: SecretStr = Field(exclude=...)
+    password: SecretStr = Field(exclude=True)
 
 
 class Transaction(BaseModel):
@@ -23,4 +23,4 @@ t = Transaction(
     value=9876543210,
 )
 
-print(t.dict(exclude={'value': ..., 'user': {'username'}}))
+print(t.dict(exclude={'value': True, 'user': {'username'}}))

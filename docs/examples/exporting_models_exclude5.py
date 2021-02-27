@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field, SecretStr
 
 
 class User(BaseModel):
-    id: int = Field(..., include=...)
-    username: str = Field(..., include=...)  # overridden by explicit include
+    id: int = Field(..., include=True)
+    username: str = Field(..., include=True)  # overridden by explicit include
     password: SecretStr
 
 
@@ -23,4 +23,4 @@ t = Transaction(
     value=9876543210,
 )
 
-print(t.dict(include={'id': ..., 'user': {'id'}}))
+print(t.dict(include={'id': True, 'user': {'id'}}))

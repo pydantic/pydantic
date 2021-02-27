@@ -15,7 +15,7 @@ try:
 except ImportError:
     pytest_plugins = []
 else:
-    pytest_plugins = []
+    pytest_plugins = ['hypothesis.extra.pytestplugin']
 
 
 def _extract_source_code_from_function(function):

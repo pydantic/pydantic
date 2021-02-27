@@ -860,7 +860,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         if include is not None or self.__include_fields__ is not None:
             include = ValueItems.merge(self.__include_fields__, include, intersect=True)
 
-        allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
+        allowed_keys = self._calculate_keys(
+            include=include, exclude=exclude, exclude_unset=exclude_unset  # type: ignore
+        )
         if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
             # huge boost for plain _iter()
             yield from self.__dict__.items()
@@ -919,7 +921,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             keys -= update.keys()
 
         if exclude:
-            keys -= {k for k, v in exclude.items() if v is ...}
+            keys -= {k for k, v in exclude.items() if ValueItems.is_true(v)}
 
         return keys
 
