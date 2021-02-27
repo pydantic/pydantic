@@ -220,3 +220,12 @@ class PydanticTypes(BaseModel):
     my_dir_path_str: DirectoryPath = 'root/mydir'
     # Json
     my_json: Json = '{"hello": "world"}'
+
+
+PydanticTypes().my_pyobject_callable(2021, 1, 1)
+PydanticTypes().my_uuid1.hex
+PydanticTypes().my_uuid1_str.hex
+PydanticTypes().my_file_path.absolute()
+PydanticTypes().my_file_path_str.absolute()
+PydanticTypes().my_dir_path.absolute()
+PydanticTypes().my_dir_path_str.absolute()
