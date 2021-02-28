@@ -87,10 +87,10 @@ Models possess the following methods and attributes:
 : loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
 
 `schema()`
-: returns a dictionary representing the model as JSON Schema; cf. [Schema](schema.md)
+: returns a dictionary representing the model as JSON Schema; cf. [schema](schema.md)
 
 `schema_json()`
-: returns a JSON string representation of `schema()`; cf. [Schema](schema.md)
+: returns a JSON string representation of `schema()`; cf. [schema](schema.md)
 
 `construct()`
 : a class method for creating models without running validation; 

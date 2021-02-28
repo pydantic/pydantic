@@ -4,6 +4,7 @@ from typing import Any, List, Optional
 import pytest
 
 from pydantic import BaseModel, Field, PrivateAttr
+from pydantic.fields import Undefined
 
 
 class Model(BaseModel):
@@ -253,13 +254,50 @@ def test_recursive_pickle():
     assert m.__foo__ == m2.__foo__
 
 
-def test_immutable_copy():
+def test_pickle_undefined():
+    m = ModelTwo(a=24, d=Model(a='123.45'))
+    m2 = pickle.loads(pickle.dumps(m))
+    assert m2.__foo__ == {'private'}
+
+    m.__foo__ = Undefined
+    m3 = pickle.loads(pickle.dumps(m))
+    assert not hasattr(m3, '__foo__')
+
+
+def test_copy_undefined():
+    m = ModelTwo(a=24, d=Model(a='123.45'))
+    m2 = m.copy()
+    assert m2.__foo__ == {'private'}
+
+    m.__foo__ = Undefined
+    m3 = m.copy()
+    assert not hasattr(m3, '__foo__')
+
+
+def test_immutable_copy_with_allow_mutation():
     class Model(BaseModel):
         a: int
         b: int
 
         class Config:
             allow_mutation = False
+
+    m = Model(a=40, b=10)
+    assert m == m.copy()
+
+    m2 = m.copy(update={'b': 12})
+    assert repr(m2) == 'Model(a=40, b=12)'
+    with pytest.raises(TypeError):
+        m2.b = 13
+
+
+def test_immutable_copy_with_frozen():
+    class Model(BaseModel):
+        a: int
+        b: int
+
+        class Config:
+            frozen = True
 
     m = Model(a=40, b=10)
     assert m == m.copy()

@@ -161,22 +161,6 @@ def test_pop_by_field_name():
     ]
 
 
-def test_population_by_alias():
-    with pytest.warns(DeprecationWarning, match='"allow_population_by_alias" is deprecated and replaced by'):
-
-        class Model(BaseModel):
-            a: str
-
-            class Config:
-                allow_population_by_alias = True
-                fields = {'a': {'alias': '_a'}}
-
-    assert Model.__config__.allow_population_by_field_name is True
-    assert Model(a='different').a == 'different'
-    assert Model(a='different').dict() == {'a': 'different'}
-    assert Model(a='different').dict(by_alias=True) == {'_a': 'different'}
-
-
 def test_alias_child_precedence():
     class Parent(BaseModel):
         x: int

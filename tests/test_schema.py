@@ -25,6 +25,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
 from pydantic.color import Color
@@ -74,7 +75,6 @@ from pydantic.types import (
     conint,
     constr,
 )
-from pydantic.typing import Literal
 
 try:
     import email_validator
@@ -1754,20 +1754,27 @@ def test_new_type_schema():
     }
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed and python version < 3.8')
 def test_literal_schema():
     class Model(BaseModel):
         a: Literal[1]
         b: Literal['a']
         c: Literal['a', 1]
+        d: Literal['a', Literal['b'], 1, 2]
 
     assert Model.schema() == {
         'properties': {
-            'a': {'title': 'A', 'type': 'integer', 'const': 1},
-            'b': {'title': 'B', 'type': 'string', 'const': 'a'},
-            'c': {'anyOf': [{'type': 'string', 'const': 'a'}, {'type': 'integer', 'const': 1}], 'title': 'C'},
+            'a': {'title': 'A', 'type': 'integer', 'enum': [1]},
+            'b': {'title': 'B', 'type': 'string', 'enum': ['a']},
+            'c': {'title': 'C', 'anyOf': [{'type': 'string', 'enum': ['a']}, {'type': 'integer', 'enum': [1]}]},
+            'd': {
+                'title': 'D',
+                'anyOf': [
+                    {'type': 'string', 'enum': ['a', 'b']},
+                    {'type': 'integer', 'enum': [1, 2]},
+                ],
+            },
         },
-        'required': ['a', 'b', 'c'],
+        'required': ['a', 'b', 'c', 'd'],
         'title': 'Model',
         'type': 'object',
     }

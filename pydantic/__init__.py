@@ -6,7 +6,7 @@ from .decorator import validate_arguments
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
 from .errors import *
-from .fields import Field, PrivateAttr, Required, Schema
+from .fields import Field, PrivateAttr, Required
 from .main import *
 from .networks import *
 from .parse import Protocol
@@ -34,7 +34,6 @@ __all__ = [
     # fields
     'Field',
     'Required',
-    'Schema',
     # main
     'BaseConfig',
     'BaseModel',

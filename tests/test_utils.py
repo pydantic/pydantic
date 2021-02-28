@@ -1,5 +1,6 @@
 import collections.abc
 import os
+import pickle
 import re
 import string
 import sys
@@ -9,15 +10,14 @@ from enum import Enum
 from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
 
 import pytest
+from typing_extensions import Annotated, Literal
 
 from pydantic import VERSION, BaseModel, ConstrainedList, conlist
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import (
-    Annotated,
     ForwardRef,
-    Literal,
     all_literal_values,
     display_as_type,
     get_args,
@@ -108,6 +108,14 @@ def test_lenient_issubclass():
         pass
 
     assert lenient_issubclass(A, str) is True
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
+def test_lenient_issubclass_with_generic_aliases():
+    from collections.abc import Mapping
+
+    # should not raise an error here:
+    assert lenient_issubclass(list[str], Mapping) is False
 
 
 def test_lenient_issubclass_is_lenient():
@@ -366,7 +374,6 @@ def test_class_attribute():
     assert f.attr == 'not foo'
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_all_literal_values():
     L1 = Literal['1']
     assert all_literal_values(L1) == ('1',)
@@ -493,3 +500,8 @@ def test_all_identical():
     assert (
         all_identical([a, [b], b], [a, [b], b]) is False
     ), 'New list objects are different objects and should therefor not be identical.'
+
+
+def test_undefined_pickle():
+    undefined2 = pickle.loads(pickle.dumps(Undefined))
+    assert undefined2 is Undefined

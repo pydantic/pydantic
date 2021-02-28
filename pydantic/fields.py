@@ -1,9 +1,9 @@
-import warnings
-from collections import deque
+from collections import defaultdict, deque
 from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    DefaultDict,
     Deque,
     Dict,
     FrozenSet,
@@ -22,6 +22,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Annotated
+
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
@@ -29,7 +31,6 @@ from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
     NONE_TYPES,
-    Annotated,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -56,6 +57,9 @@ class UndefinedType:
 
     def __copy__(self: T) -> T:
         return self
+
+    def __reduce__(self) -> str:
+        return 'Undefined'
 
     def __deepcopy__(self: T, _: Any) -> T:
         return self
@@ -231,11 +235,6 @@ def Field(
     return field_info
 
 
-def Schema(default: Any, **kwargs: Any) -> Any:
-    warnings.warn('`Schema` is deprecated, use `Field` instead', DeprecationWarning)
-    return Field(default, **kwargs)
-
-
 # used to be an enum but changed to int's for small performance improvement as less access overhead
 SHAPE_SINGLETON = 1
 SHAPE_LIST = 2
@@ -248,6 +247,8 @@ SHAPE_FROZENSET = 8
 SHAPE_ITERABLE = 9
 SHAPE_GENERIC = 10
 SHAPE_DEQUE = 11
+SHAPE_DICT = 12
+SHAPE_DEFAULTDICT = 13
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -256,7 +257,11 @@ SHAPE_NAME_LOOKUP = {
     SHAPE_FROZENSET: 'FrozenSet[{}]',
     SHAPE_ITERABLE: 'Iterable[{}]',
     SHAPE_DEQUE: 'Deque[{}]',
+    SHAPE_DICT: 'Dict[{}]',
+    SHAPE_DEFAULTDICT: 'DefaultDict[{}]',
 }
+
+MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
 
 
 class ModelField(Representation):
@@ -419,7 +424,7 @@ class ModelField(Representation):
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
         self._set_default_and_type()
-        if self.type_.__class__ == ForwardRef:
+        if self.type_.__class__ is ForwardRef or self.type_.__class__ is DeferredType:
             # self.type_ is currently a ForwardRef and there's nothing we can do now,
             # user will need to call model.update_forward_refs()
             return
@@ -571,6 +576,14 @@ class ModelField(Representation):
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
+        elif issubclass(origin, DefaultDict):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DEFAULTDICT
+        elif issubclass(origin, Dict):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DICT
         elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -660,6 +673,8 @@ class ModelField(Representation):
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
 
+        assert self.type_.__class__ is not DeferredType
+
         if self.type_.__class__ is ForwardRef:
             assert cls is not None
             raise ConfigError(
@@ -687,8 +702,8 @@ class ModelField(Representation):
 
         if self.shape == SHAPE_SINGLETON:
             v, errors = self._validate_singleton(v, values, loc, cls)
-        elif self.shape == SHAPE_MAPPING:
-            v, errors = self._validate_mapping(v, values, loc, cls)
+        elif self.shape in MAPPING_LIKE_SHAPES:
+            v, errors = self._validate_mapping_like(v, values, loc, cls)
         elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
         elif self.shape == SHAPE_ITERABLE:
@@ -805,7 +820,7 @@ class ModelField(Representation):
         else:
             return tuple(result), None
 
-    def _validate_mapping(
+    def _validate_mapping_like(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         try:
@@ -831,8 +846,30 @@ class ModelField(Representation):
             result[key_result] = value_result
         if errors:
             return v, errors
-        else:
+        elif self.shape == SHAPE_DICT:
             return result, None
+        elif self.shape == SHAPE_DEFAULTDICT:
+            return defaultdict(self.type_, result), None
+        else:
+            return self._get_mapping_value(v, result), None
+
+    def _get_mapping_value(self, original: T, converted: Dict[Any, Any]) -> Union[T, Dict[Any, Any]]:
+        """
+        When type is `Mapping[KT, KV]` (or another unsupported mapping), we try to avoid
+        coercing to `dict` unwillingly.
+        """
+        original_cls = original.__class__
+
+        if original_cls == dict or original_cls == Dict:
+            return converted
+        elif original_cls in {defaultdict, DefaultDict}:
+            return defaultdict(self.type_, converted)
+        else:
+            try:
+                # Counter, OrderedDict, UserDict, ...
+                return original_cls(converted)  # type: ignore
+            except TypeError:
+                raise RuntimeError(f'Could not convert dictionary to {original_cls.__name__!r}') from None
 
     def _validate_singleton(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
@@ -875,7 +912,7 @@ class ModelField(Representation):
         t = display_as_type(self.type_)
 
         # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
-        if self.shape == SHAPE_MAPPING:
+        if self.shape in MAPPING_LIKE_SHAPES:
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:
             t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
@@ -945,3 +982,9 @@ def PrivateAttr(
         default,
         default_factory=default_factory,
     )
+
+
+class DeferredType:
+    """
+    Used to postpone field preparation, while creating recursive generic models.
+    """

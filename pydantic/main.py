@@ -28,7 +28,7 @@ from typing import (
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import SHAPE_MAPPING, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import MAPPING_LIKE_SHAPES, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -120,6 +120,7 @@ class BaseConfig:
     validate_all = False
     extra = Extra.ignore
     allow_mutation = True
+    frozen = False
     allow_population_by_field_name = False
     use_enum_values = False
     fields: Dict[str, Union[str, Dict[str, str]]] = {}
@@ -168,18 +169,18 @@ class BaseConfig:
         pass
 
 
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType') -> 'ConfigType':
-    namespace = {}
+def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
     if not self_config:
-        base_classes = (parent_config,)
+        base_classes: Tuple['ConfigType', ...] = (parent_config,)
     elif self_config == parent_config:
         base_classes = (self_config,)
     else:
-        base_classes = self_config, parent_config  # type: ignore
-        namespace['json_encoders'] = {
-            **getattr(parent_config, 'json_encoders', {}),
-            **getattr(self_config, 'json_encoders', {}),
-        }
+        base_classes = self_config, parent_config
+
+    namespace['json_encoders'] = {
+        **getattr(parent_config, 'json_encoders', {}),
+        **getattr(self_config, 'json_encoders', {}),
+    }
 
     return type('Config', base_classes, namespace)
 
@@ -194,33 +195,23 @@ def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
         except ValueError:
             raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
 
-    if hasattr(config, 'allow_population_by_alias'):
-        warnings.warn(
-            f'{cls_name}: "allow_population_by_alias" is deprecated and replaced by "allow_population_by_field_name"',
-            DeprecationWarning,
-        )
-        config.allow_population_by_field_name = config.allow_population_by_alias  # type: ignore
-
-    if hasattr(config, 'case_insensitive') and any('BaseSettings.Config' in c.__qualname__ for c in config.__mro__):
-        warnings.warn(
-            f'{cls_name}: "case_insensitive" is deprecated on BaseSettings config and replaced by '
-            f'"case_sensitive" (default False)',
-            DeprecationWarning,
-        )
-        config.case_sensitive = not config.case_insensitive  # type: ignore
-
 
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
         raise ValueError(f'{ROOT_KEY} cannot be mixed with other fields')
 
 
-# Annotated fields can have many types like `str`, `int`, `List[str]`, `Callable`...
+def generate_hash_function(frozen: bool) -> Optional[Callable[[Any], int]]:
+    def hash_function(self_: Any) -> int:
+        return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
+
+    return hash_function if frozen else None
+
+
 # If a field is of type `Callable`, its default value should be a function and cannot to ignored.
 ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (property, type, classmethod, staticmethod)
 # When creating a `BaseModel` instance, we bypass all the methods, properties... added to the model
 UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_TYPES
-
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
 # (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
 # safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
@@ -240,6 +231,7 @@ class ModelMetaclass(ABCMeta):
         slots: SetStr = namespace.get('__slots__', ())
         slots = {slots} if isinstance(slots, str) else set(slots)
         class_vars: SetStr = set()
+        hash_func: Optional[Callable[[Any], int]] = None
 
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
@@ -250,8 +242,14 @@ class ModelMetaclass(ABCMeta):
                 post_root_validators += base.__post_root_validators__
                 private_attributes.update(base.__private_attributes__)
                 class_vars.update(base.__class_vars__)
+                hash_func = base.__hash__
 
-        config = inherit_config(namespace.get('Config'), config)
+        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & BaseConfig.__dict__.keys()}
+        config_from_namespace = namespace.get('Config')
+        if config_kwargs and config_from_namespace:
+            raise TypeError('Specifying config in two places is ambiguous, use either Config attribute or class kwargs')
+        config = inherit_config(config_from_namespace, config, **config_kwargs)
+
         validators = inherit_validators(extract_validators(namespace), validators)
         vg = ValidatorGroup(validators)
 
@@ -336,6 +334,9 @@ class ModelMetaclass(ABCMeta):
             json_encoder = pydantic_encoder
         pre_rv_new, post_rv_new = extract_root_validators(namespace)
 
+        if hash_func is None:
+            hash_func = generate_hash_function(config.frozen)
+
         exclude_from_namespace = fields | private_attributes.keys() | {'__slots__'}
         new_namespace = {
             '__config__': config,
@@ -348,6 +349,7 @@ class ModelMetaclass(ABCMeta):
             '__custom_root_type__': _custom_root_type,
             '__private_attributes__': private_attributes,
             '__slots__': slots | private_attributes.keys(),
+            '__hash__': hash_func,
             '__class_vars__': class_vars,
             **{n: v for n, v in namespace.items() if n not in exclude_from_namespace},
         }
@@ -408,7 +410,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-        elif not self.__config__.allow_mutation:
+        elif not self.__config__.allow_mutation or self.__config__.frozen:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
         elif self.__config__.validate_assignment:
             new_values = {**self.__dict__, name: value}
@@ -454,18 +456,18 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         self.__fields_set__.add(name)
 
     def __getstate__(self) -> 'DictAny':
+        private_attrs = ((k, getattr(self, k, Undefined)) for k in self.__private_attributes__)
         return {
             '__dict__': self.__dict__,
             '__fields_set__': self.__fields_set__,
-            '__private_attribute_values__': {k: getattr(self, k, Undefined) for k in self.__private_attributes__},
+            '__private_attribute_values__': {k: v for k, v in private_attrs if v is not Undefined},
         }
 
     def __setstate__(self, state: 'DictAny') -> None:
         object_setattr(self, '__dict__', state['__dict__'])
         object_setattr(self, '__fields_set__', state['__fields_set__'])
         for name, value in state.get('__private_attribute_values__', {}).items():
-            if value is not Undefined:
-                object_setattr(self, name, value)
+            object_setattr(self, name, value)
 
     def _init_private_attributes(self) -> None:
         for name, private_attr in self.__private_attributes__.items():
@@ -547,7 +549,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def _enforce_dict_if_root(cls, obj: Any) -> Any:
         if cls.__custom_root_type__ and (
-            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
+            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY})
+            or cls.__fields__[ROOT_KEY].shape in MAPPING_LIKE_SHAPES
         ):
             return {ROOT_KEY: obj}
         else:
@@ -846,14 +849,17 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         for field_key, v in self.__dict__.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
                 continue
+
             if exclude_defaults:
                 model_field = self.__fields__.get(field_key)
                 if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
                     continue
+
             if by_alias and field_key in self.__fields__:
                 dict_key = self.__fields__[field_key].alias
             else:
                 dict_key = field_key
+
             if to_dict or value_include or value_exclude:
                 v = self._get_value(
                     v,
@@ -908,20 +914,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def __repr_args__(self) -> 'ReprArgs':
         return self.__dict__.items()  # type: ignore
-
-    @property
-    def fields(self) -> Dict[str, ModelField]:
-        warnings.warn('`fields` attribute is deprecated, use `__fields__` instead', DeprecationWarning)
-        return self.__fields__
-
-    def to_string(self, pretty: bool = False) -> str:
-        warnings.warn('`model.to_string()` method is deprecated, use `str(model)` instead', DeprecationWarning)
-        return str(self)
-
-    @property
-    def __values__(self) -> 'DictStrAny':
-        warnings.warn('`__values__` attribute is deprecated, use `__dict__` instead', DeprecationWarning)
-        return self.__dict__
 
 
 _is_base_model_class_defined = True

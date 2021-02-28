@@ -2,7 +2,7 @@ We'd love you to contribute to *pydantic*!
 
 ## Issues
 
-Questions, feature requests and bug reports are all welcome as issues. **However, to report a security
+Questions, feature requests and bug reports are all welcome as [discussions or issues](https://github.com/samuelcolvin/pydantic/issues/new/choose). **However, to report a security
 vulnerability, please see our [security policy](https://github.com/samuelcolvin/pydantic/security/policy).**
 
 To make it as simple as possible for us to help you, please include the output of the following call in your issue:

@@ -1,6 +1,6 @@
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '1.7.3'
+VERSION = '1.8'
 
 
 def version_info() -> str:

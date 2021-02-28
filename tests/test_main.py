@@ -1,6 +1,7 @@
 import sys
+from collections import defaultdict
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
@@ -61,8 +62,7 @@ def test_ultra_simple_repr():
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
     assert m.json() == '{"a": 10.2, "b": 10}'
-    with pytest.raises(DeprecationWarning, match=r'`model.to_string\(\)` method is deprecated'):
-        assert m.to_string() == 'a=10.2 b=10'
+    assert str(m) == 'a=10.2 b=10'
 
 
 def test_default_factory_field():
@@ -351,39 +351,119 @@ def test_required():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-def test_not_immutability():
+def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
             allow_mutation = True
             extra = Extra.forbid
+            frozen = False
 
     m = TestModel()
+
     assert m.a == 10
     m.a = 11
     assert m.a == 11
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
-def test_immutability():
+@pytest.mark.parametrize('allow_mutation_, frozen_', [(False, False), (False, True), (True, True)])
+def test_immutability(allow_mutation_, frozen_):
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
-            allow_mutation = False
+            allow_mutation = allow_mutation_
             extra = Extra.forbid
+            frozen = frozen_
 
     m = TestModel()
+
     assert m.a == 10
     with pytest.raises(TypeError) as exc_info:
         m.a = 11
     assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
+
+
+def test_not_frozen_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'TestModel'" in exc_info.value.args[0]
+
+
+def test_with_declared_hash():
+    class Foo(BaseModel):
+        x: int
+
+        def __hash__(self):
+            return self.x ** 2
+
+    class Bar(Foo):
+        y: int
+
+        def __hash__(self):
+            return self.y ** 3
+
+    class Buz(Bar):
+        z: int
+
+    assert hash(Foo(x=2)) == 4
+    assert hash(Bar(x=2, y=3)) == 27
+    assert hash(Buz(x=2, y=3, z=4)) == 27
+
+
+def test_frozen_with_hashable_fields_are_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    assert m.__hash__ is not None
+    assert isinstance(hash(m), int)
+
+
+def test_frozen_with_unhashable_fields_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+        y: List[int] = [1, 2, 3]
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'list'" in exc_info.value.args[0]
+
+
+def test_hash_function_give_different_result_for_different_object():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    m2 = TestModel()
+    m3 = TestModel(a=11)
+    assert hash(m) == hash(m2)
+    assert hash(m) != hash(m3)
+
+    # Redefined `TestModel`
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m4 = TestModel()
+    assert hash(m) != hash(m4)
 
 
 def test_const_validates():
@@ -703,7 +783,6 @@ def test_enum_values():
     assert m.foo == 'foo'
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
 
@@ -1551,3 +1630,96 @@ def test_inherited_model_field_untouched():
 
     assert id(image_1) == id(item.images[0])
     assert id(image_2) == id(item.images[1])
+
+
+def test_mapping_retains_type_subclass():
+    class CustomMap(dict):
+        pass
+
+    class Model(BaseModel):
+        x: Mapping[str, Mapping[str, int]]
+
+    m = Model(x=CustomMap(outer=CustomMap(inner=42)))
+    assert isinstance(m.x, CustomMap)
+    assert isinstance(m.x['outer'], CustomMap)
+    assert m.x['outer']['inner'] == 42
+
+
+def test_mapping_retains_type_defaultdict():
+    class Model(BaseModel):
+        x: Mapping[str, int]
+
+    d = defaultdict(int)
+    d[1] = '2'
+    d['3']
+
+    m = Model(x=d)
+    assert isinstance(m.x, defaultdict)
+    assert m.x['1'] == 2
+    assert m.x['3'] == 0
+
+
+def test_mapping_retains_type_fallback_error():
+    class CustomMap(dict):
+        def __init__(self, *args, **kwargs):
+            if args or kwargs:
+                raise TypeError('test')
+            super().__init__(*args, **kwargs)
+
+    class Model(BaseModel):
+        x: Mapping[str, int]
+
+    d = CustomMap()
+    d['one'] = 1
+    d['two'] = 2
+
+    with pytest.raises(RuntimeError, match="Could not convert dictionary to 'CustomMap'"):
+        Model(x=d)
+
+
+def test_typing_coercion_dict():
+    class Model(BaseModel):
+        x: Dict[str, int]
+
+    m = Model(x={'one': 1, 'two': 2})
+    assert repr(m) == "Model(x={'one': 1, 'two': 2})"
+
+
+def test_typing_coercion_defaultdict():
+    class Model(BaseModel):
+        x: DefaultDict[int, str]
+
+    d = defaultdict(str)
+    d['1']
+    m = Model(x=d)
+    m.x['a']
+    assert repr(m) == "Model(x=defaultdict(<class 'str'>, {1: '', 'a': ''}))"
+
+
+def test_class_kwargs_config():
+    class Base(BaseModel, extra='forbid', alias_generator=str.upper):
+        a: int
+
+    assert Base.__config__.extra is Extra.forbid
+    assert Base.__config__.alias_generator is str.upper
+    assert Base.__fields__['a'].alias == 'A'
+
+    class Model(Base, extra='allow'):
+        b: int
+
+    assert Model.__config__.extra is Extra.allow  # overwritten as intended
+    assert Model.__config__.alias_generator is str.upper  # inherited as intended
+    assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
+
+
+def test_class_kwargs_config_and_attr_conflict():
+
+    with pytest.raises(
+        TypeError, match='Specifying config in two places is ambiguous, use either Config attribute or class kwargs'
+    ):
+
+        class Model(BaseModel, extra='allow'):
+            b: int
+
+            class Config:
+                extra = 'forbid'

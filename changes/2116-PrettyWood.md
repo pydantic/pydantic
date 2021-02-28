@@ -1,1 +1,0 @@
-fix: update all modified field values in `root_validator` when `validate_assignment` is on

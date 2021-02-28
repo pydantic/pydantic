@@ -1,3 +1,96 @@
+## v1.8 (2021-02-26)
+
+Thank you to pydantic's sponsors:
+@jorgecarleitao, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @koxudaxi, @timdrijvers, @mkeen, @meadsteve, 
+@ginomempin, @primer-io, @and-semakin, @tomthorogood, @AjitZK, @westonsteimel, @Mazyod, @christippett, @CarlosDomingues, 
+@Kludex, @r-m-n
+for their kind support.
+
+### Highlights
+
+* [Hypothesis plugin](https://pydantic-docs.helpmanual.io/hypothesis_plugin/) for testing, #2097 by @Zac-HD
+* support for [`NamedTuple` and `TypedDict`](https://pydantic-docs.helpmanual.io/usage/types/#annotated-types), #2216 by @PrettyWood
+* Support [`Annotated` hints on model fields](https://pydantic-docs.helpmanual.io/usage/schema/#typingannotated-fields), #2147 by @JacobHayes
+* [`frozen` parameter on `Config`](https://pydantic-docs.helpmanual.io/usage/model_config/) to allow models to be hashed, #1880 by @rhuille
+
+### Changes
+
+* **Breaking Change**, remove old deprecation aliases from v1, #2415 by @samuelcolvin:
+  * remove notes on migrating to v1 in docs
+  * remove `Schema` which was replaced by `Field`
+  * remove `Config.case_insensitive` which was replaced by `Config.case_sensitive` (default `False`)
+  * remove `Config.allow_population_by_alias` which was replaced by `Config.allow_population_by_field_name`
+  * remove `model.fields` which was replaced by `model.__fields__`
+  * remove `model.to_string()` which was replaced by `str(model)`
+  * remove `model.__values__` which was replaced by `model.__dict__`
+* **Breaking Change:** always validate only first sublevel items with `each_item`.
+  There were indeed some edge cases with some compound types where the validated items were the last sublevel ones, #1933 by @PrettyWood
+* Update docs extensions to fix local syntax highlighting, #2400 by @daviskirk
+* fix: allow `utils.lenient_issubclass` to handle `typing.GenericAlias` objects like `list[str]` in python >= 3.9, #2399 by @daviskirk
+* Improve field declaration for _pydantic_ `dataclass` by allowing the usage of _pydantic_ `Field` or `'metadata'` kwarg of `dataclasses.field`, #2384 by @PrettyWood
+* Making `typing-extensions` a required dependency, #2368 by @samuelcolvin
+* Make `resolve_annotations` more lenient, allowing for missing modules, #2363 by @samuelcolvin
+* Allow configuring models through class kwargs, #2356 by @MrMrRobat
+* Prevent `Mapping` subclasses from always being coerced to `dict`, #2325 by @ofek
+* fix: allow `None` for type `Optional[conset / conlist]`, #2320 by @PrettyWood
+* Support empty tuple type, #2318 by @PrettyWood
+* fix: `python_requires` metadata to require >=3.6.1, #2306 by @hukkinj1
+* Properly encode `Decimal` with, or without any decimal places, #2293 by @hultner
+* fix: update `__fields_set__` in `BaseModel.copy(update=…)`, #2290 by @PrettyWood
+* fix: keep order of fields with `BaseModel.construct()`, #2281 by @PrettyWood
+* Support generating schema for Generic fields, #2262 by @maximberg
+* Fix `validate_decorator` so `**kwargs` doesn't exclude values when the keyword
+  has the same name as the `*args` or `**kwargs` names, #2251 by @cybojenix
+* Prevent overriding positional arguments with keyword arguments in
+  `validate_arguments`, as per behaviour with native functions, #2249 by @cybojenix
+* add documentation for `con*` type functions, #2242 by @tayoogunbiyi
+* Support custom root type (aka `__root__`) when using `parse_obj()` with nested models, #2238 by @PrettyWood
+* Support custom root type (aka `__root__`) with `from_orm()`, #2237 by @PrettyWood
+* ensure cythonized functions are left untouched when creating models, based on #1944 by @kollmats, #2228 by @samuelcolvin
+* Resolve forward refs for stdlib dataclasses converted into _pydantic_ ones, #2220 by @PrettyWood
+* Add support for `NamedTuple` and `TypedDict` types.
+  Those two types are now handled and validated when used inside `BaseModel` or _pydantic_ `dataclass`.
+  Two utils are also added `create_model_from_namedtuple` and `create_model_from_typeddict`, #2216 by @PrettyWood
+* Do not ignore annotated fields when type is `Union[Type[...], ...]`, #2213 by @PrettyWood
+* Raise a user-friendly `TypeError` when a `root_validator` does not return a `dict` (e.g. `None`), #2209 by @masalim2
+* Add a `FrozenSet[str]` type annotation to the `allowed_schemes` argument on the `strict_url` field type, #2198 by @Midnighter
+* add `allow_mutation` constraint to `Field`, #2195 by @sblack-usu
+* Allow `Field` with a `default_factory` to be used as an argument to a function
+  decorated with `validate_arguments`, #2176 by @thomascobb
+* Allow non-existent secrets directory by only issuing a warning, #2175 by @davidolrik
+* fix URL regex to parse fragment without query string, #2168 by @andrewmwhite
+* fix: ensure to always return one of the values in `Literal` field type, #2166 by @PrettyWood
+* Support `typing.Annotated` hints on model fields. A `Field` may now be set in the type hint with `Annotated[..., Field(...)`; all other annotations are ignored but still visible with `get_type_hints(..., include_extras=True)`, #2147 by @JacobHayes
+* Added `StrictBytes` type as well as `strict=False` option to `ConstrainedBytes`, #2136 by @rlizzo
+* added `Config.anystr_lower` and `to_lower` kwarg to `constr` and `conbytes`, #2134 by @tayoogunbiyi
+* Support plain `typing.Tuple` type, #2132 by @PrettyWood
+* Add a bound method `validate` to functions decorated with `validate_arguments`
+  to validate parameters without actually calling the function, #2127 by @PrettyWood
+* Add the ability to customize settings sources (add / disable / change priority order), #2107 by @kozlek
+* Fix mypy complaints about most custom _pydantic_ types, #2098 by @PrettyWood
+* Add a [Hypothesis](https://hypothesis.readthedocs.io/) plugin for easier [property-based testing](https://increment.com/testing/in-praise-of-property-based-testing/) with Pydantic's custom types - [usage details here](https://pydantic-docs.helpmanual.io/hypothesis_plugin/), #2097 by @Zac-HD
+* add validator for `None`, `NoneType` or `Literal[None]`, #2095 by @PrettyWood
+* Handle properly fields of type `Callable` with a default value, #2094 by @PrettyWood
+* Updated `create_model` return type annotation to return type which inherits from `__base__` argument, #2071 by @uriyyo
+* Add merged `json_encoders` inheritance, #2064 by @art049
+* allow overwriting `ClassVar`s in sub-models without having to re-annotate them, #2061 by @layday
+* add default encoder for `Pattern` type, #2045 by @PrettyWood
+* Add `NonNegativeInt`, `NonPositiveInt`, `NonNegativeFloat`, `NonPositiveFloat`, #1975 by @mdavis-xyz
+* Use % for percentage in string format of colors, #1960 by @EdwardBetts
+* Fixed issue causing `KeyError` to be raised when building schema from multiple `BaseModel` with the same names declared in separate classes, #1912 by @JSextonn
+* Add `rediss` (Redis over SSL) protocol to `RedisDsn`
+  Allow URLs without `user` part (e.g., `rediss://:pass@localhost`), #1911 by @TrDex
+* Add a new `frozen` boolean parameter to `Config` (default: `False`).
+  Setting `frozen=True` does everything that `allow_mutation=False` does, and also generates a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the attributes are hashable, #1880 by @rhuille
+* fix schema generation with multiple Enums having the same name, #1857 by @PrettyWood
+* Added support for 13/19 digits VISA credit cards in `PaymentCardNumber` type, #1416 by @AlexanderSov
+* fix: prevent `RecursionError` while using recursive `GenericModel`s, #1370 by @xppt
+* use `enum` for `typing.Literal` in JSON schema, #1350 by @PrettyWood
+* Fix: some recursive models did not require `update_forward_refs` and silently behaved incorrectly, #1201 by @PrettyWood
+* Fix bug where generic models with fields where the typevar is nested in another type `a: List[T]` are considered to be concrete. This allows these models to be subclassed and composed as expected, #947 by @daviskirk
+* Add `Config.copy_on_model_validation` flag. When set to `False`, _pydantic_ will keep models used as fields
+  untouched on validation instead of reconstructing (copying) them, #265 by @PrettyWood
+
 ## v1.7.3 (2020-11-30)
 
 Thank you to pydantic's sponsors:

@@ -1,1 +1,0 @@
-Fixed issue causing KeyError to be raised when building schema from multiple `BaseModel` with the same names declared in separate classes.

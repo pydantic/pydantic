@@ -1,1 +1,0 @@
-fix schema generation with multiple Enums having the same name
