@@ -1,13 +1,8 @@
-
-### Changes
-
-* add ``PastDate`` and ``FutureDate`` types
-
 ## v1.8 (2021-02-26)
 
 Thank you to pydantic's sponsors:
-@jorgecarleitao, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @koxudaxi, @timdrijvers, @mkeen, @meadsteve,
-@ginomempin, @primer-io, @and-semakin, @tomthorogood, @AjitZK, @westonsteimel, @Mazyod, @christippett, @CarlosDomingues,
+@jorgecarleitao, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @koxudaxi, @timdrijvers, @mkeen, @meadsteve, 
+@ginomempin, @primer-io, @and-semakin, @tomthorogood, @AjitZK, @westonsteimel, @Mazyod, @christippett, @CarlosDomingues, 
 @Kludex, @r-m-n
 for their kind support.
 
@@ -131,7 +126,7 @@ for their kind support.
 ## v1.7 (2020-10-26)
 
 Thank you to pydantic's sponsors:
-@timdrijvers, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @jorgecarleitao, @koxudaxi, @primer-api
+@timdrijvers, @BCarley, @chdsbd, @tiangolo, @matin, @linusg, @kevinalh, @jorgecarleitao, @koxudaxi, @primer-api 
 for their kind support.
 
 ### Highlights
@@ -146,7 +141,7 @@ for their kind support.
 * **Breaking Change:** remove `__field_defaults__`, add `default_factory` support with `BaseModel.construct`.
   Use `.get_default()` method on fields in `__fields__` attribute instead, #1732 by @PrettyWood
 * Rearrange CI to run linting as a separate job, split install recipes for different tasks, #2020 by @samuelcolvin
-* Allows subclasses of generic models to make some, or all, of the superclass's type parameters concrete, while
+* Allows subclasses of generic models to make some, or all, of the superclass's type parameters concrete, while 
   also defining new type parameters in the subclass, #2005 by @choogeboom
 * Call validator with the correct `values` parameter type in `BaseModel.__setattr__`,
   when `validate_assignment = True` in model config, #1999 by @me-ransh
@@ -167,17 +162,17 @@ for their kind support.
 * add basic support of Pattern type in schema generation, #1767 by @PrettyWood
 * Support custom title, description and default in schema of enums, #1748 by @PrettyWood
 * Properly represent `Literal` Enums when `use_enum_values` is True, #1747 by @noelevans
-* Allows timezone information to be added to strings to be formatted as time objects. Permitted formats are `Z` for UTC
+* Allows timezone information to be added to strings to be formatted as time objects. Permitted formats are `Z` for UTC 
   or an offset for absolute positive or negative time shifts. Or the timezone data can be omitted, #1744 by @noelevans
 * Add stub `__init__` with python 3.6 signature for `ForwardRef`, #1738 by @sirtelemak
 * Fix behaviour with forward refs and optional fields in nested models, #1736 by @PrettyWood
 * add `Enum` and `IntEnum` as valid types for fields, #1735 by @PrettyWood
-* Change default value of `__module__` argument of `create_model` from `None` to `'pydantic.main'`.
-  Set reference of created concrete model to it's module to allow pickling (not applied to models created in
+* Change default value of `__module__` argument of `create_model` from `None` to `'pydantic.main'`. 
+  Set reference of created concrete model to it's module to allow pickling (not applied to models created in 
   functions), #1686 by @MrMrRobat
 * Add private attributes support, #1679 by @MrMrRobat
 * add `config` to `@validate_arguments`, #1663 by @samuelcolvin
-* Allow descendant Settings models to override env variable names for the fields defined in parent Settings models with
+* Allow descendant Settings models to override env variable names for the fields defined in parent Settings models with 
   `env` in their `Config`. Previously only `env_prefix` configuration option was applicable, #1561 by @ojomio
 * Support `ref_template` when creating schema `$ref`s, #1479 by @kilo59
 * Add a `__call__` stub to `PyObject` so that mypy will know that it is callable, #1352 by @brianmaissy
@@ -250,7 +245,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * Remove `typing_extensions` dependency for python 3.8, #1342 by @prettywood
 * Make `SecretStr` and `SecretBytes` initialization idempotent, #1330 by @atheuz
 * document making secret types dumpable using the json method, #1328 by @atheuz
-* Move all testing and build to github actions, add windows and macos binaries,
+* Move all testing and build to github actions, add windows and macos binaries, 
   thank you @StephenBrown2 for much help, #1326 by @samuelcolvin
 * fix card number length check in `PaymentCardNumber`, `PaymentCardBrand` now inherits from `str`, #1317 by @samuelcolvin
 * Have `BaseModel` inherit from `Representation` to make mypy happy when overriding `__str__`, #1310 by @FuegoFro
