@@ -106,6 +106,8 @@ __all__ = [
     'PaymentCardNumber',
     'PrivateAttr',
     'ByteSize',
+    'PastDate',
+    'FutureDate',
     # version
     'VERSION',
 ]

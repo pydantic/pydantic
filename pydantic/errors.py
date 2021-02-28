@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Set, Tuple, Type, Union
@@ -66,6 +67,9 @@ __all__ = (
     'DecimalWholeDigitsError',
     'DateTimeError',
     'DateError',
+    '_DateValueError',
+    'DateNotInThePastError',
+    'DateNotInTheFutureError',
     'TimeError',
     'DurationError',
     'HashableError',
@@ -436,6 +440,21 @@ class DateTimeError(PydanticValueError):
 
 class DateError(PydanticValueError):
     msg_template = 'invalid date format'
+
+
+class _DateValueError(PydanticValueError):
+    def __init__(self, *, date: date) -> None:
+        super().__init__(date=str(date))
+
+
+class DateNotInThePastError(_DateValueError):
+    code = 'date.not_in_the_past'
+    msg_template = 'date "{date}" is not in the past'
+
+
+class DateNotInTheFutureError(_DateValueError):
+    code = 'date.not_in_the_future'
+    msg_template = 'date "{date}" is not in the future'
 
 
 class TimeError(PydanticValueError):

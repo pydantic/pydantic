@@ -1,6 +1,7 @@
 import math
 import re
 import warnings
+from datetime import date
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -26,6 +27,7 @@ from uuid import UUID
 from weakref import WeakSet
 
 from . import errors
+from .datetime_parse import parse_date
 from .utils import import_string, update_not_none
 from .validators import (
     bytes_validator,
@@ -93,6 +95,8 @@ __all__ = [
     'StrictFloat',
     'PaymentCardNumber',
     'ByteSize',
+    'PastDate',
+    'FutureDate',
 ]
 
 NoneStr = Optional[str]
@@ -1008,3 +1012,45 @@ class ByteSize(int):
             raise errors.InvalidByteSizeUnit(unit=unit)
 
         return self / unit_div
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if TYPE_CHECKING:
+    PastDate = date
+    FutureDate = date
+else:
+
+    class PastDate(date):
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            field_schema.update(format='past-date')
+
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield parse_date
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, value: date) -> date:
+            if value >= date.today():
+                raise errors.DateNotInThePastError(date=value)
+
+            return value
+
+    class FutureDate(date):
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            field_schema.update(format='future-date')
+
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield parse_date
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, value: date) -> date:
+            if value <= date.today():
+                raise errors.DateNotInTheFutureError(date=value)
+
+            return value
