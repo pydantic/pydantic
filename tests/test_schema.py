@@ -29,6 +29,7 @@ import pytest
 from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
+from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
     get_flat_models_from_model,
@@ -80,6 +81,9 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
+
+
+T = TypeVar('T')
 
 
 def test_key():
@@ -2264,4 +2268,125 @@ def test_schema_for_generic_field():
             'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
         },
         'required': ['data', 'data1'],
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_nested_generic():
+    """
+    Test a nested BaseModel that is also a Generic
+    """
+
+    class Ref(BaseModel, Generic[T]):
+        uuid: str
+
+        def resolve(self) -> T:
+            ...
+
+    class Model(BaseModel):
+        ref: Ref['Model']  # noqa
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'definitions': {
+            'Ref': {
+                'title': 'Ref',
+                'type': 'object',
+                'properties': {
+                    'uuid': {'title': 'Uuid', 'type': 'string'},
+                },
+                'required': ['uuid'],
+            },
+        },
+        'properties': {
+            'ref': {'$ref': '#/definitions/Ref'},
+        },
+        'required': ['ref'],
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_nested_generic_model():
+    """
+    Test a nested GenericModel
+    """
+
+    class Box(GenericModel, Generic[T]):
+        uuid: str
+        data: T
+
+    class Model(BaseModel):
+        box_str: Box[str]
+        box_int: Box[int]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'definitions': {
+            'Box_str_': Box[str].schema(),
+            'Box_int_': Box[int].schema(),
+        },
+        'properties': {
+            'box_str': {'$ref': '#/definitions/Box_str_'},
+            'box_int': {'$ref': '#/definitions/Box_int_'},
+        },
+        'required': ['box_str', 'box_int'],
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_complex_nested_generic():
+    """
+    Handle a union of a generic.
+    """
+
+    class Ref(BaseModel, Generic[T]):
+        uuid: str
+
+        def resolve(self) -> T:
+            ...
+
+    class Model(BaseModel):
+        uuid: str
+        model: Union[Ref['Model'], 'Model']  # noqa
+
+        def resolve(self) -> 'Model':  # noqa
+            ...
+
+    Model.update_forward_refs()
+
+    assert Model.schema() == {
+        'definitions': {
+            'Model': {
+                'title': 'Model',
+                'type': 'object',
+                'properties': {
+                    'uuid': {'title': 'Uuid', 'type': 'string'},
+                    'model': {
+                        'title': 'Model',
+                        'anyOf': [
+                            {'$ref': '#/definitions/Ref'},
+                            {'$ref': '#/definitions/Model'},
+                        ],
+                    },
+                },
+                'required': ['uuid', 'model'],
+            },
+            'Ref': {
+                'title': 'Ref',
+                'type': 'object',
+                'properties': {
+                    'uuid': {'title': 'Uuid', 'type': 'string'},
+                },
+                'required': ['uuid'],
+            },
+        },
+        '$ref': '#/definitions/Model',
     }

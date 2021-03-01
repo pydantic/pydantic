@@ -373,7 +373,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
-    if field.sub_fields:
+    if field.sub_fields and not lenient_issubclass(field_type, BaseModel):
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
     elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
         flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
@@ -768,7 +768,13 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
-    if field.sub_fields:
+    field_type = field.type_
+
+    # Recurse into this field if it contains sub_fields and is NOT a
+    # BaseModel OR that BaseModel is a const
+    if field.sub_fields and (
+        (field.field_info and field.field_info.const) or not lenient_issubclass(field_type, BaseModel)
+    ):
         return field_singleton_sub_fields_schema(
             field.sub_fields,
             by_alias=by_alias,
@@ -778,16 +784,15 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_template=ref_template,
             known_models=known_models,
         )
-    if field.type_ is Any or field.type_.__class__ == TypeVar:
+    if field_type is Any or field_type.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
-    if field.type_ in NONE_TYPES:
+    if field_type in NONE_TYPES:
         return {'type': 'null'}, definitions, nested_models
-    if is_callable_type(field.type_):
+    if is_callable_type(field_type):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
-    field_type = field.type_
     if is_literal_type(field_type):
         values = literal_values(field_type)
         if len(values) > 1:
