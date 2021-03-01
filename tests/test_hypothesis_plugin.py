@@ -74,6 +74,7 @@ def gen_models():
         conintmul: pydantic.conint(ge=10, le=100, multiple_of=7)
         confloatt: pydantic.confloat(gt=10, lt=100)
         confloate: pydantic.confloat(ge=10, le=100)
+        confloatmul: pydantic.confloat(ge=10, le=100, multiple_of=4.2)
         condecimalt: pydantic.condecimal(gt=10, lt=100)
         condecimale: pydantic.condecimal(ge=10, le=100)
 
@@ -104,7 +105,7 @@ def gen_models():
 
 
 @pytest.mark.parametrize('model', gen_models())
-@settings(suppress_health_check={HealthCheck.too_slow})
+@settings(suppress_health_check={HealthCheck.too_slow, HealthCheck.filter_too_much})
 @given(data=st.data())
 def test_can_construct_models_with_all_fields(data, model):
     # The value of this test is to confirm that Hypothesis knows how to provide
