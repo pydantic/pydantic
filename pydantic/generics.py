@@ -1,5 +1,6 @@
 import sys
 import typing
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -211,7 +212,7 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
         yield v
     elif hasattr(v, '__parameters__') and not get_origin(v) and lenient_issubclass(v, GenericModel):
         yield from v.__parameters__
-    elif isinstance(v, Iterable):
+    elif isinstance(v, Iterable) and not lenient_issubclass(v, Enum):
         for var in v:
             yield from iter_contained_typevars(var)
     else:
