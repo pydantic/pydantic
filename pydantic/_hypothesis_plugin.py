@@ -220,7 +220,7 @@ def resolve_json(cls):  # type: ignore[no-untyped-def]
         finite = st.floats(allow_infinity=False, allow_nan=False)
         inner = st.recursive(
             base=st.one_of(st.none(), st.booleans(), st.integers(), finite, st.text()),
-            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),  # type: ignore
+            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),
         )
     return st.builds(
         json.dumps,
