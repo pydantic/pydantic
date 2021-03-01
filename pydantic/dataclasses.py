@@ -4,12 +4,12 @@ from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
-from .main import create_model, validate_model
+from .main import BaseConfig, create_model, inherit_config, validate_model
 from .typing import resolve_annotations
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .main import BaseModel  # noqa: F401
     from .typing import CallableGenerator, NoArgAnyCallable
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
@@ -160,7 +160,9 @@ def _process_class(
     )
     cls.__processed__ = ClassAttribute('__processed__', True)
 
+    config_instance = inherit_config(config, BaseConfig)
     field_definitions: Dict[str, Any] = {}
+
     for field in dataclasses.fields(cls):
         default: Any = Undefined
         default_factory: Optional['NoArgAnyCallable'] = None
@@ -178,7 +180,12 @@ def _process_class(
             field_info = default
             cls.__has_field_info_default__ = True
         else:
-            field_info = Field(default=default, default_factory=default_factory, **field.metadata)
+            field_info = Field(
+                default=default,
+                default_factory=default_factory,
+                **config_instance.get_field_info(field.name),
+                **field.metadata,
+            )
 
         field_definitions[field.name] = (field.type, field_info)
 

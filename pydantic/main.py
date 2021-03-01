@@ -169,7 +169,7 @@ class BaseConfig:
         pass
 
 
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
+def inherit_config(self_config: Optional['ConfigType'], parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
     if not self_config:
         base_classes: Tuple['ConfigType', ...] = (parent_config,)
     elif self_config == parent_config:

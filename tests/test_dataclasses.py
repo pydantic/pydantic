@@ -901,3 +901,14 @@ class ModelForPickle(pydantic.BaseModel):
     # ensure the restored dataclass is still a pydantic dataclass
     with pytest.raises(ValidationError, match='value\n +value is not a valid integer'):
         restored_obj.dataclass.value = 'value of a wrong type'
+
+
+def test_config_field():
+    class Config:
+        fields = {'a': {'description': 'descr'}}
+
+    @pydantic.dataclasses.dataclass(config=Config)
+    class Ad:
+        a: str
+
+    assert Ad.__pydantic_model__.schema()['properties']['a']['description'] == 'descr'
