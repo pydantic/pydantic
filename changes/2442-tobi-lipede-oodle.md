@@ -1,0 +1,1 @@
+enable the Hypothesis plugin to generate a constrained float when the `multiple_of` argument is specified.
