@@ -1,1 +1,1 @@
-Support properly `Enum` when combined with generic models
+Avoid `RecursionError` when using some types like `Enum` or `Literal` with generic models
