@@ -25,13 +25,13 @@ A few things to note on validators:
 
 * where validators rely on other values, you should be aware that:
 
-    - Validation is done in the order fields are defined.
-      E.g. in the example above, `password2` has access to `password1` (and `name`),
-      but `password1` does not have access to `password2`. See [Field Ordering](models.md#field-ordering)
-      for more information on how fields are ordered
+  * Validation is done in the order fields are defined.
+    E.g. in the example above, `password2` has access to `password1` (and `name`),
+    but `password1` does not have access to `password2`. See [Field Ordering](models.md#field-ordering)
+    for more information on how fields are ordered
 
-    - If validation fails on another field (or that field is missing) it will not be included in `values`, hence
-      `if 'password1' in values and ...` in this example.
+  * If validation fails on another field (or that field is missing) it will not be included in `values`, hence
+    `if 'password1' in values and ...` in this example.
 
 ## Pre and per-item validators
 
