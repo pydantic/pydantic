@@ -326,6 +326,19 @@ def test_parses_tld(input, output):
     assert Model(v=input).v.tld == output
 
 
+def test_http_urls_default_port():
+    class Model(BaseModel):
+        v: HttpUrl
+
+    m = Model(v='https://www.example.com')
+    assert m.v.port == '443'
+    assert m.v == 'https://www.example.com'
+
+    m = Model(v='http://www.example.com')
+    assert m.v.port == '80'
+    assert m.v == 'http://www.example.com'
+
+
 def test_postgres_dsns():
     class Model(BaseModel):
         a: PostgresDsn

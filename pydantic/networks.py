@@ -111,6 +111,7 @@ class AnyUrl(str):
     tld_required: bool = False
     user_required: bool = False
     default_parts: Optional[Set[Tuple[str, str]]] = None
+    display_port: bool = True
 
     __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
@@ -167,7 +168,7 @@ class AnyUrl(str):
         if user or password:
             url += '@'
         url += host
-        if port:
+        if port and cls.display_port:
             url += ':' + port
         if path:
             url += path
@@ -306,6 +307,12 @@ class HttpUrl(AnyUrl):
     tld_required = True
     # https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
     max_length = 2083
+    display_port = False
+
+    @classmethod
+    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+        parts['port'] = '443' if parts['scheme'] == 'https' else '80'
+        return super().validate_parts(parts)
 
 
 class PostgresDsn(AnyUrl):
