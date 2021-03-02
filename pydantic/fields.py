@@ -538,6 +538,7 @@ class ModelField(Representation):
             elif len(args) == 2 and args[1] is Ellipsis:  # e.g. Tuple[int, ...]
                 self.type_ = args[0]
                 self.shape = SHAPE_TUPLE_ELLIPSIS
+                self.sub_fields = [self._create_sub_type(args[0], f'{self.name}_0')]
             elif args == ((),):  # Tuple[()] means empty tuple
                 self.shape = SHAPE_TUPLE
                 self.type_ = Any
