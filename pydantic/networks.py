@@ -54,6 +54,7 @@ __all__ = [
     'IPvAnyNetwork',
     'PostgresDsn',
     'RedisDsn',
+    'KafkaDsn',
     'validate_email',
 ]
 
@@ -109,6 +110,7 @@ class AnyUrl(str):
     allowed_schemes: Optional[Set[str]] = None
     tld_required: bool = False
     user_required: bool = False
+    default_parts: Optional[Set[Tuple[str, str]]] = None
 
     __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
@@ -197,6 +199,7 @@ class AnyUrl(str):
         assert m, 'URL regex failed unexpectedly'
 
         parts = m.groupdict()
+        parts = cls.apply_default_parts(parts)
         parts = cls.validate_parts(parts)
 
         host, tld, host_type, rebuild = cls.validate_host(parts)
@@ -281,6 +284,14 @@ class AnyUrl(str):
 
         return host, tld, host_type, rebuild  # type: ignore
 
+    @classmethod
+    def apply_default_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+        if cls.default_parts is not None:
+            for key, value in cls.default_parts:
+                if not parts[key]:
+                    parts[key] = value
+        return parts
+
     def __repr__(self) -> str:
         extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
         return f'{self.__class__.__name__}({super().__repr__()}, {extra})'
@@ -304,18 +315,21 @@ class PostgresDsn(AnyUrl):
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis', 'rediss'}
+    default_parts = {
+        ('port', '6379'),
+        ('path', '/0'),
+    }
 
     @classmethod
     def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
-        defaults = {
-            'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
-            'port': '6379',
-            'path': '/0',
-        }
-        for key, value in defaults.items():
-            if not parts[key]:
-                parts[key] = value
+        domain_default_part = ('domain', 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '')
+        cls.default_parts.add(domain_default_part)
         return super().validate_parts(parts)
+
+
+class KafkaDsn(AnyUrl):
+    allowed_schemes = {'kafka'}
+    default_parts = {('domain', 'localhost'), ('port', '9092')}
 
 
 def stricturl(
@@ -325,6 +339,7 @@ def stricturl(
     max_length: int = 2 ** 16,
     tld_required: bool = True,
     allowed_schemes: Optional[Union[FrozenSet[str], Set[str]]] = None,
+    default_parts: Optional[Union[FrozenSet[Tuple[str, str]], Set[Tuple[str, str]]]] = None,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -333,6 +348,7 @@ def stricturl(
         max_length=max_length,
         tld_required=tld_required,
         allowed_schemes=allowed_schemes,
+        default_parts=default_parts,
     )
     return type('UrlValue', (AnyUrl,), namespace)
 

@@ -1,6 +1,17 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, EmailStr, HttpUrl, NameEmail, PostgresDsn, RedisDsn, ValidationError, stricturl
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    EmailStr,
+    HttpUrl,
+    KafkaDsn,
+    NameEmail,
+    PostgresDsn,
+    RedisDsn,
+    ValidationError,
+    stricturl,
+)
 from pydantic.networks import validate_email
 
 try:
@@ -365,6 +376,28 @@ def test_redis_dsns():
     assert m.a.host == 'localhost'
     assert m.a.port == '6379'
     assert m.a.path == '/0'
+
+
+def test_kafka_dsns():
+    class Model(BaseModel):
+        a: KafkaDsn
+
+    m = Model(a='kafka://')
+    assert m.a.scheme == 'kafka'
+    assert m.a.host == 'localhost'
+    assert m.a.port == '9092'
+    assert m.a == 'kafka://localhost:9092'
+
+    m = Model(a='kafka://kafka1')
+    assert m.a == 'kafka://kafka1:9092'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+    m = Model(a='kafka://kafka3:9093')
+    assert m.a.user is None
+    assert m.a.password is None
 
 
 def test_custom_schemes():
