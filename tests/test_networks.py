@@ -326,17 +326,24 @@ def test_parses_tld(input, output):
     assert Model(v=input).v.tld == output
 
 
-def test_http_urls_default_port():
+@pytest.mark.parametrize(
+    'url,port',
+    [
+        ('https://www.example.com', '443'),
+        ('https://www.example.com:443', '443'),
+        ('https://www.example.com:8089', '8089'),
+        ('http://www.example.com', '80'),
+        ('http://www.example.com:80', '80'),
+        ('http://www.example.com:8080', '8080'),
+    ],
+)
+def test_http_urls_default_port(url, port):
     class Model(BaseModel):
         v: HttpUrl
 
-    m = Model(v='https://www.example.com')
-    assert m.v.port == '443'
-    assert m.v == 'https://www.example.com'
-
-    m = Model(v='http://www.example.com')
-    assert m.v.port == '80'
-    assert m.v == 'http://www.example.com'
+    m = Model(v=url)
+    assert m.v.port == port
+    assert m.v == url
 
 
 def test_postgres_dsns():

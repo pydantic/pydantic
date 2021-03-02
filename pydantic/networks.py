@@ -307,11 +307,12 @@ class HttpUrl(AnyUrl):
     tld_required = True
     # https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
     max_length = 2083
-    display_port = False
 
     @classmethod
     def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
-        parts['port'] = '443' if parts['scheme'] == 'https' else '80'
+        if parts['port'] is None:
+            parts['port'] = '443' if parts['scheme'] == 'https' else '80'
+            cls.display_port = False
         return super().validate_parts(parts)
 
 
