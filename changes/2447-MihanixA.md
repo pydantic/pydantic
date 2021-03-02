@@ -1,0 +1,1 @@
+added `KafkaDsn` to the `pydantic/networks.py`
