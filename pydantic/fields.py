@@ -106,7 +106,8 @@ class FieldInfo(Representation):
         'extra',
     )
 
-    __field_constraints__ = {  # field constraints with the default value
+    # field constraints with the default value, it's also used in update_from_config below
+    __field_constraints__ = {
         'min_length': None,
         'max_length': None,
         'regex': None,
@@ -164,7 +165,7 @@ class FieldInfo(Representation):
                 # attr_name is not an attribute of FieldInfo, it should therefore be added to extra
                 self.extra[attr_name] = value
             else:
-                if current_value is None:
+                if current_value is self.__field_constraints__.get(attr_name, None):
                     setattr(self, attr_name, value)
 
     def _validate(self) -> None:

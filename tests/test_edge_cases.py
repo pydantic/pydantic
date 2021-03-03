@@ -1814,13 +1814,28 @@ def test_config_field_info_merge():
 
 
 def test_config_field_info_allow_mutation():
-    """
-    allow_mutation cannot be customised via Config.field because it has a default which is not None
-    """
     class Foo(BaseModel):
         a: str = Field(...)
 
         class Config:
-            fields = {'a': {'allow_mutation': False}}
+            validate_assignment = True
 
     assert Foo.__fields__['a'].field_info.allow_mutation is True
+
+    f = Foo(a='x')
+    f.a = 'y'
+    assert f.dict() == {'a': 'y'}
+
+    class Bar(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'allow_mutation': False}}
+            validate_assignment = True
+
+    assert Bar.__fields__['a'].field_info.allow_mutation is False
+
+    b = Bar(a='x')
+    with pytest.raises(TypeError):
+        b.a = 'y'
+    assert b.dict() == {'a': 'x'}
