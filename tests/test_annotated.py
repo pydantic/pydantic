@@ -24,12 +24,12 @@ from pydantic.fields import Undefined
         ),
         # Test valid Annotated Field uses
         pytest.param(
-            lambda: Annotated[int, Field(description='Test')],
+            lambda: Annotated[int, Field(description='Test')],  # noqa: F821
             5,
             id='annotated-field-value-default',
         ),
         pytest.param(
-            lambda: Annotated[int, Field(default_factory=lambda: 5, description='Test')],
+            lambda: Annotated[int, Field(default_factory=lambda: 5, description='Test')],  # noqa: F821
             Undefined,
             id='annotated-field-default_factory',
         ),
@@ -134,7 +134,7 @@ def test_field_reuse():
 
 def test_config_field_info():
     class Foo(BaseModel):
-        a: Annotated[int, Field(foobar='hello')]
+        a: Annotated[int, Field(foobar='hello')]  # noqa: F821
 
         class Config:
             fields = {'a': {'description': 'descr'}}
