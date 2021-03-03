@@ -1779,3 +1779,13 @@ def test_iter_coverage():
         y: str = 'a'
 
     assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
+
+
+def test_config_field_info():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'description': 'descr'}}
+
+    assert Foo.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}

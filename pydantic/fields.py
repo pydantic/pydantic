@@ -358,12 +358,17 @@ class ModelField(Representation):
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
                 if value not in (Undefined, Ellipsis):
                     field_info.default = value
+
         if isinstance(value, FieldInfo):
             if field_info is not None:
                 raise ValueError(f'cannot specify `Annotated` and value `Field`s together for {field_name!r}')
             field_info = value
-        if field_info is None:
+            for key, value in field_info_from_config.items():
+                if getattr(field_info, key, True) is None:
+                    setattr(field_info, key, value)
+        elif field_info is None:
             field_info = FieldInfo(value, **field_info_from_config)
+
         field_info.alias = field_info.alias or field_info_from_config.get('alias')
         value = None if field_info.default_factory is not None else field_info.default
         field_info._validate()
