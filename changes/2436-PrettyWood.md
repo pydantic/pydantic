@@ -1,0 +1,1 @@
+Avoid `RecursionError` when using some types like `Enum` or `Literal` with generic models
