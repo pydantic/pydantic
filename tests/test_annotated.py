@@ -2,12 +2,10 @@ import sys
 from typing import get_type_hints
 
 import pytest
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
 from pydantic.fields import Undefined
-from pydantic.typing import Annotated
-
-pytestmark = pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 
 
 @pytest.mark.parametrize(
@@ -26,12 +24,12 @@ pytestmark = pytest.mark.skipif(not Annotated, reason='typing_extensions not ins
         ),
         # Test valid Annotated Field uses
         pytest.param(
-            lambda: Annotated[int, Field(description='Test')],
+            lambda: Annotated[int, Field(description='Test')],  # noqa: F821
             5,
             id='annotated-field-value-default',
         ),
         pytest.param(
-            lambda: Annotated[int, Field(default_factory=lambda: 5, description='Test')],
+            lambda: Annotated[int, Field(default_factory=lambda: 5, description='Test')],  # noqa: F821
             Undefined,
             id='annotated-field-default_factory',
         ),
@@ -132,3 +130,15 @@ def test_field_reuse():
         one: Annotated[int, field]
 
     assert AnnotatedModel(one=1).dict() == {'one': 1}
+
+
+def test_config_field_info():
+    class Foo(BaseModel):
+        a: Annotated[int, Field(foobar='hello')]  # noqa: F821
+
+        class Config:
+            fields = {'a': {'description': 'descr'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {
+        'a': {'title': 'A', 'description': 'descr', 'foobar': 'hello', 'type': 'integer'},
+    }

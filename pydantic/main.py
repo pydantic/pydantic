@@ -142,6 +142,10 @@ class BaseConfig:
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
+        """
+        Get properties of FieldInfo from the `fields` property of the config class.
+        """
+
         fields_value = cls.fields.get(name)
 
         if isinstance(fields_value, str):

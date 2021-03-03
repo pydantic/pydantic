@@ -1779,3 +1779,63 @@ def test_iter_coverage():
         y: str = 'a'
 
     assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
+
+
+def test_config_field_info():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'description': 'descr'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+
+def test_config_field_info_alias():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'alias': 'b'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
+
+
+def test_config_field_info_merge():
+    class Foo(BaseModel):
+        a: str = Field(..., foo='Foo')
+
+        class Config:
+            fields = {'a': {'bar': 'Bar'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {
+        'a': {'bar': 'Bar', 'foo': 'Foo', 'title': 'A', 'type': 'string'}
+    }
+
+
+def test_config_field_info_allow_mutation():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            validate_assignment = True
+
+    assert Foo.__fields__['a'].field_info.allow_mutation is True
+
+    f = Foo(a='x')
+    f.a = 'y'
+    assert f.dict() == {'a': 'y'}
+
+    class Bar(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'allow_mutation': False}}
+            validate_assignment = True
+
+    assert Bar.__fields__['a'].field_info.allow_mutation is False
+
+    b = Bar(a='x')
+    with pytest.raises(TypeError):
+        b.a = 'y'
+    assert b.dict() == {'a': 'x'}
