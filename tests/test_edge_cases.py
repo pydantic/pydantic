@@ -1811,3 +1811,16 @@ def test_config_field_info_merge():
     assert Foo.schema(by_alias=True)['properties'] == {
         'a': {'bar': 'Bar', 'foo': 'Foo', 'title': 'A', 'type': 'string'}
     }
+
+
+def test_config_field_info_allow_mutation():
+    """
+    allow_mutation cannot be customised via Config.field because it has a default which is not None
+    """
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'allow_mutation': False}}
+
+    assert Foo.__fields__['a'].field_info.allow_mutation is True
