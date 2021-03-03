@@ -1788,4 +1788,26 @@ def test_config_field_info():
         class Config:
             fields = {'a': {'description': 'descr'}}
 
-    assert Foo.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    assert Foo.schema(by_alias=True)['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+
+def test_config_field_info_alias():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'alias': 'b'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
+
+
+def test_config_field_info_merge():
+    class Foo(BaseModel):
+        a: str = Field(..., foo='Foo')
+
+        class Config:
+            fields = {'a': {'bar': 'Bar'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {
+        'a': {'bar': 'Bar', 'foo': 'Foo', 'title': 'A', 'type': 'string'}
+    }

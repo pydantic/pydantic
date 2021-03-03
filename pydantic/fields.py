@@ -153,6 +153,20 @@ class FieldInfo(Representation):
         """
         return {attr for attr, default in self.__field_constraints__.items() if getattr(self, attr) != default}
 
+    def update_from_config(self, from_config: Dict[str, Any]) -> None:
+        """
+        Update this FieldInfo based on a dict from get_field_info, only fields which have not been set are dated.
+        """
+        for attr_name, value in from_config.items():
+            try:
+                current_value = getattr(self, attr_name)
+            except AttributeError:
+                # attr_name is not an attribute of FieldInfo, it should therefore be added to extra
+                self.extra[attr_name] = value
+            else:
+                if current_value is None:
+                    setattr(self, attr_name, value)
+
     def _validate(self) -> None:
         if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
@@ -354,6 +368,7 @@ class ModelField(Representation):
                 raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
             field_info = next(iter(field_infos), None)
             if field_info is not None:
+                field_info.update_from_config(field_info_from_config)
                 if field_info.default not in (Undefined, Ellipsis):
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
                 if value not in (Undefined, Ellipsis):
@@ -363,13 +378,10 @@ class ModelField(Representation):
             if field_info is not None:
                 raise ValueError(f'cannot specify `Annotated` and value `Field`s together for {field_name!r}')
             field_info = value
-            for key, value in field_info_from_config.items():
-                if getattr(field_info, key, True) is None:
-                    setattr(field_info, key, value)
+            field_info.update_from_config(field_info_from_config)
         elif field_info is None:
             field_info = FieldInfo(value, **field_info_from_config)
 
-        field_info.alias = field_info.alias or field_info_from_config.get('alias')
         value = None if field_info.default_factory is not None else field_info.default
         field_info._validate()
         return field_info, value
