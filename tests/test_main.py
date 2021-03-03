@@ -1137,6 +1137,17 @@ def test_root_list():
     assert m.__root__ == ['a']
 
 
+def test_root_nested():
+    class MyList(BaseModel):
+        __root__: List[str]
+
+    class MyModel(BaseModel):
+        my_list: MyList
+
+    my_list = MyList(__root__=['pika'])
+    assert MyModel(my_list=my_list).dict() == {'my_list': ['pika']}
+
+
 def test_encode_nested_root():
     house_dict = {'pets': ['dog', 'cats']}
 
