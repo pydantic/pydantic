@@ -69,7 +69,9 @@ def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[Non
     except ValueError:
         return None
     except TypeError:
-        raise TypeError(f'invalid type; expected {native_expected_type}, string, bytes, int or float')
+        raise TypeError(
+            f'invalid type; expected {native_expected_type}, string, bytes, int or float. Got {type(value).__name__}'
+        )
 
 
 def from_unix_seconds(seconds: Union[int, float]) -> datetime:
@@ -223,7 +225,7 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
     try:
         match = standard_duration_re.match(value) or iso8601_duration_re.match(value)
     except TypeError:
-        raise TypeError('invalid type; expected timedelta, string, bytes, int or float')
+        raise TypeError(f'invalid type; expected timedelta, string, bytes, int or float. Got {type(value).__name__}')
 
     if not match:
         raise errors.DurationError()
