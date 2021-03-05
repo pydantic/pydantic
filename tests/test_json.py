@@ -12,7 +12,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, NameEmail, create_model
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
@@ -35,6 +35,7 @@ class MyEnum(Enum):
         (SecretStr(''), '""'),
         (SecretBytes(b'xyz'), '"**********"'),
         (SecretBytes(b''), '""'),
+        (NameEmail('foo bar', 'foobaR@example.com'), '"foo bar <foobaR@example.com>"'),
         (IPv6Address('::1:0:1'), '"::1:0:1"'),
         (IPv4Interface('192.168.0.0/24'), '"192.168.0.0/24"'),
         (IPv6Interface('2001:db00::/120'), '"2001:db00::/120"'),
