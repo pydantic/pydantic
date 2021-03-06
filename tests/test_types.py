@@ -2793,61 +2793,28 @@ def test_past_date_validation_success(value, result):
 
 
 @pytest.mark.parametrize(
-    'value,errors',
+    'value,expected',
     (
-        (
-            date.today(),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': f'date "{date.today()}" is not in the past',
-                    'type': 'value_error.date.not_in_the_past',
-                    'ctx': {'date': str(date.today())},
-                }
-            ],
-        ),
-        (
-            date.today() + timedelta(1),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': f'date "{date.today() + timedelta(1)}" is not in the past',
-                    'type': 'value_error.date.not_in_the_past',
-                    'ctx': {'date': str(date.today() + timedelta(1))},
-                }
-            ],
-        ),
-        (
-            datetime.today(),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': f'date "{date.today()}" is not in the past',
-                    'type': 'value_error.date.not_in_the_past',
-                    'ctx': {'date': str(date.today())},
-                }
-            ],
-        ),
-        (
-            datetime.today() + timedelta(1),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': f'date "{date.today() + timedelta(1)}" is not in the past',
-                    'type': 'value_error.date.not_in_the_past',
-                    'ctx': {'date': str(date.today() + timedelta(1))},
-                }
-            ],
-        ),
+        (date.today(), str(date.today())),
+        (date.today() + timedelta(1), str(date.today() + timedelta(1))),
+        (datetime.today(), str(date.today())),
+        (datetime.today() + timedelta(1), str(date.today() + timedelta(1))),
     ),
 )
-def test_past_date_validation_fails(value, errors):
+def test_past_date_validation_fails(value, expected):
     class Model(BaseModel):
         foo: PastDate
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)
-    assert exc_info.value.errors() == errors
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': f'date "{expected}" is not in the past',
+            'type': 'value_error.date.not_in_the_past',
+            'ctx': {'date': expected},
+        }
+    ]
 
 
 @pytest.mark.parametrize(
@@ -2865,58 +2832,25 @@ def test_future_date_validation_success(value, result):
 
 
 @pytest.mark.parametrize(
-    'value,errors',
+    'value,expected',
     (
-        (
-            date.today(),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': f'date "{date.today()}" is not in the future',
-                    'type': 'value_error.date.not_in_the_future',
-                    'ctx': {'date': str(date.today())},
-                }
-            ],
-        ),
-        (
-            date.today() - timedelta(1),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': f'date "{date.today() - timedelta(1)}" is not in the future',
-                    'type': 'value_error.date.not_in_the_future',
-                    'ctx': {'date': str(date.today() - timedelta(1))},
-                }
-            ],
-        ),
-        (
-            datetime.today(),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': f'date "{date.today()}" is not in the future',
-                    'type': 'value_error.date.not_in_the_future',
-                    'ctx': {'date': str(date.today())},
-                }
-            ],
-        ),
-        (
-            datetime.today() - timedelta(1),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': f'date "{date.today() - timedelta(1)}" is not in the future',
-                    'type': 'value_error.date.not_in_the_future',
-                    'ctx': {'date': str(date.today() - timedelta(1))},
-                }
-            ],
-        ),
+        (date.today(), str(date.today())),
+        (date.today() - timedelta(1), str(date.today() - timedelta(1))),
+        (datetime.today(), str(date.today())),
+        (datetime.today() - timedelta(1), str(date.today() - timedelta(1))),
     ),
 )
-def test_future_date_validation_fails(value, errors):
+def test_future_date_validation_fails(value, expected):
     class Model(BaseModel):
         foo: FutureDate
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)
-    assert exc_info.value.errors() == errors
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': f'date "{expected}" is not in the future',
+            'type': 'value_error.date.not_in_the_future',
+            'ctx': {'date': expected},
+        }
+    ]
