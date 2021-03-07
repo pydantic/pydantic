@@ -824,6 +824,7 @@ The following arguments are available when using the `conbytes` type function
 - `to_lower: bool = False`: turns all characters to lowercase
 - `min_length: int = None`: minimum length of the byte string
 - `max_length: int = None`: maximum length of the byte string
+- `strict: bool = False`: controls type coercion
 
 
 ## Strict Types
