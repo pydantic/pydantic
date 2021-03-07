@@ -125,6 +125,45 @@ def test_constrained_bytes_lower_disabled():
     assert m.v == b'ABCD'
 
 
+def test_constrained_bytes_strict_true():
+    class Model(BaseModel):
+        v: conbytes(strict=True)
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+
+    with pytest.raises(ValidationError):
+        Model(v='foostring')
+
+    with pytest.raises(ValidationError):
+        Model(v=42)
+
+    with pytest.raises(ValidationError):
+        Model(v=0.42)
+
+
+def test_constrained_bytes_strict_false():
+    class Model(BaseModel):
+        v: conbytes(strict=False)
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+    assert Model(v='foostring').v == b'foostring'
+    assert Model(v=42).v == b'42'
+    assert Model(v=0.42).v == b'0.42'
+
+
+def test_constrained_bytes_strict_default():
+    class Model(BaseModel):
+        v: conbytes()
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+    assert Model(v='foostring').v == b'foostring'
+    assert Model(v=42).v == b'42'
+    assert Model(v=0.42).v == b'0.42'
+
+
 def test_constrained_list_good():
     class ConListModelMax(BaseModel):
         v: conlist(int) = []
