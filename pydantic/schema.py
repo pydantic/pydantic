@@ -490,15 +490,17 @@ def field_type_schema(
             definitions.update(sf_definitions)
             nested_models.update(sf_nested_models)
             sub_schema.append(sf_schema)
-        if len(sub_schema) == 1:
-            if field.shape == SHAPE_GENERIC:
-                f_schema = sub_schema[0]
-            else:
-                f_schema = {'type': 'array', 'items': sub_schema[0]}
-        else:
-            f_schema = {'type': 'array', 'items': sub_schema}
+
         if field.shape == SHAPE_GENERIC:
+            f_schema = sub_schema[0] if len(sub_schema) == 1 else {'type': 'array', 'items': sub_schema}
             f_schema = {'allOf': [f_schema]}
+        else:
+            tuple_len = len(sub_fields)
+            f_schema = {'type': 'array', 'minItems': tuple_len, 'maxItems': tuple_len}
+            if tuple_len == 1:
+                f_schema['items'] = sub_schema[0]
+            elif tuple_len > 1:
+                f_schema['items'] = sub_schema
     else:
         assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
@@ -835,7 +837,15 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_template=ref_template,
             known_models=known_models,
         )
-        f_schema.update({'type': 'array', 'items': list(sub_schema['properties'].values())})
+        items_schemas = list(sub_schema['properties'].values())
+        f_schema.update(
+            {
+                'type': 'array',
+                'items': items_schemas,
+                'minItems': len(items_schemas),
+                'maxItems': len(items_schemas),
+            }
+        )
     elif not hasattr(field_type, '__pydantic_model__'):
         add_field_type_to_schema(field_type, f_schema)
 
