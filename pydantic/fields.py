@@ -169,7 +169,7 @@ class FieldInfo(Representation):
                     setattr(self, attr_name, value)
 
     def _validate(self) -> None:
-        if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
+        if self.default is not Undefined and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
 
 
@@ -370,9 +370,10 @@ class ModelField(Representation):
             field_info = next(iter(field_infos), None)
             if field_info is not None:
                 field_info.update_from_config(field_info_from_config)
-                if field_info.default not in (Undefined, Ellipsis):
+                if field_info.default is not Undefined:
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
-                if value not in (Undefined, Ellipsis):
+                if value is not Undefined and value is not Required:
+                    # check also `Required` because of `validate_arguments` that sets `...` as default value
                     field_info.default = value
 
         if isinstance(value, FieldInfo):
@@ -450,7 +451,6 @@ class ModelField(Representation):
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
-            self.field_info.default = Required
         if self.default is Undefined and self.default_factory is None:
             self.default = None
         self.populate_validators()
