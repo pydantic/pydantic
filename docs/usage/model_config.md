@@ -116,6 +116,9 @@ _(This script is complete, it should run "as is")_
 **`copy_on_model_validation`**
 : whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
 
+**`strict_int`**
+: whether to treat `int` fields as strict.
+
 ## Change behaviour globally
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`

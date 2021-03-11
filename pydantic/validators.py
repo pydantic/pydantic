@@ -621,7 +621,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         ],
     ),
     (bool, [bool_validator]),
-    (int, [int_validator]),
+    (int, [IfConfig(strict_int_validator, 'strict_int'), int_validator]),
     (float, [float_validator]),
     (Path, [path_validator]),
     (datetime, [parse_datetime]),
