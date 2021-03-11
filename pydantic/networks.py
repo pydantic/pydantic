@@ -69,8 +69,8 @@ def url_regex() -> Pattern[str]:
             r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
             r'(?:(?P<user>[^\s:/]*)(?::(?P<password>[^\s/]*))?@)?'  # user info
             r'(?:'
-            r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})|'  # ipv4
-            r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])|'  # ipv6
+            r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})(?=$|[/:#?])|'  # ipv4
+            r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])(?=$|[/:#?])|'  # ipv6
             r'(?P<domain>[^\s/:?#]+)'  # domain, validation occurs later
             r')?'
             r'(?::(?P<port>\d+))?'  # port

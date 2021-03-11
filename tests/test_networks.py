@@ -51,6 +51,8 @@ except ImportError:
         AnyUrl('https://example.com', scheme='https', host='example.com'),
         'https://exam_ple.com/',
         'http://twitter.com/@handle/',
+        'http://11.11.11.11.example.com/action',
+        'http://abc.11.11.11.11.example.com/action',
     ],
 )
 def test_any_url_success(value):
@@ -155,6 +157,16 @@ def test_ipv4_port():
     assert url.host == '123.45.67.8'
     assert url.host_type == 'ipv4'
     assert url.port == '8329'
+    assert url.user is None
+    assert url.password is None
+
+
+def test_ipv4_no_port():
+    url = validate_url('ftp://123.45.67.8')
+    assert url.scheme == 'ftp'
+    assert url.host == '123.45.67.8'
+    assert url.host_type == 'ipv4'
+    assert url.port is None
     assert url.user is None
     assert url.password is None
 
