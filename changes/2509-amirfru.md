@@ -1,0 +1,1 @@
+Added **`strict_int`** option to config
