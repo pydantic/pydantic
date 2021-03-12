@@ -171,6 +171,10 @@ class FieldInfo(Representation):
             else:
                 if current_value is self.__field_constraints__.get(attr_name, None):
                     setattr(self, attr_name, value)
+                elif attr_name == 'exclude':
+                    self.exclude = ValueItems.merge(value, current_value)
+                elif attr_name == 'include':
+                    self.include = ValueItems.merge(value, current_value, intersect=True)
 
     def _validate(self) -> None:
         if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
@@ -394,8 +398,6 @@ class ModelField(Representation):
             field_info.update_from_config(field_info_from_config)
         elif field_info is None:
             field_info = FieldInfo(value, **field_info_from_config)
-        field_info.exclude = ValueItems.merge(field_info_from_config.get('exclude'), field_info.exclude)
-        field_info.include = ValueItems.merge(field_info_from_config.get('include'), field_info.include, intersect=True)
         value = None if field_info.default_factory is not None else field_info.default
         field_info._validate()
         return field_info, value
