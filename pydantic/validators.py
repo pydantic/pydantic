@@ -656,9 +656,12 @@ def find_validators(  # noqa: C901 (ignore complexity)
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
         return
-    if type_ in NONE_TYPES:
-        yield none_validator
-        return
+    try:
+        if type_ in NONE_TYPES:
+            yield none_validator
+            return
+    except TypeError:
+        pass  # in case unhashable types are in the type
     if type_ is Pattern:
         yield pattern_validator
         return
