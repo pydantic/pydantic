@@ -2238,11 +2238,6 @@ def test_discriminated_union():
         'properties': {
             'pet': {
                 'title': 'Pet',
-                'anyOf': [
-                    {'$ref': '#/definitions/Cat'},
-                    {'$ref': '#/definitions/Dog'},
-                    {'$ref': '#/definitions/Lizard'},
-                ],
                 'discriminator': {
                     'propertyName': 'pet_type',
                     'mapping': {
@@ -2252,6 +2247,11 @@ def test_discriminated_union():
                         'reptile': '#/definitions/Lizard',
                     },
                 },
+                'anyOf': [
+                    {'$ref': '#/definitions/Cat'},
+                    {'$ref': '#/definitions/Dog'},
+                    {'$ref': '#/definitions/Lizard'},
+                ],
             }
         },
         'required': ['pet'],
@@ -2259,24 +2259,19 @@ def test_discriminated_union():
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',
-                'properties': {'pet_type': {'const': 'cat', 'title': 'Pet Type', 'type': 'string'}},
+                'properties': {'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'}},
                 'required': ['pet_type'],
             },
             'Dog': {
                 'title': 'Dog',
                 'type': 'object',
-                'properties': {'pet_type': {'const': 'dog', 'title': 'Pet Type', 'type': 'string'}},
+                'properties': {'pet_type': {'title': 'Pet Type', 'enum': ['dog'], 'type': 'string'}},
                 'required': ['pet_type'],
             },
             'Lizard': {
                 'title': 'Lizard',
                 'type': 'object',
-                'properties': {
-                    'pet_type': {
-                        'anyOf': [{'const': 'reptile', 'type': 'string'}, {'const': 'lizard', 'type': 'string'}],
-                        'title': 'Pet Type',
-                    }
-                },
+                'properties': {'pet_type': {'title': 'Pet Type', 'enum': ['reptile', 'lizard'], 'type': 'string'}},
                 'required': ['pet_type'],
             },
         },
