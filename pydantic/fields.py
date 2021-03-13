@@ -290,15 +290,11 @@ class DiscriminatedUnionConfig(Representation):
     __slots__ = (
         'discriminator_key',
         'sub_fields_mapping',
-        'union_types',
-        'has_forward_refs',
     )
 
-    def __init__(self, *, discriminator_key: str, union_types: Sequence[Type[Any]]) -> None:
+    def __init__(self, *, discriminator_key: str) -> None:
         self.discriminator_key: str = discriminator_key
         self.sub_fields_mapping: Dict[str, 'ModelField'] = {}
-        self.union_types: Sequence[Any] = union_types
-        self.has_forward_refs: bool = False
 
 
 class ModelField(Representation):
@@ -567,16 +563,14 @@ class ModelField(Representation):
                 self.outer_type_ = self.type_
                 # re-run to correctly interpret the new self.type_
                 self._type_analysis()
-            elif self.field_info.discriminator:
-                self.discriminated_union_config = DiscriminatedUnionConfig(
-                    discriminator_key=self.field_info.discriminator,
-                    union_types=types_,
-                )
-
-                self.prepare_discriminated_union_sub_fields()
             else:
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
 
+                if self.field_info.discriminator:
+                    self.discriminated_union_config = DiscriminatedUnionConfig(
+                        discriminator_key=self.field_info.discriminator,
+                    )
+                    self.prepare_discriminated_union_sub_fields()
             return
 
         if issubclass(origin, Tuple):  # type: ignore
@@ -666,21 +660,19 @@ class ModelField(Representation):
         Note that this process can be aborted if a `ForwardRef` is encountered
         """
         assert self.discriminated_union_config is not None
+        assert self.sub_fields is not None
+
+        if self.discriminated_union_config.sub_fields_mapping:
+            # already evaluated
+            return
 
         discriminator_key = self.discriminated_union_config.discriminator_key
-        sub_fields: List['ModelField'] = []
         sub_fields_mapping: Dict[str, 'ModelField'] = {}
 
-        for t in self.discriminated_union_config.union_types:
-            sub_field = self._create_sub_type(t, f'{self.name}_{display_as_type(t)}')
-
+        for sub_field in self.sub_fields:
+            t = sub_field.type_
             if t.__class__ is ForwardRef:
                 # Stopping everything...will need to call `update_forward_refs`
-                self.discriminated_union_config.has_forward_refs = True
-                self.sub_fields = [
-                    self._create_sub_type(t, f'{self.name}_{display_as_type(t)}')
-                    for t in self.discriminated_union_config.union_types
-                ]
                 return
 
             try:
@@ -694,10 +686,6 @@ class ModelField(Representation):
             for discriminator_value in all_literal_values(t_discriminator_type):
                 sub_fields_mapping[discriminator_value] = sub_field
 
-            sub_fields.append(sub_field)
-
-        self.sub_fields = sub_fields
-        self.discriminated_union_config.has_forward_refs = False
         self.discriminated_union_config.sub_fields_mapping = sub_fields_mapping
 
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
@@ -969,7 +957,7 @@ class ModelField(Representation):
             errors = []
 
             if get_origin(self.type_) is Union and self.discriminated_union_config is not None:
-                if self.discriminated_union_config.has_forward_refs:
+                if not self.discriminated_union_config.sub_fields_mapping:
                     assert cls is not None
                     raise ConfigError(
                         f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
