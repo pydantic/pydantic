@@ -104,6 +104,7 @@ class FieldInfo(Representation):
         'max_length',
         'allow_mutation',
         'regex',
+        'discriminator',
         'extra',
     )
 
@@ -141,6 +142,7 @@ class FieldInfo(Representation):
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
+        self.discriminator = kwargs.pop('discriminator', None)
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
@@ -193,6 +195,7 @@ def Field(
     max_length: int = None,
     allow_mutation: bool = True,
     regex: str = None,
+    discriminator: str = None,
     **extra: Any,
 ) -> Any:
     """
@@ -225,6 +228,8 @@ def Field(
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
     :param regex: only applies to strings, requires the field match agains a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
+    :param discriminator: only useful with a (discriminated a.k.a. tagged) `Union` of sub models with a common field.
+      The `discriminator` is the name of this common field to shorten validation and improve generated schema
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
     field_info = FieldInfo(
@@ -245,6 +250,7 @@ def Field(
         max_length=max_length,
         allow_mutation=allow_mutation,
         regex=regex,
+        discriminator=discriminator,
         **extra,
     )
     field_info._validate()
@@ -561,9 +567,9 @@ class ModelField(Representation):
                 self.outer_type_ = self.type_
                 # re-run to correctly interpret the new self.type_
                 self._type_analysis()
-            elif 'discriminator' in self.field_info.extra:
+            elif self.field_info.discriminator:
                 self.discriminated_union_config = DiscriminatedUnionConfig(
-                    discriminator_key=self.field_info.extra['discriminator'],
+                    discriminator_key=self.field_info.discriminator,
                     union_types=types_,
                 )
 
