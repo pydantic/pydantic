@@ -546,3 +546,23 @@ def test_discriminated_union_forward_ref(create_module):
 
     with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
         module.Pet.parse_obj({'type': 'pika'})
+
+    assert module.Pet.schema() == {
+        'title': 'Pet',
+        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
+        'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+        'definitions': {
+            'Cat': {
+                'title': 'Cat',
+                'type': 'object',
+                'properties': {'type': {'title': 'Type', 'enum': ['cat'], 'type': 'string'}},
+                'required': ['type'],
+            },
+            'Dog': {
+                'title': 'Dog',
+                'type': 'object',
+                'properties': {'type': {'title': 'Type', 'enum': ['dog'], 'type': 'string'}},
+                'required': ['type'],
+            },
+        },
+    }

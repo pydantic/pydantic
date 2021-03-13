@@ -253,7 +253,7 @@ def field_schema(
         discriminator_models_refs: Dict[str, str] = {}
 
         for discriminator_value, sub_field in field.discriminated_union_config.sub_fields_mapping.items():
-            discriminator_model_name = model_name_map[sub_field.outer_type_]
+            discriminator_model_name = model_name_map[sub_field.type_]
             discriminator_model_ref = get_schema_ref(discriminator_model_name, ref_prefix, ref_template, False)
             discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
 
