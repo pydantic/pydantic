@@ -75,9 +75,10 @@ def gen_models():
         confloatt: pydantic.confloat(gt=10, lt=100)
         confloate: pydantic.confloat(ge=10, le=100)
         confloatemul: pydantic.confloat(ge=10, le=100, multiple_of=4.2)
-        confloattmul: pydantic.confloat(gt=10, lt=100, multiple_of=10)
         condecimalt: pydantic.condecimal(gt=10, lt=100)
         condecimale: pydantic.condecimal(ge=10, le=100)
+        condecimaltplc: pydantic.condecimal(gt=10, lt=100, decimal_places=5)
+        condecimaleplc: pydantic.condecimal(ge=10, le=100, decimal_places=2)
 
     yield from (
         MiscModel,
