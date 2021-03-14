@@ -262,7 +262,7 @@ _(This script is complete, it should run "as is")_
 
     See more details in [Required Fields](models.md#required-fields).
     
-#### Discriminated Unions
+#### Discriminated Unions (a.k.a. Tagged Unions)
 
 When `Union` is used with multiple submodels, you sometimes know exactly which submodel needs to
 be checked and validated and want to enforce this.
@@ -278,6 +278,16 @@ Setting a discriminated union has many benefits:
 
 ```py
 {!.tmp_examples/types_union_discriminated.py!}
+```
+_(This script is complete, it should run "as is")_
+
+#### Nested Discriminated Unions
+
+Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
+In this case you can always create "intermediate" models with `__root__` and add your discriminator.
+
+```py
+{!.tmp_examples/types_union_discriminated_nested.py!}
 ```
 _(This script is complete, it should run "as is")_
 
