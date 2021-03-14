@@ -1767,10 +1767,38 @@ def test_discriminated_union_literal_discriminator():
             number: int
 
 
+def test_discriminated_union_root_same_discriminator():
+    with pytest.raises(TypeError, match="Field 'pet_type' is not the same for all submodels of 'Cat'"):
+
+        class BlackCat(BaseModel):
+            pet_type: Literal['blackcat']
+
+        class WhiteCat(BaseModel):
+            pet_type: Literal['whitecat']
+
+        class Cat(BaseModel):
+            __root__: Union[BlackCat, WhiteCat]
+
+        class Dog(BaseModel):
+            pet_type: Literal['dog']
+
+        class Pet(BaseModel):
+            __root__: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+
+
 def test_discriminated_union_validation():
-    class Cat(BaseModel):
+    class BlackCat(BaseModel):
         pet_type: Literal['cat']
-        c: str
+        color: Literal['black']
+        black_infos: str
+
+    class WhiteCat(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['white']
+        white_infos: str
+
+    class Cat(BaseModel):
+        __root__: Union[BlackCat, WhiteCat] = Field(..., discriminator='color')
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
@@ -1813,3 +1841,15 @@ def test_discriminated_union_validation():
     m = Model.parse_obj({'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2})
     assert isinstance(m.pet, Lizard)
     assert m.dict() == {'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('pet (Cat)', '__root__ (WhiteCat)', 'white_infos'),
+            'msg': 'field required',
+            'type': 'value_error.missing',
+        }
+    ]
+    m = Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
+    assert isinstance(m.pet.__root__, WhiteCat)

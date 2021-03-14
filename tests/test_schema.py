@@ -2220,8 +2220,16 @@ class MyModel(BaseModel):
 
 
 def test_discriminated_union():
-    class Cat(BaseModel):
+    class BlackCat(BaseModel):
         pet_type: Literal['cat']
+        color: Literal['black']
+
+    class WhiteCat(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['white']
+
+    class Cat(BaseModel):
+        __root__: Union[BlackCat, WhiteCat] = Field(..., discriminator='color')
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
@@ -2243,8 +2251,8 @@ def test_discriminated_union():
                     'mapping': {
                         'cat': '#/definitions/Cat',
                         'dog': '#/definitions/Dog',
-                        'lizard': '#/definitions/Lizard',
                         'reptile': '#/definitions/Lizard',
+                        'lizard': '#/definitions/Lizard',
                     },
                 },
                 'anyOf': [
@@ -2256,11 +2264,31 @@ def test_discriminated_union():
         },
         'required': ['pet'],
         'definitions': {
+            'BlackCat': {
+                'title': 'BlackCat',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                },
+                'required': ['pet_type', 'color'],
+            },
+            'WhiteCat': {
+                'title': 'WhiteCat',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
+                },
+                'required': ['pet_type', 'color'],
+            },
             'Cat': {
                 'title': 'Cat',
-                'type': 'object',
-                'properties': {'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'}},
-                'required': ['pet_type'],
+                'discriminator': {
+                    'propertyName': 'color',
+                    'mapping': {'black': '#/definitions/BlackCat', 'white': '#/definitions/WhiteCat'},
+                },
+                'anyOf': [{'$ref': '#/definitions/BlackCat'}, {'$ref': '#/definitions/WhiteCat'}],
             },
             'Dog': {
                 'title': 'Dog',
