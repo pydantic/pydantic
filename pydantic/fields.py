@@ -662,10 +662,6 @@ class ModelField(Representation):
         assert self.discriminated_union_config is not None
         assert self.sub_fields is not None
 
-        if self.discriminated_union_config.sub_fields_mapping:
-            # already evaluated
-            return
-
         discriminator_key = self.discriminated_union_config.discriminator_key
         sub_fields_mapping: Dict[str, 'ModelField'] = {}
 
