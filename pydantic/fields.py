@@ -1089,7 +1089,7 @@ def _get_discriminator_values(tp: Type['BaseModel'], discriminator_key: str) -> 
     if tp.__custom_root_type__:
         root_field = tp.__fields__[ROOT_KEY]
 
-        all_values = [_get_discriminator_values(t, discriminator_key) for t in get_args(root_field.outer_type_)]
+        all_values = [_get_discriminator_values(t, discriminator_key) for t in get_args(root_field.type_)]
         if len(set(all_values)) > 1:
             raise TypeError(f'Field {discriminator_key!r} is not the same for all submodels of {tp.__name__!r}')
 
@@ -1097,7 +1097,7 @@ def _get_discriminator_values(tp: Type['BaseModel'], discriminator_key: str) -> 
 
     else:
         try:
-            t_discriminator_type = tp.__fields__[discriminator_key].outer_type_
+            t_discriminator_type = tp.__fields__[discriminator_key].type_
         except KeyError:
             raise KeyError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}')
 

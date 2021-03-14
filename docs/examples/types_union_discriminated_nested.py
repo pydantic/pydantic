@@ -1,5 +1,7 @@
 from typing import Literal, Union
 
+from typing_extensions import Annotated
+
 from pydantic import BaseModel, Field, ValidationError
 
 
@@ -16,7 +18,7 @@ class WhiteCat(BaseModel):
 
 
 class Cat(BaseModel):
-    __root__: Union[BlackCat, WhiteCat] = Field(..., discriminator='color')
+    __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
 
 
 class Dog(BaseModel):
@@ -25,7 +27,7 @@ class Dog(BaseModel):
 
 
 class Model(BaseModel):
-    pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+    pet: Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
     n: int
 
 

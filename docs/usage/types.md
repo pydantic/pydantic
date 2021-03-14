@@ -281,6 +281,10 @@ Setting a discriminated union has many benefits:
 ```
 _(This script is complete, it should run "as is")_
 
+!!! note
+    Using the [Annotated Fields syntax](../schema/#typingannotated-fields) can be handy to regroup
+    the `Union` and `discriminator` information. See below for an example!
+
 #### Nested Discriminated Unions
 
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.

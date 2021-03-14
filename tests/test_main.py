@@ -5,6 +5,7 @@ from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Op
 from uuid import UUID, uuid4
 
 import pytest
+from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,
@@ -1798,7 +1799,7 @@ def test_discriminated_union_validation():
         white_infos: str
 
     class Cat(BaseModel):
-        __root__: Union[BlackCat, WhiteCat] = Field(..., discriminator='color')
+        __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]  # noqa: F821
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
@@ -1809,7 +1810,7 @@ def test_discriminated_union_validation():
         l: str
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+        pet: Annotated[Union[Cat, Dog, Lizard], Field(discriminator='pet_type')]  # noqa: F821
         number: int
 
     with pytest.raises(ValidationError) as exc_info:
