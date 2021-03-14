@@ -44,7 +44,7 @@ from .typing import (
     is_typeddict,
     new_type_supertype,
 )
-from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
+from .utils import ROOT_KEY, PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
@@ -675,15 +675,7 @@ class ModelField(Representation):
                 # Stopping everything...will need to call `update_forward_refs`
                 return
 
-            try:
-                t_discriminator_type = t.__fields__[discriminator_key].outer_type_
-            except KeyError:
-                raise KeyError(f'Model {t.__name__!r} needs a discriminator field for key {discriminator_key!r}')
-
-            if not is_literal_type(t_discriminator_type):
-                raise TypeError(f'Field {discriminator_key!r} of model {t.__name__!r} needs to be a `Literal`')
-
-            for discriminator_value in all_literal_values(t_discriminator_type):
+            for discriminator_value in _get_discriminator_values(t, discriminator_key):
                 sub_fields_mapping[discriminator_value] = sub_field
 
         self.discriminated_union_config.sub_fields_mapping = sub_fields_mapping
@@ -1091,3 +1083,27 @@ class DeferredType:
     """
     Used to postpone field preparation, while creating recursive generic models.
     """
+
+
+def _get_discriminator_values(tp: Type['BaseModel'], discriminator_key: str) -> Tuple[str, ...]:
+    if tp.__custom_root_type__:
+        root_field = tp.__fields__[ROOT_KEY]
+        if root_field.field_info.discriminator is None:
+            raise KeyError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}')
+
+        all_values = [_get_discriminator_values(t, discriminator_key) for t in get_args(root_field.outer_type_)]
+        if len(set(all_values)) > 1:
+            raise TypeError(f'Field {discriminator_key!r} is not the same for all submodels of {tp.__name__!r}')
+
+        return all_values[0]
+
+    else:
+        try:
+            t_discriminator_type = tp.__fields__[discriminator_key].outer_type_
+        except KeyError:
+            raise KeyError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}')
+
+        if not is_literal_type(t_discriminator_type):
+            raise TypeError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
+
+        return all_literal_values(t_discriminator_type)
