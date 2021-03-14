@@ -1092,8 +1092,6 @@ class DeferredType:
 def _get_discriminator_values(tp: Type['BaseModel'], discriminator_key: str) -> Tuple[str, ...]:
     if tp.__custom_root_type__:
         root_field = tp.__fields__[ROOT_KEY]
-        if root_field.field_info.discriminator is None:
-            raise KeyError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}')
 
         all_values = [_get_discriminator_values(t, discriminator_key) for t in get_args(root_field.outer_type_)]
         if len(set(all_values)) > 1:
