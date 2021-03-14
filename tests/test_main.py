@@ -1723,6 +1723,13 @@ def test_class_kwargs_config():
     assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
 
 
+def test_class_kwargs_config_json_encoders():
+    class Model(BaseModel, json_encoders={int: str}):
+        pass
+
+    assert Model.__config__.json_encoders == {int: str}
+
+
 def test_class_kwargs_config_and_attr_conflict():
 
     with pytest.raises(
