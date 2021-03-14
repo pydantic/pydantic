@@ -966,7 +966,11 @@ class ModelField(Representation):
                 try:
                     sub_field = self.discriminated_union_config.sub_fields_mapping[discriminator_value]
                 except KeyError:
-                    msg_err = f'No match for discriminator {discriminator_key!r} and value {discriminator_value!r}'
+                    allowed_values = ', '.join(map(repr, self.discriminated_union_config.sub_fields_mapping.keys()))
+                    msg_err = (
+                        f'No match for discriminator {discriminator_key!r} and value {discriminator_value!r} '
+                        f'(allowed values: {allowed_values})'
+                    )
                     return v, ErrorWrapper(ValueError(msg_err), loc)
                 else:
                     return sub_field.validate(v, values, loc=f'{loc} ({sub_field.outer_type_.__name__})', cls=cls)

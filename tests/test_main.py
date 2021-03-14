@@ -1794,7 +1794,14 @@ def test_discriminated_union_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({'pet': {'pet_type': 'fish'}, 'number': 2})
     assert exc_info.value.errors() == [
-        {'loc': ('pet',), 'msg': "No match for discriminator 'pet_type' and value 'fish'", 'type': 'value_error'},
+        {
+            'loc': ('pet',),
+            'msg': (
+                "No match for discriminator 'pet_type' and value 'fish' "
+                "(allowed values: 'cat', 'dog', 'reptile', 'lizard')"
+            ),
+            'type': 'value_error',
+        },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
