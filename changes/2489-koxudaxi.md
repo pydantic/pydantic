@@ -1,1 +1,1 @@
-Add "strict" argument to "conbytes".
+Add `strict` argument to `conbytes`.
