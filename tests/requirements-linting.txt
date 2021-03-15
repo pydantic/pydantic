@@ -5,5 +5,5 @@ hypothesis==6.3.0
 isort==5.7.0
 mypy==0.812
 pycodestyle==2.6.0
-pyflakes==2.2.0
+pyflakes==2.3.0
 twine==3.3.0
