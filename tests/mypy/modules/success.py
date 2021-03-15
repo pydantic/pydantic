@@ -223,8 +223,8 @@ class PydanticTypes(BaseModel):
     # Json
     my_json: Json = '{"hello": "world"}'
     # Date
-    my_past_date: PastDate = date.today() + timedelta(1)
-    my_future_date: FutureDate = date.today() - timedelta(1)
+    my_past_date: PastDate = date.today() - timedelta(1)
+    my_future_date: FutureDate = date.today() + timedelta(1)
 
     class Config:
         validate_all = True
