@@ -74,6 +74,8 @@ def gen_models():
         conintmul: pydantic.conint(ge=10, le=100, multiple_of=7)
         confloatt: pydantic.confloat(gt=10, lt=100)
         confloate: pydantic.confloat(ge=10, le=100)
+        confloatemul: pydantic.confloat(ge=10, le=100, multiple_of=4.2)
+        confloattmul: pydantic.confloat(gt=10, lt=100, multiple_of=10)
         condecimalt: pydantic.condecimal(gt=10, lt=100)
         condecimale: pydantic.condecimal(ge=10, le=100)
 

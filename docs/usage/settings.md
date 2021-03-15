@@ -22,19 +22,19 @@ _(This script is complete, it should run "as is")_
 The following rules are used to determine which environment variable(s) are read for a given field:
 
 * By default, the environment variable name is built by concatenating the prefix and field name.
-    * For example, to override `special_function` above, you could use:
+  * For example, to override `special_function` above, you could use:
 
-            export my_prefix_special_function='foo.bar'
+          export my_prefix_special_function='foo.bar'
 
-    * Note 1: The default prefix is an empty string.
-    * Note 2: Field aliases are ignored when building the environment variable name.
+  * Note 1: The default prefix is an empty string.
+  * Note 2: Field aliases are ignored when building the environment variable name.
 
 * Custom environment variable names can be set in two ways:
-    * `Config.fields['field_name']['env']` (see `auth_key` and `redis_dsn` above)
-    * `Field(..., env=...)` (see `api_key` above)
+  * `Config.fields['field_name']['env']` (see `auth_key` and `redis_dsn` above)
+  * `Field(..., env=...)` (see `api_key` above)
 * When specifying custom environment variable names, either a string or a list of strings may be provided.
-    * When specifying a list of strings, order matters: the first detected value is used.
-    * For example, for `redis_dsn` above, `service_redis_dsn` would take precedence over `redis_url`.
+  * When specifying a list of strings, order matters: the first detected value is used.
+  * For example, for `redis_dsn` above, `service_redis_dsn` would take precedence over `redis_url`.
 
 !!! warning
     Since **v1.0** *pydantic* does not consider field aliases when finding environment variables to populate settings

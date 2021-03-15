@@ -15,6 +15,7 @@ from pydantic import (
     BaseModel,
     DirectoryPath,
     FilePath,
+    FutureDate,
     Json,
     NegativeFloat,
     NegativeInt,
@@ -22,9 +23,8 @@ from pydantic import (
     NonNegativeFloat,
     NonNegativeInt,
     NonPositiveFloat,
-    FutureDate,
-    PastDate,
     NonPositiveInt,
+    PastDate,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -210,18 +210,32 @@ class PydanticTypes(BaseModel):
     # String
     my_strict_str: StrictStr = 'pika'
     # PyObject
-    # TODO: my_pyobject_str: PyObject = 'datetime.date'
+    my_pyobject_str: PyObject = 'datetime.date'  # type: ignore
     my_pyobject_callable: PyObject = date
     # UUID
     my_uuid1: UUID1 = UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
-    my_uuid1_str: UUID1 = 'a8098c1a-f86e-11da-bd1a-00112444be1e'
+    my_uuid1_str: UUID1 = 'a8098c1a-f86e-11da-bd1a-00112444be1e'  # type: ignore
     # Path
-    my_file_path: FilePath = Path('root') / 'myfile.txt'
-    my_file_path_str: FilePath = 'root/myfile.txt'
-    my_dir_path: DirectoryPath = Path('root') / 'mydir'
-    my_dir_path_str: DirectoryPath = 'root/mydir'
+    my_file_path: FilePath = Path(__file__)
+    my_file_path_str: FilePath = __file__  # type: ignore
+    my_dir_path: DirectoryPath = Path('.')
+    my_dir_path_str: DirectoryPath = '.'  # type: ignore
     # Json
     my_json: Json = '{"hello": "world"}'
     # Date
     my_past_date: PastDate = date.today() + timedelta(1)
     my_future_date: FutureDate = date.today() - timedelta(1)
+
+    class Config:
+        validate_all = True
+
+
+validated = PydanticTypes()
+validated.my_pyobject_str(2021, 1, 1)
+validated.my_pyobject_callable(2021, 1, 1)
+validated.my_uuid1.hex
+validated.my_uuid1_str.hex
+validated.my_file_path.absolute()
+validated.my_file_path_str.absolute()
+validated.my_dir_path.absolute()
+validated.my_dir_path_str.absolute()

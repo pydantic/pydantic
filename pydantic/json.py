@@ -1,12 +1,20 @@
 import datetime
+import re
+import sys
 from collections import deque
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Callable, Dict, Pattern, Type, Union
+from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
+
+if sys.version_info >= (3, 7):
+    Pattern = re.Pattern
+else:
+    # python 3.6
+    Pattern = re.compile('a').__class__
 
 from .color import Color
 from .types import SecretBytes, SecretStr
@@ -58,6 +66,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     IPv6Interface: str,
     IPv6Network: str,
     Path: str,
+    Pattern: lambda o: o.pattern,
     SecretBytes: str,
     SecretStr: str,
     set: list,
@@ -74,9 +83,6 @@ def pydantic_encoder(obj: Any) -> Any:
         return obj.dict()
     elif is_dataclass(obj):
         return asdict(obj)
-
-    if isinstance(obj, Pattern):
-        return obj.pattern
 
     # Check the class type and its superclasses for a matching encoder
     for base in obj.__class__.__mro__[:-1]:

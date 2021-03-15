@@ -142,6 +142,10 @@ class BaseConfig:
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
+        """
+        Get properties of FieldInfo from the `fields` property of the config class.
+        """
+
         fields_value = cls.fields.get(name)
 
         if isinstance(fields_value, str):
@@ -717,11 +721,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
+        if isinstance(value, cls):
+            return value.copy() if cls.__config__.copy_on_model_validation else value
+
         value = cls._enforce_dict_if_root(value)
         if isinstance(value, dict):
             return cls(**value)
-        elif isinstance(value, cls):
-            return value.copy() if cls.__config__.copy_on_model_validation else value
         elif cls.__config__.orm_mode:
             return cls.from_orm(value)
         else:

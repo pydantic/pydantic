@@ -1,3 +1,16 @@
+## v1.8.1 (2021-03-03)
+
+Bug fixes for regressions and new features from `v1.8` 
+
+* allow elements of `Config.field` to update elements of a `Field`, #2461 by @samuelcolvin
+* fix validation with a `BaseModel` field and a custom root type, #2449 by @PrettyWood
+* expose `Pattern` encoder to `fastapi`, #2444 by @PrettyWood
+* enable the Hypothesis plugin to generate a constrained float when the `multiple_of` argument is specified, #2442 by @tobi-lipede-oodle
+* Avoid `RecursionError` when using some types like `Enum` or `Literal` with generic models, #2436 by @PrettyWood
+* do not overwrite declared `__hash__` in subclasses of a model, #2422 by @PrettyWood
+* fix `mypy` complaints on `Path` and `UUID` related custom types, #2418 by @PrettyWood
+* Support properly variable length tuples of compound types, #2416 by @PrettyWood
+
 ## v1.8 (2021-02-26)
 
 Thank you to pydantic's sponsors:
