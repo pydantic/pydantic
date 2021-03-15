@@ -5,7 +5,7 @@ Do a little skipping about with types to demonstrate its usage.
 """
 import json
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from uuid import UUID
@@ -22,6 +22,8 @@ from pydantic import (
     NonNegativeFloat,
     NonNegativeInt,
     NonPositiveFloat,
+    FutureDate,
+    PastDate,
     NonPositiveInt,
     PositiveFloat,
     PositiveInt,
@@ -220,3 +222,6 @@ class PydanticTypes(BaseModel):
     my_dir_path_str: DirectoryPath = 'root/mydir'
     # Json
     my_json: Json = '{"hello": "world"}'
+    # Date
+    my_past_date: PastDate = date.today() + timedelta(1)
+    my_future_date: FutureDate = date.today() - timedelta(1)

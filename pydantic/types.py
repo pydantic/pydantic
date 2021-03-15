@@ -1016,30 +1016,33 @@ class ByteSize(int):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATE TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+if TYPE_CHECKING:
+    PastDate = date
+    FutureDate = date
+else:
 
-class PastDate(date):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield parse_date
-        yield cls.validate
+    class PastDate(date):
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield parse_date
+            yield cls.validate
 
-    @classmethod
-    def validate(cls, value: date) -> date:
-        if value >= date.today():
-            raise errors.DateNotInThePastError(date=value)
+        @classmethod
+        def validate(cls, value: date) -> date:
+            if value >= date.today():
+                raise errors.DateNotInThePastError(date=value)
 
-        return value
+            return value
 
+    class FutureDate(date):
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield parse_date
+            yield cls.validate
 
-class FutureDate(date):
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield parse_date
-        yield cls.validate
+        @classmethod
+        def validate(cls, value: date) -> date:
+            if value <= date.today():
+                raise errors.DateNotInTheFutureError(date=value)
 
-    @classmethod
-    def validate(cls, value: date) -> date:
-        if value <= date.today():
-            raise errors.DateNotInTheFutureError(date=value)
-
-        return value
+            return value
