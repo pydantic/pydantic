@@ -224,6 +224,7 @@ __all__ = (
     'GenericAlias',
     'get_args',
     'get_origin',
+    'get_sub_types',
     'typing_base',
 )
 
@@ -401,3 +402,12 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
     except (AttributeError, TypeError):
         pass
     return None
+
+
+def get_sub_types(tp: Any) -> List[Any]:
+    if get_origin(tp) is Annotated:
+        return get_sub_types(get_args(tp)[0])
+    elif get_origin(tp) is Union:
+        return [x for t in get_args(tp) for x in get_sub_types(t)]
+    else:
+        return [tp]

@@ -25,7 +25,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
-from typing_extensions import Literal
+from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
 from pydantic.color import Color
@@ -2358,4 +2358,117 @@ def test_schema_for_generic_field():
             'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
         },
         'required': ['data', 'data1'],
+    }
+
+
+def test_discriminated_annotated_union():
+    class BlackCatWithHeight(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['black']
+        info: Literal['height']
+        black_infos: str
+
+    class BlackCatWithWeight(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['black']
+        info: Literal['weight']
+        black_infos: str
+
+    BlackCat = Annotated[Union[BlackCatWithHeight, BlackCatWithWeight], Field(discriminator='info')]
+
+    class WhiteCat(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['white']
+        white_infos: str
+
+    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        dog_name: str
+
+    Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+    class Model(BaseModel):
+        pet: Pet
+        number: int
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'pet': {
+                'title': 'Pet',
+                'discriminator': {
+                    'propertyName': 'pet_type',
+                    'mapping': {
+                        'cat': {
+                            'BlackCatWithHeight': {'$ref': '#/definitions/BlackCatWithHeight'},
+                            'BlackCatWithWeight': {'$ref': '#/definitions/BlackCatWithWeight'},
+                            'WhiteCat': {'$ref': '#/definitions/WhiteCat'},
+                        },
+                        'dog': '#/definitions/Dog',
+                    },
+                },
+                'anyOf': [
+                    {
+                        'anyOf': [
+                            {
+                                'anyOf': [
+                                    {'$ref': '#/definitions/BlackCatWithHeight'},
+                                    {'$ref': '#/definitions/BlackCatWithWeight'},
+                                ]
+                            },
+                            {'$ref': '#/definitions/WhiteCat'},
+                        ]
+                    },
+                    {'$ref': '#/definitions/Dog'},
+                ],
+            },
+            'number': {'title': 'Number', 'type': 'integer'},
+        },
+        'required': ['pet', 'number'],
+        'definitions': {
+            'BlackCatWithHeight': {
+                'title': 'BlackCatWithHeight',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                    'info': {'title': 'Info', 'enum': ['height'], 'type': 'string'},
+                    'black_infos': {'title': 'Black Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+            },
+            'BlackCatWithWeight': {
+                'title': 'BlackCatWithWeight',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                    'info': {'title': 'Info', 'enum': ['weight'], 'type': 'string'},
+                    'black_infos': {'title': 'Black Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+            },
+            'WhiteCat': {
+                'title': 'WhiteCat',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
+                    'white_infos': {'title': 'White Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'white_infos'],
+            },
+            'Dog': {
+                'title': 'Dog',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['dog'], 'type': 'string'},
+                    'dog_name': {'title': 'Dog Name', 'type': 'string'},
+                },
+                'required': ['pet_type', 'dog_name'],
+            },
+        },
     }

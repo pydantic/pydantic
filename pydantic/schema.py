@@ -68,6 +68,7 @@ from .typing import (
     all_literal_values,
     get_args,
     get_origin,
+    get_sub_types,
     is_callable_type,
     is_literal_type,
     is_namedtuple,
@@ -250,12 +251,22 @@ def field_schema(
 
     # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminator-object
     if field.discriminated_union_config is not None:
-        discriminator_models_refs: Dict[str, str] = {}
+        discriminator_models_refs: Dict[str, Union[str, Dict[str, Any]]] = {}
 
         for discriminator_value, sub_field in field.discriminated_union_config.sub_fields_mapping.items():
-            discriminator_model_name = model_name_map[sub_field.type_]
-            discriminator_model_ref = get_schema_ref(discriminator_model_name, ref_prefix, ref_template, False)
-            discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
+            # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
+            if get_origin(sub_field.type_) is Union:
+                sub_models = get_sub_types(sub_field.type_)
+                discriminator_models_refs[discriminator_value] = {
+                    model_name_map[sub_model]: get_schema_ref(
+                        model_name_map[sub_model], ref_prefix, ref_template, False
+                    )
+                    for sub_model in sub_models
+                }
+            else:
+                discriminator_model_name = model_name_map[sub_field.type_]
+                discriminator_model_ref = get_schema_ref(discriminator_model_name, ref_prefix, ref_template, False)
+                discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
 
         s['discriminator'] = {
             'propertyName': field.discriminated_union_config.discriminator_key,

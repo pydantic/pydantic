@@ -17,8 +17,12 @@ class WhiteCat(BaseModel):
     white_name: str
 
 
-class Cat(BaseModel):
-    __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+# Can also be written with a custom root type
+#
+# class Cat(BaseModel):
+#   __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+
+Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
 
 
 class Dog(BaseModel):
@@ -26,8 +30,11 @@ class Dog(BaseModel):
     name: str
 
 
+Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+
 class Model(BaseModel):
-    pet: Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+    pet: Pet
     n: int
 
 

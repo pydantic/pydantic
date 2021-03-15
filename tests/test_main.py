@@ -1799,7 +1799,7 @@ def test_discriminated_union_validation():
         white_infos: str
 
     class Cat(BaseModel):
-        __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]  # noqa: F821
+        __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
@@ -1810,7 +1810,7 @@ def test_discriminated_union_validation():
         l: str
 
     class Model(BaseModel):
-        pet: Annotated[Union[Cat, Dog, Lizard], Field(discriminator='pet_type')]  # noqa: F821
+        pet: Annotated[Union[Cat, Dog, Lizard], Field(discriminator='pet_type')]
         number: int
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1836,7 +1836,7 @@ def test_discriminated_union_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({'pet': {'pet_type': 'lizard'}, 'number': 2})
     assert exc_info.value.errors() == [
-        {'loc': ('pet (Lizard)', 'l'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('pet', 'l'), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
 
     m = Model.parse_obj({'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2})
@@ -1847,10 +1847,81 @@ def test_discriminated_union_validation():
         Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
-            'loc': ('pet (Cat)', '__root__ (WhiteCat)', 'white_infos'),
+            'loc': ('pet', '__root__', 'white_infos'),
             'msg': 'field required',
             'type': 'value_error.missing',
         }
     ]
     m = Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
     assert isinstance(m.pet.__root__, WhiteCat)
+
+
+def test_discriminated_annotated_union():
+    class BlackCat(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['black']
+        black_infos: str
+
+    class WhiteCat(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['white']
+        white_infos: str
+
+    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        dog_name: str
+
+    Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+    class Model(BaseModel):
+        pet: Pet
+        number: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
+    assert exc_info.value.errors() == [
+        {'loc': ('pet',), 'msg': "Discriminator 'pet_type' is missing in value", 'type': 'value_error'},
+        {'loc': ('number',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj({'pet': {'pet_type': 'fish'}, 'number': 2})
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('pet',),
+            'msg': ("No match for discriminator 'pet_type' and value 'fish' " "(allowed values: 'cat', 'dog')"),
+            'type': 'value_error',
+        },
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj({'pet': {'pet_type': 'dog'}, 'number': 2})
+    assert exc_info.value.errors() == [
+        {'loc': ('pet', 'dog_name'), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+    m = Model.parse_obj({'pet': {'pet_type': 'dog', 'dog_name': 'milou'}, 'number': 2})
+    assert isinstance(m.pet, Dog)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'red'}, 'number': 2})
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('pet',),
+            'msg': ("No match for discriminator 'color' and value 'red' " "(allowed values: 'black', 'white')"),
+            'type': 'value_error',
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('pet', 'white_infos'),
+            'msg': 'field required',
+            'type': 'value_error.missing',
+        }
+    ]
+    m = Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
+    assert isinstance(m.pet, WhiteCat)

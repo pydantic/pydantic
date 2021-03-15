@@ -261,7 +261,7 @@ _(This script is complete, it should run "as is")_
     `Optional[x]` can also be used to specify a required field that can take `None` as a value.
 
     See more details in [Required Fields](models.md#required-fields).
-    
+
 #### Discriminated Unions (a.k.a. Tagged Unions)
 
 When `Union` is used with multiple submodels, you sometimes know exactly which submodel needs to
