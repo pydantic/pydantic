@@ -63,7 +63,6 @@ from .types import (
     constr,
 )
 from .typing import (
-    NONE_TYPES,
     ForwardRef,
     all_literal_values,
     get_args,
@@ -71,6 +70,7 @@ from .typing import (
     is_callable_type,
     is_literal_type,
     is_namedtuple,
+    is_none_type,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
@@ -787,7 +787,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         )
     if field_type is Any or field_type.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
-    if field_type in NONE_TYPES:
+    if is_none_type(field_type):
         return {'type': 'null'}, definitions, nested_models
     if is_callable_type(field_type):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')

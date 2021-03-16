@@ -211,6 +211,7 @@ __all__ = (
     'NoArgAnyCallable',
     'NoneType',
     'NONE_TYPES',
+    'is_none_type',
     'display_as_type',
     'resolve_annotations',
     'is_callable_type',
@@ -242,7 +243,16 @@ __all__ = (
 
 
 NoneType = None.__class__
-NONE_TYPES: Set[Any] = {None, NoneType, Literal[None]}
+
+
+NONE_TYPES: Tuple[Any, ...] = (None, NoneType, Literal[None])
+
+
+def is_none_type(type_: Any) -> bool:
+    for none_type in NONE_TYPES:
+        if type_ is none_type:
+            return True
+    return False
 
 
 def display_as_type(v: Type[Any]) -> str:
