@@ -1780,6 +1780,22 @@ def test_literal_schema():
     }
 
 
+def test_literal_enum():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+
+    class Model(BaseModel):
+        kind: Literal[MyEnum.FOO]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'kind': {'title': 'Kind', 'enum': ['foo'], 'type': 'string'}},
+        'required': ['kind'],
+    }
+
+
 def test_color_type():
     class Model(BaseModel):
         color: Color
