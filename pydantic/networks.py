@@ -110,14 +110,12 @@ class AnyUrl(str):
     allowed_schemes: Optional[Set[str]] = None
     tld_required: bool = False
     user_required: bool = False
-    default_parts: Optional[Set[Tuple[str, str]]] = None
-    display_port: bool = True
 
     __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
     @no_type_check
     def __new__(cls, url: Optional[str], **kwargs) -> object:
-        return str.__new__(cls, cls.build(**kwargs) if url is None else url)
+        return str.__new__(cls, cls.build(**kwargs) if url is None else url)  # noqa
 
     def __init__(
         self,
@@ -158,7 +156,7 @@ class AnyUrl(str):
         path: Optional[str] = None,
         query: Optional[str] = None,
         fragment: Optional[str] = None,
-        **kwargs: str,
+        **_kwargs: str,
     ) -> str:
         url = scheme + '://'
         if user:
@@ -168,7 +166,7 @@ class AnyUrl(str):
         if user or password:
             url += '@'
         url += host
-        if port and cls.display_port:
+        if port:
             url += ':' + port
         if path:
             url += path
@@ -199,8 +197,8 @@ class AnyUrl(str):
         # the regex should always match, if it doesn't please report with details of the URL tried
         assert m, 'URL regex failed unexpectedly'
 
-        parts = m.groupdict()
-        parts = cls.apply_default_parts(parts)
+        original_parts = m.groupdict()
+        parts = cls.apply_default_parts(original_parts)
         parts = cls.validate_parts(parts)
 
         host, tld, host_type, rebuild = cls.validate_host(parts)
@@ -285,12 +283,15 @@ class AnyUrl(str):
 
         return host, tld, host_type, rebuild  # type: ignore
 
+    @staticmethod
+    def get_default_parts(_parts: Dict[str, str]) -> Dict[str, str]:
+        return {}
+
     @classmethod
     def apply_default_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
-        if cls.default_parts is not None:
-            for key, value in cls.default_parts:
-                if not parts[key]:
-                    parts[key] = value
+        for key, value in cls.get_default_parts(parts).items():
+            if not parts[key]:
+                parts[key] = value
         return parts
 
     def __repr__(self) -> str:
@@ -302,18 +303,10 @@ class AnyHttpUrl(AnyUrl):
     allowed_schemes = {'http', 'https'}
 
 
-class HttpUrl(AnyUrl):
-    allowed_schemes = {'http', 'https'}
+class HttpUrl(AnyHttpUrl):
     tld_required = True
     # https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
     max_length = 2083
-
-    @classmethod
-    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
-        if parts['port'] is None:
-            parts['port'] = '443' if parts['scheme'] == 'https' else '80'
-            cls.display_port = False
-        return super().validate_parts(parts)
 
 
 class PostgresDsn(AnyUrl):
@@ -323,21 +316,25 @@ class PostgresDsn(AnyUrl):
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis', 'rediss'}
-    default_parts = {
-        ('port', '6379'),
-        ('path', '/0'),
-    }
 
-    @classmethod
-    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
-        domain_default_part = ('domain', 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '')
-        cls.default_parts.add(domain_default_part)
-        return super().validate_parts(parts)
+    @staticmethod
+    def get_default_parts(parts: Dict[str, str]) -> Dict[str, str]:
+        return {
+            'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
+            'port': '6379',
+            'path': '/0',
+        }
 
 
 class KafkaDsn(AnyUrl):
     allowed_schemes = {'kafka'}
-    default_parts = {('domain', 'localhost'), ('port', '9092')}
+
+    @staticmethod
+    def get_default_parts(parts: Dict[str, str]) -> Dict[str, str]:
+        return {
+            'domain': 'localhost',
+            'port': '9092',
+        }
 
 
 def stricturl(
@@ -347,7 +344,6 @@ def stricturl(
     max_length: int = 2 ** 16,
     tld_required: bool = True,
     allowed_schemes: Optional[Union[FrozenSet[str], Set[str]]] = None,
-    default_parts: Optional[Union[FrozenSet[Tuple[str, str]], Set[Tuple[str, str]]]] = None,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -356,9 +352,8 @@ def stricturl(
         max_length=max_length,
         tld_required=tld_required,
         allowed_schemes=allowed_schemes,
-        default_parts=default_parts,
     )
-    return type('UrlValue', (AnyUrl,), namespace)
+    return type('UrlValue', (AnyUrl,), namespace)  # noqa
 
 
 def import_email_validator() -> None:

@@ -1,3 +1,3 @@
-added `KafkaDsn` to the `pydantic/networks.py`
-added default port 443 for `https` and 80 for `http` at `HttpUrl` model
-added `display_port=False` at `HttpUrl` model 
+ - added `KafkaDsn` to the `pydantic/networks.py`
+ - added `get_default_parts` and `apply_default_parts` methods to `AnyUrl`
+ - `HttpUrl` now inherits `AnyHttpUrl` instead of `AnyUrl`

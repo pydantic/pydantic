@@ -326,24 +326,23 @@ def test_parses_tld(input, output):
     assert Model(v=input).v.tld == output
 
 
-@pytest.mark.parametrize(
-    'url,port',
-    [
-        ('https://www.example.com', '443'),
-        ('https://www.example.com:443', '443'),
-        ('https://www.example.com:8089', '8089'),
-        ('http://www.example.com', '80'),
-        ('http://www.example.com:80', '80'),
-        ('http://www.example.com:8080', '8080'),
-    ],
-)
-def test_http_urls_default_port(url, port):
-    class Model(BaseModel):
-        v: HttpUrl
+def test_get_default_parts():
+    class MyConnectionString(AnyUrl):
+        @staticmethod
+        def get_default_parts(parts):
+            # get default parts allows to generate custom conn strings to services
+            return {
+                'user': 'admin',
+                'password': '123',
+            }
 
-    m = Model(v=url)
-    assert m.v.port == port
-    assert m.v == url
+    class C(BaseModel):
+        connection: MyConnectionString
+
+    c = C(connection='protocol://service:8080')
+    assert c.connection == 'protocol://admin:123@service:8080'
+    assert c.connection.user == 'admin'
+    assert c.connection.password == '123'
 
 
 def test_postgres_dsns():
