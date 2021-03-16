@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from pydantic import (
+    BaseConfig,
     BaseModel,
     ConfigError,
     Extra,
@@ -1734,3 +1735,14 @@ def test_class_kwargs_config_and_attr_conflict():
 
             class Config:
                 extra = 'forbid'
+
+
+def test_class_kwargs_custom_config():
+    class Base(BaseModel):
+        class Config(BaseConfig):
+            some_config = 'value'
+
+    class Model(Base, some_config='new_value'):
+        a: int
+
+    assert Model.__config__.some_config == 'new_value'
