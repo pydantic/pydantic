@@ -1,0 +1,1 @@
+Fix issue with config decl at class level.
