@@ -19,6 +19,7 @@ except ImportError:
         'postgres://user:pass@localhost:5432/app',
         'postgres://just-user@localhost:5432/app',
         'postgresql+psycopg2://postgres:postgres@localhost:5432/hatch',
+        'postgresql+asyncpg://user:pass@localhost:5432/app',
         'foo-bar://example.org',
         'foo.bar://example.org',
         'foo0bar://example.org',
@@ -321,6 +322,10 @@ def test_postgres_dsns():
 
     assert Model(a='postgres://user:pass@localhost:5432/app').a == 'postgres://user:pass@localhost:5432/app'
     assert Model(a='postgresql://user:pass@localhost:5432/app').a == 'postgresql://user:pass@localhost:5432/app'
+    assert (
+        Model(a='postgresql+asyncpg://user:pass@localhost:5432/app').a
+        == 'postgresql+asyncpg://user:pass@localhost:5432/app'
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
