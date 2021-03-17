@@ -248,12 +248,12 @@ class ModelMetaclass(ABCMeta):
                 class_vars.update(base.__class_vars__)
                 hash_func = base.__hash__
 
-        allowed_configs: SetStr = {
+        allowed_config_kwargs: SetStr = {
             key
             for key in dir(config)
-            if not (key.startswith('__') and key.endswith('__'))  # skip dander methods and attributes
+            if not (key.startswith('__') and key.endswith('__'))  # skip dunder methods and attributes
         }
-        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & allowed_configs}
+        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & allowed_config_kwargs}
         config_from_namespace = namespace.get('Config')
         if config_kwargs and config_from_namespace:
             raise TypeError('Specifying config in two places is ambiguous, use either Config attribute or class kwargs')
