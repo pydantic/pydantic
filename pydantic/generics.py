@@ -85,12 +85,14 @@ class GenericModel(BaseModel):
             create_model(
                 model_name,
                 __module__=model_module or cls.__module__,
-                __base__=cls,
+                __base__=(cls,) + tuple(cls.__parameterized_bases__(typevars_map)),
                 __config__=None,
                 __validators__=validators,
                 **fields,
             ),
         )
+
+        created_model._assigned_parameters = typevars_map
 
         if called_globally:  # create global reference and therefore allow pickling
             object_by_reference = None
@@ -140,6 +142,47 @@ class GenericModel(BaseModel):
         param_names = [display_as_type(param) for param in params]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
+
+    @classmethod
+    def __parameterized_bases__(cls, typevars_map: Mapping[TypeVarType, Type[Any]]) -> Iterator[Type[Any]]:
+        """Returns unbound bases of cls parameterised to given type variables
+
+
+        :param typevars_map: Dictionary of type applications for binding subclasses.
+            Given a generic class `Model` with 2 type variables [S, T]
+            and a concrete model `Model[str, int]`,
+            the value `{S: str, T: int}` would be passed to `typevars_map`.
+        :return: an iterator of generic sub classes, parameterised by `typevars_map`
+            and other assigned parameters of `cls`
+
+        e.g. for
+        ```
+        class A(GenericModel, Generic[T]):
+            ...
+
+        class B(A[V], Generic[V]):
+            ...
+
+        ```
+        then: `A[int] in B.__concrete_bases__({V: int})`
+        ```
+        """
+        if '_assigned_parameters' in cls.__dict__:
+            # class is a partially "bound" form of a generic model
+            # We need to determine the mapping for the base_model parameters
+            mapped_types = {key: typevars_map.get(value, value) for key, value in cls._assigned_parameters.items()}
+        else:
+            mapped_types = typevars_map
+        for base_model in cls.__bases__:
+            if issubclass(base_model, GenericModel) and issubclass(base_model, Generic):
+                if not base_model.__parameters__:
+                    # base model is already concrete, and will be included transitively.
+                    continue
+                else:
+                    base_parameters = tuple([mapped_types[param] for param in base_model.__parameters__])
+                    result = base_model[base_parameters]
+                    if result != base_model and result != cls:
+                        yield result
 
 
 def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:

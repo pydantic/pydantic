@@ -948,7 +948,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: Type[BaseConfig] = None,
-    __base__: Type['Model'] = None,
+    __base__: Union[Type['Model'], Tuple[Type['Model'], ...]] = None,
     __module__: str = __name__,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
@@ -969,8 +969,10 @@ def create_model(
     if __base__ is not None:
         if __config__ is not None:
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
+        if not isinstance(__base__, tuple):
+            __base__ = (__base__,)
     else:
-        __base__ = cast(Type['Model'], BaseModel)
+        __base__ = (cast(Type['Model'], BaseModel),)
 
     fields = {}
     annotations = {}
@@ -1001,7 +1003,7 @@ def create_model(
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(__model_name, (__base__,), namespace)
+    return type(__model_name, __base__, namespace)
 
 
 _missing = object()
