@@ -29,6 +29,8 @@ _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[B
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
+_assigned_parameters: Dict[Type[Any], Dict[TypeVarType, Any]] = {}
+
 
 class GenericModel(BaseModel):
     __slots__ = ()
@@ -92,7 +94,7 @@ class GenericModel(BaseModel):
             ),
         )
 
-        created_model._assigned_parameters = typevars_map
+        _assigned_parameters[created_model] = typevars_map
 
         if called_globally:  # create global reference and therefore allow pickling
             object_by_reference = None
@@ -167,20 +169,23 @@ class GenericModel(BaseModel):
         then: `A[int] in B.__concrete_bases__({V: int})`
         ```
         """
-        if '_assigned_parameters' in cls.__dict__:
+        if cls in _assigned_parameters:
             # class is a partially "bound" form of a generic model
             # We need to determine the mapping for the base_model parameters
-            mapped_types = {key: typevars_map.get(value, value) for key, value in cls._assigned_parameters.items()}
+            mapped_types: Mapping[TypeVarType, Type[Any]] = {
+                key: typevars_map.get(value, value) for key, value in _assigned_parameters[cls].items()
+            }
         else:
             mapped_types = typevars_map
         for base_model in cls.__bases__:
-            if issubclass(base_model, GenericModel) and issubclass(base_model, Generic):
-                if not base_model.__parameters__:
+            if issubclass(base_model, GenericModel):
+                if not hasattr(base_model, '__parameters__') or not base_model.__parameters__:
+                    # type is Generic or
                     # base model is already concrete, and will be included transitively.
                     continue
                 else:
                     base_parameters = tuple([mapped_types[param] for param in base_model.__parameters__])
-                    result = base_model[base_parameters]
+                    result = base_model.__class_getitem__(base_parameters)
                     if result != base_model and result != cls:
                         yield result
 
