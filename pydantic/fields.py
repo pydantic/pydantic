@@ -521,7 +521,9 @@ class ModelField(Representation):
                 self.allow_none = True
             return
         if origin is Annotated:
-            self.type_ = get_args(self.type_)[0]
+            from .constraints import convert_type_to_constrained_if_needed
+
+            self.type_ = convert_type_to_constrained_if_needed(self.type_)
             self._type_analysis()
             return
         if origin is Callable:

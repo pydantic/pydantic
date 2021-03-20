@@ -2,6 +2,7 @@
 from . import dataclasses
 from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
 from .class_validators import root_validator, validator
+from .constraints import Constraints, Strict
 from .decorator import validate_arguments
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
@@ -20,6 +21,9 @@ __all__ = [
     # annotated types utils
     'create_model_from_namedtuple',
     'create_model_from_typeddict',
+    # constraints
+    'Constraints',
+    'Strict',
     # dataclasses
     'dataclasses',
     # class_validators
