@@ -27,7 +27,7 @@ CONSTRAINED_TYPES_MAPPING: Dict[type, Any] = {
 }
 
 
-@dataclass(repr=False)
+@dataclass(frozen=True, repr=False)
 class Constraints(Representation):
     strict: Optional[bool] = None
 
