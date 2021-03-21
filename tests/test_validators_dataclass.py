@@ -67,7 +67,7 @@ def test_classmethod():
 
         @validator('a')
         def check_a(cls, v):
-            assert cls is MyDataclass and is_dataclass(MyDataclass)
+            assert cls is MyDataclass.__wrapped__ and is_dataclass(MyDataclass)
             return v
 
     m = MyDataclass(a='this is foobar good')
