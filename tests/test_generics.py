@@ -1171,6 +1171,7 @@ def test_generic_subclass():
     assert B[int].__name__ == 'B[int]'
     assert issubclass(B[int], B)
     assert issubclass(B[int], A[int])
+    assert not issubclass(B[int], A[str])
 
 
 @skip_36
@@ -1186,6 +1187,8 @@ def test_generic_subclass_with_partial_application():
 
     PartialyAppliedB = B[str, T]
     assert issubclass(PartialyAppliedB[int], A[int])
+    assert not issubclass(PartialyAppliedB[int], A[str])
+    assert not issubclass(PartialyAppliedB[str], A[int])
 
 
 @skip_36
@@ -1201,6 +1204,7 @@ def test_multilevel_generic_binding():
 
     assert B[int].__name__ == 'B[int]'
     assert issubclass(B[int], A[str, int])
+    assert not issubclass(B[str], A[str, int])
 
 
 @skip_36
@@ -1217,6 +1221,7 @@ def test_generic_subclass_with_extra_type():
     assert B[int, str].__name__ == 'B[int, str]', B[int, str].__name__
     assert issubclass(B[str, int], B)
     assert issubclass(B[str, int], A[int])
+    assert not issubclass(B[int, str], A[int])
 
 
 @skip_36
@@ -1234,4 +1239,6 @@ def test_multi_inheritance_generic_binding():
 
     assert C[float].__name__ == 'C[float]'
     assert issubclass(C[float], B[str])
+    assert not issubclass(C[float], B[int])
     assert issubclass(C[float], A[int])
+    assert not issubclass(C[float], A[str])
