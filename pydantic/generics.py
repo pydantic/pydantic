@@ -183,6 +183,9 @@ class GenericModel(BaseModel):
                     # type is Generic or
                     # base model is already concrete, and will be included transitively.
                     continue
+                elif cls in _assigned_parameters and base_model in _assigned_parameters:
+                    # Subclass will be inferred via cls
+                    continue
                 else:
                     base_parameters = tuple([mapped_types[param] for param in base_model.__parameters__])
                     result = base_model.__class_getitem__(base_parameters)
