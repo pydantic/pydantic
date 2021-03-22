@@ -458,17 +458,13 @@ class ModelField(Representation):
     def _set_default_and_type(self) -> None:
         """
         Set the default value, infer the type if needed and check if `None` value is valid.
-
-        Note: to prevent side effects by calling the `default_factory` for nothing, we only call it
-        when we want to validate the default value i.e. when `validate_all` is set to True.
         """
         if self.default_factory is not None:
             if self.type_ is Undefined:
                 raise errors_.ConfigError(
                     f'you need to set the type of field {self.name!r} when using `default_factory`'
                 )
-            if not self.model_config.validate_all:
-                return
+            return
 
         default_value = self.get_default()
 

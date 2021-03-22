@@ -540,8 +540,6 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 
 !!! warning
     The `default_factory` expects the field type to be set.
-    Moreover if you want to validate default values with `validate_all`,
-    *pydantic* will need to call the `default_factory`, which could lead to side effects!
 
 ## Automatically excluded attributes
 
