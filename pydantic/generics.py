@@ -29,7 +29,8 @@ _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[B
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
-_assigned_parameters: Dict[Type[Any], Dict[TypeVarType, Any]] = {}
+Parametrization = Mapping[TypeVarType, Type[Any]]
+_assigned_parameters: Dict[Type[Any], Parametrization] = {}
 
 
 class GenericModel(BaseModel):
@@ -146,7 +147,7 @@ class GenericModel(BaseModel):
         return f'{cls.__name__}[{params_component}]'
 
     @classmethod
-    def __parameterized_bases__(cls, typevars_map: Mapping[TypeVarType, Type[Any]]) -> Iterator[Type[Any]]:
+    def __parameterized_bases__(cls, typevars_map: Parametrization) -> Iterator[Type[Any]]:
         """Returns unbound bases of cls parameterised to given type variables
 
 
@@ -157,7 +158,7 @@ class GenericModel(BaseModel):
         :return: an iterator of generic sub classes, parameterised by `typevars_map`
             and other assigned parameters of `cls`
 
-        e.g. for
+        e.g.:
         ```
         class A(GenericModel, Generic[T]):
             ...
@@ -165,32 +166,48 @@ class GenericModel(BaseModel):
         class B(A[V], Generic[V]):
             ...
 
-        ```
-        then: `A[int] in B.__concrete_bases__({V: int})`
+        assert A[int] in B.__parameterized_bases__({V: int})
         ```
         """
-        if cls in _assigned_parameters:
-            # class is a partially "bound" form of a generic model
-            # We need to determine the mapping for the base_model parameters
-            mapped_types: Mapping[TypeVarType, Type[Any]] = {
-                key: typevars_map.get(value, value) for key, value in _assigned_parameters[cls].items()
-            }
-        else:
-            mapped_types = typevars_map
+
+        def build_base_model(
+            base_model: Type[GenericModel], mapped_types: Parametrization
+        ) -> Iterator[Type[GenericModel]]:
+            base_parameters = tuple([mapped_types[param] for param in base_model.__parameters__])
+            parameterized_base = base_model.__class_getitem__(base_parameters)
+            if parameterized_base is base_model or parameterized_base is cls:
+                # Avoid duplication in MRO
+                return
+            yield parameterized_base
+
         for base_model in cls.__bases__:
-            if issubclass(base_model, GenericModel):
-                if not hasattr(base_model, '__parameters__') or not base_model.__parameters__:
-                    # type is Generic or
-                    # base model is already concrete, and will be included transitively.
-                    continue
-                elif cls in _assigned_parameters and base_model in _assigned_parameters:
-                    # Subclass will be inferred via cls
-                    continue
-                else:
-                    base_parameters = tuple([mapped_types[param] for param in base_model.__parameters__])
-                    result = base_model.__class_getitem__(base_parameters)
-                    if result != base_model and result != cls:
-                        yield result
+            if not issubclass(base_model, GenericModel):
+                # not a class that can be meaningfully parameterized
+                continue
+            elif not getattr(base_model, '__parameters__', ()):
+                # base_model is "GenericModel"  (and has no __parameters__)
+                # or
+                # base_model is already concrete, and will be included transitively via cls.
+                continue
+            elif cls in _assigned_parameters and base_model in _assigned_parameters:
+                # cls is partially parameterised but not from base_model
+                # e.g. cls = B[S], base_model = A[S]
+                # B[S][int] should subclass A[int],  (and will be transitively via B[int])
+                # but it's not viable to consistently subclass types with arbitrary construction
+                # So don't attempt to include A[S][int]
+                continue
+            elif cls in _assigned_parameters and base_model not in _assigned_parameters:
+                # cls is partially parameterized, base_model is original generic
+                # e.g.  cls = B[str, T], base_model = B[S, T]
+                # Need to determine the mapping for the base_model parameters
+                mapped_types: Parametrization = {
+                    key: typevars_map.get(value, value) for key, value in _assigned_parameters[cls].items()
+                }
+                yield from build_base_model(base_model, mapped_types)
+            else:
+                # cls is base generic, so base_class has a distinct base
+                # can construct the Parameterised base model using typevars_map directly
+                yield from build_base_model(base_model, typevars_map)
 
 
 def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:

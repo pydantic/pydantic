@@ -1185,10 +1185,10 @@ def test_generic_subclass_with_partial_application():
     class B(A[S], Generic[T, S]):
         ...
 
-    PartialyAppliedB = B[str, T]
-    assert issubclass(PartialyAppliedB[int], A[int])
-    assert not issubclass(PartialyAppliedB[int], A[str])
-    assert not issubclass(PartialyAppliedB[str], A[int])
+    PartiallyAppliedB = B[str, T]
+    assert issubclass(PartiallyAppliedB[int], A[int])
+    assert not issubclass(PartiallyAppliedB[int], A[str])
+    assert not issubclass(PartiallyAppliedB[str], A[int])
 
 
 @skip_36
