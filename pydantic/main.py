@@ -173,20 +173,32 @@ class BaseConfig:
         pass
 
 
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
-    if not self_config:
-        base_classes: Tuple['ConfigType', ...] = (parent_config,)
-    elif self_config == parent_config:
-        base_classes = (self_config,)
-    else:
-        base_classes = self_config, parent_config
+def inherit_config(bases, config_from_namespace, config_namespace) -> 'ConfigType':
+    """
+    Create Config class that inherit from all Config from base classes.
+    :param bases: List of base classes of current model under constuction.
+    :param config_from_namespace: 'Config' class found in current model declaration.
+    :param config_namespace: dict of ConfigBase keys given as parameters of constructor call of current model.
 
-    namespace['json_encoders'] = {
-        **getattr(parent_config, 'json_encoders', {}),
-        **getattr(self_config, 'json_encoders', {}),
-    }
+    :return Class that inherit from: 'Config' in current model declaration, Config of all base classes and BaseConfig.
+    """
+    # Get Config from all base classes
+    config_bases = (getattr(b, '__config__', None) for b in bases)
+    config_bases = [c for c in config_bases if c]
 
-    return type('Config', base_classes, namespace)
+    if config_from_namespace:
+        # Prepend user declared Config class in resulted config class hierarchy. (allowing explicit user inheritance declaration).
+        config_bases[:0] = config_from_namespace,
+
+    # Always derives from BaseConfig
+    if not config_bases or config_bases[-1] is not BaseConfig:
+        config_bases.append(BaseConfig)
+
+    # Merge json_encoders dictionaries
+    json_encoders_bases = (getattr(c, 'json_encoders', {}) for c in reversed(config_bases))
+    config_namespace['json_encoders'] = {k: v for json_encoders in json_encoders_bases for k, v in json_encoders.items()}
+
+    return type('Config', tuple(config_bases), config_namespace)
 
 
 EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/usage/model_config/'
@@ -227,7 +239,6 @@ class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
         fields: Dict[str, ModelField] = {}
-        config = BaseConfig
         validators: 'ValidatorListDict' = {}
 
         pre_root_validators, post_root_validators = [], []
@@ -240,7 +251,6 @@ class ModelMetaclass(ABCMeta):
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(smart_deepcopy(base.__fields__))
-                config = inherit_config(base.__config__, config)
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
                 post_root_validators += base.__post_root_validators__
@@ -252,7 +262,8 @@ class ModelMetaclass(ABCMeta):
         config_from_namespace = namespace.get('Config')
         if config_kwargs and config_from_namespace:
             raise TypeError('Specifying config in two places is ambiguous, use either Config attribute or class kwargs')
-        config = inherit_config(config_from_namespace, config, **config_kwargs)
+
+        config = inherit_config(bases, config_from_namespace, config_kwargs)
 
         validators = inherit_validators(extract_validators(namespace), validators)
         vg = ValidatorGroup(validators)
@@ -979,7 +990,7 @@ def create_model(
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['Config'] = inherit_config(__config__, BaseConfig)
+        namespace['Config'] = inherit_config((BaseConfig,), __config__, {})
 
     return type(__model_name, (__base__,), namespace)
 
