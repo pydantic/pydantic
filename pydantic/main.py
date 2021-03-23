@@ -12,6 +12,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Collection,
     Dict,
     List,
     Mapping,
@@ -173,18 +174,19 @@ class BaseConfig:
         pass
 
 
-def inherit_config(bases, config_from_namespace, config_namespace) -> 'ConfigType':
+def inherit_config(
+    bases: Collection[Type[object]], config_from_namespace: Type[object], config_namespace: Dict[str, Any]
+) -> 'ConfigType':
     """
     Create Config class that inherit from all Config from base classes.
-    :param bases: List of base classes of current model under constuction.
+    :param bases: List of base classes of current model under construction.
     :param config_from_namespace: 'Config' class found in current model declaration.
     :param config_namespace: dict of ConfigBase keys given as parameters of constructor call of current model.
 
     :return Class that inherit from: 'Config' in current model declaration, Config of all base classes and BaseConfig.
     """
     # Get Config from all base classes
-    config_bases = (getattr(b, '__config__', None) for b in bases)
-    config_bases = [c for c in config_bases if c]
+    config_bases = [c for c in (getattr(b, '__config__', None) for b in bases) if c]
 
     if config_from_namespace:
         # Prepend user declared Config class in resulted config class hierarchy.
