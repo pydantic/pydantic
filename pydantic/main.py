@@ -191,7 +191,7 @@ def inherit_config(bases, config_from_namespace, config_namespace) -> 'ConfigTyp
         config_bases[:0] = config_from_namespace,
 
     # Always derives from BaseConfig
-    if not config_bases or config_bases[-1] is not BaseConfig:
+    if BaseConfig not in config_bases:
         config_bases.append(BaseConfig)
 
     # Merge json_encoders dictionaries
