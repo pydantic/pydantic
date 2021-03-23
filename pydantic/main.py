@@ -187,8 +187,9 @@ def inherit_config(bases, config_from_namespace, config_namespace) -> 'ConfigTyp
     config_bases = [c for c in config_bases if c]
 
     if config_from_namespace:
-        # Prepend user declared Config class in resulted config class hierarchy. (allowing explicit user inheritance declaration).
-        config_bases[:0] = config_from_namespace,
+        # Prepend user declared Config class in resulted config class hierarchy.
+        # (allowing explicit user inheritance declaration).
+        config_bases[:0] = (config_from_namespace,)
 
     # Always derives from BaseConfig
     if BaseConfig not in config_bases:
@@ -196,7 +197,9 @@ def inherit_config(bases, config_from_namespace, config_namespace) -> 'ConfigTyp
 
     # Merge json_encoders dictionaries
     json_encoders_bases = (getattr(c, 'json_encoders', {}) for c in reversed(config_bases))
-    config_namespace['json_encoders'] = {k: v for json_encoders in json_encoders_bases for k, v in json_encoders.items()}
+    config_namespace['json_encoders'] = {
+        k: v for json_encoders in json_encoders_bases for k, v in json_encoders.items()
+    }
 
     return type('Config', tuple(config_bases), config_namespace)
 

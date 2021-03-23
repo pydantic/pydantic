@@ -211,12 +211,29 @@ def test_create_complex_model_hierarchy():
     """
     Test Config mro problem when creating complex model hierarchy.
     """
-    class A(BaseModel): pass
-    class B(A): pass
-    class C(BaseModel): pass
-    class D(B, C): pass
-    class E(C): pass
-    class F(B, BaseModel): pass
 
-    class Z(D, E, F): pass
-    assert True, "Previous line don't raise 'TypeError: Cannot create a consistent method resolution order (MRO) for bases Config, Config'"
+    class A(BaseModel):
+        pass
+
+    class B(A):
+        pass
+
+    class C(BaseModel):
+        pass
+
+    class D(B, C):
+        pass
+
+    class E(C):
+        pass
+
+    class F(B, BaseModel):
+        pass
+
+    class Z(D, E, F):
+        pass
+
+    assert True, (
+        "Previous line don't raise 'TypeError:"
+        " Cannot create a consistent method resolution order (MRO) for bases Config, Config'"
+    )
