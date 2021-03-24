@@ -31,12 +31,27 @@ from .validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:
     import email_validator
+    from typing_extensions import TypedDict
 
     from .fields import ModelField
     from .main import BaseConfig  # noqa: F401
     from .typing import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
+
+    class Parts(TypedDict, total=False):
+        scheme: str
+        user: Optional[str]
+        password: Optional[str]
+        ipv4: Optional[str]
+        ipv6: Optional[str]
+        domain: Optional[str]
+        port: Optional[str]
+        path: Optional[str]
+        query: Optional[str]
+        fragment: Optional[str]
+
+
 else:
     email_validator = None
 
@@ -197,7 +212,7 @@ class AnyUrl(str):
         # the regex should always match, if it doesn't please report with details of the URL tried
         assert m, 'URL regex failed unexpectedly'
 
-        original_parts = m.groupdict()
+        original_parts = cast('Parts', m.groupdict())
         parts = cls.apply_default_parts(original_parts)
         parts = cls.validate_parts(parts)
 
@@ -221,7 +236,7 @@ class AnyUrl(str):
         )
 
     @classmethod
-    def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+    def validate_parts(cls, parts: 'Parts') -> 'Parts':
         """
         A method used to validate parts of an URL.
         Could be overridden to set default values for parts if missing
@@ -244,10 +259,10 @@ class AnyUrl(str):
         return parts
 
     @classmethod
-    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, Optional[str], str, bool]:
+    def validate_host(cls, parts: 'Parts') -> Tuple[str, Optional[str], str, bool]:
         host, tld, host_type, rebuild = None, None, None, False
         for f in ('domain', 'ipv4', 'ipv6'):
-            host = parts[f]
+            host = parts[f]  # type: ignore[misc]
             if host:
                 host_type = f
                 break
@@ -284,14 +299,14 @@ class AnyUrl(str):
         return host, tld, host_type, rebuild  # type: ignore
 
     @staticmethod
-    def get_default_parts(_parts: Dict[str, str]) -> Dict[str, str]:
+    def get_default_parts(parts: 'Parts') -> 'Parts':
         return {}
 
     @classmethod
-    def apply_default_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
+    def apply_default_parts(cls, parts: 'Parts') -> 'Parts':
         for key, value in cls.get_default_parts(parts).items():
-            if not parts[key]:
-                parts[key] = value
+            if not parts[key]:  # type: ignore[misc]
+                parts[key] = value  # type: ignore[misc]
         return parts
 
     def __repr__(self) -> str:
@@ -318,7 +333,7 @@ class RedisDsn(AnyUrl):
     allowed_schemes = {'redis', 'rediss'}
 
     @staticmethod
-    def get_default_parts(parts: Dict[str, str]) -> Dict[str, str]:
+    def get_default_parts(parts: 'Parts') -> 'Parts':
         return {
             'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
             'port': '6379',
@@ -330,7 +345,7 @@ class KafkaDsn(AnyUrl):
     allowed_schemes = {'kafka'}
 
     @staticmethod
-    def get_default_parts(parts: Dict[str, str]) -> Dict[str, str]:
+    def get_default_parts(parts: 'Parts') -> 'Parts':
         return {
             'domain': 'localhost',
             'port': '9092',
