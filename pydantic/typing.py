@@ -1,5 +1,4 @@
 import sys
-from enum import Enum
 from typing import (  # type: ignore
     TYPE_CHECKING,
     AbstractSet,
@@ -235,14 +234,6 @@ NONE_TYPES: Set[Any] = {None, NoneType, Literal[None]}
 def display_as_type(v: Type[Any]) -> str:
     if not isinstance(v, typing_base) and not isinstance(v, GenericAlias) and not isinstance(v, type):
         v = v.__class__
-
-    if isinstance(v, type) and issubclass(v, Enum):
-        if issubclass(v, int):
-            return 'int'
-        elif issubclass(v, str):
-            return 'str'
-        else:
-            return 'enum'
 
     if isinstance(v, GenericAlias):
         # Generic alias are constructs like `list[int]`
