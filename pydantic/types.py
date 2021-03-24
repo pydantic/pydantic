@@ -517,8 +517,6 @@ def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None)
 
 
 if TYPE_CHECKING:
-    # TODO: add `str` and support it thanks to the plugin
-    # PyObject = Union[str, Callable[..., Any]]
     PyObject = Callable[..., Any]
 else:
 
@@ -632,10 +630,10 @@ def condecimal(
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    UUID1 = Union[UUID, str]
-    UUID3 = Union[UUID, str]
-    UUID4 = Union[UUID, str]
-    UUID5 = Union[UUID, str]
+    UUID1 = UUID
+    UUID3 = UUID
+    UUID4 = UUID
+    UUID5 = UUID
 else:
 
     class UUID1(UUID):
@@ -658,8 +656,8 @@ else:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    FilePath = Union[Path, str]
-    DirectoryPath = Union[Path, str]
+    FilePath = Path
+    DirectoryPath = Path
 else:
 
     class FilePath(Path):

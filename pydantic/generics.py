@@ -6,7 +6,6 @@ from typing import (
     ClassVar,
     Dict,
     Generic,
-    Iterable,
     Iterator,
     List,
     Mapping,
@@ -205,13 +204,16 @@ def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...])
         raise TypeError(f'Too {description} parameters for {cls.__name__}; actual {actual}, expected {expected}')
 
 
+DictValues: Type[Any] = {}.values().__class__
+
+
 def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
     """Recursively iterate through all subtypes and type args of `v` and yield any typevars that are found."""
     if isinstance(v, TypeVar):
         yield v
     elif hasattr(v, '__parameters__') and not get_origin(v) and lenient_issubclass(v, GenericModel):
         yield from v.__parameters__
-    elif isinstance(v, Iterable):
+    elif isinstance(v, (DictValues, list)):
         for var in v:
             yield from iter_contained_typevars(var)
     else:

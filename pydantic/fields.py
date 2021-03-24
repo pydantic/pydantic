@@ -106,7 +106,8 @@ class FieldInfo(Representation):
         'extra',
     )
 
-    __field_constraints__ = {  # field constraints with the default value
+    # field constraints with the default value, it's also used in update_from_config below
+    __field_constraints__ = {
         'min_length': None,
         'max_length': None,
         'regex': None,
@@ -152,6 +153,20 @@ class FieldInfo(Representation):
         :return: the constraints set on field_info
         """
         return {attr for attr, default in self.__field_constraints__.items() if getattr(self, attr) != default}
+
+    def update_from_config(self, from_config: Dict[str, Any]) -> None:
+        """
+        Update this FieldInfo based on a dict from get_field_info, only fields which have not been set are dated.
+        """
+        for attr_name, value in from_config.items():
+            try:
+                current_value = getattr(self, attr_name)
+            except AttributeError:
+                # attr_name is not an attribute of FieldInfo, it should therefore be added to extra
+                self.extra[attr_name] = value
+            else:
+                if current_value is self.__field_constraints__.get(attr_name, None):
+                    setattr(self, attr_name, value)
 
     def _validate(self) -> None:
         if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
@@ -354,17 +369,20 @@ class ModelField(Representation):
                 raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
             field_info = next(iter(field_infos), None)
             if field_info is not None:
+                field_info.update_from_config(field_info_from_config)
                 if field_info.default not in (Undefined, Ellipsis):
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
                 if value not in (Undefined, Ellipsis):
                     field_info.default = value
+
         if isinstance(value, FieldInfo):
             if field_info is not None:
                 raise ValueError(f'cannot specify `Annotated` and value `Field`s together for {field_name!r}')
             field_info = value
-        if field_info is None:
+            field_info.update_from_config(field_info_from_config)
+        elif field_info is None:
             field_info = FieldInfo(value, **field_info_from_config)
-        field_info.alias = field_info.alias or field_info_from_config.get('alias')
+
         value = None if field_info.default_factory is not None else field_info.default
         field_info._validate()
         return field_info, value
@@ -538,6 +556,7 @@ class ModelField(Representation):
             elif len(args) == 2 and args[1] is Ellipsis:  # e.g. Tuple[int, ...]
                 self.type_ = args[0]
                 self.shape = SHAPE_TUPLE_ELLIPSIS
+                self.sub_fields = [self._create_sub_type(args[0], f'{self.name}_0')]
             elif args == ((),):  # Tuple[()] means empty tuple
                 self.shape = SHAPE_TUPLE
                 self.type_ = Any

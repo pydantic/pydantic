@@ -139,10 +139,10 @@ st.register_type_strategy(
 )
 
 # UUIDs
-st.register_type_strategy(pydantic.UUID1, st.uuids(version=1))  # type: ignore[arg-type]
-st.register_type_strategy(pydantic.UUID3, st.uuids(version=3))  # type: ignore[arg-type]
-st.register_type_strategy(pydantic.UUID4, st.uuids(version=4))  # type: ignore[arg-type]
-st.register_type_strategy(pydantic.UUID5, st.uuids(version=5))  # type: ignore[arg-type]
+st.register_type_strategy(pydantic.UUID1, st.uuids(version=1))
+st.register_type_strategy(pydantic.UUID3, st.uuids(version=3))
+st.register_type_strategy(pydantic.UUID4, st.uuids(version=4))
+st.register_type_strategy(pydantic.UUID5, st.uuids(version=5))
 
 # Secrets
 st.register_type_strategy(pydantic.SecretBytes, st.binary().map(pydantic.SecretBytes))
@@ -220,7 +220,7 @@ def resolve_json(cls):  # type: ignore[no-untyped-def]
         finite = st.floats(allow_infinity=False, allow_nan=False)
         inner = st.recursive(
             base=st.one_of(st.none(), st.booleans(), st.integers(), finite, st.text()),
-            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),  # type: ignore
+            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),
         )
     return st.builds(
         json.dumps,
@@ -276,6 +276,7 @@ def resolve_confloat(cls):  # type: ignore[no-untyped-def]
     max_value = cls.le
     exclude_min = False
     exclude_max = False
+
     if cls.gt is not None:
         assert min_value is None, 'Set `gt` or `ge`, but not both'
         min_value = cls.gt
@@ -284,7 +285,21 @@ def resolve_confloat(cls):  # type: ignore[no-untyped-def]
         assert max_value is None, 'Set `lt` or `le`, but not both'
         max_value = cls.lt
         exclude_max = True
-    return st.floats(min_value, max_value, exclude_min=exclude_min, exclude_max=exclude_max, allow_nan=False)
+
+    if cls.multiple_of is None:
+        return st.floats(min_value, max_value, exclude_min=exclude_min, exclude_max=exclude_max, allow_nan=False)
+
+    if min_value is not None:
+        min_value = math.ceil(min_value / cls.multiple_of)
+        if exclude_min:
+            min_value = min_value + 1
+    if max_value is not None:
+        assert max_value >= cls.multiple_of, 'Cannot build model with max value smaller than multiple of'
+        max_value = math.floor(max_value / cls.multiple_of)
+        if exclude_max:
+            max_value = max_value - 1
+
+    return st.integers(min_value, max_value).map(lambda x: x * cls.multiple_of)
 
 
 @resolves(pydantic.ConstrainedInt)
