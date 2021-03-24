@@ -115,7 +115,7 @@ class AnyUrl(str):
 
     @no_type_check
     def __new__(cls, url: Optional[str], **kwargs) -> object:
-        return str.__new__(cls, cls.build(**kwargs) if url is None else url)  # noqa
+        return str.__new__(cls, cls.build(**kwargs) if url is None else url)
 
     def __init__(
         self,
@@ -353,7 +353,7 @@ def stricturl(
         tld_required=tld_required,
         allowed_schemes=allowed_schemes,
     )
-    return type('UrlValue', (AnyUrl,), namespace)  # noqa
+    return type('UrlValue', (AnyUrl,), namespace)
 
 
 def import_email_validator() -> None:
