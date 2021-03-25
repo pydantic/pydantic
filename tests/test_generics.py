@@ -1071,3 +1071,23 @@ def test_generic_literal():
     Fields = Literal['foo', 'bar']
     m = GModel[Fields, str](field={'foo': 'x'})
     assert m.dict() == {'field': {'foo': 'x'}}
+
+
+@skip_36
+def test_generic_enums():
+    T = TypeVar('T')
+
+    class GModel(GenericModel, Generic[T]):
+        x: T
+
+    class EnumA(str, Enum):
+        a = 'a'
+
+    class EnumB(str, Enum):
+        b = 'b'
+
+    class Model(BaseModel):
+        g_a: GModel[EnumA]
+        g_b: GModel[EnumB]
+
+    assert set(Model.schema()['definitions']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
