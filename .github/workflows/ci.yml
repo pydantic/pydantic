@@ -190,7 +190,7 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux, test-windows-mac, test-fastapi]
+    needs: [lint, test-linux, test-windows-mac, test-fastapi, benchmark]
     if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
