@@ -345,6 +345,26 @@ def test_get_default_parts():
     assert c.connection.password == '123'
 
 
+@pytest.mark.parametrize(
+    'url,port',
+    [
+        ('https://www.example.com', '443'),
+        ('https://www.example.com:443', '443'),
+        ('https://www.example.com:8089', '8089'),
+        ('http://www.example.com', '80'),
+        ('http://www.example.com:80', '80'),
+        ('http://www.example.com:8080', '8080'),
+    ],
+)
+def test_http_urls_default_port(url, port):
+    class Model(BaseModel):
+        v: HttpUrl
+
+    m = Model(v=url)
+    assert m.v.port == port
+    assert m.v == url
+
+
 def test_postgres_dsns():
     class Model(BaseModel):
         a: PostgresDsn
