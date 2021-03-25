@@ -12,11 +12,11 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    Collection,
     Dict,
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -175,7 +175,7 @@ class BaseConfig:
 
 
 def inherit_config(
-    bases: Collection[Type[object]], config_from_namespace: Type[object], config_namespace: Dict[str, Any]
+    bases: Sequence[Type[object]], config_from_namespace: Type[object], config_namespace: Dict[str, Any]
 ) -> 'ConfigType':
     """
     Create Config class that inherit from all Config from base classes.
