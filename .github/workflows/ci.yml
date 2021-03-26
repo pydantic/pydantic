@@ -162,6 +162,8 @@ jobs:
     - name: install
       run: make install-testing
 
+    - run: pip uninstall sqlalchemy
+
     - name: test
       run: make test-fastapi
 
