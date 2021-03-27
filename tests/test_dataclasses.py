@@ -967,3 +967,21 @@ def test_issue_2162(foo, bar):
     assert dataclasses.asdict(foo) == dataclasses.asdict(bar.c)
     assert dataclasses.astuple(foo) == dataclasses.astuple(bar.c)
     assert foo == bar.c
+
+
+def test_issue_2383():
+    @dataclasses.dataclass
+    class A:
+        s: str
+
+        def __hash__(self):
+            return 123
+
+    class B(pydantic.BaseModel):
+        a: A
+
+    a = A('')
+    b = B(a=a)
+
+    assert hash(a) == 123
+    assert hash(b.a) == 123
