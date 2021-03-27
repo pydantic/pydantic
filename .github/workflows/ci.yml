@@ -68,19 +68,20 @@ jobs:
         ls -alh
         ls -alh pydantic/
 
+    - run: mkdir coverage
+
     - name: test compiled and deps
       run: make test
-
-    - run: mkdir coverage
-    - run: mv .coverage coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dY
+      env:
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dY
 
     - name: uninstall deps
       run: pip uninstall -y cython email-validator devtools python-dotenv
 
     - name: test compiled without deps
       run: make test
-
-    - run: mv .coverage coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dN
+      env:
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dN
 
     - name: remove compiled binaries
       run: |
@@ -90,8 +91,8 @@ jobs:
 
     - name: test uncompiled without deps
       run: make test
-
-    - run: mv .coverage coverage/.coverage.linux-py${{ matrix.python-version }}-cN-dN
+      env:
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cN-dN
 
     - name: store coverage files
       uses: actions/upload-artifact@v2
@@ -124,11 +125,12 @@ jobs:
     - name: install
       run: make install-testing
 
+    - run: mkdir coverage
+
     - name: test
       run: make test
-
-    - run: mkdir coverage
-    - run: mv .coverage coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
+      env:
+        COVERAGE_FILE: coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
 
     - name: store coverage files
       uses: actions/upload-artifact@v2
@@ -136,7 +138,7 @@ jobs:
         name: coverage
         path: coverage
 
-  coverage-check:
+  coverage-upload:
     name: coverage check
     needs: [test-linux, test-windows-mac]
     runs-on: ubuntu-latest
@@ -152,17 +154,14 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: coverage
-          path: .
+          path: coverage
 
       - run: pip install coverage smokeshow
 
       - run: ls -la
-      - run: coverage combine
-      - run: coverage report -i
-      - run: coverage debug config
-      - run: coverage debug data
-      - run: coverage debug sys
-      - run: coverage html -i --show-contexts
+      - run: coverage combine coverage
+      - run: coverage report
+      - run: coverage html
 
       - run: smokeshow upload htmlcov
         env:
