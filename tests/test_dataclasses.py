@@ -1002,3 +1002,21 @@ def test_issue_2398():
     assert real_dc <= real_dc
     assert model.dc <= model.dc
     assert real_dc <= model.dc
+
+
+def test_issue_2424():
+    @dataclasses.dataclass
+    class Base:
+        x: str
+
+    @dataclasses.dataclass
+    class Thing(Base):
+        y: str = dataclasses.field(default_factory=str)
+
+    assert Thing(x='hi').y == ''
+
+    @pydantic.dataclasses.dataclass
+    class ValidatedThing(Base):
+        y: str = dataclasses.field(default_factory=str)
+
+    assert ValidatedThing(x='hi').y == ''
