@@ -71,14 +71,14 @@ jobs:
     - name: test compiled and deps
       run: make test
 
-    - run: coverage xml
-    - uses: codecov/codecov-action@v1.2.1
+    - run: mkdir coverage
+    - run: mv .coverage coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dY
+
+    - name: store coverage files
+      uses: actions/upload-artifact@v2
       with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
-      env:
-        COMPILED: yes
-        DEPS: yes
+        name: coverage
+        path: coverage
 
     - name: uninstall deps
       run: pip uninstall -y cython email-validator devtools python-dotenv
@@ -86,14 +86,7 @@ jobs:
     - name: test compiled without deps
       run: make test
 
-    - run: coverage xml
-    - uses: codecov/codecov-action@v1.2.1
-      with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
-      env:
-        COMPILED: yes
-        DEPS: no
+    - run: mv .coverage coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dN
 
     - name: remove compiled binaries
       run: |
@@ -104,14 +97,13 @@ jobs:
     - name: test uncompiled without deps
       run: make test
 
-    - run: coverage xml
-    - uses: codecov/codecov-action@v1.2.1
+    - run: mv .coverage coverage/.coverage.linux-py${{ matrix.python-version }}-cN-dN
+
+    - name: store coverage files
+      uses: actions/upload-artifact@v2
       with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
-      env:
-        COMPILED: no
-        DEPS: no
+        name: coverage
+        path: coverage
 
   test-windows-mac:
     name: test py${{ matrix.python-version }} on ${{ matrix.os }}
@@ -126,7 +118,7 @@ jobs:
       COMPILED: no
       DEPS: yes
 
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
     - uses: actions/checkout@v2
 
@@ -143,10 +135,43 @@ jobs:
 
     - run: coverage xml
 
-    - uses: codecov/codecov-action@v1.2.1
+    - run: mv .coverage coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
+
+    - name: store coverage files
+      uses: actions/upload-artifact@v2
       with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
+        name: coverage
+        path: coverage
+
+  coverage-check:
+    name: coverage check
+    needs: [test-linux, test-windows-mac]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.8'
+
+      - name: get coverage files
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage
+          path: .
+
+      - run: pip install coverage smokeshow
+
+      - run: coverage combine
+      - run: coverage html -i
+
+      - run: smokeshow upload htmlcov
+        env:
+          SMOKESHOW_GITHUB_STATUS_DESCRIPTION: CLI Coverage {coverage-percentage}
+          SMOKESHOW_GITHUB_COVERAGE_THRESHOLD: 100
+          SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
   test-fastapi:
     name: test fastAPI
@@ -203,7 +228,7 @@ jobs:
         - os: windows
           ls: dir
 
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
     - uses: actions/checkout@v2
 
