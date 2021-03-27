@@ -16,19 +16,14 @@ jobs:
     - name: install
       run: make install-docs
 
-    - name: build site
-      run: |
-        make docs
-        zip -r site.zip site
-        ls -lh
+    - run: pip install smokeshow
 
-    - name: upload
-      run: >
-        wget
-        https://site-deploy-opivr5adlq-ue.a.run.app/upload/?run_id=$GITHUB_RUN_ID
-        -O-
-        -q
-        --content-on-error
-        --post-file=site.zip
+    - name: build site
+      run: make docs
+
+    - run: smokeshow upload site
       env:
-        GITHUB_RUN_ID: ${{ github.run_id }}
+        SMOKESHOW_GITHUB_STATUS_DESCRIPTION: Docs Preview
+        SMOKESHOW_GITHUB_CONTEXT: docs
+        SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
