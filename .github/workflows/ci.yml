@@ -74,6 +74,7 @@ jobs:
       run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dY
+        CONTEXT: linux-py${{ matrix.python-version }}-compiled-yes-deps-yes
 
     - name: uninstall deps
       run: pip uninstall -y cython email-validator devtools python-dotenv
@@ -82,6 +83,7 @@ jobs:
       run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dN
+        CONTEXT: linux-py${{ matrix.python-version }}-compiled-yes-deps-no
 
     - name: remove compiled binaries
       run: |
@@ -93,6 +95,7 @@ jobs:
       run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cN-dN
+        CONTEXT: linux-py${{ matrix.python-version }}-compiled-no-deps-no
 
     - name: store coverage files
       uses: actions/upload-artifact@v2
@@ -131,6 +134,7 @@ jobs:
       run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
+        CONTEXT: ${{ matrix.os }}-py${{ matrix.python-version }}
 
     - name: store coverage files
       uses: actions/upload-artifact@v2
@@ -161,7 +165,7 @@ jobs:
       - run: ls -la
       - run: coverage combine coverage
       - run: coverage report
-      - run: coverage html
+      - run: coverage html --show-contexts
 
       - run: smokeshow upload htmlcov
         env:
