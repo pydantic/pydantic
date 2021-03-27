@@ -920,3 +920,50 @@ def test_config_field_info_create_model():
     assert A2.__pydantic_model__.schema()['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
     }
+
+
+def gen_2162_dataclasses():
+    @dataclasses.dataclass(frozen=True)
+    class StdLibFoo:
+        a: str
+        b: int
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class PydanticFoo:
+        a: str
+        b: int
+
+    @dataclasses.dataclass(frozen=True)
+    class StdLibBar:
+        c: StdLibFoo
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class PydanticBar:
+        c: PydanticFoo
+
+    @dataclasses.dataclass(frozen=True)
+    class StdLibBaz:
+        c: PydanticFoo
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class PydanticBaz:
+        c: StdLibFoo
+
+    foo = StdLibFoo(a='Foo', b=1)
+    yield foo, StdLibBar(c=foo)
+
+    foo = PydanticFoo(a='Foo', b=1)
+    yield foo, PydanticBar(c=foo)
+
+    foo = PydanticFoo(a='Foo', b=1)
+    yield foo, StdLibBaz(c=foo)
+
+    foo = StdLibFoo(a='Foo', b=1)
+    yield foo, PydanticBaz(c=foo)
+
+
+@pytest.mark.parametrize('foo,bar', gen_2162_dataclasses())
+def test_issue_2162(foo, bar):
+    assert dataclasses.asdict(foo) == dataclasses.asdict(bar.c)
+    assert dataclasses.astuple(foo) == dataclasses.astuple(bar.c)
+    assert foo == bar.c
