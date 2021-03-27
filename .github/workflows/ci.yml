@@ -135,6 +135,7 @@ jobs:
 
     - run: coverage xml
 
+    - run: mkdir coverage
     - run: mv .coverage coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
 
     - name: store coverage files
