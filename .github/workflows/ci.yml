@@ -74,12 +74,6 @@ jobs:
     - run: mkdir coverage
     - run: mv .coverage coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dY
 
-    - name: store coverage files
-      uses: actions/upload-artifact@v2
-      with:
-        name: coverage
-        path: coverage
-
     - name: uninstall deps
       run: pip uninstall -y cython email-validator devtools python-dotenv
 
@@ -118,7 +112,7 @@ jobs:
       COMPILED: no
       DEPS: yes
 
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ${{ format('{0}-latest', matrix.os) }}
     steps:
     - uses: actions/checkout@v2
 
@@ -164,6 +158,7 @@ jobs:
 
       - run: pip install coverage smokeshow
 
+      - run: ls -la
       - run: coverage combine
       - run: coverage html -i
 
@@ -229,7 +224,7 @@ jobs:
         - os: windows
           ls: dir
 
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ${{ format('{0}-latest', matrix.os) }}
     steps:
     - uses: actions/checkout@v2
 
