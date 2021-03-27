@@ -1040,3 +1040,29 @@ def test_issue_2541():
     assert e.item.infos.id == 1
     with pytest.raises(dataclasses.FrozenInstanceError):
         e.item.infos.id = 2
+
+
+def test_issue_2555():
+    @dataclasses.dataclass
+    class Span:
+        first: int
+        last: int
+
+    @dataclasses.dataclass
+    class LabeledSpan(Span):
+        label: str
+
+    @dataclasses.dataclass
+    class BinaryRelation:
+        subject: LabeledSpan
+        object: LabeledSpan
+        label: str
+
+    @dataclasses.dataclass
+    class Sentence:
+        relations: BinaryRelation
+
+    class M(pydantic.BaseModel):
+        s: Sentence
+
+    assert M.schema()
