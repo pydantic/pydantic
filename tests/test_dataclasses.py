@@ -985,3 +985,20 @@ def test_issue_2383():
 
     assert hash(a) == 123
     assert hash(b.a) == 123
+
+
+def test_issue_2398():
+    @dataclasses.dataclass(order=True)
+    class DC:
+        num: int = 42
+
+    class Model(pydantic.BaseModel):
+        dc: DC
+
+    real_dc = DC()
+    model = Model(dc=real_dc)
+
+    # This works as expected.
+    assert real_dc <= real_dc
+    assert model.dc <= model.dc
+    assert real_dc <= model.dc
