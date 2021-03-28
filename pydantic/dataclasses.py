@@ -4,17 +4,34 @@ A pydantic dataclass can be generated from scratch or from a stdlib one.
 
 Behind the scene, a pydantic dataclass is just like a regular one on which we attach
 a `BaseModel` and magic methods to trigger the validation of the data.
+`__init__` and `__post_init__` also accept an extra kwarg `__pydantic_run_validation__`
+to decide whether or not validation should be done.
 
-The biggest problem is when a pydantic dataclass is generated from an existing stdlib one.
+When a pydantic dataclass is generated from scratch, it's just a plain dataclass
+with validation triggered at initialization
+
+The tricky part if for stdlib dataclasses that are converted after into pydantic ones e.g.
+
+```py
+@dataclasses.dataclass
+class M:
+    x: int
+
+ValidatedM = pydantic.dataclasses.dataclass(M3)
+```
+
 We indeed still want to support equality, hashing, repr, ... as if it was the stdlib one!
+
+```py
+assert isinstance(ValidatedM(x=1), M)
+assert ValidatedM(x=1) == M(x=1)
+```
+
 This means we **don't want to create a new dataclass that inherits from it**
-Now the problem is: for a stdlib dataclass `Item` that now has magic attributes for pydantic
-how can we have a new class `ValidatedItem` to trigger validation by default and keep `Item`
-behaviour untouched?
-To do this `ValidatedItem` will in fact be an instance of `DataclassProxy`, a simple wrapper
-around `Item` that acts like a proxy to trigger validation.
-This wrapper will just inject an extra kwarg `__pydantic_run_validation__` for `ValidatedItem`
-and not for `Item`! (Note that this can always be injected "a la mano" if needed)
+The trick is to create a proxy that forwards everything including inheritance (available only
+for python 3.7+)
+`ValidatedM` will hence be able to set `__pydantic_run_validation__=True` when called, which is not
+the case for the default `M` dataclass! (Note that this can always be injected "a la mano" if needed)
 """
 import sys
 from functools import partial, wraps
@@ -33,6 +50,8 @@ if TYPE_CHECKING:
     from .typing import CallableGenerator, NoArgAnyCallable
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
+
+    DataclassR = Union[Type['Dataclass'], 'DataclassProxy']
 
     class Dataclass:
         # stdlib attributes
@@ -70,7 +89,7 @@ def dataclass(
     frozen: bool = False,
     config: Type[Any] = None,
     validate_on_init: Optional[bool] = None,
-) -> Callable[[Type[Any]], 'DataclassProxy']:
+) -> Callable[[Type[Any]], 'DataclassR']:
     ...
 
 
@@ -86,7 +105,7 @@ def dataclass(
     frozen: bool = False,
     config: Type[Any] = None,
     validate_on_init: Optional[bool] = None,
-) -> 'DataclassProxy':
+) -> 'DataclassR':
     ...
 
 
@@ -101,7 +120,7 @@ def dataclass(
     frozen: bool = False,
     config: Optional[Type['BaseConfig']] = None,
     validate_on_init: Optional[bool] = None,
-) -> Union[Callable[[Type[Any]], 'DataclassProxy'], 'DataclassProxy']:
+) -> Union[Callable[[Type[Any]], 'DataclassR'], 'DataclassR']:
     """
     Like the python standard lib dataclasses but with type validation.
 
@@ -109,7 +128,7 @@ def dataclass(
     has the same meaning as `Config.validate_assignment`.
     """
 
-    def wrap(cls: Type[Any]) -> DataclassProxy:
+    def wrap(cls: Type[Any]) -> 'DataclassR':
         import dataclasses
 
         if is_builtin_dataclass(cls):
@@ -134,7 +153,7 @@ def dataclass(
 
             else:
                 should_validate_on_init = False if validate_on_init is None else validate_on_init
-                _add_pydantic_validation_attributes(cls, config, validate_on_init=should_validate_on_init)
+                _add_pydantic_validation_attributes(cls, config, should_validate_on_init)
                 return DataclassProxy(cls)  # type: ignore[no-untyped-call]
         else:
 
@@ -142,7 +161,7 @@ def dataclass(
                 cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
             )
             should_validate_on_init = True if validate_on_init is None else validate_on_init
-            _add_pydantic_validation_attributes(dc_cls, config, validate_on_init=should_validate_on_init)
+            _add_pydantic_validation_attributes(dc_cls, config, should_validate_on_init)
             return dc_cls
 
     if _cls is None:
@@ -161,8 +180,6 @@ class DataclassProxy(ObjectProxy):
 def _add_pydantic_validation_attributes(
     dc_cls: Type['Dataclass'],
     config: Optional[Type['BaseConfig']],
-    # hack used for python 3.6 (see https://github.com/samuelcolvin/pydantic/pull/2557)
-    *,
     validate_on_init: bool,
 ) -> None:
     """
