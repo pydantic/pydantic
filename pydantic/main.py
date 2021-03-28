@@ -374,6 +374,8 @@ class ModelMetaclass(ABCMeta):
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
         # set __signature__ attr only for model class, but not for its instances
         cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
+        cls.try_update_forward_refs()
+
         return cls
 
 
@@ -829,6 +831,24 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         else:
             return v
+
+    @classmethod
+    def try_update_forward_refs(cls, **localns: Any) -> None:
+        """
+        Same as update_forward_refs but will not raise exception
+        when forward references are not defined.
+        """
+        if cls.__module__ in sys.modules:
+            globalns = sys.modules[cls.__module__].__dict__.copy()
+        else:
+            globalns = {}
+
+        globalns.setdefault(cls.__name__, cls)
+        for f in cls.__fields__.values():
+            try:
+                update_field_forward_refs(f, globalns=globalns, localns=localns)
+            except NameError:
+                pass
 
     @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
