@@ -11,6 +11,9 @@ import pytest
 import pydantic
 from pydantic import BaseModel, ValidationError, validator
 
+only_36 = pytest.mark.skipif(sys.version_info[:2] != (3, 6), reason='testing 3.6 behaviour only')
+skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
+
 
 def test_simple():
     @pydantic.dataclasses.dataclass
@@ -157,6 +160,23 @@ def test_post_init():
     d = MyDataclass('1')
     assert d.a == 1
     assert post_init_called
+
+
+@skip_pre_37
+def test_post_init_validation():
+    @dataclasses.dataclass
+    class DC:
+        a: int
+
+        def __post_init__(self):
+            self.a *= 2
+
+        def __post_init_post_parse__(self):
+            self.a += 1
+
+    PydanticDC = pydantic.dataclasses.dataclass(DC)
+    assert DC(a='2').a == '22'
+    assert PydanticDC(a='2').a == 23
 
 
 def test_post_init_inheritance_chain():
@@ -651,6 +671,7 @@ def test_hashable_optional(default):
     MyDataclass(v=None)
 
 
+@skip_pre_37
 def test_override_builtin_dataclass():
     @dataclasses.dataclass
     class File:
@@ -660,25 +681,85 @@ def test_override_builtin_dataclass():
         content: Optional[bytes] = None
 
     FileChecked = pydantic.dataclasses.dataclass(File)
-    f = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
-    assert f.name == 'whatever.txt'
-    assert f.size == 456
+
+    f1 = File(hash='xxx', name=b'whatever.txt', size='456')
+    f2 = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
+
+    assert f1.name == b'whatever.txt'
+    assert f1.size == '456'
+
+    assert f2.name == 'whatever.txt'
+    assert f2.size == 456
+
+    assert isinstance(f2, File)
 
     with pytest.raises(ValidationError) as e:
         FileChecked(hash=[1], name='name', size=3)
     assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 
 
+@only_36
+def test_override_builtin_dataclass__3_6():
+    @dataclasses.dataclass
+    class File:
+        hash: str
+        name: Optional[str]
+        size: int
+        content: Optional[bytes] = None
+
+    with pytest.warns(
+        UserWarning, match="Stdlib dataclass 'File' has been modified and validates everything by default"
+    ):
+        FileChecked = pydantic.dataclasses.dataclass(File)
+
+    f1 = File(hash='xxx', name=b'whatever.txt', size='456')
+    f2 = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
+
+    assert f1.name == f2.name == 'whatever.txt'
+    assert f1.size == f2.size == 456
+
+    with pytest.raises(ValidationError) as e:
+        FileChecked(hash=[1], name='name', size=3)
+    assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
+
+
+@only_36
+def test_override_builtin_dataclass__3_6_no_overwrite():
+    @dataclasses.dataclass
+    class File:
+        hash: str
+        name: Optional[str]
+        size: int
+        content: Optional[bytes] = None
+
+    FileChecked = pydantic.dataclasses.dataclass(File, validate_on_init=False)
+
+    f1 = File(hash='xxx', name=b'whatever.txt', size='456')
+    f2 = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
+
+    assert f1.name == f2.name == b'whatever.txt'
+    assert f1.size == f2.size == '456'
+
+    with pytest.raises(ValidationError) as e:
+        FileChecked(hash=[1], name='name', size=3, __pydantic_run_validation__=True)
+    assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
+
+
+@skip_pre_37
 def test_override_builtin_dataclass_2():
     @dataclasses.dataclass
     class Meta:
         modified_date: Optional[datetime]
         seen_count: int
 
+    Meta(modified_date='not-validated', seen_count=0)
+
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
     class File(Meta):
         filename: str
+
+    Meta(modified_date='still-not-validated', seen_count=0)
 
     f = File(filename=b'thefilename', modified_date='2020-01-01T00:00', seen_count='7')
     assert f.filename == 'thefilename'
@@ -736,7 +817,10 @@ def test_override_builtin_dataclass_nested_schema():
         filename: str
         meta: Meta
 
-    FileChecked = pydantic.dataclasses.dataclass(File)
+    if sys.version_info[:2] == (3, 6):
+        FileChecked = pydantic.dataclasses.dataclass(File, validate_on_init=False)
+    else:
+        FileChecked = pydantic.dataclasses.dataclass(File)
     assert FileChecked.__pydantic_model__.schema() == {
         'definitions': {
             'Meta': {
@@ -1020,6 +1104,7 @@ def test_issue_2424():
     class ValidatedThing(Base):
         y: str = dataclasses.field(default_factory=str)
 
+    assert Thing(x='hi').y == ''
     assert ValidatedThing(x='hi').y == ''
 
 

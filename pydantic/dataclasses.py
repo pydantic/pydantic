@@ -190,8 +190,8 @@ def _add_pydantic_validation_attributes(
             post_init(self, *args, **kwargs)
             if __pydantic_run_validation__:
                 self.__pydantic_validate_values__()
-            if hasattr(self, '__post_init_post_parse__'):
-                self.__post_init_post_parse__(*args, **kwargs)
+                if hasattr(self, '__post_init_post_parse__'):
+                    self.__post_init_post_parse__(*args, **kwargs)
 
         setattr(dc_cls, '__init__', new_init)
         setattr(dc_cls, '__post_init__', new_post_init)
