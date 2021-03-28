@@ -1020,3 +1020,23 @@ def test_issue_2424():
         y: str = dataclasses.field(default_factory=str)
 
     assert ValidatedThing(x='hi').y == ''
+
+
+def test_issue_2541():
+    @dataclasses.dataclass(frozen=True)
+    class Infos:
+        id: int
+
+    @dataclasses.dataclass(frozen=True)
+    class Item:
+        name: str
+        infos: Infos
+
+    class Example(BaseModel):
+        item: Item
+
+    e = Example.parse_obj({'item': {'name': 123, 'infos': {'id': '1'}}})
+    assert e.item.name == '123'
+    assert e.item.infos.id == 1
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        e.item.infos.id = 2
