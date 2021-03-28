@@ -708,7 +708,7 @@ def test_override_builtin_dataclass__3_6():
         content: Optional[bytes] = None
 
     with pytest.warns(
-        UserWarning, match="Stdlib dataclass 'File' has been modified and validates everything by default"
+        UserWarning, match="Stdlib dataclass 'File' has been modified and validates now input by default"
     ):
         FileChecked = pydantic.dataclasses.dataclass(File)
 

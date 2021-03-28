@@ -139,14 +139,14 @@ def dataclass(
             # The big downside is that we now have a side effect on our decorator
             if sys.version_info[:2] == (3, 6):
                 should_validate_on_init = True if validate_on_init is None else validate_on_init
-                _add_pydantic_validation_attributes(cls, config, validate_on_init=should_validate_on_init)
+                _add_pydantic_validation_attributes(cls, config, should_validate_on_init)
                 if should_validate_on_init:
                     import warnings
 
                     warnings.warn(
-                        f'Stdlib dataclass {cls.__name__!r} has been modified and validates everything by default. '
-                        'To change this, you can use `validate_on_init=False` in the decorator '
-                        'or call `__init__` with extra `__pydantic_run_validation__=False`',
+                        f'Stdlib dataclass {cls.__name__!r} has been modified and validates now input by default. '
+                        'If you do not want this, you can set `validate_on_init=False` in the decorator '
+                        'or call `__init__` with extra `__pydantic_run_validation__=False`.',
                         UserWarning,
                     )
                 return cls
