@@ -11,7 +11,7 @@ Now the problem is: for a stdlib dataclass `Item` that now has magic attributes 
 how can we have a new class `ValidatedItem` to trigger validation by default and keep `Item`
 behaviour untouched!
 
-To do this `ValidatedItem` will in fact be an instance of `PydanticDataclass`, a simple wrapper
+To do this `ValidatedItem` will in fact be an instance of `DataclassProxy`, a simple wrapper
 around `Item` that acts like a proxy to trigger validation.
 This wrapper will just inject an extra kwarg `__pydantic_run_validation__` for `ValidatedItem`
 and not for `Item`! (Note that this can always be injected "a la mano" if needed)
@@ -68,7 +68,7 @@ def dataclass(
     unsafe_hash: bool = False,
     frozen: bool = False,
     config: Type[Any] = None,
-) -> Callable[[Type[Any]], 'PydanticDataclass']:
+) -> Callable[[Type[Any]], 'DataclassProxy']:
     ...
 
 
@@ -83,7 +83,7 @@ def dataclass(
     unsafe_hash: bool = False,
     frozen: bool = False,
     config: Type[Any] = None,
-) -> 'PydanticDataclass':
+) -> 'DataclassProxy':
     ...
 
 
@@ -97,7 +97,7 @@ def dataclass(
     unsafe_hash: bool = False,
     frozen: bool = False,
     config: Optional[Type['BaseConfig']] = None,
-) -> Union[Callable[[Type[Any]], 'PydanticDataclass'], 'PydanticDataclass']:
+) -> Union[Callable[[Type[Any]], 'DataclassProxy'], 'DataclassProxy']:
     """
     Like the python standard lib dataclasses but with type validation.
 
@@ -105,13 +105,15 @@ def dataclass(
     has the same meaning as `Config.validate_assignment`.
     """
 
-    def wrap(cls: Type[Any]) -> PydanticDataclass:
+    def wrap(cls: Type[Any]) -> DataclassProxy:
         import dataclasses
 
         cls = dataclasses.dataclass(  # type: ignore
             cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
         )
-        return PydanticDataclass(cls, config)
+        _add_pydantic_validation_attributes(cls, config)
+
+        return DataclassProxy(cls)  # type: ignore[no-untyped-call]
 
     if _cls is None:
         return wrap
@@ -119,11 +121,7 @@ def dataclass(
     return wrap(_cls)
 
 
-class PydanticDataclass(ObjectProxy):
-    def __init__(self, stdlib_dc_cls: Type['Dataclass'], config: Optional[Type['BaseConfig']]) -> None:
-        add_pydantic_validation_attributes(stdlib_dc_cls, config)
-        self.__wrapped__ = stdlib_dc_cls
-
+class DataclassProxy(ObjectProxy):
     def __instancecheck__(self, instance: Any) -> bool:
         return isinstance(instance, self.__wrapped__)
 
@@ -133,7 +131,10 @@ class PydanticDataclass(ObjectProxy):
         return self.__wrapped__(*args, **kwargs)
 
 
-def add_pydantic_validation_attributes(dc_cls: Type['Dataclass'], config: Optional[Type['BaseConfig']]) -> None:
+def _add_pydantic_validation_attributes(
+    dc_cls: Type['Dataclass'],
+    config: Optional[Type['BaseConfig']],
+) -> None:
     """
     We need to replace the right method. If no `__post_init__` has been set in the stdlib dataclass
     it won't even exist (code is generated on the fly by `dataclasses`)
@@ -194,12 +195,12 @@ def add_pydantic_validation_attributes(dc_cls: Type['Dataclass'], config: Option
     setattr(dc_cls, '__processed__', ClassAttribute('__processed__', True))
     setattr(dc_cls, '__pydantic_initialised__', False)
     setattr(dc_cls, '__pydantic_model__', create_pydantic_model_from_dataclass(dc_cls, config))
-    setattr(dc_cls, '__pydantic_validate_values__', dataclass_validate_values)
+    setattr(dc_cls, '__pydantic_validate_values__', _dataclass_validate_values)
     setattr(dc_cls, '__validate__', classmethod(_validate_dataclass))
     setattr(dc_cls, '__get_validators__', classmethod(_get_validators))
 
     if dc_cls.__pydantic_model__.__config__.validate_assignment and not dc_cls.__dataclass_params__.frozen:
-        setattr(dc_cls, '__setattr__', dataclass_validate_assignment_setattr)
+        setattr(dc_cls, '__setattr__', _dataclass_validate_assignment_setattr)
 
 
 def _get_validators(cls: Type['Dataclass']) -> 'CallableGenerator':
@@ -251,7 +252,7 @@ def create_pydantic_model_from_dataclass(
     )
 
 
-def dataclass_validate_values(self: 'Dataclass') -> None:
+def _dataclass_validate_values(self: 'Dataclass') -> None:
     if getattr(self, '__pydantic_has_field_info_default__', False):
         # We need to remove `FieldInfo` values since they are not valid as input
         # It's ok to do that because they are obviously the default values!
@@ -265,7 +266,7 @@ def dataclass_validate_values(self: 'Dataclass') -> None:
     object.__setattr__(self, '__pydantic_initialised__', True)
 
 
-def dataclass_validate_assignment_setattr(self: 'Dataclass', name: str, value: Any) -> None:
+def _dataclass_validate_assignment_setattr(self: 'Dataclass', name: str, value: Any) -> None:
     if self.__pydantic_initialised__:
         d = dict(self.__dict__)
         d.pop(name, None)
@@ -294,4 +295,4 @@ def make_dataclass_validator(dc_cls: Type['Dataclass'], config: Type['BaseConfig
     and yield the validators
     It retrieves the parameters of the dataclass and forwards them to the newly created dataclass
     """
-    yield from _get_validators(PydanticDataclass(dc_cls, config=config))
+    yield from _get_validators(dataclass(dc_cls, config=config))

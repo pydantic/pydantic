@@ -919,12 +919,11 @@ class ModelField(Representation):
         """
         Whether the field is "complex" eg. env variables should be parsed as JSON.
         """
-        from .dataclasses import PydanticDataclass
         from .main import BaseModel  # noqa: F811
 
         return (
             self.shape != SHAPE_SINGLETON
-            or isinstance(self.type_, PydanticDataclass)
+            or hasattr(self.type_, '__pydantic_model__')
             or lenient_issubclass(self.type_, (BaseModel, list, set, frozenset, dict))
         )
 

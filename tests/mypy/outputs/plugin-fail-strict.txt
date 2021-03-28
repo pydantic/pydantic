@@ -34,6 +34,6 @@
 189: error: Name 'Missing' is not defined  [name-defined]
 197: error: No overload variant of "dataclass" matches argument type "Dict[<nothing>, <nothing>]"  [call-overload]
 197: note: Possible overload variant:
-197: note:     def dataclass(*, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Callable[[Type[Any]], PydanticDataclass]
+197: note:     def dataclass(*, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Callable[[Type[Any]], DataclassProxy]
 197: note:     <1 more non-matching overload not shown>
 219: error: Property "y" defined in "FrozenModel" is read-only  [misc]
