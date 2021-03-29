@@ -92,6 +92,7 @@ It has the following arguments:
         See [#1631](https://github.com/samuelcolvin/pydantic/issues/1631)
         for a discussion of possible changes to *pydantic* behavior in **v2**.
 
+* `repr`: a boolean which defaults to `True`. When False, the field shall be hidden from the object representation.
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used

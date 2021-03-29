@@ -1596,6 +1596,18 @@ def test_allow_mutation_field():
         r.id = 2
 
 
+def test_repr_field():
+    class Model(BaseModel):
+        a: int = Field()
+        b: int = Field(repr=True)
+        c: int = Field(repr=False)
+
+    m = Model(a=1, b=2, c=3)
+    assert "a=1" in repr(m)
+    assert "b=2" in repr(m)
+    assert "c=3" not in repr(m)
+
+
 def test_inherited_model_field_copy():
     """It should copy models used as fields by default"""
 
