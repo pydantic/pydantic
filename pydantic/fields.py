@@ -147,7 +147,7 @@ class FieldInfo(Representation):
     def __repr_args__(self) -> 'ReprArgs':
 
         field_defaults_to_hide = {
-            "repr": True,
+            'repr': True,
             **self.__field_constraints__,
         }
 
