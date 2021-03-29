@@ -1152,3 +1152,15 @@ def test_issue_2555():
         s: Sentence
 
     assert M.schema()
+
+
+def test_issue_2594():
+    @dataclasses.dataclass
+    class Empty:
+        pass
+
+    @pydantic.dataclasses.dataclass
+    class M:
+        e: Empty
+
+    assert isinstance(M(e={}).e, Empty)

@@ -340,7 +340,7 @@ def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     return (
         not hasattr(_cls, '__processed__')
         and dataclasses.is_dataclass(_cls)
-        and set(_cls.__dataclass_fields__).issuperset(set(_cls.__annotations__))
+        and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
     )
 
 
