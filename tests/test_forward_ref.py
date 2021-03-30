@@ -519,3 +519,29 @@ def test_nested_forward_ref():
     NestedTuple.update_forward_refs()
     obj = NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
     assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
+
+
+@skip_pre_37
+def test_forward_ref_future_typing(create_module):
+    m = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+
+from pydantic import BaseModel, Field
+
+class User(BaseModel, validate_assignment=True):
+    first_name: int | str
+    last_name: str | None = None
+    friends: list[User] = Field(default_factory=list)
+    metadata: dict[str, int] | None = None
+
+user = User(first_name='pika', last_name=666)
+"""
+    )
+    assert m.user.last_name == '666'
+    assert m.user.friends == []
+    m.user.metadata = {b'1': b'1'}
+    assert m.user.metadata == {'1': 1}
+    with pytest.raises(ValidationError):
+        m.user.last_name = ['chu']

@@ -288,6 +288,29 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
         except NameError:
             # this is ok, it can be fixed with update_forward_refs
             pass
+        except TypeError:
+            if value.__class__ is not ForwardRef:
+                raise
+
+            # In case of `ForwardRef`, we give it another shot if we want to leverage "new" annotations
+            # with older versions of python
+            try:
+                from future_typing import TYPING_NAME, transform_annotation
+            except ImportError:
+                import warnings
+
+                warnings.warn(
+                    'If you try to use generic builtins or new `|` Union operator, '
+                    'you need to install `future-typing`',
+                    UserWarning,
+                )
+                raise
+            else:
+                import typing
+
+                new_forward_ref = ForwardRef(transform_annotation(value.__forward_arg__), value.__forward_is_argument__)
+                value = _eval_type(new_forward_ref, base_globals, {TYPING_NAME: typing})
+
         annotations[name] = value
     return annotations
 

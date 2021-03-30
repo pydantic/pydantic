@@ -133,6 +133,7 @@ setup(
     extras_require={
         'email': ['email-validator>=1.0.3'],
         'dotenv': ['python-dotenv>=0.10.4'],
+        'future': ['future-typing>=0.4.0'],
     },
     ext_modules=ext_modules,
     entry_points={'hypothesis': ['_ = pydantic._hypothesis_plugin']},
