@@ -99,7 +99,7 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-compiled-yes-deps-yes
 
     - name: uninstall deps
-      run: pip uninstall -y cython email-validator devtools python-dotenv
+      run: pip uninstall -y cython email-validator devtools python-dotenv future-typing
 
     - name: test compiled without deps
       run: make test

@@ -288,7 +288,7 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
         except NameError:
             # this is ok, it can be fixed with update_forward_refs
             pass
-        except TypeError:
+        except TypeError as te:
             if value.__class__ is not ForwardRef:
                 raise
 
@@ -304,7 +304,7 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
                     'you need to install `future-typing`',
                     UserWarning,
                 )
-                raise
+                raise te
             else:
                 import typing
 

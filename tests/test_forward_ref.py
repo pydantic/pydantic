@@ -7,6 +7,11 @@ from pydantic import BaseModel, ConfigError, ValidationError
 
 skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
+try:
+    import future_typing
+except ImportError:
+    future_typing = None
+
 
 @skip_pre_37
 def test_postponed_annotations(create_module):
@@ -521,6 +526,7 @@ def test_nested_forward_ref():
     assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
+@pytest.mark.skipif(future_typing is None, reason='`future_typing` is not installed')
 @skip_pre_37
 def test_forward_ref_future_typing(create_module):
     m = create_module(
@@ -545,3 +551,26 @@ user = User(first_name='pika', last_name=666)
     assert m.user.metadata == {'1': 1}
     with pytest.raises(ValidationError):
         m.user.last_name = ['chu']
+
+
+@pytest.mark.skipif(future_typing is not None, reason='`future_typing` is installed')
+@skip_pre_37
+def test_forward_ref_no_future_typing(create_module):
+    with pytest.raises(TypeError, match="unsupported operand type(s) for |: 'type' and 'type'"):
+        with pytest.warns(UserWarning, match='you need to install `future-typing`'):
+            create_module(
+                # language=Python
+                """
+from __future__ import annotations
+
+from pydantic import BaseModel, Field
+
+class User(BaseModel, validate_assignment=True):
+    first_name: int | str
+    last_name: str | None = None
+    friends: list[User] = Field(default_factory=list)
+    metadata: dict[str, int] | None = None
+
+user = User(first_name='pika', last_name=666)
+                """
+            )
