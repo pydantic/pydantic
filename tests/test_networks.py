@@ -20,6 +20,7 @@ except ImportError:
         'postgres://just-user@localhost:5432/app',
         'postgresql+psycopg2://postgres:postgres@localhost:5432/hatch',
         'postgresql+asyncpg://user:pass@localhost:5432/app',
+        'postgresql+pg8000://user:pass@localhost:5432/app',
         'foo-bar://example.org',
         'foo.bar://example.org',
         'foo0bar://example.org',
