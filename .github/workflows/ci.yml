@@ -37,6 +37,29 @@ jobs:
       - name: check dist
         run: make check-dist
 
+  docs-build:
+    name: duild docs
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: install
+      run: make install-docs
+
+    - name: build site
+      run: make docs
+
+    - name: Store docs site
+      uses: actions/upload-artifact@v2
+      with:
+        name: docs
+        path: site
+
   test-linux:
     name: test py${{ matrix.python-version }} on linux
     runs-on: ubuntu-latest
@@ -141,39 +164,6 @@ jobs:
       with:
         name: coverage
         path: coverage
-
-  coverage-upload:
-    name: coverage check
-    needs: [test-linux, test-windows-mac]
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.8'
-
-      - name: get coverage files
-        uses: actions/download-artifact@v2
-        with:
-          name: coverage
-          path: coverage
-
-      - run: pip install coverage smokeshow
-
-      - run: ls -la
-      - run: coverage combine coverage
-      - run: coverage report
-      - run: coverage html --show-contexts
-
-      - run: smokeshow upload htmlcov
-        env:
-          SMOKESHOW_GITHUB_STATUS_DESCRIPTION: Coverage {coverage-percentage}
-          SMOKESHOW_GITHUB_COVERAGE_THRESHOLD: 100
-          SMOKESHOW_GITHUB_CONTEXT: coverage
-          SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
   test-fastapi:
     name: test fastAPI
@@ -294,6 +284,12 @@ jobs:
           name: pypi_files
           path: dist
 
+      - name: get docs
+        uses: actions/download-artifact@v2
+        with:
+          name: docs
+          path: site
+
       - name: install
         run: |
           make install-docs
@@ -303,9 +299,6 @@ jobs:
         run: |
           twine check dist/*
           ls -lh dist
-
-      - name: build docs
-        run: make docs
 
       - name: check tag
         run: ./tests/check_tag.py
