@@ -38,7 +38,6 @@ jobs:
         run: make check-dist
 
   docs-build:
-    name: duild docs
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

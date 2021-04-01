@@ -25,9 +25,9 @@ jobs:
 
       - run: pip install smokeshow
 
-    - run: smokeshow upload site
-      env:
-        SMOKESHOW_GITHUB_STATUS_DESCRIPTION: Docs Preview
-        SMOKESHOW_GITHUB_CONTEXT: docs
-        SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      - run: smokeshow upload site
+        env:
+          SMOKESHOW_GITHUB_STATUS_DESCRIPTION: Docs Preview
+          SMOKESHOW_GITHUB_CONTEXT: docs
+          SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
