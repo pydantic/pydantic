@@ -2,7 +2,7 @@ name: Coverage Report Upload
 
 on:
   workflow_run:
-    workflows: [test-linux, test-windows-mac]
+    workflows: [CI]
     types: [completed]
 
 jobs:
@@ -17,13 +17,13 @@ jobs:
         with:
           python-version: '3.8'
 
+      - run: pip install coverage smokeshow
+
       - name: get coverage files
         uses: actions/download-artifact@v2
         with:
           name: coverage
           path: coverage
-
-      - run: pip install coverage smokeshow
 
       - run: ls -la
       - run: coverage combine coverage
@@ -35,5 +35,18 @@ jobs:
           SMOKESHOW_GITHUB_STATUS_DESCRIPTION: Coverage {coverage-percentage}
           SMOKESHOW_GITHUB_COVERAGE_THRESHOLD: 100
           SMOKESHOW_GITHUB_CONTEXT: coverage
+          SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+      - name: get docs site
+        uses: actions/download-artifact@v2
+        with:
+          name: docs
+          path: site
+
+      - run: smokeshow upload site
+        env:
+          SMOKESHOW_GITHUB_STATUS_DESCRIPTION: Docs Preview
+          SMOKESHOW_GITHUB_CONTEXT: docs
           SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
