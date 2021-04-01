@@ -320,6 +320,14 @@ class ListMaxLengthError(PydanticValueError):
         super().__init__(limit_value=limit_value)
 
 
+class ListUniqueItemsError(PydanticValueError):
+    code = 'list.unique_items'
+    msg_template = 'the list has {not_unique} not unique items'
+
+    def __init__(self, *, not_unique: int) -> None:
+        super().__init__(not_unique=not_unique)
+
+
 class SetMinLengthError(PydanticValueError):
     code = 'set.min_items'
     msg_template = 'ensure this value has at least {limit_value} items'
