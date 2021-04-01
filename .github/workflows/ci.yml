@@ -6,7 +6,7 @@ on:
       - master
     tags:
       - '**'
-  pull_request_target: {}
+  pull_request: {}
 
 jobs:
   lint:
