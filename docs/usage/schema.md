@@ -76,7 +76,7 @@ It has the following arguments:
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
   annotation of `pattern` to the JSON Schema
 
-    !!! note
+    **NOTE**
         *pydantic* validates strings using `re.match`,
         which treats regular expressions as implicitly anchored at the beginning.
         On the contrary,
