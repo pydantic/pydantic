@@ -7,6 +7,8 @@
 
 {!.version.md!}
 
+CHANGED!
+
 Data validation and settings management using python type annotations.
 
 *pydantic* enforces type hints at runtime, and provides user friendly errors when data is invalid.
