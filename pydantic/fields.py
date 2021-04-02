@@ -1,5 +1,6 @@
 from collections import defaultdict, deque
 from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
+from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,6 +21,8 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
+    overload,
 )
 
 from typing_extensions import Annotated
@@ -78,6 +81,10 @@ if TYPE_CHECKING:
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
     BoolUndefined = Union[bool, UndefinedType]
+    ExcludeInclude = Union[AbstractSetIntStr, MappingIntStrAny, Any]
+
+    FGet = Callable[[Optional[BaseModel], str], Any]
+    FSet = Callable[[Optional[BaseModel], Any], None]
 
 
 class FieldInfo(Representation):
@@ -107,6 +114,7 @@ class FieldInfo(Representation):
         'allow_mutation',
         'repr',
         'regex',
+        'read_only',
         'extra',
     )
 
@@ -147,6 +155,7 @@ class FieldInfo(Representation):
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
         self.repr = kwargs.pop('repr', True)
+        self.read_only = kwargs.pop('read_only', None)
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
@@ -197,8 +206,8 @@ def Field(
     alias: str = None,
     title: str = None,
     description: str = None,
-    exclude: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
-    include: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
+    exclude: 'ExcludeInclude' = None,
+    include: 'ExcludeInclude' = None,
     const: bool = None,
     gt: float = None,
     ge: float = None,
@@ -305,6 +314,231 @@ SHAPE_NAME_LOOKUP = {
 }
 
 MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
+
+
+def _get_descriptor_infos(descriptor: Any) -> Tuple[Any, 'FGet', Optional['FSet']]:
+    import inspect
+
+    fset = None
+
+    if isinstance(descriptor, property):
+        fget = cast('FGet', descriptor.fget)
+        fset = cast('FSet', descriptor.fset)
+    else:
+        _self_param, getter_param, *set_del_params = inspect.signature(
+            descriptor.__class__.__init__
+        ).parameters.values()
+        fget = getattr(descriptor, getter_param.name)
+        if len(set_del_params) > 0:
+            fset = getattr(descriptor, set_del_params[0].name)
+
+    sig = inspect.signature(fget)
+    type_ = sig.return_annotation
+    if type_ is sig.empty:
+        type_ = Any
+
+    return type_, fget, fset
+
+
+@overload
+def computed_field(
+    *,
+    alias: Optional[str] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    exclude: Optional['ExcludeInclude'] = None,
+    include: Optional['ExcludeInclude'] = None,
+) -> 'Callable[[Any], ComputedField]':
+    ...
+
+
+@overload
+def computed_field(
+    func: Any,
+    *,
+    alias: Optional[str] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    exclude: Optional['ExcludeInclude'] = None,
+    include: Optional['ExcludeInclude'] = None,
+) -> Any:
+    ...
+
+
+def computed_field(
+    func: Optional[Any] = None,
+    *,
+    alias: Optional[str] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    exclude: Optional['ExcludeInclude'] = None,
+    include: Optional['ExcludeInclude'] = None,
+) -> 'Union[Callable[[Any], ComputedField], ComputedField]':
+    def wrap(func_: Any) -> 'ComputedField':
+        return ComputedField(
+            func_,
+            alias=alias,
+            title=title,
+            description=description,
+            exclude=exclude,
+            include=include,
+        )
+
+    if func is None:
+        return wrap
+
+    return wrap(func)
+
+
+class GetAttributeDict:
+    """
+    A tiny wrapper around a dictionary to be able to call a descriptor on it
+    Calling `self.first_name` for example will return `self['first_name']`
+    """
+
+    __slots__ = ('_obj',)
+
+    def __init__(self, obj: Dict[str, Any]) -> None:
+        self._obj = obj
+
+    def __getattr__(self, item: str) -> Any:
+        return self._obj[item]
+
+
+class ComputedField(Representation):
+    __slots__ = (
+        'descriptor',
+        'type_',
+        'fget',
+        'fset',
+        'defined_name',
+        'class_validators',
+        'alias',
+        'title',
+        'description',
+        'exclude',
+        'include',
+        'config',
+        'model_field',
+        'required',
+    )
+
+    def __init__(
+        self,
+        default_callable: Any,
+        *,
+        name: Optional[str] = None,
+        alias: Optional[str] = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        exclude: Optional['ExcludeInclude'] = None,
+        include: Optional['ExcludeInclude'] = None,
+        config: Optional[Type['BaseConfig']] = None,
+        model_field: Optional['ModelField'] = None,
+    ) -> None:
+        from inspect import isdatadescriptor, ismethoddescriptor
+
+        if not (ismethoddescriptor(default_callable) or isdatadescriptor(default_callable)):
+            default_callable = property(default_callable)
+
+        self.descriptor: Any = default_callable
+        type_, fget, fset = _get_descriptor_infos(default_callable)
+        self.type_: Any = type_
+        self.fget: 'FGet' = fget
+        self.fset: Optional['FSet'] = fset
+        self.defined_name: Optional[str] = name
+        self.class_validators: Optional[Dict[str, 'Validator']] = None
+
+        self.alias: str = alias or self.name
+        self.title: Optional[str] = title
+        self.description: Optional[str] = description
+        self.exclude: Optional['ExcludeInclude'] = exclude
+        self.include: Optional['ExcludeInclude'] = include
+
+        self.config: Optional[Type['BaseConfig']] = config
+        self.model_field: Optional[ModelField] = model_field
+        self.required: bool = False
+
+    @property
+    def name(self) -> str:
+        return self.defined_name or self.fget.__name__
+
+    @property
+    def field_info(self) -> FieldInfo:
+        return FieldInfo(
+            alias=self.alias,
+            title=self.title,
+            description=self.description or self.descriptor.__doc__,
+            read_only=self.fset is None,
+            exclude=self.exclude,
+            include=self.include,
+        )
+
+    def __get__(self, instance: Optional['BaseModel'], owner: Any = None) -> Any:
+        return self.descriptor.__get__(instance, owner)
+
+    def __set__(self, instance: Optional['BaseModel'], value: Any) -> None:
+        return self.descriptor.__set__(instance, value)
+
+    def __delete__(self, obj: Any) -> None:
+        return self.descriptor.__delete__(obj)
+
+    def __set_name__(self, instance: 'BaseModel', name: str) -> None:
+        if hasattr(self.descriptor, '__set_name__'):
+            self.descriptor.__set_name__(instance, name)
+
+    def __getattr__(self, name: str) -> Any:
+        # we forward only `setter`, `getter` (public methods)
+        # we don't want to forward things like `__isabstractmethod__`
+        if not name.startswith('_') and hasattr(self.descriptor, name):
+
+            def update_computed_field(*args: Any, **kwargs: Any) -> 'ComputedField':
+                return type(self)(
+                    getattr(self.descriptor, name)(*args, **kwargs),
+                    name=self.name,
+                    alias=self.alias,
+                    title=self.title,
+                    description=self.description,
+                    config=self.config,
+                    model_field=self.model_field,
+                )
+
+            return update_computed_field
+
+    def prepare(
+        self,
+        config: Type['BaseConfig'],
+        name: str,
+        class_validators: Optional[Dict[str, 'Validator']],
+    ) -> None:
+        if self.defined_name is None:
+            self.defined_name = name
+        self.class_validators = class_validators
+        self.config = config
+        self.model_field = ModelField(
+            name=self.name,
+            type_=self.type_,
+            class_validators=self.class_validators,
+            model_config=self.config,
+            default=None,
+            required=self.required,
+            alias=self.field_info.alias,
+            field_info=self.field_info,
+        )
+
+    def validate(
+        self, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
+    ) -> 'Optional[ErrorList]':
+        get_values = GetAttributeDict(values)
+        try:
+            v = self.fget(get_values)  # type: ignore
+        except KeyError:
+            errors = None
+        else:
+            new_loc = self.name if isinstance(loc, str) else tuple((loc[:-1], self.name))
+            assert self.model_field is not None
+            _, errors = self.model_field.validate(v, values, loc=cast('LocStr', new_loc), cls=cls)
+        return errors
 
 
 class ModelField(Representation):

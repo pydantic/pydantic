@@ -194,7 +194,10 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
         schema['description'] = field.field_info.description
         schema_overrides = True
 
-    if (
+    if field.field_info.read_only:
+        schema['readOnly'] = True
+        schema_overrides = True
+    elif (
         not field.required
         and not field.field_info.const
         and field.default is not None
@@ -628,7 +631,12 @@ def model_type_schema(
     required = []
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
-    for k, f in model.__fields__.items():
+    all_fields: Dict[str, ModelField] = {
+        **model.__fields__,
+        **{k: cast(ModelField, m.model_field) for k, m in model.__computed_fields__.items()},
+    }
+
+    for k, f in all_fields.items():
         try:
             f_schema, f_definitions, f_nested_models = field_schema(
                 f,

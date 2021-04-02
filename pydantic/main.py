@@ -1,6 +1,7 @@
 import sys
 import warnings
 from abc import ABCMeta
+from collections import ChainMap
 from copy import deepcopy
 from enum import Enum
 from functools import partial
@@ -27,7 +28,7 @@ from .class_validators import ValidatorGroup, extract_root_validators, extract_v
 from .config import BaseConfig, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import MAPPING_LIKE_SHAPES, Field, FieldInfo, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import MAPPING_LIKE_SHAPES, ComputedField, Field, FieldInfo, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -103,7 +104,7 @@ def generate_hash_function(frozen: bool) -> Optional[Callable[[Any], int]]:
 
 
 # If a field is of type `Callable`, its default value should be a function and cannot to ignored.
-ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (property, type, classmethod, staticmethod)
+ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (type, classmethod, staticmethod)
 # When creating a `BaseModel` instance, we bypass all the methods, properties... added to the model
 UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_TYPES
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
@@ -111,6 +112,13 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 # safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
 # the `BaseModel` class, since that's defined immediately after the metaclass.
 _is_base_model_class_defined = False
+
+
+def is_descriptor(v: Any) -> bool:
+    """Whether or not v is a `property`, `cached_property`, `singledispatchmethod`, ..."""
+    from inspect import isdatadescriptor, ismethoddescriptor
+
+    return ismethoddescriptor(v) or isdatadescriptor(v)
 
 
 _T = TypeVar('_T')
@@ -125,11 +133,13 @@ def __dataclass_transform__(
 ) -> Callable[[_T], _T]:
     return lambda a: a
 
+
 @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
         fields: Dict[str, ModelField] = {}
+        computed_fields: Dict[str, ComputedField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
 
@@ -143,6 +153,7 @@ class ModelMetaclass(ABCMeta):
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(smart_deepcopy(base.__fields__))
+                computed_fields.update(smart_deepcopy(base.__computed_fields__))
                 config = inherit_config(base.__config__, config)
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
@@ -178,7 +189,11 @@ class ModelMetaclass(ABCMeta):
         untouched_types = ANNOTATED_FIELD_UNTOUCHED_TYPES
 
         def is_untouched(v: Any) -> bool:
-            return isinstance(v, untouched_types) or v.__class__.__name__ == 'cython_function_or_method'
+            return (
+                isinstance(v, untouched_types)
+                or is_descriptor(v)
+                or v.__class__.__name__ == 'cython_function_or_method'
+            )
 
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
@@ -218,6 +233,9 @@ class ModelMetaclass(ABCMeta):
                             f'Use sunder or dunder names, e. g. "_{var_name}" or "__{var_name}__"'
                         )
                     private_attributes[var_name] = value
+                elif isinstance(value, ComputedField):
+                    computed_fields[var_name] = value
+                    value.prepare(config, var_name, vg.get_validators(var_name))
                 elif config.underscore_attrs_are_private and is_valid_private_name(var_name) and can_be_changed:
                     private_attributes[var_name] = PrivateAttr(default=value)
                 elif is_valid_field(var_name) and var_name not in annotations and can_be_changed:
@@ -250,17 +268,26 @@ class ModelMetaclass(ABCMeta):
             hash_func = generate_hash_function(config.frozen)
 
         exclude_from_namespace = fields | private_attributes.keys() | {'__slots__'}
+
+        all_fields = ChainMap(fields, computed_fields)
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
+            '__computed_fields__': computed_fields,
+            '__all_fields__': all_fields,
             '__exclude_fields__': {
-                name: field.field_info.exclude for name, field in fields.items() if field.field_info.exclude is not None
+                name: field.field_info.exclude
+                for name, field in all_fields.items()
+                if field.field_info.exclude is not None
             }
             or None,
             '__include_fields__': {
-                name: field.field_info.include for name, field in fields.items() if field.field_info.include is not None
+                name: field.field_info.include
+                for name, field in all_fields.items()
+                if field.field_info.include is not None
             }
             or None,
+            '__computed_fields__': computed_fields,
             '__validators__': vg.validators,
             '__pre_root_validators__': unique_list(pre_root_validators + pre_rv_new),
             '__post_root_validators__': unique_list(post_root_validators + post_rv_new),
@@ -287,8 +314,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
+        __computed_fields__: Dict[str, ComputedField] = {}
+        __all_fields__: Mapping[str, Union[ModelField, ComputedField]]
         __include_fields__: Optional[Mapping[str, Any]] = None
         __exclude_fields__: Optional[Mapping[str, Any]] = None
+        __computed_fields__: Dict[str, ComputedField] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
         __post_root_validators__: List[Tuple[bool, AnyCallable]]
@@ -329,8 +359,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
         if name in self.__private_attributes__:
             return object_setattr(self, name, value)
-
-        if self.__config__.extra is not Extra.allow and name not in self.__fields__:
+        elif name in self.__computed_fields__:
+            self.__computed_fields__[name].__set__(self, value)
+        elif is_descriptor(getattr(self.__class__, name, None)):
+            getattr(self.__class__, name).__set__(self, value)
+        elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation or self.__config__.frozen:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
@@ -359,6 +392,14 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     new_values[name] = value
 
             errors = []
+
+            for name, computed_field in self.__computed_fields__.items():
+                errors_ = computed_field.validate(new_values, loc=computed_field.alias, cls=self.__class__)
+                if isinstance(errors_, ErrorWrapper):
+                    errors.append(errors_)
+                elif isinstance(errors_, list):
+                    errors.extend(errors_)
+
             for skip_on_failure, validator in self.__post_root_validators__:
                 if skip_on_failure and errors:
                     continue
@@ -779,17 +820,31 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         value_exclude = ValueItems(self, exclude) if exclude is not None else None
         value_include = ValueItems(self, include) if include is not None else None
 
-        for field_key, v in self.__dict__.items():
+        if not self.__computed_fields__:
+            all_values = self.__dict__
+        else:
+            # In python 3.6, `ChainMap` deserialization is not consistent with newer versions.
+            # We hence recreate a whole dictionary.
+            # If 3.6 is dropped, we should probably use a `ChainMap` instead for perf reasons
+            all_values = {
+                **{k: v for k, v in self.__dict__.items()},
+                **{
+                    computed_field.name: computed_field.__get__(self)
+                    for computed_field in self.__computed_fields__.values()
+                },
+            }
+
+        for field_key, v in all_values.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
                 continue
 
             if exclude_defaults:
-                model_field = self.__fields__.get(field_key)
+                model_field = self.__all_fields__.get(field_key)
                 if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
                     continue
 
-            if by_alias and field_key in self.__fields__:
-                dict_key = self.__fields__[field_key].alias
+            if by_alias and field_key in self.__all_fields__:
+                dict_key = self.__all_fields__[field_key].alias
             else:
                 dict_key = field_key
 
@@ -821,6 +876,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             keys = self.__fields_set__.copy()
         else:
             keys = self.__dict__.keys()
+        keys |= set(self.__computed_fields__)
 
         if include is not None:
             keys &= include.keys()
@@ -960,6 +1016,13 @@ def validate_model(  # noqa: C901 (ignore complexity)
             errors.extend(errors_)
         else:
             values[name] = v_
+
+    for name, computed_field in model.__computed_fields__.items():
+        errors_ = computed_field.validate(values, loc=computed_field.alias, cls=cls_)
+        if isinstance(errors_, ErrorWrapper):
+            errors.append(errors_)
+        elif isinstance(errors_, list):
+            errors.extend(errors_)
 
     if check_extra:
         if isinstance(input_data, GetterDict):
