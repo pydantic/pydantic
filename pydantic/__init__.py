@@ -6,7 +6,7 @@ from .decorator import validate_arguments
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
 from .errors import *
-from .fields import Field, PrivateAttr, Required
+from .fields import Field, PrivateAttr, Required, field
 from .main import *
 from .networks import *
 from .parse import Protocol
@@ -32,6 +32,7 @@ __all__ = [
     # error_wrappers
     'ValidationError',
     # fields
+    'field',
     'Field',
     'Required',
     # main

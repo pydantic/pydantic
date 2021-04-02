@@ -103,6 +103,7 @@ class FieldInfo(Representation):
         'max_length',
         'allow_mutation',
         'regex',
+        'read_only',
         'extra',
     )
 
@@ -140,6 +141,7 @@ class FieldInfo(Representation):
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
+        self.read_only = kwargs.pop('read_only', None)
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
@@ -277,6 +279,128 @@ SHAPE_NAME_LOOKUP = {
 }
 
 MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
+
+
+def field(
+    func: Optional[Any] = None,
+    *,
+    alias: Optional[str] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+) -> 'Union[Callable[[Any], ComputedField], ComputedField]':
+    import inspect
+
+    def wrap(func_: Any) -> 'ComputedField':
+        if not isinstance(func_, property):
+            func_ = property(func_)
+        type_ = inspect.signature(func_.fget).return_annotation
+        if type_ is inspect._empty:  # type: ignore[attr-defined]
+            type_ = Any
+
+        return ComputedField(
+            name=func_.fget.__name__,
+            type_=type_,
+            fget=func_.fget,
+            alias=alias,
+            title=title,
+            description=description,
+        )
+
+    if func is None:
+        return wrap
+
+    return wrap(func)
+
+
+class ComputedField(Representation):
+    __slots__ = (
+        'name',
+        'type_',
+        'outer_type_',
+        'fget',
+        'fset',
+        'class_validators',
+
+        'alias',
+        'title',
+        'description',
+
+        'config',
+        'model_field',
+        'required',
+    )
+
+    def __init__(
+        self,
+        *,
+        name: str,
+        type_: type,
+        fget: Callable[[Optional['BaseModel']], Any],
+        fset: Any = None,
+        alias: Optional[str] = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        config: Optional[Type['BaseConfig']] = None,
+        model_field: Optional['ModelField'] = None,
+    ) -> None:
+        self.name: str = name
+        self.type_: type = type_
+        self.outer_type_: type = type_
+        self.fget: Callable[[Optional['BaseModel']], Any] = fget
+        self.fset: Any = fset
+        self.class_validators: Optional[Dict[str, 'Validator']] = None
+
+        self.alias: str = alias or name
+        self.title: Optional[str] = title
+        self.description: Optional[str] = description
+
+        self.config: Optional[Type['BaseConfig']] = config
+        self.model_field: Optional[ModelField] = model_field
+        self.required: bool = False
+
+    @property
+    def field_info(self) -> FieldInfo:
+        return FieldInfo(
+            alias=self.alias,
+            title=self.title,
+            description=self.description or self.fget.__doc__, read_only=True
+        )
+
+    def __get__(self, instance: Optional['BaseModel'], owner: Any) -> Any:
+        if instance is None:
+            return self
+        return self.fget(instance)
+
+    def __set__(self, obj, value):
+        if self.fset is None:
+            raise AttributeError("can't set attribute")
+        self.fset(obj, value)
+
+    def setter(self, fset):
+        return type(self)(
+            name=self.name,
+            type_=self.type_,
+            fget=self.fget,
+            fset=fset,
+            alias=self.alias,
+            title=self.title,
+            description=self.description,
+            config=self.config,
+            model_field=self.model_field,
+        )
+
+    def set_config_and_prepare_field(self, config: Type['BaseConfig']) -> None:
+        self.config = config
+        self.model_field = ModelField(
+            name=self.name,
+            type_=self.type_,
+            class_validators=self.class_validators,
+            model_config=self.config,
+            default=None,
+            required=self.required,
+            alias=self.field_info.alias,
+            field_info=self.field_info,
+        )
 
 
 class ModelField(Representation):

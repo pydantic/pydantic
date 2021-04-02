@@ -28,7 +28,7 @@ from typing import (
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import MAPPING_LIKE_SHAPES, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import MAPPING_LIKE_SHAPES, ComputedField, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -227,6 +227,7 @@ class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
         fields: Dict[str, ModelField] = {}
+        computed_fields: Dict[str, ComputedField] = {}
         config = BaseConfig
         validators: 'ValidatorListDict' = {}
 
@@ -240,6 +241,7 @@ class ModelMetaclass(ABCMeta):
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(smart_deepcopy(base.__fields__))
+                computed_fields.update(smart_deepcopy(base.__computed_fields__))
                 config = inherit_config(base.__config__, config)
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
@@ -310,6 +312,9 @@ class ModelMetaclass(ABCMeta):
                             f'Use sunder or dunder names, e. g. "_{var_name}" or "__{var_name}__"'
                         )
                     private_attributes[var_name] = value
+                elif isinstance(value, ComputedField):
+                    computed_fields[var_name] = value
+                    value.set_config_and_prepare_field(config)
                 elif config.underscore_attrs_are_private and is_valid_private_name(var_name) and can_be_changed:
                     private_attributes[var_name] = PrivateAttr(default=value)
                 elif is_valid_field(var_name) and var_name not in annotations and can_be_changed:
@@ -345,6 +350,7 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
+            '__computed_fields__': computed_fields,
             '__validators__': vg.validators,
             '__pre_root_validators__': unique_list(pre_root_validators + pre_rv_new),
             '__post_root_validators__': unique_list(post_root_validators + post_rv_new),
@@ -371,6 +377,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
+        __computed_fields__: Dict[str, ComputedField] = {}
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
         __post_root_validators__: List[Tuple[bool, AnyCallable]]
@@ -411,8 +418,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
         if name in self.__private_attributes__:
             return object_setattr(self, name, value)
-
-        if self.__config__.extra is not Extra.allow and name not in self.__fields__:
+        elif name in self.__computed_fields__:
+            self.__computed_fields__[name].fset(self, value)
+        elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation or self.__config__.frozen:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
@@ -877,6 +885,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude_none=exclude_none,
                 )
             yield dict_key, v
+
+        for field_key, v in self.__computed_fields__.items():
+            yield field_key, v.fget(self)
 
     def _calculate_keys(
         self,
