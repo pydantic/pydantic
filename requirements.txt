@@ -5,4 +5,4 @@ devtools==0.6.1
 email-validator==1.1.2
 dataclasses==0.6; python_version < '3.7'
 typing-extensions==3.7.4.3
-python-dotenv==0.15.0
+python-dotenv==0.16.0
