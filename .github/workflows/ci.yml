@@ -164,6 +164,36 @@ jobs:
         name: coverage
         path: coverage
 
+  coverage-combine:
+    needs: [test-linux, test-windows-mac]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.8'
+
+      - name: get coverage files
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage
+          path: coverage
+
+      - run: pip install coverage
+
+      - run: ls -la
+      - run: coverage combine coverage
+      - run: coverage report
+      - run: coverage html --show-contexts
+
+      - name: Store coverage html
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-html
+          path: htmlcov
+
   test-fastapi:
     name: test fastAPI
     runs-on: ubuntu-latest
