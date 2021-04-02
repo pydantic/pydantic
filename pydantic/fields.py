@@ -320,11 +320,9 @@ class ComputedField(Representation):
         'fget',
         'fset',
         'class_validators',
-
         'alias',
         'title',
         'description',
-
         'config',
         'model_field',
         'required',
@@ -336,7 +334,7 @@ class ComputedField(Representation):
         name: str,
         type_: type,
         fget: Callable[[Optional['BaseModel']], Any],
-        fset: Any = None,
+        fset: 'Optional[Callable[[Optional[BaseModel], Any], None]]' = None,
         alias: Optional[str] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
@@ -347,7 +345,7 @@ class ComputedField(Representation):
         self.type_: type = type_
         self.outer_type_: type = type_
         self.fget: Callable[[Optional['BaseModel']], Any] = fget
-        self.fset: Any = fset
+        self.fset: 'Optional[Callable[[Optional[BaseModel], Any], None]]' = fset
         self.class_validators: Optional[Dict[str, 'Validator']] = None
 
         self.alias: str = alias or name
@@ -361,9 +359,7 @@ class ComputedField(Representation):
     @property
     def field_info(self) -> FieldInfo:
         return FieldInfo(
-            alias=self.alias,
-            title=self.title,
-            description=self.description or self.fget.__doc__, read_only=True
+            alias=self.alias, title=self.title, description=self.description or self.fget.__doc__, read_only=True
         )
 
     def __get__(self, instance: Optional['BaseModel'], owner: Any) -> Any:
@@ -371,12 +367,12 @@ class ComputedField(Representation):
             return self
         return self.fget(instance)
 
-    def __set__(self, obj, value):
+    def __set__(self, instance: Optional['BaseModel'], value: Any) -> None:
         if self.fset is None:
             raise AttributeError("can't set attribute")
-        self.fset(obj, value)
+        self.fset(instance, value)
 
-    def setter(self, fset):
+    def setter(self, fset: Callable[[Optional['BaseModel'], Any], None]) -> 'ComputedField':
         return type(self)(
             name=self.name,
             type_=self.type_,

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from pydantic.fields import field
 
 
-def test_computed_fields():
+def test_computed_fields_get():
     class Rectangle(BaseModel):
         width: int
         length: int
@@ -58,3 +58,21 @@ def test_computed_fields():
         },
         'required': ['width', 'length'],
     }
+
+
+def test_computed_fields_set():
+    class Square(BaseModel):
+        side: float
+
+        @field
+        def area(self) -> float:
+            return self.side ** 2
+
+        @area.setter
+        def area(self, new_area: int):
+            self.side = new_area ** 0.5
+
+    r = Square(side=10)
+    assert r.dict() == {'side': 10.0, 'area': 100.0}
+    r.area = 64
+    assert r.dict() == {'side': 8.0, 'area': 64.0}
