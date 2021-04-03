@@ -1,6 +1,5 @@
 from collections import defaultdict, deque
 from collections.abc import Iterable as CollectionsIterable
-from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -78,6 +77,10 @@ if TYPE_CHECKING:
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
     BoolUndefined = Union[bool, UndefinedType]
+
+    FGet = Callable[[Optional[BaseModel], str], Any]
+    FSet = Callable[[Optional[BaseModel], Any], None]
+    FDel = Callable[[Optional[BaseModel], str], None]
 
 
 class FieldInfo(Representation):
@@ -285,10 +288,10 @@ MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
 class DescriptorInfos:
     __slots__ = ('type_', 'fget', 'fset')
 
-    def __init__(self, type_: type, fget: Any, fset: Any) -> None:
-        self.type_ = type_
-        self.fget = fget
-        self.fset = fset
+    def __init__(self, type_: type, fget: 'FGet', fset: Optional['FSet']) -> None:
+        self.type_: type = type_
+        self.fget: 'FGet' = fget
+        self.fset: Optional['FSet'] = fset
 
     @classmethod
     def infer(cls, descriptor: Any) -> 'DescriptorInfos':
@@ -311,7 +314,7 @@ class DescriptorInfos:
         if type_ is inspect._empty:  # type: ignore[attr-defined]
             type_ = Any
 
-        return cls(type_, fget, fset)
+        return cls(type_, fget, fset)  # type: ignore
 
 
 def field(
@@ -388,7 +391,7 @@ class ComputedField(Representation):
             read_only=self.descriptor_infos.fset is None,
         )
 
-    def __get__(self, instance: Optional['BaseModel'], owner: Any) -> Any:
+    def __get__(self, instance: Optional['BaseModel'], owner: Any = None) -> Any:
         return self.descriptor.__get__(instance, owner)
 
     def __set__(self, instance: Optional['BaseModel'], value: Any) -> None:
@@ -397,42 +400,27 @@ class ComputedField(Representation):
     def __delete__(self, obj: Any) -> None:
         return self.descriptor.__delete__(obj)
 
-    def getter(self, fget: 'Callable[[Optional[BaseModel], str], Any]') -> 'ComputedField':
-        return type(self)(
-            name=self.name,
-            descriptor=self.descriptor.getter(fget),
-            alias=self.alias,
-            title=self.title,
-            description=self.description,
-            config=self.config,
-            model_field=self.model_field,
-        )
-
-    def setter(self, fset: 'Callable[[Optional[BaseModel], Any], None]') -> 'ComputedField':
-        return type(self)(
-            name=self.name,
-            descriptor=self.descriptor.setter(fset),
-            alias=self.alias,
-            title=self.title,
-            description=self.description,
-            config=self.config,
-            model_field=self.model_field,
-        )
-
-    def deleter(self, fdel: 'Callable[[Optional[BaseModel], str], None]') -> 'ComputedField':
-        return type(self)(
-            name=self.name,
-            descriptor=self.descriptor.deleter(fdel),
-            alias=self.alias,
-            title=self.title,
-            description=self.description,
-            config=self.config,
-            model_field=self.model_field,
-        )
-
     def __set_name__(self, instance: 'BaseModel', name: str) -> None:
-        with suppress(Exception):
+        if hasattr(self.descriptor, '__set_name__'):
             self.descriptor.__set_name__(instance, name)
+
+    def __getattr__(self, name: str) -> Any:
+        # we forward only `setter`, `getter` (public methods)
+        # we don't want to forward things like `__isabstractmethod__`
+        if not name.startswith('_') and hasattr(self.descriptor, name):
+
+            def update_computed_field(*args: Any, **kwargs: Any) -> 'ComputedField':
+                return type(self)(
+                    descriptor=getattr(self.descriptor, name)(*args, **kwargs),
+                    name=self.name,
+                    alias=self.alias,
+                    title=self.title,
+                    description=self.description,
+                    config=self.config,
+                    model_field=self.model_field,
+                )
+
+            return update_computed_field
 
     def set_config_and_prepare_field(self, config: Type['BaseConfig']) -> None:
         self.config = config

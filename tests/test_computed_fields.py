@@ -146,3 +146,70 @@ def test_cached_property():
     assert first_n == second_n
     assert rect.dict() == {'minimum': 10, 'maximum': 10_000, 'random_number': first_n}
     assert rect.dict(by_alias=True, exclude={'random_number'}) == {'min': 10, 'max': 10000, 'the magic number': first_n}
+
+
+def test_custom_descriptor():
+    class MyCustomProperty:
+        def __init__(self, fget=None, my_setter=None):
+            self.fget = fget
+            self.my_setter = my_setter
+
+        def __get__(self, instance, owner=None):
+            return self.fget(instance)
+
+        def __set__(self, instance, value):
+            self.my_setter(instance, value)
+
+        def update_g(self, new_get):
+            return type(self)(new_get, self.my_setter)
+
+        def setter(self, new_set):
+            return type(self)(self.fget, new_set)
+
+    class User(BaseModel):
+        first: str
+        last: str
+
+        @field
+        @MyCustomProperty
+        def fullname(self) -> str:
+            return f'{self.first} {self.last}'
+
+        @fullname.update_g
+        def new_fullname(self) -> str:
+            return f'The REAL {self.first} {self.last}'
+
+    user = User(first='John', last='Smith')
+    assert user.dict() == {'first': 'John', 'last': 'Smith', 'fullname': 'The REAL John Smith'}
+    assert User.schema()['properties']['fullname'] == {'title': 'Fullname', 'readOnly': True, 'type': 'string'}
+
+    class User(BaseModel):
+        first: str
+        last: str
+
+        @field
+        @MyCustomProperty
+        def fullname(self) -> str:
+            return f'{self.first} {self.last}'
+
+        @fullname.setter
+        def fullname(self, new_fullname: str) -> None:
+            self.first, self.last = new_fullname.split()
+
+    user = User(first='John', last='Smith')
+    assert user.dict() == {'first': 'John', 'last': 'Smith', 'fullname': 'John Smith'}
+    user.fullname = 'Pika Chu'
+    assert user.dict() == {'first': 'Pika', 'last': 'Chu', 'fullname': 'Pika Chu'}
+    assert User.schema()['properties']['fullname'] == {'title': 'Fullname', 'type': 'string'}
+
+
+def test_computed_fields_no_return_type():
+    class User(BaseModel):
+        first: str
+        last: str
+
+        @field
+        def fullname(self):
+            return f'{self.first} {self.last}'
+
+    assert User.schema()['properties']['fullname'] == {'title': 'Fullname', 'readOnly': True}

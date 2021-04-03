@@ -425,7 +425,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         if name in self.__private_attributes__:
             return object_setattr(self, name, value)
         elif name in self.__computed_fields__:
-            self.__computed_fields__[name].descriptor.__set__(self, value)
+            self.__computed_fields__[name].__set__(self, value)
         elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation or self.__config__.frozen:
@@ -894,7 +894,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         for computed_field in self.__computed_fields__.values():
             dict_key = computed_field.alias if by_alias else computed_field.name
-            yield dict_key, computed_field.descriptor.__get__(self)
+            yield dict_key, computed_field.__get__(self)
 
     def _calculate_keys(
         self,
