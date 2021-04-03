@@ -302,8 +302,9 @@ def _get_descriptor_infos(descriptor: Any) -> Tuple[Any, 'FGet', Optional['FSet'
         if len(set_del_params) > 0:
             fset = getattr(descriptor, set_del_params[0].name)
 
-    type_ = inspect.signature(fget).return_annotation
-    if type_ is inspect._empty:  # type: ignore[attr-defined]
+    sig = inspect.signature(fget)
+    type_ = sig.return_annotation
+    if type_ is sig.empty:
         type_ = Any
 
     return type_, cast('FGet', fget), cast('FSet', fset)
