@@ -276,7 +276,8 @@ class ModelMetaclass(ABCMeta):
 
             return (
                 isinstance(v, untouched_types)
-                or (ismethoddescriptor(v) or isdatadescriptor(v))  # ignore `property`, `cached_property`, ...
+                # ignore `property`, `cached_property`, `singledispatchmethod`, ...
+                or (ismethoddescriptor(v) or isdatadescriptor(v))
                 or v.__class__.__name__ == 'cython_function_or_method'
             )
 

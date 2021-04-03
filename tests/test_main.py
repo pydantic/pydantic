@@ -1270,9 +1270,23 @@ def test_parse_obj_nested_root():
     assert tournament.players.__root__['Jane'].pokemons.__root__[0].name == 'Pikachu'
 
 
-def test_untouched_types():
-    from pydantic import BaseModel
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='singledispatchmethod is not available')
+def test_descriptors_work_without_keep_untouched():
+    from functools import singledispatchmethod
 
+    class Model(BaseModel):
+        x: int
+
+        @singledispatchmethod
+        def add_to_x(self, y):
+            raise NotImplementedError()
+
+    m = Model(x=1)
+    with pytest.raises(NotImplementedError):
+        m.add_to_x(3)
+
+
+def test_descriptors_work_without_keep_untouched_2():
     class _ClassPropertyDescriptor:
         def __init__(self, getter):
             self.getter = getter
@@ -1283,9 +1297,6 @@ def test_untouched_types():
     classproperty = _ClassPropertyDescriptor
 
     class Model(BaseModel):
-        class Config:
-            keep_untouched = (classproperty,)
-
         @classproperty
         def class_name(cls) -> str:
             return cls.__name__
@@ -1294,22 +1305,20 @@ def test_untouched_types():
     assert Model().class_name == 'Model'
 
 
-def test_descriptors_work_without_keep_untouched():
-    class _ClassPropertyDescriptor:
-        def __init__(self, getter):
-            self.getter = getter
-
-        def __get__(self, instance, owner):
-            return self.getter(owner)
-
-    classproperty = _ClassPropertyDescriptor
+def test_keep_untouched():
+    class decorator:
+        def __init__(self, func):
+            self.func = func
 
     class Model(BaseModel):
-        @classproperty
+        class Config:
+            keep_untouched = (decorator,)
+
+        @decorator
         def class_name(cls) -> str:
             return cls.__name__
 
-    assert Model.class_name == 'Model'
+    assert Model.class_name.func(Model) == 'Model'
 
 
 def test_other_classes_fail_without_keep_untouched():
