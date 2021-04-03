@@ -282,18 +282,36 @@ SHAPE_NAME_LOOKUP = {
 MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
 
 
-def _descriptor_getter(func: Any) -> Any:
-    with suppress(AttributeError):
-        return func.fget
+class DescriptorInfos:
+    __slots__ = ('type_', 'fget', 'fset')
 
-    with suppress(AttributeError):
-        return func.func
+    def __init__(self, type_: type, fget: Any, fset: Any) -> None:
+        self.type_ = type_
+        self.fget = fget
+        self.fset = fset
 
-    # try to get the first parameter after self
-    from inspect import signature
+    @classmethod
+    def infer(cls, descriptor: Any) -> 'DescriptorInfos':
+        import inspect
 
-    _self_param, getter_param, *_ = signature(func.__class__.__init__).parameters.values()
-    return getattr(func, getter_param.name)
+        fset = None
+
+        if isinstance(descriptor, property):
+            fget = descriptor.fget
+            fset = descriptor.fset
+        else:
+            _self_param, getter_param, *set_del_params = inspect.signature(
+                descriptor.__class__.__init__
+            ).parameters.values()
+            fget = getattr(descriptor, getter_param.name)
+            if len(set_del_params) > 0:
+                fset = getattr(descriptor, set_del_params[0].name)
+
+        type_ = inspect.signature(fget).return_annotation
+        if type_ is inspect._empty:  # type: ignore[attr-defined]
+            type_ = Any
+
+        return cls(type_, fget, fset)
 
 
 def field(
@@ -309,10 +327,7 @@ def field(
         if not (ismethoddescriptor(func_) or isdatadescriptor(func_)):
             func_ = property(func_)
 
-        getter = _descriptor_getter(func_)
-
         return ComputedField(
-            name=getter.__name__,
             descriptor=func_,
             alias=alias,
             title=title,
@@ -327,8 +342,9 @@ def field(
 
 class ComputedField(Representation):
     __slots__ = (
-        'name',
         'descriptor',
+        'descriptor_infos',
+        'name',
         'class_validators',
         'alias',
         'title',
@@ -342,20 +358,20 @@ class ComputedField(Representation):
     def __init__(
         self,
         *,
-        name: str,
         descriptor: Any,
+        name: Optional[str] = None,
         alias: Optional[str] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
         config: Optional[Type['BaseConfig']] = None,
         model_field: Optional['ModelField'] = None,
     ) -> None:
-        self.name: str = name
         self.descriptor = descriptor
-
+        self.descriptor_infos = DescriptorInfos.infer(descriptor)
+        self.name: str = name or self.descriptor_infos.fget.__name__
         self.class_validators: Optional[Dict[str, 'Validator']] = None
 
-        self.alias: str = alias or name
+        self.alias: str = alias or self.name
         self.title: Optional[str] = title
         self.description: Optional[str] = description
 
@@ -364,21 +380,12 @@ class ComputedField(Representation):
         self.required: bool = False
 
     @property
-    def type_(self) -> Any:
-        import inspect
-
-        getter = _descriptor_getter(self.descriptor)
-        type_ = inspect.signature(getter).return_annotation
-
-        if type_ is inspect._empty:  # type: ignore[attr-defined]
-            return Any
-        else:
-            return type_
-
-    @property
     def field_info(self) -> FieldInfo:
         return FieldInfo(
-            alias=self.alias, title=self.title, description=self.description or self.descriptor.__doc__, read_only=True
+            alias=self.alias,
+            title=self.title,
+            description=self.description or self.descriptor.__doc__,
+            read_only=self.descriptor_infos.fset is None,
         )
 
     def __get__(self, instance: Optional['BaseModel'], owner: Any) -> Any:
@@ -431,7 +438,7 @@ class ComputedField(Representation):
         self.config = config
         self.model_field = ModelField(
             name=self.name,
-            type_=self.type_,
+            type_=self.descriptor_infos.type_,
             class_validators=self.class_validators,
             model_config=self.config,
             default=None,

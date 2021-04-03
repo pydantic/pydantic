@@ -40,7 +40,7 @@ def test_computed_fields_get():
     assert rect.double_width == 20
     assert rect.dict() == {'width': 10, 'length': 5, 'area': 50, 'area2': 50}
     assert rect.json() == '{"width": 10, "length": 5, "area": 50, "area2": 50}'
-    assert rect.schema() == {
+    assert Rectangle.schema() == {
         'title': 'Rectangle',
         'type': 'object',
         'properties': {
@@ -81,10 +81,25 @@ def test_computed_fields_set():
         def area(self, new_area: int):
             self.side = new_area ** 0.5
 
-    r = Square(side=10)
-    assert r.dict() == {'side': 10.0, 'area': 100.0}
-    r.area = 64
-    assert r.dict() == {'side': 8.0, 'area': 64.0}
+    s = Square(side=10)
+    assert s.dict() == {'side': 10.0, 'area': 100.0}
+    s.area = 64
+    assert s.dict() == {'side': 8.0, 'area': 64.0}
+    assert Square.schema() == {
+        'title': 'Square',
+        'type': 'object',
+        'properties': {
+            'side': {
+                'title': 'Side',
+                'type': 'number',
+            },
+            'area': {
+                'title': 'Area',
+                'type': 'number',
+            },
+        },
+        'required': ['side'],
+    }
 
 
 def test_computed_fields_del():
