@@ -1,5 +1,14 @@
+import random
+
+import pytest
+
 from pydantic import BaseModel
-from pydantic.fields import field
+from pydantic.fields import Field, field
+
+try:
+    from functools import cached_property
+except ImportError:
+    cached_property = None
 
 
 def test_computed_fields_get():
@@ -76,3 +85,49 @@ def test_computed_fields_set():
     assert r.dict() == {'side': 10.0, 'area': 100.0}
     r.area = 64
     assert r.dict() == {'side': 8.0, 'area': 64.0}
+
+
+def test_computed_fields_del():
+    class User(BaseModel):
+        first: str
+        last: str
+
+        @field
+        def fullname(self) -> str:
+            return f'{self.first} {self.last}'
+
+        @fullname.setter
+        def fullname(self, new_fullname: str) -> None:
+            self.first, self.last = new_fullname.split()
+
+        @fullname.deleter
+        def fullname(self):
+            self.first = ''
+            self.last = ''
+
+    user = User(first='John', last='Smith')
+    assert user.dict() == {'first': 'John', 'last': 'Smith', 'fullname': 'John Smith'}
+    user.fullname = 'Pika Chu'
+    assert user.dict() == {'first': 'Pika', 'last': 'Chu', 'fullname': 'Pika Chu'}
+    del user.fullname
+    assert user.dict() == {'first': '', 'last': '', 'fullname': ' '}
+
+
+@pytest.mark.skipif(cached_property is None, reason='Need cached_property')
+def test_cached_property():
+    class Model(BaseModel):
+        minimum: int = Field(alias='min')
+        maximum: int = Field(alias='max')
+
+        @field(alias='the magic number')
+        @cached_property
+        def random_number(self) -> int:
+            """An awesome area"""
+            return random.randint(self.minimum, self.maximum)
+
+    rect = Model(min=10, max=10_000)
+    first_n = rect.random_number
+    second_n = rect.random_number
+    assert first_n == second_n
+    assert rect.dict() == {'minimum': 10, 'maximum': 10_000, 'random_number': first_n}
+    assert rect.dict(by_alias=True, exclude={'random_number'}) == {'min': 10, 'max': 10000, 'the magic number': first_n}

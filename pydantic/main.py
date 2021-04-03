@@ -213,7 +213,7 @@ def generate_hash_function(frozen: bool) -> Optional[Callable[[Any], int]]:
 
 
 # If a field is of type `Callable`, its default value should be a function and cannot to ignored.
-ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (property, type, classmethod, staticmethod)
+ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (type, classmethod, staticmethod)
 # When creating a `BaseModel` instance, we bypass all the methods, properties... added to the model
 UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_TYPES
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
@@ -272,7 +272,13 @@ class ModelMetaclass(ABCMeta):
         untouched_types = ANNOTATED_FIELD_UNTOUCHED_TYPES
 
         def is_untouched(v: Any) -> bool:
-            return isinstance(v, untouched_types) or v.__class__.__name__ == 'cython_function_or_method'
+            from inspect import isdatadescriptor, ismethoddescriptor
+
+            return (
+                isinstance(v, untouched_types)
+                or (ismethoddescriptor(v) or isdatadescriptor(v))  # ignore `property`, `cached_property`, ...
+                or v.__class__.__name__ == 'cython_function_or_method'
+            )
 
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
@@ -419,7 +425,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         if name in self.__private_attributes__:
             return object_setattr(self, name, value)
         elif name in self.__computed_fields__:
-            self.__computed_fields__[name].fset(self, value)
+            self.__computed_fields__[name].descriptor.__set__(self, value)
         elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation or self.__config__.frozen:
@@ -886,8 +892,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 )
             yield dict_key, v
 
-        for field_key, v in self.__computed_fields__.items():
-            yield field_key, v.fget(self)
+        for computed_field in self.__computed_fields__.values():
+            dict_key = computed_field.alias if by_alias else computed_field.name
+            yield dict_key, computed_field.descriptor.__get__(self)
 
     def _calculate_keys(
         self,

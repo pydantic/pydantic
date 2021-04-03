@@ -1294,9 +1294,7 @@ def test_untouched_types():
     assert Model().class_name == 'Model'
 
 
-def test_custom_types_fail_without_keep_untouched():
-    from pydantic import BaseModel
-
+def test_descriptors_work_without_keep_untouched():
     class _ClassPropertyDescriptor:
         def __init__(self, getter):
             self.getter = getter
@@ -1306,31 +1304,30 @@ def test_custom_types_fail_without_keep_untouched():
 
     classproperty = _ClassPropertyDescriptor
 
-    with pytest.raises(RuntimeError) as e:
-
-        class Model(BaseModel):
-            @classproperty
-            def class_name(cls) -> str:
-                return cls.__name__
-
-        Model.class_name
-
-    assert str(e.value) == (
-        "no validator found for <class 'tests.test_main.test_custom_types_fail_without_keep_untouched.<locals>."
-        "_ClassPropertyDescriptor'>, see `arbitrary_types_allowed` in Config"
-    )
-
     class Model(BaseModel):
-        class Config:
-            arbitrary_types_allowed = True
-
         @classproperty
         def class_name(cls) -> str:
             return cls.__name__
 
-    with pytest.raises(AttributeError) as e:
-        Model.class_name
-    assert str(e.value) == "type object 'Model' has no attribute 'class_name'"
+    assert Model.class_name == 'Model'
+
+
+def test_other_classes_fail_without_keep_untouched():
+    class decorator:
+        def __init__(self, func):
+            self.func = func
+
+    with pytest.raises(RuntimeError) as e:
+
+        class Model(BaseModel):
+            @decorator
+            def class_name(cls) -> str:
+                return cls.__name__
+
+    assert str(e.value) == (
+        "no validator found for <class 'tests.test_main.test_other_classes_fail_without_keep_untouched.<locals>."
+        "decorator'>, see `arbitrary_types_allowed` in Config"
+    )
 
 
 def test_model_iteration():

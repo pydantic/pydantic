@@ -1,5 +1,6 @@
 from collections import defaultdict, deque
 from collections.abc import Iterable as CollectionsIterable
+from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -281,6 +282,20 @@ SHAPE_NAME_LOOKUP = {
 MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
 
 
+def _descriptor_getter(func: Any) -> Any:
+    with suppress(AttributeError):
+        return func.fget
+
+    with suppress(AttributeError):
+        return func.func
+
+    # try to get the first parameter after self
+    from inspect import signature
+
+    _self_param, getter_param, *_ = signature(func.__class__.__init__).parameters.values()
+    return getattr(func, getter_param.name)
+
+
 def field(
     func: Optional[Any] = None,
     *,
@@ -288,19 +303,17 @@ def field(
     title: Optional[str] = None,
     description: Optional[str] = None,
 ) -> 'Union[Callable[[Any], ComputedField], ComputedField]':
-    import inspect
-
     def wrap(func_: Any) -> 'ComputedField':
-        if not isinstance(func_, property):
+        from inspect import isdatadescriptor, ismethoddescriptor
+
+        if not (ismethoddescriptor(func_) or isdatadescriptor(func_)):
             func_ = property(func_)
-        type_ = inspect.signature(func_.fget).return_annotation
-        if type_ is inspect._empty:  # type: ignore[attr-defined]
-            type_ = Any
+
+        getter = _descriptor_getter(func_)
 
         return ComputedField(
-            name=func_.fget.__name__,
-            type_=type_,
-            fget=func_.fget,
+            name=getter.__name__,
+            descriptor=func_,
             alias=alias,
             title=title,
             description=description,
@@ -315,10 +328,7 @@ def field(
 class ComputedField(Representation):
     __slots__ = (
         'name',
-        'type_',
-        'outer_type_',
-        'fget',
-        'fset',
+        'descriptor',
         'class_validators',
         'alias',
         'title',
@@ -326,15 +336,14 @@ class ComputedField(Representation):
         'config',
         'model_field',
         'required',
+        'descriptor',
     )
 
     def __init__(
         self,
         *,
         name: str,
-        type_: type,
-        fget: Callable[[Optional['BaseModel']], Any],
-        fset: 'Optional[Callable[[Optional[BaseModel], Any], None]]' = None,
+        descriptor: Any,
         alias: Optional[str] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
@@ -342,10 +351,8 @@ class ComputedField(Representation):
         model_field: Optional['ModelField'] = None,
     ) -> None:
         self.name: str = name
-        self.type_: type = type_
-        self.outer_type_: type = type_
-        self.fget: Callable[[Optional['BaseModel']], Any] = fget
-        self.fset: 'Optional[Callable[[Optional[BaseModel], Any], None]]' = fset
+        self.descriptor = descriptor
+
         self.class_validators: Optional[Dict[str, 'Validator']] = None
 
         self.alias: str = alias or name
@@ -357,33 +364,68 @@ class ComputedField(Representation):
         self.required: bool = False
 
     @property
+    def type_(self) -> Any:
+        import inspect
+
+        getter = _descriptor_getter(self.descriptor)
+        type_ = inspect.signature(getter).return_annotation
+
+        if type_ is inspect._empty:  # type: ignore[attr-defined]
+            return Any
+        else:
+            return type_
+
+    @property
     def field_info(self) -> FieldInfo:
         return FieldInfo(
-            alias=self.alias, title=self.title, description=self.description or self.fget.__doc__, read_only=True
+            alias=self.alias, title=self.title, description=self.description or self.descriptor.__doc__, read_only=True
         )
 
     def __get__(self, instance: Optional['BaseModel'], owner: Any) -> Any:
-        if instance is None:
-            return self
-        return self.fget(instance)
+        return self.descriptor.__get__(instance, owner)
 
     def __set__(self, instance: Optional['BaseModel'], value: Any) -> None:
-        if self.fset is None:
-            raise AttributeError("can't set attribute")
-        self.fset(instance, value)
+        return self.descriptor.__set__(instance, value)
 
-    def setter(self, fset: Callable[[Optional['BaseModel'], Any], None]) -> 'ComputedField':
+    def __delete__(self, obj: Any) -> None:
+        return self.descriptor.__delete__(obj)
+
+    def getter(self, fget: 'Callable[[Optional[BaseModel], str], Any]') -> 'ComputedField':
         return type(self)(
             name=self.name,
-            type_=self.type_,
-            fget=self.fget,
-            fset=fset,
+            descriptor=self.descriptor.getter(fget),
             alias=self.alias,
             title=self.title,
             description=self.description,
             config=self.config,
             model_field=self.model_field,
         )
+
+    def setter(self, fset: 'Callable[[Optional[BaseModel], Any], None]') -> 'ComputedField':
+        return type(self)(
+            name=self.name,
+            descriptor=self.descriptor.setter(fset),
+            alias=self.alias,
+            title=self.title,
+            description=self.description,
+            config=self.config,
+            model_field=self.model_field,
+        )
+
+    def deleter(self, fdel: 'Callable[[Optional[BaseModel], str], None]') -> 'ComputedField':
+        return type(self)(
+            name=self.name,
+            descriptor=self.descriptor.deleter(fdel),
+            alias=self.alias,
+            title=self.title,
+            description=self.description,
+            config=self.config,
+            model_field=self.model_field,
+        )
+
+    def __set_name__(self, instance: 'BaseModel', name: str) -> None:
+        with suppress(Exception):
+            self.descriptor.__set_name__(instance, name)
 
     def set_config_and_prepare_field(self, config: Type['BaseConfig']) -> None:
         self.config = config
