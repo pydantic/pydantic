@@ -29,7 +29,7 @@ import pydantic
 print('compiled:', pydantic.compiled)
 ```
 
-*pydantic* has three optional dependencies:
+*pydantic* has two optional dependencies:
 
 * If you require email validation you can add [email-validator](https://github.com/JoshData/python-email-validator)
 * [dotenv file support](usage/settings.md#dotenv-env-support) with `Settings` requires
