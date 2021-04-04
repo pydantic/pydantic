@@ -641,6 +641,14 @@ def test_read_env_file_cast_sensitive(tmp_path):
     assert read_env_file(p, case_sensitive=True) == {'a': 'test', 'B': '123'}
 
 
+def test_read_env_file_without_dotenv(tmp_path, mocker):
+    p = tmp_path / '.env'
+    p.write_text('a="test"\nB=123')
+    mocker.patch.dict('sys.modules', {'dotenv': None})
+    with pytest.raises(ImportError):
+        read_env_file(p)
+
+
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
 def test_read_env_file_syntax_wrong(tmp_path):
     p = tmp_path / '.env'
