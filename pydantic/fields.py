@@ -21,6 +21,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
 from typing_extensions import Annotated
@@ -308,6 +309,27 @@ def _get_descriptor_infos(descriptor: Any) -> Tuple[Any, 'FGet', Optional['FSet'
         type_ = Any
 
     return type_, cast('FGet', fget), cast('FSet', fset)
+
+
+@overload
+def field(
+    *,
+    alias: Optional[str] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+) -> 'Callable[[Any], ComputedField]':
+    ...
+
+
+@overload
+def field(
+    func: T,
+    *,
+    alias: Optional[str] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+) -> Any:
+    ...
 
 
 def field(
