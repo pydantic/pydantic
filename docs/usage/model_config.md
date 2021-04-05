@@ -91,7 +91,7 @@ _(This script is complete, it should run "as is")_
   for use with `orm_mode`
 
 **`alias_generator`**
-: a callable that takes a field name and returns an alias for it
+: a callable that takes a field name and returns an alias for it (see [the dedicated section](#alias-generator))
 
 **`keep_untouched`**
 : a tuple of types (e.g. descriptors) for a model's default values that should not be changed during model creation and will
