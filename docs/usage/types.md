@@ -221,7 +221,7 @@ _(This script is complete, it should run "as is")_
     pydantic can't validate the values automatically for you because it would require
     consuming the infinite generator.
 
-## Validating the first value
+#### Validating the first value
 
 You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
 
@@ -571,10 +571,10 @@ _(This script is complete, it should run "as is")_
 For URI/URL validation the following types are available:
 
 - `AnyUrl`: any scheme allowed, TLD not required
-- `AnyHttpUrl`: schema `http` or `https`, TLD not required
-- `HttpUrl`: schema `http` or `https`, TLD required, max length 2083
-- `PostgresDsn`: schema `postgres` or `postgresql`, user info required, TLD not required
-- `RedisDsn`: schema `redis` or `rediss`, user info not required, tld not required (CHANGED: user info
+- `AnyHttpUrl`: scheme `http` or `https`, TLD not required
+- `HttpUrl`: scheme `http` or `https`, TLD required, max length 2083
+- `PostgresDsn`: scheme `postgres` or `postgresql`, user info required, TLD not required
+- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required (CHANGED: user info
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`, method with the following keyword arguments:
     - `strip_whitespace: bool = True`
@@ -598,7 +598,7 @@ If you require a custom URI/URL type, it can be created in a similar way to the 
 Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
 the above types export the following properties:
 
-- `scheme`: always set - the url schema (`http` above)
+- `scheme`: always set - the url scheme (`http` above)
 - `host`: always set - the url host (`example.com` above)
 - `host_type`: always set - describes the type of host, either:
 

@@ -149,7 +149,7 @@ st.register_type_strategy(pydantic.SecretBytes, st.binary().map(pydantic.SecretB
 st.register_type_strategy(pydantic.SecretStr, st.text().map(pydantic.SecretStr))
 
 # IP addresses, networks, and interfaces
-st.register_type_strategy(pydantic.IPvAnyAddress, st.ip_addresses())
+st.register_type_strategy(pydantic.IPvAnyAddress, st.ip_addresses())  # type: ignore[arg-type]
 st.register_type_strategy(
     pydantic.IPvAnyInterface,
     st.from_type(ipaddress.IPv4Interface) | st.from_type(ipaddress.IPv6Interface),  # type: ignore[arg-type]
@@ -220,7 +220,7 @@ def resolve_json(cls):  # type: ignore[no-untyped-def]
         finite = st.floats(allow_infinity=False, allow_nan=False)
         inner = st.recursive(
             base=st.one_of(st.none(), st.booleans(), st.integers(), finite, st.text()),
-            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),
+            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),  # type: ignore
         )
     return st.builds(
         json.dumps,
