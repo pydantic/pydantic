@@ -17,7 +17,7 @@ Similarly, if using the `@dataclass` decorator:
 ```
 _(This script is complete, it should run "as is")_
 
-Options:
+## Options
 
 **`title`**
 : the title for the generated JSON Schema
