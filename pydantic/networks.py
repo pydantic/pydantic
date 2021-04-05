@@ -125,7 +125,7 @@ class AnyUrl(str):
     allowed_schemes: Optional[Set[str]] = None
     tld_required: bool = False
     user_required: bool = False
-    hidden_parts: Optional[Set[str]] = None
+    hidden_parts: Set[str] = set()
 
     __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
