@@ -504,6 +504,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_computed: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -525,6 +526,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
+                exclude_computed=exclude_computed,
             )
         )
 
@@ -538,6 +540,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_computed: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -560,6 +563,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_computed=exclude_computed,
         )
         if self.__custom_root_type__:
             data = data[ROOT_KEY]
@@ -855,6 +859,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_computed: bool = False,
     ) -> 'TupleGenerator':
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
@@ -866,17 +871,40 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         value_exclude = ValueItems(self, exclude) if exclude else None
         value_include = ValueItems(self, include) if include else None
 
-        for field_key, v in self.__dict__.items():
+        all_values: Mapping[str, Any]
+        all_fields: Mapping[str, 'Union[ModelField, ComputedField]']
+        # Case 1: no computed fields -> just reference for max speed
+        if not self.__computed_fields__:
+            all_fields = self.__fields__
+            all_values = self.__dict__
+        # Case 2: we have computed fields but want to ignore them
+        # In this case we need to remove some extra values in self.__dict__ that may have been added by
+        # descriptors (e.g. `cached_property`)
+        elif exclude_computed:
+            all_fields = self.__fields__
+            all_values = {k: v for k, v in self.__dict__.items() if k not in self.__computed_fields__}
+        # Case 3: we have computed fields and want to add them
+        else:
+            all_fields = {**self.__fields__, **self.__computed_fields__}
+            all_values = {
+                **{k: v for k, v in self.__dict__.items() if k not in self.__computed_fields__},
+                **{
+                    computed_field.name: computed_field.__get__(self)
+                    for computed_field in self.__computed_fields__.values()
+                },
+            }
+
+        for field_key, v in all_values.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
                 continue
 
             if exclude_defaults:
-                model_field = self.__fields__.get(field_key)
+                model_field = all_fields.get(field_key)
                 if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
                     continue
 
-            if by_alias and field_key in self.__fields__:
-                dict_key = self.__fields__[field_key].alias
+            if by_alias and field_key in all_fields:
+                dict_key = all_fields[field_key].alias
             else:
                 dict_key = field_key
 
@@ -893,10 +921,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 )
             yield dict_key, v
 
-        for computed_field in self.__computed_fields__.values():
-            dict_key = computed_field.alias if by_alias else computed_field.name
-            yield dict_key, computed_field.__get__(self)
-
     def _calculate_keys(
         self,
         include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
@@ -912,6 +936,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             keys = self.__fields_set__.copy()
         else:
             keys = self.__dict__.keys()
+        keys |= set(self.__computed_fields__)
 
         if include is not None:
             if isinstance(include, Mapping):

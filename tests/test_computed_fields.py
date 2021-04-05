@@ -39,6 +39,7 @@ def test_computed_fields_get():
     assert rect.area == 50
     assert rect.double_width == 20
     assert rect.dict() == {'width': 10, 'length': 5, 'area': 50, 'area2': 50}
+    assert rect.dict(exclude_computed=True) == {'width': 10, 'length': 5}
     assert rect.json() == '{"width": 10, "length": 5, "area": 50, "area2": 50}'
     assert Rectangle.schema() == {
         'title': 'Rectangle',
@@ -145,7 +146,9 @@ def test_cached_property():
     second_n = rect.random_number
     assert first_n == second_n
     assert rect.dict() == {'minimum': 10, 'maximum': 10_000, 'random_number': first_n}
-    assert rect.dict(by_alias=True, exclude={'random_number'}) == {'min': 10, 'max': 10000, 'the magic number': first_n}
+    assert rect.dict(exclude_computed=True) == {'minimum': 10, 'maximum': 10_000}
+    assert rect.dict(by_alias=True) == {'min': 10, 'max': 10_000, 'the magic number': first_n}
+    assert rect.dict(by_alias=True, exclude={'random_number'}) == {'min': 10, 'max': 10000}
 
 
 def test_custom_descriptor():
