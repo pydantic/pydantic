@@ -2,7 +2,7 @@ black==20.8b1
 flake8==3.9.0
 flake8-quotes==3.2.0
 hypothesis==6.3.4
-isort==5.7.0
+isort==5.8.0
 mypy==0.812
 pycodestyle==2.7.0
 pyflakes==2.3.1
