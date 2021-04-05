@@ -1603,9 +1603,10 @@ def test_repr_field():
         c: int = Field(repr=False)
 
     m = Model(a=1, b=2, c=3)
-    assert 'a=1' in repr(m)
-    assert 'b=2' in repr(m)
-    assert 'c=3' not in repr(m)
+    assert repr(m) == 'Model(a=1, b=2)'
+    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=Ellipsis, extra={})'
+    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=Ellipsis, extra={})'
+    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=Ellipsis, repr=False, extra={})'
 
 
 def test_inherited_model_field_copy():
