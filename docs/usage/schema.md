@@ -71,26 +71,26 @@ It has the following arguments:
   JSON Schema
 * `max_length`: for string values, this adds a corresponding validation and an annotation of `maxLength` to the
   JSON Schema
-* `allow_mutation`: a boolean which defaults to `True`. When False, the field raises a `TypeError` if the field is 
+* `allow_mutation`: a boolean which defaults to `True`. When False, the field raises a `TypeError` if the field is
   assigned on an instance.  The model config must set `validate_assignment` to `True` for this check to be performed.
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
   annotation of `pattern` to the JSON Schema
 
-    !!! note
-        *pydantic* validates strings using `re.match`,
-        which treats regular expressions as implicitly anchored at the beginning.
-        On the contrary,
-        JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
-        more like what `re.search` does.
+  !!! note
+      *pydantic* validates strings using `re.match`,
+      which treats regular expressions as implicitly anchored at the beginning.
+      On the contrary,
+      JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
+      more like what `re.search` does.
 
-        For interoperability, depending on your desired behavior,
-        either explicitly anchor your regular expressions with `^`
-        (e.g. `^foo` to match any string starting with `foo`),
-        or explicitly allow an arbitrary prefix with `.*?`
-        (e.g. `.*?foo` to match any string containing the substring `foo`).
+      For interoperability, depending on your desired behavior,
+      either explicitly anchor your regular expressions with `^`
+      (e.g. `^foo` to match any string starting with `foo`),
+      or explicitly allow an arbitrary prefix with `.*?`
+      (e.g. `.*?foo` to match any string containing the substring `foo`).
 
-        See [#1631](https://github.com/samuelcolvin/pydantic/issues/1631)
-        for a discussion of possible changes to *pydantic* behavior in **v2**.
+      See [#1631](https://github.com/samuelcolvin/pydantic/issues/1631)
+      for a discussion of possible changes to *pydantic* behavior in **v2**.
 
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
