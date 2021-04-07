@@ -1842,7 +1842,7 @@ def test_discriminated_union_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({'pet': {'pet_type': 'lizard'}, 'number': 2})
     assert exc_info.value.errors() == [
-        {'loc': ('pet', 'l'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('pet', 'Lizard', 'l'), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
 
     m = Model.parse_obj({'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2})
@@ -1853,7 +1853,7 @@ def test_discriminated_union_validation():
         Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
-            'loc': ('pet', '__root__', 'white_infos'),
+            'loc': ('pet', 'Cat', '__root__', 'WhiteCat', 'white_infos'),
             'msg': 'field required',
             'type': 'value_error.missing',
         }
@@ -1897,7 +1897,7 @@ def test_discriminated_annotated_union():
     assert exc_info.value.errors() == [
         {
             'loc': ('pet',),
-            'msg': ("No match for discriminator 'pet_type' and value 'fish' " "(allowed values: 'cat', 'dog')"),
+            'msg': "No match for discriminator 'pet_type' and value 'fish' " "(allowed values: 'cat', 'dog')",
             'type': 'value_error',
         },
     ]
@@ -1905,7 +1905,7 @@ def test_discriminated_annotated_union():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({'pet': {'pet_type': 'dog'}, 'number': 2})
     assert exc_info.value.errors() == [
-        {'loc': ('pet', 'dog_name'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('pet', 'Dog', 'dog_name'), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
     m = Model.parse_obj({'pet': {'pet_type': 'dog', 'dog_name': 'milou'}, 'number': 2})
     assert isinstance(m.pet, Dog)
@@ -1914,8 +1914,8 @@ def test_discriminated_annotated_union():
         Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'red'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
-            'loc': ('pet',),
-            'msg': ("No match for discriminator 'color' and value 'red' " "(allowed values: 'black', 'white')"),
+            'loc': ('pet', 'Union[BlackCat, WhiteCat]'),
+            'msg': "No match for discriminator 'color' and value 'red' " "(allowed values: 'black', 'white')",
             'type': 'value_error',
         }
     ]
@@ -1924,7 +1924,7 @@ def test_discriminated_annotated_union():
         Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
-            'loc': ('pet', 'white_infos'),
+            'loc': ('pet', 'Union[BlackCat, WhiteCat]', 'WhiteCat', 'white_infos'),
             'msg': 'field required',
             'type': 'value_error.missing',
         }

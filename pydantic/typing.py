@@ -249,6 +249,9 @@ def display_as_type(v: Type[Any]) -> str:
         # Generic alias are constructs like `list[int]`
         return str(v).replace('typing.', '')
 
+    if get_origin(v) is Union:
+        return f'Union[{", ".join(map(display_as_type, get_args(v)))}]'
+
     try:
         return v.__name__
     except AttributeError:

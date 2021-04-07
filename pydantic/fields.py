@@ -973,7 +973,9 @@ class ModelField(Representation):
                     )
                     return v, ErrorWrapper(ValueError(msg_err), loc)
                 else:
-                    return sub_field.validate(v, values, loc=loc, cls=cls)
+                    if not isinstance(loc, tuple):
+                        loc = (loc,)
+                    return sub_field.validate(v, values, loc=(*loc, display_as_type(sub_field.type_)), cls=cls)
 
             for field in self.sub_fields:
                 value, error = field.validate(v, values, loc=loc, cls=cls)
