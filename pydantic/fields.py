@@ -960,7 +960,7 @@ class ModelField(Representation):
 
                 try:
                     discriminator_value = v[discriminator_key]
-                except KeyError:
+                except (KeyError, TypeError):
                     return v, ErrorWrapper(ValueError(f'Discriminator {discriminator_key!r} is missing in value'), loc)
 
                 try:
