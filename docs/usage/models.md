@@ -14,7 +14,7 @@ of the resultant model instance will conform to the field types defined on the m
     In other words, *pydantic* guarantees the types and constraints of the output model, not the input data.
 
     This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
-    how it might effect your usage you should read the section about [Data Conversion](#data-conversion) below.
+    how it might affect your usage you should read the section about [Data Conversion](#data-conversion) below.
 
 ## Basic model usage
 
