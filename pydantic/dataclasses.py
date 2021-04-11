@@ -131,15 +131,23 @@ def dataclass(
     def wrap(cls: Type[Any]) -> 'DataclassR':
         import dataclasses
 
+        dc_cls_doc = cls.__doc__ or ''
+
         if is_builtin_dataclass(cls):
             # we don't want to overwrite default behaviour of a stdlib dataclass
             # But with python 3.6 we can't use a simple wrapper that acts like a pure proxy
             # because this proxy also needs to forward inheritance and that is achieved
             # thanks to `__mro_entries__` that was only added in 3.7
             # The big downside is that we now have a side effect on our decorator
+            import inspect
+
+            # By default `dataclasses.dataclass` adds a useless doc for us that will be added in schema
+            if dc_cls_doc == cls.__name__ + str(inspect.signature(cls)).replace(' -> None', ''):
+                dc_cls_doc = ''
+
             if sys.version_info[:2] == (3, 6):
                 should_validate_on_init = True if validate_on_init is None else validate_on_init
-                _add_pydantic_validation_attributes(cls, config, should_validate_on_init)
+                _add_pydantic_validation_attributes(cls, config, should_validate_on_init, dc_cls_doc)
                 if should_validate_on_init:
                     import warnings
 
@@ -153,7 +161,7 @@ def dataclass(
 
             else:
                 should_validate_on_init = False if validate_on_init is None else validate_on_init
-                _add_pydantic_validation_attributes(cls, config, should_validate_on_init)
+                _add_pydantic_validation_attributes(cls, config, should_validate_on_init, dc_cls_doc)
                 return DataclassProxy(cls)  # type: ignore[no-untyped-call]
         else:
 
@@ -161,7 +169,7 @@ def dataclass(
                 cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
             )
             should_validate_on_init = True if validate_on_init is None else validate_on_init
-            _add_pydantic_validation_attributes(dc_cls, config, should_validate_on_init)
+            _add_pydantic_validation_attributes(dc_cls, config, should_validate_on_init, dc_cls_doc)
             return dc_cls
 
     if _cls is None:
@@ -181,6 +189,7 @@ def _add_pydantic_validation_attributes(
     dc_cls: Type['Dataclass'],
     config: Optional[Type['BaseConfig']],
     validate_on_init: bool,
+    dc_cls_doc: Optional[str] = None,
 ) -> None:
     """
     We need to replace the right method. If no `__post_init__` has been set in the stdlib dataclass
@@ -245,7 +254,7 @@ def _add_pydantic_validation_attributes(
 
     setattr(dc_cls, '__processed__', ClassAttribute('__processed__', True))
     setattr(dc_cls, '__pydantic_initialised__', False)
-    setattr(dc_cls, '__pydantic_model__', create_pydantic_model_from_dataclass(dc_cls, config))
+    setattr(dc_cls, '__pydantic_model__', create_pydantic_model_from_dataclass(dc_cls, config, dc_cls_doc))
     setattr(dc_cls, '__pydantic_validate_values__', _dataclass_validate_values)
     setattr(dc_cls, '__validate__', classmethod(_validate_dataclass))
     setattr(dc_cls, '__get_validators__', classmethod(_get_validators))
@@ -271,7 +280,9 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
 
 
 def create_pydantic_model_from_dataclass(
-    dc_cls: Type['Dataclass'], config: Optional[Type['BaseConfig']] = None
+    dc_cls: Type['Dataclass'],
+    config: Optional[Type['BaseConfig']] = None,
+    dc_cls_doc: Optional[str] = None,
 ) -> Type['BaseModel']:
     import dataclasses
 
@@ -298,9 +309,11 @@ def create_pydantic_model_from_dataclass(
         field_definitions[field.name] = (field.type, field_info)
 
     validators = gather_all_validators(dc_cls)
-    return create_model(
+    model: Type['BaseModel'] = create_model(
         dc_cls.__name__, __config__=config, __module__=dc_cls.__module__, __validators__=validators, **field_definitions
     )
+    model.__doc__ = dc_cls_doc if dc_cls_doc is not None else dc_cls.__doc__ or ''
+    return model
 
 
 def _dataclass_validate_values(self: 'Dataclass') -> None:

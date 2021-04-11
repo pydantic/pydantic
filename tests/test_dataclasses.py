@@ -1164,3 +1164,39 @@ def test_issue_2594():
         e: Empty
 
     assert isinstance(M(e={}).e, Empty)
+
+
+@skip_pre_37
+def test_schema_description_unset():
+    @pydantic.dataclasses.dataclass
+    class A:
+        x: int
+
+    assert 'description' not in A.__pydantic_model__.schema()
+
+    @pydantic.dataclasses.dataclass
+    @dataclasses.dataclass
+    class B:
+        x: int
+
+    assert 'description' not in B.__pydantic_model__.schema()
+
+
+@skip_pre_37
+def test_schema_description_set():
+    @pydantic.dataclasses.dataclass
+    class A:
+        """my description"""
+
+        x: int
+
+    assert A.__pydantic_model__.schema()['description'] == 'my description'
+
+    @pydantic.dataclasses.dataclass
+    @dataclasses.dataclass
+    class B:
+        """my description"""
+
+        x: int
+
+    assert A.__pydantic_model__.schema()['description'] == 'my description'
