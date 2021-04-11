@@ -216,3 +216,30 @@ def test_computed_fields_no_return_type():
             return f'{self.first} {self.last}'
 
     assert User.schema()['properties']['fullname'] == {'title': 'Fullname', 'readOnly': True}
+
+
+def test_properties_and_computed_fields():
+    class Model(BaseModel, underscore_attrs_are_private=True):
+        x: str
+        _private_float: float = 0
+
+        @property
+        def public_int(self) -> int:
+            return int(self._private_float)
+
+        @public_int.setter
+        def public_int(self, v: float) -> None:
+            self._private_float = v
+
+        @field
+        @property
+        def public_str(self) -> str:
+            return f'public {self.public_int}'
+
+    m = Model(x='pika')
+    assert m.dict() == {'x': 'pika', 'public_str': 'public 0'}
+    m._private_float = 3.1
+    assert m.dict() == {'x': 'pika', 'public_str': 'public 3'}
+    m.public_int = 2
+    assert m._private_float == 2.0
+    assert m.dict() == {'x': 'pika', 'public_str': 'public 2'}

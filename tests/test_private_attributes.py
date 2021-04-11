@@ -160,8 +160,8 @@ def test_slots_are_ignored():
     m = Model()
     for attr in Model.__slots__:
         assert object.__getattribute__(m, attr) == 'spam'
-        with pytest.raises(ValueError, match=f'"Model" object has no field "{attr}"'):
-            setattr(m, attr, 'not spam')
+        setattr(m, attr, 'not spam')
+        assert object.__getattribute__(m, attr) == 'not spam'
 
 
 def test_default_and_default_factory_used_error():

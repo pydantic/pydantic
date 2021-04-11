@@ -223,6 +223,13 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 _is_base_model_class_defined = False
 
 
+def is_descriptor(v: Any) -> bool:
+    """Whether or not v is a `property`, `cached_property`, `singledispatchmethod`, ..."""
+    from inspect import isdatadescriptor, ismethoddescriptor
+
+    return ismethoddescriptor(v) or isdatadescriptor(v)
+
+
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
@@ -272,12 +279,9 @@ class ModelMetaclass(ABCMeta):
         untouched_types = ANNOTATED_FIELD_UNTOUCHED_TYPES
 
         def is_untouched(v: Any) -> bool:
-            from inspect import isdatadescriptor, ismethoddescriptor
-
             return (
                 isinstance(v, untouched_types)
-                # ignore `property`, `cached_property`, `singledispatchmethod`, ...
-                or (ismethoddescriptor(v) or isdatadescriptor(v))
+                or is_descriptor(v)
                 or v.__class__.__name__ == 'cython_function_or_method'
             )
 
@@ -427,6 +431,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return object_setattr(self, name, value)
         elif name in self.__computed_fields__:
             self.__computed_fields__[name].__set__(self, value)
+        elif is_descriptor(getattr(self.__class__, name, None)):
+            getattr(self.__class__, name).__set__(self, value)
         elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation or self.__config__.frozen:
