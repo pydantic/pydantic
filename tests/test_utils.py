@@ -327,8 +327,8 @@ def test_undefined_repr():
 
 
 def test_undefined_copy():
-    copy(Undefined) is Undefined
-    deepcopy(Undefined) is Undefined
+    assert copy(Undefined) is Undefined
+    assert deepcopy(Undefined) is Undefined
 
 
 def test_get_model():
