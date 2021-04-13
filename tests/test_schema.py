@@ -28,7 +28,7 @@ from uuid import UUID
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, confrozenset, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
@@ -1460,6 +1460,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'gt': 0}, Callable[[int], int]),
         ({'gt': 0}, conlist(int, min_items=4)),
         ({'gt': 0}, conset(int, min_items=4)),
+        ({'gt': 0}, confrozenset(int, min_items=4)),
     ],
 )
 def test_unenforced_constraints_schema(kwargs, type_):
