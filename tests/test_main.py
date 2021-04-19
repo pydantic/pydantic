@@ -1931,3 +1931,17 @@ def test_discriminated_annotated_union():
     ]
     m = Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
     assert isinstance(m.pet, WhiteCat)
+
+
+def test_discrimated_union_basemodel_instance_value():
+    class A(BaseModel):
+        l: Literal['a']
+
+    class B(BaseModel):
+        l: Literal['b']
+
+    class Top(BaseModel):
+        sub: Union[A, B] = Field(..., discriminator='l')
+
+    t = Top(sub=A(l='a'))
+    assert isinstance(t, Top)

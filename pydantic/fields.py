@@ -961,7 +961,13 @@ class ModelField(Representation):
                 try:
                     discriminator_value = v[discriminator_key]
                 except (KeyError, TypeError):
-                    return v, ErrorWrapper(ValueError(f'Discriminator {discriminator_key!r} is missing in value'), loc)
+                    try:
+                        # BaseModel or dataclass
+                        discriminator_value = getattr(v, discriminator_key)
+                    except (AttributeError, TypeError):
+                        return v, ErrorWrapper(
+                            ValueError(f'Discriminator {discriminator_key!r} is missing in value'), loc
+                        )
 
                 try:
                     sub_field = self.discriminated_union_config.sub_fields_mapping[discriminator_value]
@@ -1100,6 +1106,9 @@ def _get_discriminator_values(tp: Any, discriminator_key: str) -> Tuple[str, ...
 
     if get_origin(tp) is Annotated:
         tp = get_args(tp)[0]
+
+    if hasattr(tp, '__pydantic_model__'):
+        tp = tp.__pydantic_model__
 
     if is_root_model or get_origin(tp) is Union:
         union_type = tp.__fields__[ROOT_KEY].type_ if is_root_model else tp

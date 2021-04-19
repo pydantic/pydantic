@@ -3,9 +3,10 @@ import pickle
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional
+from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Union
 
 import pytest
+from typing_extensions import Literal
 
 import pydantic
 from pydantic import BaseModel, ValidationError, validator
@@ -920,3 +921,20 @@ def test_config_field_info_create_model():
     assert A2.__pydantic_model__.schema()['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
     }
+
+
+def test_discrimated_union_basemodel_instance_value():
+    @pydantic.dataclasses.dataclass
+    class A:
+        l: Literal['a']
+
+    @pydantic.dataclasses.dataclass
+    class B:
+        l: Literal['b']
+
+    @pydantic.dataclasses.dataclass
+    class Top:
+        sub: Union[A, B] = dataclasses.field(metadata=dict(discriminator='l'))
+
+    t = Top(sub=A(l='a'))
+    assert isinstance(t, Top)
