@@ -264,7 +264,11 @@ def field_schema(
                     for sub_model in sub_models
                 }
             else:
-                discriminator_model_name = model_name_map[sub_field.type_]
+                sub_field_type = sub_field.type_
+                if hasattr(sub_field_type, '__pydantic_model__'):
+                    sub_field_type = sub_field_type.__pydantic_model__
+
+                discriminator_model_name = model_name_map[sub_field_type]
                 discriminator_model_ref = get_schema_ref(discriminator_model_name, ref_prefix, ref_template, False)
                 discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
 

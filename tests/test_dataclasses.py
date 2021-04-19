@@ -938,3 +938,29 @@ def test_discrimated_union_basemodel_instance_value():
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
+    assert Top.__pydantic_model__.schema() == {
+        'title': 'Top',
+        'type': 'object',
+        'properties': {
+            'sub': {
+                'title': 'Sub',
+                'discriminator': {'propertyName': 'l', 'mapping': {'a': '#/definitions/A', 'b': '#/definitions/B'}},
+                'anyOf': [{'$ref': '#/definitions/A'}, {'$ref': '#/definitions/B'}],
+            }
+        },
+        'required': ['sub'],
+        'definitions': {
+            'A': {
+                'title': 'A',
+                'type': 'object',
+                'properties': {'l': {'title': 'L', 'enum': ['a'], 'type': 'string'}},
+                'required': ['l'],
+            },
+            'B': {
+                'title': 'B',
+                'type': 'object',
+                'properties': {'l': {'title': 'L', 'enum': ['b'], 'type': 'string'}},
+                'required': ['l'],
+            },
+        },
+    }
