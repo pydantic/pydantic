@@ -446,7 +446,7 @@ _(This script is complete, it should run "as is")_
 
 `EmailStr`
 : requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
-  the input string must be a valid email address, and the output is a simple string
+  the input string must be a valid email address, and the output is an `EmailStr` object which is also a simple string
 
 
 

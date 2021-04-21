@@ -484,6 +484,17 @@ def test_email_str():
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_email_str_type():
+    class Model(BaseModel):
+        v: EmailStr
+
+    assert isinstance(Model(v=EmailStr('foo@example.org')).v, EmailStr)
+    assert isinstance(Model(v=EmailStr('foo@example.org')).v, str)
+    assert isinstance(Model(v='foo@example.org').v, EmailStr)
+    assert isinstance(Model(v='foo@example.org').v, str)
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_name_email():
     class Model(BaseModel):
         v: NameEmail

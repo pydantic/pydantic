@@ -359,8 +359,8 @@ class EmailStr(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Union[str]) -> str:
-        return validate_email(value)[1]
+    def validate(cls, value: Union[str]) -> 'EmailStr':
+        return cls(validate_email(value)[1])
 
 
 class NameEmail(Representation):
