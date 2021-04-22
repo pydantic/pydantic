@@ -306,7 +306,7 @@ class TupleLengthError(PydanticValueError):
 
 class ListMinLengthError(PydanticValueError):
     code = 'list.min_items'
-    msg_template = 'ensure this value has at least {limit_value} items'
+    msg_template = 'ensure this value has at least {limit_value} item(s)'
 
     def __init__(self, *, limit_value: int) -> None:
         super().__init__(limit_value=limit_value)
@@ -314,7 +314,7 @@ class ListMinLengthError(PydanticValueError):
 
 class ListMaxLengthError(PydanticValueError):
     code = 'list.max_items'
-    msg_template = 'ensure this value has at most {limit_value} items'
+    msg_template = 'ensure this value has at most {limit_value} item(s)'
 
     def __init__(self, *, limit_value: int) -> None:
         super().__init__(limit_value=limit_value)
@@ -322,7 +322,7 @@ class ListMaxLengthError(PydanticValueError):
 
 class SetMinLengthError(PydanticValueError):
     code = 'set.min_items'
-    msg_template = 'ensure this value has at least {limit_value} items'
+    msg_template = 'ensure this value has at least {limit_value} item(s)'
 
     def __init__(self, *, limit_value: int) -> None:
         super().__init__(limit_value=limit_value)
@@ -330,7 +330,7 @@ class SetMinLengthError(PydanticValueError):
 
 class SetMaxLengthError(PydanticValueError):
     code = 'set.max_items'
-    msg_template = 'ensure this value has at most {limit_value} items'
+    msg_template = 'ensure this value has at most {limit_value} item(s)'
 
     def __init__(self, *, limit_value: int) -> None:
         super().__init__(limit_value=limit_value)
@@ -338,7 +338,7 @@ class SetMaxLengthError(PydanticValueError):
 
 class AnyStrMinLengthError(PydanticValueError):
     code = 'any_str.min_length'
-    msg_template = 'ensure this value has at least {limit_value} characters'
+    msg_template = 'ensure this value has at least {limit_value} character(s)'
 
     def __init__(self, *, limit_value: int) -> None:
         super().__init__(limit_value=limit_value)
@@ -346,7 +346,7 @@ class AnyStrMinLengthError(PydanticValueError):
 
 class AnyStrMaxLengthError(PydanticValueError):
     code = 'any_str.max_length'
-    msg_template = 'ensure this value has at most {limit_value} characters'
+    msg_template = 'ensure this value has at most {limit_value} character(s)'
 
     def __init__(self, *, limit_value: int) -> None:
         super().__init__(limit_value=limit_value)
@@ -408,7 +408,7 @@ class DecimalIsNotFiniteError(PydanticValueError):
 
 class DecimalMaxDigitsError(PydanticValueError):
     code = 'decimal.max_digits'
-    msg_template = 'ensure that there are no more than {max_digits} digits in total'
+    msg_template = 'ensure that there are no more than {max_digits} digit(s) in total'
 
     def __init__(self, *, max_digits: int) -> None:
         super().__init__(max_digits=max_digits)
@@ -416,7 +416,7 @@ class DecimalMaxDigitsError(PydanticValueError):
 
 class DecimalMaxPlacesError(PydanticValueError):
     code = 'decimal.max_places'
-    msg_template = 'ensure that there are no more than {decimal_places} decimal places'
+    msg_template = 'ensure that there are no more than {decimal_places} decimal place(s)'
 
     def __init__(self, *, decimal_places: int) -> None:
         super().__init__(decimal_places=decimal_places)
@@ -424,7 +424,7 @@ class DecimalMaxPlacesError(PydanticValueError):
 
 class DecimalWholeDigitsError(PydanticValueError):
     code = 'decimal.whole_digits'
-    msg_template = 'ensure that there are no more than {whole_digits} digits before the decimal point'
+    msg_template = 'ensure that there are no more than {whole_digits} digit(s) before the decimal point'
 
     def __init__(self, *, whole_digits: int) -> None:
         super().__init__(whole_digits=whole_digits)
