@@ -598,7 +598,7 @@ If you require a custom URI/URL type, it can be created in a similar way to the 
 Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
 the above types export the following properties:
 
-- `scheme`: always set - the url schema (`http` above)
+- `scheme`: always set - the url scheme (`http` above)
 - `host`: always set - the url host (`example.com` above)
 - `host_type`: always set - describes the type of host, either:
 
