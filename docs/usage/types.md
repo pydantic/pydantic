@@ -221,7 +221,7 @@ _(This script is complete, it should run "as is")_
     pydantic can't validate the values automatically for you because it would require
     consuming the infinite generator.
 
-## Validating the first value
+#### Validating the first value
 
 You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
 
