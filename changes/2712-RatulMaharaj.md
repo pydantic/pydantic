@@ -1,0 +1,1 @@
+Add episode 313 of the *Talk Python To Me* podcast, where Micheal Kennedy and Samuel Colvin discuss *pydantic*, to the docs.
