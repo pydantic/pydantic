@@ -121,6 +121,9 @@ For a more comprehensive list of open-source projects using *pydantic* see the
 
 Podcasts and videos discussing pydantic.
 
+[Talk Python To Me](https://talkpython.fm/episodes/show/313/automate-your-data-exchange-with-pydantic){target=_blank}
+: Micheal Kennedy and Samuel Colvin, the creator of *pydantic*, dive into the history of pydantic and it's many uses and benefits.
+
 [Podcast.\_\_init\_\_](https://www.pythonpodcast.com/pydantic-data-validation-episode-263/){target=_blank}
 : Discussion about where *pydantic* came from and ideas for where it might go next with 
   Samuel Colvin the creator of pydantic.
