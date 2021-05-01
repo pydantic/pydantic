@@ -162,7 +162,7 @@ sets or dictionaries. This allows nested selection of which fields to export:
 {!.tmp_examples/exporting_models_exclude1.py!}
 ```
 
-The ``True`` indicates that we want to exclude or include an entire key, just as if we included it in a set.
+The `True` indicates that we want to exclude or include an entire key, just as if we included it in a set.
 Of course, the same can be done at any depth level.
 
 Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.  In this scenario,
