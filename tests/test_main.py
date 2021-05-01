@@ -1997,14 +1997,14 @@ def test_class_kwargs_config_and_attr_conflict():
 
 
 def test_discriminated_union_defined_discriminator():
+    class Cat(BaseModel):
+        c: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        d: str
+
     with pytest.raises(KeyError, match="Model 'Cat' needs a discriminator field for key 'pet_type'"):
-
-        class Cat(BaseModel):
-            c: str
-
-        class Dog(BaseModel):
-            pet_type: Literal['dog']
-            d: str
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
@@ -2012,15 +2012,15 @@ def test_discriminated_union_defined_discriminator():
 
 
 def test_discriminated_union_literal_discriminator():
+    class Cat(BaseModel):
+        pet_type: int
+        c: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        d: str
+
     with pytest.raises(TypeError, match="Field 'pet_type' of model 'Cat' needs to be a `Literal`"):
-
-        class Cat(BaseModel):
-            pet_type: int
-            c: str
-
-        class Dog(BaseModel):
-            pet_type: Literal['dog']
-            d: str
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
@@ -2028,19 +2028,19 @@ def test_discriminated_union_literal_discriminator():
 
 
 def test_discriminated_union_root_same_discriminator():
+    class BlackCat(BaseModel):
+        pet_type: Literal['blackcat']
+
+    class WhiteCat(BaseModel):
+        pet_type: Literal['whitecat']
+
+    class Cat(BaseModel):
+        __root__: Union[BlackCat, WhiteCat]
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+
     with pytest.raises(TypeError, match="Field 'pet_type' is not the same for all submodels of 'Cat'"):
-
-        class BlackCat(BaseModel):
-            pet_type: Literal['blackcat']
-
-        class WhiteCat(BaseModel):
-            pet_type: Literal['whitecat']
-
-        class Cat(BaseModel):
-            __root__: Union[BlackCat, WhiteCat]
-
-        class Dog(BaseModel):
-            pet_type: Literal['dog']
 
         class Pet(BaseModel):
             __root__: Union[Cat, Dog] = Field(..., discriminator='pet_type')
