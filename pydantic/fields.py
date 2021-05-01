@@ -27,7 +27,7 @@ from typing_extensions import Annotated
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
-from .errors import ConfigError, NoneIsNotAllowedError
+from .errors import ConfigError, InvalidDiscriminator, MissingDiscriminator, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
     NONE_TYPES,
@@ -994,19 +994,19 @@ class ModelField(Representation):
                         # BaseModel or dataclass
                         discriminator_value = getattr(v, discriminator_key)
                     except (AttributeError, TypeError):
-                        return v, ErrorWrapper(
-                            ValueError(f'Discriminator {discriminator_key!r} is missing in value'), loc
-                        )
+                        return v, ErrorWrapper(MissingDiscriminator(discriminator_key=discriminator_key), loc)
 
                 try:
                     sub_field = self.discriminated_union_config.sub_fields_mapping[discriminator_value]
                 except KeyError:
-                    allowed_values = ', '.join(map(repr, self.discriminated_union_config.sub_fields_mapping.keys()))
-                    msg_err = (
-                        f'No match for discriminator {discriminator_key!r} and value {discriminator_value!r} '
-                        f'(allowed values: {allowed_values})'
+                    return v, ErrorWrapper(
+                        InvalidDiscriminator(
+                            discriminator_key=discriminator_key,
+                            discriminator_value=discriminator_value,
+                            allowed_values=list(self.discriminated_union_config.sub_fields_mapping),
+                        ),
+                        loc,
                     )
-                    return v, ErrorWrapper(ValueError(msg_err), loc)
                 else:
                     if not isinstance(loc, tuple):
                         loc = (loc,)

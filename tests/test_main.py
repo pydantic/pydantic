@@ -2075,14 +2075,24 @@ def test_discriminated_union_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
     assert exc_info.value.errors() == [
-        {'loc': ('pet',), 'msg': "Discriminator 'pet_type' is missing in value", 'type': 'value_error'},
+        {
+            'loc': ('pet',),
+            'msg': "Discriminator 'pet_type' is missing in value",
+            'type': 'value_error.discriminated_union.missing_discriminator',
+            'ctx': {'discriminator_key': 'pet_type'},
+        },
         {'loc': ('number',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({'pet': 'fish', 'number': 2})
     assert exc_info.value.errors() == [
-        {'loc': ('pet',), 'msg': "Discriminator 'pet_type' is missing in value", 'type': 'value_error'},
+        {
+            'loc': ('pet',),
+            'msg': "Discriminator 'pet_type' is missing in value",
+            'type': 'value_error.discriminated_union.missing_discriminator',
+            'ctx': {'discriminator_key': 'pet_type'},
+        },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -2094,7 +2104,12 @@ def test_discriminated_union_validation():
                 "No match for discriminator 'pet_type' and value 'fish' "
                 "(allowed values: 'cat', 'dog', 'reptile', 'lizard')"
             ),
-            'type': 'value_error',
+            'type': 'value_error.discriminated_union.invalid_discriminator',
+            'ctx': {
+                'discriminator_key': 'pet_type',
+                'discriminator_value': 'fish',
+                'allowed_values': "'cat', 'dog', 'reptile', 'lizard'",
+            },
         },
     ]
 
@@ -2147,7 +2162,12 @@ def test_discriminated_annotated_union():
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
     assert exc_info.value.errors() == [
-        {'loc': ('pet',), 'msg': "Discriminator 'pet_type' is missing in value", 'type': 'value_error'},
+        {
+            'loc': ('pet',),
+            'msg': "Discriminator 'pet_type' is missing in value",
+            'type': 'value_error.discriminated_union.missing_discriminator',
+            'ctx': {'discriminator_key': 'pet_type'},
+        },
         {'loc': ('number',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
     ]
 
@@ -2157,7 +2177,8 @@ def test_discriminated_annotated_union():
         {
             'loc': ('pet',),
             'msg': "No match for discriminator 'pet_type' and value 'fish' " "(allowed values: 'cat', 'dog')",
-            'type': 'value_error',
+            'type': 'value_error.discriminated_union.invalid_discriminator',
+            'ctx': {'discriminator_key': 'pet_type', 'discriminator_value': 'fish', 'allowed_values': "'cat', 'dog'"},
         },
     ]
 
@@ -2175,7 +2196,8 @@ def test_discriminated_annotated_union():
         {
             'loc': ('pet', 'Union[BlackCat, WhiteCat]'),
             'msg': "No match for discriminator 'color' and value 'red' " "(allowed values: 'black', 'white')",
-            'type': 'value_error',
+            'type': 'value_error.discriminated_union.invalid_discriminator',
+            'ctx': {'discriminator_key': 'color', 'discriminator_value': 'red', 'allowed_values': "'black', 'white'"},
         }
     ]
 
