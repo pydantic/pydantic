@@ -1425,10 +1425,13 @@ def test_strict_str():
 
     assert Model(v='foobar').v == 'foobar'
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='str type expected'):
+        Model(v=FruitEnum.banana)
+
+    with pytest.raises(ValidationError, match='str type expected'):
         Model(v=123)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='str type expected'):
         Model(v=b'foobar')
 
 
