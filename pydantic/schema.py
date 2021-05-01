@@ -627,7 +627,7 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
     """
     from inspect import getdoc
 
-    schema: Dict[str, Any] = {
+    schema_: Dict[str, Any] = {
         'title': enum.__name__,
         # Python assigns all enums a default docstring value of 'An enumeration', so
         # all enums will have a description field even if not explicitly provided.
@@ -636,13 +636,13 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
         'enum': [item.value for item in cast(Iterable[Enum], enum)],
     }
 
-    add_field_type_to_schema(enum, schema)
+    add_field_type_to_schema(enum, schema_)
 
     modify_schema = getattr(enum, '__modify_schema__', None)
     if modify_schema:
-        modify_schema(schema)
+        modify_schema(schema_)
 
-    return schema
+    return schema_
 
 
 def field_singleton_sub_fields_schema(
