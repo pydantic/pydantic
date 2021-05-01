@@ -23,7 +23,9 @@ from typing import (
     Union,
 )
 
-from .typing import GenericAlias, NoneType, display_as_type
+from typing_extensions import Annotated
+
+from .typing import GenericAlias, NoneType, all_literal_values, display_as_type, get_args, get_origin, is_literal_type
 from .version import version_info
 
 if TYPE_CHECKING:
@@ -56,6 +58,7 @@ __all__ = (
     'ClassAttribute',
     'path_type',
     'ROOT_KEY',
+    'get_discriminator_values',
 )
 
 ROOT_KEY = '__root__'
@@ -653,3 +656,37 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
         if left_item is not right_item:
             return False
     return True
+
+
+def get_discriminator_values(tp: Any, discriminator_key: str) -> Tuple[str, ...]:
+    """
+    Get all valid values in the `Literal` type of the discriminator field
+    `tp` can be a `BaseModel` class or directly an `Annotated` `Union` of many.
+    """
+    is_root_model = getattr(tp, '__custom_root_type__', False)
+
+    if get_origin(tp) is Annotated:
+        tp = get_args(tp)[0]
+
+    if hasattr(tp, '__pydantic_model__'):
+        tp = tp.__pydantic_model__
+
+    if is_root_model or get_origin(tp) is Union:
+        union_type = tp.__fields__[ROOT_KEY].type_ if is_root_model else tp
+
+        all_values = [get_discriminator_values(t, discriminator_key) for t in get_args(union_type)]
+        if len(set(all_values)) > 1:
+            raise TypeError(f'Field {discriminator_key!r} is not the same for all submodels of {tp.__name__!r}')
+
+        return all_values[0]
+
+    else:
+        try:
+            t_discriminator_type = tp.__fields__[discriminator_key].type_
+        except KeyError:
+            raise KeyError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}')
+
+        if not is_literal_type(t_discriminator_type):
+            raise TypeError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
+
+        return all_literal_values(t_discriminator_type)
