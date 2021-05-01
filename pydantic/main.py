@@ -28,7 +28,7 @@ from typing import (
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import MAPPING_LIKE_SHAPES, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import MAPPING_LIKE_SHAPES, Field, FieldInfo, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -101,6 +101,20 @@ else:  # pragma: no cover
         compiled = cython.compiled
     except AttributeError:
         compiled = False
+
+
+_T = TypeVar('_T')
+
+
+def __dataclass_transform__(
+    *,
+    eq_default: bool = True,
+    order_default: bool = False,
+    kw_only_default: bool = False,
+    field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
+) -> Callable[[_T], _T]:
+    return lambda a: a
+
 
 __all__ = 'BaseConfig', 'BaseModel', 'Extra', 'compiled', 'create_model', 'validate_model'
 
@@ -223,6 +237,7 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 _is_base_model_class_defined = False
 
 
+@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
