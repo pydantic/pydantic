@@ -408,9 +408,14 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
 
 
 def get_sub_types(tp: Any) -> List[Any]:
-    if get_origin(tp) is Annotated:
+    """
+    Return all the types that are allowed by type `tp`
+    `tp` can indeed be a `Union` of allowed types or an `Annotated` type
+    """
+    origin = get_origin(tp)
+    if origin is Annotated:
         return get_sub_types(get_args(tp)[0])
-    elif get_origin(tp) is Union:
+    elif origin is Union:
         return [x for t in get_args(tp) for x in get_sub_types(t)]
     else:
         return [tp]
