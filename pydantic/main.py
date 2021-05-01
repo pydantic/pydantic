@@ -590,7 +590,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 allow_pickle=allow_pickle,
                 json_loads=cls.__config__.json_loads,
             )
-        except (ValueError, TypeError, UnicodeDecodeError) as e:
+        except (UnicodeDecodeError, ValueError, TypeError) as e:
             raise ValidationError([ErrorWrapper(e, loc=ROOT_KEY)], cls)
         return cls.parse_obj(obj)
 
