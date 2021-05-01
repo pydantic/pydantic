@@ -23,8 +23,8 @@ class Model(BaseModel):
     n: int
 
 
-print(Model.parse_obj({'pet': {'pet_type': 'dog', 'name': 'woof'}, 'n': '1'}))
+print(Model(pet={'pet_type': 'dog', 'name': 'woof'}, n='1'))
 try:
-    Model.parse_obj({'pet': {'pet_type': 'dog'}, 'n': '1'})
+    Model(pet={'pet_type': 'dog'}, n='1')
 except ValidationError as e:
     print(e)

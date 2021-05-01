@@ -38,19 +38,13 @@ class Model(BaseModel):
     n: int
 
 
-print(
-    Model.parse_obj(
-        {
-            'pet': {'pet_type': 'cat', 'color': 'black', 'black_name': 'felix'},
-            'n': '1',
-        }
-    )
-)
+m = Model(pet={'pet_type': 'cat', 'color': 'black', 'black_name': 'felix'}, n=1)
+print(m)
 try:
-    Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'red'}, 'n': '1'})
+    Model(pet={'pet_type': 'cat', 'color': 'red'}, n='1')
 except ValidationError as e:
     print(e)
 try:
-    Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'black'}, 'n': '1'})
+    Model(pet={'pet_type': 'cat', 'color': 'black'}, n='1')
 except ValidationError as e:
     print(e)
