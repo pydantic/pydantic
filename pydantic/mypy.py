@@ -286,11 +286,10 @@ class PydanticModelTransformer:
                 if name not in known_fields:
                     field = PydanticModelField.deserialize(info, data)
                     known_fields.add(name)
-                    superclass_fields.append(field)
                 else:
                     (field,) = [a for a in all_fields if a.name == name]
                     all_fields.remove(field)
-                    superclass_fields.append(field)
+                superclass_fields.append(field)
             all_fields = superclass_fields + all_fields
         return all_fields
 
