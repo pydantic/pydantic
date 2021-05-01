@@ -1,0 +1,1 @@
+Changed the order of exceptions UnicodeDecodeError to be the first one.
