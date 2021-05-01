@@ -1,0 +1,1 @@
+Changed superclass_fields.append(field) to be called outside of the if/else pair but inside the for loop, it will ensure that it is not duplicated
