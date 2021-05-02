@@ -119,9 +119,13 @@ Nevertheless, it would be detected as a type error:
 
 ![VS Code strict type errors with model](./img/vs_code_07.png)
 
+In those cases, there are several ways to disable or ignore strict errors in very specific places, while still preserving them in the rest of the code.
+
+Below are several techniques to achieve it.
+
 #### Disable type checks in a line
 
-In those cases, you can disable the errors for a specific line using a comment of:
+You can disable the errors for a specific line using a comment of:
 
 ```
 # type: ignore
@@ -144,9 +148,13 @@ lancelot = Knight(title='Sir Lancelot', age='23')  # type: ignore
 
 that way Pylance/Pyright and mypy will ignore errors in that line.
 
+**Pros**: it's a simple change in that line to remove errors there.
+
+**Cons**: any other error in that line will also be omitted, including type checks, misspelled arguments, required arguments not provided, etc.
+
 #### Override the type of a variable
 
-Alternatively, you can create a variable with the value you want to use, and set an explicit type of `Any`.
+You can also create a variable with the value you want to use and declare it's type explicitly with `Any`.
 
 ```Python hl_lines="1 11-12"
 from typing import Any
@@ -165,9 +173,37 @@ lancelot = Knight(title='Sir Lancelot', age=age_str)
 
 that way Pylance/Pyright and mypy will interpret the variable `age_str` as if they didn't know its type, instead of knowing it has a type of `str` when an `int` was expected (and then showing the corresponding error).
 
-The advantage of this technique is that you will still see any additional errors for the other arguments.
+**Pros**: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments.
 
-The disadvantage is that you have to create a new variable in a new line for each argument with inexact data types.
+**Cons**: it requires importing `Any` and a new variable in a new line for each argument that needs ignoring errors.
+
+#### Override the type of a value with `cast`
+
+The same idea from the previous example can be put on the same line with the help of `cast()`.
+
+This way, the type declaration of the value is overriden inline, without requiring another variable.
+
+```Python hl_lines="1 11"
+from typing import Any, cast
+from pydantic import BaseModel
+
+
+class Knight(BaseModel):
+    title: str
+    age: int
+    color: str = 'blue'
+
+
+lancelot = Knight(title='Sir Lancelot', age=cast(Any, '23'))
+```
+
+`cast(Any, '23')` doesn't affect the value, it's still just `'23'`, but now Pylance/Pyright and mypy will assume it is of type `Any`, which means, they will act as if they didn't know the type of the value.
+
+So, this is the equivalent of the previous example, without the additional variable.
+
+**Pros**: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments. There's no need for additional variables.
+
+**Cons**: it requires importing `Any` and `cast`, and if you are not used to using `cast()`, it could seem strange at first.
 
 ### Config in class arguments
 
