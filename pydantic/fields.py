@@ -79,6 +79,7 @@ if TYPE_CHECKING:
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
     BoolUndefined = Union[bool, UndefinedType]
+    ExcludeInclude = Union[AbstractSetIntStr, MappingIntStrAny, Any]
 
     FGet = Callable[[Optional[BaseModel], str], Any]
     FSet = Callable[[Optional[BaseModel], Any], None]
@@ -195,8 +196,8 @@ def Field(
     alias: str = None,
     title: str = None,
     description: str = None,
-    exclude: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
-    include: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
+    exclude: 'ExcludeInclude' = None,
+    include: 'ExcludeInclude' = None,
     const: bool = None,
     gt: float = None,
     ge: float = None,
@@ -332,6 +333,8 @@ def field(
     alias: Optional[str] = None,
     title: Optional[str] = None,
     description: Optional[str] = None,
+    exclude: Optional['ExcludeInclude'] = None,
+    include: Optional['ExcludeInclude'] = None,
 ) -> 'Callable[[Any], ComputedField]':
     ...
 
@@ -343,6 +346,8 @@ def field(
     alias: Optional[str] = None,
     title: Optional[str] = None,
     description: Optional[str] = None,
+    exclude: Optional['ExcludeInclude'] = None,
+    include: Optional['ExcludeInclude'] = None,
 ) -> Any:
     ...
 
@@ -353,6 +358,8 @@ def field(
     alias: Optional[str] = None,
     title: Optional[str] = None,
     description: Optional[str] = None,
+    exclude: Optional['ExcludeInclude'] = None,
+    include: Optional['ExcludeInclude'] = None,
 ) -> 'Union[Callable[[Any], ComputedField], ComputedField]':
     def wrap(func_: Any) -> 'ComputedField':
         from inspect import isdatadescriptor, ismethoddescriptor
@@ -365,6 +372,8 @@ def field(
             alias=alias,
             title=title,
             description=description,
+            exclude=exclude,
+            include=include,
         )
 
     if func is None:
@@ -384,6 +393,8 @@ class ComputedField(Representation):
         'alias',
         'title',
         'description',
+        'exclude',
+        'include',
         'config',
         'model_field',
         'required',
@@ -397,6 +408,8 @@ class ComputedField(Representation):
         alias: Optional[str] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
+        exclude: Optional['ExcludeInclude'] = None,
+        include: Optional['ExcludeInclude'] = None,
         config: Optional[Type['BaseConfig']] = None,
         model_field: Optional['ModelField'] = None,
     ) -> None:
@@ -411,6 +424,8 @@ class ComputedField(Representation):
         self.alias: str = alias or self.name
         self.title: Optional[str] = title
         self.description: Optional[str] = description
+        self.exclude: Optional['ExcludeInclude'] = exclude
+        self.include: Optional['ExcludeInclude'] = include
 
         self.config: Optional[Type['BaseConfig']] = config
         self.model_field: Optional[ModelField] = model_field
@@ -423,6 +438,8 @@ class ComputedField(Representation):
             title=self.title,
             description=self.description or self.descriptor.__doc__,
             read_only=self.fset is None,
+            exclude=self.exclude,
+            include=self.include,
         )
 
     def __get__(self, instance: Optional['BaseModel'], owner: Any = None) -> Any:

@@ -39,7 +39,6 @@ def test_computed_fields_get():
     assert rect.area == 50
     assert rect.double_width == 20
     assert rect.dict() == {'width': 10, 'length': 5, 'area': 50, 'area2': 50}
-    assert rect.dict(exclude_computed=True) == {'width': 10, 'length': 5}
     assert rect.json() == '{"width": 10, "length": 5, "area": 50, "area2": 50}'
     assert Rectangle.schema() == {
         'title': 'Rectangle',
@@ -146,7 +145,6 @@ def test_cached_property():
     second_n = rect.random_number
     assert first_n == second_n
     assert rect.dict() == {'minimum': 10, 'maximum': 10_000, 'random_number': first_n}
-    assert rect.dict(exclude_computed=True) == {'minimum': 10, 'maximum': 10_000}
     assert rect.dict(by_alias=True) == {'min': 10, 'max': 10_000, 'the magic number': first_n}
     assert rect.dict(by_alias=True, exclude={'random_number'}) == {'min': 10, 'max': 10000}
 
@@ -243,3 +241,21 @@ def test_properties_and_computed_fields():
     m.public_int = 2
     assert m._private_float == 2.0
     assert m.dict() == {'x': 'pika', 'public_str': 'public 2'}
+
+
+def test_exclude():
+    class Model(BaseModel):
+        x: float = Field(...)
+
+        @field(exclude=True)
+        @property
+        def double(self) -> float:
+            return self.x * 2
+
+        @field
+        @property
+        def quadruple(self) -> float:
+            return self.double * 2
+
+    m = Model(x=3)
+    assert m.dict() == {'x': 3.0, 'quadruple': 12.0}

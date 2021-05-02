@@ -2,6 +2,7 @@ import json
 import sys
 import warnings
 from abc import ABCMeta
+from collections import ChainMap
 from copy import deepcopy
 from enum import Enum
 from functools import partial
@@ -358,16 +359,23 @@ class ModelMetaclass(ABCMeta):
             hash_func = generate_hash_function(config.frozen)
 
         exclude_from_namespace = fields | private_attributes.keys() | {'__slots__'}
+
+        all_fields = ChainMap(fields, computed_fields)
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
             '__computed_fields__': computed_fields,
+            '__all_fields__': all_fields,
             '__exclude_fields__': {
-                name: field.field_info.exclude for name, field in fields.items() if field.field_info.exclude is not None
+                name: field.field_info.exclude
+                for name, field in all_fields.items()
+                if field.field_info.exclude is not None
             }
             or None,
             '__include_fields__': {
-                name: field.field_info.include for name, field in fields.items() if field.field_info.include is not None
+                name: field.field_info.include
+                for name, field in all_fields.items()
+                if field.field_info.include is not None
             }
             or None,
             '__validators__': vg.validators,
@@ -397,6 +405,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
         __computed_fields__: Dict[str, ComputedField] = {}
+        __all_fields__: Dict[str, Union[ModelField, ComputedField]]
         __include_fields__: Optional[Mapping[str, Any]] = None
         __exclude_fields__: Optional[Mapping[str, Any]] = None
         __validators__: Dict[str, AnyCallable] = {}
@@ -520,7 +529,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        exclude_computed: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -542,7 +550,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
-                exclude_computed=exclude_computed,
             )
         )
 
@@ -556,7 +563,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        exclude_computed: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -579,7 +585,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
-            exclude_computed=exclude_computed,
         )
         if self.__custom_root_type__:
             data = data[ROOT_KEY]
@@ -875,7 +880,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        exclude_computed: bool = False,
     ) -> 'TupleGenerator':
 
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
@@ -897,40 +901,22 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         value_exclude = ValueItems(self, exclude) if exclude is not None else None
         value_include = ValueItems(self, include) if include is not None else None
 
-        all_values: Mapping[str, Any]
-        all_fields: Mapping[str, 'Union[ModelField, ComputedField]']
-        # Case 1: no computed fields -> just reference for max speed
-        if not self.__computed_fields__:
-            all_fields = self.__fields__
-            all_values = self.__dict__
-        # Case 2: we have computed fields but want to ignore them
-        # In this case we need to remove some extra values in self.__dict__ that may have been added by
-        # descriptors (e.g. `cached_property`)
-        elif exclude_computed:
-            all_fields = self.__fields__
-            all_values = {k: v for k, v in self.__dict__.items() if k not in self.__computed_fields__}
-        # Case 3: we have computed fields and want to add them
-        else:
-            all_fields = {**self.__fields__, **self.__computed_fields__}
-            all_values = {
-                **{k: v for k, v in self.__dict__.items() if k not in self.__computed_fields__},
-                **{
-                    computed_field.name: computed_field.__get__(self)
-                    for computed_field in self.__computed_fields__.values()
-                },
-            }
+        all_values = ChainMap(
+            {computed_field.name: computed_field.__get__(self) for computed_field in self.__computed_fields__.values()},
+            self.__dict__,
+        )
 
         for field_key, v in all_values.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
                 continue
 
             if exclude_defaults:
-                model_field = all_fields.get(field_key)
+                model_field = self.__all_fields__.get(field_key)
                 if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
                     continue
 
-            if by_alias and field_key in all_fields:
-                dict_key = all_fields[field_key].alias
+            if by_alias and field_key in self.__all_fields__:
+                dict_key = self.__all_fields__[field_key].alias
             else:
                 dict_key = field_key
 
