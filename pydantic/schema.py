@@ -250,10 +250,12 @@ def field_schema(
     )
 
     # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminator-object
-    if field.discriminated_union_config is not None:
+    if field.discriminator_key is not None:
+        assert field.sub_fields_mapping is not None
+
         discriminator_models_refs: Dict[str, Union[str, Dict[str, Any]]] = {}
 
-        for discriminator_value, sub_field in field.discriminated_union_config.sub_fields_mapping.items():
+        for discriminator_value, sub_field in field.sub_fields_mapping.items():
             # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
             if get_origin(sub_field.type_) is Union:
                 sub_models = get_sub_types(sub_field.type_)
@@ -273,7 +275,7 @@ def field_schema(
                 discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
 
         s['discriminator'] = {
-            'propertyName': field.discriminated_union_config.discriminator_key,
+            'propertyName': field.discriminator_key,
             'mapping': discriminator_models_refs,
         }
 

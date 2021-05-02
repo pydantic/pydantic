@@ -683,6 +683,8 @@ def get_discriminator_values(tp: Any, discriminator_key: str) -> Tuple[str, ...]
     else:
         try:
             t_discriminator_type = tp.__fields__[discriminator_key].type_
+        except AttributeError:
+            raise TypeError(f'Type {tp.__name__!r} is not a valid `BaseModel` or `dataclass`')
         except KeyError:
             raise KeyError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}')
 

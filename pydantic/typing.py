@@ -385,7 +385,7 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
 
-    if field.discriminated_union_config is not None:
+    if field.discriminator_key is not None:
         field.prepare_discriminated_union_sub_fields()
 
 

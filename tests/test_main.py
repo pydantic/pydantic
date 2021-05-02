@@ -1996,6 +1996,20 @@ def test_class_kwargs_config_and_attr_conflict():
                 extra = 'forbid'
 
 
+def test_discriminated_union_only_union():
+    with pytest.raises(TypeError, match='`discriminator` can only be used with `Union` type'):
+
+        class Model(BaseModel):
+            x: str = Field(..., discriminator='qwe')
+
+
+def test_discriminated_union_invalid_type():
+    with pytest.raises(TypeError, match="Type 'str' is not a valid `BaseModel` or `dataclass`"):
+
+        class Model(BaseModel):
+            x: Union[str, int] = Field(..., discriminator='qwe')
+
+
 def test_discriminated_union_defined_discriminator():
     class Cat(BaseModel):
         c: str
