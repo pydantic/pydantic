@@ -37,6 +37,19 @@ The format of `$ref`s (`"#/definitions/FooBar"` above) can be altered by calling
 with the `ref_template` keyword argument, e.g. `ApplePie.schema(ref_template='/schemas/{model}.json#/')`, here `{model}`
 will be replaced with the model naming using `str.format()`.
 
+## Getting schema of a specified type
+
+_Pydantic_ includes two standalone utility functions `schema` and `schema_json` that can be used to
+apply the schema generation logic used for _pydantic_ models in a more ad-hoc way.
+These functions behave similarly to `BaseModel.schema` and `BaseModel.schema_json`,
+but work with arbitrary pydantic-compatible types.
+
+```py
+{!.tmp_examples/schema_ad_hoc.py!}
+```
+_(This script is complete, it should run "as is")_
+
+
 ## Field customisation
 
 Optionally, the `Field` function can be used to provide extra information about the field and validations.
