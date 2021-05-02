@@ -405,7 +405,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
         __computed_fields__: Dict[str, ComputedField] = {}
-        __all_fields__: Dict[str, Union[ModelField, ComputedField]]
+        __all_fields__: Mapping[str, Union[ModelField, ComputedField]]
         __include_fields__: Optional[Mapping[str, Any]] = None
         __exclude_fields__: Optional[Mapping[str, Any]] = None
         __validators__: Dict[str, AnyCallable] = {}
@@ -901,10 +901,19 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         value_exclude = ValueItems(self, exclude) if exclude is not None else None
         value_include = ValueItems(self, include) if include is not None else None
 
-        all_values = ChainMap(
-            {computed_field.name: computed_field.__get__(self) for computed_field in self.__computed_fields__.values()},
-            self.__dict__,
-        )
+        if not self.__computed_fields__:
+            all_values = self.__dict__
+        else:
+            # In python 3.6, `ChainMap` deserialization is not consistent with newer versions.
+            # We hence recreate a whole dictionary.
+            # If 3.6 is dropped, we should probably use a `ChainMap` instead for perf reasons
+            all_values = {
+                **{k: v for k, v in self.__dict__.items()},
+                **{
+                    computed_field.name: computed_field.__get__(self)
+                    for computed_field in self.__computed_fields__.values()
+                },
+            }
 
         for field_key, v in all_values.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
