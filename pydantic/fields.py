@@ -975,43 +975,10 @@ class ModelField(Representation):
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         if self.sub_fields:
+            if self.discriminated_union_config is not None:
+                return self._validate_discriminated_union(v, values, loc, cls)
+
             errors = []
-
-            if get_origin(self.type_) is Union and self.discriminated_union_config is not None:
-                if not self.discriminated_union_config.sub_fields_mapping:
-                    assert cls is not None
-                    raise ConfigError(
-                        f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
-                        f'you might need to call {cls.__name__}.update_forward_refs().'
-                    )
-
-                discriminator_key = self.discriminated_union_config.discriminator_key
-
-                try:
-                    discriminator_value = v[discriminator_key]
-                except (KeyError, TypeError):
-                    try:
-                        # BaseModel or dataclass
-                        discriminator_value = getattr(v, discriminator_key)
-                    except (AttributeError, TypeError):
-                        return v, ErrorWrapper(MissingDiscriminator(discriminator_key=discriminator_key), loc)
-
-                try:
-                    sub_field = self.discriminated_union_config.sub_fields_mapping[discriminator_value]
-                except KeyError:
-                    return v, ErrorWrapper(
-                        InvalidDiscriminator(
-                            discriminator_key=discriminator_key,
-                            discriminator_value=discriminator_value,
-                            allowed_values=list(self.discriminated_union_config.sub_fields_mapping),
-                        ),
-                        loc,
-                    )
-                else:
-                    if not isinstance(loc, tuple):
-                        loc = (loc,)
-                    return sub_field.validate(v, values, loc=(*loc, display_as_type(sub_field.type_)), cls=cls)
-
             for field in self.sub_fields:
                 value, error = field.validate(v, values, loc=loc, cls=cls)
                 if error:
@@ -1021,6 +988,43 @@ class ModelField(Representation):
             return v, errors
         else:
             return self._apply_validators(v, values, loc, cls, self.validators)
+
+    def _validate_discriminated_union(
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+    ) -> 'ValidateReturn':
+        if not self.discriminated_union_config.sub_fields_mapping:
+            assert cls is not None
+            raise ConfigError(
+                f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
+                f'you might need to call {cls.__name__}.update_forward_refs().'
+            )
+
+        discriminator_key = self.discriminated_union_config.discriminator_key
+
+        try:
+            discriminator_value = v[discriminator_key]
+        except (KeyError, TypeError):
+            try:
+                # BaseModel or dataclass
+                discriminator_value = getattr(v, discriminator_key)
+            except (AttributeError, TypeError):
+                return v, ErrorWrapper(MissingDiscriminator(discriminator_key=discriminator_key), loc)
+
+        try:
+            sub_field = self.discriminated_union_config.sub_fields_mapping[discriminator_value]
+        except KeyError:
+            return v, ErrorWrapper(
+                InvalidDiscriminator(
+                    discriminator_key=discriminator_key,
+                    discriminator_value=discriminator_value,
+                    allowed_values=list(self.discriminated_union_config.sub_fields_mapping),
+                ),
+                loc,
+            )
+        else:
+            if not isinstance(loc, tuple):
+                loc = (loc,)
+            return sub_field.validate(v, values, loc=(*loc, display_as_type(sub_field.type_)), cls=cls)
 
     def _apply_validators(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
