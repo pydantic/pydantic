@@ -13,7 +13,7 @@ jobs:
   label-and-assign:
     runs-on: ubuntu-latest
     steps:
-      - uses: docker://samuelcolvin/label-and-assign:v1
+      - uses: docker://samuelcolvin/label-and-assign:latest
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           reviewers: samuelcolvin,PrettyWood
