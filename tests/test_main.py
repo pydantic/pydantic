@@ -2240,3 +2240,57 @@ def test_discrimated_union_basemodel_instance_value():
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
+
+
+def test_discriminated_union_int():
+    class A(BaseModel):
+        l: Literal[1]
+
+    class B(BaseModel):
+        l: Literal[2]
+
+    class Top(BaseModel):
+        sub: Union[A, B] = Field(..., discriminator='l')
+
+    assert isinstance(Top.parse_obj({'sub': {'l': 2}}).sub, B)
+    with pytest.raises(ValidationError) as exc_info:
+        Top.parse_obj({'sub': {'l': 3}})
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('sub',),
+            'msg': "No match for discriminator 'l' and value 3 (allowed values: 1, 2)",
+            'type': 'value_error.discriminated_union.invalid_discriminator',
+            'ctx': {'discriminator_key': 'l', 'discriminator_value': 3, 'allowed_values': '1, 2'},
+        }
+    ]
+
+
+def test_discriminated_union_enum():
+    class EnumValue(Enum):
+        a = 1
+        b = 2
+
+    class A(BaseModel):
+        l: Literal[EnumValue.a]
+
+    class B(BaseModel):
+        l: Literal[EnumValue.b]
+
+    class Top(BaseModel):
+        sub: Union[A, B] = Field(..., discriminator='l')
+
+    assert isinstance(Top.parse_obj({'sub': {'l': EnumValue.b}}).sub, B)
+    with pytest.raises(ValidationError) as exc_info:
+        Top.parse_obj({'sub': {'l': 3}})
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('sub',),
+            'msg': "No match for discriminator 'l' and value 3 (allowed values: <EnumValue.a: 1>, <EnumValue.b: 2>)",
+            'type': 'value_error.discriminated_union.invalid_discriminator',
+            'ctx': {
+                'discriminator_key': 'l',
+                'discriminator_value': 3,
+                'allowed_values': '<EnumValue.a: 1>, <EnumValue.b: 2>',
+            },
+        }
+    ]
