@@ -1,7 +1,7 @@
 import os
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, Union
+from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 from .fields import ModelField
 from .main import BaseConfig, BaseModel, Extra
@@ -113,10 +113,8 @@ class BaseSettings(BaseModel):
         ) -> Tuple[SettingsSourceCallable, ...]:
             return init_settings, env_settings, file_secret_settings
 
-    if TYPE_CHECKING:
-        # populated by the metaclass using the Config class defined above, annotated here to help IDEs only
-        # inside a TYPE_CHECKING block to avoid showing it in __init__ by IDEs supporting dataclass_transform
-        __config__: Type[Config]
+    # populated by the metaclass using the Config class defined above, annotated here to help IDEs only
+    __config__: ClassVar[Type[Config]]
 
 
 class InitSettingsSource:
