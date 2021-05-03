@@ -13,8 +13,6 @@ jobs:
   label-and-assign:
     runs-on: ubuntu-latest
     steps:
-      - run: cat "$GITHUB_EVENT_PATH"
-
       - uses: docker://samuelcolvin/label-and-assign:v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
