@@ -46,7 +46,7 @@ assert user.name == 'Jane Doe'
 ```py
 assert user.__fields_set__ == {'id'}
 ```
-The fields which were supplied when user was initialised:
+The fields which were supplied when user was initialised.
 ```py
 assert user.dict() == dict(user) == {'id': 123, 'name': 'Jane Doe'}
 ```
