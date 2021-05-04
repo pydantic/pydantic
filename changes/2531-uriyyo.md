@@ -1,0 +1,1 @@
+Add ability to have custom encoder for builtin types.
