@@ -2,12 +2,13 @@ import datetime
 import re
 import sys
 from collections import deque
+from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Callable, Dict, Type, Union
+from typing import AbstractSet, Any, Callable, Dict, Type, Union
 from uuid import UUID
 
 if sys.version_info >= (3, 7):
@@ -19,7 +20,32 @@ else:
 from .color import Color
 from .types import SecretBytes, SecretStr
 
-__all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
+__all__ = (
+    'BuiltinTypeWrapper',
+    'pydantic_encoder',
+    'custom_pydantic_encoder',
+    'timedelta_isoformat',
+    'wrap_builtin_types',
+)
+
+
+@dataclass
+class BuiltinTypeWrapper:
+    obj: Any
+
+
+def wrap_builtin_types(obj: Any, types: AbstractSet[Type[Any]]) -> Any:
+    if obj.__class__ is dict:
+        obj = {k: wrap_builtin_types(v, types) for k, v in obj.items()}
+    elif obj.__class__ is list:
+        obj = [wrap_builtin_types(v, types) for v in obj]
+    elif obj.__class__ is tuple:
+        obj = tuple(wrap_builtin_types(v, types) for v in obj)
+
+    if obj.__class__ in types:
+        obj = BuiltinTypeWrapper(obj)
+
+    return obj
 
 
 def isoformat(o: Union[datetime.date, datetime.time]) -> str:
@@ -96,6 +122,9 @@ def pydantic_encoder(obj: Any) -> Any:
 
 
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
+    if obj.__class__ is BuiltinTypeWrapper:
+        obj = obj.obj  # type: ignore
+
     # Check the class type and its superclasses for a matching encoder
     for base in obj.__class__.__mro__[:-1]:
         try:

@@ -278,3 +278,37 @@ def test_custom_decode_encode():
     m = Model.parse_raw('${"a": 1, "b": "foo"}$$')
     assert m.dict() == {'a': 1, 'b': 'foo'}
     assert m.json() == '{\n  "a": 1,\n  "b": "foo"\n}'
+
+
+@pytest.mark.parametrize(
+    'field_type,obj,encoder,json_value',
+    [
+        (dict, {1: 2, 3: 4}, lambda v: [tuple(e) for e in v.items()], '[["field", [[1, 2], [3, 4]]]]'),
+        (list, ["a", "b", "c"], lambda v: dict(enumerate(v)), '{"field": {"0": "a", "1": "b", "2": "c"}}'),
+        (tuple, ("a", "b", "c"), lambda v: dict(enumerate(v)), '{"field": {"0": "a", "1": "b", "2": "c"}}'),
+        (str, "val", lambda v: f"super-{v}", '{"field": "super-val"}'),
+        (int, 1, str, '{"field": "1"}'),
+        (bool, True, int, '{"field": 1}'),
+        (float, 0.5, str, '{"field": "0.5"}'),
+    ],
+    ids=[
+        'dict',
+        'list',
+        'tuple',
+        'str',
+        'int',
+        'bool',
+        'float',
+    ],
+)
+def test_encode_builtin_type(field_type, obj, encoder, json_value):
+    class Model(BaseModel):
+        field: field_type
+
+        class Config:
+            json_encoders = {field_type: encoder}
+
+    Model.update_forward_refs(field_type=field_type)
+
+    model = Model(field=obj)
+    assert model.json() == json_value
