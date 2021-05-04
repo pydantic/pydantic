@@ -158,3 +158,7 @@ class NotFrozenModel(FrozenModel):
 
 NotFrozenModel(x=1).x = 2
 NotFrozenModel.from_orm(model)
+
+
+class ModelWithSelfField(BaseModel):
+    self: str
