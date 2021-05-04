@@ -2,7 +2,6 @@ import datetime
 import re
 import sys
 from collections import deque
-from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -29,9 +28,9 @@ __all__ = (
 )
 
 
-@dataclass
 class BuiltinTypeWrapper:
-    obj: Any
+    def __init__(self, obj: Any) -> None:
+        self.obj = obj
 
 
 def wrap_builtin_types(obj: Any, types: AbstractSet[Type[Any]]) -> Any:
@@ -123,7 +122,7 @@ def pydantic_encoder(obj: Any) -> Any:
 
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
     if obj.__class__ is BuiltinTypeWrapper:
-        obj = obj.obj  # type: ignore
+        obj = obj.obj
 
     # Check the class type and its superclasses for a matching encoder
     for base in obj.__class__.__mro__[:-1]:

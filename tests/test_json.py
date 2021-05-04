@@ -284,9 +284,9 @@ def test_custom_decode_encode():
     'field_type,obj,encoder,json_value',
     [
         (dict, {1: 2, 3: 4}, lambda v: [tuple(e) for e in v.items()], '[["field", [[1, 2], [3, 4]]]]'),
-        (list, ["a", "b", "c"], lambda v: dict(enumerate(v)), '{"field": {"0": "a", "1": "b", "2": "c"}}'),
-        (tuple, ("a", "b", "c"), lambda v: dict(enumerate(v)), '{"field": {"0": "a", "1": "b", "2": "c"}}'),
-        (str, "val", lambda v: f"super-{v}", '{"field": "super-val"}'),
+        (list, ('a', 'b', 'c'), lambda v: dict(enumerate(v)), '{"field": {"0": "a", "1": "b", "2": "c"}}'),
+        (tuple, ('a', 'b', 'c'), lambda v: dict(enumerate(v)), '{"field": {"0": "a", "1": "b", "2": "c"}}'),
+        (str, 'val', lambda v: f'super-{v}', '{"field": "super-val"}'),
         (int, 1, str, '{"field": "1"}'),
         (bool, True, int, '{"field": 1}'),
         (float, 0.5, str, '{"field": "0.5"}'),
