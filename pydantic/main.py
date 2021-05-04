@@ -346,10 +346,10 @@ class ModelMetaclass(ABCMeta):
         vg.check_for_unused()
         if config.json_encoders:
             json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
-            json_built_in_types = frozenset(t for t in config.json_encoders if t in BUILTIN_TYPES)
+            json_builtin_types = frozenset(t for t in config.json_encoders if t in BUILTIN_TYPES)
         else:
             json_encoder = pydantic_encoder
-            json_built_in_types = frozenset()
+            json_builtin_types = frozenset()
 
         pre_rv_new, post_rv_new = extract_root_validators(namespace)
 
@@ -373,7 +373,7 @@ class ModelMetaclass(ABCMeta):
             '__post_root_validators__': unique_list(post_root_validators + post_rv_new),
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
-            '__json_builtin_encode_types__': json_built_in_types,
+            '__json_builtin_types_to_encode__': json_builtin_types,
             '__custom_root_type__': _custom_root_type,
             '__private_attributes__': private_attributes,
             '__slots__': slots | private_attributes.keys(),
@@ -403,7 +403,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __config__: Type[BaseConfig] = BaseConfig
         __root__: Any = None
         __json_encoder__: Callable[[Any], Any] = lambda x: x
-        __json_builtin_encode_types__: AbstractSet[Type[Any]]
+        __json_builtin_types_to_encode__: AbstractSet[Type[Any]]
         __schema_cache__: 'DictAny' = {}
         __custom_root_type__: bool = False
         __signature__: 'Signature'
@@ -576,8 +576,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         if self.__custom_root_type__:
             data = data[ROOT_KEY]
 
-        if encoder is self.__json_encoder__ and self.__json_builtin_encode_types__:
-            data = wrap_builtin_types(data, self.__json_builtin_encode_types__)
+        if encoder is self.__json_encoder__ and self.__json_builtin_types_to_encode__:
+            data = wrap_builtin_types(data, self.__json_builtin_types_to_encode__)
 
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
