@@ -938,6 +938,32 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 _is_base_model_class_defined = True
 
 
+@overload
+def create_model(
+    __model_name: str,
+    *,
+    __config__: Type[BaseConfig] = None,
+    __base__: None = None,
+    __module__: str = __name__,
+    __validators__: Dict[str, classmethod] = None,
+    **field_definitions: Any,
+) -> Type['BaseModel']:
+    pass
+
+
+@overload
+def create_model(
+    __model_name: str,
+    *,
+    __config__: Type[BaseConfig] = None,
+    __base__: Type['Model'] = None,
+    __module__: str = __name__,
+    __validators__: Dict[str, classmethod] = None,
+    **field_definitions: Any,
+) -> Type['Model']:
+    pass
+
+
 def create_model(
     __model_name: str,
     *,
