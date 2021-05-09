@@ -1695,12 +1695,12 @@ def test_hashable_optional(default):
     Model()
 
 
-def test_default_factory_side_effect():
-    """It may call `default_factory` more than once when `validate_all` is set"""
+def test_default_factory_called_once():
+    """It should never call `default_factory` more than once even when `validate_all` is set"""
 
     v = 0
 
-    def factory():
+    def factory() -> int:
         nonlocal v
         v += 1
         return v
@@ -1712,7 +1712,20 @@ def test_default_factory_side_effect():
             validate_all = True
 
     m1 = MyModel()
-    assert m1.id == 2  # instead of 1
+    assert m1.id == 1
+
+    class MyBadModel(BaseModel):
+        id: List[str] = Field(default_factory=factory)
+
+        class Config:
+            validate_all = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyBadModel()
+    assert v == 2  # `factory` has been called to run validation
+    assert exc_info.value.errors() == [
+        {'loc': ('id',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+    ]
 
 
 def test_default_factory_validator_child():
