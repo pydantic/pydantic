@@ -169,7 +169,7 @@ You can also customise class validation using [root_validators](validators.md#ro
 In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
 
 The `GetterDict` instance will be called for each field with a sentinel as a fallback (if no other default
-value is set). Returning this sentinel (or `object()`) means that the field is missing. Any other value will
+value is set). Returning this sentinel means that the field is missing. Any other value will
 be interpreted as the value of the field.
 
 ```py
