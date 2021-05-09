@@ -17,7 +17,7 @@ from typing import (
 )
 
 import pytest
-from typing_extensions import Literal
+from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
@@ -1127,3 +1127,13 @@ def test_generic_with_user_defined_generic_field():
 
     with pytest.raises(ValidationError):
         model = Model[int](field=['a'])
+
+
+@skip_36
+def test_generic_annotated():
+    T = TypeVar('T')
+
+    class SomeGenericModel(GenericModel, Generic[T]):
+        some_field: Annotated[T, Field(alias='the_alias')]
+
+    SomeGenericModel[str](the_alias='qwe')
