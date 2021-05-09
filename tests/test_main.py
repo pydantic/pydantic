@@ -2021,25 +2021,18 @@ def test_class_kwargs_custom_config():
     assert Model.__config__.some_config == 'new_value'
 
 
-def test_final_field_without_initializer():
-    class Model(BaseModel):
-        a: Final[int] = 10
-
-    assert 'a' in Model.__class_vars__
-    assert 'a' not in Model.__fields__
-
-
+@pytest.mark.parametrize('ann', [Final, Final[int]])
 @pytest.mark.parametrize(
-    'ann',
-    [Final, Final[int]],
-    ids=['simple-final', 'parametrized-final'],
+    'value,is_required',
+    [
+        (None, True),
+        (Field(), True),
+        (10, False),
+        (Field(default=10), False),
+        (Field(default_factory=lambda: 10), False),
+    ],
 )
-@pytest.mark.parametrize(
-    'value',
-    [None, Field()],
-    ids=['no-value', 'field-value'],
-)
-def test_final_field_with_initializer(ann, value):
+def test_final_field_decl(ann, value, is_required):
     class Model(BaseModel):
         a: ann
 
@@ -2051,6 +2044,11 @@ def test_final_field_with_initializer(ann, value):
     assert 'a' not in Model.__class_vars__
     assert 'a' in Model.__fields__
 
+    field = Model.__fields__['a']
+
+    assert field.final
+    assert field.required == is_required
+
 
 def test_final_field_reassignment():
     class Model(BaseModel):
@@ -2058,32 +2056,16 @@ def test_final_field_reassignment():
 
     obj = Model(a=10)
 
-    with pytest.raises(TypeError, match=r'^"Model" object "a" field is final and does not support reassignment$'):
+    with pytest.raises(
+        TypeError,
+        match=r'^"Model" object "a" field is final and does not support reassignment$',
+    ):
         obj.a = 20
 
 
-def test_final_field_without_initializer_init_assign():
+def test_final_field_init():
     class Model(BaseModel):
         a: Final[int] = 10
 
-    obj = Model()
-
-    with pytest.raises(ValueError, match=r'^"Model" object has no field "a"$'):
-        obj.a = 20
-
-
-def test_final_decl_as_field():
-    class Model(BaseModel):
-        a: Final[int] = Field(default=10)
-
-    obj1 = Model()
-
-    assert obj1.a == 10
-    with pytest.raises(TypeError):
-        obj1.a = 20
-
-    obj2 = Model(a=20)
-
-    assert obj2.a == 20
-    with pytest.raises(TypeError):
-        obj2.a = 10
+    assert Model().a == 10
+    assert Model(a=20).a == 20

@@ -28,7 +28,7 @@ from typing import (
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import MAPPING_LIKE_SHAPES, FieldInfo, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import MAPPING_LIKE_SHAPES, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -38,7 +38,6 @@ from .typing import (
     get_args,
     get_origin,
     is_classvar,
-    is_finalvar,
     is_namedtuple,
     resolve_annotations,
     update_field_forward_refs,
@@ -283,8 +282,6 @@ class ModelMetaclass(ABCMeta):
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
-                    class_vars.add(ann_name)
-                elif is_finalvar(ann_type) and ann_name in namespace and not isinstance(namespace[ann_name], FieldInfo):
                     class_vars.add(ann_name)
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)

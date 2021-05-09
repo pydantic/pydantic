@@ -38,6 +38,7 @@ from .typing import (
     display_as_type,
     get_args,
     get_origin,
+    is_finalvar,
     is_literal_type,
     is_new_type,
     is_typeddict,
@@ -545,18 +546,21 @@ class ModelField(Representation):
         elif is_typeddict(self.type_):
             return
 
-        origin = get_origin(self.type_)
-
-        if origin is Final or self.type_ is Final:
+        if is_finalvar(self.type_):
             self.final = True
 
-            if origin is None:
+            if self.required is Undefined:
+                self.required = self.default is Undefined and self.default_factory is None
+
+            if self.type_ is Final:
                 self.type_ = Any
             else:
                 self.type_ = get_args(self.type_)[0]
 
             self._type_analysis()
             return
+
+        origin = get_origin(self.type_)
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable
