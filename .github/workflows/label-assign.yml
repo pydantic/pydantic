@@ -3,8 +3,8 @@ name: Label & Assign
 on:
   issue_comment:
     types: [created, edited]
-  pull_request_review:
-    types: [submitted, edited]
+#  pull_request_review:
+#    types: [submitted, edited]
 
 permissions:
   pull-requests: write
