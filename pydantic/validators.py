@@ -25,7 +25,7 @@ from typing import (
 )
 from uuid import UUID
 
-from typing_extensions import Final, Literal
+from typing_extensions import Literal
 
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
@@ -652,8 +652,6 @@ def find_validators(  # noqa: C901 (ignore complexity)
     from .dataclasses import is_builtin_dataclass, make_dataclass_validator
 
     if type_ is Any:
-        return
-    if type_ is Final:
         return
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:

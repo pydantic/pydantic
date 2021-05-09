@@ -2055,7 +2055,7 @@ def test_final_field_reassignment():
 
     obj = Model(a=10)
 
-    with pytest.raises(TypeError, match=r'^"Model" object "a" field is final and does not reassignment$'):
+    with pytest.raises(TypeError, match=r'^"Model" object "a" field is final and does not support reassignment$'):
         obj.a = 20
 
 
