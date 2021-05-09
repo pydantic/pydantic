@@ -788,6 +788,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     f_schema: Dict[str, Any] = {}
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
+
     field_type = field.type_
     if is_literal_type(field_type):
         values = all_literal_values(field_type)
@@ -805,8 +806,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         # All values have the same type
         field_type = values[0].__class__
         f_schema['enum'] = list(values)
-
-    if lenient_issubclass(field_type, Enum):
+        add_field_type_to_schema(field_type, f_schema)
+    elif lenient_issubclass(field_type, Enum):
         enum_name = model_name_map[field_type]
         f_schema, schema_overrides = get_field_info_schema(field)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
