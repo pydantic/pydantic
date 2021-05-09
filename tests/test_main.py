@@ -2023,16 +2023,16 @@ def test_class_kwargs_custom_config():
 
 @pytest.mark.parametrize('ann', [Final, Final[int]])
 @pytest.mark.parametrize(
-    'value,is_required',
+    'value,has_default',
     [
-        (None, True),
-        (Field(), True),
-        (10, False),
-        (Field(default=10), False),
-        (Field(default_factory=lambda: 10), False),
+        (None, False),
+        (Field(), False),
+        (10, True),
+        (Field(default=10), True),
+        (Field(default_factory=lambda: 10), True),
     ],
 )
-def test_final_field_decl(ann, value, is_required):
+def test_final_field_decl(ann, value, has_default):
     class Model(BaseModel):
         a: ann
 
@@ -2047,7 +2047,7 @@ def test_final_field_decl(ann, value, is_required):
     field = Model.__fields__['a']
 
     assert field.final
-    assert field.required == is_required
+    assert field.required == (not has_default and ann is not Final)
 
 
 def test_final_field_reassignment():

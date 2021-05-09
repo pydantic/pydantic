@@ -549,9 +549,6 @@ class ModelField(Representation):
         if is_finalvar(self.type_):
             self.final = True
 
-            if self.required is Undefined:
-                self.required = self.default is Undefined and self.default_factory is None
-
             if self.type_ is Final:
                 self.type_ = Any
             else:
