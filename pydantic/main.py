@@ -38,6 +38,7 @@ from .typing import (
     get_args,
     get_origin,
     is_classvar,
+    is_finalvar,
     is_namedtuple,
     resolve_annotations,
     update_field_forward_refs,
@@ -281,7 +282,7 @@ class ModelMetaclass(ABCMeta):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
-                if is_classvar(ann_type):
+                if is_classvar(ann_type) or (is_finalvar(ann_type) and ann_name in namespace):
                     class_vars.add(ann_name)
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
@@ -431,6 +432,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation or self.__config__.frozen:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
+        elif name in self.__fields__ and self.__fields__[name].final:
+            raise TypeError(f'"{self.__class__.__name__}" object "{name}" field is final and does not reassignment')
         elif self.__config__.validate_assignment:
             new_values = {**self.__dict__, name: value}
 

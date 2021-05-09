@@ -22,7 +22,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Final
 
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
@@ -318,6 +318,7 @@ class ModelField(Representation):
         'default',
         'default_factory',
         'required',
+        'final',
         'model_config',
         'name',
         'alias',
@@ -340,6 +341,7 @@ class ModelField(Representation):
         default: Any = None,
         default_factory: Optional[NoArgAnyCallable] = None,
         required: 'BoolUndefined' = Undefined,
+        final: bool = False,
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
@@ -353,6 +355,7 @@ class ModelField(Representation):
         self.default: Any = default
         self.default_factory: Optional[NoArgAnyCallable] = default_factory
         self.required: 'BoolUndefined' = required
+        self.final: bool = final
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
 
@@ -543,6 +546,18 @@ class ModelField(Representation):
             return
 
         origin = get_origin(self.type_)
+
+        if origin is Final or self.type_ is Final:
+            self.final = True
+            self.required = True
+
+            if origin is None:
+                self.type_ = Any
+            else:
+                self.type_ = get_args(self.type_)[0]
+
+            self._type_analysis()
+            return
         if origin is None:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable

@@ -2,7 +2,7 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import Any, Callable, ClassVar, DefaultDict, Dict, Final, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
@@ -2019,3 +2019,51 @@ def test_class_kwargs_custom_config():
         a: int
 
     assert Model.__config__.some_config == 'new_value'
+
+
+def test_final_field_without_initializer():
+    class Model(BaseModel):
+        a: Final[int] = 10
+
+    assert 'a' in Model.__class_vars__
+    assert 'a' not in Model.__fields__
+
+
+@pytest.mark.parametrize(
+    'ann',
+    [Final, Final[int]],
+    ids=['simple-final', 'parametrized-final'],
+)
+def test_final_field_with_initializer(ann):
+    class Model(BaseModel):
+        a: ann
+
+    Model.update_forward_refs(ann=ann)
+
+    assert 'a' not in Model.__class_vars__
+    assert 'a' in Model.__fields__
+
+    field = Model.__fields__['a']
+
+    assert field.final
+    assert field.required
+
+
+def test_final_field_reassignment():
+    class Model(BaseModel):
+        a: Final[int]
+
+    obj = Model(a=10)
+
+    with pytest.raises(TypeError, match=r'^"Model" object "a" field is final and does not reassignment$'):
+        obj.a = 20
+
+
+def test_final_field_without_initializer_init_assign():
+    class Model(BaseModel):
+        a: Final[int] = 10
+
+    obj = Model()
+
+    with pytest.raises(ValueError, match=r'^"Model" object has no field "a"$'):
+        obj.a = 20

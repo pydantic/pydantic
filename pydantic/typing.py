@@ -20,7 +20,7 @@ from typing import (  # type: ignore
     get_type_hints,
 )
 
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Final, Literal
 
 try:
     from typing import _TypingBase as typing_base  # type: ignore
@@ -221,6 +221,7 @@ __all__ = (
     'is_new_type',
     'new_type_supertype',
     'is_classvar',
+    'is_finalvar',
     'update_field_forward_refs',
     'TupleGenerator',
     'DictStrAny',
@@ -370,8 +371,19 @@ def _check_classvar(v: Optional[Type[Any]]) -> bool:
     return v.__class__ == ClassVar.__class__ and (sys.version_info < (3, 7) or getattr(v, '_name', None) == 'ClassVar')
 
 
+def _check_finalvar(v: Optional[Type[Any]]) -> bool:
+    if v is None:
+        return False
+
+    return v.__class__ == Final.__class__ and (sys.version_info < (3, 8) or getattr(v, '_name', None) == 'Final')
+
+
 def is_classvar(ann_type: Type[Any]) -> bool:
     return _check_classvar(ann_type) or _check_classvar(get_origin(ann_type))
+
+
+def is_finalvar(ann_type: Type[Any]) -> bool:
+    return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
 def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) -> None:
