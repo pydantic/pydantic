@@ -2034,19 +2034,22 @@ def test_final_field_without_initializer():
     [Final, Final[int]],
     ids=['simple-final', 'parametrized-final'],
 )
-def test_final_field_with_initializer(ann):
+@pytest.mark.parametrize(
+    'value',
+    [None, Field()],
+    ids=['no-value', 'field-value'],
+)
+def test_final_field_with_initializer(ann, value):
     class Model(BaseModel):
         a: ann
+
+        if value is not None:
+            a = value
 
     Model.update_forward_refs(ann=ann)
 
     assert 'a' not in Model.__class_vars__
     assert 'a' in Model.__fields__
-
-    field = Model.__fields__['a']
-
-    assert field.final
-    assert field.required
 
 
 def test_final_field_reassignment():
@@ -2067,3 +2070,20 @@ def test_final_field_without_initializer_init_assign():
 
     with pytest.raises(ValueError, match=r'^"Model" object has no field "a"$'):
         obj.a = 20
+
+
+def test_final_decl_as_field():
+    class Model(BaseModel):
+        a: Final[int] = Field(default=10)
+
+    obj1 = Model()
+
+    assert obj1.a == 10
+    with pytest.raises(TypeError):
+        obj1.a = 20
+
+    obj2 = Model(a=20)
+
+    assert obj2.a == 20
+    with pytest.raises(TypeError):
+        obj2.a = 10

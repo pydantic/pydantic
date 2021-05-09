@@ -549,7 +549,6 @@ class ModelField(Representation):
 
         if origin is Final or self.type_ is Final:
             self.final = True
-            self.required = True
 
             if origin is None:
                 self.type_ = Any
