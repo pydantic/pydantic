@@ -1,6 +1,6 @@
 from typing import ClassVar, Optional, Union
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, create_model, BaseSettings
 from pydantic.dataclasses import dataclass
 
 
@@ -158,3 +158,10 @@ class NotFrozenModel(FrozenModel):
 
 NotFrozenModel(x=1).x = 2
 NotFrozenModel.from_orm(model)
+
+
+class SettingsModel(BaseSettings):
+    pass
+
+
+settings = SettingsModel.construct()

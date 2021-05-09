@@ -1,0 +1,1 @@
+Fix bug when `mypy` plugin fail on `construct` method call for `BaseSettings` derived classes.

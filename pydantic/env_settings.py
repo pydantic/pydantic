@@ -1,7 +1,7 @@
 import os
 import warnings
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Tuple, Union
 
 from .fields import ModelField
 from .main import BaseConfig, BaseModel, Extra
@@ -113,7 +113,7 @@ class BaseSettings(BaseModel):
         ) -> Tuple[SettingsSourceCallable, ...]:
             return init_settings, env_settings, file_secret_settings
 
-    __config__: Config  # type: ignore
+    __config__: ClassVar[Config]  # type: ignore
 
 
 class InitSettingsSource:
