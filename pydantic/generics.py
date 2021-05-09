@@ -172,7 +172,12 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             # If all arguments are the same, there is no need to modify the
             # type or create a new object at all
             return type_
-        if origin_type is not None and isinstance(type_, typing_base) and not isinstance(origin_type, typing_base):
+        if (
+            origin_type is not None
+            and isinstance(type_, typing_base)
+            and not isinstance(origin_type, typing_base)
+            and getattr(type_, '_name', None) is not None
+        ):
             # In python < 3.9 generic aliases don't exist so any of these like `list`,
             # `type` or `collections.abc.Callable` need to be translated.
             # See: https://www.python.org/dev/peps/pep-0585
