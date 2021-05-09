@@ -1857,6 +1857,19 @@ def test_allow_mutation_field():
         r.id = 2
 
 
+def test_repr_field():
+    class Model(BaseModel):
+        a: int = Field()
+        b: int = Field(repr=True)
+        c: int = Field(repr=False)
+
+    m = Model(a=1, b=2, c=3)
+    assert repr(m) == 'Model(a=1, b=2)'
+    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=Ellipsis, extra={})'
+    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=Ellipsis, extra={})'
+    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=Ellipsis, repr=False, extra={})'
+
+
 def test_inherited_model_field_copy():
     """It should copy models used as fields by default"""
 

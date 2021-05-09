@@ -104,6 +104,7 @@ class FieldInfo(Representation):
         'min_length',
         'max_length',
         'allow_mutation',
+        'repr',
         'regex',
         'extra',
     )
@@ -144,11 +145,18 @@ class FieldInfo(Representation):
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
+        self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
+
+        field_defaults_to_hide: Dict[str, Any] = {
+            'repr': True,
+            **self.__field_constraints__,
+        }
+
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return [(a, v) for a, v in attrs if v != self.__field_constraints__.get(a, None)]
+        return [(a, v) for a, v in attrs if v != field_defaults_to_hide.get(a, None)]
 
     def get_constraints(self) -> Set[str]:
         """
@@ -202,6 +210,7 @@ def Field(
     max_length: int = None,
     allow_mutation: bool = True,
     regex: str = None,
+    repr: bool = True,
     **extra: Any,
 ) -> Any:
     """
@@ -238,6 +247,7 @@ def Field(
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
     :param regex: only applies to strings, requires the field match agains a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
+    :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
     field_info = FieldInfo(
@@ -260,6 +270,7 @@ def Field(
         max_length=max_length,
         allow_mutation=allow_mutation,
         regex=regex,
+        repr=repr,
         **extra,
     )
     field_info._validate()
