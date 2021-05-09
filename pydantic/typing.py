@@ -250,10 +250,7 @@ NONE_TYPES: Tuple[Any, Any, Any] = (None, NoneType, Literal[None])
 if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
 
     def is_none_type(type_: Any) -> bool:
-        try:
-            return type_ in NONE_TYPES
-        except TypeError:
-            return False
+        return type_ in NONE_TYPES
 
 
 else:
