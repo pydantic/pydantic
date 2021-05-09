@@ -1,6 +1,20 @@
 import sys
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, Generic, List, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generic,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import pytest
 from typing_extensions import Annotated, Literal
@@ -806,6 +820,30 @@ def test_replace_types():
         # resolve correctly (don't get translated to typing versions for
         # example)
         assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
+
+
+@skip_36
+def test_replace_types_with_user_defined_generic_type_field():
+    """Test that using user defined generic types as generic model fields are handled correctly."""
+
+    T = TypeVar('T')
+    KT = TypeVar('KT')
+    VT = TypeVar('VT')
+
+    class GenericMapping(Mapping[KT, VT]):
+        pass
+
+    class GenericList(List[T]):
+        pass
+
+    class Model(GenericModel, Generic[T, KT, VT]):
+
+        map_field: GenericMapping[KT, VT]
+        list_field: GenericList[T]
+
+    assert replace_types(Model, {T: bool, KT: str, VT: int}) == Model[bool, str, int]
+    assert replace_types(Model[T, KT, VT], {T: bool, KT: str, VT: int}) == Model[bool, str, int]
+    assert replace_types(Model[T, VT, KT], {T: bool, KT: str, VT: int}) == Model[T, VT, KT][bool, int, str]
 
 
 @skip_36
