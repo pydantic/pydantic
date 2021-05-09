@@ -262,7 +262,7 @@ def resolve_condecimal(cls):  # type: ignore[no-untyped-def]
     if cls.lt is not None:
         assert max_value is None, 'Set `lt` or `le`, but not both'
         max_value = cls.lt
-    s = st.decimals(min_value, max_value, allow_nan=False)
+    s = st.decimals(min_value, max_value, allow_nan=False, places=cls.decimal_places)
     if cls.lt is not None:
         s = s.filter(lambda d: d < cls.lt)
     if cls.gt is not None:

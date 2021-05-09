@@ -1839,3 +1839,19 @@ def test_config_field_info_allow_mutation():
     with pytest.raises(TypeError):
         b.a = 'y'
     assert b.dict() == {'a': 'x'}
+
+
+def test_arbitrary_types_allowed_custom_eq():
+    class Foo:
+        def __eq__(self, other):
+            if other.__class__ is not Foo:
+                raise TypeError(f'Cannot interpret {other.__class__.__name__!r} as a valid type')
+            return True
+
+    class Model(BaseModel):
+        x: Foo = Foo()
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    assert Model().x == Foo()

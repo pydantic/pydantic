@@ -338,10 +338,21 @@ class ConstrainedBytes(bytes):
 
 
 def conbytes(
-    *, strip_whitespace: bool = False, to_lower: bool = False, min_length: int = None, max_length: int = None
+    *,
+    strip_whitespace: bool = False,
+    to_lower: bool = False,
+    min_length: int = None,
+    max_length: int = None,
+    strict: bool = False,
 ) -> Type[bytes]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(strip_whitespace=strip_whitespace, to_lower=to_lower, min_length=min_length, max_length=max_length)
+    namespace = dict(
+        strip_whitespace=strip_whitespace,
+        to_lower=to_lower,
+        min_length=min_length,
+        max_length=max_length,
+        strict=strict,
+    )
     return _registered(type('ConstrainedBytesValue', (ConstrainedBytes,), namespace))
 
 

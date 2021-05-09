@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Callable, ClassVar, Dict, Generic, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import pytest
-from typing_extensions import Literal
+from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
@@ -1071,3 +1071,13 @@ def test_generic_literal():
     Fields = Literal['foo', 'bar']
     m = GModel[Fields, str](field={'foo': 'x'})
     assert m.dict() == {'field': {'foo': 'x'}}
+
+
+@skip_36
+def test_generic_annotated():
+    T = TypeVar('T')
+
+    class SomeGenericModel(GenericModel, Generic[T]):
+        some_field: Annotated[T, Field(alias='the_alias')]
+
+    SomeGenericModel[str](the_alias='qwe')
