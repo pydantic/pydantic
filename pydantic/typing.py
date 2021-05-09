@@ -210,7 +210,6 @@ __all__ = (
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',
-    'NONE_TYPES',
     'is_none_type',
     'display_as_type',
     'resolve_annotations',
@@ -245,13 +244,24 @@ __all__ = (
 NoneType = None.__class__
 
 
-NONE_TYPES: Set[Any] = {None, NoneType, Literal[None]}
+NONE_TYPES: Tuple[Any, Any, Any] = (None, NoneType, Literal[None])
 
 
-def is_none_type(type_: Any) -> bool:
-    try:
-        return type_ in NONE_TYPES
-    except TypeError:
+if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
+
+    def is_none_type(type_: Any) -> bool:
+        try:
+            return type_ in NONE_TYPES
+        except TypeError:
+            return False
+
+
+else:
+
+    def is_none_type(type_: Any) -> bool:
+        for none_type in NONE_TYPES:
+            if type_ is none_type:
+                return True
         return False
 
 
