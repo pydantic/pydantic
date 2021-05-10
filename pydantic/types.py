@@ -485,7 +485,8 @@ class ConstrainedList(list):  # type: ignore
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.list_length_validator
-        yield cls.unique_items_validator
+        if cls.unique_items:
+            yield cls.unique_items_validator
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -509,14 +510,21 @@ class ConstrainedList(list):  # type: ignore
 
     @classmethod
     def unique_items_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
-        if cls.unique_items and v and len(set(v)) != len(v):
-            raise errors.ListUniqueItemsError(not_unique=len(v) - len(set(v)))
+        try:
+            if v and len(set(v)) != len(v):
+                raise errors.ListUniqueItemsError(not_unique=len(v) - len(set(v)))
+        except TypeError:
+            # failover for unhashable types
+            unique = list()
+
+            if v and len([unique.append(i) for i in v if i not in unique]) != len(v):  # type: ignore
+                raise errors.ListUniqueItemsError(not_unique=len(v) - len(unique)) from None
 
         return v
 
 
 def conlist(
-    item_type: Type[T], *, min_items: int = None, max_items: int = None, unique_items: bool = False
+    item_type: Type[T], *, min_items: int = None, max_items: int = None, unique_items: bool = None
 ) -> Type[List[T]]:
     # __args__ is needed to conform to typing generics api
     namespace = dict(

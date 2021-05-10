@@ -67,6 +67,8 @@ It has the following arguments:
   JSON Schema
 * `max_items`: for list values, this adds a corresponding validation and an annotation of `maxItems` to the
   JSON Schema
+* `unique_items`: for list values, this adds a corresponding validation and an annotation of `uniqueItems` to the
+  JSON Schema
 * `min_length`: for string values, this adds a corresponding validation and an annotation of `minLength` to the
   JSON Schema
 * `max_length`: for string values, this adds a corresponding validation and an annotation of `maxLength` to the

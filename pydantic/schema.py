@@ -913,11 +913,9 @@ def get_annotation_from_field_info(
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
     constraints = field_info.get_constraints()
-
     used_constraints: Set[str] = set()
     if constraints:
         annotation, used_constraints = get_annotation_with_constraints(annotation, field_info)
-
     if validate_assignment:
         used_constraints.add('allow_mutation')
 
@@ -961,9 +959,18 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             if origin is Union:
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
-            if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
-                used_constraints.update({'min_items', 'max_items'})
-                return conlist(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+            if issubclass(origin, List) and (
+                field_info.min_items is not None
+                or field_info.max_items is not None
+                or field_info.unique_items is not None
+            ):
+                used_constraints.update({'min_items', 'max_items', 'unique_items'})
+                return conlist(
+                    go(args[0]),
+                    min_items=field_info.min_items,
+                    max_items=field_info.max_items,
+                    unique_items=field_info.unique_items,
+                )
 
             if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
                 used_constraints.update({'min_items', 'max_items'})
