@@ -1,9 +1,9 @@
-import warnings
-from collections import deque
+from collections import defaultdict, deque
 from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    DefaultDict,
     Deque,
     Dict,
     FrozenSet,
@@ -22,6 +22,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Annotated
+
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
@@ -29,7 +31,6 @@ from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
     NONE_TYPES,
-    Annotated,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -42,7 +43,7 @@ from .typing import (
     is_typeddict,
     new_type_supertype,
 )
-from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
+from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
@@ -57,6 +58,9 @@ class UndefinedType:
     def __copy__(self: T) -> T:
         return self
 
+    def __reduce__(self) -> str:
+        return 'Undefined'
+
     def __deepcopy__(self: T, _: Any) -> T:
         return self
 
@@ -68,7 +72,7 @@ if TYPE_CHECKING:
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
-    from .typing import ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
@@ -87,6 +91,8 @@ class FieldInfo(Representation):
         'alias_priority',
         'title',
         'description',
+        'exclude',
+        'include',
         'const',
         'gt',
         'ge',
@@ -98,11 +104,13 @@ class FieldInfo(Representation):
         'min_length',
         'max_length',
         'allow_mutation',
+        'repr',
         'regex',
         'extra',
     )
 
-    __field_constraints__ = {  # field constraints with the default value
+    # field constraints with the default value, it's also used in update_from_config below
+    __field_constraints__ = {
         'min_length': None,
         'max_length': None,
         'regex': None,
@@ -123,6 +131,8 @@ class FieldInfo(Representation):
         self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
+        self.exclude = kwargs.pop('exclude', None)
+        self.include = kwargs.pop('include', None)
         self.const = kwargs.pop('const', None)
         self.gt = kwargs.pop('gt', None)
         self.ge = kwargs.pop('ge', None)
@@ -135,11 +145,18 @@ class FieldInfo(Representation):
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
+        self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
+
+        field_defaults_to_hide: Dict[str, Any] = {
+            'repr': True,
+            **self.__field_constraints__,
+        }
+
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return [(a, v) for a, v in attrs if v != self.__field_constraints__.get(a, None)]
+        return [(a, v) for a, v in attrs if v != field_defaults_to_hide.get(a, None)]
 
     def get_constraints(self) -> Set[str]:
         """
@@ -149,8 +166,26 @@ class FieldInfo(Representation):
         """
         return {attr for attr, default in self.__field_constraints__.items() if getattr(self, attr) != default}
 
+    def update_from_config(self, from_config: Dict[str, Any]) -> None:
+        """
+        Update this FieldInfo based on a dict from get_field_info, only fields which have not been set are dated.
+        """
+        for attr_name, value in from_config.items():
+            try:
+                current_value = getattr(self, attr_name)
+            except AttributeError:
+                # attr_name is not an attribute of FieldInfo, it should therefore be added to extra
+                self.extra[attr_name] = value
+            else:
+                if current_value is self.__field_constraints__.get(attr_name, None):
+                    setattr(self, attr_name, value)
+                elif attr_name == 'exclude':
+                    self.exclude = ValueItems.merge(value, current_value)
+                elif attr_name == 'include':
+                    self.include = ValueItems.merge(value, current_value, intersect=True)
+
     def _validate(self) -> None:
-        if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
+        if self.default is not Undefined and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
 
 
@@ -161,6 +196,8 @@ def Field(
     alias: str = None,
     title: str = None,
     description: str = None,
+    exclude: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
+    include: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
     const: bool = None,
     gt: float = None,
     ge: float = None,
@@ -173,6 +210,7 @@ def Field(
     max_length: int = None,
     allow_mutation: bool = True,
     regex: str = None,
+    repr: bool = True,
     **extra: Any,
 ) -> Any:
     """
@@ -186,6 +224,10 @@ def Field(
     :param alias: the public name of the field
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
+    :param exclude: exclude this field while dumping.
+      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
+    :param include: include this field while dumping.
+      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
     :param const: this field is required and *must* take it's default value
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
       will have an ``exclusiveMinimum`` validation keyword
@@ -205,6 +247,7 @@ def Field(
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
     :param regex: only applies to strings, requires the field match agains a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
+    :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
     field_info = FieldInfo(
@@ -213,6 +256,8 @@ def Field(
         alias=alias,
         title=title,
         description=description,
+        exclude=exclude,
+        include=include,
         const=const,
         gt=gt,
         ge=ge,
@@ -225,15 +270,11 @@ def Field(
         max_length=max_length,
         allow_mutation=allow_mutation,
         regex=regex,
+        repr=repr,
         **extra,
     )
     field_info._validate()
     return field_info
-
-
-def Schema(default: Any, **kwargs: Any) -> Any:
-    warnings.warn('`Schema` is deprecated, use `Field` instead', DeprecationWarning)
-    return Field(default, **kwargs)
 
 
 # used to be an enum but changed to int's for small performance improvement as less access overhead
@@ -248,6 +289,8 @@ SHAPE_FROZENSET = 8
 SHAPE_ITERABLE = 9
 SHAPE_GENERIC = 10
 SHAPE_DEQUE = 11
+SHAPE_DICT = 12
+SHAPE_DEFAULTDICT = 13
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -256,7 +299,11 @@ SHAPE_NAME_LOOKUP = {
     SHAPE_FROZENSET: 'FrozenSet[{}]',
     SHAPE_ITERABLE: 'Iterable[{}]',
     SHAPE_DEQUE: 'Deque[{}]',
+    SHAPE_DICT: 'Dict[{}]',
+    SHAPE_DEFAULTDICT: 'DefaultDict[{}]',
 }
+
+MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
 
 
 class ModelField(Representation):
@@ -349,17 +396,20 @@ class ModelField(Representation):
                 raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
             field_info = next(iter(field_infos), None)
             if field_info is not None:
-                if field_info.default not in (Undefined, Ellipsis):
+                field_info.update_from_config(field_info_from_config)
+                if field_info.default is not Undefined:
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
-                if value not in (Undefined, Ellipsis):
+                if value is not Undefined and value is not Required:
+                    # check also `Required` because of `validate_arguments` that sets `...` as default value
                     field_info.default = value
+
         if isinstance(value, FieldInfo):
             if field_info is not None:
                 raise ValueError(f'cannot specify `Annotated` and value `Field`s together for {field_name!r}')
             field_info = value
-        if field_info is None:
+            field_info.update_from_config(field_info_from_config)
+        elif field_info is None:
             field_info = FieldInfo(value, **field_info_from_config)
-        field_info.alias = field_info.alias or field_info_from_config.get('alias')
         value = None if field_info.default_factory is not None else field_info.default
         field_info._validate()
         return field_info, value
@@ -384,6 +434,7 @@ class ModelField(Representation):
         elif value is not Undefined:
             required = False
         annotation = get_annotation_from_field_info(annotation, field_info, name, config.validate_assignment)
+
         return cls(
             name=name,
             type_=annotation,
@@ -406,6 +457,12 @@ class ModelField(Representation):
             self.field_info.alias = new_alias
             self.field_info.alias_priority = new_alias_priority
             self.alias = new_alias
+        new_exclude = info_from_config.get('exclude')
+        if new_exclude is not None:
+            self.field_info.exclude = ValueItems.merge(self.field_info.exclude, new_exclude)
+        new_include = info_from_config.get('include')
+        if new_include is not None:
+            self.field_info.include = ValueItems.merge(self.field_info.include, new_include, intersect=True)
 
     @property
     def alt_alias(self) -> bool:
@@ -419,7 +476,7 @@ class ModelField(Representation):
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
         self._set_default_and_type()
-        if self.type_.__class__ == ForwardRef:
+        if self.type_.__class__ is ForwardRef or self.type_.__class__ is DeferredType:
             # self.type_ is currently a ForwardRef and there's nothing we can do now,
             # user will need to call model.update_forward_refs()
             return
@@ -427,7 +484,6 @@ class ModelField(Representation):
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
-            self.field_info.default = Required
         if self.default is Undefined and self.default_factory is None:
             self.default = None
         self.populate_validators()
@@ -435,17 +491,13 @@ class ModelField(Representation):
     def _set_default_and_type(self) -> None:
         """
         Set the default value, infer the type if needed and check if `None` value is valid.
-
-        Note: to prevent side effects by calling the `default_factory` for nothing, we only call it
-        when we want to validate the default value i.e. when `validate_all` is set to True.
         """
         if self.default_factory is not None:
             if self.type_ is Undefined:
                 raise errors_.ConfigError(
                     f'you need to set the type of field {self.name!r} when using `default_factory`'
                 )
-            if not self.model_config.validate_all:
-                return
+            return
 
         default_value = self.get_default()
 
@@ -533,6 +585,7 @@ class ModelField(Representation):
             elif len(args) == 2 and args[1] is Ellipsis:  # e.g. Tuple[int, ...]
                 self.type_ = args[0]
                 self.shape = SHAPE_TUPLE_ELLIPSIS
+                self.sub_fields = [self._create_sub_type(args[0], f'{self.name}_0')]
             elif args == ((),):  # Tuple[()] means empty tuple
                 self.shape = SHAPE_TUPLE
                 self.type_ = Any
@@ -571,6 +624,14 @@ class ModelField(Representation):
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
+        elif issubclass(origin, DefaultDict):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DEFAULTDICT
+        elif issubclass(origin, Dict):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DICT
         elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -660,6 +721,8 @@ class ModelField(Representation):
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
 
+        assert self.type_.__class__ is not DeferredType
+
         if self.type_.__class__ is ForwardRef:
             assert cls is not None
             raise ConfigError(
@@ -687,8 +750,8 @@ class ModelField(Representation):
 
         if self.shape == SHAPE_SINGLETON:
             v, errors = self._validate_singleton(v, values, loc, cls)
-        elif self.shape == SHAPE_MAPPING:
-            v, errors = self._validate_mapping(v, values, loc, cls)
+        elif self.shape in MAPPING_LIKE_SHAPES:
+            v, errors = self._validate_mapping_like(v, values, loc, cls)
         elif self.shape == SHAPE_TUPLE:
             v, errors = self._validate_tuple(v, values, loc, cls)
         elif self.shape == SHAPE_ITERABLE:
@@ -805,7 +868,7 @@ class ModelField(Representation):
         else:
             return tuple(result), None
 
-    def _validate_mapping(
+    def _validate_mapping_like(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         try:
@@ -831,8 +894,30 @@ class ModelField(Representation):
             result[key_result] = value_result
         if errors:
             return v, errors
-        else:
+        elif self.shape == SHAPE_DICT:
             return result, None
+        elif self.shape == SHAPE_DEFAULTDICT:
+            return defaultdict(self.type_, result), None
+        else:
+            return self._get_mapping_value(v, result), None
+
+    def _get_mapping_value(self, original: T, converted: Dict[Any, Any]) -> Union[T, Dict[Any, Any]]:
+        """
+        When type is `Mapping[KT, KV]` (or another unsupported mapping), we try to avoid
+        coercing to `dict` unwillingly.
+        """
+        original_cls = original.__class__
+
+        if original_cls == dict or original_cls == Dict:
+            return converted
+        elif original_cls in {defaultdict, DefaultDict}:
+            return defaultdict(self.type_, converted)
+        else:
+            try:
+                # Counter, OrderedDict, UserDict, ...
+                return original_cls(converted)  # type: ignore
+            except TypeError:
+                raise RuntimeError(f'Could not convert dictionary to {original_cls.__name__!r}') from None
 
     def _validate_singleton(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
@@ -875,7 +960,7 @@ class ModelField(Representation):
         t = display_as_type(self.type_)
 
         # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
-        if self.shape == SHAPE_MAPPING:
+        if self.shape in MAPPING_LIKE_SHAPES:
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:
             t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
@@ -945,3 +1030,9 @@ def PrivateAttr(
         default,
         default_factory=default_factory,
     )
+
+
+class DeferredType:
+    """
+    Used to postpone field preparation, while creating recursive generic models.
+    """

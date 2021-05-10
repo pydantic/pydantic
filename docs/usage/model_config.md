@@ -1,6 +1,23 @@
 Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
 
-Options:
+```py
+{!.tmp_examples/model_config_main.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Also, you can specify config options as model class kwargs:
+```py
+{!.tmp_examples/model_config_class_kwargs.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Similarly, if using the `@dataclass` decorator:
+```py
+{!.tmp_examples/model_config_dataclass.py!}
+```
+_(This script is complete, it should run "as is")_
+
+## Options
 
 **`title`**
 : the title for the generated JSON Schema
@@ -28,6 +45,14 @@ Options:
 
 **`allow_mutation`**
 : whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed (default: `True`)
+
+**`frozen`**
+
+!!! warning
+    This parameter is in beta
+
+: setting `frozen=True` does everything that `allow_mutation=False` does, and also generates a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the attributes are hashable. (default: `False`)
+
 
 **`use_enum_values`**
 : whether to populate models with the `value` property of enums, rather than the raw enum.
@@ -66,14 +91,14 @@ Options:
   for use with `orm_mode`
 
 **`alias_generator`**
-: a callable that takes a field name and returns an alias for it
+: a callable that takes a field name and returns an alias for it (see [the dedicated section](#alias-generator))
 
 **`keep_untouched`**
 : a tuple of types (e.g. descriptors) for a model's default values that should not be changed during model creation and will
 not be included in the model schemas. **Note**: this means that attributes on the model with *defaults of this type*, not *annotations of this type*, will be left alone.
 
 **`schema_extra`**
-: a `dict` used to extend/update the generated JSON Schema, or a callable to post-process it; see [Schema customization](schema.md#schema-customization)
+: a `dict` used to extend/update the generated JSON Schema, or a callable to post-process it; see [schema customization](schema.md#schema-customization)
 
 **`json_loads`**
 : a custom function for decoding JSON; see [custom JSON (de)serialisation](exporting_models.md#custom-json-deserialisation)
@@ -83,19 +108,6 @@ not be included in the model schemas. **Note**: this means that attributes on th
 
 **`json_encoders`**
 : a `dict` used to customise the way types are encoded to JSON; see [JSON Serialisation](exporting_models.md#modeljson)
-
-```py
-{!.tmp_examples/model_config_main.py!}
-```
-_(This script is complete, it should run "as is")_
-
-Similarly, if using the `@dataclass` decorator:
-
-```py
-{!.tmp_examples/model_config_dataclass.py!}
-```
-_(This script is complete, it should run "as is")_
-
 
 **`underscore_attrs_are_private`**
 : whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)

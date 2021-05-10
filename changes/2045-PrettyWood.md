@@ -1,1 +1,0 @@
-add default encoder for `Pattern` type

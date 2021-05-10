@@ -1,23 +1,10 @@
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    get_type_hints,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
 from . import validator
 from .errors import ConfigError
 from .main import BaseModel, Extra, create_model
+from .typing import get_all_type_hints
 from .utils import to_camel
 
 __all__ = ('validate_arguments',)
@@ -87,17 +74,17 @@ class ValidatedFunction:
         self.v_args_name = 'args'
         self.v_kwargs_name = 'kwargs'
 
-        type_hints = get_type_hints(function)
+        type_hints = get_all_type_hints(function)
         takes_args = False
         takes_kwargs = False
         fields: Dict[str, Tuple[Any, Any]] = {}
         for i, (name, p) in enumerate(parameters.items()):
-            if p.annotation == p.empty:
+            if p.annotation is p.empty:
                 annotation = Any
             else:
                 annotation = type_hints[name]
 
-            default = ... if p.default == p.empty else p.default
+            default = ... if p.default is p.empty else p.default
             if p.kind == Parameter.POSITIONAL_ONLY:
                 self.arg_mapping[i] = name
                 fields[name] = annotation, default
@@ -184,7 +171,7 @@ class ValidatedFunction:
         return values
 
     def execute(self, m: BaseModel) -> Any:
-        d = {k: v for k, v in m._iter() if k in m.__fields_set__}
+        d = {k: v for k, v in m._iter() if k in m.__fields_set__ or m.__fields__[k].default_factory}
         var_kwargs = d.pop(self.v_kwargs_name, {})
 
         if self.v_args_name in d:

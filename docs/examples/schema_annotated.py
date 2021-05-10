@@ -1,11 +1,7 @@
 from uuid import uuid4
 
-try:
-    from typing import Annotated
-except ImportError:
-    from typing_extensions import Annotated
-
 from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
 class Foo(BaseModel):

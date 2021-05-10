@@ -1,1 +1,0 @@
-Fix: some recursive models did not require `update_forward_refs` and silently behaved incorrectly

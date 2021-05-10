@@ -1,1 +1,0 @@
-Support generating schema for Generic fields. 

@@ -5,8 +5,9 @@ from pathlib import Path
 from typing import List
 
 import pytest
+from typing_extensions import Annotated
 
-from pydantic import BaseModel, ValidationError, validate_arguments
+from pydantic import BaseModel, Field, ValidationError, validate_arguments
 from pydantic.decorator import ValidatedFunction
 from pydantic.errors import ConfigError
 
@@ -140,6 +141,25 @@ def test_var_args_kwargs(validated):
     assert foo(1, 2, 3, e=10) == "a=1, b=2, args=(3,), d=3, kwargs={'e': 10}"
     assert foo(1, 2, kwargs=4) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4}"
     assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
+
+
+def test_field_can_provide_factory() -> None:
+    @validate_arguments
+    def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:
+        """mypy is happy with this"""
+        return a + b + sum(args)
+
+    assert foo(3) == 102
+    assert foo(1, 2, 3) == 6
+
+
+def test_annotated_field_can_provide_factory() -> None:
+    @validate_arguments
+    def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
+        """mypy reports Incompatible default for argument "b" if we don't supply ANY as default"""
+        return a + b + sum(args)
+
+    assert foo2(1) == 100
 
 
 @skip_pre_38

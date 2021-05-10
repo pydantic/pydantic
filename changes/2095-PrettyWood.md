@@ -1,1 +1,0 @@
-add validator for `None`, `NoneType` or `Literal[None]`

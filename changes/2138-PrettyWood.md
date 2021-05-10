@@ -1,1 +1,0 @@
-fix: support `underscore_attrs_are_private` with generic models

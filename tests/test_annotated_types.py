@@ -8,24 +8,19 @@ import sys
 from collections import namedtuple
 from typing import List, NamedTuple, Tuple
 
+import pytest
+from typing_extensions import TypedDict
+
+from pydantic import BaseModel, ValidationError
+
 if sys.version_info < (3, 9):
     try:
         from typing import TypedDict as LegacyTypedDict
     except ImportError:
         LegacyTypedDict = None
 
-    try:
-        from typing_extensions import TypedDict
-    except ImportError:
-        TypedDict = None
 else:
-    from typing import TypedDict
-
     LegacyTypedDict = None
-
-import pytest
-
-from pydantic import BaseModel, ValidationError
 
 
 def test_namedtuple():
@@ -128,7 +123,6 @@ def test_namedtuple_right_length():
     ]
 
 
-@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
 def test_typeddict():
     class TD(TypedDict):
         a: int
@@ -153,7 +147,6 @@ def test_typeddict():
     ]
 
 
-@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
 def test_typeddict_non_total():
     class FullMovie(TypedDict, total=True):
         name: str
@@ -183,7 +176,6 @@ def test_typeddict_non_total():
     assert m.movie == {'year': 2002}
 
 
-@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
 def test_partial_new_typeddict():
     class OptionalUser(TypedDict, total=False):
         name: str
@@ -198,7 +190,7 @@ def test_partial_new_typeddict():
     assert m.user == {'id': 1}
 
 
-@pytest.mark.skipif(not LegacyTypedDict, reason='python 3.9+ is used or typing_extensions is installed')
+@pytest.mark.skipif(not LegacyTypedDict, reason='python 3.9+ is used, no legacy TypedDict')
 def test_partial_legacy_typeddict():
     class OptionalUser(LegacyTypedDict, total=False):
         name: str
@@ -206,26 +198,12 @@ def test_partial_legacy_typeddict():
     class User(OptionalUser):
         id: int
 
-    with pytest.warns(
-        UserWarning,
-        match='You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` for better support!',
-    ):
+    with pytest.raises(TypeError, match='^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict`'):
 
         class Model(BaseModel):
             user: User
 
-        with pytest.raises(ValidationError) as exc_info:
-            Model(user={'id': 1})
-        assert exc_info.value.errors() == [
-            {
-                'loc': ('user', 'name'),
-                'msg': 'field required',
-                'type': 'value_error.missing',
-            }
-        ]
 
-
-@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
 def test_typeddict_extra():
     class User(TypedDict):
         name: str
@@ -244,7 +222,6 @@ def test_typeddict_extra():
     ]
 
 
-@pytest.mark.skipif(not TypedDict, reason='typing_extensions not installed')
 def test_typeddict_schema():
     class Data(BaseModel):
         a: int

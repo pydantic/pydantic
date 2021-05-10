@@ -1,5 +1,6 @@
 import re
 import warnings
+from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -26,12 +27,14 @@ from typing import (
 )
 from uuid import UUID
 
+from typing_extensions import Annotated, Literal
+
 from .fields import (
+    MAPPING_LIKE_SHAPES,
     SHAPE_FROZENSET,
     SHAPE_GENERIC,
     SHAPE_ITERABLE,
     SHAPE_LIST,
-    SHAPE_MAPPING,
     SHAPE_SEQUENCE,
     SHAPE_SET,
     SHAPE_SINGLETON,
@@ -61,15 +64,13 @@ from .types import (
 )
 from .typing import (
     NONE_TYPES,
-    Annotated,
     ForwardRef,
-    Literal,
+    all_literal_values,
     get_args,
     get_origin,
     is_callable_type,
     is_literal_type,
     is_namedtuple,
-    literal_values,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
@@ -373,7 +374,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
-    if field.sub_fields:
+    if field.sub_fields and not lenient_issubclass(field_type, BaseModel):
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
     elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
         flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
@@ -449,7 +450,8 @@ def field_type_schema(
         f_schema = {'type': 'array', 'items': items_schema}
         if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
             f_schema['uniqueItems'] = True
-    elif field.shape == SHAPE_MAPPING:
+
+    elif field.shape in MAPPING_LIKE_SHAPES:
         f_schema = {'type': 'object'}
         key_field = cast(ModelField, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
@@ -773,7 +775,13 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
-    if field.sub_fields:
+    field_type = field.type_
+
+    # Recurse into this field if it contains sub_fields and is NOT a
+    # BaseModel OR that BaseModel is a const
+    if field.sub_fields and (
+        (field.field_info and field.field_info.const) or not lenient_issubclass(field_type, BaseModel)
+    ):
         return field_singleton_sub_fields_schema(
             field.sub_fields,
             by_alias=by_alias,
@@ -783,32 +791,34 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_template=ref_template,
             known_models=known_models,
         )
-    if field.type_ is Any or field.type_.__class__ == TypeVar:
+    if field_type is Any or field_type.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
-    if field.type_ in NONE_TYPES:
+    if field_type in NONE_TYPES:
         return {'type': 'null'}, definitions, nested_models
-    if is_callable_type(field.type_):
+    if is_callable_type(field_type):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
     f_schema: Dict[str, Any] = {}
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
-    field_type = field.type_
+
     if is_literal_type(field_type):
-        values = literal_values(field_type)
-        if len(values) > 1:
+        values = all_literal_values(field_type)
+
+        if len({v.__class__ for v in values}) > 1:
             return field_schema(
-                multivalue_literal_field_for_schema(values, field),
+                multitypes_literal_field_for_schema(values, field),
                 by_alias=by_alias,
                 model_name_map=model_name_map,
                 ref_prefix=ref_prefix,
                 ref_template=ref_template,
                 known_models=known_models,
             )
-        literal_value = values[0]
-        field_type = literal_value.__class__
-        f_schema['const'] = literal_value
 
-    if lenient_issubclass(field_type, Enum):
+        # All values have the same type
+        field_type = values[0].__class__
+        f_schema['enum'] = list(values)
+        add_field_type_to_schema(field_type, f_schema)
+    elif lenient_issubclass(field_type, Enum):
         enum_name = model_name_map[field_type]
         f_schema, schema_overrides = get_field_info_schema(field)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
@@ -864,10 +874,19 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
 
 
-def multivalue_literal_field_for_schema(values: Tuple[Any, ...], field: ModelField) -> ModelField:
+def multitypes_literal_field_for_schema(values: Tuple[Any, ...], field: ModelField) -> ModelField:
+    """
+    To support `Literal` with values of different types, we split it into multiple `Literal` with same type
+    e.g. `Literal['qwe', 'asd', 1, 2]` becomes `Union[Literal['qwe', 'asd'], Literal[1, 2]]`
+    """
+    literal_distinct_types = defaultdict(list)
+    for v in values:
+        literal_distinct_types[v.__class__].append(v)
+    distinct_literals = (Literal[tuple(same_type_values)] for same_type_values in literal_distinct_types.values())
+
     return ModelField(
         name=field.name,
-        type_=Union[tuple(Literal[value] for value in values)],  # type: ignore
+        type_=Union[tuple(distinct_literals)],  # type: ignore
         class_validators=field.class_validators,
         model_config=field.model_config,
         default=field.default,

@@ -76,7 +76,7 @@ else:
 
 # PyObject - dotted names, in this case taken from the math module.
 st.register_type_strategy(
-    pydantic.PyObject,
+    pydantic.PyObject,  # type: ignore[arg-type]
     st.sampled_from(
         [cast(pydantic.PyObject, f'math.{name}') for name in sorted(vars(math)) if not name.startswith('_')]
     ),
@@ -139,31 +139,31 @@ st.register_type_strategy(
 )
 
 # UUIDs
-st.register_type_strategy(pydantic.UUID1, st.uuids(version=1))  # type: ignore[arg-type]
-st.register_type_strategy(pydantic.UUID3, st.uuids(version=3))  # type: ignore[arg-type]
-st.register_type_strategy(pydantic.UUID4, st.uuids(version=4))  # type: ignore[arg-type]
-st.register_type_strategy(pydantic.UUID5, st.uuids(version=5))  # type: ignore[arg-type]
+st.register_type_strategy(pydantic.UUID1, st.uuids(version=1))
+st.register_type_strategy(pydantic.UUID3, st.uuids(version=3))
+st.register_type_strategy(pydantic.UUID4, st.uuids(version=4))
+st.register_type_strategy(pydantic.UUID5, st.uuids(version=5))
 
 # Secrets
 st.register_type_strategy(pydantic.SecretBytes, st.binary().map(pydantic.SecretBytes))
 st.register_type_strategy(pydantic.SecretStr, st.text().map(pydantic.SecretStr))
 
 # IP addresses, networks, and interfaces
-st.register_type_strategy(pydantic.IPvAnyAddress, st.ip_addresses())
+st.register_type_strategy(pydantic.IPvAnyAddress, st.ip_addresses())  # type: ignore[arg-type]
 st.register_type_strategy(
     pydantic.IPvAnyInterface,
-    st.from_type(ipaddress.IPv4Interface) | st.from_type(ipaddress.IPv6Interface),
+    st.from_type(ipaddress.IPv4Interface) | st.from_type(ipaddress.IPv6Interface),  # type: ignore[arg-type]
 )
 st.register_type_strategy(
     pydantic.IPvAnyNetwork,
-    st.from_type(ipaddress.IPv4Network) | st.from_type(ipaddress.IPv6Network),
+    st.from_type(ipaddress.IPv4Network) | st.from_type(ipaddress.IPv6Network),  # type: ignore[arg-type]
 )
 
 # We hook into the con***() functions and the ConstrainedNumberMeta metaclass,
 # so here we only have to register subclasses for other constrained types which
 # don't go via those mechanisms.  Then there are the registration hooks below.
 st.register_type_strategy(pydantic.StrictBool, st.booleans())
-st.register_type_strategy(pydantic.StrictStr, st.text())  # type: ignore[arg-type]
+st.register_type_strategy(pydantic.StrictStr, st.text())
 
 
 # Constrained-type resolver functions
@@ -212,7 +212,6 @@ def resolves(
 # Type-to-strategy resolver functions
 
 
-@resolves(pydantic.Json)
 @resolves(pydantic.JsonWrapper)
 def resolve_json(cls):  # type: ignore[no-untyped-def]
     try:
@@ -221,7 +220,7 @@ def resolve_json(cls):  # type: ignore[no-untyped-def]
         finite = st.floats(allow_infinity=False, allow_nan=False)
         inner = st.recursive(
             base=st.one_of(st.none(), st.booleans(), st.integers(), finite, st.text()),
-            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),
+            extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),  # type: ignore
         )
     return st.builds(
         json.dumps,
@@ -263,7 +262,7 @@ def resolve_condecimal(cls):  # type: ignore[no-untyped-def]
     if cls.lt is not None:
         assert max_value is None, 'Set `lt` or `le`, but not both'
         max_value = cls.lt
-    s = st.decimals(min_value, max_value, allow_nan=False)
+    s = st.decimals(min_value, max_value, allow_nan=False, places=cls.decimal_places)
     if cls.lt is not None:
         s = s.filter(lambda d: d < cls.lt)
     if cls.gt is not None:
@@ -277,6 +276,7 @@ def resolve_confloat(cls):  # type: ignore[no-untyped-def]
     max_value = cls.le
     exclude_min = False
     exclude_max = False
+
     if cls.gt is not None:
         assert min_value is None, 'Set `gt` or `ge`, but not both'
         min_value = cls.gt
@@ -285,7 +285,21 @@ def resolve_confloat(cls):  # type: ignore[no-untyped-def]
         assert max_value is None, 'Set `lt` or `le`, but not both'
         max_value = cls.lt
         exclude_max = True
-    return st.floats(min_value, max_value, exclude_min=exclude_min, exclude_max=exclude_max, allow_nan=False)
+
+    if cls.multiple_of is None:
+        return st.floats(min_value, max_value, exclude_min=exclude_min, exclude_max=exclude_max, allow_nan=False)
+
+    if min_value is not None:
+        min_value = math.ceil(min_value / cls.multiple_of)
+        if exclude_min:
+            min_value = min_value + 1
+    if max_value is not None:
+        assert max_value >= cls.multiple_of, 'Cannot build model with max value smaller than multiple of'
+        max_value = math.floor(max_value / cls.multiple_of)
+        if exclude_max:
+            max_value = max_value - 1
+
+    return st.integers(min_value, max_value).map(lambda x: x * cls.multiple_of)
 
 
 @resolves(pydantic.ConstrainedInt)
@@ -347,3 +361,4 @@ def resolve_constr(cls):  # type: ignore[no-untyped-def]  # pragma: no cover
 for typ in pydantic.types._DEFINED_TYPES:
     _registered(typ)
 pydantic.types._registered = _registered
+st.register_type_strategy(pydantic.Json, resolve_json)

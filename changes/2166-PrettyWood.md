@@ -1,1 +1,0 @@
-fix: ensure to always return one of the values in `Literal` field type

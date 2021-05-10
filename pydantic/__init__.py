@@ -6,13 +6,15 @@ from .decorator import validate_arguments
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
 from .errors import *
-from .fields import Field, PrivateAttr, Required, Schema
+from .fields import Field, PrivateAttr, Required
 from .main import *
 from .networks import *
 from .parse import Protocol
 from .tools import *
 from .types import *
 from .version import VERSION
+
+__version__ = VERSION
 
 # WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
@@ -34,7 +36,6 @@ __all__ = [
     # fields
     'Field',
     'Required',
-    'Schema',
     # main
     'BaseConfig',
     'BaseModel',

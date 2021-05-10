@@ -1,1 +1,0 @@
-Support custom root type (aka `__root__`) when using `parse_obj()` with nested models

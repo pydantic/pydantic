@@ -11,7 +11,7 @@ from _pytest.assertion.rewrite import AssertionRewritingHook
 
 # See https://hypothesis.readthedocs.io/en/latest/strategies.html#interaction-with-pytest-cov
 try:
-    import hypothesis  # noqa
+    from hypothesis import given  # noqa
 except ImportError:
     pytest_plugins = []
 else:

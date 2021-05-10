@@ -12,11 +12,11 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, NameEmail, create_model
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
-from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
+from pydantic.types import ConstrainedDecimal, DirectoryPath, FilePath, SecretBytes, SecretStr
 
 
 class MyEnum(Enum):
@@ -35,6 +35,7 @@ class MyEnum(Enum):
         (SecretStr(''), '""'),
         (SecretBytes(b'xyz'), '"**********"'),
         (SecretBytes(b''), '""'),
+        (NameEmail('foo bar', 'foobaR@example.com'), '"foo bar <foobaR@example.com>"'),
         (IPv6Address('::1:0:1'), '"::1:0:1"'),
         (IPv4Interface('192.168.0.0/24'), '"192.168.0.0/24"'),
         (IPv6Interface('2001:db00::/120'), '"2001:db00::/120"'),
@@ -168,6 +169,25 @@ def test_custom_iso_timedelta():
 
     m = Model(x=123)
     assert m.json() == '{"x": "P0DT0H2M3.000000S"}'
+
+
+def test_con_decimal_encode() -> None:
+    """
+    Makes sure a decimal with decimal_places = 0, as well as one with places
+    can handle a encode/decode roundtrip.
+    """
+
+    class Id(ConstrainedDecimal):
+        max_digits = 22
+        decimal_places = 0
+        ge = 0
+
+    class Obj(BaseModel):
+        id: Id
+        price: Decimal = Decimal('0.01')
+
+    assert Obj(id=1).json() == '{"id": 1, "price": 0.01}'
+    assert Obj.parse_raw('{"id": 1, "price": 0.01}') == Obj(id=1)
 
 
 def test_json_encoder_simple_inheritance():

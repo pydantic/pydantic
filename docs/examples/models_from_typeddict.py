@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import ValidationError, create_model_from_typeddict
 

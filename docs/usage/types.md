@@ -221,7 +221,7 @@ _(This script is complete, it should run "as is")_
     pydantic can't validate the values automatically for you because it would require
     consuming the infinite generator.
 
-## Validating the first value
+#### Validating the first value
 
 You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
 
@@ -279,37 +279,37 @@ types:
 
 * `datetime` fields can be:
 
-    * `datetime`, existing `datetime` object
-    * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
-    * `str`, following formats work:
+  * `datetime`, existing `datetime` object
+  * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
+  * `str`, following formats work:
 
-        * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
-        * `int` or `float` as a string (assumed as Unix time)
+    * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
+    * `int` or `float` as a string (assumed as Unix time)
 
 * `date` fields can be:
 
-    * `date`, existing `date` object
-    * `int` or `float`, see `datetime`
-    * `str`, following formats work:
+  * `date`, existing `date` object
+  * `int` or `float`, see `datetime`
+  * `str`, following formats work:
 
-        * `YYYY-MM-DD`
-        * `int` or `float`, see `datetime`
+    * `YYYY-MM-DD`
+    * `int` or `float`, see `datetime`
 
 * `time` fields can be:
 
-    * `time`, existing `time` object
-    * `str`, following formats work:
+  * `time`, existing `time` object
+  * `str`, following formats work:
 
-        * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
+    * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
 
 * `timedelta` fields can be:
 
-    * `timedelta`, existing `timedelta` object
-    * `int` or `float`, assumed as seconds
-    * `str`, following formats work:
+  * `timedelta`, existing `timedelta` object
+  * `int` or `float`, assumed as seconds
+  * `str`, following formats work:
 
-        * `[-][DD ][HH:MM]SS[.ffffff]`
-        * `[±]P[DD]DT[HH]H[MM]M[SS]S` (ISO 8601 format for timedelta)
+    * `[-][DD ][HH:MM]SS[.ffffff]`
+    * `[±]P[DD]DT[HH]H[MM]M[SS]S` (ISO 8601 format for timedelta)
 
 ```py
 {!.tmp_examples/types_dt.py!}
@@ -565,10 +565,10 @@ _(This script is complete, it should run "as is")_
 For URI/URL validation the following types are available:
 
 - `AnyUrl`: any scheme allowed, TLD not required
-- `AnyHttpUrl`: schema `http` or `https`, TLD not required
-- `HttpUrl`: schema `http` or `https`, TLD required, max length 2083
-- `PostgresDsn`: schema `postgres` or `postgresql`, user info required, TLD not required
-- `RedisDsn`: schema `redis` or `rediss`, user info not required, tld not required (CHANGED: user info
+- `AnyHttpUrl`: scheme `http` or `https`, TLD not required
+- `HttpUrl`: scheme `http` or `https`, TLD required, max length 2083
+- `PostgresDsn`: scheme `postgres` or `postgresql`, user info required, TLD not required
+- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required (CHANGED: user info
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`, method with the following keyword arguments:
     - `strip_whitespace: bool = True`
@@ -592,7 +592,7 @@ If you require a custom URI/URL type, it can be created in a similar way to the 
 Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
 the above types export the following properties:
 
-- `scheme`: always set - the url schema (`http` above)
+- `scheme`: always set - the url scheme (`http` above)
 - `host`: always set - the url host (`example.com` above)
 - `host_type`: always set - describes the type of host, either:
 
@@ -824,6 +824,7 @@ The following arguments are available when using the `conbytes` type function
 - `to_lower: bool = False`: turns all characters to lowercase
 - `min_length: int = None`: minimum length of the byte string
 - `max_length: int = None`: maximum length of the byte string
+- `strict: bool = False`: controls type coercion
 
 
 ## Strict Types
@@ -881,7 +882,7 @@ _(This script is complete, it should run "as is")_
 Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
 formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
 
-See [Schema](schema.md) for more details on how the model's schema is generated.
+See [schema](schema.md) for more details on how the model's schema is generated.
 
 ### Arbitrary Types Allowed
 

@@ -11,10 +11,10 @@ A few things to note on validators:
   of `UserModel`.
 * the second argument is always the field value to validate; it can be named as you please
 * you can also add any subset of the following arguments to the signature (the names **must** match):
-    * `values`: a dict containing the name-to-value mapping of any previously-validated fields
-    * `config`: the model config
-    * `field`: the field being validated. Type of object is `pydantic.fields.ModelField`.
-    * `**kwargs`: if provided, this will include the arguments above not explicitly listed in the signature
+  * `values`: a dict containing the name-to-value mapping of any previously-validated fields
+  * `config`: the model config
+  * `field`: the field being validated. Type of object is `pydantic.fields.ModelField`.
+  * `**kwargs`: if provided, this will include the arguments above not explicitly listed in the signature
 * validators should either return the parsed value or raise a `ValueError`, `TypeError`, or `AssertionError`
   (``assert`` statements may be used).
 
@@ -25,13 +25,13 @@ A few things to note on validators:
 
 * where validators rely on other values, you should be aware that:
 
-    - Validation is done in the order fields are defined.
-      E.g. in the example above, `password2` has access to `password1` (and `name`),
-      but `password1` does not have access to `password2`. See [Field Ordering](models.md#field-ordering)
-      for more information on how fields are ordered
+  * Validation is done in the order fields are defined.
+    E.g. in the example above, `password2` has access to `password1` (and `name`),
+    but `password1` does not have access to `password2`. See [Field Ordering](models.md#field-ordering)
+    for more information on how fields are ordered
 
-    - If validation fails on another field (or that field is missing) it will not be included in `values`, hence
-      `if 'password1' in values and ...` in this example.
+  * If validation fails on another field (or that field is missing) it will not be included in `values`, hence
+    `if 'password1' in values and ...` in this example.
 
 ## Pre and per-item validators
 

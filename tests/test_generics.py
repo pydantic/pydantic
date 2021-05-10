@@ -1,8 +1,23 @@
 import sys
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, Generic, List, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generic,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import pytest
+from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
@@ -808,6 +823,30 @@ def test_replace_types():
 
 
 @skip_36
+def test_replace_types_with_user_defined_generic_type_field():
+    """Test that using user defined generic types as generic model fields are handled correctly."""
+
+    T = TypeVar('T')
+    KT = TypeVar('KT')
+    VT = TypeVar('VT')
+
+    class GenericMapping(Mapping[KT, VT]):
+        pass
+
+    class GenericList(List[T]):
+        pass
+
+    class Model(GenericModel, Generic[T, KT, VT]):
+
+        map_field: GenericMapping[KT, VT]
+        list_field: GenericList[T]
+
+    assert replace_types(Model, {T: bool, KT: str, VT: int}) == Model[bool, str, int]
+    assert replace_types(Model[T, KT, VT], {T: bool, KT: str, VT: int}) == Model[bool, str, int]
+    assert replace_types(Model[T, VT, KT], {T: bool, KT: str, VT: int}) == Model[T, VT, KT][bool, int, str]
+
+
+@skip_36
 def test_replace_types_identity_on_unchanged():
     T = TypeVar('T')
     U = TypeVar('U')
@@ -1015,3 +1054,106 @@ def test_generic_with_partial_callable():
     Model[str, U].__concrete__ is False
     Model[str, U].__parameters__ == [U]
     Model[str, int].__concrete__ is False
+
+
+@skip_36
+def test_generic_recursive_models(create_module):
+    @create_module
+    def module():
+        from typing import Generic, TypeVar, Union
+
+        from pydantic.generics import GenericModel
+
+        T = TypeVar('T')
+
+        class Model1(GenericModel, Generic[T]):
+            ref: 'Model2[T]'
+
+        class Model2(GenericModel, Generic[T]):
+            ref: Union[T, Model1[T]]
+
+        Model1.update_forward_refs()
+
+    Model1 = module.Model1
+    Model2 = module.Model2
+    result = Model1[str].parse_obj(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
+    assert result == Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
+
+
+@skip_36
+def test_generic_enum():
+    T = TypeVar('T')
+
+    class SomeGenericModel(GenericModel, Generic[T]):
+        some_field: T
+
+    class SomeStringEnum(str, Enum):
+        A = 'A'
+        B = 'B'
+
+    class MyModel(BaseModel):
+        my_gen: SomeGenericModel[SomeStringEnum]
+
+    m = MyModel.parse_obj({'my_gen': {'some_field': 'A'}})
+    assert m.my_gen.some_field is SomeStringEnum.A
+
+
+@skip_36
+def test_generic_literal():
+    FieldType = TypeVar('FieldType')
+    ValueType = TypeVar('ValueType')
+
+    class GModel(GenericModel, Generic[FieldType, ValueType]):
+        field: Dict[FieldType, ValueType]
+
+    Fields = Literal['foo', 'bar']
+    m = GModel[Fields, str](field={'foo': 'x'})
+    assert m.dict() == {'field': {'foo': 'x'}}
+
+
+@skip_36
+def test_generic_enums():
+    T = TypeVar('T')
+
+    class GModel(GenericModel, Generic[T]):
+        x: T
+
+    class EnumA(str, Enum):
+        a = 'a'
+
+    class EnumB(str, Enum):
+        b = 'b'
+
+    class Model(BaseModel):
+        g_a: GModel[EnumA]
+        g_b: GModel[EnumB]
+
+    assert set(Model.schema()['definitions']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
+
+
+@skip_36
+def test_generic_with_user_defined_generic_field():
+    T = TypeVar('T')
+
+    class GenericList(List[T]):
+        pass
+
+    class Model(GenericModel, Generic[T]):
+
+        field: GenericList[T]
+
+    model = Model[int](field=[5])
+    assert model.field[0] == 5
+
+    with pytest.raises(ValidationError):
+        model = Model[int](field=['a'])
+
+
+@skip_36
+def test_generic_annotated():
+    T = TypeVar('T')
+
+    class SomeGenericModel(GenericModel, Generic[T]):
+        some_field: Annotated[T, Field(alias='the_alias')]
+
+    SomeGenericModel[str](the_alias='qwe')

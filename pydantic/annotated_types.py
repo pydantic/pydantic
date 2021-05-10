@@ -16,29 +16,21 @@ def create_model_from_typeddict(typeddict_cls: Type['TypedDict'], **kwargs: Any)
     """
     Create a `BaseModel` based on the fields of a `TypedDict`.
     Since `typing.TypedDict` in Python 3.8 does not store runtime information about optional keys,
-    we warn the user if that's the case (see https://bugs.python.org/issue38834).
+    we raise an error if this happens (see https://bugs.python.org/issue38834).
     """
     field_definitions: Dict[str, Any]
 
     # Best case scenario: with python 3.9+ or when `TypedDict` is imported from `typing_extensions`
-    if hasattr(typeddict_cls, '__required_keys__'):
-        field_definitions = {
-            field_name: (field_type, Required if field_name in typeddict_cls.__required_keys__ else None)
-            for field_name, field_type in typeddict_cls.__annotations__.items()
-        }
-    else:
-        import warnings
-
-        warnings.warn(
-            'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` for better support! '
-            'Without it, there is no way to differentiate required and optional fields when subclassed. '
-            'Fields will therefore be considered all required or all optional depending on class totality.',
-            UserWarning,
+    if not hasattr(typeddict_cls, '__required_keys__'):
+        raise TypeError(
+            'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict`. '
+            'Without it, there is no way to differentiate required and optional fields when subclassed.'
         )
-        default_value = Required if typeddict_cls.__total__ else None
-        field_definitions = {
-            field_name: (field_type, default_value) for field_name, field_type in typeddict_cls.__annotations__.items()
-        }
+
+    field_definitions = {
+        field_name: (field_type, Required if field_name in typeddict_cls.__required_keys__ else None)
+        for field_name, field_type in typeddict_cls.__annotations__.items()
+    }
 
     return create_model(typeddict_cls.__name__, **kwargs, **field_definitions)
 

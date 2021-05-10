@@ -1,3 +1,4 @@
+import importlib.util
 import sys
 from collections.abc import Hashable
 from decimal import Decimal
@@ -18,7 +19,7 @@ from pydantic import (
     validate_model,
     validator,
 )
-from pydantic.fields import Field, Schema
+from pydantic.fields import Field
 
 try:
     import cython
@@ -202,12 +203,19 @@ def test_tuple_more():
         empty_tuple: Tuple[()]
         simple_tuple: tuple = None
         tuple_of_different_types: Tuple[int, float, str, bool] = None
+        tuple_of_single_tuples: Tuple[Tuple[int], ...] = ()
 
-    m = Model(empty_tuple=[], simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[4, 3, 2, 1])
+    m = Model(
+        empty_tuple=[],
+        simple_tuple=[1, 2, 3, 4],
+        tuple_of_different_types=[4, 3, 2, 1],
+        tuple_of_single_tuples=(('1',), (2,)),
+    )
     assert m.dict() == {
         'empty_tuple': (),
         'simple_tuple': (1, 2, 3, 4),
         'tuple_of_different_types': (4, 3.0, '2', True),
+        'tuple_of_single_tuples': ((1,), (2,)),
     }
 
 
@@ -1106,16 +1114,6 @@ def test_nested_init(model):
     assert m.nest.modified_number == 1
 
 
-def test_values_attr_deprecation():
-    class Model(BaseModel):
-        foo: int
-        bar: str
-
-    m = Model(foo=4, bar='baz')
-    with pytest.warns(DeprecationWarning, match='`__values__` attribute is deprecated, use `__dict__` instead'):
-        assert m.__values__ == m.__dict__
-
-
 def test_init_inspection():
     class Foobar(BaseModel):
         x: int
@@ -1216,25 +1214,6 @@ def test_not_optional_subfields():
     assert Model().a is None
     assert Model(a=None).a is None
     assert Model(a=12).a == 12
-
-
-def test_scheme_deprecated():
-
-    with pytest.warns(DeprecationWarning, match='`Schema` is deprecated, use `Field` instead'):
-
-        class Model(BaseModel):
-            foo: int = Schema(4)
-
-
-def test_fields_deprecated():
-    class Model(BaseModel):
-        v: str = 'x'
-
-    with pytest.warns(DeprecationWarning, match='`fields` attribute is deprecated, use `__fields__` instead'):
-        assert Model().fields.keys() == {'v'}
-
-    assert Model().__fields__.keys() == {'v'}
-    assert Model.__fields__.keys() == {'v'}
 
 
 def test_optional_field_constraints():
@@ -1716,12 +1695,12 @@ def test_hashable_optional(default):
     Model()
 
 
-def test_default_factory_side_effect():
-    """It may call `default_factory` more than once when `validate_all` is set"""
+def test_default_factory_called_once():
+    """It should never call `default_factory` more than once even when `validate_all` is set"""
 
     v = 0
 
-    def factory():
+    def factory() -> int:
         nonlocal v
         v += 1
         return v
@@ -1733,7 +1712,20 @@ def test_default_factory_side_effect():
             validate_all = True
 
     m1 = MyModel()
-    assert m1.id == 2  # instead of 1
+    assert m1.id == 1
+
+    class MyBadModel(BaseModel):
+        id: List[str] = Field(default_factory=factory)
+
+        class Config:
+            validate_all = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyBadModel()
+    assert v == 2  # `factory` has been called to run validation
+    assert exc_info.value.errors() == [
+        {'loc': ('id',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+    ]
 
 
 def test_default_factory_validator_child():
@@ -1773,3 +1765,106 @@ return Model
     assert model.a == 10.2
     assert model.b == 10
     return model.get_double_a() == 20.2
+
+
+def test_resolve_annotations_module_missing(tmp_path):
+    # see https://github.com/samuelcolvin/pydantic/issues/2363
+    file_path = tmp_path / 'module_to_load.py'
+    # language=Python
+    file_path.write_text(
+        """
+from pydantic import BaseModel
+class User(BaseModel):
+    id: int
+    name = 'Jane Doe'
+"""
+    )
+
+    spec = importlib.util.spec_from_file_location('my_test_module', file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.User(id=12).dict() == {'id': 12, 'name': 'Jane Doe'}
+
+
+def test_iter_coverage():
+    class MyModel(BaseModel):
+        x: int = 1
+        y: str = 'a'
+
+    assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
+
+
+def test_config_field_info():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'description': 'descr'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+
+def test_config_field_info_alias():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'alias': 'b'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
+
+
+def test_config_field_info_merge():
+    class Foo(BaseModel):
+        a: str = Field(..., foo='Foo')
+
+        class Config:
+            fields = {'a': {'bar': 'Bar'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {
+        'a': {'bar': 'Bar', 'foo': 'Foo', 'title': 'A', 'type': 'string'}
+    }
+
+
+def test_config_field_info_allow_mutation():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            validate_assignment = True
+
+    assert Foo.__fields__['a'].field_info.allow_mutation is True
+
+    f = Foo(a='x')
+    f.a = 'y'
+    assert f.dict() == {'a': 'y'}
+
+    class Bar(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'allow_mutation': False}}
+            validate_assignment = True
+
+    assert Bar.__fields__['a'].field_info.allow_mutation is False
+
+    b = Bar(a='x')
+    with pytest.raises(TypeError):
+        b.a = 'y'
+    assert b.dict() == {'a': 'x'}
+
+
+def test_arbitrary_types_allowed_custom_eq():
+    class Foo:
+        def __eq__(self, other):
+            if other.__class__ is not Foo:
+                raise TypeError(f'Cannot interpret {other.__class__.__name__!r} as a valid type')
+            return True
+
+    class Model(BaseModel):
+        x: Foo = Foo()
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    assert Model().x == Foo()

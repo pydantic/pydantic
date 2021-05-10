@@ -143,6 +143,7 @@ class PydanticModelTransformer:
     tracked_config_fields: Set[str] = {
         'extra',
         'allow_mutation',
+        'frozen',
         'orm_mode',
         'allow_population_by_field_name',
         'alias_generator',
@@ -159,7 +160,7 @@ class PydanticModelTransformer:
         In particular:
         * determines the model config and fields,
         * adds a fields-aware signature for the initializer and construct methods
-        * freezes the class if allow_mutation = False
+        * freezes the class if allow_mutation = False or frozen = True
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         ctx = self._ctx
@@ -174,7 +175,7 @@ class PydanticModelTransformer:
         is_settings = any(get_fullname(base) == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings)
         self.add_construct_method(fields)
-        self.set_frozen(fields, frozen=config.allow_mutation is False)
+        self.set_frozen(fields, frozen=config.allow_mutation is False or config.frozen is True)
         info.metadata[METADATA_KEY] = {
             'fields': {field.name: field.serialize() for field in fields},
             'config': config.set_values_dict(),
@@ -529,12 +530,14 @@ class ModelConfigData:
         self,
         forbid_extra: Optional[bool] = None,
         allow_mutation: Optional[bool] = None,
+        frozen: Optional[bool] = None,
         orm_mode: Optional[bool] = None,
         allow_population_by_field_name: Optional[bool] = None,
         has_alias_generator: Optional[bool] = None,
     ):
         self.forbid_extra = forbid_extra
         self.allow_mutation = allow_mutation
+        self.frozen = frozen
         self.orm_mode = orm_mode
         self.allow_population_by_field_name = allow_population_by_field_name
         self.has_alias_generator = has_alias_generator

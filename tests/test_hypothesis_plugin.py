@@ -6,13 +6,12 @@ import pydantic
 from pydantic.networks import import_email_validator
 
 try:
-    from hypothesis import given, strategies as st
+    from hypothesis import HealthCheck, given, settings, strategies as st
 except ImportError:
+    from unittest import mock
 
-    def given(*args, **kwargs):
-        return lambda f: f
-
-    st = type('st', (), {'data': lambda: None})
+    given = settings = lambda *a, **kw: (lambda f: f)  # pass-through decorator
+    HealthCheck = st = mock.Mock()
 
     pytestmark = pytest.mark.skipif(True, reason='"hypothesis" not installed')
 
@@ -63,7 +62,6 @@ def gen_models():
         nonnegfloat: pydantic.NonNegativeFloat
 
     class JsonModel(pydantic.BaseModel):
-        json_any: pydantic.Json
         json_int: pydantic.Json[int]
         json_float: pydantic.Json[float]
         json_str: pydantic.Json[str]
@@ -76,8 +74,12 @@ def gen_models():
         conintmul: pydantic.conint(ge=10, le=100, multiple_of=7)
         confloatt: pydantic.confloat(gt=10, lt=100)
         confloate: pydantic.confloat(ge=10, le=100)
+        confloatemul: pydantic.confloat(ge=10, le=100, multiple_of=4.2)
+        confloattmul: pydantic.confloat(gt=10, lt=100, multiple_of=10)
         condecimalt: pydantic.condecimal(gt=10, lt=100)
         condecimale: pydantic.condecimal(ge=10, le=100)
+        condecimaltplc: pydantic.condecimal(gt=10, lt=100, decimal_places=5)
+        condecimaleplc: pydantic.condecimal(ge=10, le=100, decimal_places=2)
 
     yield from (
         MiscModel,
@@ -106,6 +108,7 @@ def gen_models():
 
 
 @pytest.mark.parametrize('model', gen_models())
+@settings(suppress_health_check={HealthCheck.too_slow})
 @given(data=st.data())
 def test_can_construct_models_with_all_fields(data, model):
     # The value of this test is to confirm that Hypothesis knows how to provide

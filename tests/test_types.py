@@ -26,6 +26,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import (
     UUID1,
@@ -69,7 +70,7 @@ from pydantic import (
     errors,
     validator,
 )
-from pydantic.typing import Literal, NoneType
+from pydantic.typing import NoneType
 
 try:
     import email_validator
@@ -122,6 +123,45 @@ def test_constrained_bytes_lower_disabled():
 
     m = Model(v=b'ABCD')
     assert m.v == b'ABCD'
+
+
+def test_constrained_bytes_strict_true():
+    class Model(BaseModel):
+        v: conbytes(strict=True)
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+
+    with pytest.raises(ValidationError):
+        Model(v='foostring')
+
+    with pytest.raises(ValidationError):
+        Model(v=42)
+
+    with pytest.raises(ValidationError):
+        Model(v=0.42)
+
+
+def test_constrained_bytes_strict_false():
+    class Model(BaseModel):
+        v: conbytes(strict=False)
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+    assert Model(v='foostring').v == b'foostring'
+    assert Model(v=42).v == b'42'
+    assert Model(v=0.42).v == b'0.42'
+
+
+def test_constrained_bytes_strict_default():
+    class Model(BaseModel):
+        v: conbytes()
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+    assert Model(v='foostring').v == b'foostring'
+    assert Model(v=42).v == b'42'
+    assert Model(v=0.42).v == b'0.42'
 
 
 def test_constrained_list_good():
@@ -2508,7 +2548,6 @@ def test_generic_without_params_error():
     ]
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_single():
     class Model(BaseModel):
         a: Literal['a']
@@ -2526,7 +2565,6 @@ def test_literal_single():
     ]
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_multiple():
     class Model(BaseModel):
         a_or_b: Literal['a', 'b']
@@ -2723,9 +2761,7 @@ def test_deque_json():
     assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
 
 
-none_value_type_cases = (None, type(None), NoneType)
-if Literal:
-    none_value_type_cases += (Literal[None],)
+none_value_type_cases = None, type(None), NoneType, Literal[None]
 
 
 @pytest.mark.parametrize('value_type', none_value_type_cases)

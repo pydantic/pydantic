@@ -1,14 +1,11 @@
-import sys
-from typing import get_type_hints
-
 import pytest
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
 from pydantic.fields import Undefined
-from pydantic.typing import Annotated
+from pydantic.typing import get_all_type_hints
 
 
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 @pytest.mark.parametrize(
     ['hint_fn', 'value'],
     [
@@ -25,12 +22,12 @@ from pydantic.typing import Annotated
         ),
         # Test valid Annotated Field uses
         pytest.param(
-            lambda: Annotated[int, Field(description='Test')],
+            lambda: Annotated[int, Field(description='Test')],  # noqa: F821
             5,
             id='annotated-field-value-default',
         ),
         pytest.param(
-            lambda: Annotated[int, Field(default_factory=lambda: 5, description='Test')],
+            lambda: Annotated[int, Field(default_factory=lambda: 5, description='Test')],  # noqa: F821
             Undefined,
             id='annotated-field-default_factory',
         ),
@@ -44,18 +41,9 @@ def test_annotated(hint_fn, value):
 
     assert M().x == 5
     assert M(x=10).x == 10
-
-    # get_type_hints doesn't recognize typing_extensions.Annotated, so will return the full
-    # annotation. 3.9 w/ stock Annotated will return the wrapped type by default, but return the
-    # full thing with the new include_extras flag.
-    if sys.version_info >= (3, 9):
-        assert get_type_hints(M)['x'] is int
-        assert get_type_hints(M, include_extras=True)['x'] == hint
-    else:
-        assert get_type_hints(M)['x'] == hint
+    assert get_all_type_hints(M)['x'] == hint
 
 
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 @pytest.mark.parametrize(
     ['hint_fn', 'value', 'subclass_ctx'],
     [
@@ -93,7 +81,6 @@ def test_annotated_model_exceptions(hint_fn, value, subclass_ctx):
             x: hint = value
 
 
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 @pytest.mark.parametrize(
     ['hint_fn', 'value', 'empty_init_ctx'],
     [
@@ -121,7 +108,6 @@ def test_annotated_instance_exceptions(hint_fn, value, empty_init_ctx):
         assert M().x == 5
 
 
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 def test_field_reuse():
     field = Field(description='Long description')
 
@@ -134,3 +120,15 @@ def test_field_reuse():
         one: Annotated[int, field]
 
     assert AnnotatedModel(one=1).dict() == {'one': 1}
+
+
+def test_config_field_info():
+    class Foo(BaseModel):
+        a: Annotated[int, Field(foobar='hello')]  # noqa: F821
+
+        class Config:
+            fields = {'a': {'description': 'descr'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {
+        'a': {'title': 'A', 'description': 'descr', 'foobar': 'hello', 'type': 'integer'},
+    }

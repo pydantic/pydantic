@@ -25,13 +25,14 @@ from typing import (
 )
 from uuid import UUID
 
+from typing_extensions import Literal
+
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
     NONE_TYPES,
     AnyCallable,
     ForwardRef,
-    Literal,
     all_literal_values,
     display_as_type,
     get_class,

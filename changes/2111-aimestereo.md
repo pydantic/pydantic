@@ -1,1 +1,0 @@
-Allow pickling of `pydantic.dataclasses.dataclass` dynamically created from a built-in `dataclasses.dataclass`.
