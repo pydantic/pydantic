@@ -1,2 +1,0 @@
-- support arbitrary types with custom `__eq__`
-- support `Annotated` in `validate_arguments` and in generic models with python 3.9
