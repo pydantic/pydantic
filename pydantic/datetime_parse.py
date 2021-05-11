@@ -58,6 +58,8 @@ EPOCH = datetime(1970, 1, 1)
 # if greater than this, the number is in ms, if less than or equal it's in seconds
 # (in seconds this is 11th October 2603, in ms it's 20th August 1970)
 MS_WATERSHED = int(2e10)
+# slightly more than datetime.max in ns - (datetime.max - EPOCH).total_seconds() * 1e9
+MAX_NUMBER = int(3e20)
 StrBytesIntFloat = Union[str, bytes, int, float]
 
 
@@ -73,6 +75,11 @@ def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[Non
 
 
 def from_unix_seconds(seconds: Union[int, float]) -> datetime:
+    if seconds > MAX_NUMBER:
+        return datetime.max
+    elif seconds < -MAX_NUMBER:
+        return datetime.min
+
     while abs(seconds) > MS_WATERSHED:
         seconds /= 1000
     dt = EPOCH + timedelta(seconds=seconds)
