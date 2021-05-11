@@ -1,8 +1,8 @@
 ## v1.8.2 (2021-05-11)
 
 !!! warning
-   A security vulnerability, level "moderate" is fixed in v1.8.2. Please upgrade **ASAP**.
-   See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
+    A security vulnerability, level "moderate" is fixed in v1.8.2. Please upgrade **ASAP**.
+    See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
 
 * **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
   (or their negative values) does not cause an infinite loop, 
