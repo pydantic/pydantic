@@ -122,6 +122,12 @@ for their kind support.
 * Add `Config.copy_on_model_validation` flag. When set to `False`, _pydantic_ will keep models used as fields
   untouched on validation instead of reconstructing (copying) them, #265 by @PrettyWood
 
+## v1.7.4 (2021-05-11)
+
+* **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
+  (or their negative values) does not cause an infinite loop,
+  See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
+
 ## v1.7.3 (2020-11-30)
 
 Thank you to pydantic's sponsors:
@@ -210,6 +216,12 @@ for their kind support.
 * `pydantic.dataclasses.dataclass` decorator now supports built-in `dataclasses.dataclass`.
   It is hence possible to convert an existing `dataclass` easily to add *pydantic* validation.
   Moreover nested dataclasses are also supported, #744 by @PrettyWood
+
+## v1.6.2 (2021-05-11)
+
+* **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
+  (or their negative values) does not cause an infinite loop,
+  See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
 
 ## v1.6.1 (2020-07-15)
 
