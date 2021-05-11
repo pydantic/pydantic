@@ -149,7 +149,7 @@ st.register_type_strategy(pydantic.SecretBytes, st.binary().map(pydantic.SecretB
 st.register_type_strategy(pydantic.SecretStr, st.text().map(pydantic.SecretStr))
 
 # IP addresses, networks, and interfaces
-st.register_type_strategy(pydantic.IPvAnyAddress, st.ip_addresses())
+st.register_type_strategy(pydantic.IPvAnyAddress, st.ip_addresses())  # type: ignore[arg-type]
 st.register_type_strategy(
     pydantic.IPvAnyInterface,
     st.from_type(ipaddress.IPv4Interface) | st.from_type(ipaddress.IPv6Interface),  # type: ignore[arg-type]

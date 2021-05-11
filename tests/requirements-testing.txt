@@ -1,5 +1,5 @@
 coverage==5.5
-hypothesis==6.3.0
+hypothesis==6.10.1
 # pin importlib-metadata as upper versions need typing-extensions to work if on python < 3.8
 importlib-metadata==3.1.0;python_version<"3.8"
 mypy==0.812
