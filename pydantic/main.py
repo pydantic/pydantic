@@ -184,6 +184,7 @@ def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **nam
     namespace['json_encoders'] = {
         **getattr(parent_config, 'json_encoders', {}),
         **getattr(self_config, 'json_encoders', {}),
+        **namespace.get('json_encoders', {}),
     }
 
     return type('Config', base_classes, namespace)
