@@ -14,6 +14,7 @@
 * Allow passing `json_encoders` in class kwargs, #2521 by @layday
 * support arbitrary types with custom `__eq__`, #2483 by @PrettyWood
 * support `Annotated` in `validate_arguments` and in generic models with python 3.9, #2483 by @PrettyWood
+* Support user defined generic field types in generic models, #2465 by @daviskirk
 
 ## v1.8.1 (2021-03-03)
 
