@@ -80,20 +80,20 @@ jobs:
         COMPILED: yes
         DEPS: yes
 
-    - name: uninstall deps
-      run: pip uninstall -y cython email-validator devtools python-dotenv
-
-    - name: test compiled without deps
-      run: make test
-
-    - run: coverage xml
-    - uses: codecov/codecov-action@v1.0.14
-      with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
-      env:
-        COMPILED: yes
-        DEPS: no
+#    - name: uninstall deps
+#      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+#
+#    - name: test compiled without deps
+#      run: make test
+#
+#    - run: coverage xml
+#    - uses: codecov/codecov-action@v1.0.14
+#      with:
+#        file: ./coverage.xml
+#        env_vars: COMPILED,DEPS,PYTHON,OS
+#      env:
+#        COMPILED: yes
+#        DEPS: no
 
     - name: remove compiled binaries
       run: |
@@ -159,7 +159,7 @@ jobs:
       with:
         python-version: '3.7'
 
-    - run: echo "sip fastapi for now"
+    - run: echo "skip fastapi for now"
 #    - name: install
 #      run: make install-testing
 #
