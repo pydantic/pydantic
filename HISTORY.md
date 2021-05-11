@@ -1,3 +1,8 @@
+## v1.6.2 (2021-05-11)
+
+* **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
+  (or their negative values) does not cause an infinite loop, #2776 by @samuelcolvin
+
 ## v1.6.1 (2020-07-15)
 
 * fix validation and parsing of nested models with `default_factory`, #1710 by @PrettyWood
