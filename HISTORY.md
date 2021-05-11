@@ -1,7 +1,8 @@
 ## v1.6.2 (2021-05-11)
 
 * **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
-  (or their negative values) does not cause an infinite loop, #2776 by @samuelcolvin
+  (or their negative values) does not cause an infinite loop,
+  See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
 
 ## v1.6.1 (2020-07-15)
 
