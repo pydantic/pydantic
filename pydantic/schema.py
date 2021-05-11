@@ -895,7 +895,8 @@ def encode_default(dft: Any) -> Any:
         return dft
     elif sequence_like(dft):
         t = dft.__class__
-        return t(encode_default(v) for v in dft)
+        seq_args = (encode_default(v) for v in dft)
+        return t(*seq_args) if is_namedtuple(t) else t(seq_args)
     elif isinstance(dft, dict):
         return {encode_default(k): encode_default(v) for k, v in dft.items()}
     elif dft is None:
