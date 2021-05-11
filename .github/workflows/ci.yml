@@ -65,7 +65,8 @@ jobs:
         DEPS: yes
 
     - name: uninstall deps
-      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+#      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+      run: pip uninstall -y cython email-validator devtools python-dotenv
 
     - name: test compiled without deps
       run: make test
@@ -149,7 +150,8 @@ jobs:
       with:
         python-version: '3.7'
 
-    - run: make test-fastapi
+    - run: echo "skip fastapi tests for now"
+#    - run: make test-fastapi
 
   benchmark:
     name: run benchmarks
