@@ -64,21 +64,20 @@ jobs:
         COMPILED: yes
         DEPS: yes
 
-    - name: uninstall deps
+#    - name: uninstall deps
 #      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
-      run: pip uninstall -y cython email-validator devtools python-dotenv
-
-    - name: test compiled without deps
-      run: make test
-
-    - run: coverage xml
-    - uses: codecov/codecov-action@v1.0.10
-      with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
-      env:
-        COMPILED: yes
-        DEPS: no
+#
+#    - name: test compiled without deps
+#      run: make test
+#
+#    - run: coverage xml
+#    - uses: codecov/codecov-action@v1.0.10
+#      with:
+#        file: ./coverage.xml
+#        env_vars: COMPILED,DEPS,PYTHON,OS
+#      env:
+#        COMPILED: yes
+#        DEPS: no
 
     - name: remove compiled binaries
       run: |
