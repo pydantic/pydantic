@@ -269,14 +269,6 @@ def test_nan():
     with pytest.raises(ValidationError) as exc_info:
         Model(dt='nan', d='nan')
     assert exc_info.value.errors() == [
-        {
-            'loc': ('dt',),
-            'msg': 'cannot convert float NaN to integer',
-            'type': 'value_error',
-        },
-        {
-            'loc': ('d',),
-            'msg': 'cannot convert float NaN to integer',
-            'type': 'value_error',
-        },
+        {'loc': ('dt',), 'msg': 'cannot convert float NaN to integer', 'type': 'value_error'},
+        {'loc': ('d',), 'msg': 'cannot convert float NaN to integer', 'type': 'value_error'},
     ]
