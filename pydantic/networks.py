@@ -76,7 +76,7 @@ def url_regex() -> Pattern[str]:
             r'(?::(?P<port>\d+))?'  # port
             r'(?P<path>/[^\s?#]*)?'  # path
             r'(?:\?(?P<query>[^\s#]+))?'  # query
-            r'(?:#(?P<fragment>\S+))?',  # fragment
+            r'(?:#(?P<fragment>\S*))?',  # fragment
             re.IGNORECASE,
         )
     return _url_regex_cache
