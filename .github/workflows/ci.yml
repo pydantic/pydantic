@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - v1.8-patches
     tags:
       - '**'
   pull_request: {}
