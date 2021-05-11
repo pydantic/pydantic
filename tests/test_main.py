@@ -1865,9 +1865,9 @@ def test_repr_field():
 
     m = Model(a=1, b=2, c=3)
     assert repr(m) == 'Model(a=1, b=2)'
-    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=Ellipsis, extra={})'
-    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=Ellipsis, extra={})'
-    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=Ellipsis, repr=False, extra={})'
+    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=PydanticUndefined, repr=False, extra={})'
 
 
 def test_inherited_model_field_copy():
