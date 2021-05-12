@@ -16,7 +16,7 @@ In case you have a different configuration, here's a short overview of the steps
 
 You should use the [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extension for VS Code. It is the recommended, next-generation, official VS Code plug-in for Python.
 
-Make sure you install and enable it in your editor.
+Pylance is installed as part of the [Python Extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-python.python) by default, so it should probably just work. Otherwise, you can double check it's installed and enabled in your editor.
 
 ### Configure your environment
 
@@ -24,13 +24,11 @@ Then you need to make sure your editor knows the [Python environment](https://co
 
 This would be the environment in where you installed *pydantic*.
 
-### Configure Pylance and Pyright
+### Configure Pylance
 
-Pylance is the VS Code extension. Underneath, it uses an open source tool called [Pyright](https://github.com/microsoft/pyright) that does all the heavy lifting.
+With the default configurations, you will get support for autocompletion, but Pylance might not check for type errors.
 
-With the default configurations, you will get support for autocompletion, but Pyright (and Pylance) might not check for type errors.
-
-You can enable type error checks from Pylance/Pyright with these steps:
+You can enable type error checks from Pylance with these steps:
 
 * Open the "User Settings"
 * Search for `Type Checking Mode`
@@ -47,9 +45,12 @@ And you will also get error checks for **invalid data types**.
 
 ![Invalid data types error checks in VS Code](./img/vs_code_04.png)
 
+!!! note "Technical Details"
+    Pylance is the VS Code extension, it's closed source, but free to use. Underneath, Pylance uses an open source tool (also from Microsoft) called [Pyright](https://github.com/microsoft/pyright) that does all the heavy lifting.
+
 ### Configure mypy
 
-You might also want to configure mypy in VS Code to get mypy error checks inline in your editor (alternatively/additionally to Pyright).
+You might also want to configure mypy in VS Code to get mypy error checks inline in your editor (alternatively/additionally to Pylance).
 
 This would include the errors detected by the [*pydantic* mypy plugin](./mypy_plugin.md), if you configured it.
 
@@ -68,7 +69,7 @@ Here are some additional tips and tricks to improve your developer experience wh
 
 ### Strict errors
 
-The way this additional editor support works is that Pylance/Pyright will treat your *pydantic* models as if they were Python's pure `dataclasses`.
+The way this additional editor support works is that Pylance will treat your *pydantic* models as if they were Python's pure `dataclasses`.
 
 And it will show **strict type error checks** about the data types passed in arguments when creating a new *pydantic* model instance.
 
@@ -146,7 +147,7 @@ class Knight(BaseModel):
 lancelot = Knight(title='Sir Lancelot', age='23')  # type: ignore
 ```
 
-that way Pylance/Pyright and mypy will ignore errors in that line.
+that way Pylance and mypy will ignore errors in that line.
 
 **Pros**: it's a simple change in that line to remove errors there.
 
@@ -171,7 +172,7 @@ age_str: Any = '23'
 lancelot = Knight(title='Sir Lancelot', age=age_str)
 ```
 
-that way Pylance/Pyright and mypy will interpret the variable `age_str` as if they didn't know its type, instead of knowing it has a type of `str` when an `int` was expected (and then showing the corresponding error).
+that way Pylance and mypy will interpret the variable `age_str` as if they didn't know its type, instead of knowing it has a type of `str` when an `int` was expected (and then showing the corresponding error).
 
 **Pros**: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments.
 
@@ -197,7 +198,7 @@ class Knight(BaseModel):
 lancelot = Knight(title='Sir Lancelot', age=cast(Any, '23'))
 ```
 
-`cast(Any, '23')` doesn't affect the value, it's still just `'23'`, but now Pylance/Pyright and mypy will assume it is of type `Any`, which means, they will act as if they didn't know the type of the value.
+`cast(Any, '23')` doesn't affect the value, it's still just `'23'`, but now Pylance and mypy will assume it is of type `Any`, which means, they will act as if they didn't know the type of the value.
 
 So, this is the equivalent of the previous example, without the additional variable.
 
@@ -240,7 +241,7 @@ The specific configuration **`frozen`** (in beta) has a special meaning.
 
 It prevents other code from changing a model instance once it's created, keeping it **"frozen"**.
 
-When using the second version to declare `frozen=True` (with **keyword arguments** in the class definition), Pylance/Pyright can use it to help you check in your code and **detect errors** when something is trying to set values in a model that is "frozen".
+When using the second version to declare `frozen=True` (with **keyword arguments** in the class definition), Pylance can use it to help you check in your code and **detect errors** when something is trying to set values in a model that is "frozen".
 
 ![VS Code strict type errors with model](./img/vs_code_08.png)
 
