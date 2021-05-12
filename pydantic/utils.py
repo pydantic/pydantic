@@ -279,7 +279,7 @@ T = TypeVar('T')
 def unique_list(
     input_list: Union[List[T], Tuple[T, ...]],
     *,
-    get_name: Callable[..., str] = lambda x: str(x),
+    name_factory: Callable[[T], str] = str,
 ) -> List[T]:
     """
     Make a list unique while maintaining order.
@@ -289,7 +289,7 @@ def unique_list(
     result: List[T] = []
     result_names: List[str] = []
     for v in input_list:
-        v_name = get_name(v)
+        v_name = name_factory(v)
         if v_name not in result_names:
             result_names.append(v_name)
             result.append(v)
