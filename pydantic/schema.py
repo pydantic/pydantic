@@ -434,6 +434,7 @@ def field_type_schema(
     information as title, etc. Also return additional schema definitions, from sub-models.
     """
     from .main import BaseModel  # noqa: F811
+
     definitions = {}
     nested_models: Set[str] = set()
     f_schema: Dict[str, Any]
