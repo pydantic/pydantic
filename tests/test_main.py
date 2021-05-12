@@ -1865,9 +1865,9 @@ def test_repr_field():
 
     m = Model(a=1, b=2, c=3)
     assert repr(m) == 'Model(a=1, b=2)'
-    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=Ellipsis, extra={})'
-    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=Ellipsis, extra={})'
-    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=Ellipsis, repr=False, extra={})'
+    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=PydanticUndefined, repr=False, extra={})'
 
 
 def test_inherited_model_field_copy():
@@ -1995,6 +1995,13 @@ def test_class_kwargs_config():
     assert Model.__config__.extra is Extra.allow  # overwritten as intended
     assert Model.__config__.alias_generator is str.upper  # inherited as intended
     assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
+
+
+def test_class_kwargs_config_json_encoders():
+    class Model(BaseModel, json_encoders={int: str}):
+        pass
+
+    assert Model.__config__.json_encoders == {int: str}
 
 
 def test_class_kwargs_config_and_attr_conflict():
