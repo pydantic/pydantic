@@ -12,12 +12,11 @@ from ipaddress import (
 from typing import (
     TYPE_CHECKING,
     Any,
+    Collection,
     Dict,
-    FrozenSet,
     Generator,
     Optional,
     Pattern,
-    Set,
     Tuple,
     Type,
     Union,
@@ -106,7 +105,7 @@ class AnyUrl(str):
     strip_whitespace = True
     min_length = 1
     max_length = 2 ** 16
-    allowed_schemes: Optional[Set[str]] = None
+    allowed_schemes: Optional[Collection[str]] = None
     tld_required: bool = False
     user_required: bool = False
 
@@ -229,7 +228,7 @@ class AnyUrl(str):
             raise errors.UrlSchemeError()
 
         if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
-            raise errors.UrlSchemePermittedError(cls.allowed_schemes)
+            raise errors.UrlSchemePermittedError(set(cls.allowed_schemes))
 
         port = parts['port']
         if port is not None and int(port) > 65_535:
@@ -324,7 +323,7 @@ def stricturl(
     min_length: int = 1,
     max_length: int = 2 ** 16,
     tld_required: bool = True,
-    allowed_schemes: Optional[Union[FrozenSet[str], Set[str]]] = None,
+    allowed_schemes: Optional[Collection[str]] = None,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(

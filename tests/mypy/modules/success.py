@@ -32,6 +32,7 @@ from pydantic import (
     StrictInt,
     StrictStr,
     root_validator,
+    stricturl,
     validate_arguments,
     validator,
 )
@@ -234,3 +235,7 @@ validated.my_file_path.absolute()
 validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
 validated.my_dir_path_str.absolute()
+
+stricturl(allowed_schemes={'http'})
+stricturl(allowed_schemes=frozenset({'http'}))
+stricturl(allowed_schemes=('s3', 's3n', 's3a'))
