@@ -15,6 +15,7 @@ from typing import (
     Generic,
     Iterable,
     List,
+    NamedTuple,
     NewType,
     Optional,
     Set,
@@ -30,6 +31,7 @@ from typing_extensions import Annotated, Literal
 from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
+from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
     get_flat_models_from_model,
@@ -80,6 +82,9 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
+
+
+T = TypeVar('T')
 
 
 def test_key():
@@ -1780,6 +1785,22 @@ def test_literal_schema():
     }
 
 
+def test_literal_enum():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+
+    class Model(BaseModel):
+        kind: Literal[MyEnum.FOO]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'kind': {'title': 'Kind', 'enum': ['foo'], 'type': 'string'}},
+        'required': ['kind'],
+    }
+
+
 def test_color_type():
     class Model(BaseModel):
         color: Color
@@ -2219,6 +2240,204 @@ class MyModel(BaseModel):
     }
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_schema_for_generic_field():
+    T = TypeVar('T')
+
+    class GenModel(Generic[T]):
+        def __init__(self, data: Any):
+            self.data = data
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return v
+
+    class Model(BaseModel):
+        data: GenModel[str]
+        data1: GenModel
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'data': {'title': 'Data', 'type': 'string'},
+            'data1': {
+                'title': 'Data1',
+            },
+        },
+        'required': ['data', 'data1'],
+    }
+
+    class GenModelModified(GenModel, Generic[T]):
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.pop('type', None)
+            field_schema.update(anyOf=[{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}])
+
+    class ModelModified(BaseModel):
+        data: GenModelModified[str]
+        data1: GenModelModified
+
+    assert ModelModified.schema() == {
+        'title': 'ModelModified',
+        'type': 'object',
+        'properties': {
+            'data': {'title': 'Data', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+            'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+        },
+        'required': ['data', 'data1'],
+    }
+
+
+def test_namedtuple_default():
+    class Coordinates(NamedTuple):
+        x: float
+        y: float
+
+    class LocationBase(BaseModel):
+        coords: Coordinates = Coordinates(0, 0)
+
+    assert LocationBase.schema() == {
+        'title': 'LocationBase',
+        'type': 'object',
+        'properties': {
+            'coords': {
+                'title': 'Coords',
+                'default': Coordinates(x=0, y=0),
+                'type': 'array',
+                'items': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
+            }
+        },
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_nested_generic():
+    """
+    Test a nested BaseModel that is also a Generic
+    """
+
+    class Ref(BaseModel, Generic[T]):
+        uuid: str
+
+        def resolve(self) -> T:
+            ...
+
+    class Model(BaseModel):
+        ref: Ref['Model']  # noqa
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'definitions': {
+            'Ref': {
+                'title': 'Ref',
+                'type': 'object',
+                'properties': {
+                    'uuid': {'title': 'Uuid', 'type': 'string'},
+                },
+                'required': ['uuid'],
+            },
+        },
+        'properties': {
+            'ref': {'$ref': '#/definitions/Ref'},
+        },
+        'required': ['ref'],
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_nested_generic_model():
+    """
+    Test a nested GenericModel
+    """
+
+    class Box(GenericModel, Generic[T]):
+        uuid: str
+        data: T
+
+    class Model(BaseModel):
+        box_str: Box[str]
+        box_int: Box[int]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'definitions': {
+            'Box_str_': Box[str].schema(),
+            'Box_int_': Box[int].schema(),
+        },
+        'properties': {
+            'box_str': {'$ref': '#/definitions/Box_str_'},
+            'box_int': {'$ref': '#/definitions/Box_int_'},
+        },
+        'required': ['box_str', 'box_int'],
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_complex_nested_generic():
+    """
+    Handle a union of a generic.
+    """
+
+    class Ref(BaseModel, Generic[T]):
+        uuid: str
+
+        def resolve(self) -> T:
+            ...
+
+    class Model(BaseModel):
+        uuid: str
+        model: Union[Ref['Model'], 'Model']  # noqa
+
+        def resolve(self) -> 'Model':  # noqa
+            ...
+
+    Model.update_forward_refs()
+
+    assert Model.schema() == {
+        'definitions': {
+            'Model': {
+                'title': 'Model',
+                'type': 'object',
+                'properties': {
+                    'uuid': {'title': 'Uuid', 'type': 'string'},
+                    'model': {
+                        'title': 'Model',
+                        'anyOf': [
+                            {'$ref': '#/definitions/Ref'},
+                            {'$ref': '#/definitions/Model'},
+                        ],
+                    },
+                },
+                'required': ['uuid', 'model'],
+            },
+            'Ref': {
+                'title': 'Ref',
+                'type': 'object',
+                'properties': {
+                    'uuid': {'title': 'Uuid', 'type': 'string'},
+                },
+                'required': ['uuid'],
+            },
+        },
+        '$ref': '#/definitions/Model',
+    }
+
+
 def test_discriminated_union():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -2303,61 +2522,6 @@ def test_discriminated_union():
                 'required': ['pet_type'],
             },
         },
-    }
-
-
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
-def test_schema_for_generic_field():
-    T = TypeVar('T')
-
-    class GenModel(Generic[T]):
-        def __init__(self, data: Any):
-            self.data = data
-
-        @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
-
-        @classmethod
-        def validate(cls, v: Any):
-            return v
-
-    class Model(BaseModel):
-        data: GenModel[str]
-        data1: GenModel
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'data': {'title': 'Data', 'type': 'string'},
-            'data1': {
-                'title': 'Data1',
-            },
-        },
-        'required': ['data', 'data1'],
-    }
-
-    class GenModelModified(GenModel, Generic[T]):
-        @classmethod
-        def __modify_schema__(cls, field_schema):
-            field_schema.pop('type', None)
-            field_schema.update(anyOf=[{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}])
-
-    class ModelModified(BaseModel):
-        data: GenModelModified[str]
-        data1: GenModelModified
-
-    assert ModelModified.schema() == {
-        'title': 'ModelModified',
-        'type': 'object',
-        'properties': {
-            'data': {'title': 'Data', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
-            'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
-        },
-        'required': ['data', 'data1'],
     }
 
 

@@ -5,6 +5,9 @@ on:
     workflows: [CI]
     types: [completed]
 
+permissions:
+  statuses: write
+
 jobs:
   upload-previews:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}

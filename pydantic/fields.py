@@ -112,6 +112,7 @@ class FieldInfo(Representation):
         'min_length',
         'max_length',
         'allow_mutation',
+        'repr',
         'regex',
         'discriminator',
         'extra',
@@ -154,11 +155,18 @@ class FieldInfo(Representation):
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
         self.discriminator = kwargs.pop('discriminator', None)
+        self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
+
+        field_defaults_to_hide: Dict[str, Any] = {
+            'repr': True,
+            **self.__field_constraints__,
+        }
+
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return [(a, v) for a, v in attrs if v != self.__field_constraints__.get(a, None)]
+        return [(a, v) for a, v in attrs if v != field_defaults_to_hide.get(a, None)]
 
     def get_constraints(self) -> Set[str]:
         """
@@ -187,7 +195,7 @@ class FieldInfo(Representation):
                     self.include = ValueItems.merge(value, current_value, intersect=True)
 
     def _validate(self) -> None:
-        if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
+        if self.default is not Undefined and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
 
 
@@ -213,6 +221,7 @@ def Field(
     allow_mutation: bool = True,
     regex: str = None,
     discriminator: str = None,
+    repr: bool = True,
     **extra: Any,
 ) -> Any:
     """
@@ -251,6 +260,7 @@ def Field(
       pattern string. The schema will have a ``pattern`` validation keyword
     :param discriminator: only useful with a (discriminated a.k.a. tagged) `Union` of sub models with a common field.
       The `discriminator` is the name of this common field to shorten validation and improve generated schema
+    :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
     field_info = FieldInfo(
@@ -274,6 +284,7 @@ def Field(
         allow_mutation=allow_mutation,
         regex=regex,
         discriminator=discriminator,
+        repr=repr,
         **extra,
     )
     field_info._validate()
@@ -406,9 +417,10 @@ class ModelField(Representation):
             field_info = next(iter(field_infos), None)
             if field_info is not None:
                 field_info.update_from_config(field_info_from_config)
-                if field_info.default not in (Undefined, Ellipsis):
+                if field_info.default is not Undefined:
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
-                if value not in (Undefined, Ellipsis):
+                if value is not Undefined and value is not Required:
+                    # check also `Required` because of `validate_arguments` that sets `...` as default value
                     field_info.default = value
 
         if isinstance(value, FieldInfo):
@@ -492,7 +504,6 @@ class ModelField(Representation):
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
-            self.field_info.default = Required
         if self.default is Undefined and self.default_factory is None:
             self.default = None
         self.populate_validators()
@@ -500,17 +511,13 @@ class ModelField(Representation):
     def _set_default_and_type(self) -> None:
         """
         Set the default value, infer the type if needed and check if `None` value is valid.
-
-        Note: to prevent side effects by calling the `default_factory` for nothing, we only call it
-        when we want to validate the default value i.e. when `validate_all` is set to True.
         """
         if self.default_factory is not None:
             if self.type_ is Undefined:
                 raise errors_.ConfigError(
                     f'you need to set the type of field {self.name!r} when using `default_factory`'
                 )
-            if not self.model_config.validate_all:
-                return
+            return
 
         default_value = self.get_default()
 
