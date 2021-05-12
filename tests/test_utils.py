@@ -6,7 +6,6 @@ import string
 import sys
 from copy import copy, deepcopy
 from distutils.version import StrictVersion
-from enum import Enum
 from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
 
 import pytest
@@ -74,33 +73,6 @@ def test_display_as_type(value, expected):
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
 def test_display_as_type_generic_alias():
     assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
-
-
-def test_display_as_type_enum():
-    class SubField(Enum):
-        a = 1
-        b = 'b'
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'enum'
-
-
-def test_display_as_type_enum_int():
-    class SubField(int, Enum):
-        a = 1
-        b = 2
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'int'
-
-
-def test_display_as_type_enum_str():
-    class SubField(str, Enum):
-        a = 'a'
-        b = 'b'
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'str'
 
 
 def test_lenient_issubclass():

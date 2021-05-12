@@ -185,6 +185,7 @@ def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **nam
     namespace['json_encoders'] = {
         **getattr(parent_config, 'json_encoders', {}),
         **getattr(self_config, 'json_encoders', {}),
+        **namespace.get('json_encoders', {}),
     }
 
     return type('Config', base_classes, namespace)
@@ -258,7 +259,12 @@ class ModelMetaclass(ABCMeta):
                 class_vars.update(base.__class_vars__)
                 hash_func = base.__hash__
 
-        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & BaseConfig.__dict__.keys()}
+        allowed_config_kwargs: SetStr = {
+            key
+            for key in dir(config)
+            if not (key.startswith('__') and key.endswith('__'))  # skip dunder methods and attributes
+        }
+        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & allowed_config_kwargs}
         config_from_namespace = namespace.get('Config')
         if config_kwargs and config_from_namespace:
             raise TypeError('Specifying config in two places is ambiguous, use either Config attribute or class kwargs')
@@ -977,7 +983,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return self.dict() == other
 
     def __repr_args__(self) -> 'ReprArgs':
-        return self.__dict__.items()  # type: ignore
+        return [(k, v) for k, v in self.__dict__.items() if self.__fields__[k].field_info.repr]
 
 
 _is_base_model_class_defined = True

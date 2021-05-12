@@ -15,13 +15,14 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    get_type_hints,
 )
+
+from typing_extensions import Annotated
 
 from .class_validators import gather_all_validators
 from .fields import DeferredType
 from .main import BaseModel, create_model
-from .typing import display_as_type, get_args, get_origin, typing_base
+from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from .utils import all_identical, lenient_issubclass
 
 _generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
@@ -73,7 +74,7 @@ class GenericModel(BaseModel):
         model_name = cls.__concrete_name__(params)
         validators = gather_all_validators(cls)
 
-        type_hints = get_type_hints(cls).items()
+        type_hints = get_all_type_hints(cls).items()
         instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}
 
         fields = {k: (DeferredType(), cls.__fields__[k].field_info) for k in instance_type_hints if k in cls.__fields__}
@@ -159,6 +160,10 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     type_args = get_args(type_)
     origin_type = get_origin(type_)
 
+    if origin_type is Annotated:
+        annotated_type, *annotations = type_args
+        return Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
+
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
     if type_args:
@@ -167,7 +172,12 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             # If all arguments are the same, there is no need to modify the
             # type or create a new object at all
             return type_
-        if origin_type is not None and isinstance(type_, typing_base) and not isinstance(origin_type, typing_base):
+        if (
+            origin_type is not None
+            and isinstance(type_, typing_base)
+            and not isinstance(origin_type, typing_base)
+            and getattr(type_, '_name', None) is not None
+        ):
             # In python < 3.9 generic aliases don't exist so any of these like `list`,
             # `type` or `collections.abc.Callable` need to be translated.
             # See: https://www.python.org/dev/peps/pep-0585

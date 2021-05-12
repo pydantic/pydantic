@@ -9,6 +9,7 @@ import pytest
 from pytest import param
 
 from pydantic import (
+    BaseConfig,
     BaseModel,
     ConfigError,
     Extra,
@@ -1862,6 +1863,19 @@ def test_allow_mutation_field():
         r.id = 2
 
 
+def test_repr_field():
+    class Model(BaseModel):
+        a: int = Field()
+        b: int = Field(repr=True)
+        c: int = Field(repr=False)
+
+    m = Model(a=1, b=2, c=3)
+    assert repr(m) == 'Model(a=1, b=2)'
+    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=PydanticUndefined, repr=False, extra={})'
+
+
 def test_inherited_model_field_copy():
     """It should copy models used as fields by default"""
 
@@ -1989,6 +2003,13 @@ def test_class_kwargs_config():
     assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
 
 
+def test_class_kwargs_config_json_encoders():
+    class Model(BaseModel, json_encoders={int: str}):
+        pass
+
+    assert Model.__config__.json_encoders == {int: str}
+
+
 def test_class_kwargs_config_and_attr_conflict():
 
     with pytest.raises(
@@ -2000,3 +2021,14 @@ def test_class_kwargs_config_and_attr_conflict():
 
             class Config:
                 extra = 'forbid'
+
+
+def test_class_kwargs_custom_config():
+    class Base(BaseModel):
+        class Config(BaseConfig):
+            some_config = 'value'
+
+    class Model(Base, some_config='new_value'):
+        a: int
+
+    assert Model.__config__.some_config == 'new_value'
