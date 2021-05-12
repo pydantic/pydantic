@@ -554,6 +554,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             )
             exclude_unset = skip_defaults
         encoder = cast(Callable[[Any], Any], encoder or self.__json_encoder__)
+
+        # We don't directly call `self.dict()`, which does exactly the same thing but
+        # with `to_dict = True` because we want to keep raw `BaseModel` instances and not as `dict`.
+        # This allows users to write custom JSON encoders for given `BaseModel` classes.
         data = dict(
             self._iter(
                 by_alias=by_alias,
