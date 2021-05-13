@@ -231,7 +231,7 @@ def generate_model_signature(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
             )
 
-    if config.extra is config.extra.allow:
+    if config.extra.value == "allow":
         use_var_kw = True
 
     if var_kw and use_var_kw:
