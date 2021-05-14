@@ -295,7 +295,7 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
             # In case of `ForwardRef`, we give it another shot if we want to leverage "new" annotations
             # with older versions of python
             try:
-                from future_typing import TYPING_NAME, transform_annotation
+                from future_typing import transform_annotation
             except ImportError:
                 import warnings
 
@@ -306,10 +306,15 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
                 )
                 raise te
             else:
-                import typing
+                # We need a merged version of typing (with typing_extensions) to
+                # ensure we can resolve things like `Literal` or `Annotated` with older versions
+                from . import typing_merge
 
-                new_forward_ref = ForwardRef(transform_annotation(value.__forward_arg__), value.__forward_is_argument__)
-                value = _eval_type(new_forward_ref, base_globals, {TYPING_NAME: typing})
+                all_typing_mod_name = 'pydantic_all_typing___'
+                new_forward_ref = ForwardRef(
+                    transform_annotation(value.__forward_arg__, all_typing_mod_name), value.__forward_is_argument__
+                )
+                value = _eval_type(new_forward_ref, base_globals, {all_typing_mod_name: typing_merge})
 
         annotations[name] = value
     return annotations

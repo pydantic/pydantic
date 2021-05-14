@@ -534,6 +534,8 @@ def test_forward_ref_future_typing(create_module):
         """
 from __future__ import annotations
 
+from typing_extensions import Literal
+
 from pydantic import BaseModel, Field
 
 class User(BaseModel, validate_assignment=True):
@@ -541,8 +543,9 @@ class User(BaseModel, validate_assignment=True):
     last_name: str | None = None
     friends: list[User] = Field(default_factory=list)
     metadata: dict[str, int] | None = None
+    number: Literal[42] = 42
 
-user = User(first_name='pika', last_name=666)
+user = User(first_name='pika', last_name=666, number=42)
 """
     )
     assert m.user.last_name == '666'
@@ -551,6 +554,8 @@ user = User(first_name='pika', last_name=666)
     assert m.user.metadata == {'1': 1}
     with pytest.raises(ValidationError):
         m.user.last_name = ['chu']
+    with pytest.raises(ValidationError):
+        m.user.number = 43
 
 
 @pytest.mark.skipif(future_typing is not None, reason='`future_typing` is installed')
