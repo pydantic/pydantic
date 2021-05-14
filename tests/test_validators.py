@@ -2,7 +2,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from itertools import product
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import pytest
 from typing_extensions import Literal
@@ -1200,6 +1200,15 @@ def test_nested_literal_validator():
             'ctx': {'given': 'nope', 'permitted': ('foo', 'bar')},
         }
     ]
+
+
+def test_union_literal_with_constraints():
+    class Model(BaseModel, validate_assignment=True):
+        x: Union[Literal[42], Literal['pika']] = Field(allow_mutation=False)
+
+    m = Model(x=42)
+    with pytest.raises(TypeError):
+        m.x += 1
 
 
 def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker):
