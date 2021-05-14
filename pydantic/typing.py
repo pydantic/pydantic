@@ -289,7 +289,7 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
             # this is ok, it can be fixed with update_forward_refs
             pass
         except TypeError as te:
-            if value.__class__ is not ForwardRef:
+            if value.__class__ is not ForwardRef:  # pragma: no cover
                 raise
 
             # In case of `ForwardRef`, we give it another shot if we want to leverage "new" annotations
