@@ -7,4 +7,5 @@ class Foo(BaseModel):
     values: list[int | str]
     optional: str | None = None
 
-Foo(values=[1, "qwe"])
+
+Foo(values=[1, 'qwe'])
