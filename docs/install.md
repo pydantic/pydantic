@@ -29,19 +29,23 @@ import pydantic
 print('compiled:', pydantic.compiled)
 ```
 
-*pydantic* has two optional dependencies:
+*pydantic* has three optional dependencies:
 
 * If you require email validation you can add [email-validator](https://github.com/JoshData/python-email-validator)
 * [dotenv file support](usage/settings.md#dotenv-env-support) with `Settings` requires
   [python-dotenv](https://pypi.org/project/python-dotenv)
+* If you want to use new annotation syntax from `__future__.annotations` in your models,
+  you can add [future-typing](https://pypi.org/project/future-typing)
 
 To install these along with *pydantic*:
 ```bash
 pip install pydantic[email]
 # or
 pip install pydantic[dotenv]
+# or
+pip install pydantic[future-annotations]
 # or just
-pip install pydantic[email,dotenv]
+pip install pydantic[email,dotenv,future-annotations]
 ```
 
 Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install`.

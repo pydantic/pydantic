@@ -562,7 +562,7 @@ user = User(first_name='pika', last_name=666, number=42)
 @skip_pre_37
 def test_forward_ref_no_future_typing(create_module):
     with pytest.raises(TypeError, match="unsupported operand type(s) for |: 'type' and 'type'"):
-        with pytest.warns(UserWarning, match='you need to install `future-typing`'):
+        with pytest.warns(UserWarning, match='you need to install `pydantic[future-annotations]`'):
             create_module(
                 # language=Python
                 """

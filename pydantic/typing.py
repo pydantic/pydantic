@@ -301,7 +301,7 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
 
                 warnings.warn(
                     'If you try to use generic builtins or new `|` Union operator, '
-                    'you need to install `future-typing`',
+                    'you need to install `pydantic[future-annotations]` or directly `future-typing`.',
                     UserWarning,
                 )
                 raise te

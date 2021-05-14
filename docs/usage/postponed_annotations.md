@@ -64,3 +64,19 @@ and *pydantic* versions).
 {!.tmp_examples/postponed_annotations_self_referencing_annotations.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+## Using new annotation syntax in your model
+
+New annotation syntax like `list[int | str]` may be valid prior to python 3.10 for static type checkers
+but _pydantic_ needs to actually `eval`uate them, which is by default impossible!
+Nevertheless, if you still want to use them, you can install `future-typing`, which will be used by
+_pydantic_ to modify the annotations before evaluating them
+
+```py
+{!.tmp_examples/postponed_annotations_new_syntax.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! warning
+    **`future-typing` is still in beta!** If you find a bug, please open an issue
+    [in the dedicated repository](https://github.com/PrettyWood/future-typing/issues).

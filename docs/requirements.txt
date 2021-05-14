@@ -10,3 +10,4 @@ mkdocs-material==7.1.4
 sqlalchemy
 orjson
 ujson
+future-typing==0.4.1
