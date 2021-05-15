@@ -48,6 +48,8 @@ And you will also get error checks for **invalid data types**.
 !!! note "Technical Details"
     Pylance is the VS Code extension, it's closed source, but free to use. Underneath, Pylance uses an open source tool (also from Microsoft) called [Pyright](https://github.com/microsoft/pyright) that does all the heavy lifting.
 
+    You can read more about it in the [Pylance Frequently Asked Questions](https://github.com/microsoft/pylance-release/blob/main/FAQ.md#what-is-the-relationship-between-pylance-pyright-and-the-python-extension).
+
 ### Configure mypy
 
 You might also want to configure mypy in VS Code to get mypy error checks inline in your editor (alternatively/additionally to Pylance).
