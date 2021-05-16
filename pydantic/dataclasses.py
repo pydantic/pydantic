@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
 
-    DataclassClass = Union[Type['Dataclass'], 'DataclassProxy']
+    DataclassClassOrWrapper = Union[Type['Dataclass'], 'DataclassProxy']
 
     class Dataclass:
         # stdlib attributes
@@ -98,7 +98,7 @@ def dataclass(
     frozen: bool = False,
     config: Type[Any] = None,
     validate_on_init: Optional[bool] = None,
-) -> Callable[[Type[Any]], 'DataclassClass']:
+) -> Callable[[Type[Any]], 'DataclassClassOrWrapper']:
     ...
 
 
@@ -114,7 +114,7 @@ def dataclass(
     frozen: bool = False,
     config: Type[Any] = None,
     validate_on_init: Optional[bool] = None,
-) -> 'DataclassClass':
+) -> 'DataclassClassOrWrapper':
     ...
 
 
@@ -129,7 +129,7 @@ def dataclass(
     frozen: bool = False,
     config: Optional[Type['BaseConfig']] = None,
     validate_on_init: Optional[bool] = None,
-) -> Union[Callable[[Type[Any]], 'DataclassClass'], 'DataclassClass']:
+) -> Union[Callable[[Type[Any]], 'DataclassClassOrWrapper'], 'DataclassClassOrWrapper']:
     """
     Like the python standard lib dataclasses but with type validation.
     The result is either pydantic dataclass that will validate input data
@@ -137,7 +137,7 @@ def dataclass(
     to avoid modifying it directly
     """
 
-    def wrap(cls: Type[Any]) -> 'DataclassClass':
+    def wrap(cls: Type[Any]) -> 'DataclassClassOrWrapper':
         import dataclasses
 
         dc_cls_doc = cls.__doc__ or ''
@@ -145,7 +145,7 @@ def dataclass(
         if is_builtin_dataclass(cls):
             should_validate_on_init = False if validate_on_init is None else validate_on_init
             _add_pydantic_validation_attributes(cls, config, should_validate_on_init, '')
-            return DataclassProxy(cls)  # type: ignore[no-untyped-call]
+            return DataclassProxy(cls)
 
         else:
 
@@ -163,7 +163,7 @@ def dataclass(
 
 
 @contextmanager
-def set_validation(cls: 'DataclassClass', value: bool) -> Generator['DataclassClass', None, None]:
+def set_validation(cls: Type['DataclassT'], value: bool) -> Generator[Type['DataclassT'], None, None]:
     original_run_validation = cls.__pydantic_run_validation__
     try:
         cls.__pydantic_run_validation__ = value
@@ -182,7 +182,7 @@ class DataclassProxy:
         with set_validation(self.__dataclass__, True):
             return self.__dataclass__(*args, **kwargs)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         return getattr(self.__dataclass__, name)
 
 
@@ -190,7 +190,7 @@ def _add_pydantic_validation_attributes(
     dc_cls: Type['Dataclass'],
     config: Optional[Type['BaseConfig']],
     validate_on_init: bool,
-    dc_cls_doc: Optional[str] = None,
+    dc_cls_doc: str,
 ) -> None:
     """
     We need to replace the right method. If no `__post_init__` has been set in the stdlib dataclass
@@ -251,7 +251,7 @@ def _add_pydantic_validation_attributes(
         setattr(dc_cls, '__setattr__', _dataclass_validate_assignment_setattr)
 
 
-def _get_validators(cls: Type['Dataclass']) -> 'CallableGenerator':
+def _get_validators(cls: 'DataclassClassOrWrapper') -> 'CallableGenerator':
     yield cls.__validate__
 
 
