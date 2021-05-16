@@ -722,6 +722,10 @@ def test_override_builtin_dataclass__3_6():
         FileChecked(hash=[1], name='name', size=3)
     assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 
+    with pydantic.dataclasses.set_validation(FileChecked, False):
+        f = FileChecked(hash=[1], name='name', size=3)
+    assert f.hash == [1]
+
 
 @only_36
 def test_override_builtin_dataclass__3_6_no_overwrite():
@@ -741,7 +745,7 @@ def test_override_builtin_dataclass__3_6_no_overwrite():
     assert f1.size == f2.size == '456'
 
     with pytest.raises(ValidationError) as e:
-        with pydantic.dataclasses.trigger_validation(FileChecked):
+        with pydantic.dataclasses.set_validation(FileChecked, True):
             FileChecked(hash=[1], name='name', size=3)
     assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 

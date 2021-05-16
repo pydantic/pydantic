@@ -127,9 +127,10 @@ def dataclass(
     Like the python standard lib dataclasses but with type validation.
 
     Arguments are the same as for standard dataclasses, except for `validate_on_init`, which
-    enforces validation by default on __init__.
-    By default, it is set to `False` because we don't modify the `dataclass` inplace, the wrapper
-    will ensure validation is triggered
+    can be used in python 3.6.
+    By default, it is set to `False` (except for python 3.6) because we create a wrapper around
+    the `dataclass` and don't need to modify the `dataclass` inplace.
+    It is the wrapper that will ensure validation is triggered.
     """
 
     def wrap(cls: Type[Any]) -> 'DataclassClass':
@@ -158,7 +159,7 @@ def dataclass(
                     warnings.warn(
                         f'Stdlib dataclass {cls.__name__!r} has been modified and now validates input by default. '
                         'If you do not want this, you can set `validate_on_init=False` in the decorator '
-                        f'or set `{cls.__name__}.__pydantic_run_validation__ = False`.',
+                        f'or use `with set_validation({cls.__name__}, False)` context manager.',
                         UserWarning,
                     )
                 return cls
@@ -261,17 +262,17 @@ def _get_validators(cls: Type['Dataclass']) -> 'CallableGenerator':
 
 
 @contextmanager
-def trigger_validation(cls: 'DataclassClass') -> Generator['DataclassClass', None, None]:
+def set_validation(cls: 'DataclassClass', value: bool) -> Generator['DataclassClass', None, None]:
     original_run_validation = cls.__pydantic_run_validation__
     try:
-        cls.__pydantic_run_validation__ = True
+        cls.__pydantic_run_validation__ = value
         yield cls
     finally:
         cls.__pydantic_run_validation__ = original_run_validation
 
 
 def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
-    with trigger_validation(cls):
+    with set_validation(cls, True):
         if isinstance(v, cls):
             v.__pydantic_validate_values__()
             return v
