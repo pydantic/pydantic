@@ -43,7 +43,7 @@ from .typing import (
     is_typeddict,
     new_type_supertype,
 )
-from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
+from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
@@ -72,7 +72,7 @@ if TYPE_CHECKING:
     from .error_wrappers import ErrorList
     from .main import BaseConfig, BaseModel  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
-    from .typing import ReprArgs  # noqa: F401
+    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
@@ -91,6 +91,8 @@ class FieldInfo(Representation):
         'alias_priority',
         'title',
         'description',
+        'exclude',
+        'include',
         'const',
         'gt',
         'ge',
@@ -102,6 +104,7 @@ class FieldInfo(Representation):
         'min_length',
         'max_length',
         'allow_mutation',
+        'repr',
         'regex',
         'extra',
     )
@@ -128,6 +131,8 @@ class FieldInfo(Representation):
         self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
+        self.exclude = kwargs.pop('exclude', None)
+        self.include = kwargs.pop('include', None)
         self.const = kwargs.pop('const', None)
         self.gt = kwargs.pop('gt', None)
         self.ge = kwargs.pop('ge', None)
@@ -140,11 +145,18 @@ class FieldInfo(Representation):
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
+        self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
+
+        field_defaults_to_hide: Dict[str, Any] = {
+            'repr': True,
+            **self.__field_constraints__,
+        }
+
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return [(a, v) for a, v in attrs if v != self.__field_constraints__.get(a, None)]
+        return [(a, v) for a, v in attrs if v != field_defaults_to_hide.get(a, None)]
 
     def get_constraints(self) -> Set[str]:
         """
@@ -167,9 +179,13 @@ class FieldInfo(Representation):
             else:
                 if current_value is self.__field_constraints__.get(attr_name, None):
                     setattr(self, attr_name, value)
+                elif attr_name == 'exclude':
+                    self.exclude = ValueItems.merge(value, current_value)
+                elif attr_name == 'include':
+                    self.include = ValueItems.merge(value, current_value, intersect=True)
 
     def _validate(self) -> None:
-        if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
+        if self.default is not Undefined and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
 
 
@@ -180,6 +196,8 @@ def Field(
     alias: str = None,
     title: str = None,
     description: str = None,
+    exclude: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
+    include: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
     const: bool = None,
     gt: float = None,
     ge: float = None,
@@ -192,6 +210,7 @@ def Field(
     max_length: int = None,
     allow_mutation: bool = True,
     regex: str = None,
+    repr: bool = True,
     **extra: Any,
 ) -> Any:
     """
@@ -205,6 +224,10 @@ def Field(
     :param alias: the public name of the field
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
+    :param exclude: exclude this field while dumping.
+      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
+    :param include: include this field while dumping.
+      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
     :param const: this field is required and *must* take it's default value
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
       will have an ``exclusiveMinimum`` validation keyword
@@ -224,6 +247,7 @@ def Field(
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
     :param regex: only applies to strings, requires the field match agains a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
+    :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
     field_info = FieldInfo(
@@ -232,6 +256,8 @@ def Field(
         alias=alias,
         title=title,
         description=description,
+        exclude=exclude,
+        include=include,
         const=const,
         gt=gt,
         ge=ge,
@@ -244,6 +270,7 @@ def Field(
         max_length=max_length,
         allow_mutation=allow_mutation,
         regex=regex,
+        repr=repr,
         **extra,
     )
     field_info._validate()
@@ -370,9 +397,10 @@ class ModelField(Representation):
             field_info = next(iter(field_infos), None)
             if field_info is not None:
                 field_info.update_from_config(field_info_from_config)
-                if field_info.default not in (Undefined, Ellipsis):
+                if field_info.default is not Undefined:
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
-                if value not in (Undefined, Ellipsis):
+                if value is not Undefined and value is not Required:
+                    # check also `Required` because of `validate_arguments` that sets `...` as default value
                     field_info.default = value
 
         if isinstance(value, FieldInfo):
@@ -382,7 +410,6 @@ class ModelField(Representation):
             field_info.update_from_config(field_info_from_config)
         elif field_info is None:
             field_info = FieldInfo(value, **field_info_from_config)
-
         value = None if field_info.default_factory is not None else field_info.default
         field_info._validate()
         return field_info, value
@@ -407,6 +434,7 @@ class ModelField(Representation):
         elif value is not Undefined:
             required = False
         annotation = get_annotation_from_field_info(annotation, field_info, name, config.validate_assignment)
+
         return cls(
             name=name,
             type_=annotation,
@@ -429,6 +457,12 @@ class ModelField(Representation):
             self.field_info.alias = new_alias
             self.field_info.alias_priority = new_alias_priority
             self.alias = new_alias
+        new_exclude = info_from_config.get('exclude')
+        if new_exclude is not None:
+            self.field_info.exclude = ValueItems.merge(self.field_info.exclude, new_exclude)
+        new_include = info_from_config.get('include')
+        if new_include is not None:
+            self.field_info.include = ValueItems.merge(self.field_info.include, new_include, intersect=True)
 
     @property
     def alt_alias(self) -> bool:
@@ -450,7 +484,6 @@ class ModelField(Representation):
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
-            self.field_info.default = Required
         if self.default is Undefined and self.default_factory is None:
             self.default = None
         self.populate_validators()
@@ -458,17 +491,13 @@ class ModelField(Representation):
     def _set_default_and_type(self) -> None:
         """
         Set the default value, infer the type if needed and check if `None` value is valid.
-
-        Note: to prevent side effects by calling the `default_factory` for nothing, we only call it
-        when we want to validate the default value i.e. when `validate_all` is set to True.
         """
         if self.default_factory is not None:
             if self.type_ is Undefined:
                 raise errors_.ConfigError(
                     f'you need to set the type of field {self.name!r} when using `default_factory`'
                 )
-            if not self.model_config.validate_all:
-                return
+            return
 
         default_value = self.get_default()
 

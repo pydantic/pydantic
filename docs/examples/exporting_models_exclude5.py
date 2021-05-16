@@ -1,9 +1,9 @@
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, Field, SecretStr
 
 
 class User(BaseModel):
-    id: int
-    username: str
+    id: int = Field(..., include=True)
+    username: str = Field(..., include=True)  # overridden by explicit include
     password: SecretStr
 
 
@@ -22,11 +22,5 @@ t = Transaction(
     ),
     value=9876543210,
 )
-
-# using a set:
-print(t.dict(exclude={'user', 'value'}))
-
-# using a dict:
-print(t.dict(exclude={'user': {'username', 'password'}, 'value': True}))
 
 print(t.dict(include={'id': True, 'user': {'id'}}))

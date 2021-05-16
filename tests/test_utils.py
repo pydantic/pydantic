@@ -6,7 +6,6 @@ import string
 import sys
 from copy import copy, deepcopy
 from distutils.version import StrictVersion
-from enum import Enum
 from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
 
 import pytest
@@ -74,33 +73,6 @@ def test_display_as_type(value, expected):
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
 def test_display_as_type_generic_alias():
     assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
-
-
-def test_display_as_type_enum():
-    class SubField(Enum):
-        a = 1
-        b = 'b'
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'enum'
-
-
-def test_display_as_type_enum_int():
-    class SubField(int, Enum):
-        a = 1
-        b = 2
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'int'
-
-
-def test_display_as_type_enum_str():
-    class SubField(str, Enum):
-        a = 'a'
-        b = 'b'
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'str'
 
 
 def test_lenient_issubclass():
@@ -177,13 +149,62 @@ def test_value_items():
 
     sub_v = included['a']
     sub_vi = ValueItems(sub_v, vi.for_element('a'))
-    assert repr(sub_vi) == 'ValueItems({0, 2})'
+    assert repr(sub_vi) == 'ValueItems({0: Ellipsis, 2: Ellipsis})'
 
     assert sub_vi.is_excluded(2)
     assert [v_ for i, v_ in enumerate(sub_v) if not sub_vi.is_excluded(i)] == ['b']
 
     assert sub_vi.is_included(2)
     assert [v_ for i, v_ in enumerate(sub_v) if sub_vi.is_included(i)] == ['a', 'c']
+
+
+@pytest.mark.parametrize(
+    'base,override,intersect,expected',
+    [
+        # Check in default (union) mode
+        (..., ..., False, ...),
+        (None, None, False, None),
+        ({}, {}, False, {}),
+        (..., None, False, ...),
+        (None, ..., False, ...),
+        (None, {}, False, {}),
+        ({}, None, False, {}),
+        (..., {}, False, {}),
+        ({}, ..., False, ...),
+        ({'a': None}, {'a': None}, False, {}),
+        ({'a'}, ..., False, ...),
+        ({'a'}, {}, False, {'a': ...}),
+        ({'a'}, {'b'}, False, {'a': ..., 'b': ...}),
+        ({'a': ...}, {'b': {'c'}}, False, {'a': ..., 'b': {'c': ...}}),
+        ({'a': ...}, {'a': {'c'}}, False, {'a': {'c': ...}}),
+        ({'a': {'c': ...}, 'b': {'d'}}, {'a': ...}, False, {'a': ..., 'b': {'d': ...}}),
+        # Check in intersection mode
+        (..., ..., True, ...),
+        (None, None, True, None),
+        ({}, {}, True, {}),
+        (..., None, True, ...),
+        (None, ..., True, ...),
+        (None, {}, True, {}),
+        ({}, None, True, {}),
+        (..., {}, True, {}),
+        ({}, ..., True, {}),
+        ({'a': None}, {'a': None}, True, {}),
+        ({'a'}, ..., True, {'a': ...}),
+        ({'a'}, {}, True, {}),
+        ({'a'}, {'b'}, True, {}),
+        ({'a': ...}, {'b': {'c'}}, True, {}),
+        ({'a': ...}, {'a': {'c'}}, True, {'a': {'c': ...}}),
+        ({'a': {'c': ...}, 'b': {'d'}}, {'a': ...}, True, {'a': {'c': ...}}),
+        # Check usage of `True` instead of `...`
+        (..., True, False, True),
+        (True, ..., False, ...),
+        (True, None, False, True),
+        ({'a': {'c': True}, 'b': {'d'}}, {'a': True}, False, {'a': True, 'b': {'d': ...}}),
+    ],
+)
+def test_value_items_merge(base, override, intersect, expected):
+    actual = ValueItems.merge(base, override, intersect=intersect)
+    assert actual == expected
 
 
 def test_value_items_error():
@@ -327,8 +348,8 @@ def test_undefined_repr():
 
 
 def test_undefined_copy():
-    copy(Undefined) is Undefined
-    deepcopy(Undefined) is Undefined
+    assert copy(Undefined) is Undefined
+    assert deepcopy(Undefined) is Undefined
 
 
 def test_get_model():
