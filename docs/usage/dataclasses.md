@@ -20,7 +20,7 @@ You can use all the standard _pydantic_ field types, and the resulting dataclass
 created by the standard library `dataclass` decorator.
 
 The underlying model and its schema can be accessed through `__pydantic_model__`.
-Also, fields that require a `default_factory` can be specified by a `dataclasses.field`.
+Also, fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
 
 ```py
 {!.tmp_examples/dataclasses_default_schema.py!}
@@ -53,9 +53,21 @@ Dataclasses attributes can be populated by tuples, dictionaries or instances of 
 
 Stdlib dataclasses (nested or not) can be easily converted into _pydantic_ dataclasses by just decorating
 them with `pydantic.dataclasses.dataclass`.
+_Pydantic_ will enhance the given stdlib dataclass but won't alter the default behaviour (i.e. without validation).
+It will instead create a wrapper around it to trigger validation that will act like a plain proxy.
 
 ```py
 {!.tmp_examples/dataclasses_stdlib_to_pydantic.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### Choose when to trigger validation
+
+As soon as your stdlib dataclass has been decorated with _pydantic_ dataclass decorator, magic methods have been
+added to validate input data. If you want, you can still keep using your dataclass and choose when to trigger it.
+
+```py
+{!.tmp_examples/dataclasses_stdlib_run_validation.py!}
 ```
 _(This script is complete, it should run "as is")_
 
