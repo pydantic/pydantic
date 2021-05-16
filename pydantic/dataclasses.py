@@ -28,10 +28,8 @@ assert ValidatedM(x=1) == M(x=1)
 ```
 
 This means we **don't want to create a new dataclass that inherits from it**
-The trick is to create a proxy that forwards everything including inheritance (available only
-for python 3.7+)
-`ValidatedM` will hence be able to run validation when called, which is not
-the case for the default `M` dataclass!
+The trick is to create a wrapper around `M` that will act as a proxy to trigger
+validation without altering default `M` behaviour.
 """
 from contextlib import contextmanager
 from functools import wraps
