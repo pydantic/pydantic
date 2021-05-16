@@ -20,6 +20,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from typing_extensions import Annotated
@@ -42,6 +43,7 @@ from .typing import (
     is_new_type,
     is_typeddict,
     new_type_supertype,
+    normalize_type,
 )
 from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
 from .validators import constant_validator, dict_validator, find_validators, validate_json
@@ -347,7 +349,7 @@ class ModelField(Representation):
         self.name: str = name
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
-        self.type_: Any = type_
+        self.type_: Any = normalize_type(type_)
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
@@ -656,6 +658,9 @@ class ModelField(Representation):
 
         # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
         self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
+
+        if self.shape in {SHAPE_DICT, SHAPE_MAPPING, SHAPE_DEFAULTDICT}:
+            self.sub_fields.append(cast(ModelField, self.key_field))
 
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
         if for_keys:

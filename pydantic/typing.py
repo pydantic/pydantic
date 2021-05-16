@@ -189,6 +189,22 @@ else:
         return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
 
 
+if sys.version_info < (3, 9):
+
+    def normalize_type(tp: Type[Any]) -> Type[Any]:
+        return tp
+
+
+else:
+
+    def normalize_type(tp: Type[Any]) -> Type[Any]:
+        if isinstance(tp, GenericAlias):
+            args = tuple(ForwardRef(t) if isinstance(t, str) else t for t in get_args(tp))
+            tp = GenericAlias(tp.__origin__, args)
+
+        return tp
+
+
 if TYPE_CHECKING:
     from .fields import ModelField
 
@@ -238,6 +254,7 @@ __all__ = (
     'get_origin',
     'typing_base',
     'get_all_type_hints',
+    'normalize_type',
 )
 
 

@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict, Mapping, DefaultDict
 
 import pytest
 
@@ -519,3 +519,16 @@ def test_nested_forward_ref():
     NestedTuple.update_forward_refs()
     obj = NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
     assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
+
+
+def test_mapping_key_forward_ref():
+    class Model(BaseModel):
+        a: Dict['int', 'float']
+        b: Mapping['int', 'float']
+        c: DefaultDict['int', 'float']
+
+    Model.update_forward_refs()
+
+    for field in Model.__fields__.values():
+        assert field.type_ is float
+        assert field.key_field.type_ is int
