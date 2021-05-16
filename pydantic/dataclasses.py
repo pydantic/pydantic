@@ -17,7 +17,7 @@ The tricky part if for stdlib dataclasses that are converted after into pydantic
 class M:
     x: int
 
-ValidatedM = pydantic.dataclasses.dataclass(M3)
+ValidatedM = pydantic.dataclasses.dataclass(M)
 ```
 
 We indeed still want to support equality, hashing, repr, ... as if it was the stdlib one!
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
 
-    DataclassR = Union[Type['Dataclass'], 'DataclassProxy']
+    DataclassClass = Union[Type['Dataclass'], 'DataclassProxy']
 
     class Dataclass:
         # stdlib attributes
@@ -89,7 +89,7 @@ def dataclass(
     frozen: bool = False,
     config: Type[Any] = None,
     validate_on_init: Optional[bool] = None,
-) -> Callable[[Type[Any]], 'DataclassR']:
+) -> Callable[[Type[Any]], 'DataclassClass']:
     ...
 
 
@@ -105,7 +105,7 @@ def dataclass(
     frozen: bool = False,
     config: Type[Any] = None,
     validate_on_init: Optional[bool] = None,
-) -> 'DataclassR':
+) -> 'DataclassClass':
     ...
 
 
@@ -120,15 +120,17 @@ def dataclass(
     frozen: bool = False,
     config: Optional[Type['BaseConfig']] = None,
     validate_on_init: Optional[bool] = None,
-) -> Union[Callable[[Type[Any]], 'DataclassR'], 'DataclassR']:
+) -> Union[Callable[[Type[Any]], 'DataclassClass'], 'DataclassClass']:
     """
     Like the python standard lib dataclasses but with type validation.
 
-    Arguments are the same as for standard dataclasses, except for `validate_assignment`, which
-    has the same meaning as `Config.validate_assignment`.
+    Arguments are the same as for standard dataclasses, except for `validate_on_init`, which
+    enforces validation by default on __init__.
+    By default, it is set to `False` because we don't modify the `dataclass` inplace, the wrapper
+    will ensure validation is triggered
     """
 
-    def wrap(cls: Type[Any]) -> 'DataclassR':
+    def wrap(cls: Type[Any]) -> 'DataclassClass':
         import dataclasses
 
         dc_cls_doc = cls.__doc__ or ''
@@ -152,9 +154,9 @@ def dataclass(
                     import warnings
 
                     warnings.warn(
-                        f'Stdlib dataclass {cls.__name__!r} has been modified and validates now input by default. '
+                        f'Stdlib dataclass {cls.__name__!r} has been modified and now validates input by default. '
                         'If you do not want this, you can set `validate_on_init=False` in the decorator '
-                        'or call `__init__` with extra `__pydantic_run_validation__=False`.',
+                        'or call `__init__` with an extra argument `__pydantic_run_validation__=False`.',
                         UserWarning,
                     )
                 return cls
@@ -196,8 +198,9 @@ def _add_pydantic_validation_attributes(
     it won't even exist (code is generated on the fly by `dataclasses`)
     By default, we run validation after `__init__` or `__post_init__` if defined
     """
+    init = dc_cls.__init__
+
     if hasattr(dc_cls, '__post_init__'):
-        init = dc_cls.__init__
         post_init = dc_cls.__post_init__
 
         @wraps(init)
@@ -223,7 +226,6 @@ def _add_pydantic_validation_attributes(
         setattr(dc_cls, '__post_init__', new_post_init)
 
     else:
-        init = dc_cls.__init__
 
         @wraps(init)
         def new_init(
