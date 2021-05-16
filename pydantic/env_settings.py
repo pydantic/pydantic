@@ -5,7 +5,7 @@ from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tu
 
 from .fields import ModelField
 from .main import BaseConfig, BaseModel, Extra
-from .typing import display_as_type
+from .typing import StrPath, display_as_type
 from .utils import deep_update, path_type, sequence_like
 
 env_file_sentinel = str(object())
@@ -27,9 +27,9 @@ class BaseSettings(BaseModel):
 
     def __init__(
         __pydantic_self__,
-        _env_file: Union[Path, str, None] = env_file_sentinel,
+        _env_file: Optional[StrPath] = env_file_sentinel,
         _env_file_encoding: Optional[str] = None,
-        _secrets_dir: Union[Path, str, None] = None,
+        _secrets_dir: Optional[StrPath] = None,
         **values: Any,
     ) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
@@ -42,9 +42,9 @@ class BaseSettings(BaseModel):
     def _build_values(
         self,
         init_kwargs: Dict[str, Any],
-        _env_file: Union[Path, str, None] = None,
+        _env_file: Optional[StrPath] = None,
         _env_file_encoding: Optional[str] = None,
-        _secrets_dir: Union[Path, str, None] = None,
+        _secrets_dir: Optional[StrPath] = None,
     ) -> Dict[str, Any]:
         # Configure built-in sources
         init_settings = InitSettingsSource(init_kwargs=init_kwargs)
@@ -132,8 +132,8 @@ class InitSettingsSource:
 class EnvSettingsSource:
     __slots__ = ('env_file', 'env_file_encoding')
 
-    def __init__(self, env_file: Union[Path, str, None], env_file_encoding: Optional[str]):
-        self.env_file: Union[Path, str, None] = env_file
+    def __init__(self, env_file: Optional[StrPath], env_file_encoding: Optional[str]):
+        self.env_file: Optional[StrPath] = env_file
         self.env_file_encoding: Optional[str] = env_file_encoding
 
     def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
@@ -182,8 +182,8 @@ class EnvSettingsSource:
 class SecretsSettingsSource:
     __slots__ = ('secrets_dir',)
 
-    def __init__(self, secrets_dir: Union[Path, str, None]):
-        self.secrets_dir: Union[Path, str, None] = secrets_dir
+    def __init__(self, secrets_dir: Optional[StrPath]):
+        self.secrets_dir: Optional[StrPath] = secrets_dir
 
     def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
         """
@@ -220,7 +220,9 @@ class SecretsSettingsSource:
         return f'SecretsSettingsSource(secrets_dir={self.secrets_dir!r})'
 
 
-def read_env_file(file_path: Path, *, encoding: str = None, case_sensitive: bool = False) -> Dict[str, Optional[str]]:
+def read_env_file(
+    file_path: StrPath, *, encoding: str = None, case_sensitive: bool = False
+) -> Dict[str, Optional[str]]:
     try:
         from dotenv import dotenv_values
     except ImportError as e:
