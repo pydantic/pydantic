@@ -4,8 +4,8 @@ A pydantic dataclass can be generated from scratch or from a stdlib one.
 
 Behind the scene, a pydantic dataclass is just like a regular one on which we attach
 a `BaseModel` and magic methods to trigger the validation of the data.
-`__init__` and `__post_init__` also accept an extra kwarg `__pydantic_run_validation__`
-to decide whether or not validation should be done.
+`__init__` and `__post_init__` are hence overridden and have extra logic to be
+able to validate input data.
 
 When a pydantic dataclass is generated from scratch, it's just a plain dataclass
 with validation triggered at initialization
@@ -30,12 +30,13 @@ assert ValidatedM(x=1) == M(x=1)
 This means we **don't want to create a new dataclass that inherits from it**
 The trick is to create a proxy that forwards everything including inheritance (available only
 for python 3.7+)
-`ValidatedM` will hence be able to set `__pydantic_run_validation__=True` when called, which is not
-the case for the default `M` dataclass! (Note that this can always be injected "a la mano" if needed)
+`ValidatedM` will hence be able to run validation when called, which is not
+the case for the default `M` dataclass!
 """
 import sys
-from functools import partial, wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, Union, overload
+from contextlib import contextmanager
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
@@ -60,6 +61,7 @@ if TYPE_CHECKING:
         __post_init__: Callable[..., None]
 
         # Added by pydantic
+        __pydantic_run_validation__: bool
         __post_init_post_parse__: Callable[..., None]
         __pydantic_initialised__: bool
         __pydantic_model__: Type[BaseModel]
@@ -156,7 +158,7 @@ def dataclass(
                     warnings.warn(
                         f'Stdlib dataclass {cls.__name__!r} has been modified and now validates input by default. '
                         'If you do not want this, you can set `validate_on_init=False` in the decorator '
-                        'or call `__init__` with an extra argument `__pydantic_run_validation__=False`.',
+                        f'or set `{cls.__name__}.__pydantic_run_validation__ = False`.',
                         UserWarning,
                     )
                 return cls
@@ -182,9 +184,11 @@ def dataclass(
 
 class DataclassProxy(ObjectProxy):
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        # By default we run the validation with the wrapper but can still be overwritten
-        kwargs.setdefault('__pydantic_run_validation__', True)
-        return self.__wrapped__(*args, **kwargs)
+        try:
+            self.__wrapped__.__pydantic_run_validation__ = True
+            return self.__wrapped__(*args, **kwargs)
+        finally:
+            self.__wrapped__.__pydantic_run_validation__ = False
 
 
 def _add_pydantic_validation_attributes(
@@ -203,36 +207,22 @@ def _add_pydantic_validation_attributes(
     if hasattr(dc_cls, '__post_init__'):
         post_init = dc_cls.__post_init__
 
-        @wraps(init)
-        def new_init(
-            self: 'Dataclass', *args: Any, __pydantic_run_validation__: bool = validate_on_init, **kwargs: Any
-        ) -> None:
-            self.__post_init__ = partial(  # type: ignore[assignment]
-                self.__post_init__, __pydantic_run_validation__=__pydantic_run_validation__
-            )
-            init(self, *args, **kwargs)
-
         @wraps(post_init)
-        def new_post_init(
-            self: 'Dataclass', *args: Any, __pydantic_run_validation__: bool = validate_on_init, **kwargs: Any
-        ) -> None:
+        def new_post_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
             post_init(self, *args, **kwargs)
-            if __pydantic_run_validation__:
+            if self.__class__.__pydantic_run_validation__:
                 self.__pydantic_validate_values__()
                 if hasattr(self, '__post_init_post_parse__'):
                     self.__post_init_post_parse__(*args, **kwargs)
 
-        setattr(dc_cls, '__init__', new_init)
         setattr(dc_cls, '__post_init__', new_post_init)
 
     else:
 
         @wraps(init)
-        def new_init(
-            self: 'Dataclass', *args: Any, __pydantic_run_validation__: bool = validate_on_init, **kwargs: Any
-        ) -> None:
+        def new_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
             init(self, *args, **kwargs)
-            if __pydantic_run_validation__:
+            if self.__class__.__pydantic_run_validation__:
                 self.__pydantic_validate_values__()
             if hasattr(self, '__post_init_post_parse__'):
                 # We need to find again the initvars. To do that we use `__dataclass_fields__` instead of
@@ -255,6 +245,7 @@ def _add_pydantic_validation_attributes(
         setattr(dc_cls, '__init__', new_init)
 
     setattr(dc_cls, '__processed__', ClassAttribute('__processed__', True))
+    setattr(dc_cls, '__pydantic_run_validation__', ClassAttribute('__pydantic_run_validation__', validate_on_init))
     setattr(dc_cls, '__pydantic_initialised__', False)
     setattr(dc_cls, '__pydantic_model__', create_pydantic_model_from_dataclass(dc_cls, config, dc_cls_doc))
     setattr(dc_cls, '__pydantic_validate_values__', _dataclass_validate_values)
@@ -269,16 +260,27 @@ def _get_validators(cls: Type['Dataclass']) -> 'CallableGenerator':
     yield cls.__validate__
 
 
+@contextmanager
+def trigger_validation(cls: 'DataclassClass') -> Generator['DataclassClass', None, None]:
+    original_run_validation = cls.__pydantic_run_validation__
+    try:
+        cls.__pydantic_run_validation__ = True
+        yield cls
+    finally:
+        cls.__pydantic_run_validation__ = original_run_validation
+
+
 def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
-    if isinstance(v, cls):
-        v.__pydantic_validate_values__()
-        return v
-    elif isinstance(v, (list, tuple)):
-        return cls(*v, __pydantic_run_validation__=True)
-    elif isinstance(v, dict):
-        return cls(**v, __pydantic_run_validation__=True)
-    else:
-        raise DataclassTypeError(class_name=cls.__name__)
+    with trigger_validation(cls):
+        if isinstance(v, cls):
+            v.__pydantic_validate_values__()
+            return v
+        elif isinstance(v, (list, tuple)):
+            return cls(*v)
+        elif isinstance(v, dict):
+            return cls(**v)
+        else:
+            raise DataclassTypeError(class_name=cls.__name__)
 
 
 def create_pydantic_model_from_dataclass(
