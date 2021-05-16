@@ -55,6 +55,7 @@ Stdlib dataclasses (nested or not) can be easily converted into _pydantic_ datac
 them with `pydantic.dataclasses.dataclass`.
 _Pydantic_ will enhance the given stdlib dataclass but won't alter the default behaviour (i.e. without validation).
 It will instead create a wrapper around it to trigger validation that will act like a plain proxy.
+The stdlib dataclass can still be accessed via the `__dataclass__` attribute (see example below).
 
 ```py
 {!.tmp_examples/dataclasses_stdlib_to_pydantic.py!}

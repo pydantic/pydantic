@@ -9,6 +9,7 @@ class User:
     id: int
     name: str
 
+
 # Enhance stdlib dataclass
 pydantic_dataclass(User)
 

@@ -16,7 +16,12 @@ class File(Meta):
     filename: str
 
 
+# `ValidatedFile` will be a proxy around `File`
 ValidatedFile = pydantic.dataclasses.dataclass(File)
+
+# the original dataclass is the `__dataclass__` attribute
+assert ValidatedFile.__dataclass__ is File
+
 
 validated_file = ValidatedFile(
     filename=b'thefilename',
@@ -24,7 +29,6 @@ validated_file = ValidatedFile(
     seen_count='7',
 )
 print(validated_file)
-
 
 try:
     ValidatedFile(
@@ -35,6 +39,7 @@ try:
 except pydantic.ValidationError as e:
     print(e)
 
+# `File` is not altered and still does no validation by default
 print(File(
     filename=['not', 'a', 'string'],
     modified_date=None,
