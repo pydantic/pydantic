@@ -1,4 +1,5 @@
 import sys
+from os import PathLike
 from typing import (  # type: ignore
     TYPE_CHECKING,
     AbstractSet,
@@ -190,6 +191,17 @@ else:
 
 
 if TYPE_CHECKING:
+    StrPath = Union[str, PathLike[str]]
+else:
+    if sys.version_info < (3, 9):
+        # Python >= 3.6, < 3.9
+        StrPath = Union[str, PathLike]
+    else:
+        # os.PathLike only becomes subscriptable from Python 3.9 onwards
+        StrPath = Union[str, PathLike[str]]
+
+
+if TYPE_CHECKING:
     from .fields import ModelField
 
     TupleGenerator = Generator[Tuple[str, Any], None, None]
@@ -238,6 +250,7 @@ __all__ = (
     'get_origin',
     'typing_base',
     'get_all_type_hints',
+    'StrPath',
 )
 
 
