@@ -924,6 +924,31 @@ class ModelField(Representation):
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
+
+            if get_origin(self.type_) is Union and self.model_config.smart_union:
+                # 1st pass: check if the value is an exact instance of one of the Union types
+                # (e.g. to avoid coercing a bool into an int)
+                for field in self.sub_fields:
+                    if v.__class__ is field.outer_type_:
+                        return v, None
+
+                # 2nd pass: check if the value is an instance of any subclass of the Union types
+                for field in self.sub_fields:
+                    # This whole logic will be improved later on to support more complex `isinstance` checks
+                    # It will probably be done once a strict mode is added and be something like:
+                    # ```
+                    #     value, error = field.validate(v, values, strict=True)
+                    #     if error is None:
+                    #         return value, None
+                    # ```
+                    try:
+                        if isinstance(v, field.outer_type_):
+                            return v, None
+                    except TypeError:
+                        pass
+
+            # 1st pass by default or 3rd pass with `smart_union` enabled:
+            # check if the value can be coerced into one of the Union types
             for field in self.sub_fields:
                 value, error = field.validate(v, values, loc=loc, cls=cls)
                 if error:

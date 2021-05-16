@@ -22,6 +22,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
 )
 from uuid import UUID
 
@@ -2813,3 +2814,125 @@ def test_none(value_type):
         {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_none'},
         {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
     ]
+
+
+def test_default_union_types():
+    class DefaultModel(BaseModel):
+        v: Union[int, bool, str]
+
+    assert DefaultModel(v=True).dict() == {'v': 1}
+    assert DefaultModel(v=1).dict() == {'v': 1}
+    assert DefaultModel(v='1').dict() == {'v': 1}
+
+    # In 3.6, Union[int, bool, str] == Union[int, str]
+    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
+
+    assert DefaultModel.schema() == {
+        'title': 'DefaultModel',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
+        'required': ['v'],
+    }
+
+
+def test_smart_union_types():
+    class SmartModel(BaseModel):
+        v: Union[int, bool, str]
+
+        class Config:
+            smart_union = True
+
+    assert SmartModel(v=1).dict() == {'v': 1}
+    assert SmartModel(v=True).dict() == {'v': True}
+    assert SmartModel(v='1').dict() == {'v': '1'}
+
+    # In 3.6, Union[int, bool, str] == Union[int, str]
+    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
+
+    assert SmartModel.schema() == {
+        'title': 'SmartModel',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
+        'required': ['v'],
+    }
+
+
+def test_default_union_class():
+    class A(BaseModel):
+        x: str
+
+    class B(BaseModel):
+        x: str
+
+    class Model(BaseModel):
+        y: Union[A, B]
+
+    assert isinstance(Model(y=A(x='a')).y, A)
+    # `B` instance is coerced to `A`
+    assert isinstance(Model(y=B(x='b')).y, A)
+
+
+def test_smart_union_class():
+    class A(BaseModel):
+        x: str
+
+    class B(BaseModel):
+        x: str
+
+    class Model(BaseModel):
+        y: Union[A, B]
+
+        class Config:
+            smart_union = True
+
+    assert isinstance(Model(y=A(x='a')).y, A)
+    assert isinstance(Model(y=B(x='b')).y, B)
+
+
+def test_default_union_subclass():
+    class MyStr(str):
+        ...
+
+    class Model(BaseModel):
+        x: Union[int, str]
+
+    assert Model(x=MyStr('1')).x == 1
+
+
+def test_smart_union_subclass():
+    class MyStr(str):
+        ...
+
+    class Model(BaseModel):
+        x: Union[int, str]
+
+        class Config:
+            smart_union = True
+
+    assert Model(x=MyStr('1')).x == '1'
+
+
+def test_default_union_compound_types():
+    class DefaultModel(BaseModel):
+        values: Union[Dict[str, str], List[str]]
+
+    assert DefaultModel(values={'L': '1'}).dict() == {'values': {'L': '1'}}
+    assert DefaultModel(values=['L1']).dict() == {'values': {'L': '1'}}  # dict(['L1']) == {'L': '1'}
+
+
+def test_smart_union_compound_types():
+    """For now, `smart_union` does not support well compound types"""
+
+    class DefaultModel(BaseModel):
+        values: Union[Dict[str, str], List[str]]
+
+        class Config:
+            smart_union = True
+
+    assert DefaultModel(values={'L': '1'}).dict() == {'values': {'L': '1'}}
+    assert DefaultModel(values=['L1']).dict() == {
+        'values': {'L': '1'}
+    }  # should be `['L1']` once `smart_union` is improved
+    assert DefaultModel(values=('L1',)).dict() == {
+        'values': {'L': '1'}
+    }  # expected! (still coerce as tuple is not a list)

@@ -139,6 +139,8 @@ class BaseConfig:
 
     # Whether or not inherited models as fields should be reconstructed as base model
     copy_on_model_validation: bool = True
+    # whether or not `Union` should check all allowed types before even trying to coerce
+    smart_union: bool = False
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
