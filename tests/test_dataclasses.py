@@ -1,6 +1,5 @@
 import dataclasses
 import pickle
-import sys
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
@@ -10,9 +9,6 @@ import pytest
 
 import pydantic
 from pydantic import BaseModel, ValidationError, validator
-
-only_36 = pytest.mark.skipif(sys.version_info[:2] != (3, 6), reason='testing 3.6 behaviour only')
-skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
 
 def test_simple():
@@ -162,7 +158,6 @@ def test_post_init():
     assert post_init_called
 
 
-@skip_pre_37
 def test_post_init_validation():
     @dataclasses.dataclass
     class DC:
@@ -671,7 +666,6 @@ def test_hashable_optional(default):
     MyDataclass(v=None)
 
 
-@skip_pre_37
 def test_override_builtin_dataclass():
     @dataclasses.dataclass
     class File:
@@ -698,59 +692,6 @@ def test_override_builtin_dataclass():
     assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 
 
-@only_36
-def test_override_builtin_dataclass__3_6():
-    @dataclasses.dataclass
-    class File:
-        hash: str
-        name: Optional[str]
-        size: int
-        content: Optional[bytes] = None
-
-    with pytest.warns(
-        UserWarning, match="Stdlib dataclass 'File' has been modified and now validates input by default"
-    ):
-        FileChecked = pydantic.dataclasses.dataclass(File)
-
-    f1 = File(hash='xxx', name=b'whatever.txt', size='456')
-    f2 = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
-
-    assert f1.name == f2.name == 'whatever.txt'
-    assert f1.size == f2.size == 456
-
-    with pytest.raises(ValidationError) as e:
-        FileChecked(hash=[1], name='name', size=3)
-    assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
-
-    with pydantic.dataclasses.set_validation(FileChecked, False):
-        f = FileChecked(hash=[1], name='name', size=3)
-    assert f.hash == [1]
-
-
-@only_36
-def test_override_builtin_dataclass__3_6_no_overwrite():
-    @dataclasses.dataclass
-    class File:
-        hash: str
-        name: Optional[str]
-        size: int
-        content: Optional[bytes] = None
-
-    FileChecked = pydantic.dataclasses.dataclass(File, validate_on_init=False)
-
-    f1 = File(hash='xxx', name=b'whatever.txt', size='456')
-    f2 = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
-
-    assert f1.name == f2.name == b'whatever.txt'
-    assert f1.size == f2.size == '456'
-
-    with pytest.raises(ValidationError) as e:
-        with pydantic.dataclasses.set_validation(FileChecked, True):
-            FileChecked(hash=[1], name='name', size=3)
-    assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
-
-
-@skip_pre_37
 def test_override_builtin_dataclass_2():
     @dataclasses.dataclass
     class Meta:
@@ -822,10 +763,7 @@ def test_override_builtin_dataclass_nested_schema():
         filename: str
         meta: Meta
 
-    if sys.version_info[:2] == (3, 6):
-        FileChecked = pydantic.dataclasses.dataclass(File, validate_on_init=False)
-    else:
-        FileChecked = pydantic.dataclasses.dataclass(File)
+    FileChecked = pydantic.dataclasses.dataclass(File)
     assert FileChecked.__pydantic_model__.schema() == {
         'definitions': {
             'Meta': {
@@ -1171,7 +1109,6 @@ def test_issue_2594():
     assert isinstance(M(e={}).e, Empty)
 
 
-@skip_pre_37
 def test_schema_description_unset():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1187,7 +1124,6 @@ def test_schema_description_unset():
     assert 'description' not in B.__pydantic_model__.schema()
 
 
-@skip_pre_37
 def test_schema_description_set():
     @pydantic.dataclasses.dataclass
     class A:

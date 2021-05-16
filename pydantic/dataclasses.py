@@ -33,7 +33,6 @@ for python 3.7+)
 `ValidatedM` will hence be able to run validation when called, which is not
 the case for the default `M` dataclass!
 """
-import sys
 from contextlib import contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, TypeVar, Union, overload
@@ -77,6 +76,15 @@ if TYPE_CHECKING:
         @classmethod
         def __validate__(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
             pass
+
+
+__all__ = [
+    'dataclass',
+    'set_validation',
+    'create_pydantic_model_from_dataclass',
+    'is_builtin_dataclass',
+    'make_dataclass_validator',
+]
 
 
 @overload
@@ -124,12 +132,9 @@ def dataclass(
 ) -> Union[Callable[[Type[Any]], 'DataclassClass'], 'DataclassClass']:
     """
     Like the python standard lib dataclasses but with type validation.
-
-    Arguments are the same as for standard dataclasses, except for `validate_on_init`, which
-    can be used in python 3.6.
-    By default, it is set to `False` (except for python 3.6) because we create a wrapper around
-    the `dataclass` and don't need to modify the `dataclass` inplace.
-    It is the wrapper that will ensure validation is triggered.
+    The result is either pydantic dataclass that will validate input data
+    or a wrapper that will trigger validation around a stdlib dataclass
+    to avoid modifying it directly
     """
 
     def wrap(cls: Type[Any]) -> 'DataclassClass':
@@ -138,35 +143,10 @@ def dataclass(
         dc_cls_doc = cls.__doc__ or ''
 
         if is_builtin_dataclass(cls):
-            # we don't want to overwrite default behaviour of a stdlib dataclass
-            # But with python 3.6 we can't use a simple wrapper that acts like a pure proxy
-            # because this proxy also needs to forward inheritance and that is achieved
-            # thanks to `__mro_entries__` that was only added in 3.7
-            # The big downside is that we now have a side effect on our decorator
-            import inspect
+            should_validate_on_init = False if validate_on_init is None else validate_on_init
+            _add_pydantic_validation_attributes(cls, config, should_validate_on_init, '')
+            return DataclassProxy(cls)  # type: ignore[no-untyped-call]
 
-            # By default `dataclasses.dataclass` adds a useless doc for us that will be added in schema
-            if dc_cls_doc == cls.__name__ + str(inspect.signature(cls)).replace(' -> None', ''):
-                dc_cls_doc = ''
-
-            if sys.version_info[:2] == (3, 6):
-                should_validate_on_init = True if validate_on_init is None else validate_on_init
-                _add_pydantic_validation_attributes(cls, config, should_validate_on_init, dc_cls_doc)
-                if should_validate_on_init:
-                    import warnings
-
-                    warnings.warn(
-                        f'Stdlib dataclass {cls.__name__!r} has been modified and now validates input by default. '
-                        'If you do not want this, you can set `validate_on_init=False` in the decorator '
-                        f'or use `with set_validation({cls.__name__}, False)` context manager.',
-                        UserWarning,
-                    )
-                return cls
-
-            else:
-                should_validate_on_init = False if validate_on_init is None else validate_on_init
-                _add_pydantic_validation_attributes(cls, config, should_validate_on_init, dc_cls_doc)
-                return DataclassProxy(cls)  # type: ignore[no-untyped-call]
         else:
 
             dc_cls = dataclasses.dataclass(  # type: ignore
@@ -180,6 +160,16 @@ def dataclass(
         return wrap
 
     return wrap(_cls)
+
+
+@contextmanager
+def set_validation(cls: 'DataclassClass', value: bool) -> Generator['DataclassClass', None, None]:
+    original_run_validation = cls.__pydantic_run_validation__
+    try:
+        cls.__pydantic_run_validation__ = value
+        yield cls
+    finally:
+        cls.__pydantic_run_validation__ = original_run_validation
 
 
 class DataclassProxy:
@@ -263,16 +253,6 @@ def _add_pydantic_validation_attributes(
 
 def _get_validators(cls: Type['Dataclass']) -> 'CallableGenerator':
     yield cls.__validate__
-
-
-@contextmanager
-def set_validation(cls: 'DataclassClass', value: bool) -> Generator['DataclassClass', None, None]:
-    original_run_validation = cls.__pydantic_run_validation__
-    try:
-        cls.__pydantic_run_validation__ = value
-        yield cls
-    finally:
-        cls.__pydantic_run_validation__ = original_run_validation
 
 
 def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
