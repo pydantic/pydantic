@@ -20,7 +20,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from typing_extensions import Annotated
@@ -658,9 +657,6 @@ class ModelField(Representation):
 
         # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
         self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
-
-        if self.shape in {SHAPE_DICT, SHAPE_MAPPING, SHAPE_DEFAULTDICT}:
-            self.sub_fields.append(cast(ModelField, self.key_field))
 
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
         if for_keys:

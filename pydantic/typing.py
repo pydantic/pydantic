@@ -398,6 +398,8 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
     if field.type_.__class__ == ForwardRef:
         field.type_ = evaluate_forwardref(field.type_, globalns, localns or None)
         field.prepare()
+    if field.key_field:
+        update_field_forward_refs(field.key_field, globalns=globalns, localns=localns)
     if field.sub_fields:
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)

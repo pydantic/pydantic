@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Tuple, Dict, Mapping, DefaultDict
+from typing import DefaultDict, Dict, Mapping, Optional, Tuple
 
 import pytest
 
