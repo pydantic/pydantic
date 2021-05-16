@@ -44,7 +44,6 @@ from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
 from .main import create_model, validate_model
 from .utils import ClassAttribute
-from .wrapper import ObjectProxy
 
 if TYPE_CHECKING:
     from .main import BaseConfig, BaseModel  # noqa: F401
@@ -183,13 +182,18 @@ def dataclass(
     return wrap(_cls)
 
 
-class DataclassProxy(ObjectProxy):
+class DataclassProxy:
+    __slots__ = '__dataclass__'
+
+    def __init__(self, dc_cls: Type['Dataclass']) -> None:
+        object.__setattr__(self, '__dataclass__', dc_cls)
+
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        try:
-            self.__wrapped__.__pydantic_run_validation__ = True
-            return self.__wrapped__(*args, **kwargs)
-        finally:
-            self.__wrapped__.__pydantic_run_validation__ = False
+        with set_validation(self.__dataclass__, True):
+            return self.__dataclass__(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(self.__dataclass__, name)
 
 
 def _add_pydantic_validation_attributes(
