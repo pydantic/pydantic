@@ -113,7 +113,10 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)
 
 **`copy_on_model_validation`**
-: whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
+: whether inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
+
+**`smart_union`**
+: whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion (see [the dedicated section](#smart-union)
 
 ## Change behaviour globally
 
@@ -162,5 +165,30 @@ For example:
 
 ```py
 {!.tmp_examples/model_config_alias_precedence.py!}
+```
+_(This script is complete, it should run "as is")_
+
+## Smart Union
+
+By default, if you set a `Union` type for a field, _pydantic_ tries to validate (and coerce if it can) in the order of the union,
+which can be unexpected in some cases
+
+```py
+{!.tmp_examples/model_config_smart_union_off.py!}
+```
+_(This script is complete, it should run "as is")_
+
+To prevent this, you can enable `Config.smart_union`. _Pydantic_ will then check all allowed types before even trying to coerce.
+
+```py
+{!.tmp_examples/model_config_smart_union_on.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
+This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
+
+```py
+{!.tmp_examples/model_config_smart_union_on_edge_case.py!}
 ```
 _(This script is complete, it should run "as is")_
