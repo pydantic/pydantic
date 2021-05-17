@@ -189,21 +189,22 @@ class GenericModel(BaseModel):
                 # or
                 # base_model is already concrete, and will be included transitively via cls.
                 continue
-            elif cls in _assigned_parameters and base_model in _assigned_parameters:
-                # cls is partially parameterised but not from base_model
-                # e.g. cls = B[S], base_model = A[S]
-                # B[S][int] should subclass A[int],  (and will be transitively via B[int])
-                # but it's not viable to consistently subclass types with arbitrary construction
-                # So don't attempt to include A[S][int]
-                continue
-            elif cls in _assigned_parameters and base_model not in _assigned_parameters:
-                # cls is partially parameterized, base_model is original generic
-                # e.g.  cls = B[str, T], base_model = B[S, T]
-                # Need to determine the mapping for the base_model parameters
-                mapped_types: Parametrization = {
-                    key: typevars_map.get(value, value) for key, value in _assigned_parameters[cls].items()
-                }
-                yield from build_base_model(base_model, mapped_types)
+            elif cls in _assigned_parameters:
+                if base_model in _assigned_parameters:
+                    # cls is partially parameterised but not from base_model
+                    # e.g. cls = B[S], base_model = A[S]
+                    # B[S][int] should subclass A[int],  (and will be transitively via B[int])
+                    # but it's not viable to consistently subclass types with arbitrary construction
+                    # So don't attempt to include A[S][int]
+                    continue
+                else:  # base_model not in _assigned_parameters:
+                    # cls is partially parameterized, base_model is original generic
+                    # e.g.  cls = B[str, T], base_model = B[S, T]
+                    # Need to determine the mapping for the base_model parameters
+                    mapped_types: Parametrization = {
+                        key: typevars_map.get(value, value) for key, value in _assigned_parameters[cls].items()
+                    }
+                    yield from build_base_model(base_model, mapped_types)
             else:
                 # cls is base generic, so base_class has a distinct base
                 # can construct the Parameterised base model using typevars_map directly
