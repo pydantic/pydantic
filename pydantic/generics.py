@@ -148,8 +148,8 @@ class GenericModel(BaseModel):
 
     @classmethod
     def __parameterized_bases__(cls, typevars_map: Parametrization) -> Iterator[Type[Any]]:
-        """Returns unbound bases of cls parameterised to given type variables
-
+        """
+        Returns unbound bases of cls parameterised to given type variables
 
         :param typevars_map: Dictionary of type applications for binding subclasses.
             Given a generic class `Model` with 2 type variables [S, T]
@@ -184,7 +184,7 @@ class GenericModel(BaseModel):
             if not issubclass(base_model, GenericModel):
                 # not a class that can be meaningfully parameterized
                 continue
-            elif not getattr(base_model, '__parameters__', ()):
+            elif not getattr(base_model, '__parameters__', None):
                 # base_model is "GenericModel"  (and has no __parameters__)
                 # or
                 # base_model is already concrete, and will be included transitively via cls.
