@@ -2,7 +2,7 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import Any, Callable, ClassVar, Counter, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
@@ -1979,6 +1979,30 @@ def test_typing_coercion_defaultdict():
     m = Model(x=d)
     m.x['a']
     assert repr(m) == "Model(x=defaultdict(<class 'str'>, {1: '', 'a': ''}))"
+
+
+def test_typing_coercion_counter():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    assert Model.__fields__['x'].type_ is int
+    assert repr(Model(x={'a': 10})) == "Model(x=Counter({'a': 10}))"
+
+
+def test_typing_counter_value_validation():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x={'a': 'a'})
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('x', 'a'),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        }
+    ]
 
 
 def test_class_kwargs_config():

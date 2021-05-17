@@ -1,8 +1,9 @@
-from collections import defaultdict, deque
+from collections import Counter as CollectionCounter, defaultdict, deque
 from collections.abc import Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    Counter,
     DefaultDict,
     Deque,
     Dict,
@@ -291,6 +292,7 @@ SHAPE_GENERIC = 10
 SHAPE_DEQUE = 11
 SHAPE_DICT = 12
 SHAPE_DEFAULTDICT = 13
+SHAPE_COUNTER = 14
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -301,9 +303,10 @@ SHAPE_NAME_LOOKUP = {
     SHAPE_DEQUE: 'Deque[{}]',
     SHAPE_DICT: 'Dict[{}]',
     SHAPE_DEFAULTDICT: 'DefaultDict[{}]',
+    SHAPE_COUNTER: 'Counter[{}]',
 }
 
-MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
+MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING, SHAPE_COUNTER}
 
 
 class ModelField(Representation):
@@ -628,6 +631,10 @@ class ModelField(Representation):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
             self.shape = SHAPE_DEFAULTDICT
+        elif issubclass(origin, Counter):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = int
+            self.shape = SHAPE_COUNTER
         elif issubclass(origin, Dict):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -898,6 +905,8 @@ class ModelField(Representation):
             return result, None
         elif self.shape == SHAPE_DEFAULTDICT:
             return defaultdict(self.type_, result), None
+        elif self.shape == SHAPE_COUNTER:
+            return CollectionCounter(result), None
         else:
             return self._get_mapping_value(v, result), None
 
