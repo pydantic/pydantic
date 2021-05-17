@@ -1,5 +1,5 @@
 black==21.4b0
-flake8==3.9.1
+flake8==3.9.2
 flake8-quotes==3.2.0
 hypothesis==6.10.1
 isort==5.8.0
