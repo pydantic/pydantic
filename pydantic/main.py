@@ -31,7 +31,7 @@ from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import MAPPING_LIKE_SHAPES, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
-from .schema import default_ref_template, model_schema
+from .schema import Alias, default_ref_template, model_schema
 from .types import PyObject, StrBytes
 from .typing import (
     AnyCallable,
@@ -738,17 +738,29 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return m
 
     @classmethod
-    def schema(cls, by_alias: bool = True, ref_template: str = default_ref_template) -> 'DictStrAny':
+    def schema(
+        cls, by_alias: Union[Optional[Alias], bool] = Alias.load, ref_template: str = default_ref_template
+    ) -> 'DictStrAny':
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
-        s = model_schema(cls, by_alias=by_alias, ref_template=ref_template)
+
+        if by_alias is True:
+            by_alias = Alias.load
+        elif by_alias is False:
+            by_alias = None
+
+        s = model_schema(cls, by_alias=cast(Optional[Alias], by_alias), ref_template=ref_template)
         cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
 
     @classmethod
     def schema_json(
-        cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
+        cls,
+        *,
+        by_alias: Union[Optional[Alias], bool] = Alias.load,
+        ref_template: str = default_ref_template,
+        **dumps_kwargs: Any,
     ) -> str:
         from .json import pydantic_encoder
 

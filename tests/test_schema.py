@@ -34,6 +34,7 @@ from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
+    Alias,
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
@@ -105,7 +106,7 @@ def test_key():
     }
     assert ApplePie.__schema_cache__.keys() == set()
     assert ApplePie.schema() == s
-    assert ApplePie.__schema_cache__.keys() == {(True, '#/definitions/{model}')}
+    assert ApplePie.__schema_cache__.keys() == {('load', '#/definitions/{model}')}
     assert ApplePie.schema() == s
 
 
@@ -2436,3 +2437,17 @@ def test_complex_nested_generic():
         },
         '$ref': '#/definitions/Model',
     }
+
+
+def test_load_dump_alias():
+    class Model(BaseModel):
+        x: str = Field(load_alias='input_x', dump_alias='output_x')
+
+    assert Model.schema(by_alias=False)['properties'] == {'x': {'title': 'X', 'type': 'string'}}
+    assert Model.schema(by_alias=None)['properties'] == {'x': {'title': 'X', 'type': 'string'}}
+
+    assert Model.schema()['properties'] == {'input_x': {'title': 'Input X', 'type': 'string'}}
+    assert Model.schema(by_alias=Alias.load)['properties'] == {'input_x': {'title': 'Input X', 'type': 'string'}}
+    assert Model.schema(by_alias=True)['properties'] == {'input_x': {'title': 'Input X', 'type': 'string'}}
+
+    assert Model.schema(by_alias=Alias.dump)['properties'] == {'output_x': {'title': 'Output X', 'type': 'string'}}

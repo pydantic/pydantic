@@ -85,10 +85,15 @@ TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
 TypeModelSet = Set[TypeModelOrEnum]
 
 
+class Alias(str, Enum):
+    load = 'load'
+    dump = 'dump'
+
+
 def schema(
     models: Sequence[Union[Type['BaseModel'], Type['Dataclass']]],
     *,
-    by_alias: bool = True,
+    by_alias: Union[Optional[Alias], bool] = True,
     title: Optional[str] = None,
     description: Optional[str] = None,
     ref_prefix: Optional[str] = None,
@@ -113,6 +118,11 @@ def schema(
     :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for
       the models and sub-models passed in ``models``.
     """
+    if by_alias is True:
+        by_alias = Alias.load
+    elif by_alias is False:
+        by_alias = None
+
     clean_models = [get_model(model) for model in models]
     flat_models = get_flat_models_from_models(clean_models)
     model_name_map = get_model_name_map(flat_models)
@@ -125,7 +135,7 @@ def schema(
     for model in clean_models:
         m_schema, m_definitions, m_nested_models = model_process_schema(
             model,
-            by_alias=by_alias,
+            by_alias=cast(Optional[Alias], by_alias),
             model_name_map=model_name_map,
             ref_prefix=ref_prefix,
             ref_template=ref_template,
@@ -140,7 +150,7 @@ def schema(
 
 def model_schema(
     model: Union[Type['BaseModel'], Type['Dataclass']],
-    by_alias: bool = True,
+    by_alias: Optional[Alias] = Alias.load,
     ref_prefix: Optional[str] = None,
     ref_template: str = default_ref_template,
 ) -> Dict[str, Any]:
@@ -176,7 +186,7 @@ def model_schema(
     return m_schema
 
 
-def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
+def get_field_info_schema(field: ModelField, by_alias: Optional[Alias]) -> Tuple[Dict[str, Any], bool]:
     schema_overrides = False
 
     # If no title is explicitly set, we don't set title in the schema for enums.
@@ -184,7 +194,13 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
     # is in the definitions part of the schema.
     schema: Dict[str, Any] = {}
     if field.field_info.title or not lenient_issubclass(field.type_, Enum):
-        schema['title'] = field.field_info.title or field.alias.title().replace('_', ' ')
+        if by_alias is None:
+            field_alias = field.name
+        elif by_alias == 'dump':
+            field_alias = field.dump_alias
+        else:
+            field_alias = field.load_alias
+        schema['title'] = field.field_info.title or field_alias.title().replace('_', ' ')
 
     if field.field_info.title:
         schema_overrides = True
@@ -208,7 +224,7 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
 def field_schema(
     field: ModelField,
     *,
-    by_alias: bool = True,
+    by_alias: Optional[Alias] = Alias.load,
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
     ref_template: str = default_ref_template,
@@ -231,7 +247,7 @@ def field_schema(
     :param known_models: used to solve circular references
     :return: tuple of the schema for this field and additional definitions
     """
-    s, schema_overrides = get_field_info_schema(field)
+    s, schema_overrides = get_field_info_schema(field, by_alias)
 
     validation_schema = get_field_schema_validations(field)
     if validation_schema:
@@ -420,7 +436,7 @@ def get_long_model_name(model: TypeModelOrEnum) -> str:
 def field_type_schema(
     field: ModelField,
     *,
-    by_alias: bool,
+    by_alias: Optional[Alias],
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_template: str,
     schema_overrides: bool = False,
@@ -519,7 +535,7 @@ def field_type_schema(
 def model_process_schema(
     model: TypeModelOrEnum,
     *,
-    by_alias: bool = True,
+    by_alias: Optional[Alias] = Alias.load,
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
     ref_template: str = default_ref_template,
@@ -568,7 +584,7 @@ def model_process_schema(
 def model_type_schema(
     model: Type['BaseModel'],
     *,
-    by_alias: bool,
+    by_alias: Optional[Alias],
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_template: str,
     ref_prefix: Optional[str] = None,
@@ -600,9 +616,10 @@ def model_type_schema(
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
         if by_alias:
-            properties[f.alias] = f_schema
+            field_alias = f.dump_alias if by_alias == 'dump' else f.load_alias
+            properties[field_alias] = f_schema
             if f.required:
-                required.append(f.alias)
+                required.append(field_alias)
         else:
             properties[k] = f_schema
             if f.required:
@@ -648,7 +665,7 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
 def field_singleton_sub_fields_schema(
     sub_fields: Sequence[ModelField],
     *,
-    by_alias: bool,
+    by_alias: Optional[Alias],
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_template: str,
     schema_overrides: bool = False,
@@ -753,7 +770,7 @@ def get_schema_ref(name: str, ref_prefix: Optional[str], ref_template: str, sche
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
     field: ModelField,
     *,
-    by_alias: bool,
+    by_alias: Optional[Alias],
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_template: str,
     schema_overrides: bool = False,
@@ -814,7 +831,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         add_field_type_to_schema(field_type, f_schema)
     elif lenient_issubclass(field_type, Enum):
         enum_name = model_name_map[field_type]
-        f_schema, schema_overrides = get_field_info_schema(field)
+        f_schema, schema_overrides = get_field_info_schema(field, by_alias)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
     elif is_namedtuple(field_type):
