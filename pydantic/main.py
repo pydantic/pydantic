@@ -130,6 +130,8 @@ class BaseConfig:
     orm_mode: bool = False
     getter_dict: Type[GetterDict] = GetterDict
     alias_generator: Optional[Callable[[str], str]] = None
+    dump_alias_generator: Optional[Callable[[str], str]] = None
+    load_alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()
     schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}
     json_loads: Callable[[str], Any] = json.loads
@@ -155,14 +157,37 @@ class BaseConfig:
         else:
             field_info = {}
 
-        if 'alias' in field_info:
+        if any(x in field_info for x in {'alias', 'dump_alias', 'load_alias'}):
             field_info.setdefault('alias_priority', 2)
 
-        if field_info.get('alias_priority', 0) <= 1 and cls.alias_generator:
-            alias = cls.alias_generator(name)
-            if not isinstance(alias, str):
-                raise TypeError(f'Config.alias_generator must return str, not {alias.__class__}')
-            field_info.update(alias=alias, alias_priority=1)
+        if field_info.get('alias_priority', 0) <= 1 and (
+            cls.alias_generator or cls.dump_alias_generator or cls.load_alias_generator
+        ):
+            alias = dump_alias = load_alias = None
+
+            if cls.alias_generator:
+                alias = cls.alias_generator(name)
+                if not isinstance(alias, str):
+                    raise TypeError(f'Config.alias_generator must return str, not {alias.__class__}')
+
+            if cls.dump_alias_generator:
+                dump_alias = cls.dump_alias_generator(name)
+                if not isinstance(dump_alias, str):
+                    raise TypeError(f'Config.dump_alias_generator must return str, not {dump_alias.__class__}')
+
+            if cls.load_alias_generator:
+                load_alias = cls.load_alias_generator(name)
+                if not isinstance(load_alias, str):
+                    raise TypeError(f'Config.load_alias_generator must return str, not {load_alias.__class__}')
+
+            aliases = {
+                'alias': alias,
+                'dump_alias': dump_alias,
+                'load_alias': load_alias,
+                'alias_priority': 1,
+            }
+            field_info.update(**{k: v for k, v in aliases.items() if v is not None})
+
         return field_info
 
     @classmethod
@@ -887,7 +912,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     continue
 
             if by_alias and field_key in self.__fields__:
-                dict_key = self.__fields__[field_key].alias
+                dict_key = self.__fields__[field_key].dump_alias
             else:
                 dict_key = field_key
 
@@ -1030,15 +1055,15 @@ def validate_model(  # noqa: C901 (ignore complexity)
             return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_)
 
     for name, field in model.__fields__.items():
-        value = input_data.get(field.alias, _missing)
+        value = input_data.get(field.load_alias, _missing)
         using_name = False
-        if value is _missing and config.allow_population_by_field_name and field.alt_alias:
+        if value is _missing and config.allow_population_by_field_name and field.alt_load_alias:
             value = input_data.get(field.name, _missing)
             using_name = True
 
         if value is _missing:
             if field.required:
-                errors.append(ErrorWrapper(MissingError(), loc=field.alias))
+                errors.append(ErrorWrapper(MissingError(), loc=field.load_alias))
                 continue
 
             value = field.get_default()
@@ -1049,9 +1074,9 @@ def validate_model(  # noqa: C901 (ignore complexity)
         else:
             fields_set.add(name)
             if check_extra:
-                names_used.add(field.name if using_name else field.alias)
+                names_used.add(field.name if using_name else field.load_alias)
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls_)
+        v_, errors_ = field.validate(value, values, loc=field.load_alias, cls=cls_)
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):

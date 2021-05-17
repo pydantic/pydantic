@@ -93,6 +93,12 @@ for validation, for use with `orm_mode`; see [Data binding](models.md#data-bindi
 **`alias_generator`**
 : a callable that takes a field name and returns an alias for it (see [the dedicated section](#alias-generator))
 
+**`dump_alias_generator`**
+: Same as `alias_generator` but only for `dump_alias`, which takes precedence over `alias` for serialization
+
+**`load_alias_generator`**
+: Same as `alias_generator` but only for `load_alias`, which takes precedence over `alias` for deserialization
+
 **`keep_untouched`**
 : a tuple of types (e.g. descriptors) for a model's default values that should not be changed during model creation and will
 not be included in the model schemas. **Note**: this means that attributes on the model with *defaults of this type*, not *annotations of this type*, will be left alone.

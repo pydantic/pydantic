@@ -172,10 +172,18 @@ def test_alias_child_precedence():
         y: int
 
         class Config:
-            fields = {'y': 'y2', 'x': 'x2'}
+            fields = {'y': 'y2', 'x': {'alias': 'x2', 'dump_alias': 'dumpx', 'load_alias': 'loadx'}}
 
+    assert Child.__fields__['y'].load_alias == 'y2'
+    assert Child.__fields__['y'].dump_alias == 'y2'
     assert Child.__fields__['y'].alias == 'y2'
-    assert Child.__fields__['x'].alias == 'x2'
+
+    assert Child.__fields__['x'].dump_alias == 'dumpx'
+    assert Child.__fields__['x'].load_alias == 'loadx'
+    with pytest.raises(
+        ValueError, match=r'`alias` cannot be called since `dump_alias` and `load_alias` are not the same'
+    ):
+        Child.__fields__['x'].alias
 
 
 def test_alias_generator_parent():
@@ -335,3 +343,80 @@ def test_alias_priority():
         'd_config_parent',
         'e_generator_child',
     ]
+
+
+def test_dump_alias():
+    class Model(BaseModel):
+        a: str = Field(..., dump_alias='dumpme')
+
+    assert Model(a='foobar').a == 'foobar'
+    assert Model(a='foobar').dict() == {'a': 'foobar'}
+    assert Model(a='foobar').dict(by_alias=True) == {'dumpme': 'foobar'}
+    assert Model(a='foobar').json(by_alias=True) == '{"dumpme": "foobar"}'
+
+
+def test_dump_alias_over_alias():
+    class Model(BaseModel):
+        a: str = Field(..., alias='pikalias', dump_alias='dumpme')
+
+    assert Model(pikalias='foobar').a == 'foobar'
+    assert Model(pikalias='foobar').dict() == {'a': 'foobar'}
+    assert Model(pikalias='foobar').dict(by_alias=True) == {'dumpme': 'foobar'}
+
+
+def test_dump_alias_over_alias_config():
+    class Model(BaseModel):
+        a: str
+
+        class Config:
+            fields = {'a': {'alias': 'pikalias', 'dump_alias': 'dumpme'}}
+
+    assert Model(pikalias='foobar').a == 'foobar'
+    assert Model(pikalias='foobar').dict() == {'a': 'foobar'}
+    assert Model(pikalias='foobar').dict(by_alias=True) == {'dumpme': 'foobar'}
+
+
+def test_load_alias():
+    class Model(BaseModel):
+        a: str = Field(..., load_alias='loadme')
+
+    assert Model(loadme='foobar').a == 'foobar'
+    assert Model(loadme='foobar').dict() == {'a': 'foobar'}
+    assert Model(loadme='foobar').dict(by_alias=True) == {'a': 'foobar'}
+    assert Model(loadme='foobar').json(by_alias=True) == '{"a": "foobar"}'
+
+
+def test_load_alias_over_alias():
+    class Model(BaseModel):
+        a: str = Field(..., alias='pikalias', load_alias='loadme')
+
+    assert Model(loadme='foobar').a == 'foobar'
+    assert Model(loadme='foobar').dict() == {'a': 'foobar'}
+    assert Model(loadme='foobar').dict(by_alias=True) == {'pikalias': 'foobar'}
+
+
+def test_load_alias_over_alias_config():
+    class Model(BaseModel):
+        a: str
+
+        class Config:
+            fields = {'a': {'load_alias': 'loadme', 'dump_alias': 'dumpme'}}
+
+    assert Model(loadme='foobar').a == 'foobar'
+    assert Model(loadme='foobar').dict() == {'a': 'foobar'}
+    assert Model(loadme='foobar').dict(by_alias=True) == {'dumpme': 'foobar'}
+    assert Model(loadme='foobar').json(by_alias=True) == '{"dumpme": "foobar"}'
+
+
+def test_load_dump_alias_generator():
+    class Model(BaseModel):
+        AField: str
+        AnotherOne: str
+
+        class Config:
+            dump_alias_generator = str.lower
+            load_alias_generator = str.upper
+
+    v = Model(AFIELD='pika', ANOTHERONE='cara')
+    assert v.dict() == {'AField': 'pika', 'AnotherOne': 'cara'}
+    assert v.dict(by_alias=True) == {'afield': 'pika', 'anotherone': 'cara'}

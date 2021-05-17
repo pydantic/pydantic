@@ -88,6 +88,8 @@ class FieldInfo(Representation):
         'default',
         'default_factory',
         'alias',
+        '_dump_alias',
+        '_load_alias',
         'alias_priority',
         'title',
         'description',
@@ -128,7 +130,11 @@ class FieldInfo(Representation):
         self.default = default
         self.default_factory = kwargs.pop('default_factory', None)
         self.alias = kwargs.pop('alias', None)
-        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
+        self.dump_alias = kwargs.pop('dump_alias', None)
+        self.load_alias = kwargs.pop('load_alias', None)
+        self.alias_priority = kwargs.pop(
+            'alias_priority', 2 if self.alias or self.dump_alias or self.load_alias else None
+        )
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
         self.exclude = kwargs.pop('exclude', None)
@@ -147,6 +153,22 @@ class FieldInfo(Representation):
         self.regex = kwargs.pop('regex', None)
         self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
+
+    @property
+    def dump_alias(self) -> Optional[str]:
+        return self._dump_alias or self.alias
+
+    @dump_alias.setter
+    def dump_alias(self, x: str) -> None:
+        self._dump_alias = x
+
+    @property
+    def load_alias(self) -> Optional[str]:
+        return self._load_alias or self.alias
+
+    @load_alias.setter
+    def load_alias(self, x: str) -> None:
+        self._load_alias = x
 
     def __repr_args__(self) -> 'ReprArgs':
 
@@ -194,6 +216,8 @@ def Field(
     *,
     default_factory: Optional[NoArgAnyCallable] = None,
     alias: str = None,
+    dump_alias: Optional[str] = None,
+    load_alias: Optional[str] = None,
     title: str = None,
     description: str = None,
     exclude: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
@@ -221,7 +245,11 @@ def Field(
       to set the default, use ellipsis (``...``) to indicate the field is required
     :param default_factory: callable that will be called when a default value is needed for this field
       If both `default` and `default_factory` are set, an error is raised.
-    :param alias: the public name of the field
+    :param alias: the public name of the field (used for serialization and deserialization)
+    :param dump_alias: only used when dumping the model with `.dict()` and `.json()` (serialization)
+      Takes precedence over `alias`
+    :param load_alias: only used when loading data (deserialization)
+      Takes precedence over `alias`
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
     :param exclude: exclude this field while dumping.
@@ -254,6 +282,8 @@ def Field(
         default,
         default_factory=default_factory,
         alias=alias,
+        dump_alias=dump_alias,
+        load_alias=load_alias,
         title=title,
         description=description,
         exclude=exclude,
@@ -320,8 +350,6 @@ class ModelField(Representation):
         'required',
         'model_config',
         'name',
-        'alias',
-        'has_alias',
         'field_info',
         'validate_always',
         'allow_none',
@@ -340,13 +368,10 @@ class ModelField(Representation):
         default: Any = None,
         default_factory: Optional[NoArgAnyCallable] = None,
         required: 'BoolUndefined' = Undefined,
-        alias: str = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
 
         self.name: str = name
-        self.has_alias: bool = bool(alias)
-        self.alias: str = alias or name
         self.type_: Any = type_
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
@@ -367,6 +392,37 @@ class ModelField(Representation):
         self.shape: int = SHAPE_SINGLETON
         self.model_config.prepare_field(self)
         self.prepare()
+
+    @property
+    def dump_alias(self) -> str:
+        return self.field_info.dump_alias or self.name
+
+    @dump_alias.setter
+    def dump_alias(self, new_dump_alias: Optional[str]) -> None:
+        self.field_info.dump_alias = new_dump_alias
+
+    @property
+    def alt_dump_alias(self) -> bool:
+        return self.name != self.dump_alias
+
+    @property
+    def load_alias(self) -> str:
+        return self.field_info.load_alias or self.name
+
+    @load_alias.setter
+    def load_alias(self, new_load_alias: Optional[str]) -> None:
+        self.field_info.load_alias = new_load_alias
+
+    @property
+    def alt_load_alias(self) -> bool:
+        return self.name != self.load_alias
+
+    @property
+    def alias(self) -> str:
+        if self.dump_alias == self.load_alias:
+            return self.dump_alias
+        else:
+            raise ValueError('`alias` cannot be called since `dump_alias` and `load_alias` are not the same.')
 
     def get_default(self) -> Any:
         return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
@@ -438,7 +494,6 @@ class ModelField(Representation):
         return cls(
             name=name,
             type_=annotation,
-            alias=field_info.alias,
             class_validators=class_validators,
             default=value,
             default_factory=field_info.default_factory,
@@ -451,22 +506,21 @@ class ModelField(Representation):
         self.model_config = config
         info_from_config = config.get_field_info(self.name)
         config.prepare_field(self)
-        new_alias = info_from_config.get('alias')
+        new_dump_alias = info_from_config.get('dump_alias') or info_from_config.get('alias')
+        new_load_alias = info_from_config.get('load_alias') or info_from_config.get('alias')
         new_alias_priority = info_from_config.get('alias_priority') or 0
-        if new_alias and new_alias_priority >= (self.field_info.alias_priority or 0):
-            self.field_info.alias = new_alias
+        if (new_dump_alias or new_load_alias) and new_alias_priority >= (self.field_info.alias_priority or 0):
             self.field_info.alias_priority = new_alias_priority
-            self.alias = new_alias
+            if new_dump_alias:
+                self.field_info.dump_alias = new_dump_alias
+            if new_load_alias:
+                self.field_info.load_alias = new_load_alias
         new_exclude = info_from_config.get('exclude')
         if new_exclude is not None:
             self.field_info.exclude = ValueItems.merge(self.field_info.exclude, new_exclude)
         new_include = info_from_config.get('include')
         if new_include is not None:
             self.field_info.include = ValueItems.merge(self.field_info.include, new_include, intersect=True)
-
-    @property
-    def alt_alias(self) -> bool:
-        return self.name != self.alias
 
     def prepare(self) -> None:
         """
@@ -985,8 +1039,14 @@ class ModelField(Representation):
             else:
                 args.append(('default', self.default))
 
-        if self.alt_alias:
-            args.append(('alias', self.alias))
+        if self.alt_load_alias and self.dump_alias == self.load_alias:
+            args.append(('alias', self.dump_alias))
+        else:
+            if self.alt_dump_alias:
+                args.append(('dump_alias', self.dump_alias))
+            if self.alt_load_alias:
+                args.append(('load_alias', self.load_alias))
+
         return args
 
 

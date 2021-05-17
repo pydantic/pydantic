@@ -48,7 +48,9 @@ It has the following arguments:
 * `default_factory`: a zero-argument callable that will be called when a default value is needed for this field.
     Among other purposes, this can be used to set dynamic default values.
     It is forbidden to set both `default` and `default_factory`.
-* `alias`: the public name of the field
+* `alias`: the public name of the field (used for serialization and deserialization)
+* `dump_alias`: only used when dumping the model with `.dict()` and `.json()` (serialization), takes precedence over `alias`
+* `load_alias`: only used when loading data (deserialization), takes precedence over `alias`
 * `title`: if omitted, `field_name.title()` is used
 * `description`: if omitted and the annotation is a sub-model,
     the docstring of the sub-model will be used

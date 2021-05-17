@@ -885,7 +885,6 @@ def multitypes_literal_field_for_schema(values: Tuple[Any, ...], field: ModelFie
         model_config=field.model_config,
         default=field.default,
         required=field.required,
-        alias=field.alias,
         field_info=field.field_info,
     )
 

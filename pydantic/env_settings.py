@@ -83,7 +83,7 @@ class BaseSettings(BaseModel):
 
             env = field_info_from_config.get('env') or field.field_info.extra.get('env')
             if env is None:
-                if field.has_alias:
+                if field.alt_load_alias:
                     warnings.warn(
                         'aliases are no longer used by BaseSettings to define which environment variables to read. '
                         'Instead use the "env" field setting. '
@@ -101,7 +101,7 @@ class BaseSettings(BaseModel):
                 raise TypeError(f'invalid field env: {env!r} ({display_as_type(env)}); should be string, list or set')
 
             if not cls.case_sensitive:
-                env_names = env_names.__class__(n.lower() for n in env_names)
+                env_names = env_names.__class__(n.lower() for n in env_names)  # type: ignore[call-arg]
             field.field_info.extra['env_names'] = env_names
 
         @classmethod
@@ -172,7 +172,7 @@ class EnvSettingsSource:
                     env_val = settings.__config__.json_loads(env_val)  # type: ignore
                 except ValueError as e:
                     raise SettingsError(f'error parsing JSON for "{env_name}"') from e
-            d[field.alias] = env_val
+            d[field.load_alias] = env_val
         return d
 
     def __repr__(self) -> str:
@@ -207,7 +207,7 @@ class SecretsSettingsSource:
             for env_name in field.field_info.extra['env_names']:
                 path = secrets_path / env_name
                 if path.is_file():
-                    secrets[field.alias] = path.read_text().strip()
+                    secrets[field.load_alias] = path.read_text().strip()
                 elif path.exists():
                     warnings.warn(
                         f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',

@@ -215,7 +215,7 @@ def generate_model_signature(
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
         allow_names = config.allow_population_by_field_name
         for field_name, field in fields.items():
-            param_name = field.alias
+            param_name = field.load_alias
             if field_name in merged_params or param_name in merged_params:
                 continue
             elif not param_name.isidentifier():
