@@ -30,6 +30,12 @@ GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
 Parametrization = Mapping[TypeVarType, Type[Any]]
+
+# _assigned_parameters is a Mapping from parametrized version of generic models to assigned types of parametrizations
+# as captured during construction of the class (not instances).
+# E.g., for generic model `Model[A, B]`, when parametrized model `Model[int, str]` is created,
+# `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
+# (This information is only otherwise available after creation from the class name string).
 _assigned_parameters: Dict[Type[Any], Parametrization] = {}
 
 
