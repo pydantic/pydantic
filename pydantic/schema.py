@@ -31,6 +31,7 @@ from typing_extensions import Annotated, Literal
 
 from .fields import (
     MAPPING_LIKE_SHAPES,
+    SHAPE_DEQUE,
     SHAPE_FROZENSET,
     SHAPE_GENERIC,
     SHAPE_ITERABLE,
@@ -437,7 +438,15 @@ def field_type_schema(
     definitions = {}
     nested_models: Set[str] = set()
     f_schema: Dict[str, Any]
-    if field.shape in {SHAPE_LIST, SHAPE_TUPLE_ELLIPSIS, SHAPE_SEQUENCE, SHAPE_SET, SHAPE_FROZENSET, SHAPE_ITERABLE}:
+    if field.shape in {
+        SHAPE_LIST,
+        SHAPE_TUPLE_ELLIPSIS,
+        SHAPE_SEQUENCE,
+        SHAPE_SET,
+        SHAPE_FROZENSET,
+        SHAPE_ITERABLE,
+        SHAPE_DEQUE,
+    }:
         items_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
