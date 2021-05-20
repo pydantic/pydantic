@@ -397,6 +397,35 @@ def test_enum_and_model_have_same_behaviour():
     }
 
 
+def test_enum_includes_extra_without_other_params():
+    class Names(str, Enum):
+        rick = 'Rick'
+        morty = 'Morty'
+        summer = 'Summer'
+
+    class Foo(BaseModel):
+        enum: Names
+        extra_enum: Names = Field(..., extra='Extra field')
+
+    assert Foo.schema() == {
+        'definitions': {
+            'Names': {
+                'description': 'An enumeration.',
+                'enum': ['Rick', 'Morty', 'Summer'],
+                'title': 'Names',
+                'type': 'string',
+            },
+        },
+        'properties': {
+            'enum': {'$ref': '#/definitions/Names'},
+            'extra_enum': {'allOf': [{'$ref': '#/definitions/Names'}], 'extra': 'Extra field'},
+        },
+        'required': ['enum', 'extra_enum'],
+        'title': 'Foo',
+        'type': 'object',
+    }
+
+
 def test_list_enum_schema_extras():
     class FoodChoice(str, Enum):
         spam = 'spam'

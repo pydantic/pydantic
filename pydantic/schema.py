@@ -176,8 +176,7 @@ def model_schema(
     return m_schema
 
 
-def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
-    schema_overrides = False
+def get_field_info_schema(field: ModelField, schema_overrides: bool = False) -> Tuple[Dict[str, Any], bool]:
 
     # If no title is explicitly set, we don't set title in the schema for enums.
     # The behaviour is the same as `BaseModel` reference, where the default title
@@ -814,7 +813,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         add_field_type_to_schema(field_type, f_schema)
     elif lenient_issubclass(field_type, Enum):
         enum_name = model_name_map[field_type]
-        f_schema, schema_overrides = get_field_info_schema(field)
+        f_schema, schema_overrides = get_field_info_schema(field, schema_overrides)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
     elif is_namedtuple(field_type):
