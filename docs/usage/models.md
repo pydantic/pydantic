@@ -554,6 +554,34 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 !!! warning
     The `default_factory` expects the field type to be set.
 
+## Field with computed value based on other fields
+
+You have two ways of writing a computed field, either with a `property`-like syntax
+
+```py
+{!.tmp_examples/models_computed_field_decorator.py!}
+```
+_(This script is complete, it should run "as is")_
+
+or a `Field`-like one
+
+```py
+{!.tmp_examples/models_computed_field_annotation.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! note
+    If `computed_field` decorator doesn't wrap a decorator like `property`, `cached_property`, ...,
+    it will fallback and create `property` itself. This is shorter and may be what you want, but you
+    will probably lose IntelliSense in your IDE and have some warnings.
+    This is why it is recommanded to combine `computed_field` with `property`<br>
+    **Warning for _mypy_**: Even with this, _mypy_ won't be happy because of [this issue](https://github.com/python/mypy/issues/1362)
+
+```py
+{!.tmp_examples/models_computed_field_decorator_details.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Automatically excluded attributes
 
 Class variables which begin with an underscore and attributes annotated with `typing.ClassVar` will be
