@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from pydantic import BaseModel, ComputedField, Field, ValidationError, field, validator
+from pydantic import BaseModel, ComputedField, Field, ValidationError, computed_field, validator
 
 try:
     from functools import cached_property
@@ -15,13 +15,13 @@ def test_computed_fields_get():
         width: int
         length: int
 
-        @field
+        @computed_field
         @property
         def area(self) -> int:
             """An awesome area"""
             return self.width * self.length
 
-        @field(title='Pikarea', description='Another area')
+        @computed_field(title='Pikarea', description='Another area')
         @property
         def area2(self) -> int:
             return self.width * self.length
@@ -72,7 +72,7 @@ def test_computed_fields_set():
     class Square(BaseModel):
         side: float
 
-        @field
+        @computed_field
         def area(self) -> float:
             return self.side ** 2
 
@@ -106,7 +106,7 @@ def test_computed_fields_del():
         first: str
         last: str
 
-        @field
+        @computed_field
         def fullname(self) -> str:
             return f'{self.first} {self.last}'
 
@@ -133,7 +133,7 @@ def test_cached_property():
         minimum: int = Field(alias='min')
         maximum: int = Field(alias='max')
 
-        @field(alias='the magic number')
+        @computed_field(alias='the magic number')
         @cached_property
         def random_number(self) -> int:
             """An awesome area"""
@@ -170,7 +170,7 @@ def test_custom_descriptor():
         first: str
         last: str
 
-        @field
+        @computed_field
         @MyCustomProperty
         def fullname(self) -> str:
             return f'{self.first} {self.last}'
@@ -187,7 +187,7 @@ def test_custom_descriptor():
         first: str
         last: str
 
-        @field
+        @computed_field
         @MyCustomProperty
         def fullname(self) -> str:
             return f'{self.first} {self.last}'
@@ -208,7 +208,7 @@ def test_computed_fields_no_return_type():
         first: str
         last: str
 
-        @field
+        @computed_field
         def fullname(self):
             return f'{self.first} {self.last}'
 
@@ -228,7 +228,7 @@ def test_properties_and_computed_fields():
         def public_int(self, v: float) -> None:
             self._private_float = v
 
-        @field
+        @computed_field
         @property
         def public_str(self) -> str:
             return f'public {self.public_int}'
@@ -246,12 +246,12 @@ def test_exclude():
     class Model(BaseModel):
         x: float = Field(...)
 
-        @field(exclude=True)
+        @computed_field(exclude=True)
         @property
         def double(self) -> float:
             return self.x * 2
 
-        @field
+        @computed_field
         @property
         def quadruple(self) -> float:
             return self.double * 2
@@ -265,7 +265,7 @@ def test_validation():
         first_name: str
         surname: str
 
-        @field
+        @computed_field
         @property
         def full_name(self) -> str:
             return f'{self.first_name} {self.surname}'
@@ -327,7 +327,7 @@ def test_more_validation():
     class M(BaseModel):
         value: int
 
-        @field
+        @computed_field
         @property
         def plus_one(self) -> int:
             return self.value + 1

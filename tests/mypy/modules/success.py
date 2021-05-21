@@ -31,7 +31,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
-    field,
+    computed_field,
     root_validator,
     validate_arguments,
     validator,
@@ -242,7 +242,7 @@ validated.my_dir_path_str.absolute()
 class Square(BaseModel):
     side: float
 
-    @field(alias='the area')  # type: ignore[misc]
+    @computed_field(alias='the area')  # type: ignore[misc]
     @property
     def area(self) -> float:
         return self.side ** 2

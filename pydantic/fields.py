@@ -339,7 +339,7 @@ def _get_descriptor_infos(descriptor: Any) -> Tuple[Any, 'FGet', Optional['FSet'
 
 
 @overload
-def field(
+def computed_field(
     *,
     alias: Optional[str] = None,
     title: Optional[str] = None,
@@ -351,7 +351,7 @@ def field(
 
 
 @overload
-def field(
+def computed_field(
     func: Any,
     *,
     alias: Optional[str] = None,
@@ -363,7 +363,7 @@ def field(
     ...
 
 
-def field(
+def computed_field(
     func: Optional[Any] = None,
     *,
     alias: Optional[str] = None,
