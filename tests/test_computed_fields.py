@@ -1,4 +1,5 @@
 import random
+from typing import List
 
 import pytest
 
@@ -347,6 +348,38 @@ def test_more_validation():
     assert exc_info.value.errors() == [{'loc': ('plus_one',), 'msg': 'should be greater than 1', 'type': 'value_error'}]
 
     assert M(value=0).plus_one == 1
+
+
+def test_many_errors_validation():
+    class M(BaseModel, validate_assignment=True):
+        doubles: List[int]
+
+        @computed_field
+        @property
+        def quads(self) -> List[int]:
+            return [x * 2 for x in self.doubles]
+
+        @validator('quads', each_item=True)
+        def validate_quads(cls, v):
+            if v % 4 != 0:
+                raise ValueError('should be divisible by 4')
+            return v
+
+    with pytest.raises(ValidationError) as exc_info:
+        M(doubles=[1, 3])
+    assert exc_info.value.errors() == [
+        {'loc': ('quads', 0), 'msg': 'should be divisible by 4', 'type': 'value_error'},
+        {'loc': ('quads', 1), 'msg': 'should be divisible by 4', 'type': 'value_error'},
+    ]
+
+    m = M(doubles=[2, 4])
+
+    with pytest.raises(ValidationError) as exc_info:
+        m.doubles = [1, 3]
+    assert exc_info.value.errors() == [
+        {'loc': ('quads', 0), 'msg': 'should be divisible by 4', 'type': 'value_error'},
+        {'loc': ('quads', 1), 'msg': 'should be divisible by 4', 'type': 'value_error'},
+    ]
 
 
 def test_computed_field_syntax():
