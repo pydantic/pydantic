@@ -2,8 +2,7 @@ import random
 
 import pytest
 
-from pydantic import BaseModel
-from pydantic.fields import Field, field
+from pydantic import BaseModel, ComputedField, Field, ValidationError, field, validator
 
 try:
     from functools import cached_property
@@ -259,3 +258,120 @@ def test_exclude():
 
     m = Model(x=3)
     assert m.dict() == {'x': 3.0, 'quadruple': 12.0}
+
+
+def test_validation():
+    class User(BaseModel, validate_assignment=True):
+        first_name: str
+        surname: str
+
+        @field
+        @property
+        def full_name(self) -> str:
+            return f'{self.first_name} {self.surname}'
+
+        @full_name.setter
+        def full_name(self, v: str) -> None:
+            self.first_name, self.surname = v.split(' ', 1)
+
+        @validator('first_name')
+        def first_name_should_not_start_with_z(cls, v: str) -> str:
+            if v.lower().startswith('z'):
+                raise ValueError('The first name cannot start with Z')
+            return v
+
+        @validator('full_name')
+        def full_name_should_not_have_pika(cls, v: str) -> str:
+            if 'pika' in v.lower():
+                raise ValueError('We love pika but not that much!')
+            return v
+
+    with pytest.raises(ValidationError) as exc_info:
+        User(first_name='pika', surname='chu')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('full_name',),
+            'msg': 'We love pika but not that much!',
+            'type': 'value_error',
+        }
+    ]
+
+    u = User(first_name='John', surname='Smith')
+    assert u.dict() == {'first_name': 'John', 'surname': 'Smith', 'full_name': 'John Smith'}
+
+    u.full_name = 'Ali Ababwa'
+    assert u.dict() == {'first_name': 'Ali', 'surname': 'Ababwa', 'full_name': 'Ali Ababwa'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        u.full_name = 'Zor ro'
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('first_name',),
+            'msg': 'The first name cannot start with Z',
+            'type': 'value_error',
+        },
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        u.first_name = 'Pika'
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('full_name',),
+            'msg': 'We love pika but not that much!',
+            'type': 'value_error',
+        }
+    ]
+
+
+def test_more_validation():
+    class M(BaseModel):
+        value: int
+
+        @field
+        @property
+        def plus_one(self) -> int:
+            return self.value + 1
+
+        @plus_one.setter
+        def plus_one(self, v: int) -> None:
+            self.value = v - 1
+
+        @validator('plus_one', always=True)
+        def validate_plus_one(cls, v: int) -> int:
+            if v < 1:
+                raise ValueError('should be greater than 1')
+            return v
+
+    with pytest.raises(ValidationError) as exc_info:
+        M(value=-1)
+    assert exc_info.value.errors() == [{'loc': ('plus_one',), 'msg': 'should be greater than 1', 'type': 'value_error'}]
+
+    assert M(value=0).plus_one == 1
+
+
+def test_computed_field_syntax():
+    class User(BaseModel):
+        first_name: str
+        surname: str
+        full_name: str = ComputedField(lambda self: f'{self.first_name} {self.surname}')
+
+        @validator('full_name')
+        def should_not_have_pika(cls, v: str) -> str:
+            if 'pika' in v.lower():
+                raise ValueError('We love pika but not that much!')
+            return v
+
+    u = User(first_name='John', surname='Smith')
+    assert u.dict() == {'first_name': 'John', 'surname': 'Smith', 'full_name': 'John Smith'}
+    u.first_name = 'Mike'
+    assert u.dict()['full_name'] == 'Mike Smith'
+
+    with pytest.raises(ValidationError) as exc_info:
+        User(first_name='pika', surname='chu')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('full_name',),
+            'msg': 'We love pika but not that much!',
+            'type': 'value_error',
+        }
+    ]

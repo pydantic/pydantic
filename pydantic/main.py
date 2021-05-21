@@ -332,7 +332,7 @@ class ModelMetaclass(ABCMeta):
                     private_attributes[var_name] = value
                 elif isinstance(value, ComputedField):
                     computed_fields[var_name] = value
-                    value.set_config_and_prepare_field(config)
+                    value.prepare(config, var_name, vg.get_validators(var_name))
                 elif config.underscore_attrs_are_private and is_valid_private_name(var_name) and can_be_changed:
                     private_attributes[var_name] = PrivateAttr(default=value)
                 elif is_valid_field(var_name) and var_name not in annotations and can_be_changed:
@@ -487,6 +487,14 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     new_values[name] = value
 
             errors = []
+
+            for name, computed_field in self.__computed_fields__.items():
+                errors_ = computed_field.validate(new_values, loc=computed_field.alias, cls=self.__class__)
+                if isinstance(errors_, ErrorWrapper):
+                    errors.append(errors_)
+                elif isinstance(errors_, list):
+                    errors.extend(errors_)
+
             for skip_on_failure, validator in self.__post_root_validators__:
                 if skip_on_failure and errors:
                     continue
@@ -1103,6 +1111,13 @@ def validate_model(  # noqa: C901 (ignore complexity)
             errors.extend(errors_)
         else:
             values[name] = v_
+
+    for name, computed_field in model.__computed_fields__.items():
+        errors_ = computed_field.validate(values, loc=computed_field.alias, cls=cls_)
+        if isinstance(errors_, ErrorWrapper):
+            errors.append(errors_)
+        elif isinstance(errors_, list):
+            errors.extend(errors_)
 
     if check_extra:
         if isinstance(input_data, GetterDict):

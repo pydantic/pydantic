@@ -373,13 +373,8 @@ def field(
     include: Optional['ExcludeInclude'] = None,
 ) -> 'Union[Callable[[Any], ComputedField], ComputedField]':
     def wrap(func_: Any) -> 'ComputedField':
-        from inspect import isdatadescriptor, ismethoddescriptor
-
-        if not (ismethoddescriptor(func_) or isdatadescriptor(func_)):
-            func_ = property(func_)
-
         return ComputedField(
-            descriptor=func_,
+            func_,
             alias=alias,
             title=title,
             description=description,
@@ -393,13 +388,28 @@ def field(
     return wrap(func)
 
 
+class GetAttributeDict:
+    """
+    A tiny wrapper around a dictionary to be able to call a descriptor on it
+    Calling `self.first_name` for example will return `self['first_name']`
+    """
+
+    __slots__ = ('_obj',)
+
+    def __init__(self, obj: Dict[str, Any]) -> None:
+        self._obj = obj
+
+    def __getattr__(self, item: str) -> Any:
+        return self._obj[item]
+
+
 class ComputedField(Representation):
     __slots__ = (
         'descriptor',
         'type_',
         'fget',
         'fset',
-        'name',
+        'defined_name',
         'class_validators',
         'alias',
         'title',
@@ -413,8 +423,8 @@ class ComputedField(Representation):
 
     def __init__(
         self,
+        default_callable: Any,
         *,
-        descriptor: Any,
         name: Optional[str] = None,
         alias: Optional[str] = None,
         title: Optional[str] = None,
@@ -424,12 +434,17 @@ class ComputedField(Representation):
         config: Optional[Type['BaseConfig']] = None,
         model_field: Optional['ModelField'] = None,
     ) -> None:
-        self.descriptor: Any = descriptor
-        type_, fget, fset = _get_descriptor_infos(descriptor)
+        from inspect import isdatadescriptor, ismethoddescriptor
+
+        if not (ismethoddescriptor(default_callable) or isdatadescriptor(default_callable)):
+            default_callable = property(default_callable)
+
+        self.descriptor: Any = default_callable
+        type_, fget, fset = _get_descriptor_infos(default_callable)
         self.type_: Any = type_
         self.fget: 'FGet' = fget
         self.fset: Optional['FSet'] = fset
-        self.name: str = name or self.fget.__name__
+        self.defined_name: Optional[str] = name
         self.class_validators: Optional[Dict[str, 'Validator']] = None
 
         self.alias: str = alias or self.name
@@ -441,6 +456,10 @@ class ComputedField(Representation):
         self.config: Optional[Type['BaseConfig']] = config
         self.model_field: Optional[ModelField] = model_field
         self.required: bool = False
+
+    @property
+    def name(self) -> str:
+        return self.defined_name or self.fget.__name__
 
     @property
     def field_info(self) -> FieldInfo:
@@ -473,7 +492,7 @@ class ComputedField(Representation):
 
             def update_computed_field(*args: Any, **kwargs: Any) -> 'ComputedField':
                 return type(self)(
-                    descriptor=getattr(self.descriptor, name)(*args, **kwargs),
+                    getattr(self.descriptor, name)(*args, **kwargs),
                     name=self.name,
                     alias=self.alias,
                     title=self.title,
@@ -484,7 +503,15 @@ class ComputedField(Representation):
 
             return update_computed_field
 
-    def set_config_and_prepare_field(self, config: Type['BaseConfig']) -> None:
+    def prepare(
+        self,
+        config: Type['BaseConfig'],
+        name: str,
+        class_validators: Optional[Dict[str, 'Validator']],
+    ) -> None:
+        if self.defined_name is None:
+            self.defined_name = name
+        self.class_validators = class_validators
         self.config = config
         self.model_field = ModelField(
             name=self.name,
@@ -496,6 +523,20 @@ class ComputedField(Representation):
             alias=self.field_info.alias,
             field_info=self.field_info,
         )
+
+    def validate(
+        self, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
+    ) -> 'Optional[ErrorList]':
+        get_values = GetAttributeDict(values)
+        try:
+            v = self.fget(get_values)  # type: ignore
+        except KeyError:
+            errors = None
+        else:
+            new_loc = self.name if isinstance(loc, str) else tuple((loc[:-1], self.name))
+            assert self.model_field is not None
+            _, errors = self.model_field.validate(v, values, loc=cast('LocStr', new_loc), cls=cls)
+        return errors
 
 
 class ModelField(Representation):
