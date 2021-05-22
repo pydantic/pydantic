@@ -574,7 +574,7 @@ _(This script is complete, it should run "as is")_
     If `computed_field` decorator doesn't wrap a decorator like `property`, `cached_property`, ...,
     it will fallback and create `property` itself. This is shorter and may be what you want, but you
     will probably lose IntelliSense in your IDE and have some warnings.
-    This is why it is recommanded to combine `computed_field` with `property`<br>
+    This is why it is recommended to combine `computed_field` with `property`<br>
     **Warning for _mypy_**: Even with this, _mypy_ won't be happy because of [this issue](https://github.com/python/mypy/issues/1362)
 
 ```py
