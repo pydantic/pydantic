@@ -1,11 +1,9 @@
-import sys
-from typing import get_type_hints
-
 import pytest
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
 from pydantic.fields import Undefined
+from pydantic.typing import get_all_type_hints
 
 
 @pytest.mark.parametrize(
@@ -43,15 +41,7 @@ def test_annotated(hint_fn, value):
 
     assert M().x == 5
     assert M(x=10).x == 10
-
-    # get_type_hints doesn't recognize typing_extensions.Annotated, so will return the full
-    # annotation. 3.9 w/ stock Annotated will return the wrapped type by default, but return the
-    # full thing with the new include_extras flag.
-    if sys.version_info >= (3, 9):
-        assert get_type_hints(M)['x'] is int
-        assert get_type_hints(M, include_extras=True)['x'] == hint
-    else:
-        assert get_type_hints(M)['x'] == hint
+    assert get_all_type_hints(M)['x'] == hint
 
 
 @pytest.mark.parametrize(

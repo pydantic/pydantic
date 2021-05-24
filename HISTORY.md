@@ -1,3 +1,20 @@
+## v1.8.2 (2021-05-11)
+
+!!! warning
+    A security vulnerability, level "moderate" is fixed in v1.8.2. Please upgrade **ASAP**.
+    See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
+
+* **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
+  (or their negative values) does not cause an infinite loop, 
+  see security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
+* fix schema generation with Enum by generating a valid name, #2575 by @PrettyWood
+* fix JSON schema generation with a `Literal` of an enum member, #2536 by @PrettyWood
+* Fix bug with configurations declarations that are passed as
+  keyword arguments during class creation, #2532 by @uriyyo
+* Allow passing `json_encoders` in class kwargs, #2521 by @layday
+* support arbitrary types with custom `__eq__`, #2483 by @PrettyWood
+* support `Annotated` in `validate_arguments` and in generic models with python 3.9, #2483 by @PrettyWood
+
 ## v1.8.1 (2021-03-03)
 
 Bug fixes for regressions and new features from `v1.8` 
@@ -104,6 +121,12 @@ for their kind support.
 * Add `Config.copy_on_model_validation` flag. When set to `False`, _pydantic_ will keep models used as fields
   untouched on validation instead of reconstructing (copying) them, #265 by @PrettyWood
 
+## v1.7.4 (2021-05-11)
+
+* **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
+  (or their negative values) does not cause an infinite loop,
+  See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
+
 ## v1.7.3 (2020-11-30)
 
 Thank you to pydantic's sponsors:
@@ -192,6 +215,12 @@ for their kind support.
 * `pydantic.dataclasses.dataclass` decorator now supports built-in `dataclasses.dataclass`.
   It is hence possible to convert an existing `dataclass` easily to add *pydantic* validation.
   Moreover nested dataclasses are also supported, #744 by @PrettyWood
+
+## v1.6.2 (2021-05-11)
+
+* **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
+  (or their negative values) does not cause an infinite loop,
+  See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
 
 ## v1.6.1 (2020-07-15)
 
