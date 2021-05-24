@@ -2850,7 +2850,7 @@ def test_past_date_validation_fails(value):
     assert exc_info.value.errors() == [
         {
             'loc': ('foo',),
-            'msg': f'date is not in the past',
+            'msg': 'date is not in the past',
             'type': 'value_error.date.not_in_the_past',
         }
     ]
@@ -2889,7 +2889,7 @@ def test_future_date_validation_fails(value):
     assert exc_info.value.errors() == [
         {
             'loc': ('foo',),
-            'msg': f'date is not in the future',
+            'msg': 'date is not in the future',
             'type': 'value_error.date.not_in_the_future',
         }
     ]
