@@ -440,17 +440,12 @@ class DateError(PydanticValueError):
     msg_template = 'invalid date format'
 
 
-class _DateValueError(PydanticValueError):
-    def __init__(self) -> None:
-        super().__init__()
-
-
-class DateNotInThePastError(_DateValueError):
+class DateNotInThePastError(PydanticValueError):
     code = 'date.not_in_the_past'
     msg_template = 'date is not in the past'
 
 
-class DateNotInTheFutureError(_DateValueError):
+class DateNotInTheFutureError(PydanticValueError):
     code = 'date.not_in_the_future'
     msg_template = 'date is not in the future'
 
