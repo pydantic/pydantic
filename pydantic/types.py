@@ -1039,7 +1039,7 @@ else:
         @classmethod
         def validate(cls, value: date) -> date:
             if value >= date.today():
-                raise errors.DateNotInThePastError(date=value)
+                raise errors.DateNotInThePastError()
 
             return value
 
@@ -1052,6 +1052,6 @@ else:
         @classmethod
         def validate(cls, value: date) -> date:
             if value <= date.today():
-                raise errors.DateNotInTheFutureError(date=value)
+                raise errors.DateNotInTheFutureError()
 
             return value

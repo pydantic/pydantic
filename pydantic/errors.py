@@ -67,7 +67,6 @@ __all__ = (
     'DecimalWholeDigitsError',
     'DateTimeError',
     'DateError',
-    '_DateValueError',
     'DateNotInThePastError',
     'DateNotInTheFutureError',
     'TimeError',
@@ -443,18 +442,18 @@ class DateError(PydanticValueError):
 
 
 class _DateValueError(PydanticValueError):
-    def __init__(self, *, date: date) -> None:
-        super().__init__(date=str(date))
+    def __init__(self) -> None:
+        super().__init__()
 
 
 class DateNotInThePastError(_DateValueError):
     code = 'date.not_in_the_past'
-    msg_template = 'date "{date}" is not in the past'
+    msg_template = 'date is not in the past'
 
 
 class DateNotInTheFutureError(_DateValueError):
     code = 'date.not_in_the_future'
-    msg_template = 'date "{date}" is not in the future'
+    msg_template = 'date is not in the future'
 
 
 class TimeError(PydanticValueError):

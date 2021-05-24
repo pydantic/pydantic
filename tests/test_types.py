@@ -2832,15 +2832,16 @@ def test_past_date_validation_success(value, result):
 
 
 @pytest.mark.parametrize(
-    'value,expected',
+    'value',
     (
-        (date.today(), str(date.today())),
-        (date.today() + timedelta(1), str(date.today() + timedelta(1))),
-        (datetime.today(), str(date.today())),
-        (datetime.today() + timedelta(1), str(date.today() + timedelta(1))),
+        date.today(),
+        date.today() + timedelta(1),
+        datetime.today(),
+        datetime.today() + timedelta(1),
+        '2064-06-01',
     ),
 )
-def test_past_date_validation_fails(value, expected):
+def test_past_date_validation_fails(value):
     class Model(BaseModel):
         foo: PastDate
 
@@ -2849,9 +2850,8 @@ def test_past_date_validation_fails(value, expected):
     assert exc_info.value.errors() == [
         {
             'loc': ('foo',),
-            'msg': f'date "{expected}" is not in the past',
+            'msg': f'date is not in the past',
             'type': 'value_error.date.not_in_the_past',
-            'ctx': {'date': expected},
         }
     ]
 
@@ -2871,15 +2871,16 @@ def test_future_date_validation_success(value, result):
 
 
 @pytest.mark.parametrize(
-    'value,expected',
+    'value',
     (
-        (date.today(), str(date.today())),
-        (date.today() - timedelta(1), str(date.today() - timedelta(1))),
-        (datetime.today(), str(date.today())),
-        (datetime.today() - timedelta(1), str(date.today() - timedelta(1))),
+        date.today(),
+        date.today() - timedelta(1),
+        datetime.today(),
+        datetime.today() - timedelta(1),
+        '1996-01-22',
     ),
 )
-def test_future_date_validation_fails(value, expected):
+def test_future_date_validation_fails(value):
     class Model(BaseModel):
         foo: FutureDate
 
@@ -2888,8 +2889,7 @@ def test_future_date_validation_fails(value, expected):
     assert exc_info.value.errors() == [
         {
             'loc': ('foo',),
-            'msg': f'date "{expected}" is not in the future',
+            'msg': f'date is not in the future',
             'type': 'value_error.date.not_in_the_future',
-            'ctx': {'date': expected},
         }
     ]
