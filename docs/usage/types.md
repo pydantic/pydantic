@@ -255,6 +255,11 @@ classes to preclude the unexpected representation as such:
 ```
 _(This script is complete, it should run "as is")_
 
+!!! warning
+    `typing.Unions` also ignore order when they are [defined](https://docs.python.org/3/library/typing.html#typing.Union),
+    so `Union[int, float] == Union[float, int]` which can lead to unexpected behaviour when combined with matching the first type.
+    Please note that this can also be affected by third party libraries and their internal type definitions.
+
 !!! tip
     The type `Optional[x]` is a shorthand for `Union[x, None]`.
 
