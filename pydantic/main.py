@@ -505,6 +505,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_unset_none: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -526,6 +527,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
+                exclude_unset_none=exclude_unset_none,
             )
         )
 
@@ -539,6 +541,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_unset_none: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         **dumps_kwargs: Any,
     ) -> str:
@@ -561,6 +564,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_unset_none=exclude_unset_none,
         )
         if self.__custom_root_type__:
             data = data[ROOT_KEY]
@@ -856,6 +860,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_unset_none: bool = False,
     ) -> 'TupleGenerator':
 
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
@@ -884,6 +889,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             if exclude_defaults:
                 model_field = self.__fields__.get(field_key)
                 if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
+                    continue
+
+            if exclude_unset_none:
+                model_field = self.__fields__.get(field_key)
+                if v is None and field_key not in self.__fields_set__.copy():
                     continue
 
             if by_alias and field_key in self.__fields__:

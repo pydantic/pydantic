@@ -389,6 +389,30 @@ def test_include_exclude_unset():
     assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_unset=True) == {'b': 2}
 
 
+def test_include_exclude_unset_none():
+    class Model(BaseModel):
+        a: int
+        b: int = 2
+        c: Optional[int] = 3
+        d: Optional[int] = 4
+        e: Optional[int] = None
+        f: Optional[int] = None
+
+    m = Model(a=1, b=2, c=None, e=None)
+    assert m.dict() == {'a': 1, 'b': 2, 'c': None, 'd': 4, 'e': None, 'f': None}
+    assert m.__fields_set__ == {'a', 'b', 'c', 'e'}
+    assert m.dict(exclude_unset_none=True) == {'a': 1, 'b': 2, 'c': None, 'd': 4, 'e': None}
+
+    assert m.dict(include={'a'}, exclude_unset_none=True) == {'a': 1}
+    assert m.dict(include={'f'}, exclude_unset_none=True) == {}
+
+    assert m.dict(exclude={'a'}, exclude_unset_none=True) == {'b': 2, 'c': None, 'd': 4, 'e': None}
+    assert m.dict(exclude={'c'}, exclude_unset_none=True) == {'a': 1, 'b': 2, 'd': 4, 'e': None}
+
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'b'}, exclude_unset_none=True) == {'a': 1, 'c': None}
+    assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_unset_none=True) == {'b': 2}
+
+
 def test_include_exclude_defaults():
     class Model(BaseModel):
         a: int
