@@ -41,9 +41,10 @@ git clone git@github.com:<your username>/pydantic.git
 cd pydantic
 
 # 2. Set up a virtualenv for running tests
-virtualenv -p `which python3.7` env
+virtualenv -p `which python3.8` env
 source env/bin/activate
-# (or however you prefer to setup a python environment, 3.6 will work too)
+# Building docs require 3.8. Otherwise, feel free to setup a python environment
+# however you prefer; 3.6 will work too.
 
 # 3. Install pydantic, dependencies, test dependencies and doc dependencies
 make install
