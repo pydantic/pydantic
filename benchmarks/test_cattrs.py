@@ -95,7 +95,5 @@ class TestCAttrs:
     def validate(self, data):
         try:
             return True, cattr.structure(data, self.model)
-        except ValueError as e:
-            return False, str(e)
-        except TypeError as e:
+        except (ValueError, TypeError, KeyError) as e:
             return False, str(e)
