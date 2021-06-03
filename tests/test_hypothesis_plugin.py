@@ -68,6 +68,12 @@ def gen_models():
         json_int_or_str: pydantic.Json[typing.Union[int, str]]
         json_list_of_float: pydantic.Json[typing.List[float]]
 
+    class ListModel(pydantic.BaseModel):
+        int_list_a: pydantic.conlist(int, min_items=1)
+        int_list_b: pydantic.conlist(int, min_items=1, max_items=2)
+        empty_list: pydantic.conlist(int, max_items=0)
+        list_of_list: pydantic.conlist(pydantic.conlist(str, max_items=3), min_items=1)
+
     class ConstrainedNumbersModel(pydantic.BaseModel):
         conintt: pydantic.conint(gt=10, lt=100)
         coninte: pydantic.conint(ge=10, le=100)
@@ -91,6 +97,7 @@ def gen_models():
         StrictNumbersModel,
         NumbersModel,
         JsonModel,
+        ListModel,
         ConstrainedNumbersModel,
     )
 

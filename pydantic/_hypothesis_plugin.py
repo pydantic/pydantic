@@ -357,6 +357,15 @@ def resolve_constr(cls):  # type: ignore[no-untyped-def]  # pragma: no cover
     return strategy.filter(lambda s: min_size <= len(s) <= max_size)
 
 
+@resolves(pydantic.ConstrainedList)
+def resolve_conlist(cls):  # type: ignore[no-untyped-def]  # pragma: no cover
+
+    min_items = cls.min_items or 0
+    max_items = cls.max_items or None
+
+    return st.lists(st.from_type(cls.item_type), min_size=min_items, max_size=max_items)
+
+
 # Finally, register all previously-defined types, and patch in our new function
 for typ in pydantic.types._DEFINED_TYPES:
     _registered(typ)
