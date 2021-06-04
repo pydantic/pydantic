@@ -2861,6 +2861,7 @@ def test_past_date_validation_fails(value):
     (
         (date.today() + timedelta(1), date.today() + timedelta(1)),
         (datetime.today() + timedelta(1), date.today() + timedelta(1)),
+        ('2064-06-01', date(2064, 6, 1)),
     ),
 )
 def test_future_date_validation_success(value, result):
