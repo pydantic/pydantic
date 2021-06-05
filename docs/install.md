@@ -16,10 +16,13 @@ channel:
 conda install pydantic -c conda-forge
 ```
 
-*pydantic* can optionally be compiled with [cython](https://cython.org/) which should give a 30-50% performance
-improvement. 
+## Compiled with Cython
 
-Binaries are available from [PyPI](https://pypi.org/project/pydantic/#files) for Linux, MacOS and 64bit Windows.
+*pydantic* can optionally be compiled with [cython](https://cython.org/) which should give a 30-50% performance improvement. 
+
+By default `pip install` provides optimized binaries via [PyPI](https://pypi.org/project/pydantic/#files) for Linux, MacOS and 64bit Windows.
+
+
 If you're installing manually, install `cython` before installing *pydantic* and compilation should happen automatically.
 
 To test if *pydantic* is compiled run:
@@ -28,6 +31,27 @@ To test if *pydantic* is compiled run:
 import pydantic
 print('compiled:', pydantic.compiled)
 ```
+
+### Performance vs package size trade-off
+
+Compiled binaries can increase the size of your Python environment. If for some reason you want to reduce the size of your *pydantic* installation you can avoid installing any binaries using the [`pip --no-binary`](https://pip.pypa.io/en/stable/cli/pip_install/#install-no-binary) option. Make sure `Cython` is not in your environment, or that you have the `SKIP_CYTHON` environment variable set to avoid re-compiling *pydantic* libraries:
+
+```bash
+SKIP_CYTHON=1 pip install --no-binary pydantic pydantic
+```
+!!! note
+    `pydantic` is repeated here intentionally, `--no-binary pydantic` tells `pip` you want no binaries for pydantic,
+    the next `pydantic` tells `pip` which package to install.
+
+Alternatively, you can re-compile *pydantic* with custom [build options](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html), this would require having the [`Cython`](https://pypi.org/project/Cython/) package installed before re-compiling *pydantic* with:
+```bash
+CFLAGS="-Os -g0 -s" pip install \
+  --no-binary pydantic \
+  --global-option=build_ext \
+  pydantic
+```
+
+## Optional dependencies
 
 *pydantic* has two optional dependencies:
 
@@ -45,6 +69,9 @@ pip install pydantic[email,dotenv]
 ```
 
 Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install`.
+
+
+## Install from repository
 
 And if you prefer to install *pydantic* directly from the repository:
 ```bash

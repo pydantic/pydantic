@@ -52,6 +52,8 @@ It has the following arguments:
 * `title`: if omitted, `field_name.title()` is used
 * `description`: if omitted and the annotation is a sub-model,
     the docstring of the sub-model will be used
+* `exclude`: exclude this field when dumping (`.dict` and `.json`) the instance. The exact syntax and configuration options are described in details in the [exporting models section](exporting_models.md#advanced-include-and-exclude).
+* `include`: include (only) this field when dumping (`.dict` and `.json`) the instance. The exact syntax and configuration options are described in details in the [exporting models section](exporting_models.md#advanced-include-and-exclude).
 * `const`: this argument *must* be the same as the field's default value if present.
 * `gt`: for numeric values (``int``, `float`, `Decimal`), adds a validation of "greater than" and an annotation
   of `exclusiveMinimum` to the JSON Schema
@@ -92,6 +94,7 @@ It has the following arguments:
       See [#1631](https://github.com/samuelcolvin/pydantic/issues/1631)
       for a discussion of possible changes to *pydantic* behavior in **v2**.
 
+* `repr`: a boolean which defaults to `True`. When False, the field shall be hidden from the object representation.
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used
