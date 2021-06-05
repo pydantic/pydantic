@@ -131,7 +131,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     return v
 
 
-def sequence_like(v: Type[Any]) -> bool:
+def sequence_like(v: Any) -> bool:
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
