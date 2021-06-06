@@ -30,9 +30,10 @@ if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
 
+    from .config import BaseConfig
     from .dataclasses import Dataclass  # noqa: F401
     from .fields import ModelField  # noqa: F401
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .main import BaseModel  # noqa: F401
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
 
 __all__ = (

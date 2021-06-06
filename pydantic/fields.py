@@ -69,8 +69,9 @@ Undefined = UndefinedType()
 
 if TYPE_CHECKING:
     from .class_validators import ValidatorsList  # noqa: F401
+    from .config import BaseConfig
     from .error_wrappers import ErrorList
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .main import BaseModel  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
     from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
 

@@ -5,7 +5,7 @@ from .json import pydantic_encoder
 from .utils import Representation
 
 if TYPE_CHECKING:
-    from .main import BaseConfig  # noqa: F401
+    from .config import BaseConfig  # noqa: F401
     from .types import ModelOrDc  # noqa: F401
     from .typing import ReprArgs
 
