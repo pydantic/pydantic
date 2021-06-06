@@ -75,8 +75,8 @@ from .typing import (
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
-    from .dataclasses import Dataclass  # noqa: F401
-    from .main import BaseModel  # noqa: F401
+    from .dataclasses import Dataclass
+    from .main import BaseModel
 
 default_prefix = '#/definitions/'
 default_ref_template = '#/definitions/{model}'

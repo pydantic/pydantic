@@ -62,7 +62,7 @@ if TYPE_CHECKING:
 
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
-    from .typing import (  # noqa: F401
+    from .typing import (
         AbstractSetIntStr,
         CallableGenerator,
         DictAny,
