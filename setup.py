@@ -7,7 +7,7 @@ from pathlib import Path
 from setuptools import setup
 
 if os.name == 'nt':
-    from distutils.command import build_ext
+    from setuptools.command import build_ext
 
     def get_export_symbols(self, ext):
         """
