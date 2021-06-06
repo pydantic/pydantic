@@ -1,6 +1,6 @@
 import re
 from collections import OrderedDict, deque
-from collections.abc import Hashable
+from collections.abc import Hashable as CollectionsHashable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum, IntEnum
@@ -14,6 +14,7 @@ from typing import (
     Dict,
     FrozenSet,
     Generator,
+    Hashable,
     List,
     NamedTuple,
     Pattern,
@@ -662,7 +663,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if type_ is Pattern:
         yield pattern_validator
         return
-    if type_ is Hashable:
+    if type_ is Hashable or type_ is CollectionsHashable:
         yield hashable_validator
         return
     if is_callable_type(type_):

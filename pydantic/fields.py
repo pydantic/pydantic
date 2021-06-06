@@ -1,5 +1,5 @@
 from collections import defaultdict, deque
-from collections.abc import Iterable as CollectionsIterable
+from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -543,7 +543,8 @@ class ModelField(Representation):
             return
 
         origin = get_origin(self.type_)
-        if origin is None:
+        # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
+        if origin is None or origin is CollectionsHashable:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable
             if isinstance(self.type_, type) and isinstance(None, self.type_):
