@@ -258,7 +258,7 @@ def generate_model_signature(
 
 
 def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseModel']:
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     try:
         model_cls = obj.__pydantic_model__  # type: ignore

@@ -364,7 +364,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
     from .dataclasses import dataclass, is_builtin_dataclass
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     flat_models: TypeModelSet = set()
 
@@ -765,7 +765,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     Take a single Pydantic ``ModelField``, and return its schema and any additional definitions from sub-models.
     """
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()

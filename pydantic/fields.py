@@ -948,7 +948,7 @@ class ModelField(Representation):
         """
         Whether the field is "complex" eg. env variables should be parsed as JSON.
         """
-        from .main import BaseModel  # noqa: F811
+        from .main import BaseModel
 
         return (
             self.shape != SHAPE_SINGLETON
