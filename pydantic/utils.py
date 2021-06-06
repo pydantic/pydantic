@@ -202,6 +202,8 @@ def generate_model_signature(
     """
     from inspect import Parameter, Signature, signature
 
+    from .config import Extra
+
     present_params = signature(init).parameters.values()
     merged_params: Dict[str, Parameter] = {}
     var_kw = None
@@ -232,7 +234,7 @@ def generate_model_signature(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
             )
 
-    if config.extra is config.extra.allow:
+    if config.extra is Extra.allow:
         use_var_kw = True
 
     if var_kw and use_var_kw:
