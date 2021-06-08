@@ -289,6 +289,8 @@ class AnyUrl(str):
 class AnyHttpUrl(AnyUrl):
     allowed_schemes = {'http', 'https'}
 
+    __slots__ = ()
+
 
 class HttpUrl(AnyUrl):
     allowed_schemes = {'http', 'https'}
@@ -296,14 +298,20 @@ class HttpUrl(AnyUrl):
     # https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
     max_length = 2083
 
+    __slots__ = ()
+
 
 class PostgresDsn(AnyUrl):
     allowed_schemes = {'postgres', 'postgresql'}
     user_required = True
 
+    __slots__ = ()
+
 
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis', 'rediss'}
+
+    __slots__ = ()
 
     @classmethod
     def validate_parts(cls, parts: Dict[str, str]) -> Dict[str, str]:
@@ -395,6 +403,8 @@ class NameEmail(Representation):
 
 
 class IPvAnyAddress(_BaseAddress):
+    __slots__ = ()
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyaddress')
@@ -417,6 +427,8 @@ class IPvAnyAddress(_BaseAddress):
 
 
 class IPvAnyInterface(_BaseAddress):
+    __slots__ = ()
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyinterface')
