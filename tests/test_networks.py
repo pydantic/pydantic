@@ -53,6 +53,14 @@ except ImportError:
         'http://twitter.com/@handle/',
         'http://11.11.11.11.example.com/action',
         'http://abc.11.11.11.11.example.com/action',
+        'http://example#',
+        'http://example/#',
+        'http://example/#fragment',
+        'http://example/?#',
+        'http://example.org/path#',
+        'http://example.org/path#fragment',
+        'http://example.org/path?query#',
+        'http://example.org/path?query#fragment',
     ],
 )
 def test_any_url_success(value):
