@@ -1,6 +1,7 @@
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
+import toml
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -110,8 +111,14 @@ class PydanticPluginConfig:
     def __init__(self, options: Options) -> None:
         if options.config_file is None:  # pragma: no cover
             return
+
         plugin_config = ConfigParser()
-        plugin_config.read(options.config_file)
+        if options.config_file.endswith("toml"):
+            with open(options.config_file, "r") as rf:
+                data = toml.load(rf)
+            plugin_config.read_dict(data.get("tools", {}))
+        else:
+            plugin_config.read(options.config_file)
         for key in self.__slots__:
             setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
             setattr(self, key, setting)
