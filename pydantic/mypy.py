@@ -112,16 +112,17 @@ class PydanticPluginConfig:
         if options.config_file is None:  # pragma: no cover
             return
 
-        plugin_config = ConfigParser()
         if options.config_file.endswith("toml"):
             with open(options.config_file, "r") as rf:
-                data = toml.load(rf)
-            plugin_config.read_dict(data.get("tool", {}))
+                data = toml.load(rf).get("tool", {}).get("pydantic-mypy", {})
+            for key in self.__slots__:
+                setattr(self, key, data.get(key, False))
         else:
+            plugin_config = ConfigParser()
             plugin_config.read(options.config_file)
-        for key in self.__slots__:
-            setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
-            setattr(self, key, setting)
+            for key in self.__slots__:
+                setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
+                setattr(self, key, setting)
 
 
 def from_orm_callback(ctx: MethodContext) -> Type:
