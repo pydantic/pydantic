@@ -112,7 +112,7 @@ class PydanticPluginConfig:
         if options.config_file is None:  # pragma: no cover
             return
 
-        if options.config_file.endswith('toml'):
+        if options.config_file == 'pyproject.toml':
             with open(options.config_file, 'r') as rf:
                 config = toml.load(rf).get('tool', {}).get('pydantic-mypy', {})
             for key in self.__slots__:
