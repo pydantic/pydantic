@@ -116,7 +116,7 @@ class PydanticPluginConfig:
         if options.config_file.endswith("toml"):
             with open(options.config_file, "r") as rf:
                 data = toml.load(rf)
-            plugin_config.read_dict(data.get("tools", {}))
+            plugin_config.read_dict(data.get("tool", {}))
         else:
             plugin_config.read(options.config_file)
         for key in self.__slots__:
