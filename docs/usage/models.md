@@ -615,7 +615,7 @@ _(This script is complete, it should run "as is")_
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
 [here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.
 
-Nevertheless, [strict type checking](types.md#strict-types) is supported.
+Nevertheless, [strict type checking](types.md#strict-types) is partially supported.
 
 ## Model signature
 
