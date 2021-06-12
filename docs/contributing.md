@@ -43,8 +43,8 @@ cd pydantic
 # 2. Set up a virtualenv for running tests
 virtualenv -p `which python3.8` env
 source env/bin/activate
-# Building docs require 3.8. Otherwise, feel free to setup a python environment
-# however you prefer; 3.6 will work too.
+# Building docs requires 3.8. If you don't need to build docs you can use
+# whichever version; 3.6 will work too.
 
 # 3. Install pydantic, dependencies, test dependencies and doc dependencies
 make install
