@@ -1,4 +1,4 @@
-black==21.5b2
+black==21.6b0
 flake8==3.9.2
 flake8-quotes==3.2.0
 hypothesis==6.13.10
