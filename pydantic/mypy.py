@@ -112,11 +112,14 @@ class PydanticPluginConfig:
         if options.config_file is None:  # pragma: no cover
             return
 
-        if options.config_file == 'pyproject.toml':
+        if options.config_file.endswith('.toml'):
             with open(options.config_file, 'r') as rf:
                 config = toml.load(rf).get('tool', {}).get('pydantic-mypy', {})
             for key in self.__slots__:
-                setattr(self, key, config.get(key, False))
+                setting = config.get(key, False)
+                if not isinstance(setting, bool):
+                    raise ValueError(f'Configuration value must be a boolean for key: {key}')
+                setattr(self, key, setting)
         else:
             plugin_config = ConfigParser()
             plugin_config.read(options.config_file)
