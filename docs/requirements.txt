@@ -4,7 +4,7 @@ flake8-quotes==3.2.0
 hypothesis==6.13.10
 markdown-include==0.6.0
 mdx-truly-sane-lists==1.2
-mkdocs==1.1.2
+mkdocs==1.2.1
 mkdocs-exclude==1.0.2
 mkdocs-material==7.1.6
 sqlalchemy
