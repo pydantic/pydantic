@@ -635,6 +635,8 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
         'description': getdoc(enum),
         # Add enum values and the enum field type to the schema.
         'enum': [item.value for item in cast(Iterable[Enum], enum)],
+        # Add enum varnames to the schema.
+        "x-enum-varnames": [item.name for item in cast(Iterable[Enum], enum)],
     }
 
     add_field_type_to_schema(enum, schema)
