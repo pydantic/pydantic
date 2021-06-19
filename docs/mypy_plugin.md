@@ -76,11 +76,11 @@ There are other benefits too! See below for more details.
 
 ### Enabling the Plugin
 
-To enable the plugin, just add `pydantic.mypy` to the list of plugins in your
+To enable the plugin, add `pydantic.mypy` to the list of plugins in your
 [mypy config file](https://mypy.readthedocs.io/en/latest/config_file.html)
 (this could be `mypy.ini` or `setup.cfg`).
 
-To get started, all you need to do is create a `mypy.ini` file with following contents:
+To get started, all you need to do is create a `mypy.ini` file with the following contents:
 ```ini
 [mypy]
 plugins = pydantic.mypy
