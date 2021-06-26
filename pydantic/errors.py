@@ -66,6 +66,8 @@ __all__ = (
     'DecimalWholeDigitsError',
     'DateTimeError',
     'DateError',
+    'DateNotInThePastError',
+    'DateNotInTheFutureError',
     'TimeError',
     'DurationError',
     'HashableError',
@@ -436,6 +438,16 @@ class DateTimeError(PydanticValueError):
 
 class DateError(PydanticValueError):
     msg_template = 'invalid date format'
+
+
+class DateNotInThePastError(PydanticValueError):
+    code = 'date.not_in_the_past'
+    msg_template = 'date is not in the past'
+
+
+class DateNotInTheFutureError(PydanticValueError):
+    code = 'date.not_in_the_future'
+    msg_template = 'date is not in the future'
 
 
 class TimeError(PydanticValueError):
