@@ -10,7 +10,15 @@ Hypothesis will automatically load support for [custom types](usage/types.md) li
 `PaymentCardNumber` and `PositiveFloat`, so that the
 [`st.builds()`](https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.builds)
 and [`st.from_type()`](https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.from_type)
-strategies support them without any user configuration.
+strategies support them without any user configuration.  **Please note, while the plugin supports these types,
+hypothesis will(currently) generate values outside of given args for the constrained function types, ie:**
+
+```py
+condecimaleplc: pydantic.condecimal(ge=-1000, le=1000, decimal_places=2)
+>>> Decimal('95.27208')
+# E     ensure that there are no more than 2 decimal places (type=value_error.decimal.max_places; decimal_places=2)
+```
+
 
 
 ### Example tests
