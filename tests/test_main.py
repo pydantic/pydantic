@@ -519,6 +519,23 @@ def test_const_with_wrong_value():
     ]
 
 
+def test_const_with_wrong_value_with_default_factory():
+    class Model(BaseModel):
+        a: int = Field(default_factory=lambda: 3, const=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=4)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'unexpected value; permitted: 3',
+            'type': 'value_error.const',
+            'ctx': {'given': 4, 'permitted': [3]},
+        }
+    ]
+
+
 def test_const_with_validator():
     class Model(BaseModel):
         a: int = Field(3, const=True)
