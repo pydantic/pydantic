@@ -182,8 +182,13 @@ def constant_validator(v: 'Any', field: 'ModelField') -> 'Any':
     of the field. This is to support the keyword of the same name in JSON
     Schema.
     """
-    if v != field.default:
-        raise errors.WrongConstantError(given=v, permitted=[field.default])
+    if field.default_factory is not None:
+        default_value = field.default_factory()
+    else:
+        default_value = field.default
+
+    if v != default_value:
+        raise errors.WrongConstantError(given=v, permitted=[default_value])
 
     return v
 

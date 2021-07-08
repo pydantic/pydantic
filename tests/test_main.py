@@ -477,6 +477,14 @@ def test_const_validates():
     assert m.a == 3
 
 
+def test_const_validates_with_default_factory():
+    class Model(BaseModel):
+        a: int = Field(default_factory=lambda: 3, const=True)
+
+    m = Model(a=3)
+    assert m.a == 3
+
+
 def test_const_uses_default():
     class Model(BaseModel):
         a: int = Field(3, const=True)
