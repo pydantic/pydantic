@@ -1,0 +1,1 @@
+Parse environment variables as JSON, if they have a Union Type with a complex subfield.

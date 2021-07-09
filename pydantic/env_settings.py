@@ -1,7 +1,7 @@
 import os
 import warnings
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tuple, Union, get_origin
 
 from .fields import ModelField
 from .main import BaseConfig, BaseModel, Extra
@@ -172,6 +172,15 @@ class EnvSettingsSource:
                     env_val = settings.__config__.json_loads(env_val)  # type: ignore
                 except ValueError as e:
                     raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+            elif (
+                get_origin(field.type_) == Union
+                and field.sub_fields
+                and any(map(lambda f: f.is_complex(), field.sub_fields))
+            ):
+                try:
+                    env_val = settings.__config__.json_loads(env_val)  # type: ignore
+                except ValueError:
+                    pass
             d[field.alias] = env_val
         return d
 
