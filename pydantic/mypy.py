@@ -109,12 +109,14 @@ class PydanticPluginConfig:
 
     def __init__(self, options: Options) -> None:
         if options.config_file is None:  # pragma: no cover
-            return
-        plugin_config = ConfigParser()
-        plugin_config.read(options.config_file)
-        for key in self.__slots__:
-            setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
-            setattr(self, key, setting)
+            for key in self.__slots__:
+                setattr(self, key, True)  # default to strict without a config
+        else:
+            plugin_config = ConfigParser()
+            plugin_config.read(options.config_file)
+            for key in self.__slots__:
+                setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
+                setattr(self, key, setting)
 
 
 def from_orm_callback(ctx: MethodContext) -> Type:
