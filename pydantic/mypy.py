@@ -108,7 +108,8 @@ class PydanticPluginConfig:
     warn_untyped_fields: bool
 
     def __init__(self, options: Options) -> None:
-        if options.config_file is None:  # pragma: no cover
+        # NOTE: pyproject.toml reading not supported
+        if options.config_file is None or options.config_file.endswith('.toml'):  # pragma: no cover
             for key in self.__slots__:
                 setattr(self, key, True)  # default to strict without a config
         else:
