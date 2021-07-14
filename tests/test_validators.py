@@ -1,4 +1,4 @@
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime
 from enum import Enum
 from itertools import product
@@ -69,6 +69,17 @@ def test_deque_validation():
     assert Model(a=deque({1, 2, 3})).a == deque([1, 2, 3])
     assert Model(a=[4, 5]).a == deque([4, 5])
     assert Model(a=(6,)).a == deque([6])
+
+
+def test_defaultdict_validation():
+    class Model(BaseModel):
+        a: defaultdict
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='snap')
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
+    assert Model(a={1: 1, 2: 2, 3: 3}).a == defaultdict(None, {1: 1, 2: 2, 3: 3})
+    assert Model(a=defaultdict(list, {1: 1, 2: 2, 3: 3})).a == defaultdict(list, {1: 1, 2: 2, 3: 3})
 
 
 def test_validate_whole():

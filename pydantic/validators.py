@@ -1,5 +1,5 @@
 import re
-from collections import OrderedDict, deque
+from collections import OrderedDict, defaultdict, deque
 from collections.abc import Hashable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
@@ -51,6 +51,7 @@ if TYPE_CHECKING:
 
     ConstrainedNumber = Union[ConstrainedDecimal, ConstrainedFloat, ConstrainedInt]
     AnyOrderedDict = OrderedDict[Any, Any]
+    AnyDefaultdict = defaultdict[Any, Any]
     Number = Union[int, float, Decimal]
     StrBytes = Union[str, bytes]
 
@@ -208,6 +209,16 @@ def anystr_strip_whitespace(v: 'StrBytes') -> 'StrBytes':
 
 def anystr_lower(v: 'StrBytes') -> 'StrBytes':
     return v.lower()
+
+
+def defaultdict_validator(v: Any) -> 'AnyDefaultdict':
+    if isinstance(v, defaultdict):
+        return v
+
+    try:
+        return defaultdict(None, v)
+    except (TypeError, ValueError):
+        raise errors.DictError()
 
 
 def ordered_dict_validator(v: Any) -> 'AnyOrderedDict':
@@ -628,6 +639,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
     (date, [parse_date]),
     (time, [parse_time]),
     (timedelta, [parse_duration]),
+    (defaultdict, [defaultdict_validator]),
     (OrderedDict, [ordered_dict_validator]),
     (dict, [dict_validator]),
     (list, [list_validator]),
