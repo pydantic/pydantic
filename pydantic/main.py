@@ -122,6 +122,7 @@ class ModelMetaclass(ABCMeta):
 
         pre_root_validators, post_root_validators = [], []
         private_attributes: Dict[str, ModelPrivateAttr] = {}
+        base_private_attributes: Dict[str, ModelPrivateAttr] = {}
         slots: SetStr = namespace.get('__slots__', ())
         slots = {slots} if isinstance(slots, str) else set(slots)
         class_vars: SetStr = set()
@@ -134,7 +135,7 @@ class ModelMetaclass(ABCMeta):
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
                 post_root_validators += base.__post_root_validators__
-                private_attributes.update(base.__private_attributes__)
+                base_private_attributes.update(base.__private_attributes__)
                 class_vars.update(base.__class_vars__)
                 hash_func = base.__hash__
 
@@ -254,7 +255,7 @@ class ModelMetaclass(ABCMeta):
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
-            '__private_attributes__': private_attributes,
+            '__private_attributes__': {**base_private_attributes, **private_attributes},
             '__slots__': slots | private_attributes.keys(),
             '__hash__': hash_func,
             '__class_vars__': class_vars,
