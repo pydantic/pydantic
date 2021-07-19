@@ -835,7 +835,10 @@ def test_enum_successful():
     m = CookingModel(tool=2)
     assert m.fruit == FruitEnum.pear
     assert m.tool == ToolEnum.wrench
-    assert repr(m.tool) == '<ToolEnum.wrench: 2>'
+    if sys.version_info < (3, 10):
+        assert repr(m.tool) == '<ToolEnum.wrench: 2>'
+    else:
+        assert repr(m.tool) == 'ToolEnum.wrench'
 
 
 def test_enum_fails():
@@ -855,7 +858,10 @@ def test_enum_fails():
 def test_int_enum_successful_for_str_int():
     m = CookingModel(tool='2')
     assert m.tool == ToolEnum.wrench
-    assert repr(m.tool) == '<ToolEnum.wrench: 2>'
+    if sys.version_info < (3, 10):
+        assert repr(m.tool) == '<ToolEnum.wrench: 2>'
+    else:
+        assert repr(m.tool) == 'ToolEnum.wrench'
 
 
 def test_enum_type():

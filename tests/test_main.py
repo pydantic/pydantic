@@ -803,10 +803,15 @@ def test_literal_enum_values():
     with pytest.raises(ValidationError) as exc_info:
         Model(baz=FooEnum.bar)
 
+    if sys.version_info < (3, 10):
+        enum_repr = "<FooEnum.foo: 'foo_value'>"
+    else:
+        enum_repr = 'FooEnum.foo'
+
     assert exc_info.value.errors() == [
         {
             'loc': ('baz',),
-            'msg': "unexpected value; permitted: <FooEnum.foo: 'foo_value'>",
+            'msg': f'unexpected value; permitted: {enum_repr}',
             'type': 'value_error.const',
             'ctx': {'given': FooEnum.bar, 'permitted': (FooEnum.foo,)},
         },
@@ -2026,3 +2031,21 @@ def test_class_kwargs_custom_config():
         a: int
 
     assert Model.__config__.some_config == 'new_value'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
+def test_new_union_origin():
+    """On 3.10+, origin of `int | str` is `types.Union`, not `typing.Union`"""
+
+    class Model(BaseModel):
+        x: int | str
+
+    assert Model(x=3).x == 3
+    assert Model(x='3').x == 3
+    assert Model(x='pika').x == 'pika'
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['x'],
+    }

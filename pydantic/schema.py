@@ -71,12 +71,13 @@ from .typing import (
     is_callable_type,
     is_literal_type,
     is_namedtuple,
+    is_union,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
-    from .dataclasses import Dataclass  # noqa: F401
-    from .main import BaseModel  # noqa: F401
+    from .dataclasses import Dataclass
+    from .main import BaseModel
 
 default_prefix = '#/definitions/'
 default_ref_template = '#/definitions/{model}'
@@ -364,7 +365,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
     from .dataclasses import dataclass, is_builtin_dataclass
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     flat_models: TypeModelSet = set()
 
@@ -765,7 +766,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     Take a single Pydantic ``ModelField``, and return its schema and any additional definitions from sub-models.
     """
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
@@ -965,7 +966,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if origin is Annotated:
                 return go(args[0])
-            if origin is Union:
+            if is_union(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
             if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
