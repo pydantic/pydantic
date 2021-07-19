@@ -12,7 +12,4 @@ git checkout "${latest_tag}"
 pip install -U flit
 flit install
 
-# ignore cryptography warning https://github.com/mpdavis/python-jose/issues/208
-PYTHONPATH=./docs/src pytest \
-  -W 'ignore:int_from_bytes is deprecated, use int.from_bytes instead:cryptography.utils.CryptographyDeprecationWarning' \
-  -W ignore::pytest.PytestCollectionWarning
+PYTHONPATH=./docs/src pytest
