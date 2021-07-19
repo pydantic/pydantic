@@ -803,15 +803,10 @@ def test_literal_enum_values():
     with pytest.raises(ValidationError) as exc_info:
         Model(baz=FooEnum.bar)
 
-    if sys.version_info < (3, 10):
-        enum_repr = "<FooEnum.foo: 'foo_value'>"
-    else:
-        enum_repr = 'FooEnum.foo'
-
     assert exc_info.value.errors() == [
         {
             'loc': ('baz',),
-            'msg': f'unexpected value; permitted: {enum_repr}',
+            'msg': "unexpected value; permitted: <FooEnum.foo: 'foo_value'>",
             'type': 'value_error.const',
             'ctx': {'given': FooEnum.bar, 'permitted': (FooEnum.foo,)},
         },

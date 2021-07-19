@@ -131,7 +131,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos, windows]
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-beta.2']
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-beta.4']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
