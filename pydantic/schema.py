@@ -535,6 +535,8 @@ def model_process_schema(
     """
     from inspect import getdoc, signature
 
+    from .main import BaseModel
+
     known_models = known_models or set()
     if lenient_issubclass(model, Enum):
         model = cast(Type[Enum], model)
@@ -546,14 +548,55 @@ def model_process_schema(
     if doc:
         s['description'] = doc
     known_models.add(model)
-    m_schema, m_definitions, nested_models = model_type_schema(
-        model,
-        by_alias=by_alias,
-        model_name_map=model_name_map,
-        ref_prefix=ref_prefix,
-        ref_template=ref_template,
-        known_models=known_models,
-    )
+
+    # if model allows for field names or aliases, and there are fields with
+    # aliases, then we must account for this in request body + definitions
+    if (
+        issubclass(model, BaseModel)
+        and getattr(model.Config, 'allow_population_by_field_name', False)
+        and any([x.alias != x.name for x in model.__fields__.values()])
+    ):
+        ma_schema, ma_definitions, a_nested_models = model_type_schema(
+            model,
+            by_alias=True,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            ref_template=ref_template,
+            known_models=known_models,
+        )
+
+        mf_schema, mf_definitions, f_nested_models = model_type_schema(
+            model,
+            by_alias=False,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            ref_template=ref_template,
+            known_models=known_models,
+        )
+
+        m_schema = ma_schema
+        if ma_schema != mf_schema:
+            m_schema = {'anyOf': [ma_schema, mf_schema]}
+
+        m_definitions = ma_definitions
+        for key in mf_definitions:
+            if key in ma_definitions:
+                if mf_definitions[key] != ma_definitions[key]:
+                    m_definitions[key] = {'anyOf': [ma_definitions[key], mf_definitions[key]]}
+            else:
+                m_definitions[key] = mf_definitions[key]
+
+        nested_models = a_nested_models.union(f_nested_models)
+    else:
+        m_schema, m_definitions, nested_models = model_type_schema(
+            model,
+            by_alias=by_alias,
+            model_name_map=model_name_map,
+            ref_prefix=ref_prefix,
+            ref_template=ref_template,
+            known_models=known_models,
+        )
+
     s.update(m_schema)
     schema_extra = model.__config__.schema_extra
     if callable(schema_extra):
