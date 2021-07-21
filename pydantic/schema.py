@@ -576,17 +576,17 @@ def model_process_schema(
 
         m_schema = ma_schema
         if ma_schema != mf_schema:
-            m_schema = {'anyOf': [ma_schema, mf_schema]}
+            m_schema = {'anyOf': [mf_schema, ma_schema]}
 
         m_definitions = ma_definitions
         for key in mf_definitions:
             if key in ma_definitions:
                 if mf_definitions[key] != ma_definitions[key]:
-                    m_definitions[key] = {'anyOf': [ma_definitions[key], mf_definitions[key]]}
+                    m_definitions[key] = {'anyOf': [mf_definitions[key], ma_definitions[key]]}
             else:
                 m_definitions[key] = mf_definitions[key]
 
-        nested_models = a_nested_models.union(f_nested_models)
+        nested_models = f_nested_models.union(a_nested_models)
     else:
         m_schema, m_definitions, nested_models = model_type_schema(
             model,
