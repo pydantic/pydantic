@@ -777,6 +777,25 @@ def test_inherit_builtin_dataclass():
     assert pika.z == 3
 
 
+def test_inherit_builtin_dataclass_nested():
+    @dataclasses.dataclass
+    class A:
+        a: int
+
+    @dataclasses.dataclass
+    class B(A):
+        b: int
+
+    @pydantic.dataclasses.dataclass
+    class Z:
+        za: A
+
+    b = B(0, 1)
+    z = Z(b)
+    assert z.za.a == 0
+    assert z.za.b == 1
+
+
 def test_dataclass_arbitrary():
     class ArbitraryType:
         def __init__(self):

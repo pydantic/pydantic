@@ -47,10 +47,18 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
     # In nested dataclasses, v can be of type `dataclasses.dataclass`.
     # But to validate fields `cls` will be in fact a `pydantic.dataclasses.dataclass`,
     # which inherits directly from the class of `v`.
-    elif is_builtin_dataclass(v) and cls.__bases__[0] is type(v):
+    elif is_builtin_dataclass(v) and isinstance(v, cls.__bases__[0]):
         import dataclasses
 
-        return cls(**dataclasses.asdict(v))
+        if cls.__bases__[0] == type(v):
+            return cls(**dataclasses.asdict(v))
+        else:
+            # `v` is an instance of a *subclass* of `cls`, `subcls`.
+            # We don't have a definitive constructor for the pydantic.dataclasses.dataclass associated with `subcls`
+            # so we (unfortunately) have to create a new constructor for each instance we come across.
+            # We copy the configuration to ensure consistent behaviour with `cls`.
+            pydantic_dataclass_constructor = dataclass(v.__class__, config=cls.__pydantic_model__.Config)
+            return pydantic_dataclass_constructor(**dataclasses.asdict(v))
     else:
         raise DataclassTypeError(class_name=cls.__name__)
 
