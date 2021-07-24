@@ -152,9 +152,14 @@ class ValidatedFunction:
         var_kwargs = {}
         wrong_positional_args = []
         duplicate_kwargs = []
+        fields_alias = [
+            field.alias
+            for name, field in self.model.__fields__.items()
+            if name not in (self.v_args_name, self.v_kwargs_name)
+        ]
         non_var_fields = set(self.model.__fields__) - {self.v_args_name, self.v_kwargs_name}
         for k, v in kwargs.items():
-            if k in non_var_fields:
+            if k in non_var_fields or k in fields_alias:
                 if k in self.positional_only_args:
                     wrong_positional_args.append(k)
                 if k in values:
