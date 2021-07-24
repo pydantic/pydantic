@@ -769,6 +769,24 @@ def test_inheritance():
     assert Bar().dict() == {'x': 12.3, 'a': 123.0}
 
 
+def test_inheritance_subclass_default():
+    class MyStr(str):
+        pass
+
+    # Confirm hint supports a subclass default
+
+    class Simple(BaseModel):
+        x: str = MyStr('test')
+
+    # Confirm hint on a base can be overridden with a subclass default on a subclass
+
+    class Base(BaseModel):
+        x: str
+
+    class Sub(Base):
+        x = MyStr('test')
+
+
 def test_invalid_type():
     with pytest.raises(RuntimeError) as exc_info:
 
