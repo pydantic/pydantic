@@ -399,3 +399,36 @@ def test_validate(mocker):
         func.validate(['qwe'], 2)
 
     stub.assert_not_called()
+
+
+def test_annotated_use_of_alias():
+    @validate_arguments
+    def foo(a: Annotated[int, Field(alias='b')]):
+        return a
+
+    assert foo(b=10) == 10
+
+    with pytest.raises(ValidationError) as exc_info:
+        assert foo(a=10) == 10
+
+    assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('a',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+    ]
+
+
+def test_use_of_alias():
+    @validate_arguments
+    def foo(a: int = Field(default_factory=lambda: 10, alias='b')):
+        return a
+
+    assert foo(b=10) == 10
+
+
+def test_allow_population_by_field_name():
+    @validate_arguments(config=dict(allow_population_by_field_name=True))
+    def foo(a: Annotated[int, Field(alias='b')]):
+        return a
+
+    assert foo(a=10) == 10
+    assert foo(b=10) == 10
