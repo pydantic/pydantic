@@ -10,7 +10,7 @@ from .errors import *
 from .fields import Field, PrivateAttr, Required
 from .main import *
 from .networks import *
-from .parse import Protocol
+from .parse import Protocol, register_loader
 from .tools import *
 from .types import *
 from .version import VERSION
@@ -60,6 +60,7 @@ __all__ = [
     'validate_email',
     # parse
     'Protocol',
+    'register_loader',
     # tools
     'parse_file_as',
     'parse_obj_as',

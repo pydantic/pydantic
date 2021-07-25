@@ -144,6 +144,14 @@ def test_bad_proto():
     assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'Unknown protocol: foobar', 'type': 'type_error'}]
 
 
+def test_user_proto():
+    from pydantic.parse import register_loader
+
+    register_loader(json.loads, proto_name='foobar')
+
+    assert Model.parse_raw('{"a": 12, "b": 8}', proto='foobar') == Model(a=12, b=8)
+
+
 def test_file_json(tmpdir):
     p = tmpdir.join('test.json')
     p.write('{"a": 12, "b": 8}')
