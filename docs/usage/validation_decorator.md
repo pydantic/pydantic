@@ -67,7 +67,7 @@ as the default value of the field:
 ```
 _(This script is complete, it should run "as is")_
 
-The [alias](model_config#alias-precedence) can be used from the decorator without any problem 
+The [alias](model_config#alias-precedence) can be used from the decorator without any problem.
 
 ```py
 {!.tmp_examples/validation_decorator_field_alias.py!}
