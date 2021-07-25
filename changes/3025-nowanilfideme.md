@@ -1,0 +1,1 @@
+Add ability to define custom loaders for non-JSON file formats/MIME types.
