@@ -99,17 +99,17 @@ def strict_bytes_validator(v: Any) -> Union[bytes]:
         raise errors.BytesError()
 
 
-BOOL_FALSE = {0, '0', 'off', 'f', 'false', 'n', 'no'}
-BOOL_TRUE = {1, '1', 'on', 't', 'true', 'y', 'yes'}
+BOOL_FALSE = {0, '0', 'off', 'f', 'false', 'n', 'no', '-'}
+BOOL_TRUE = {1, '1', 'on', 't', 'true', 'y', 'yes', '+'}
 
 
 def bool_validator(v: Any) -> bool:
     if v is True or v is False:
         return v
     if isinstance(v, bytes):
-        v = v.decode()
+        v = v.decode().strip()
     if isinstance(v, str):
-        v = v.lower()
+        v = v.lower().strip()
     try:
         if v in BOOL_TRUE:
             return True

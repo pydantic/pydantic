@@ -1256,3 +1256,35 @@ def test_exceptions_in_field_validators_restore_original_field_value():
     with pytest.raises(RuntimeError, match='test error'):
         model.foo = 'raise_exception'
     assert model.foo == 'foo'
+
+
+def test_bool_validator():
+    class Model(BaseModel):
+        a: bool
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='')
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
+    ]
+
+    assert Model(a=True).a is True
+    assert Model(a=False).a is False
+    assert Model(a='+').a is True
+    assert Model(a='-').a is False
+    assert Model(a='true').a is True
+    assert Model(a='false').a is False
+    assert Model(a='  tRuE   ').a is True
+    assert Model(a=' FALsE').a is False
+    assert Model(a=1).a is True
+    assert Model(a=0).a is False
+    assert Model(a='1').a is True
+    assert Model(a='0').a is False
+    assert Model(a='on').a is True
+    assert Model(a='off').a is False
+    assert Model(a='t').a is True
+    assert Model(a='f').a is False
+    assert Model(a='y').a is True
+    assert Model(a='n').a is False
+    assert Model(a='yes').a is True
+    assert Model(a='no').a is False
