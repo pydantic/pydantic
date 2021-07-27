@@ -107,7 +107,7 @@ def bool_validator(v: Any) -> bool:
     if v is True or v is False:
         return v
     if isinstance(v, bytes):
-        v = v.decode().strip()
+        v = v.decode().lower().strip()
     if isinstance(v, str):
         v = v.lower().strip()
     try:
