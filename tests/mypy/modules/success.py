@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from uuid import UUID
 
+from typing_extensions import TypedDict
+
 from pydantic import (
     UUID1,
     BaseModel,
@@ -33,6 +35,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    create_model_from_typeddict,
     root_validator,
     validate_arguments,
     validator,
@@ -239,3 +242,16 @@ validated.my_file_path.absolute()
 validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
 validated.my_dir_path_str.absolute()
+
+
+class SomeDict(TypedDict):
+    val: int
+    name: str
+
+
+obj: SomeDict = {
+    'val': 12,
+    'name': 'John',
+}
+
+create_model_from_typeddict(SomeDict)(**obj)

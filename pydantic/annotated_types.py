@@ -4,15 +4,12 @@ from .fields import Required
 from .main import BaseModel, create_model
 
 if TYPE_CHECKING:
-
-    class TypedDict(Dict[str, Any]):
-        __annotations__: Dict[str, Type[Any]]
-        __total__: bool
-        __required_keys__: FrozenSet[str]
-        __optional_keys__: FrozenSet[str]
+    from typing_extensions import TypedDict
 
 
-def create_model_from_typeddict(typeddict_cls: Type['TypedDict'], **kwargs: Any) -> Type['BaseModel']:
+def create_model_from_typeddict(
+    typeddict_cls: Type['TypedDict'], **kwargs: Any  # type: ignore[valid-type]
+) -> Type['BaseModel']:
     """
     Create a `BaseModel` based on the fields of a `TypedDict`.
     Since `typing.TypedDict` in Python 3.8 does not store runtime information about optional keys,
@@ -27,8 +24,9 @@ def create_model_from_typeddict(typeddict_cls: Type['TypedDict'], **kwargs: Any)
             'Without it, there is no way to differentiate required and optional fields when subclassed.'
         )
 
+    required_keys: FrozenSet[str] = typeddict_cls.__required_keys__  # type: ignore[attr-defined]
     field_definitions = {
-        field_name: (field_type, Required if field_name in typeddict_cls.__required_keys__ else None)
+        field_name: (field_type, Required if field_name in required_keys else None)
         for field_name, field_type in typeddict_cls.__annotations__.items()
     }
 
