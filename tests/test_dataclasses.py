@@ -832,7 +832,7 @@ def test_inherit_builtin_dataclass_nested_abstract():
     assert z.zx.xa.b == 1
 
 
-def test_idk():
+def test_wrapping_existing_data_classes_with_default_factory_fields():
     """
     Checking that the following exception is not raised:
         > TypeError: non-default argument 'b_1' follows default argument
