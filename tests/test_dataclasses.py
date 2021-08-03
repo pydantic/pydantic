@@ -832,6 +832,30 @@ def test_inherit_builtin_dataclass_nested_abstract():
     assert z.zx.xa.b == 1
 
 
+def test_idk():
+    """
+    Checking that the following exception is not raised:
+        > TypeError: non-default argument 'b_1' follows default argument
+        > in '3.9/lib/python3.9/dataclasses.py:504'
+    """
+    @dataclasses.dataclass
+    class A:
+        a_1: int
+        mro_override_test_prop: str
+
+    @dataclasses.dataclass
+    class B(A):
+        mro_override_test_prop: bool
+        b_2: Optional[str] = dataclasses.field(default=None)
+        b_1: List[str] = dataclasses.field(default_factory=list)
+
+    B_Pydantic = pydantic.dataclasses.dataclass(B)
+
+    b_p = B_Pydantic(a_1=0, mro_override_test_prop=False)
+    assert b_p.a_1 == 0
+    assert type(b_p.mro_override_test_prop) == bool
+
+
 def test_dataclass_arbitrary():
     class ArbitraryType:
         def __init__(self):

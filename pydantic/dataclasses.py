@@ -161,18 +161,31 @@ def _process_class(
     # https://github.com/samuelcolvin/pydantic/issues/2111
     if is_builtin_dataclass(_cls):
         uniq_class_name = f'_Pydantic_{_cls.__name__}_{id(_cls)}'
+        existing_dataclass_fields = dataclasses.fields(_cls)
+
+        mro_annotations = {}
+        for c in reversed(_cls.mro()):
+            mro_annotations = dict(mro_annotations, **getattr(c, "__annotations__", {}))
+
         _cls = type(
             # for pretty output new class will have the name as original
             _cls.__name__,
             (_cls,),
             {
-                '__annotations__': resolve_annotations(_cls.__annotations__, _cls.__module__),
+                '__annotations__': resolve_annotations(mro_annotations, _cls.__module__),
                 '__post_init__': _pydantic_post_init,
                 # attrs for pickle to find this class
                 '__module__': __name__,
                 '__qualname__': uniq_class_name,
             },
         )
+
+        for f in existing_dataclass_fields:
+            # For some reason, this ensures that `delattr` works correctly on these fields.
+            # This is necessary to support the underlying `dataclasses.dataclass` functionality when a
+            # field with `factory_default` follows a field a previously defined default field.
+            setattr(_cls, f.name, f)
+
         globals()[uniq_class_name] = _cls
     else:
         _cls.__post_init__ = _pydantic_post_init
