@@ -1,3 +1,4 @@
+import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
@@ -37,6 +38,17 @@ if TYPE_CHECKING:
             pass
 
 
+def _dataclass_as_shallow_dict(data_class: Type['DataclassT']) -> dict:
+    """
+    Creates a shallow copy of a dataclass.
+
+    If the dataclass contains an attribute which is of type dataclass, then calling `dataclasses.asdict` recursively
+    serialises the object to JSON. This causes problems when the type associated with the datatype is an abstract class
+    since it cannot be instantiated.
+    """
+    return dict([(f.name, getattr(data_class, f.name)) for f in dataclasses.fields(data_class)])
+
+
 def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
     if isinstance(v, cls):
         return v
@@ -51,14 +63,14 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
         import dataclasses
 
         if cls.__bases__[0] == type(v):
-            return cls(**dataclasses.asdict(v))
+            return cls(**_dataclass_as_shallow_dict(v))
         else:
             # `v` is an instance of a *subclass* of `cls`, `subcls`.
             # We don't have a definitive constructor for the pydantic.dataclasses.dataclass associated with `subcls`
             # so we (unfortunately) have to create a new constructor for each instance we come across.
             # We copy the configuration to ensure consistent behaviour with `cls`.
             pydantic_dataclass_constructor = dataclass(v.__class__, config=cls.__pydantic_model__.Config)
-            return pydantic_dataclass_constructor(**dataclasses.asdict(v))
+            return pydantic_dataclass_constructor(**_dataclass_as_shallow_dict(v))
     else:
         raise DataclassTypeError(class_name=cls.__name__)
 
