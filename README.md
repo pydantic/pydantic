@@ -1,3 +1,17 @@
+Liquet fork of `pydantic` - it includes:
+- Early adoption of `__dataclas_transform__` typings of `ModelMetaClass`
+  - https://github.com/samuelcolvin/pydantic/pull/2721
+  - https://github.com/microsoft/pyright/blob/main/specs/dataclass_transforms.md
+  - https://github.com/microsoft/pyright/discussions/1782
+- Support for using `pyproject.toml` to configure `pydantic-mypy`
+  - https://github.com/samuelcolvin/pydantic/pull/2908
+- Patched schema generation when `allow_population_by_field_name` is set to `True`
+  - https://github.com/samuelcolvin/pydantic/pull/3005
+  - https://github.com/samuelcolvin/pydantic/issues/3004
+  - https://github.com/tiangolo/fastapi/issues/3559
+
+---
+
 # pydantic
 
 [![CI](https://github.com/samuelcolvin/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/samuelcolvin/pydantic/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI)
