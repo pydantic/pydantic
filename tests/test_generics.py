@@ -1077,7 +1077,7 @@ def test_generic_recursive_models(create_module):
     Model1 = module.Model1
     Model2 = module.Model2
     result = Model1[str].parse_obj(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
-    assert result == Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
+    assert result == Model1[str](ref=Model2(ref=Model1(ref=Model2(ref='123'))))
 
 
 @skip_36
