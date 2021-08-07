@@ -2047,11 +2047,19 @@ def test_new_union_origin():
 
 
 def test_equality():
-    class A(BaseModel):
-        description: str = ''
+    class Animal(BaseModel):
+        name: str = ''
 
-    class B(BaseModel):
-        description: str = ''
+    class Dog(Animal):
+        pass
 
-    assert A() == A()
-    assert A() != B()
+    class Cat(Animal):
+        pass
+
+    class Owner(BaseModel):
+        name: str = ''
+        pet: Animal
+
+    assert Dog() == Dog()
+    assert Dog() != Cat()
+    assert Owner(pet=Dog()) != Owner(pet=Cat())
