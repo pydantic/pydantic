@@ -2048,10 +2048,10 @@ def test_new_union_origin():
 
 def test_equality():
     class A(BaseModel):
-        description: str = ""
+        description: str = ''
 
     class B(BaseModel):
-        description: str = ""
+        description: str = ''
 
     assert A() == A()
     assert A() != B()
