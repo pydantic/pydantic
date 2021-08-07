@@ -2044,3 +2044,14 @@ def test_new_union_origin():
         'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
         'required': ['x'],
     }
+
+
+def test_equality():
+    class A(BaseModel):
+        description: str = ""
+
+    class B(BaseModel):
+        description: str = ""
+
+    assert A() == A()
+    assert A() != B()
