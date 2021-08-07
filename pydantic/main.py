@@ -822,7 +822,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseModel):
-            return self.dict() == other.dict()
+            return (self.__class__, self.dict()) == (other.__class__, other.dict())
         else:
             return self.dict() == other
 
