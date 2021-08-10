@@ -41,7 +41,7 @@ from .typing import (
     is_literal_type,
     is_new_type,
     is_typeddict,
-    is_union,
+    is_union_origin,
     new_type_supertype,
 )
 from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
@@ -557,7 +557,7 @@ class ModelField(Representation):
             return
         if origin is Callable:
             return
-        if is_union(origin):
+        if is_union_origin(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if type_ is NoneType:

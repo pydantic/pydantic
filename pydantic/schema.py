@@ -71,7 +71,7 @@ from .typing import (
     is_callable_type,
     is_literal_type,
     is_namedtuple,
-    is_union,
+    is_union_origin,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
@@ -966,7 +966,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if origin is Annotated:
                 return go(args[0])
-            if is_union(origin):
+            if is_union_origin(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
             if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
