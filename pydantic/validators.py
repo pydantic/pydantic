@@ -655,7 +655,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if type_ is Any:
         return
     type_type = type_.__class__
-    if type_type == ForwardRef or type_type == TypeVar:
+    if type_type in [ForwardRef, TypeVar]:
         return
     if type_ in NONE_TYPES:
         yield none_validator
