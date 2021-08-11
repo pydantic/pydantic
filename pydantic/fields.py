@@ -157,7 +157,7 @@ class FieldInfo(Representation):
         }
 
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return [(a, v) for a, v in attrs if v != field_defaults_to_hide.get(a, None)]
+        return [(a, v) for a, v in attrs if v != field_defaults_to_hide.get(a)]
 
     def get_constraints(self) -> Set[str]:
         """
@@ -910,7 +910,7 @@ class ModelField(Representation):
         """
         original_cls = original.__class__
 
-        if original_cls == dict or original_cls == Dict:
+        if original_cls in [dict, Dict]:
             return converted
         elif original_cls in {defaultdict, DefaultDict}:
             return defaultdict(self.type_, converted)
@@ -924,17 +924,17 @@ class ModelField(Representation):
     def _validate_singleton(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
-        if self.sub_fields:
-            errors = []
-            for field in self.sub_fields:
-                value, error = field.validate(v, values, loc=loc, cls=cls)
-                if error:
-                    errors.append(error)
-                else:
-                    return value, None
-            return v, errors
-        else:
+        if not self.sub_fields:
             return self._apply_validators(v, values, loc, cls, self.validators)
+
+        errors = []
+        for field in self.sub_fields:
+            value, error = field.validate(v, values, loc=loc, cls=cls)
+            if error:
+                errors.append(error)
+            else:
+                return value, None
+        return v, errors
 
     def _apply_validators(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
