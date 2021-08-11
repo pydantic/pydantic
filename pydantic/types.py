@@ -402,9 +402,8 @@ class ConstrainedStr(str):
         if cls.curtail_length and len(value) > cls.curtail_length:
             value = value[: cls.curtail_length]
 
-        if cls.regex:
-            if not cls.regex.match(value):
-                raise errors.StrRegexError(pattern=cls.regex.pattern)
+        if cls.regex and not cls.regex.match(value):
+            raise errors.StrRegexError(pattern=cls.regex.pattern)
 
         return value
 
@@ -935,14 +934,13 @@ class PaymentCardNumber(str):
     @staticmethod
     def _get_brand(card_number: str) -> PaymentCardBrand:
         if card_number[0] == '4':
-            brand = PaymentCardBrand.visa
+            return PaymentCardBrand.visa
         elif 51 <= int(card_number[:2]) <= 55:
-            brand = PaymentCardBrand.mastercard
+            return PaymentCardBrand.mastercard
         elif card_number[:2] in {'34', '37'}:
-            brand = PaymentCardBrand.amex
+            return PaymentCardBrand.amex
         else:
-            brand = PaymentCardBrand.other
-        return brand
+            return PaymentCardBrand.other
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTE SIZE TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
