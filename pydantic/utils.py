@@ -652,7 +652,7 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
     >>> all_identical([a, b, [a]], [a, b, [a]])  # new list object, while "equal" is not "identical"
     False
     """
-    for left_item, right_item in zip_longest(left, right, fillvalue=_EMPTY):
-        if left_item is not right_item:
-            return False
-    return True
+    return all(
+        left_item is right_item
+        for left_item, right_item in zip_longest(left, right, fillvalue=_EMPTY)
+    )
