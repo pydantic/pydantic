@@ -121,7 +121,7 @@ def bool_validator(v: Any) -> bool:
 
 
 def int_validator(v: Any) -> int:
-    if isinstance(v, int) and not (v is True or v is False):
+    if isinstance(v, int) and v is not True and v is not False:
         return v
 
     try:
@@ -131,7 +131,7 @@ def int_validator(v: Any) -> int:
 
 
 def strict_int_validator(v: Any) -> int:
-    if isinstance(v, int) and not (v is True or v is False):
+    if isinstance(v, int) and v is not True and v is not False:
         return v
     raise errors.IntegerError()
 
@@ -163,14 +163,14 @@ def number_multiple_validator(v: 'Number', field: 'ModelField') -> 'Number':
 
 def number_size_validator(v: 'Number', field: 'ModelField') -> 'Number':
     field_type: ConstrainedNumber = field.type_
-    if field_type.gt is not None and not v > field_type.gt:
+    if field_type.gt is not None and v <= field_type.gt:
         raise errors.NumberNotGtError(limit_value=field_type.gt)
-    elif field_type.ge is not None and not v >= field_type.ge:
+    elif field_type.ge is not None and v < field_type.ge:
         raise errors.NumberNotGeError(limit_value=field_type.ge)
 
-    if field_type.lt is not None and not v < field_type.lt:
+    if field_type.lt is not None and v >= field_type.lt:
         raise errors.NumberNotLtError(limit_value=field_type.lt)
-    if field_type.le is not None and not v <= field_type.le:
+    if field_type.le is not None and v > field_type.le:
         raise errors.NumberNotLeError(limit_value=field_type.le)
 
     return v
