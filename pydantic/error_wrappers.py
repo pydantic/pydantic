@@ -91,11 +91,7 @@ def flatten_errors(
     for error in errors:
         if isinstance(error, ErrorWrapper):
 
-            if loc:
-                error_loc = loc + error.loc_tuple()
-            else:
-                error_loc = error.loc_tuple()
-
+            error_loc = loc + error.loc_tuple() if loc else error.loc_tuple()
             if isinstance(error.exc, ValidationError):
                 yield from flatten_errors(error.exc.raw_errors, config, error_loc)
             else:
@@ -110,11 +106,7 @@ def error_dict(exc: Exception, config: Type['BaseConfig'], loc: 'Loc') -> Dict[s
     type_ = get_exc_type(exc.__class__)
     msg_template = config.error_msg_templates.get(type_) or getattr(exc, 'msg_template', None)
     ctx = exc.__dict__
-    if msg_template:
-        msg = msg_template.format(**ctx)
-    else:
-        msg = str(exc)
-
+    msg = msg_template.format(**ctx) if msg_template else str(exc)
     d: Dict[str, Any] = {'loc': loc, 'msg': msg, 'type': type_}
 
     if ctx:
