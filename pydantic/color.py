@@ -90,17 +90,17 @@ class Color(Representation):
         return self._original
 
     def as_named(self, *, fallback: bool = False) -> str:
-        if self._rgba.alpha is None:
-            rgb = cast(Tuple[int, int, int], self.as_rgb_tuple())
-            try:
-                return COLORS_BY_VALUE[rgb]
-            except KeyError as e:
-                if fallback:
-                    return self.as_hex()
-                else:
-                    raise ValueError('no named color found, use fallback=True, as_hex() or as_rgb()') from e
-        else:
+        if self._rgba.alpha is not None:
             return self.as_hex()
+
+        rgb = cast(Tuple[int, int, int], self.as_rgb_tuple())
+        try:
+            return COLORS_BY_VALUE[rgb]
+        except KeyError as e:
+            if fallback:
+                return self.as_hex()
+            else:
+                raise ValueError('no named color found, use fallback=True, as_hex() or as_rgb()') from e
 
     def as_hex(self) -> str:
         """
@@ -139,16 +139,15 @@ class Color(Representation):
           False - always omit alpha,
         """
         r, g, b = [float_to_255(c) for c in self._rgba[:3]]
-        if alpha is None:
-            if self._rgba.alpha is None:
-                return r, g, b
-            else:
-                return r, g, b, self._alpha_float()
-        elif alpha:
-            return r, g, b, self._alpha_float()
-        else:
-            # alpha is False
+        if (
+            alpha is None
+            and self._rgba.alpha is None
+            or alpha is not None
+            and not alpha
+        ):
             return r, g, b
+        else:
+            return r, g, b, self._alpha_float()
 
     def as_hsl(self) -> str:
         """
@@ -244,10 +243,7 @@ def parse_str(value: str) -> RGBA:
     if m:
         *rgb, a = m.groups()
         r, g, b = [int(v, 16) for v in rgb]
-        if a:
-            alpha = int(a, 16) / 255
-        else:
-            alpha = None
+        alpha = int(a, 16) / 255 if a else None
         return ints_to_rgba(r, g, b, alpha)
 
     m = re.fullmatch(r_rgb, value_lower)
@@ -325,7 +321,7 @@ def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: Optional[float]
         h_value = h_value % rads / rads
     else:
         # turns
-        h_value = h_value % 1
+        h_value %= 1
 
     r, g, b = hls_to_rgb(h_value, l_value, s_value)
     return RGBA(r, g, b, alpha)
