@@ -290,11 +290,10 @@ class PydanticModelTransformer:
                 if name not in known_fields:
                     field = PydanticModelField.deserialize(info, data)
                     known_fields.add(name)
-                    superclass_fields.append(field)
                 else:
                     (field,) = [a for a in all_fields if a.name == name]
                     all_fields.remove(field)
-                    superclass_fields.append(field)
+                superclass_fields.append(field)
             all_fields = superclass_fields + all_fields
         return all_fields
 
@@ -406,10 +405,9 @@ class PydanticModelTransformer:
         if isinstance(expr, TempNode):
             # TempNode means annotation-only, so only non-required if Optional
             value_type = get_proper_type(cls.info[lhs.name].type)
-            if isinstance(value_type, UnionType) and any(isinstance(item, NoneType) for item in value_type.items):
-                # Annotated as Optional, or otherwise having NoneType in the union
-                return False
-            return True
+            return not isinstance(value_type, UnionType) or not any(
+                isinstance(item, NoneType) for item in value_type.items
+            ) # Annotated as Optional, or otherwise having NoneType in the union
         if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
             # The "default value" is a call to `Field`; at this point, the field is
             # only required if default is Ellipsis (i.e., `field_name: Annotation = Field(...)`)
@@ -455,12 +453,16 @@ class PydanticModelTransformer:
         Returns a list of mypy Argument instances for use in the generated signatures.
         """
         info = self._ctx.cls.info
-        arguments = [
-            field.to_argument(info, typed=typed, force_optional=force_all_optional, use_alias=use_alias)
+        return [
+            field.to_argument(
+                info,
+                typed=typed,
+                force_optional=force_all_optional,
+                use_alias=use_alias,
+            )
             for field in fields
             if not (use_alias and field.has_dynamic_alias)
         ]
-        return arguments
 
     def should_init_forbid_extra(self, fields: List['PydanticModelField'], config: 'ModelConfigData') -> bool:
         """
