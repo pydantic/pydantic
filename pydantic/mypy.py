@@ -79,10 +79,15 @@ class PydanticPlugin(Plugin):
 
     def get_base_class_hook(self, fullname: str) -> 'Optional[Callable[[ClassDefContext], None]]':
         sym = self.lookup_fully_qualified(fullname)
-        if sym and isinstance(sym.node, TypeInfo):  # pragma: no branch
-            # No branching may occur if the mypy cache has not been cleared
-            if any(get_fullname(base) == BASEMODEL_FULLNAME for base in sym.node.mro):
-                return self._pydantic_model_class_maker_callback
+        if (
+            sym
+            and isinstance(sym.node, TypeInfo)
+            and any(
+                get_fullname(base) == BASEMODEL_FULLNAME for base in sym.node.mro
+            )
+        ): # pragma: no branch
+        # No branching may occur if the mypy cache has not been cleared
+            return self._pydantic_model_class_maker_callback
         return None
 
     def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
@@ -169,9 +174,8 @@ class PydanticModelTransformer:
         config = self.collect_config()
         fields = self.collect_fields(config)
         for field in fields:
-            if info[field.name].type is None:
-                if not ctx.api.final_iteration:
-                    ctx.api.defer()
+            if info[field.name].type is None and not ctx.api.final_iteration:
+                ctx.api.defer()
         is_settings = any(get_fullname(base) == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings)
         self.add_construct_method(fields)
@@ -465,9 +469,13 @@ class PydanticModelTransformer:
         We disallow arbitrary kwargs if the extra config setting is "forbid", or if the plugin config says to,
         *unless* a required dynamic alias is present (since then we can't determine a valid signature).
         """
-        if not config.allow_population_by_field_name:
-            if self.is_dynamic_alias_present(fields, bool(config.has_alias_generator)):
-                return False
+        if (
+            not config.allow_population_by_field_name
+            and self.is_dynamic_alias_present(
+                fields, bool(config.has_alias_generator)
+            )
+        ):
+            return False
         if config.forbid_extra:
             return True
         return self.plugin_config.init_forbid_extra
