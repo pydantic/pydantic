@@ -451,7 +451,7 @@ class ValueItems(Representation):
     def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
-        :return: raw values for elemet if self._items is dict and contain needed element
+        :return: raw values for element if self._items is dict and contain needed element
         """
 
         item = self._items.get(e)

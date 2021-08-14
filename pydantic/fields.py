@@ -246,7 +246,7 @@ def Field(
       schema will have a ``maxLength`` validation keyword
     :param allow_mutation: a boolean which defaults to True. When False, the field raises a TypeError if the field is
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
-    :param regex: only applies to strings, requires the field match agains a regular expression
+    :param regex: only applies to strings, requires the field match against a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
     :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
