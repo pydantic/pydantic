@@ -36,6 +36,8 @@ if TYPE_CHECKING:
     from .main import BaseModel
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
 
+    RichReprResult = Iterable[Union[Any, Tuple[Any], Tuple[str, Any], Tuple[str, Any, Any]]]
+
 __all__ = (
     'import_string',
     'sequence_like',
@@ -353,6 +355,14 @@ class Representation:
 
     def __repr__(self) -> str:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
+
+    def __rich_repr__(self) -> "RichReprResult":
+        """Get fields for Rich library"""
+        for name, field_repr in self.__repr_args__():
+            if name is None:
+                yield field_repr
+            else:
+                yield name, field_repr
 
 
 class GetterDict(Representation):

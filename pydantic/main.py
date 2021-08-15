@@ -76,7 +76,6 @@ if TYPE_CHECKING:
 
     Model = TypeVar('Model', bound='BaseModel')
 
-
 try:
     import cython  # type: ignore
 except ImportError:
