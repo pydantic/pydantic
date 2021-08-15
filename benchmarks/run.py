@@ -64,6 +64,12 @@ except Exception as e:
     print('WARNING: unable to import TestSchematics')
     TestSchematics = None
 
+try:
+    from test_related import TestRelated
+except Exception as e:
+    print('WARNING: unable to import TestRelated')
+    TestRelated = None
+
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
 UNICODE = '\xa0\xad¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
@@ -73,6 +79,7 @@ random = random.SystemRandom()
 # in order of performance for csv
 other_tests = [
     TestCAttrs,
+    TestRelated,
     TestValideer,
     TestMarshmallow,
     TestVoluptuous,
