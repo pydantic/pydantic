@@ -1,3 +1,4 @@
+import collections
 import sys
 import warnings
 from abc import ABCMeta
@@ -678,7 +679,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         value_exclude = ValueItems(v, exclude) if exclude else None
         value_include = ValueItems(v, include) if include else None
 
-        if isinstance(v, dict):
+        if isinstance(v, collections.abc.Mapping):
             return {
                 k_: cls._get_value(
                     v_,
