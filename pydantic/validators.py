@@ -125,7 +125,7 @@ def int_validator(v: Any) -> int:
 
     try:
         return int(v)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         raise errors.IntegerError()
 
 
