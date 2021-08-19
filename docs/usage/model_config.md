@@ -115,6 +115,10 @@ not be included in the model schemas. **Note**: this means that attributes on th
 **`copy_on_model_validation`**
 : whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
 
+**`total`**
+: whether all fields must be present in the model. Setting this to `False` is equivalent to manually setting all fields as `Optional` with a `None` default (default: `True`)
+
+
 ## Change behaviour globally
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
