@@ -205,3 +205,26 @@ def test_config_field_info_create_model():
 
     m2 = create_model('M2', __config__=Config, a=(str, Field(...)))
     assert m2.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+
+def test_config_all_optional_fields_model():
+    class Config:
+        all_optionals = True
+
+    m1 = create_model('M1', __config__=Config, a=(str, ...))
+    assert m1()
+
+
+def test_config_all_optional_fields_model_inheritance():
+    class TestBase(BaseModel):
+        b: str
+
+    class Test(TestBase):
+        a: str
+
+        class Config:
+            all_optionals = True
+
+    with pytest.raises(ValidationError):
+        TestBase()
+    assert Test()

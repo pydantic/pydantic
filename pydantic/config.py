@@ -62,6 +62,7 @@ class BaseConfig:
     json_dumps: Callable[..., str] = json.dumps
     json_encoders: Dict[Type[Any], AnyCallable] = {}
     underscore_attrs_are_private: bool = False
+    all_optionals: bool = False
 
     # Whether or not inherited models as fields should be reconstructed as base model
     copy_on_model_validation: bool = True
@@ -96,7 +97,9 @@ class BaseConfig:
         """
         Optional hook to check or modify fields during model creation.
         """
-        pass
+        if cls.all_optionals:
+            field.type_ = Optional[field.type_]
+            field.required = False
 
 
 def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
