@@ -62,7 +62,7 @@ class BaseConfig:
     json_dumps: Callable[..., str] = json.dumps
     json_encoders: Dict[Type[Any], AnyCallable] = {}
     underscore_attrs_are_private: bool = False
-    all_optionals: bool = False
+    total: bool = True
 
     # Whether or not inherited models as fields should be reconstructed as base model
     copy_on_model_validation: bool = True
@@ -97,7 +97,7 @@ class BaseConfig:
         """
         Optional hook to check or modify fields during model creation.
         """
-        if cls.all_optionals:
+        if not cls.total:
             field.type_ = Optional[field.type_]
             field.required = False
 

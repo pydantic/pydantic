@@ -209,7 +209,7 @@ def test_config_field_info_create_model():
 
 def test_config_all_optional_fields_model():
     class Config:
-        all_optionals = True
+        total = False
 
     m1 = create_model('M1', __config__=Config, a=(str, ...))
     assert m1()
@@ -219,11 +219,8 @@ def test_config_all_optional_fields_model_inheritance():
     class TestBase(BaseModel):
         b: str
 
-    class Test(TestBase):
+    class Test(TestBase, total=False):
         a: str
-
-        class Config:
-            all_optionals = True
 
     with pytest.raises(ValidationError):
         TestBase()
