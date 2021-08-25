@@ -27,6 +27,11 @@ from pydantic.typing import get_all_type_hints
             id='annotated-field-value-default',
         ),
         pytest.param(
+            lambda: Annotated[int, Field(..., description='Test')],
+            5,
+            id='annotated-field-value-default-ellipsis',
+        ),
+        pytest.param(
             lambda: Annotated[int, Field(default_factory=lambda: 5, description='Test')],  # noqa: F821
             Undefined,
             id='annotated-field-default_factory',
