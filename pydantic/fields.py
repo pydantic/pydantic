@@ -630,7 +630,7 @@ class ModelField(Representation):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
             self.shape = SHAPE_DEFAULTDICT
-        elif issubclass(origin, Dict):
+        elif origin is dict or origin is Dict:
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
             self.shape = SHAPE_DICT
