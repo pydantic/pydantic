@@ -41,7 +41,7 @@ class BaseSettings(BaseModel):
                 _env_file=_env_file,
                 _env_file_encoding=_env_file_encoding,
                 _env_nested_delimiter=_env_nested_delimiter,
-                _secrets_dir=_secrets_dir
+                _secrets_dir=_secrets_dir,
             )
         )
 
@@ -61,8 +61,8 @@ class BaseSettings(BaseModel):
                 _env_file_encoding if _env_file_encoding is not None else self.__config__.env_file_encoding
             ),
             env_nested_delimiter=(
-                _env_nested_delimiter if _env_nested_delimiter is not None else self.__config__._env_nested_delimiter
-            )
+                _env_nested_delimiter if _env_nested_delimiter is not None else self.__config__.env_nested_delimiter
+            ),
         )
         file_secret_settings = SecretsSettingsSource(secrets_dir=_secrets_dir or self.__config__.secrets_dir)
         # Provide a hook to set built-in sources priority and add / remove sources
@@ -144,18 +144,16 @@ class EnvSettingsSource:
     __slots__ = ('env_file', 'env_file_encoding', 'env_nested_delimiter')
 
     def __init__(
-            self,
-            env_file: Union[Path, str, None],
-            env_file_encoding: Optional[str],
-            env_nested_delimiter: Optional[str]
+        self,
+        env_file: Union[Path, str, None],
+        env_file_encoding: Optional[str],
+        env_nested_delimiter: Optional[str] = None,
     ):
         self.env_file: Union[Path, str, None] = env_file
         self.env_file_encoding: Optional[str] = env_file_encoding
         self.env_nested_delimiter: Optional[str] = env_nested_delimiter
 
-    def get_default_env_vars(
-            self, settings: BaseSettings
-    ) -> Mapping[str, Optional[str]]:
+    def get_default_env_vars(self, settings: BaseSettings) -> Mapping[str, Optional[str]]:
         if settings.__config__.case_sensitive:
             env_vars: Mapping[str, Optional[str]] = os.environ
         else:
@@ -166,58 +164,45 @@ class EnvSettingsSource:
             if env_path.is_file():
                 env_vars = {
                     **read_env_file(
-                        env_path, encoding=self.env_file_encoding,
-                        case_sensitive=settings.__config__.case_sensitive
+                        env_path, encoding=self.env_file_encoding, case_sensitive=settings.__config__.case_sensitive
                     ),
                     **env_vars,
                 }
         return env_vars
 
     @classmethod
-    def parse_complex_env_val_str(
-            cls, settings: BaseSettings, env_name: str, env_val: str
-    ) -> Any:
+    def parse_complex_env_val_str(cls, settings: BaseSettings, env_name: str, env_val: str) -> Any:
         try:
-            return settings.__config__.json_loads(
-                env_val
-            )  # type: ignore
+            return settings.__config__.json_loads(env_val)  # type: ignore
         except ValueError as e:
-            raise SettingsError(
-                f'error parsing JSON for "{env_name}"'
-            ) from e
+            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
 
     def env_vars_to_nested_env_vars(
-            self,
-            settings: BaseSettings,
-            env_vars: Mapping[str, Optional[Union[str, Mapping]]]
+        self, settings: BaseSettings, env_vars: Mapping[str, Optional[str]]
     ) -> Dict[str, Any]:
-        result = {}
+        result: Dict[str, Optional[Union[str, Dict[str, Any]]]] = {}
         for env_name, value in env_vars.items():
-            if self.env_nested_delimiter is not None:
-                keys = env_name.split(self.env_nested_delimiter)
-                if len(keys) > 1:
-                    root_key = keys[0]
-                    root_field = settings.__fields__.get(root_key)
-                    if root_field.is_complex():
-                        nested_settings = root_field.type_
-                    else:
-                        nested_settings = None
-                    nested_field = None
-                    nested_result = result.setdefault(root_key, {})
-                    for key in keys[1:-1]:
-                        if nested_settings:
-                            nested_field = nested_settings.__fields__.get(key)
-                            nested_settings = nested_field.type_
+            keys = env_name.split(self.env_nested_delimiter)
+            if len(keys) > 1:
+                root_key = keys[0]
+                root_field = settings.__fields__.get(root_key)
+                if root_field and root_field.is_complex():
+                    nested_settings = root_field.type_
+                else:
+                    nested_settings = None
+                nested_field = None
+                nested_result = result.setdefault(root_key, {})
+                for key in keys[1:-1]:
+                    if nested_settings:
+                        nested_field = nested_settings.__fields__.get(key)
+                        nested_settings = nested_field.type_
+                    if nested_result and isinstance(nested_result, dict):
                         nested_result = nested_result.setdefault(key, {})
 
-                    if nested_field and nested_field.is_complex():
-                        value = self.parse_complex_env_val_str(
-                            settings, env_name, value
-                        )
-
+                if nested_field and nested_field.is_complex() and isinstance(value, str):
+                    value = self.parse_complex_env_val_str(settings, env_name, value)
+                if isinstance(nested_result, dict):
                     nested_result[keys[-1]] = value
-                else:
-                    result[env_name] = value
             else:
                 result[env_name] = value
         return result
@@ -226,7 +211,8 @@ class EnvSettingsSource:
         result: Dict[str, Optional[str]] = {}
 
         env_vars = self.get_default_env_vars(settings)
-        env_vars = self.env_vars_to_nested_env_vars(settings, env_vars)
+        if self.env_nested_delimiter is not None:
+            env_vars = self.env_vars_to_nested_env_vars(settings, env_vars)
 
         for field in settings.__fields__.values():
             env_val: Optional[str] = None
@@ -239,19 +225,13 @@ class EnvSettingsSource:
                 continue
 
             if field.is_complex():
-                if not isinstance(env_val, dict):
-                    self.parse_complex_env_val_str(settings, env_name, env_val)
+                if isinstance(env_val, str):
+                    env_val = self.parse_complex_env_val_str(settings, env_name, env_val)
             result[field.alias] = env_val
         return result
 
     def __repr__(self) -> str:
-        return (
-            f'EnvSettingsSource('
-            f'env_file={self.env_file!r}, '
-            f'env_file_encoding={self.env_file_encoding!r}'
-            f'env_nested_delimiter={self.env_nested_delimiter!r}'
-            f')'
-        )
+        return f'EnvSettingsSource(env_file={self.env_file!r}, env_file_encoding={self.env_file_encoding!r})'
 
 
 class SecretsSettingsSource:
