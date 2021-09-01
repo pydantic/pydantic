@@ -80,7 +80,7 @@ class BaseSettings(BaseModel):
         env_prefix = ''
         env_file = None
         env_file_encoding = None
-        env_nested_delimiter = '__'
+        env_nested_delimiter = None
         secrets_dir = None
         validate_all = True
         extra = Extra.forbid
@@ -193,28 +193,31 @@ class EnvSettingsSource:
     ) -> Dict[str, Any]:
         result = {}
         for env_name, value in env_vars.items():
-            keys = env_name.split(self.env_nested_delimiter)
-            if len(keys) > 1:
-                root_key = keys[0]
-                root_field = settings.__fields__.get(root_key)
-                if root_field.is_complex():
-                    nested_settings = root_field.type_
+            if self.env_nested_delimiter is not None:
+                keys = env_name.split(self.env_nested_delimiter)
+                if len(keys) > 1:
+                    root_key = keys[0]
+                    root_field = settings.__fields__.get(root_key)
+                    if root_field.is_complex():
+                        nested_settings = root_field.type_
+                    else:
+                        nested_settings = None
+                    nested_field = None
+                    nested_result = result.setdefault(root_key, {})
+                    for key in keys[1:-1]:
+                        if nested_settings:
+                            nested_field = nested_settings.__fields__.get(key)
+                            nested_settings = nested_field.type_
+                        nested_result = nested_result.setdefault(key, {})
+
+                    if nested_field and nested_field.is_complex():
+                        value = self.parse_complex_env_val_str(
+                            settings, env_name, value
+                        )
+
+                    nested_result[keys[-1]] = value
                 else:
-                    nested_settings = None
-                nested_field = None
-                nested_result = result.setdefault(root_key, {})
-                for key in keys[1:-1]:
-                    if nested_settings:
-                        nested_field = nested_settings.__fields__.get(key)
-                        nested_settings = nested_field.type_
-                    nested_result = nested_result.setdefault(key, {})
-
-                if nested_field and nested_field.is_complex():
-                    value = self.parse_complex_env_val_str(
-                        settings, env_name, value
-                    )
-
-                nested_result[keys[-1]] = value
+                    result[env_name] = value
             else:
                 result[env_name] = value
         return result
