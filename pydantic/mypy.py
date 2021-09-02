@@ -2,11 +2,11 @@ from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
 try:
-    import toml
+    import tomli
 except ImportError:
     import warnings
     warnings.warn('The `toml` module is not installed, cannot read configuration from `pyproject.toml`.')
-    toml = None  # type: ignore
+    tomli = None  # type: ignore
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -117,9 +117,9 @@ class PydanticPluginConfig:
         if options.config_file is None:  # pragma: no cover
             return
 
-        if toml and options.config_file.endswith('.toml'):
+        if tomli and options.config_file.endswith('.toml'):
             with open(options.config_file, 'r') as rf:
-                config = toml.load(rf).get('tool', {}).get('pydantic-mypy', {})
+                config = tomli.load(rf).get('tool', {}).get('pydantic-mypy', {})
             for key in self.__slots__:
                 setting = config.get(key, False)
                 if not isinstance(setting, bool):
