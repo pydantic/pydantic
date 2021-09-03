@@ -33,8 +33,8 @@ if TYPE_CHECKING:
     import email_validator
     from typing_extensions import TypedDict
 
+    from .config import BaseConfig
     from .fields import ModelField
-    from .main import BaseConfig  # noqa: F401
     from .typing import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
@@ -85,8 +85,8 @@ def url_regex() -> Pattern[str]:
             r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
             r'(?:(?P<user>[^\s:/]*)(?::(?P<password>[^\s/]*))?@)?'  # user info
             r'(?:'
-            r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})|'  # ipv4
-            r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])|'  # ipv6
+            r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})(?=$|[/:#?])|'  # ipv4
+            r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])(?=$|[/:#?])|'  # ipv6
             r'(?P<domain>[^\s/:?#]+)'  # domain, validation occurs later
             r')?'
             r'(?::(?P<port>\d+))?'  # port
@@ -341,7 +341,16 @@ class HttpUrl(AnyHttpUrl):
 
 
 class PostgresDsn(AnyUrl):
-    allowed_schemes = {'postgres', 'postgresql'}
+    allowed_schemes = {
+        'postgres',
+        'postgresql',
+        'postgresql+asyncpg',
+        'postgresql+pg8000',
+        'postgresql+psycopg2',
+        'postgresql+psycopg2cffi',
+        'postgresql+py-postgresql',
+        'postgresql+pygresql',
+    }
     user_required = True
 
 

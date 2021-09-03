@@ -27,6 +27,6 @@ t = Transaction(
 print(t.dict(exclude={'user', 'value'}))
 
 # using a dict:
-print(t.dict(exclude={'user': {'username', 'password'}, 'value': ...}))
+print(t.dict(exclude={'user': {'username', 'password'}, 'value': True}))
 
-print(t.dict(include={'id': ..., 'user': {'id'}}))
+print(t.dict(include={'id': True, 'user': {'id'}}))

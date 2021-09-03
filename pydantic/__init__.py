@@ -2,6 +2,7 @@
 from . import dataclasses
 from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
 from .class_validators import root_validator, validator
+from .config import BaseConfig, Extra
 from .decorator import validate_arguments
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
@@ -14,6 +15,8 @@ from .tools import *
 from .types import *
 from .version import VERSION
 
+__version__ = VERSION
+
 # WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
 __all__ = [
@@ -25,6 +28,9 @@ __all__ = [
     # class_validators
     'root_validator',
     'validator',
+    # config
+    'BaseConfig',
+    'Extra',
     # decorator
     'validate_arguments',
     # env_settings
@@ -35,9 +41,7 @@ __all__ = [
     'Field',
     'Required',
     # main
-    'BaseConfig',
     'BaseModel',
-    'Extra',
     'compiled',
     'create_model',
     'validate_model',
@@ -107,6 +111,8 @@ __all__ = [
     'PaymentCardNumber',
     'PrivateAttr',
     'ByteSize',
+    'PastDate',
+    'FutureDate',
     # version
     'VERSION',
 ]

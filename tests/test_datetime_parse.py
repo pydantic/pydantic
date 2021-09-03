@@ -42,11 +42,20 @@ def create_tz(minutes):
         (1_549_316_052_104, date(2019, 2, 4)),  # nowish in ms
         (1_549_316_052_104_324, date(2019, 2, 4)),  # nowish in μs
         (1_549_316_052_104_324_096, date(2019, 2, 4)),  # nowish in ns
+        ('infinity', date(9999, 12, 31)),
+        ('inf', date(9999, 12, 31)),
+        (float('inf'), date(9999, 12, 31)),
+        ('infinity ', date(9999, 12, 31)),
+        (int('1' + '0' * 100), date(9999, 12, 31)),
+        (1e1000, date(9999, 12, 31)),
+        ('-infinity', date(1, 1, 1)),
+        ('-inf', date(1, 1, 1)),
+        ('nan', ValueError),
     ],
 )
 def test_date_parsing(value, result):
-    if result == errors.DateError:
-        with pytest.raises(errors.DateError):
+    if type(result) == type and issubclass(result, Exception):
+        with pytest.raises(result):
             parse_date(value)
     else:
         assert parse_date(value) == result
@@ -123,11 +132,19 @@ def test_time_parsing(value, result):
         (1_549_316_052_104, datetime(2019, 2, 4, 21, 34, 12, 104_000, tzinfo=timezone.utc)),  # nowish in ms
         (1_549_316_052_104_324, datetime(2019, 2, 4, 21, 34, 12, 104_324, tzinfo=timezone.utc)),  # nowish in μs
         (1_549_316_052_104_324_096, datetime(2019, 2, 4, 21, 34, 12, 104_324, tzinfo=timezone.utc)),  # nowish in ns
+        ('infinity', datetime(9999, 12, 31, 23, 59, 59, 999999)),
+        ('inf', datetime(9999, 12, 31, 23, 59, 59, 999999)),
+        ('inf ', datetime(9999, 12, 31, 23, 59, 59, 999999)),
+        (1e50, datetime(9999, 12, 31, 23, 59, 59, 999999)),
+        (float('inf'), datetime(9999, 12, 31, 23, 59, 59, 999999)),
+        ('-infinity', datetime(1, 1, 1, 0, 0)),
+        ('-inf', datetime(1, 1, 1, 0, 0)),
+        ('nan', ValueError),
     ],
 )
 def test_datetime_parsing(value, result):
-    if result == errors.DateTimeError:
-        with pytest.raises(errors.DateTimeError):
+    if type(result) == type and issubclass(result, Exception):
+        with pytest.raises(result):
             parse_datetime(value)
     else:
         assert parse_datetime(value) == result
@@ -251,3 +268,24 @@ def test_unicode_decode_error(field):
         'type': 'value_error.unicodedecode',
         'msg': "'utf-8' codec can't decode byte 0x81 in position 0: invalid start byte",
     }
+
+
+def test_nan():
+    class Model(BaseModel):
+        dt: datetime
+        d: date
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(dt='nan', d='nan')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('dt',),
+            'msg': 'cannot convert float NaN to integer',
+            'type': 'value_error',
+        },
+        {
+            'loc': ('d',),
+            'msg': 'cannot convert float NaN to integer',
+            'type': 'value_error',
+        },
+    ]

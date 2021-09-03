@@ -29,7 +29,12 @@ except ImportError:
         'https://example.org/whatever/next/',
         'postgres://user:pass@localhost:5432/app',
         'postgres://just-user@localhost:5432/app',
+        'postgresql+asyncpg://user:pass@localhost:5432/app',
+        'postgresql+pg8000://user:pass@localhost:5432/app',
         'postgresql+psycopg2://postgres:postgres@localhost:5432/hatch',
+        'postgresql+psycopg2cffi://user:pass@localhost:5432/app',
+        'postgresql+py-postgresql://user:pass@localhost:5432/app',
+        'postgresql+pygresql://user:pass@localhost:5432/app',
         'foo-bar://example.org',
         'foo.bar://example.org',
         'foo0bar://example.org',
@@ -62,6 +67,8 @@ except ImportError:
         AnyUrl('https://example.com', scheme='https', host='example.com'),
         'https://exam_ple.com/',
         'http://twitter.com/@handle/',
+        'http://11.11.11.11.example.com/action',
+        'http://abc.11.11.11.11.example.com/action',
     ],
 )
 def test_any_url_success(value):
@@ -166,6 +173,16 @@ def test_ipv4_port():
     assert url.host == '123.45.67.8'
     assert url.host_type == 'ipv4'
     assert url.port == '8329'
+    assert url.user is None
+    assert url.password is None
+
+
+def test_ipv4_no_port():
+    url = validate_url('ftp://123.45.67.8')
+    assert url.scheme == 'ftp'
+    assert url.host == '123.45.67.8'
+    assert url.host_type == 'ipv4'
+    assert url.port is None
     assert url.user is None
     assert url.password is None
 
@@ -371,6 +388,10 @@ def test_postgres_dsns():
 
     assert Model(a='postgres://user:pass@localhost:5432/app').a == 'postgres://user:pass@localhost:5432/app'
     assert Model(a='postgresql://user:pass@localhost:5432/app').a == 'postgresql://user:pass@localhost:5432/app'
+    assert (
+        Model(a='postgresql+asyncpg://user:pass@localhost:5432/app').a
+        == 'postgresql+asyncpg://user:pass@localhost:5432/app'
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')

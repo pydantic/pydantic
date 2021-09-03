@@ -104,7 +104,7 @@ with custom properties and validation.
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
 `subclass of typing.TypedDict`
-: Same as `dict` but _pydantic_ will validate the dictionary since keys are annotated.  
+: Same as `dict` but _pydantic_ will validate the dictionary since keys are annotated.
   See [Annotated Types](#annotated-types) below for more detail on parsing and validation
 
 `typing.Set`
@@ -444,6 +444,12 @@ _(This script is complete, it should run "as is")_
 `DirectoryPath`
 : like `Path`, but the path must exist and be a directory
 
+`PastDate`
+: like `date`, but the date should be in the past
+
+`FutureDate`
+: like `date`, but the date should be in the future
+
 `EmailStr`
 : requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
   the input string must be a valid email address, and the output is a simple string
@@ -567,7 +573,13 @@ For URI/URL validation the following types are available:
 - `AnyUrl`: any scheme allowed, TLD not required
 - `AnyHttpUrl`: scheme `http` or `https`, TLD not required
 - `HttpUrl`: scheme `http` or `https`, TLD required, max length 2083
-- `PostgresDsn`: scheme `postgres` or `postgresql`, user info required, TLD not required
+- `PostgresDsn`: scheme `postgres`, `postgresql`, user info required, TLD not required. Also, its supported DBAPI dialects:
+  - `postgresql+asyncpg`
+  - `postgresql+pg8000`
+  - `postgresql+psycopg2`
+  - `postgresql+psycopg2cffi`
+  - `postgresql+py-postgresql`
+  - `postgresql+pygresql`
 - `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required (CHANGED: user info
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`, method with the following keyword arguments:
@@ -824,20 +836,21 @@ The following arguments are available when using the `conbytes` type function
 - `to_lower: bool = False`: turns all characters to lowercase
 - `min_length: int = None`: minimum length of the byte string
 - `max_length: int = None`: maximum length of the byte string
+- `strict: bool = False`: controls type coercion
 
 
 ## Strict Types
 
-You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types 
+You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types
 to prevent coercion from compatible types.
 These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
-This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedBytes`, 
+This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedBytes`,
 `ConstrainedFloat` and `ConstrainedInt` classes and can be combined with a multitude of complex validation rules.
 
 The following caveats apply:
 
 - `StrictBytes` (and the `strict` option of `ConstrainedBytes`) will accept both `bytes`,
-   and `bytearray` types. 
+   and `bytearray` types.
 - `StrictInt` (and the `strict` option of `ConstrainedInt`) will not accept `bool` types,
     even though `bool` is a subclass of `int` in Python. Other subclasses will work.
 - `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.

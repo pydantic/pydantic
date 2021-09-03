@@ -84,11 +84,11 @@ _(This script is complete, it should run "as is")_
   [Field Types](types.md#arbitrary-types-allowed).
 
 **`orm_mode`**
-: whether to allow usage of [ORM mode](models.md#orm-mode)
+: whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances)
 
 **`getter_dict`**
-: a custom class (which should inherit from `GetterDict`) to use when decomposing ORM classes for validation,
-  for use with `orm_mode`
+: a custom class (which should inherit from `GetterDict`) to use when decomposing arbitrary classes
+for validation, for use with `orm_mode`; see [Data binding](models.md#data-binding).
 
 **`alias_generator`**
 : a callable that takes a field name and returns an alias for it (see [the dedicated section](#alias-generator))
