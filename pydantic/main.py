@@ -38,7 +38,7 @@ from .typing import (
     get_origin,
     is_classvar,
     is_namedtuple,
-    is_union,
+    is_union_origin,
     resolve_annotations,
     update_field_forward_refs,
 )
@@ -176,7 +176,7 @@ class ModelMetaclass(ABCMeta):
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, Undefined)
-                    allowed_types = get_args(ann_type) if is_union(get_origin(ann_type)) else (ann_type,)
+                    allowed_types = get_args(ann_type) if is_union_origin(get_origin(ann_type)) else (ann_type,)
                     if (
                         is_untouched(value)
                         and ann_type != PyObject
