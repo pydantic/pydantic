@@ -574,9 +574,9 @@ For URI/URL validation the following types are available:
 - `AnyHttpUrl`: scheme `http` or `https`, TLD not required
 - `HttpUrl`: scheme `http` or `https`, TLD required, max length 2083
 - `PostgresDsn`: scheme `postgres`, `postgresql`, user info required, TLD not required. Also, its supported DBAPI dialects:
-  - `postgresql+psycopg2`
   - `postgresql+asyncpg`
   - `postgresql+pg8000`
+  - `postgresql+psycopg2`
   - `postgresql+psycopg2cffi`
   - `postgresql+py-postgresql`
   - `postgresql+pygresql`

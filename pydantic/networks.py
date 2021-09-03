@@ -301,9 +301,9 @@ class PostgresDsn(AnyUrl):
     allowed_schemes = {
         'postgres',
         'postgresql',
-        'postgresql+psycopg2',
         'postgresql+asyncpg',
         'postgresql+pg8000',
+        'postgresql+psycopg2',
         'postgresql+psycopg2cffi',
         'postgresql+py-postgresql',
         'postgresql+pygresql',
