@@ -227,7 +227,7 @@ __all__ = (
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',
-    'NONE_TYPES',
+    'is_none_type',
     'display_as_type',
     'resolve_annotations',
     'is_callable_type',
@@ -260,7 +260,29 @@ __all__ = (
 
 
 NoneType = None.__class__
-NONE_TYPES: Set[Any] = {None, NoneType, Literal[None]}
+
+
+NONE_TYPES: Tuple[Any, Any, Any] = (None, NoneType, Literal[None])
+
+
+if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
+    # Even though this implementation is slower, we need it for python 3.6/3.7:
+    # In python 3.6/3.7 "Literal" is not a builtin type and uses a different
+    # mechanism.
+    # for this reason `Literal[None] is Literal[None]` evaluates to `False`,
+    # breaking the faster implementation used for the other python versions.
+
+    def is_none_type(type_: Any) -> bool:
+        return type_ in NONE_TYPES
+
+
+else:
+
+    def is_none_type(type_: Any) -> bool:
+        for none_type in NONE_TYPES:
+            if type_ is none_type:
+                return True
+        return False
 
 
 def display_as_type(v: Type[Any]) -> str:

@@ -30,7 +30,6 @@ from .error_wrappers import ErrorWrapper
 from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
-    NONE_TYPES,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -40,6 +39,7 @@ from .typing import (
     get_origin,
     is_literal_type,
     is_new_type,
+    is_none_type,
     is_typeddict,
     is_union_origin,
     new_type_supertype,
@@ -739,7 +739,7 @@ class ModelField(Representation):
                 return v, errors
 
         if v is None:
-            if self.type_ in NONE_TYPES:
+            if is_none_type(self.type_):
                 # keep validating
                 pass
             elif self.allow_none:
