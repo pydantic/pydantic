@@ -200,8 +200,8 @@ else:
     import types
     import typing
 
-    def is_union_origin(tp: Type[Any]) -> bool:
-        return tp is Union or tp is types.UnionType  # type: ignore  # noqa: E721
+    def is_union_origin(origin: Type[Any]) -> bool:
+        return origin is Union or origin is types.UnionType  # type: ignore  # noqa: E721
 
     WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # type: ignore
 
