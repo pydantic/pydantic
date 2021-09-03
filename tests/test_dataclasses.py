@@ -856,6 +856,32 @@ def test_wrapping_existing_data_classes_with_default_factory_fields():
     assert type(b_p.mro_override_test_prop) == bool
 
 
+def test_nested_dataclass_non_init_attributes():
+    """
+     When a dataclass instance is converted from a built-in type to the pydantic type, test that it correctly avoids
+     attempting to copy fields which have `init=False` set.
+    """
+    @dataclasses.dataclass
+    class A:
+        a_1: int
+        a_non_init: str = dataclasses.field(init=False)
+
+        def __post_init__(self):
+            self.a_non_init = "Hello, world."
+
+    @dataclasses.dataclass
+    class B:
+        a: A
+
+    B_Pydantic = pydantic.dataclasses.dataclass(B)
+
+    a = A(0)
+    a.a_non_init = "Goodbye, world."
+    b_p = B_Pydantic(a=a)
+    assert b_p.a.a_1 == 0
+    assert b_p.a.a_non_init == "Hello, world."
+
+
 def test_dataclass_arbitrary():
     class ArbitraryType:
         def __init__(self):

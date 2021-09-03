@@ -46,7 +46,7 @@ def _dataclass_as_shallow_dict(data_class: Type['DataclassT']) -> dict:
     serialises the object to JSON. This causes problems when the type associated with the datatype is an abstract class
     since it cannot be instantiated.
     """
-    return dict([(f.name, getattr(data_class, f.name)) for f in dataclasses.fields(data_class)])
+    return dict([(f.name, getattr(data_class, f.name)) for f in dataclasses.fields(data_class) if f.init])
 
 
 def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
