@@ -298,7 +298,16 @@ class HttpUrl(AnyUrl):
 
 
 class PostgresDsn(AnyUrl):
-    allowed_schemes = {'postgres', 'postgresql'}
+    allowed_schemes = {
+        'postgres',
+        'postgresql',
+        'postgresql+asyncpg',
+        'postgresql+pg8000',
+        'postgresql+psycopg2',
+        'postgresql+psycopg2cffi',
+        'postgresql+py-postgresql',
+        'postgresql+pygresql',
+    }
     user_required = True
 
 
