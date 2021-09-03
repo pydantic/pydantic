@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as Typi
 try:
     import toml
 except ImportError:
+    # future-proofing for upcoming `mypy` releases which will switch dependencies
     try:
         import tomli as toml
     except ImportError:
