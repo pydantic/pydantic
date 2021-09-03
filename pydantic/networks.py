@@ -182,7 +182,7 @@ class AnyUrl(str):
         if user or password:
             url += '@'
         url += host
-        if port and ('port' not in cls.hidden_parts):
+        if port and 'port' not in cls.hidden_parts:
             url += ':' + port
         if path:
             url += path
