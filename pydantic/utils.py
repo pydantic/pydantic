@@ -23,17 +23,18 @@ from typing import (
     Union,
 )
 
-from .typing import GenericAlias, NoneType, display_as_type
+from .typing import NoneType, WithArgsTypes, display_as_type
 from .version import version_info
 
 if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
 
-    from .dataclasses import Dataclass  # noqa: F401
-    from .fields import ModelField  # noqa: F401
-    from .main import BaseConfig, BaseModel  # noqa: F401
-    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
+    from .config import BaseConfig
+    from .dataclasses import Dataclass
+    from .fields import ModelField
+    from .main import BaseModel
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
 
 __all__ = (
     'import_string',
@@ -151,7 +152,7 @@ def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any
     try:
         return isinstance(cls, type) and issubclass(cls, class_or_tuple)
     except TypeError:
-        if isinstance(cls, GenericAlias):
+        if isinstance(cls, WithArgsTypes):
             return False
         raise  # pragma: no cover
 
@@ -201,6 +202,8 @@ def generate_model_signature(
     """
     from inspect import Parameter, Signature, signature
 
+    from .config import Extra
+
     present_params = signature(init).parameters.values()
     merged_params: Dict[str, Parameter] = {}
     var_kw = None
@@ -231,7 +234,7 @@ def generate_model_signature(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
             )
 
-    if config.extra is config.extra.allow:
+    if config.extra is Extra.allow:
         use_var_kw = True
 
     if var_kw and use_var_kw:
@@ -257,7 +260,7 @@ def generate_model_signature(
 
 
 def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseModel']:
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     try:
         model_cls = obj.__pydantic_model__  # type: ignore
@@ -448,7 +451,7 @@ class ValueItems(Representation):
     def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
-        :return: raw values for elemet if self._items is dict and contain needed element
+        :return: raw values for element if self._items is dict and contain needed element
         """
 
         item = self._items.get(e)

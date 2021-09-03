@@ -28,10 +28,10 @@ except ImportError:
     from typing import _Final as typing_base  # type: ignore
 
 try:
-    from typing import GenericAlias  # type: ignore
+    from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:
     # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
-    GenericAlias = ()
+    TypingGenericAlias = ()
 
 
 if sys.version_info < (3, 7):
@@ -189,6 +189,23 @@ else:
         return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
 
 
+if sys.version_info < (3, 10):
+
+    def is_union_origin(tp: Type[Any]) -> bool:
+        return tp is Union
+
+    WithArgsTypes = (TypingGenericAlias,)
+
+else:
+    import types
+    import typing
+
+    def is_union_origin(origin: Type[Any]) -> bool:
+        return origin is Union or origin is types.UnionType  # noqa: E721
+
+    WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)
+
+
 if TYPE_CHECKING:
     from .fields import ModelField
 
@@ -233,11 +250,12 @@ __all__ = (
     'CallableGenerator',
     'ReprArgs',
     'CallableGenerator',
-    'GenericAlias',
+    'WithArgsTypes',
     'get_args',
     'get_origin',
     'typing_base',
     'get_all_type_hints',
+    'is_union_origin',
 )
 
 
@@ -268,10 +286,10 @@ else:
 
 
 def display_as_type(v: Type[Any]) -> str:
-    if not isinstance(v, typing_base) and not isinstance(v, GenericAlias) and not isinstance(v, type):
+    if not isinstance(v, typing_base) and not isinstance(v, WithArgsTypes) and not isinstance(v, type):
         v = v.__class__
 
-    if isinstance(v, GenericAlias):
+    if isinstance(v, WithArgsTypes):
         # Generic alias are constructs like `list[int]`
         return str(v).replace('typing.', '')
 

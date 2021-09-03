@@ -1,0 +1,1 @@
+Add an example and a short explanation of subclassing `GetterDict` to docs.
