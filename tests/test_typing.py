@@ -62,7 +62,7 @@ def test_is_none_type():
     assert is_none_type(type(None)) is True
     assert is_none_type(6) is False
     assert is_none_type({}) is False
-    # WARNING: It's important to test typing.Callable not
-    # collections.abc.Callable (event with python >= 3.9) as they behave
+    # WARNING: It's important to test `typing.Callable` not
+    # `collections.abc.Callable` (even with python >= 3.9) as they behave
     # differently
     assert is_none_type(TypingCallable) is False
