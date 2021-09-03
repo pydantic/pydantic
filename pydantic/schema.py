@@ -386,7 +386,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
 
 def get_flat_models_from_fields(fields: Sequence[ModelField], known_models: TypeModelSet) -> TypeModelSet:
     """
-    Take a list of Pydantic  ``ModelField``s (from a model) that could have been declared as sublcasses of ``BaseModel``
+    Take a list of Pydantic  ``ModelField``s (from a model) that could have been declared as subclasses of ``BaseModel``
     (so, any of them could be a submodel), and generate a set with their models and all the sub-models in the tree.
     I.e. if you pass a the fields of a model ``Foo`` (subclass of ``BaseModel``) as ``fields``, and on of them has a
     field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of type ``Baz`` (also
@@ -1019,9 +1019,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 return constraint_func(**kwargs)
         return type_
 
-    ans = go(annotation)
-
-    return ans, used_constraints
+    return go(annotation), used_constraints
 
 
 def normalize_name(name: str) -> str:
