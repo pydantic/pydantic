@@ -577,10 +577,16 @@ For URI/URL validation the following types are available:
 - `AnyHttpUrl`: scheme `http` or `https`, TLD not required, host required
 - `HttpUrl`: scheme `http` or `https`, TLD required, host required, max length 2083
 - `FileUrl`: scheme `file`, host not required
-- `PostgresDsn`: scheme `postgres` or `postgresql`, user info required, TLD not required, host required
-- `RedisDsn`: scheme `redis` or `rediss`, user info not required, TLD not required, host not required (CHANGED: user
-  info not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
-- `stricturl`, method with the following keyword arguments:
+- `PostgresDsn`: scheme `postgres`, `postgresql`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
+  - `postgresql+asyncpg`
+  - `postgresql+pg8000`
+  - `postgresql+psycopg2`
+  - `postgresql+psycopg2cffi`
+  - `postgresql+py-postgresql`
+  - `postgresql+pygresql`
+- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
+  not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
+- `stricturl`: method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`
     - `max_length: int = 2 ** 16`

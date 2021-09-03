@@ -31,7 +31,6 @@ from typing_extensions import Literal
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
-    NONE_TYPES,
     AnyCallable,
     ForwardRef,
     all_literal_values,
@@ -40,6 +39,7 @@ from .typing import (
     is_callable_type,
     is_literal_type,
     is_namedtuple,
+    is_none_type,
     is_typeddict,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
@@ -657,7 +657,8 @@ def find_validators(  # noqa: C901 (ignore complexity)
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
         return
-    if type_ in NONE_TYPES:
+
+    if is_none_type(type_):
         yield none_validator
         return
     if type_ is Pattern:

@@ -38,7 +38,7 @@ from .typing import (
     get_origin,
     is_classvar,
     is_namedtuple,
-    is_union,
+    is_union_origin,
     resolve_annotations,
     update_field_forward_refs,
 )
@@ -176,7 +176,7 @@ class ModelMetaclass(ABCMeta):
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, Undefined)
-                    allowed_types = get_args(ann_type) if is_union(get_origin(ann_type)) else (ann_type,)
+                    allowed_types = get_args(ann_type) if is_union_origin(get_origin(ann_type)) else (ann_type,)
                     if (
                         is_untouched(value)
                         and ann_type != PyObject
@@ -630,10 +630,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return value.copy() if cls.__config__.copy_on_model_validation else value
 
         value = cls._enforce_dict_if_root(value)
-        if isinstance(value, dict):
-            return cls(**value)
-        elif cls.__config__.orm_mode:
+
+        if cls.__config__.orm_mode:
             return cls.from_orm(value)
+        elif isinstance(value, dict):
+            return cls(**value)
         else:
             try:
                 value_as_dict = dict(value)

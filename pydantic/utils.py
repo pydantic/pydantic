@@ -23,7 +23,7 @@ from typing import (
     Union,
 )
 
-from .typing import GenericAlias, NoneType, display_as_type
+from .typing import NoneType, WithArgsTypes, display_as_type
 from .version import version_info
 
 if TYPE_CHECKING:
@@ -152,7 +152,7 @@ def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any
     try:
         return isinstance(cls, type) and issubclass(cls, class_or_tuple)
     except TypeError:
-        if isinstance(cls, GenericAlias):
+        if isinstance(cls, WithArgsTypes):
             return False
         raise  # pragma: no cover
 
@@ -451,7 +451,7 @@ class ValueItems(Representation):
     def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
-        :return: raw values for elemet if self._items is dict and contain needed element
+        :return: raw values for element if self._items is dict and contain needed element
         """
 
         item = self._items.get(e)

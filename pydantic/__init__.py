@@ -58,6 +58,7 @@ __all__ = [
     'IPvAnyNetwork',
     'PostgresDsn',
     'RedisDsn',
+    'KafkaDsn',
     'validate_email',
     # parse
     'Protocol',

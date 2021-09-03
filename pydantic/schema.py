@@ -63,7 +63,6 @@ from .types import (
     constr,
 )
 from .typing import (
-    NONE_TYPES,
     ForwardRef,
     all_literal_values,
     get_args,
@@ -71,7 +70,8 @@ from .typing import (
     is_callable_type,
     is_literal_type,
     is_namedtuple,
-    is_union,
+    is_none_type,
+    is_union_origin,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
@@ -386,7 +386,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
 
 def get_flat_models_from_fields(fields: Sequence[ModelField], known_models: TypeModelSet) -> TypeModelSet:
     """
-    Take a list of Pydantic  ``ModelField``s (from a model) that could have been declared as sublcasses of ``BaseModel``
+    Take a list of Pydantic  ``ModelField``s (from a model) that could have been declared as subclasses of ``BaseModel``
     (so, any of them could be a submodel), and generate a set with their models and all the sub-models in the tree.
     I.e. if you pass a the fields of a model ``Foo`` (subclass of ``BaseModel``) as ``fields``, and on of them has a
     field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of type ``Baz`` (also
@@ -788,7 +788,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         )
     if field_type is Any or field_type.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
-    if field_type in NONE_TYPES:
+    if is_none_type(field_type):
         return {'type': 'null'}, definitions, nested_models
     if is_callable_type(field_type):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
@@ -966,7 +966,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if origin is Annotated:
                 return go(args[0])
-            if is_union(origin):
+            if is_union_origin(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
             if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
@@ -1019,9 +1019,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 return constraint_func(**kwargs)
         return type_
 
-    ans = go(annotation)
-
-    return ans, used_constraints
+    return go(annotation), used_constraints
 
 
 def normalize_name(name: str) -> str:

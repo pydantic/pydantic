@@ -6,6 +6,7 @@ from pydantic import (
     EmailStr,
     FileUrl,
     HttpUrl,
+    KafkaDsn,
     NameEmail,
     PostgresDsn,
     RedisDsn,
@@ -29,7 +30,12 @@ except ImportError:
         'https://example.org/whatever/next/',
         'postgres://user:pass@localhost:5432/app',
         'postgres://just-user@localhost:5432/app',
+        'postgresql+asyncpg://user:pass@localhost:5432/app',
+        'postgresql+pg8000://user:pass@localhost:5432/app',
         'postgresql+psycopg2://postgres:postgres@localhost:5432/hatch',
+        'postgresql+psycopg2cffi://user:pass@localhost:5432/app',
+        'postgresql+py-postgresql://user:pass@localhost:5432/app',
+        'postgresql+pygresql://user:pass@localhost:5432/app',
         'foo-bar://example.org',
         'foo.bar://example.org',
         'foo0bar://example.org',
@@ -351,12 +357,55 @@ def test_file_url_success(value):
     assert Model(v=value).v == value, value
 
 
+def test_get_default_parts():
+    class MyConnectionString(AnyUrl):
+        @staticmethod
+        def get_default_parts(parts):
+            # get default parts allows to generate custom conn strings to services
+            return {
+                'user': 'admin',
+                'password': '123',
+            }
+
+    class C(BaseModel):
+        connection: MyConnectionString
+
+    c = C(connection='protocol://service:8080')
+    assert c.connection == 'protocol://admin:123@service:8080'
+    assert c.connection.user == 'admin'
+    assert c.connection.password == '123'
+
+
+@pytest.mark.parametrize(
+    'url,port',
+    [
+        ('https://www.example.com', '443'),
+        ('https://www.example.com:443', '443'),
+        ('https://www.example.com:8089', '8089'),
+        ('http://www.example.com', '80'),
+        ('http://www.example.com:80', '80'),
+        ('http://www.example.com:8080', '8080'),
+    ],
+)
+def test_http_urls_default_port(url, port):
+    class Model(BaseModel):
+        v: HttpUrl
+
+    m = Model(v=url)
+    assert m.v.port == port
+    assert m.v == url
+
+
 def test_postgres_dsns():
     class Model(BaseModel):
         a: PostgresDsn
 
     assert Model(a='postgres://user:pass@localhost:5432/app').a == 'postgres://user:pass@localhost:5432/app'
     assert Model(a='postgresql://user:pass@localhost:5432/app').a == 'postgresql://user:pass@localhost:5432/app'
+    assert (
+        Model(a='postgresql+asyncpg://user:pass@localhost:5432/app').a
+        == 'postgresql+asyncpg://user:pass@localhost:5432/app'
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
@@ -406,6 +455,28 @@ def test_redis_dsns():
     assert m.a.host == 'localhost'
     assert m.a.port == '6379'
     assert m.a.path == '/0'
+
+
+def test_kafka_dsns():
+    class Model(BaseModel):
+        a: KafkaDsn
+
+    m = Model(a='kafka://')
+    assert m.a.scheme == 'kafka'
+    assert m.a.host == 'localhost'
+    assert m.a.port == '9092'
+    assert m.a == 'kafka://localhost:9092'
+
+    m = Model(a='kafka://kafka1')
+    assert m.a == 'kafka://kafka1:9092'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+    m = Model(a='kafka://kafka3:9093')
+    assert m.a.user is None
+    assert m.a.password is None
 
 
 def test_custom_schemes():
