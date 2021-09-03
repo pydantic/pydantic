@@ -267,7 +267,7 @@ def test_async():
         v = await foo(1, 2)
         assert v == 'a=1 b=2'
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop_policy().get_event_loop()
     loop.run_until_complete(run())
     with pytest.raises(ValidationError) as exc_info:
         loop.run_until_complete(foo('x'))

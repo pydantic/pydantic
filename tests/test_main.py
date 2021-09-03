@@ -2026,3 +2026,21 @@ def test_class_kwargs_custom_config():
         a: int
 
     assert Model.__config__.some_config == 'new_value'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
+def test_new_union_origin():
+    """On 3.10+, origin of `int | str` is `types.Union`, not `typing.Union`"""
+
+    class Model(BaseModel):
+        x: int | str
+
+    assert Model(x=3).x == 3
+    assert Model(x='3').x == 3
+    assert Model(x='pika').x == 'pika'
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['x'],
+    }

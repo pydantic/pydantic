@@ -32,8 +32,8 @@ from .validators import constr_length_validator, str_validator
 if TYPE_CHECKING:
     import email_validator
 
+    from .config import BaseConfig
     from .fields import ModelField
-    from .main import BaseConfig  # noqa: F401
     from .typing import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
