@@ -43,7 +43,8 @@ from .main import create_model, validate_model
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .config import BaseConfig
+    from .main import BaseModel
     from .typing import CallableGenerator, NoArgAnyCallable
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
