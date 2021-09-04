@@ -434,6 +434,8 @@ def field_type_schema(
     Take a single ``field`` and generate the schema for its type only, not including additional
     information as title, etc. Also return additional schema definitions, from sub-models.
     """
+    from .main import BaseModel  # noqa: F811
+
     definitions = {}
     nested_models: Set[str] = set()
     f_schema: Dict[str, Any]
@@ -473,7 +475,7 @@ def field_type_schema(
         elif items_schema:
             # The dict values are not simply Any, so they need a schema
             f_schema['additionalProperties'] = items_schema
-    elif field.shape == SHAPE_TUPLE:
+    elif field.shape == SHAPE_TUPLE or (field.shape == SHAPE_GENERIC and not issubclass(field.type_, BaseModel)):
         sub_schema = []
         sub_fields = cast(List[ModelField], field.sub_fields)
         for sf in sub_fields:
@@ -489,8 +491,14 @@ def field_type_schema(
             nested_models.update(sf_nested_models)
             sub_schema.append(sf_schema)
         if len(sub_schema) == 1:
-            sub_schema = sub_schema[0]  # type: ignore
-        f_schema = {'type': 'array', 'items': sub_schema}
+            if field.shape == SHAPE_GENERIC:
+                f_schema = sub_schema[0]
+            else:
+                f_schema = {'type': 'array', 'items': sub_schema[0]}
+        else:
+            f_schema = {'type': 'array', 'items': sub_schema}
+        if field.shape == SHAPE_GENERIC:
+            f_schema = {'allOf': [f_schema]}
     else:
         assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
