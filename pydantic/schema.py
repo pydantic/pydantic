@@ -65,7 +65,6 @@ from .types import (
     constr,
 )
 from .typing import (
-    NONE_TYPES,
     ForwardRef,
     all_literal_values,
     get_args,
@@ -73,12 +72,14 @@ from .typing import (
     is_callable_type,
     is_literal_type,
     is_namedtuple,
+    is_none_type,
+    is_union_origin,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
-    from .dataclasses import Dataclass  # noqa: F401
-    from .main import BaseModel  # noqa: F401
+    from .dataclasses import Dataclass
+    from .main import BaseModel
 
 default_prefix = '#/definitions/'
 default_ref_template = '#/definitions/{model}'
@@ -366,7 +367,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
     from .dataclasses import dataclass, is_builtin_dataclass
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     flat_models: TypeModelSet = set()
 
@@ -387,7 +388,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
 
 def get_flat_models_from_fields(fields: Sequence[ModelField], known_models: TypeModelSet) -> TypeModelSet:
     """
-    Take a list of Pydantic  ``ModelField``s (from a model) that could have been declared as sublcasses of ``BaseModel``
+    Take a list of Pydantic  ``ModelField``s (from a model) that could have been declared as subclasses of ``BaseModel``
     (so, any of them could be a submodel), and generate a set with their models and all the sub-models in the tree.
     I.e. if you pass a the fields of a model ``Foo`` (subclass of ``BaseModel``) as ``fields``, and on of them has a
     field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of type ``Baz`` (also
@@ -435,6 +436,8 @@ def field_type_schema(
     Take a single ``field`` and generate the schema for its type only, not including additional
     information as title, etc. Also return additional schema definitions, from sub-models.
     """
+    from .main import BaseModel  # noqa: F811
+
     definitions = {}
     nested_models: Set[str] = set()
     f_schema: Dict[str, Any]
@@ -474,7 +477,7 @@ def field_type_schema(
         elif items_schema:
             # The dict values are not simply Any, so they need a schema
             f_schema['additionalProperties'] = items_schema
-    elif field.shape == SHAPE_TUPLE:
+    elif field.shape == SHAPE_TUPLE or (field.shape == SHAPE_GENERIC and not issubclass(field.type_, BaseModel)):
         sub_schema = []
         sub_fields = cast(List[ModelField], field.sub_fields)
         for sf in sub_fields:
@@ -490,8 +493,14 @@ def field_type_schema(
             nested_models.update(sf_nested_models)
             sub_schema.append(sf_schema)
         if len(sub_schema) == 1:
-            sub_schema = sub_schema[0]  # type: ignore
-        f_schema = {'type': 'array', 'items': sub_schema}
+            if field.shape == SHAPE_GENERIC:
+                f_schema = sub_schema[0]
+            else:
+                f_schema = {'type': 'array', 'items': sub_schema[0]}
+        else:
+            f_schema = {'type': 'array', 'items': sub_schema}
+        if field.shape == SHAPE_GENERIC:
+            f_schema = {'allOf': [f_schema]}
     else:
         assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
@@ -767,7 +776,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
     Take a single Pydantic ``ModelField``, and return its schema and any additional definitions from sub-models.
     """
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
@@ -789,7 +798,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         )
     if field_type is Any or field_type.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
-    if field_type in NONE_TYPES:
+    if is_none_type(field_type):
         return {'type': 'null'}, definitions, nested_models
     if is_callable_type(field_type):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
@@ -967,7 +976,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if origin is Annotated:
                 return go(args[0])
-            if origin is Union:
+            if is_union_origin(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
             if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
@@ -1033,9 +1042,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 return constraint_func(**kwargs)
         return type_
 
-    ans = go(annotation)
-
-    return ans, used_constraints
+    return go(annotation), used_constraints
 
 
 def normalize_name(name: str) -> str:

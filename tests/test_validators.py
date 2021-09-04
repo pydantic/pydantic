@@ -1256,3 +1256,39 @@ def test_exceptions_in_field_validators_restore_original_field_value():
     with pytest.raises(RuntimeError, match='test error'):
         model.foo = 'raise_exception'
     assert model.foo == 'foo'
+
+
+def test_overridden_root_validators(mocker):
+    validate_stub = mocker.stub(name='validate')
+
+    class A(BaseModel):
+        x: str
+
+        @root_validator(pre=True)
+        def pre_root(cls, values):
+            validate_stub('A', 'pre')
+            return values
+
+        @root_validator(pre=False)
+        def post_root(cls, values):
+            validate_stub('A', 'post')
+            return values
+
+    class B(A):
+        @root_validator(pre=True)
+        def pre_root(cls, values):
+            validate_stub('B', 'pre')
+            return values
+
+        @root_validator(pre=False)
+        def post_root(cls, values):
+            validate_stub('B', 'post')
+            return values
+
+    A(x='pika')
+    assert validate_stub.call_args_list == [mocker.call('A', 'pre'), mocker.call('A', 'post')]
+
+    validate_stub.reset_mock()
+
+    B(x='pika')
+    assert validate_stub.call_args_list == [mocker.call('B', 'pre'), mocker.call('B', 'post')]
