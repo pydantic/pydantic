@@ -205,8 +205,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     # For JsonWrapperValue, need to handle its inner type to allow correct parsing
     # of generic Json arguments like Json[T]
     if not origin_type and lenient_issubclass(type_, JsonWrapper):
-        inner_resolved = replace_types(type_.inner_type, type_map)
-        type_.inner_type = inner_resolved
+        type_.inner_type = replace_types(type_.inner_type, type_map)
         return type_
 
     # If all else fails, we try to resolve the type directly and otherwise just

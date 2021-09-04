@@ -1173,3 +1173,12 @@ def test_parse_generic_json():
     raw = json.dumps({'payload_field': 'payload'})
     record = MessageWrapper[Payload](message=raw)
     assert isinstance(record.message, Payload)
+
+    schema = record.schema()
+    assert schema['properties'] == {'message': {'$ref': '#/definitions/Payload'}}
+    assert schema['definitions']['Payload'] == {
+        'title': 'Payload',
+        'type': 'object',
+        'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
+        'required': ['payload_field'],
+    }
