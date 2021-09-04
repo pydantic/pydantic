@@ -286,9 +286,15 @@ def test_set_attr_invalid():
 def test_any():
     class AnyModel(BaseModel):
         a: Any = 10
+        b: object = 20
 
-    assert AnyModel().a == 10
-    assert AnyModel(a='foobar').a == 'foobar'
+    m = AnyModel()
+    assert m.a == 10
+    assert m.b == 20
+
+    m = AnyModel(a='foobar', b='barfoo')
+    assert m.a == 'foobar'
+    assert m.b == 'barfoo'
 
 
 def test_alias():

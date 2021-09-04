@@ -48,6 +48,7 @@ __all__ = [
     # network
     'AnyUrl',
     'AnyHttpUrl',
+    'FileUrl',
     'HttpUrl',
     'stricturl',
     'EmailStr',
@@ -57,6 +58,7 @@ __all__ = [
     'IPvAnyNetwork',
     'PostgresDsn',
     'RedisDsn',
+    'KafkaDsn',
     'validate_email',
     # parse
     'Protocol',

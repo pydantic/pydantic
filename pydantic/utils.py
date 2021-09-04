@@ -23,7 +23,7 @@ from typing import (
     Union,
 )
 
-from .typing import GenericAlias, NoneType, display_as_type
+from .typing import NoneType, WithArgsTypes, display_as_type
 from .version import version_info
 
 if TYPE_CHECKING:
@@ -132,7 +132,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     return v
 
 
-def sequence_like(v: Type[Any]) -> bool:
+def sequence_like(v: Any) -> bool:
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
@@ -152,7 +152,7 @@ def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any
     try:
         return isinstance(cls, type) and issubclass(cls, class_or_tuple)
     except TypeError:
-        if isinstance(cls, GenericAlias):
+        if isinstance(cls, WithArgsTypes):
             return False
         raise  # pragma: no cover
 
@@ -279,16 +279,25 @@ def to_camel(string: str) -> str:
 T = TypeVar('T')
 
 
-def unique_list(input_list: Union[List[T], Tuple[T, ...]]) -> List[T]:
+def unique_list(
+    input_list: Union[List[T], Tuple[T, ...]],
+    *,
+    name_factory: Callable[[T], str] = str,
+) -> List[T]:
     """
     Make a list unique while maintaining order.
+    We update the list if another one with the same name is set
+    (e.g. root validator overridden in subclass)
     """
-    result = []
-    unique_set = set()
+    result: List[T] = []
+    result_names: List[str] = []
     for v in input_list:
-        if v not in unique_set:
-            unique_set.add(v)
+        v_name = name_factory(v)
+        if v_name not in result_names:
+            result_names.append(v_name)
             result.append(v)
+        else:
+            result[result_names.index(v_name)] = v
 
     return result
 
@@ -451,7 +460,7 @@ class ValueItems(Representation):
     def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
-        :return: raw values for elemet if self._items is dict and contain needed element
+        :return: raw values for element if self._items is dict and contain needed element
         """
 
         item = self._items.get(e)

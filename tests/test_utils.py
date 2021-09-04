@@ -520,7 +520,7 @@ def test_all_identical():
     assert all_identical([a], []) is False, 'Expected iterables with different lengths to evaluate to `False`'
     assert (
         all_identical([a, [b], b], [a, [b], b]) is False
-    ), 'New list objects are different objects and should therefor not be identical.'
+    ), 'New list objects are different objects and should therefore not be identical.'
 
 
 def test_undefined_pickle():
