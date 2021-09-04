@@ -774,17 +774,20 @@ def test_inheritance_subclass_default():
         pass
 
     # Confirm hint supports a subclass default
-
     class Simple(BaseModel):
         x: str = MyStr('test')
 
     # Confirm hint on a base can be overridden with a subclass default on a subclass
-
     class Base(BaseModel):
         x: str
+        y: str
 
     class Sub(Base):
         x = MyStr('test')
+        y: MyStr = MyStr('test')  # force subtype
+
+    assert Sub.__fields__['x'].type_ == str
+    assert Sub.__fields__['y'].type_ == MyStr
 
 
 def test_invalid_type():
