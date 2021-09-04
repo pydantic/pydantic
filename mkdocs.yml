@@ -12,14 +12,14 @@ theme:
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb
+      icon: material/lightbulb-outline
       name: "Switch to dark mode"
   - media: "(prefers-color-scheme: dark)"
     scheme: slate
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb-outline
+      icon: material/lightbulb
       name: "Switch to light mode"
 
   logo: 'logo-white.svg'
