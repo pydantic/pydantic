@@ -21,6 +21,7 @@ from typing import (
     Union,
     cast,
     no_type_check,
+    overload,
 )
 
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
@@ -840,11 +841,37 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 _is_base_model_class_defined = True
 
 
+@overload
 def create_model(
     __model_name: str,
     *,
-    __config__: Type[BaseConfig] = None,
-    __base__: Type['Model'] = None,
+    __config__: Optional[Type[BaseConfig]] = None,
+    __base__: None = None,
+    __module__: str = __name__,
+    __validators__: Dict[str, classmethod] = None,
+    **field_definitions: Any,
+) -> Type['BaseModel']:
+    ...
+
+
+@overload
+def create_model(
+    __model_name: str,
+    *,
+    __config__: Optional[Type[BaseConfig]] = None,
+    __base__: Type['Model'],
+    __module__: str = __name__,
+    __validators__: Dict[str, classmethod] = None,
+    **field_definitions: Any,
+) -> Type['Model']:
+    ...
+
+
+def create_model(
+    __model_name: str,
+    *,
+    __config__: Optional[Type[BaseConfig]] = None,
+    __base__: Optional[Type['Model']] = None,
     __module__: str = __name__,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,

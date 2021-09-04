@@ -35,6 +35,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    create_model,
     root_validator,
     validate_arguments,
     validator,
@@ -241,6 +242,8 @@ validated.my_file_path.absolute()
 validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
 validated.my_dir_path_str.absolute()
+
+DynamicModel = create_model('DynamicModel')
 
 
 class Config(BaseConfig):
