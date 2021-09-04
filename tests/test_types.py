@@ -40,6 +40,7 @@ from pydantic import (
     EmailStr,
     Field,
     FilePath,
+    FutureDate,
     Json,
     NameEmail,
     NegativeFloat,
@@ -48,6 +49,7 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    PastDate,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -2812,4 +2814,83 @@ def test_none(value_type):
         {'loc': ('my_none_list', 2), 'msg': 'value is not None', 'type': 'type_error.not_none'},
         {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_none'},
         {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+    ]
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    (
+        ('1996-01-22', date(1996, 1, 22)),
+        (date(1996, 1, 22), date(1996, 1, 22)),
+    ),
+)
+def test_past_date_validation_success(value, result):
+    class Model(BaseModel):
+        foo: PastDate
+
+    assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize(
+    'value',
+    (
+        date.today(),
+        date.today() + timedelta(1),
+        datetime.today(),
+        datetime.today() + timedelta(1),
+        '2064-06-01',
+    ),
+)
+def test_past_date_validation_fails(value):
+    class Model(BaseModel):
+        foo: PastDate
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': 'date is not in the past',
+            'type': 'value_error.date.not_in_the_past',
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    (
+        (date.today() + timedelta(1), date.today() + timedelta(1)),
+        (datetime.today() + timedelta(1), date.today() + timedelta(1)),
+        ('2064-06-01', date(2064, 6, 1)),
+    ),
+)
+def test_future_date_validation_success(value, result):
+    class Model(BaseModel):
+        foo: FutureDate
+
+    assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize(
+    'value',
+    (
+        date.today(),
+        date.today() - timedelta(1),
+        datetime.today(),
+        datetime.today() - timedelta(1),
+        '1996-01-22',
+    ),
+)
+def test_future_date_validation_fails(value):
+    class Model(BaseModel):
+        foo: FutureDate
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': 'date is not in the future',
+            'type': 'value_error.date.not_in_the_future',
+        }
     ]
