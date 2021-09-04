@@ -46,7 +46,7 @@ Resolving this is beyond the call for *pydantic*: either remove the future impor
 ## Self-referencing Models
 
 Data structures with self-referencing models are also supported. Self-referencing fields will be automatically
-resolved after was created.
+resolved after model creation.
 
 Within the model, you can refer to the not-yet-constructed model using a string:
 
