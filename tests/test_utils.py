@@ -5,10 +5,10 @@ import re
 import string
 import sys
 from copy import copy, deepcopy
-from distutils.version import StrictVersion
 from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
 
 import pytest
+from pkg_resources import safe_version
 from typing_extensions import Annotated, Literal
 
 from pydantic import VERSION, BaseModel, ConstrainedList, conlist
@@ -377,8 +377,8 @@ def test_version_info():
     assert s.count('\n') == 5
 
 
-def test_version_strict():
-    assert str(StrictVersion(VERSION)) == VERSION
+def test_standard_version():
+    assert safe_version(VERSION) == VERSION
 
 
 def test_class_attribute():

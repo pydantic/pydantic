@@ -15,6 +15,7 @@ from typing import (
     Generic,
     Iterable,
     List,
+    NamedTuple,
     NewType,
     Optional,
     Set,
@@ -2291,6 +2292,28 @@ def test_schema_for_generic_field():
             'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
         },
         'required': ['data', 'data1'],
+    }
+
+
+def test_namedtuple_default():
+    class Coordinates(NamedTuple):
+        x: float
+        y: float
+
+    class LocationBase(BaseModel):
+        coords: Coordinates = Coordinates(0, 0)
+
+    assert LocationBase.schema() == {
+        'title': 'LocationBase',
+        'type': 'object',
+        'properties': {
+            'coords': {
+                'title': 'Coords',
+                'default': Coordinates(x=0, y=0),
+                'type': 'array',
+                'items': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
+            }
+        },
     }
 
 
