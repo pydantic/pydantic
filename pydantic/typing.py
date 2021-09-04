@@ -207,15 +207,11 @@ else:
     WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)
 
 
-if TYPE_CHECKING:
-    StrPath = Union[str, PathLike[str]]
+if sys.version_info < (3, 9):
+    StrPath = Union[str, PathLike]
 else:
-    if sys.version_info < (3, 9):
-        # Python >= 3.6, < 3.9
-        StrPath = Union[str, PathLike]
-    else:
-        # os.PathLike only becomes subscriptable from Python 3.9 onwards
-        StrPath = Union[str, PathLike[str]]
+    # os.PathLike only becomes subscriptable from Python 3.9 onwards
+    StrPath = Union[str, PathLike[str]]
 
 
 if TYPE_CHECKING:
