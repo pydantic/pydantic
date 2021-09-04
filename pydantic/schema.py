@@ -960,7 +960,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
     def go(type_: Any) -> Type[Any]:
         if (
-            is_literal_type(annotation)
+            is_literal_type(type_)
             or isinstance(type_, ForwardRef)
             or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet))
         ):
