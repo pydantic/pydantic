@@ -22,6 +22,7 @@ from typing_extensions import Annotated
 from .class_validators import gather_all_validators
 from .fields import DeferredType
 from .main import BaseModel, create_model
+from .types import JsonWrapper
 from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from .utils import all_identical, lenient_issubclass
 
@@ -200,6 +201,12 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
         if all_identical(type_, resolved_list):
             return type_
         return resolved_list
+
+    # For JsonWrapperValue, need to handle its inner type to allow correct parsing
+    # of generic Json arguments like Json[T]
+    if not origin_type and lenient_issubclass(type_, JsonWrapper):
+        type_.inner_type = replace_types(type_.inner_type, type_map)
+        return type_
 
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.
