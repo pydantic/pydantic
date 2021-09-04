@@ -268,7 +268,7 @@ def test_http_url_success(value):
     class Model(BaseModel):
         v: HttpUrl
 
-    assert Model(v=value).v == value, value
+    assert Model(v=value).v == value
 
 
 @pytest.mark.parametrize(
@@ -354,7 +354,7 @@ def test_file_url_success(value):
     class Model(BaseModel):
         v: FileUrl
 
-    assert Model(v=value).v == value, value
+    assert Model(v=value).v == value
 
 
 def test_get_default_parts():
