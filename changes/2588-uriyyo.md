@@ -1,1 +1,1 @@
-Try to evaluate forward refs after model created.
+Try to evaluate forward refs automatically at model creation.
