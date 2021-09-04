@@ -8,7 +8,9 @@ if TYPE_CHECKING:
 
 
 def create_model_from_typeddict(
-    typeddict_cls: Type['TypedDict'], **kwargs: Any  # type: ignore[valid-type]
+    # Mypy bug: `Type[TypedDict]` is resolved as `Any` https://github.com/python/mypy/issues/11030
+    typeddict_cls: Type['TypedDict'],  # type: ignore[valid-type]
+    **kwargs: Any,
 ) -> Type['BaseModel']:
     """
     Create a `BaseModel` based on the fields of a `TypedDict`.
