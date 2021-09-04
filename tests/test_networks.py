@@ -123,6 +123,18 @@ def test_any_url_success(value):
         ),
         ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
         ('http://example.com:99999', 'value_error.url.port', 'URL port invalid, port cannot exceed 65535', None),
+        (
+            'http://example##',
+            'value_error.url.extra',
+            "URL invalid, extra characters found after valid URL: '#'",
+            {'extra': '#'},
+        ),
+        (
+            'http://example/##',
+            'value_error.url.extra',
+            "URL invalid, extra characters found after valid URL: '#'",
+            {'extra': '#'},
+        ),
         ('file:///foo/bar', 'value_error.url.host', 'URL host invalid', None),
     ],
 )
