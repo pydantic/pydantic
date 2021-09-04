@@ -302,3 +302,38 @@ def test_custom_getter_dict_derived_model_class():
 
     model = ExampleOrm.from_orm(Example())
     assert model.dict() == {'name': 'name', 'col': [0, 1, 2, 3, 4], 'id': 1}
+
+
+def test_recursive_parsing():
+    from types import SimpleNamespace
+
+    class Getter(GetterDict):
+        # try to read the modified property name
+        # either as an attribute or as a key
+        def get(self, key, default):
+            key = key + key
+            try:
+                return self._obj[key]
+            except TypeError:
+                return getattr(self._obj, key, default)
+            except KeyError:
+                return default
+
+    class Model(BaseModel):
+        class Config:
+            orm_mode = True
+            getter_dict = Getter
+
+    class ModelA(Model):
+        a: int
+
+    class ModelB(Model):
+        b: ModelA
+
+    # test recursive parsing with object attributes
+    dct = dict(bb=SimpleNamespace(aa=1))
+    assert ModelB.from_orm(dct) == ModelB(b=ModelA(a=1))
+
+    # test recursive parsing with dict keys
+    obj = dict(bb=dict(aa=1))
+    assert ModelB.from_orm(obj) == ModelB(b=ModelA(a=1))
