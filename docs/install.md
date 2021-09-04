@@ -4,7 +4,7 @@ Installation is as simple as:
 pip install pydantic
 ```
 
-*pydantic* has no required dependencies except python 3.6, 3.7, 3.8, or 3.9,
+*pydantic* has no required dependencies except python 3.6, 3.7, 3.8, 3.9 or 3.10,
 [`typing-extensions`](https://pypi.org/project/typing-extensions/), and the
 [`dataclasses`](https://pypi.org/project/dataclasses/) backport package for python 3.6.
 If you've got python 3.6+ and `pip` installed, you're good to go.

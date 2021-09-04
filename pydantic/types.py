@@ -109,8 +109,8 @@ OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
-    from .dataclasses import Dataclass  # noqa: F401
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .dataclasses import Dataclass
+    from .main import BaseModel
     from .typing import CallableGenerator
 
     ModelOrDc = Type[Union['BaseModel', 'Dataclass']]
