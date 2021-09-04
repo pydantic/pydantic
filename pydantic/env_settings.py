@@ -3,8 +3,9 @@ import warnings
 from pathlib import Path
 from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
+from .config import BaseConfig, Extra
 from .fields import ModelField
-from .main import BaseConfig, BaseModel, Extra
+from .main import BaseModel
 from .typing import display_as_type
 from .utils import deep_update, path_type, sequence_like
 

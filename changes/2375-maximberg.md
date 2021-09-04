@@ -1,0 +1,1 @@
+Support generating schema for `Generic` fields with subtypes. 
