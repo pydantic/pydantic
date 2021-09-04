@@ -296,7 +296,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __schema_cache__: 'DictAny' = {}
         __custom_root_type__: bool = False
         __signature__: 'Signature'
-        __private_attributes__: Dict[str, Any]
+        __private_attributes__: Dict[str, ModelPrivateAttr]
         __class_vars__: SetStr
         __fields_set__: SetStr = set()
 
