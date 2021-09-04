@@ -502,7 +502,7 @@ def field_type_schema(
                 'maxItems': sub_fields_len,
             }
             if sub_fields_len >= 1:
-                f_schema['items'] = sub_schema[0] if sub_fields_len == 1 else sub_schema
+                f_schema['items'] = sub_schema
     else:
         assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(

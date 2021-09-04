@@ -542,7 +542,7 @@ def test_const_false():
                 'maxItems': 4,
             },
         ),
-        (Tuple[str], {'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 1}),
+        (Tuple[str], {'items': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}),
         (Tuple[()], {'maxItems': 0, 'minItems': 0}),
     ],
 )
@@ -2412,7 +2412,7 @@ def test_advanced_generic_schema():
             'data4': {
                 'title': 'Data4',
                 'type': 'array',
-                'items': {'$ref': '#/definitions/CustomType'},
+                'items': [{'$ref': '#/definitions/CustomType'}],
                 'minItems': 1,
                 'maxItems': 1,
             },
