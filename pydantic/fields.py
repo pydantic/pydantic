@@ -530,7 +530,7 @@ class ModelField(Representation):
         elif is_new_type(self.type_):
             self.type_ = new_type_supertype(self.type_)
 
-        if self.type_ is Any:
+        if self.type_ is Any or self.type_ is object:
             if self.required is Undefined:
                 self.required = False
             self.allow_none = True

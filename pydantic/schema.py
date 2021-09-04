@@ -794,7 +794,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_template=ref_template,
             known_models=known_models,
         )
-    if field_type is Any or field_type.__class__ == TypeVar:
+    if field_type is Any or field_type is object or field_type.__class__ == TypeVar:
         return {}, definitions, nested_models  # no restrictions
     if is_none_type(field_type):
         return {'type': 'null'}, definitions, nested_models

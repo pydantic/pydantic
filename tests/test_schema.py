@@ -483,8 +483,16 @@ def test_optional():
 def test_any():
     class Model(BaseModel):
         a: Any
+        b: object
 
-    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'title': 'A'}}}
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A'},
+            'b': {'title': 'B'},
+        },
+    }
 
 
 def test_set():
