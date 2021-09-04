@@ -1,1 +1,1 @@
-Add a `total` configuration field to create models with all fields Optional
+Add a `total` configuration field to create models with all fields `Optional`
