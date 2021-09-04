@@ -572,6 +572,24 @@ def test_constrained_str_lower_disabled():
     assert m.v == 'ABCD'
 
 
+def test_constrained_str_max_length_0():
+    class Model(BaseModel):
+        v: constr(max_length=0)
+
+    m = Model(v='')
+    assert m.v == ''
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='qwe')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'ensure this value has at most 0 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 0},
+        }
+    ]
+
+
 def test_module_import():
     class PyObjectModel(BaseModel):
         module: PyObject = 'os.path'

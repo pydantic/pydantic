@@ -12,8 +12,10 @@ from uuid import UUID
 
 from pydantic import (
     UUID1,
+    BaseConfig,
     BaseModel,
     DirectoryPath,
+    Extra,
     FilePath,
     FutureDate,
     Json,
@@ -239,3 +241,9 @@ validated.my_file_path.absolute()
 validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
 validated.my_dir_path_str.absolute()
+
+
+class Config(BaseConfig):
+    title = 'Record'
+    extra = Extra.ignore
+    max_anystr_length = 1234
