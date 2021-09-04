@@ -11,13 +11,14 @@ if TYPE_CHECKING:
     from .types import ModelOrDc
     from .typing import ReprArgs
 
-    Loc = Tuple[Union[int, str], ...]
-
 __all__ = 'ErrorWrapper', 'ValidationError'
 
 
+Loc = Tuple[Union[int, str], ...]
+
+
 class _ErrorDictRequired(TypedDict):
-    loc: 'Loc'
+    loc: Loc
     msg: str
     type: str
 
@@ -29,11 +30,11 @@ class ErrorDict(_ErrorDictRequired, total=False):
 class ErrorWrapper(Representation):
     __slots__ = 'exc', '_loc'
 
-    def __init__(self, exc: Exception, loc: Union[str, 'Loc']) -> None:
+    def __init__(self, exc: Exception, loc: Union[str, Loc]) -> None:
         self.exc = exc
         self._loc = loc
 
-    def loc_tuple(self) -> 'Loc':
+    def loc_tuple(self) -> Loc:
         if isinstance(self._loc, tuple):
             return self._loc
         else:
@@ -98,7 +99,7 @@ def _display_error_type_and_ctx(error: ErrorDict) -> str:
 
 
 def flatten_errors(
-    errors: Sequence[Any], config: Type['BaseConfig'], loc: Optional['Loc'] = None
+    errors: Sequence[Any], config: Type['BaseConfig'], loc: Optional[Loc] = None
 ) -> Generator[ErrorDict, None, None]:
     for error in errors:
         if isinstance(error, ErrorWrapper):
@@ -118,7 +119,7 @@ def flatten_errors(
             raise RuntimeError(f'Unknown error object: {error}')
 
 
-def error_dict(exc: Exception, config: Type['BaseConfig'], loc: 'Loc') -> ErrorDict:
+def error_dict(exc: Exception, config: Type['BaseConfig'], loc: Loc) -> ErrorDict:
     type_ = get_exc_type(exc.__class__)
     msg_template = config.error_msg_templates.get(type_) or getattr(exc, 'msg_template', None)
     ctx = exc.__dict__
