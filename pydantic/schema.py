@@ -737,7 +737,7 @@ field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
 json_scheme = {'type': 'string', 'format': 'json-string'}
 
 
-def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]) -> None:
+def add_field_type_to_schema(field_type: Any, schema_: Dict[str, Any]) -> None:
     """
     Update the given `schema` with the type-specific metadata for the given `field_type`.
 
@@ -747,7 +747,7 @@ def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]) -> None:
     for type_, t_schema in field_class_to_schema:
         # Fallback for `typing.Pattern` as it is not a valid class
         if lenient_issubclass(field_type, type_) or field_type is type_ is Pattern:
-            schema.update(t_schema)
+            schema_.update(t_schema)
             break
 
 
@@ -998,8 +998,8 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             if issubclass(type_, (SecretStr, SecretBytes)):
                 attrs = ('max_length', 'min_length')
 
-                def constraint_func(**kwargs: Any) -> Type[Any]:
-                    return type(type_.__name__, (type_,), kwargs)
+                def constraint_func(**kw: Any) -> Type[Any]:
+                    return type(type_.__name__, (type_,), kw)
 
             elif issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
                 attrs = ('max_length', 'min_length', 'regex')
