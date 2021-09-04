@@ -216,7 +216,6 @@ class AnyUrl(str):
         assert m, 'URL regex failed unexpectedly'
 
         original_parts = cast('Parts', m.groupdict())
-        cls.hide_parts(original_parts)
         parts = cls.apply_default_parts(original_parts)
         parts = cls.validate_parts(parts)
 
@@ -308,10 +307,6 @@ class AnyUrl(str):
         return {}
 
     @classmethod
-    def hide_parts(cls, original_parts: 'Parts') -> None:
-        cls.hidden_parts = set()
-
-    @classmethod
     def apply_default_parts(cls, parts: 'Parts') -> 'Parts':
         for key, value in cls.get_default_parts(parts).items():
             if not parts[key]:  # type: ignore[misc]
@@ -331,16 +326,11 @@ class HttpUrl(AnyHttpUrl):
     tld_required = True
     # https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
     max_length = 2083
+    hidden_parts = {'port'}
 
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
         return {'port': '80' if parts['scheme'] == 'http' else '443'}
-
-    @classmethod
-    def hide_parts(cls, original_parts: 'Parts') -> None:
-        super().hide_parts(original_parts)
-        if 'port' in original_parts:
-            cls.hidden_parts.add('port')
 
 
 class FileUrl(AnyUrl):
