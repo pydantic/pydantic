@@ -183,15 +183,15 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
     # If no title is explicitly set, we don't set title in the schema for enums.
     # The behaviour is the same as `BaseModel` reference, where the default title
     # is in the definitions part of the schema.
-    schema: Dict[str, Any] = {}
+    schema_: Dict[str, Any] = {}
     if field.field_info.title or not lenient_issubclass(field.type_, Enum):
-        schema['title'] = field.field_info.title or field.alias.title().replace('_', ' ')
+        schema_['title'] = field.field_info.title or field.alias.title().replace('_', ' ')
 
     if field.field_info.title:
         schema_overrides = True
 
     if field.field_info.description:
-        schema['description'] = field.field_info.description
+        schema_['description'] = field.field_info.description
         schema_overrides = True
 
     if (
@@ -200,10 +200,10 @@ def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
         and field.default is not None
         and not is_callable_type(field.outer_type_)
     ):
-        schema['default'] = encode_default(field.default)
+        schema_['default'] = encode_default(field.default)
         schema_overrides = True
 
-    return schema, schema_overrides
+    return schema_, schema_overrides
 
 
 def field_schema(
@@ -636,7 +636,7 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
     """
     from inspect import getdoc
 
-    schema: Dict[str, Any] = {
+    schema_: Dict[str, Any] = {
         'title': enum.__name__,
         # Python assigns all enums a default docstring value of 'An enumeration', so
         # all enums will have a description field even if not explicitly provided.
@@ -645,13 +645,13 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
         'enum': [item.value for item in cast(Iterable[Enum], enum)],
     }
 
-    add_field_type_to_schema(enum, schema)
+    add_field_type_to_schema(enum, schema_)
 
     modify_schema = getattr(enum, '__modify_schema__', None)
     if modify_schema:
-        modify_schema(schema)
+        modify_schema(schema_)
 
-    return schema
+    return schema_
 
 
 def field_singleton_sub_fields_schema(
@@ -737,7 +737,7 @@ field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
 json_scheme = {'type': 'string', 'format': 'json-string'}
 
 
-def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]) -> None:
+def add_field_type_to_schema(field_type: Any, schema_: Dict[str, Any]) -> None:
     """
     Update the given `schema` with the type-specific metadata for the given `field_type`.
 
@@ -747,7 +747,7 @@ def add_field_type_to_schema(field_type: Any, schema: Dict[str, Any]) -> None:
     for type_, t_schema in field_class_to_schema:
         # Fallback for `typing.Pattern` as it is not a valid class
         if lenient_issubclass(field_type, type_) or field_type is type_ is Pattern:
-            schema.update(t_schema)
+            schema_.update(t_schema)
             break
 
 
@@ -998,8 +998,8 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             if issubclass(type_, (SecretStr, SecretBytes)):
                 attrs = ('max_length', 'min_length')
 
-                def constraint_func(**kwargs: Any) -> Type[Any]:
-                    return type(type_.__name__, (type_,), kwargs)
+                def constraint_func(**kw: Any) -> Type[Any]:
+                    return type(type_.__name__, (type_,), kw)
 
             elif issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
                 attrs = ('max_length', 'min_length', 'regex')
