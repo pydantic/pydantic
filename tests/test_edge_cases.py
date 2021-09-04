@@ -859,7 +859,10 @@ def test_annotation_inheritance():
     class B(A):
         integer = 2
 
-    assert B.__annotations__['integer'] == int
+    if sys.version_info < (3, 10):
+        assert B.__annotations__['integer'] == int
+    else:
+        assert B.__annotations__ == {}
     assert B.__fields__['integer'].type_ == int
 
     class C(A):

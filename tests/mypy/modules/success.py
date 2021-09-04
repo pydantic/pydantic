@@ -5,16 +5,19 @@ Do a little skipping about with types to demonstrate its usage.
 """
 import json
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from uuid import UUID
 
 from pydantic import (
     UUID1,
+    BaseConfig,
     BaseModel,
     DirectoryPath,
+    Extra,
     FilePath,
+    FutureDate,
     Json,
     NegativeFloat,
     NegativeInt,
@@ -23,6 +26,7 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    PastDate,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -31,6 +35,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    create_model,
     root_validator,
     validate_arguments,
     validator,
@@ -220,6 +225,9 @@ class PydanticTypes(BaseModel):
     my_dir_path_str: DirectoryPath = '.'  # type: ignore
     # Json
     my_json: Json = '{"hello": "world"}'
+    # Date
+    my_past_date: PastDate = date.today() - timedelta(1)
+    my_future_date: FutureDate = date.today() + timedelta(1)
 
     class Config:
         validate_all = True
@@ -234,3 +242,11 @@ validated.my_file_path.absolute()
 validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
 validated.my_dir_path_str.absolute()
+
+DynamicModel = create_model('DynamicModel')
+
+
+class Config(BaseConfig):
+    title = 'Record'
+    extra = Extra.ignore
+    max_anystr_length = 1234
