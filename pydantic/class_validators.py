@@ -33,8 +33,8 @@ class Validator:
 if TYPE_CHECKING:
     from inspect import Signature
 
+    from .config import BaseConfig
     from .fields import ModelField
-    from .main import BaseConfig
     from .types import ModelOrDc
 
     ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], ModelField, Type[BaseConfig]], Any]

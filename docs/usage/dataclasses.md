@@ -31,7 +31,7 @@ _(This script is complete, it should run "as is")_
 keyword argument `config` which has the same meaning as [Config](model_config.md).
 
 !!! warning
-    After v1.2, [The Mypy plugin](/mypy_plugin.md) must be installed to type check _pydantic_ dataclasses.
+    After v1.2, [The Mypy plugin](../mypy_plugin.md) must be installed to type check _pydantic_ dataclasses.
 
 For more information about combining validators with dataclasses, see
 [dataclass validators](validators.md#dataclass-validators).
