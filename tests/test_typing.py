@@ -1,9 +1,9 @@
 from collections import namedtuple
-from typing import NamedTuple
+from typing import Callable as TypingCallable, NamedTuple
 
 import pytest
 
-from pydantic.typing import is_namedtuple, is_typeddict
+from pydantic.typing import Literal, is_namedtuple, is_none_type, is_typeddict
 
 try:
     from typing import TypedDict as typing_TypedDict
@@ -54,3 +54,15 @@ def test_is_typeddict_typing(TypedDict):
         id: int
 
     assert is_typeddict(Other) is False
+
+
+def test_is_none_type():
+    assert is_none_type(Literal[None]) is True
+    assert is_none_type(None) is True
+    assert is_none_type(type(None)) is True
+    assert is_none_type(6) is False
+    assert is_none_type({}) is False
+    # WARNING: It's important to test `typing.Callable` not
+    # `collections.abc.Callable` (even with python >= 3.9) as they behave
+    # differently
+    assert is_none_type(TypingCallable) is False
