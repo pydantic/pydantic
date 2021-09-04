@@ -4,9 +4,10 @@ Test pydantic's compliance with mypy.
 Do a little skipping about with types to demonstrate its usage.
 """
 import json
+import os
 import sys
 from datetime import date, datetime, timedelta
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from uuid import UUID
 
@@ -14,6 +15,7 @@ from pydantic import (
     UUID1,
     BaseConfig,
     BaseModel,
+    BaseSettings,
     DirectoryPath,
     Extra,
     FilePath,
@@ -250,3 +252,20 @@ class Config(BaseConfig):
     title = 'Record'
     extra = Extra.ignore
     max_anystr_length = 1234
+
+
+class Settings(BaseSettings):
+    ...
+
+
+class CustomPath(PurePath):
+    def __init__(self, *args: str):
+        self.path = os.path.join(*args)
+
+    def __fspath__(self) -> str:
+        return f'a/custom/{self.path}'
+
+
+def dont_check_path_existence() -> None:
+    Settings(_env_file='a/path', _secrets_dir='a/path')
+    Settings(_env_file=CustomPath('a/path'), _secrets_dir=CustomPath('a/path'))
