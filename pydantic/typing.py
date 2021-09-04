@@ -210,8 +210,12 @@ else:
 if sys.version_info < (3, 9):
     StrPath = Union[str, PathLike]
 else:
-    # os.PathLike only becomes subscriptable from Python 3.9 onwards
-    StrPath = Union[str, PathLike[str]]
+    StrPath = Union[str, PathLike]
+    # TODO: Once we switch to Cython 3 to handle generics properly
+    #  (https://github.com/cython/cython/issues/2753), use following lines instead
+    #  of the one above
+    # # os.PathLike only becomes subscriptable from Python 3.9 onwards
+    # StrPath = Union[str, PathLike[str]]
 
 
 if TYPE_CHECKING:
