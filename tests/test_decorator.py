@@ -3,14 +3,13 @@ import inspect
 import sys
 from pathlib import Path
 from typing import List
-from unittest.mock import ANY
 
 import pytest
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, ValidationError, validate_arguments
 from pydantic.decorator import ValidatedFunction
 from pydantic.errors import ConfigError
-from pydantic.typing import Annotated
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
@@ -154,12 +153,13 @@ def test_field_can_provide_factory() -> None:
     assert foo(1, 2, 3) == 6
 
 
-@pytest.mark.skipif(not Annotated, reason='typing_extensions not installed')
 def test_annotated_field_can_provide_factory() -> None:
     @validate_arguments
-    def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)] = ANY, *args: int) -> int:
+    def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
         """mypy reports Incompatible default for argument "b" if we don't supply ANY as default"""
         return a + b + sum(args)
+
+    assert foo2(1) == 100
 
 
 @skip_pre_38
@@ -267,7 +267,7 @@ def test_async():
         v = await foo(1, 2)
         assert v == 'a=1 b=2'
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop_policy().get_event_loop()
     loop.run_until_complete(run())
     with pytest.raises(ValidationError) as exc_info:
         loop.run_until_complete(foo('x'))

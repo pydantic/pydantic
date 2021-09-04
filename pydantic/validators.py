@@ -1,6 +1,6 @@
 import re
 from collections import OrderedDict, deque
-from collections.abc import Hashable
+from collections.abc import Hashable as CollectionsHashable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum, IntEnum
@@ -14,6 +14,7 @@ from typing import (
     Dict,
     FrozenSet,
     Generator,
+    Hashable,
     List,
     NamedTuple,
     Pattern,
@@ -30,7 +31,6 @@ from typing_extensions import Literal
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
-    NONE_TYPES,
     AnyCallable,
     ForwardRef,
     all_literal_values,
@@ -39,14 +39,15 @@ from .typing import (
     is_callable_type,
     is_literal_type,
     is_namedtuple,
+    is_none_type,
     is_typeddict,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:
     from .annotated_types import TypedDict
+    from .config import BaseConfig
     from .fields import ModelField
-    from .main import BaseConfig
     from .types import ConstrainedDecimal, ConstrainedFloat, ConstrainedInt
 
     ConstrainedNumber = Union[ConstrainedDecimal, ConstrainedFloat, ConstrainedInt]
@@ -656,13 +657,14 @@ def find_validators(  # noqa: C901 (ignore complexity)
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
         return
-    if type_ in NONE_TYPES:
+
+    if is_none_type(type_):
         yield none_validator
         return
     if type_ is Pattern:
         yield pattern_validator
         return
-    if type_ is Hashable:
+    if type_ is Hashable or type_ is CollectionsHashable:
         yield hashable_validator
         return
     if is_callable_type(type_):

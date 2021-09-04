@@ -1,4 +1,3 @@
-import json
 import sys
 import warnings
 from abc import ABCMeta
@@ -22,10 +21,10 @@ from typing import (
     Union,
     cast,
     no_type_check,
-    overload,
 )
 
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
+from .config import BaseConfig, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import MAPPING_LIKE_SHAPES, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
@@ -39,6 +38,7 @@ from .typing import (
     get_origin,
     is_classvar,
     is_namedtuple,
+    is_union_origin,
     resolve_annotations,
     update_field_forward_refs,
 )
@@ -61,11 +61,9 @@ from .utils import (
 if TYPE_CHECKING:
     from inspect import Signature
 
-    import typing_extensions
-
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
-    from .typing import (  # noqa: F401
+    from .typing import (
         AbstractSetIntStr,
         CallableGenerator,
         DictAny,
@@ -76,21 +74,8 @@ if TYPE_CHECKING:
         TupleGenerator,
     )
 
-    ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
 
-    class SchemaExtraCallable(typing_extensions.Protocol):
-        @overload
-        def __call__(self, schema: Dict[str, Any]) -> None:
-            pass
-
-        @overload  # noqa: F811
-        def __call__(self, schema: Dict[str, Any], model_class: Type['Model']) -> None:  # noqa: F811
-            pass
-
-
-else:
-    SchemaExtraCallable = Callable[..., None]
 
 try:
     import cython  # type: ignore
@@ -102,102 +87,7 @@ else:  # pragma: no cover
     except AttributeError:
         compiled = False
 
-__all__ = 'BaseConfig', 'BaseModel', 'Extra', 'compiled', 'create_model', 'validate_model'
-
-
-class Extra(str, Enum):
-    allow = 'allow'
-    ignore = 'ignore'
-    forbid = 'forbid'
-
-
-class BaseConfig:
-    title: Optional[str] = None
-    anystr_lower: bool = False
-    anystr_strip_whitespace: bool = False
-    min_anystr_length: int = 0
-    max_anystr_length: Optional[int] = None
-    validate_all: bool = False
-    extra: Extra = Extra.ignore
-    allow_mutation: bool = True
-    frozen: bool = False
-    allow_population_by_field_name: bool = False
-    use_enum_values: bool = False
-    fields: Dict[str, Union[str, Dict[str, str]]] = {}
-    validate_assignment: bool = False
-    error_msg_templates: Dict[str, str] = {}
-    arbitrary_types_allowed: bool = False
-    orm_mode: bool = False
-    getter_dict: Type[GetterDict] = GetterDict
-    alias_generator: Optional[Callable[[str], str]] = None
-    keep_untouched: Tuple[type, ...] = ()
-    schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}
-    json_loads: Callable[[str], Any] = json.loads
-    json_dumps: Callable[..., str] = json.dumps
-    json_encoders: Dict[Type[Any], AnyCallable] = {}
-    underscore_attrs_are_private: bool = False
-
-    # Whether or not inherited models as fields should be reconstructed as base model
-    copy_on_model_validation: bool = True
-
-    @classmethod
-    def get_field_info(cls, name: str) -> Dict[str, Any]:
-        """
-        Get properties of FieldInfo from the `fields` property of the config class.
-        """
-
-        fields_value = cls.fields.get(name)
-
-        if isinstance(fields_value, str):
-            field_info: Dict[str, Any] = {'alias': fields_value}
-        elif isinstance(fields_value, dict):
-            field_info = fields_value
-        else:
-            field_info = {}
-
-        if 'alias' in field_info:
-            field_info.setdefault('alias_priority', 2)
-
-        if field_info.get('alias_priority', 0) <= 1 and cls.alias_generator:
-            alias = cls.alias_generator(name)
-            if not isinstance(alias, str):
-                raise TypeError(f'Config.alias_generator must return str, not {alias.__class__}')
-            field_info.update(alias=alias, alias_priority=1)
-        return field_info
-
-    @classmethod
-    def prepare_field(cls, field: 'ModelField') -> None:
-        """
-        Optional hook to check or modify fields during model creation.
-        """
-        pass
-
-
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
-    if not self_config:
-        base_classes: Tuple['ConfigType', ...] = (parent_config,)
-    elif self_config == parent_config:
-        base_classes = (self_config,)
-    else:
-        base_classes = self_config, parent_config
-
-    namespace['json_encoders'] = {
-        **getattr(parent_config, 'json_encoders', {}),
-        **getattr(self_config, 'json_encoders', {}),
-    }
-
-    return type('Config', base_classes, namespace)
-
-
-EXTRA_LINK = 'https://pydantic-docs.helpmanual.io/usage/model_config/'
-
-
-def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
-    if not isinstance(config.extra, Extra):
-        try:
-            config.extra = Extra(config.extra)
-        except ValueError:
-            raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
+__all__ = 'BaseModel', 'compiled', 'create_model', 'validate_model'
 
 
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
@@ -248,7 +138,12 @@ class ModelMetaclass(ABCMeta):
                 class_vars.update(base.__class_vars__)
                 hash_func = base.__hash__
 
-        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & BaseConfig.__dict__.keys()}
+        allowed_config_kwargs: SetStr = {
+            key
+            for key in dir(config)
+            if not (key.startswith('__') and key.endswith('__'))  # skip dunder methods and attributes
+        }
+        config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & allowed_config_kwargs}
         config_from_namespace = namespace.get('Config')
         if config_kwargs and config_from_namespace:
             raise TypeError('Specifying config in two places is ambiguous, use either Config attribute or class kwargs')
@@ -281,7 +176,7 @@ class ModelMetaclass(ABCMeta):
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, Undefined)
-                    allowed_types = get_args(ann_type) if get_origin(ann_type) is Union else (ann_type,)
+                    allowed_types = get_args(ann_type) if is_union_origin(get_origin(ann_type)) else (ann_type,)
                     if (
                         is_untouched(value)
                         and ann_type != PyObject
@@ -345,9 +240,23 @@ class ModelMetaclass(ABCMeta):
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
+            '__exclude_fields__': {
+                name: field.field_info.exclude for name, field in fields.items() if field.field_info.exclude is not None
+            }
+            or None,
+            '__include_fields__': {
+                name: field.field_info.include for name, field in fields.items() if field.field_info.include is not None
+            }
+            or None,
             '__validators__': vg.validators,
-            '__pre_root_validators__': unique_list(pre_root_validators + pre_rv_new),
-            '__post_root_validators__': unique_list(post_root_validators + post_rv_new),
+            '__pre_root_validators__': unique_list(
+                pre_root_validators + pre_rv_new,
+                name_factory=lambda v: v.__name__,
+            ),
+            '__post_root_validators__': unique_list(
+                post_root_validators + post_rv_new,
+                name_factory=lambda skip_on_failure_and_v: skip_on_failure_and_v[1].__name__,
+            ),
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
@@ -371,6 +280,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __fields__: Dict[str, ModelField] = {}
+        __include_fields__: Optional[Mapping[str, Any]] = None
+        __exclude_fields__: Optional[Mapping[str, Any]] = None
         __validators__: Dict[str, AnyCallable] = {}
         __pre_root_validators__: List[AnyCallable]
         __post_root_validators__: List[Tuple[bool, AnyCallable]]
@@ -725,10 +636,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return value.copy() if cls.__config__.copy_on_model_validation else value
 
         value = cls._enforce_dict_if_root(value)
-        if isinstance(value, dict):
-            return cls(**value)
-        elif cls.__config__.orm_mode:
+
+        if cls.__config__.orm_mode:
             return cls.from_orm(value)
+        elif isinstance(value, dict):
+            return cls(**value)
         else:
             try:
                 value_as_dict = dict(value)
@@ -842,14 +754,24 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_none: bool = False,
     ) -> 'TupleGenerator':
 
-        allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
+        # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
+        # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
+        if exclude is not None or self.__exclude_fields__ is not None:
+            exclude = ValueItems.merge(self.__exclude_fields__, exclude)
+
+        if include is not None or self.__include_fields__ is not None:
+            include = ValueItems.merge(self.__include_fields__, include, intersect=True)
+
+        allowed_keys = self._calculate_keys(
+            include=include, exclude=exclude, exclude_unset=exclude_unset  # type: ignore
+        )
         if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
             # huge boost for plain _iter()
             yield from self.__dict__.items()
             return
 
-        value_exclude = ValueItems(self, exclude) if exclude else None
-        value_include = ValueItems(self, include) if include else None
+        value_exclude = ValueItems(self, exclude) if exclude is not None else None
+        value_include = ValueItems(self, include) if include is not None else None
 
         for field_key, v in self.__dict__.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
@@ -880,8 +802,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def _calculate_keys(
         self,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+        include: Optional['MappingIntStrAny'],
+        exclude: Optional['MappingIntStrAny'],
         exclude_unset: bool,
         update: Optional['DictStrAny'] = None,
     ) -> Optional[AbstractSet[str]]:
@@ -895,19 +817,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             keys = self.__dict__.keys()
 
         if include is not None:
-            if isinstance(include, Mapping):
-                keys &= include.keys()
-            else:
-                keys &= include
+            keys &= include.keys()
 
         if update:
             keys -= update.keys()
 
         if exclude:
-            if isinstance(exclude, Mapping):
-                keys -= {k for k, v in exclude.items() if v is ...}
-            else:
-                keys -= exclude
+            keys -= {k for k, v in exclude.items() if ValueItems.is_true(v)}
 
         return keys
 
@@ -918,7 +834,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return self.dict() == other
 
     def __repr_args__(self) -> 'ReprArgs':
-        return self.__dict__.items()  # type: ignore
+        return [(k, v) for k, v in self.__dict__.items() if self.__fields__[k].field_info.repr]
 
 
 _is_base_model_class_defined = True
