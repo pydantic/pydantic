@@ -6,7 +6,7 @@ from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tu
 from .config import BaseConfig, Extra
 from .fields import ModelField
 from .main import BaseModel
-from .typing import StrPath, display_as_type
+from .typing import StrPath, display_as_type, get_origin, is_union_origin
 from .utils import deep_update, path_type, sequence_like
 
 env_file_sentinel = str(object())
@@ -173,6 +173,15 @@ class EnvSettingsSource:
                     env_val = settings.__config__.json_loads(env_val)  # type: ignore
                 except ValueError as e:
                     raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+            elif (
+                is_union_origin(get_origin(field.type_))
+                and field.sub_fields
+                and any(f.is_complex() for f in field.sub_fields)
+            ):
+                try:
+                    env_val = settings.__config__.json_loads(env_val)  # type: ignore
+                except ValueError:
+                    pass
             d[field.alias] = env_val
         return d
 
