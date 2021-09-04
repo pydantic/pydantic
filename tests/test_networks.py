@@ -4,6 +4,7 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     EmailStr,
+    FileUrl,
     HttpUrl,
     KafkaDsn,
     NameEmail,
@@ -69,6 +70,7 @@ except ImportError:
         'http://twitter.com/@handle/',
         'http://11.11.11.11.example.com/action',
         'http://abc.11.11.11.11.example.com/action',
+        'file://localhost/foo/bar',
     ],
 )
 def test_any_url_success(value):
@@ -113,6 +115,7 @@ def test_any_url_success(value):
         ),
         ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
         ('http://example.com:99999', 'value_error.url.port', 'URL port invalid, port cannot exceed 65535', None),
+        ('file:///foo/bar', 'value_error.url.host', 'URL host invalid', None),
     ],
 )
 def test_any_url_invalid(value, err_type, err_msg, err_ctx):
@@ -265,7 +268,7 @@ def test_http_url_success(value):
     class Model(BaseModel):
         v: HttpUrl
 
-    assert Model(v=value).v == value, value
+    assert Model(v=value).v == value
 
 
 @pytest.mark.parametrize(
@@ -343,6 +346,17 @@ def test_parses_tld(input, output):
     assert Model(v=input).v.tld == output
 
 
+@pytest.mark.parametrize(
+    'value',
+    ['file:///foo/bar', 'file://localhost/foo/bar' 'file:////localhost/foo/bar'],
+)
+def test_file_url_success(value):
+    class Model(BaseModel):
+        v: FileUrl
+
+    assert Model(v=value).v == value
+
+
 def test_get_default_parts():
     class MyConnectionString(AnyUrl):
         @staticmethod
@@ -402,6 +416,11 @@ def test_postgres_dsns():
         Model(a='postgres://localhost:5432/app')
     error = exc_info.value.errors()[0]
     assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='postgres://user@/foo/bar:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
 
 
 def test_redis_dsns():
@@ -464,13 +483,20 @@ def test_custom_schemes():
     class Model(BaseModel):
         v: stricturl(strip_whitespace=False, allowed_schemes={'ws', 'wss'})  # noqa: F821
 
+    class Model2(BaseModel):
+        v: stricturl(host_required=False, allowed_schemes={'foo'})  # noqa: F821
+
     assert Model(v='ws://example.org').v == 'ws://example.org'
+    assert Model2(v='foo:///foo/bar').v == 'foo:///foo/bar'
 
     with pytest.raises(ValidationError):
         Model(v='http://example.org')
 
     with pytest.raises(ValidationError):
         Model(v='ws://example.org  ')
+
+    with pytest.raises(ValidationError):
+        Model(v='ws:///foo/bar')
 
 
 @pytest.mark.parametrize(

@@ -48,6 +48,7 @@ __all__ = [
     # network
     'AnyUrl',
     'AnyHttpUrl',
+    'FileUrl',
     'HttpUrl',
     'stricturl',
     'EmailStr',
