@@ -859,7 +859,10 @@ def test_annotation_inheritance():
     class B(A):
         integer = 2
 
-    assert B.__annotations__['integer'] == int
+    if sys.version_info < (3, 10):
+        assert B.__annotations__['integer'] == int
+    else:
+        assert B.__annotations__ == {}
     assert B.__fields__['integer'].type_ == int
 
     class C(A):
@@ -1695,12 +1698,12 @@ def test_hashable_optional(default):
     Model()
 
 
-def test_default_factory_side_effect():
-    """It may call `default_factory` more than once when `validate_all` is set"""
+def test_default_factory_called_once():
+    """It should never call `default_factory` more than once even when `validate_all` is set"""
 
     v = 0
 
-    def factory():
+    def factory() -> int:
         nonlocal v
         v += 1
         return v
@@ -1712,7 +1715,20 @@ def test_default_factory_side_effect():
             validate_all = True
 
     m1 = MyModel()
-    assert m1.id == 2  # instead of 1
+    assert m1.id == 1
+
+    class MyBadModel(BaseModel):
+        id: List[str] = Field(default_factory=factory)
+
+        class Config:
+            validate_all = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyBadModel()
+    assert v == 2  # `factory` has been called to run validation
+    assert exc_info.value.errors() == [
+        {'loc': ('id',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+    ]
 
 
 def test_default_factory_validator_child():
@@ -1839,3 +1855,19 @@ def test_config_field_info_allow_mutation():
     with pytest.raises(TypeError):
         b.a = 'y'
     assert b.dict() == {'a': 'x'}
+
+
+def test_arbitrary_types_allowed_custom_eq():
+    class Foo:
+        def __eq__(self, other):
+            if other.__class__ is not Foo:
+                raise TypeError(f'Cannot interpret {other.__class__.__name__!r} as a valid type')
+            return True
+
+    class Model(BaseModel):
+        x: Foo = Foo()
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    assert Model().x == Foo()

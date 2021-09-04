@@ -1,5 +1,5 @@
 from collections import defaultdict, deque
-from collections.abc import Iterable as CollectionsIterable
+from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,7 +30,6 @@ from .error_wrappers import ErrorWrapper
 from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
-    NONE_TYPES,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -40,7 +39,9 @@ from .typing import (
     get_origin,
     is_literal_type,
     is_new_type,
+    is_none_type,
     is_typeddict,
+    is_union_origin,
     new_type_supertype,
 )
 from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
@@ -68,11 +69,11 @@ class UndefinedType:
 Undefined = UndefinedType()
 
 if TYPE_CHECKING:
-    from .class_validators import ValidatorsList  # noqa: F401
+    from .class_validators import ValidatorsList
+    from .config import BaseConfig
     from .error_wrappers import ErrorList
-    from .main import BaseConfig, BaseModel  # noqa: F401
-    from .types import ModelOrDc  # noqa: F401
-    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
+    from .types import ModelOrDc
+    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
@@ -104,6 +105,7 @@ class FieldInfo(Representation):
         'min_length',
         'max_length',
         'allow_mutation',
+        'repr',
         'regex',
         'extra',
     )
@@ -144,11 +146,18 @@ class FieldInfo(Representation):
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
+        self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
+
+        field_defaults_to_hide: Dict[str, Any] = {
+            'repr': True,
+            **self.__field_constraints__,
+        }
+
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return [(a, v) for a, v in attrs if v != self.__field_constraints__.get(a, None)]
+        return [(a, v) for a, v in attrs if v != field_defaults_to_hide.get(a, None)]
 
     def get_constraints(self) -> Set[str]:
         """
@@ -177,7 +186,7 @@ class FieldInfo(Representation):
                     self.include = ValueItems.merge(value, current_value, intersect=True)
 
     def _validate(self) -> None:
-        if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
+        if self.default is not Undefined and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
 
 
@@ -202,6 +211,7 @@ def Field(
     max_length: int = None,
     allow_mutation: bool = True,
     regex: str = None,
+    repr: bool = True,
     **extra: Any,
 ) -> Any:
     """
@@ -236,8 +246,9 @@ def Field(
       schema will have a ``maxLength`` validation keyword
     :param allow_mutation: a boolean which defaults to True. When False, the field raises a TypeError if the field is
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
-    :param regex: only applies to strings, requires the field match agains a regular expression
+    :param regex: only applies to strings, requires the field match against a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
+    :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
     field_info = FieldInfo(
@@ -260,6 +271,7 @@ def Field(
         max_length=max_length,
         allow_mutation=allow_mutation,
         regex=regex,
+        repr=repr,
         **extra,
     )
     field_info._validate()
@@ -386,9 +398,10 @@ class ModelField(Representation):
             field_info = next(iter(field_infos), None)
             if field_info is not None:
                 field_info.update_from_config(field_info_from_config)
-                if field_info.default not in (Undefined, Ellipsis):
+                if field_info.default is not Undefined:
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
-                if value not in (Undefined, Ellipsis):
+                if value is not Undefined and value is not Required:
+                    # check also `Required` because of `validate_arguments` that sets `...` as default value
                     field_info.default = value
 
         if isinstance(value, FieldInfo):
@@ -472,7 +485,6 @@ class ModelField(Representation):
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
-            self.field_info.default = Required
         if self.default is Undefined and self.default_factory is None:
             self.default = None
         self.populate_validators()
@@ -480,17 +492,13 @@ class ModelField(Representation):
     def _set_default_and_type(self) -> None:
         """
         Set the default value, infer the type if needed and check if `None` value is valid.
-
-        Note: to prevent side effects by calling the `default_factory` for nothing, we only call it
-        when we want to validate the default value i.e. when `validate_all` is set to True.
         """
         if self.default_factory is not None:
             if self.type_ is Undefined:
                 raise errors_.ConfigError(
                     f'you need to set the type of field {self.name!r} when using `default_factory`'
                 )
-            if not self.model_config.validate_all:
-                return
+            return
 
         default_value = self.get_default()
 
@@ -536,7 +544,8 @@ class ModelField(Representation):
             return
 
         origin = get_origin(self.type_)
-        if origin is None:
+        # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
+        if origin is None or origin is CollectionsHashable:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable
             if isinstance(self.type_, type) and isinstance(None, self.type_):
@@ -548,7 +557,7 @@ class ModelField(Representation):
             return
         if origin is Callable:
             return
-        if origin is Union:
+        if is_union_origin(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if type_ is NoneType:
@@ -730,7 +739,7 @@ class ModelField(Representation):
                 return v, errors
 
         if v is None:
-            if self.type_ in NONE_TYPES:
+            if is_none_type(self.type_):
                 # keep validating
                 pass
             elif self.allow_none:
@@ -941,7 +950,7 @@ class ModelField(Representation):
         """
         Whether the field is "complex" eg. env variables should be parsed as JSON.
         """
-        from .main import BaseModel  # noqa: F811
+        from .main import BaseModel
 
         return (
             self.shape != SHAPE_SINGLETON

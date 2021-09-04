@@ -637,7 +637,7 @@ def test_hashable_required():
     ]
     with pytest.raises(TypeError) as exc_info:
         MyDataclass()
-    assert str(exc_info.value) == "__init__() missing 1 required positional argument: 'v'"
+    assert "__init__() missing 1 required positional argument: 'v'" in str(exc_info.value)
 
 
 @pytest.mark.parametrize('default', [1, None, ...])

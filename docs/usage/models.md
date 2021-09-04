@@ -157,13 +157,26 @@ Here a vanilla class is used to demonstrate the principle, but any ORM class cou
 ```
 _(This script is complete, it should run "as is")_
 
-Arbitrary classes are processed by *pydantic* using the `GetterDict` class
-(see [utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)), which attempts to
+
+### Data binding
+
+Arbitrary classes are processed by *pydantic* using the `GetterDict` class (see
+[utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)), which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
 sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
 
 You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`. 
 In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
+
+The `GetterDict` instance will be called for each field with a sentinel as a fallback (if no other default
+value is set). Returning this sentinel means that the field is missing. Any other value will
+be interpreted as the value of the field.
+
+```py
+{!.tmp_examples/models_orm_mode_data_binding.py!}
+```
+_(This script is complete, it should run "as is")_
+
 
 ## Error Handling
 
@@ -482,7 +495,7 @@ _(This script is complete, it should run "as is")_
     in the same model can result in surprising field orderings. (This is due to limitations of python)
 
     Therefore, **we recommend adding type annotations to all fields**, even when a default value
-    would determine the type by itself to guarentee field order is preserved.
+    would determine the type by itself to guarantee field order is preserved.
 
 ## Required fields
 
@@ -540,8 +553,6 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 
 !!! warning
     The `default_factory` expects the field type to be set.
-    Moreover if you want to validate default values with `validate_all`,
-    *pydantic* will need to call the `default_factory`, which could lead to side effects!
 
 ## Automatically excluded attributes
 
