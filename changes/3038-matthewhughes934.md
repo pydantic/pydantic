@@ -1,1 +1,1 @@
-Add a TypedDict class for error objects
+Add a `TypedDict` class for error objects
