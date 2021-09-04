@@ -31,7 +31,6 @@ from typing_extensions import Literal
 from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
-    NONE_TYPES,
     AnyCallable,
     ForwardRef,
     all_literal_values,
@@ -40,6 +39,7 @@ from .typing import (
     is_callable_type,
     is_literal_type,
     is_namedtuple,
+    is_none_type,
     is_typeddict,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
@@ -72,7 +72,7 @@ def str_validator(v: Any) -> Union[str]:
 
 
 def strict_str_validator(v: Any) -> Union[str]:
-    if isinstance(v, str):
+    if isinstance(v, str) and not isinstance(v, Enum):
         return v
     raise errors.StrError()
 
@@ -193,7 +193,7 @@ def anystr_length_validator(v: 'StrBytes', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 
     min_length = config.min_anystr_length
-    if min_length is not None and v_len < min_length:
+    if v_len < min_length:
         raise errors.AnyStrMinLengthError(limit_value=min_length)
 
     max_length = config.max_anystr_length
@@ -470,11 +470,11 @@ def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
 def constr_length_validator(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
     v_len = len(v)
 
-    min_length = field.type_.min_length or config.min_anystr_length
-    if min_length is not None and v_len < min_length:
+    min_length = field.type_.min_length if field.type_.min_length is not None else config.min_anystr_length
+    if v_len < min_length:
         raise errors.AnyStrMinLengthError(limit_value=min_length)
 
-    max_length = field.type_.max_length or config.max_anystr_length
+    max_length = field.type_.max_length if field.type_.max_length is not None else config.max_anystr_length
     if max_length is not None and v_len > max_length:
         raise errors.AnyStrMaxLengthError(limit_value=max_length)
 
@@ -652,12 +652,13 @@ def find_validators(  # noqa: C901 (ignore complexity)
 ) -> Generator[AnyCallable, None, None]:
     from .dataclasses import is_builtin_dataclass, make_dataclass_validator
 
-    if type_ is Any:
+    if type_ is Any or type_ is object:
         return
     type_type = type_.__class__
     if type_type == ForwardRef or type_type == TypeVar:
         return
-    if type_ in NONE_TYPES:
+
+    if is_none_type(type_):
         yield none_validator
         return
     if type_ is Pattern:

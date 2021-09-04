@@ -495,7 +495,7 @@ _(This script is complete, it should run "as is")_
     in the same model can result in surprising field orderings. (This is due to limitations of python)
 
     Therefore, **we recommend adding type annotations to all fields**, even when a default value
-    would determine the type by itself to guarentee field order is preserved.
+    would determine the type by itself to guarantee field order is preserved.
 
 ## Required fields
 
