@@ -16,10 +16,13 @@ if TYPE_CHECKING:
 __all__ = 'ErrorWrapper', 'ValidationError'
 
 
-class ErrorDict(TypedDict, total=False):
+class _ErrorDictRequired(TypedDict):
     loc: 'Loc'
     msg: str
     type: str
+
+
+class ErrorDict(_ErrorDictRequired, total=False):
     ctx: Dict[str, Any]
 
 
