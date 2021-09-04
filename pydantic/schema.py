@@ -491,16 +491,18 @@ def field_type_schema(
             nested_models.update(sf_nested_models)
             sub_schema.append(sf_schema)
 
+        sub_fields_len = len(sub_fields)
         if field.shape == SHAPE_GENERIC:
-            f_schema = sub_schema[0] if len(sub_schema) == 1 else {'type': 'array', 'items': sub_schema}
-            f_schema = {'allOf': [f_schema]}
+            all_of_schemas = sub_schema[0] if sub_fields_len == 1 else {'type': 'array', 'items': sub_schema}
+            f_schema = {'allOf': [all_of_schemas]}
         else:
-            tuple_len = len(sub_fields)
-            f_schema = {'type': 'array', 'minItems': tuple_len, 'maxItems': tuple_len}
-            if tuple_len == 1:
-                f_schema['items'] = sub_schema[0]
-            elif tuple_len > 1:
-                f_schema['items'] = sub_schema
+            f_schema = {
+                'type': 'array',
+                'minItems': sub_fields_len,
+                'maxItems': sub_fields_len,
+            }
+            if sub_fields_len >= 1:
+                f_schema['items'] = sub_schema[0] if sub_fields_len == 1 else sub_schema
     else:
         assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
