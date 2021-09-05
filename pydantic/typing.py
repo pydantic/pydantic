@@ -289,6 +289,19 @@ if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
         return type_ in NONE_TYPES
 
 
+elif sys.version_info[:2] == (3, 8):
+    # We can use the fast implementation for 3.8 but using directly `NONE_TYPES` like above
+    # fails for `Literal[None]` because of defined methods `ComputedField.__get__`
+    # or `ComputedField.__set__` in module `fields.py`.
+    # This is why we repeat the value of `NONE_TYPES` here
+
+    def is_none_type(type_: Any) -> bool:
+        for none_type in (None, NoneType, Literal[None]):
+            if type_ is none_type:
+                return True
+        return False
+
+
 else:
 
     def is_none_type(type_: Any) -> bool:
