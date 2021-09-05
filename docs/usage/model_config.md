@@ -170,8 +170,13 @@ _(This script is complete, it should run "as is")_
 
 ## Smart Union
 
-By default, if you set a `Union` type for a field, _pydantic_ tries to validate (and coerce if it can) in the order of the union,
-which can be unexpected in some cases
+
+By default, if you set a `Union` type for a field, _pydantic_ tries to validate (and coerce if it can) in the order of the union.
+
+!!! warning
+    `typing.Unions` also ignore order when they are [defined](https://docs.python.org/3/library/typing.html#typing.Union),
+    so `Union[int, float] == Union[float, int]` which can lead to unexpected behaviour when combined with matching based on the `Union` type order.
+    Please note that this can also be affected by third party libraries and their internal type definitions and the import orders.
 
 ```py
 {!.tmp_examples/model_config_smart_union_off.py!}
