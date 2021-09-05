@@ -32,7 +32,7 @@ _(This script is complete, it should run "as is")_
 : the min length for str & byte types (default: `0`)
 
 **`max_anystr_length`**
-: the max length for str & byte types (default: `2 ** 16`)
+: the max length for str & byte types (default: `None`)
 
 **`validate_all`**
 : whether to validate field defaults (default: `False`)

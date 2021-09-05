@@ -41,6 +41,7 @@ from pydantic import (
     EmailStr,
     Field,
     FilePath,
+    FutureDate,
     Json,
     NameEmail,
     NegativeFloat,
@@ -49,6 +50,7 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    PastDate,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -569,6 +571,24 @@ def test_constrained_str_lower_disabled():
 
     m = Model(v='ABCD')
     assert m.v == 'ABCD'
+
+
+def test_constrained_str_max_length_0():
+    class Model(BaseModel):
+        v: constr(max_length=0)
+
+    m = Model(v='')
+    assert m.v == ''
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='qwe')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'ensure this value has at most 0 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 0},
+        }
+    ]
 
 
 def test_module_import():
@@ -1465,10 +1485,13 @@ def test_strict_str():
 
     assert Model(v='foobar').v == 'foobar'
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='str type expected'):
+        Model(v=FruitEnum.banana)
+
+    with pytest.raises(ValidationError, match='str type expected'):
         Model(v=123)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='str type expected'):
         Model(v=b'foobar')
 
 
@@ -2936,3 +2959,82 @@ def test_smart_union_compound_types():
     assert DefaultModel(values=('L1',)).dict() == {
         'values': {'L': '1'}
     }  # expected! (still coerce as tuple is not a list)
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    (
+        ('1996-01-22', date(1996, 1, 22)),
+        (date(1996, 1, 22), date(1996, 1, 22)),
+    ),
+)
+def test_past_date_validation_success(value, result):
+    class Model(BaseModel):
+        foo: PastDate
+
+    assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize(
+    'value',
+    (
+        date.today(),
+        date.today() + timedelta(1),
+        datetime.today(),
+        datetime.today() + timedelta(1),
+        '2064-06-01',
+    ),
+)
+def test_past_date_validation_fails(value):
+    class Model(BaseModel):
+        foo: PastDate
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': 'date is not in the past',
+            'type': 'value_error.date.not_in_the_past',
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    (
+        (date.today() + timedelta(1), date.today() + timedelta(1)),
+        (datetime.today() + timedelta(1), date.today() + timedelta(1)),
+        ('2064-06-01', date(2064, 6, 1)),
+    ),
+)
+def test_future_date_validation_success(value, result):
+    class Model(BaseModel):
+        foo: FutureDate
+
+    assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize(
+    'value',
+    (
+        date.today(),
+        date.today() - timedelta(1),
+        datetime.today(),
+        datetime.today() - timedelta(1),
+        '1996-01-22',
+    ),
+)
+def test_future_date_validation_fails(value):
+    class Model(BaseModel):
+        foo: FutureDate
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': 'date is not in the future',
+            'type': 'value_error.date.not_in_the_future',
+        }
+    ]

@@ -1,8 +1,9 @@
 import os
 import sys
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
@@ -461,6 +462,45 @@ def test_config_file_settings_nornir(env):
     assert s.param_a == 'config a'
     assert s.param_b == 'argument b'
     assert s.param_c == 'env setting c'
+
+
+def test_env_union_with_complex_subfields_parses_json(env):
+    class A(BaseSettings):
+        a: str
+
+    class B(BaseSettings):
+        b: int
+
+    class Settings(BaseSettings):
+        content: Union[A, B, int]
+
+    env.set('content', '{"a": "test"}')
+    s = Settings()
+    assert s.content == A(a='test')
+
+
+def test_env_union_with_complex_subfields_parses_plain_if_json_fails(env):
+    class A(BaseSettings):
+        a: str
+
+    class B(BaseSettings):
+        b: int
+
+    class Settings(BaseSettings):
+        content: Union[A, B, datetime]
+
+    env.set('content', '2020-07-05T00:00:00Z')
+    s = Settings()
+    assert s.content == datetime(2020, 7, 5, 0, 0, tzinfo=timezone.utc)
+
+
+def test_env_union_without_complex_subfields_does_not_parse_json(env):
+    class Settings(BaseSettings):
+        content: Union[datetime, str]
+
+    env.set('content', '2020-07-05T00:00:00Z')
+    s = Settings()
+    assert s.content == datetime(2020, 7, 5, 0, 0, tzinfo=timezone.utc)
 
 
 test_env_file = """\

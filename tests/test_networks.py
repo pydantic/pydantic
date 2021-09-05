@@ -1,6 +1,18 @@
 import pytest
 
-from pydantic import AnyUrl, BaseModel, EmailStr, HttpUrl, NameEmail, PostgresDsn, RedisDsn, ValidationError, stricturl
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    EmailStr,
+    FileUrl,
+    HttpUrl,
+    KafkaDsn,
+    NameEmail,
+    PostgresDsn,
+    RedisDsn,
+    ValidationError,
+    stricturl,
+)
 from pydantic.networks import validate_email
 
 try:
@@ -18,7 +30,12 @@ except ImportError:
         'https://example.org/whatever/next/',
         'postgres://user:pass@localhost:5432/app',
         'postgres://just-user@localhost:5432/app',
+        'postgresql+asyncpg://user:pass@localhost:5432/app',
+        'postgresql+pg8000://user:pass@localhost:5432/app',
         'postgresql+psycopg2://postgres:postgres@localhost:5432/hatch',
+        'postgresql+psycopg2cffi://user:pass@localhost:5432/app',
+        'postgresql+py-postgresql://user:pass@localhost:5432/app',
+        'postgresql+pygresql://user:pass@localhost:5432/app',
         'foo-bar://example.org',
         'foo.bar://example.org',
         'foo0bar://example.org',
@@ -53,6 +70,15 @@ except ImportError:
         'http://twitter.com/@handle/',
         'http://11.11.11.11.example.com/action',
         'http://abc.11.11.11.11.example.com/action',
+        'http://example#',
+        'http://example/#',
+        'http://example/#fragment',
+        'http://example/?#',
+        'http://example.org/path#',
+        'http://example.org/path#fragment',
+        'http://example.org/path?query#',
+        'http://example.org/path?query#fragment',
+        'file://localhost/foo/bar',
     ],
 )
 def test_any_url_success(value):
@@ -97,6 +123,19 @@ def test_any_url_success(value):
         ),
         ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
         ('http://example.com:99999', 'value_error.url.port', 'URL port invalid, port cannot exceed 65535', None),
+        (
+            'http://example##',
+            'value_error.url.extra',
+            "URL invalid, extra characters found after valid URL: '#'",
+            {'extra': '#'},
+        ),
+        (
+            'http://example/##',
+            'value_error.url.extra',
+            "URL invalid, extra characters found after valid URL: '#'",
+            {'extra': '#'},
+        ),
+        ('file:///foo/bar', 'value_error.url.host', 'URL host invalid', None),
     ],
 )
 def test_any_url_invalid(value, err_type, err_msg, err_ctx):
@@ -249,7 +288,7 @@ def test_http_url_success(value):
     class Model(BaseModel):
         v: HttpUrl
 
-    assert Model(v=value).v == value, value
+    assert Model(v=value).v == value
 
 
 @pytest.mark.parametrize(
@@ -327,12 +366,66 @@ def test_parses_tld(input, output):
     assert Model(v=input).v.tld == output
 
 
+@pytest.mark.parametrize(
+    'value',
+    ['file:///foo/bar', 'file://localhost/foo/bar' 'file:////localhost/foo/bar'],
+)
+def test_file_url_success(value):
+    class Model(BaseModel):
+        v: FileUrl
+
+    assert Model(v=value).v == value
+
+
+def test_get_default_parts():
+    class MyConnectionString(AnyUrl):
+        @staticmethod
+        def get_default_parts(parts):
+            # get default parts allows to generate custom conn strings to services
+            return {
+                'user': 'admin',
+                'password': '123',
+            }
+
+    class C(BaseModel):
+        connection: MyConnectionString
+
+    c = C(connection='protocol://service:8080')
+    assert c.connection == 'protocol://admin:123@service:8080'
+    assert c.connection.user == 'admin'
+    assert c.connection.password == '123'
+
+
+@pytest.mark.parametrize(
+    'url,port',
+    [
+        ('https://www.example.com', '443'),
+        ('https://www.example.com:443', '443'),
+        ('https://www.example.com:8089', '8089'),
+        ('http://www.example.com', '80'),
+        ('http://www.example.com:80', '80'),
+        ('http://www.example.com:8080', '8080'),
+    ],
+)
+def test_http_urls_default_port(url, port):
+    class Model(BaseModel):
+        v: HttpUrl
+
+    m = Model(v=url)
+    assert m.v.port == port
+    assert m.v == url
+
+
 def test_postgres_dsns():
     class Model(BaseModel):
         a: PostgresDsn
 
     assert Model(a='postgres://user:pass@localhost:5432/app').a == 'postgres://user:pass@localhost:5432/app'
     assert Model(a='postgresql://user:pass@localhost:5432/app').a == 'postgresql://user:pass@localhost:5432/app'
+    assert (
+        Model(a='postgresql+asyncpg://user:pass@localhost:5432/app').a
+        == 'postgresql+asyncpg://user:pass@localhost:5432/app'
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
@@ -343,6 +436,11 @@ def test_postgres_dsns():
         Model(a='postgres://localhost:5432/app')
     error = exc_info.value.errors()[0]
     assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='postgres://user@/foo/bar:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
 
 
 def test_redis_dsns():
@@ -379,17 +477,46 @@ def test_redis_dsns():
     assert m.a.path == '/0'
 
 
+def test_kafka_dsns():
+    class Model(BaseModel):
+        a: KafkaDsn
+
+    m = Model(a='kafka://')
+    assert m.a.scheme == 'kafka'
+    assert m.a.host == 'localhost'
+    assert m.a.port == '9092'
+    assert m.a == 'kafka://localhost:9092'
+
+    m = Model(a='kafka://kafka1')
+    assert m.a == 'kafka://kafka1:9092'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+    m = Model(a='kafka://kafka3:9093')
+    assert m.a.user is None
+    assert m.a.password is None
+
+
 def test_custom_schemes():
     class Model(BaseModel):
         v: stricturl(strip_whitespace=False, allowed_schemes={'ws', 'wss'})  # noqa: F821
 
+    class Model2(BaseModel):
+        v: stricturl(host_required=False, allowed_schemes={'foo'})  # noqa: F821
+
     assert Model(v='ws://example.org').v == 'ws://example.org'
+    assert Model2(v='foo:///foo/bar').v == 'foo:///foo/bar'
 
     with pytest.raises(ValidationError):
         Model(v='http://example.org')
 
     with pytest.raises(ValidationError):
         Model(v='ws://example.org  ')
+
+    with pytest.raises(ValidationError):
+        Model(v='ws:///foo/bar')
 
 
 @pytest.mark.parametrize(
