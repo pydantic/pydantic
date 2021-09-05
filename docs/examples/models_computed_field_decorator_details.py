@@ -16,18 +16,21 @@ class Square(BaseModel):
     def area(self, new_area: float) -> None:
         self.width = new_area ** .5
 
-    @computed_field(alias='the magic number')
+    @computed_field(alias='the magic number', repr=False)
     @cached_property
     def random_number(self) -> int:
         """An awesome number"""
         return random.randint(0, 1_000)
 
-    @computed_field(exclude=True)
+    @computed_field(exclude=True)  # exclude it in serialization
     def is_dot(self) -> bool:
         return self.width == 0
 
 
 square = Square(width=1.3)
+
+# `random_number` does not appear in representation
+print(repr(square))
 
 print(square.random_number)
 

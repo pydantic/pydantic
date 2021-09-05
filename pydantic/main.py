@@ -892,7 +892,17 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return self.dict() == other
 
     def __repr_args__(self) -> 'ReprArgs':
-        return [(k, v) for k, v in self.__dict__.items() if self.__fields__[k].field_info.repr]
+        if not self.__computed_fields__:
+            return [(k, v) for k, v in self.__dict__.items() if self.__fields__[k].field_info.repr]
+        else:
+            all_values = {
+                **{k: v for k, v in self.__dict__.items()},
+                **{
+                    computed_field.name: computed_field.__get__(self)
+                    for computed_field in self.__computed_fields__.values()
+                },
+            }
+            return [(k, v) for k, v in all_values.items() if self.__all_fields__[k].field_info.repr]
 
 
 _is_base_model_class_defined = True

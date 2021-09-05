@@ -408,3 +408,20 @@ def test_computed_field_syntax():
             'type': 'value_error',
         }
     ]
+
+
+def test_computed_fields_repr():
+    class Model(BaseModel):
+        x: int
+
+        @computed_field(repr=False)
+        @property
+        def double(self) -> int:
+            return self.x * 2
+
+        @computed_field  # repr=True by default
+        @property
+        def triple(self) -> int:
+            return self.x * 3
+
+    assert repr(Model(x=2)) == 'Model(x=2, triple=6)'

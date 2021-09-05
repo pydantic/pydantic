@@ -351,6 +351,7 @@ def computed_field(
     description: Optional[str] = None,
     exclude: Optional['ExcludeInclude'] = None,
     include: Optional['ExcludeInclude'] = None,
+    repr: bool = True,
 ) -> 'Callable[[Any], ComputedField]':
     ...
 
@@ -364,6 +365,7 @@ def computed_field(
     description: Optional[str] = None,
     exclude: Optional['ExcludeInclude'] = None,
     include: Optional['ExcludeInclude'] = None,
+    repr: bool = True,
 ) -> Any:
     ...
 
@@ -376,6 +378,7 @@ def computed_field(
     description: Optional[str] = None,
     exclude: Optional['ExcludeInclude'] = None,
     include: Optional['ExcludeInclude'] = None,
+    repr: bool = True,
 ) -> 'Union[Callable[[Any], ComputedField], ComputedField]':
     def wrap(func_: Any) -> 'ComputedField':
         return ComputedField(
@@ -385,6 +388,7 @@ def computed_field(
             description=description,
             exclude=exclude,
             include=include,
+            repr=repr,
         )
 
     if func is None:
@@ -424,6 +428,7 @@ class ComputedField(Representation):
         'config',
         'model_field',
         'required',
+        'repr',
     )
 
     def __init__(
@@ -438,6 +443,7 @@ class ComputedField(Representation):
         include: Optional['ExcludeInclude'] = None,
         config: Optional[Type['BaseConfig']] = None,
         model_field: Optional['ModelField'] = None,
+        repr: bool = True,
     ) -> None:
         from inspect import isdatadescriptor, ismethoddescriptor
 
@@ -461,6 +467,7 @@ class ComputedField(Representation):
         self.config: Optional[Type['BaseConfig']] = config
         self.model_field: Optional[ModelField] = model_field
         self.required: bool = False
+        self.repr = repr
 
     @property
     def name(self) -> str:
@@ -475,6 +482,7 @@ class ComputedField(Representation):
             read_only=self.fset is None,
             exclude=self.exclude,
             include=self.include,
+            repr=self.repr,
         )
 
     def __get__(self, instance: Optional['BaseModel'], owner: Any = None) -> Any:
