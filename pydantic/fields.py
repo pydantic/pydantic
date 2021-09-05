@@ -348,8 +348,9 @@ class ModelField(Representation):
         self.name: str = name
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
-        self.type_: Any = normalize_type(type_)
-        self.outer_type_: Any = normalize_type(type_)
+        type_ = normalize_type(type_)
+        self.type_: Any = type_
+        self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
         self.default_factory: Optional[NoArgAnyCallable] = default_factory
