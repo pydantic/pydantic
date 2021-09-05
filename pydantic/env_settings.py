@@ -1,7 +1,7 @@
 import os
 import warnings
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 from .config import BaseConfig, Extra
 from .fields import ModelField
@@ -114,7 +114,7 @@ class BaseSettings(BaseModel):
         ) -> Tuple[SettingsSourceCallable, ...]:
             return init_settings, env_settings, file_secret_settings
 
-    __config__: Config  # type: ignore
+    __config__: ClassVar[Type[Config]]  # type: ignore
 
 
 class InitSettingsSource:
@@ -170,7 +170,7 @@ class EnvSettingsSource:
 
             if field.is_complex():
                 try:
-                    env_val = settings.__config__.json_loads(env_val)  # type: ignore
+                    env_val = settings.__config__.json_loads(env_val)
                 except ValueError as e:
                     raise SettingsError(f'error parsing JSON for "{env_name}"') from e
             elif (
@@ -179,7 +179,7 @@ class EnvSettingsSource:
                 and any(f.is_complex() for f in field.sub_fields)
             ):
                 try:
-                    env_val = settings.__config__.json_loads(env_val)  # type: ignore
+                    env_val = settings.__config__.json_loads(env_val)
                 except ValueError:
                     pass
             d[field.alias] = env_val
