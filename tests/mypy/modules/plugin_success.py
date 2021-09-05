@@ -1,6 +1,6 @@
 from typing import ClassVar, Optional, Union
 
-from pydantic import BaseModel, Field, create_model, BaseSettings
+from pydantic import BaseModel, BaseSettings, Field, create_model
 from pydantic.dataclasses import dataclass
 
 
