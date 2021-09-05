@@ -246,9 +246,20 @@ the first one that matches. In the above example the `id` of `user_03` was defin
 is defined under the attribute's `Union` annotation) but as the `uuid.UUID` can be marshalled into an `int` it
 chose to match against the `int` type and disregarded the other types.
 
+!!! warning
+    `typing.Union` also ignores order when [defined](https://docs.python.org/3/library/typing.html#typing.Union),
+    so `Union[int, float] == Union[float, int]` which can lead to unexpected behaviour
+    when combined with matching based on the `Union` type order.
+    Please note that this can also be [affected by third party libraries](https://github.com/samuelcolvin/pydantic/issues/2835)
+    and their internal type definitions and the import orders.
+
 As such, it is recommended that, when defining `Union` annotations, the most specific type is included first and
-followed by less specific types. In the above example, the `UUID` class should precede the `int` and `str`
-classes to preclude the unexpected representation as such:
+followed by less specific types.
+
+!!! tip
+    You can also make your `Union` stricter by using [Smart Union](model_config.md#smart-union)
+
+In the above example, the `UUID` class should precede the `int` and `str` classes to preclude the unexpected representation as such:
 
 ```py
 {!.tmp_examples/types_union_correct.py!}

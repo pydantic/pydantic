@@ -170,13 +170,8 @@ _(This script is complete, it should run "as is")_
 
 ## Smart Union
 
-
-By default, if you set a `Union` type for a field, _pydantic_ tries to validate (and coerce if it can) in the order of the union.
-
-!!! warning
-    `typing.Unions` also ignore order when they are [defined](https://docs.python.org/3/library/typing.html#typing.Union),
-    so `Union[int, float] == Union[float, int]` which can lead to unexpected behaviour when combined with matching based on the `Union` type order.
-    Please note that this can also be affected by third party libraries and their internal type definitions and the import orders.
+By default, as explained [here](types.md#unions), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
+So sometimes you may have unexpected coerced data.
 
 ```py
 {!.tmp_examples/model_config_smart_union_off.py!}
@@ -189,6 +184,8 @@ To prevent this, you can enable `Config.smart_union`. _Pydantic_ will then check
 {!.tmp_examples/model_config_smart_union_on.py!}
 ```
 _(This script is complete, it should run "as is")_
+
+!!! warning
 
 Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
 This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
