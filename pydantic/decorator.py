@@ -254,6 +254,6 @@ class ValidatedFunction:
                 raise TypeError(f'multiple values for argument{plural}: {keys}')
 
             class Config(CustomConfig):
-                extra = Extra.forbid
+                extra = getattr(CustomConfig, 'extra', Extra.forbid)
 
         self.model = create_model(to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)

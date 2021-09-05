@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, Field, ValidationError, validate_arguments
+from pydantic import BaseModel, Extra, Field, ValidationError, validate_arguments
 from pydantic.decorator import ValidatedFunction
 from pydantic.errors import ConfigError
 
@@ -427,3 +427,20 @@ def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
     )
     assert module.foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
     assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def test_validate_extra():
+    class TypedTest(TypedDict):
+        y: str
+
+    @validate_arguments(config={'extra': Extra.allow})
+    def test(other: TypedTest):
+        return other
+
+    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b', 'z': 'a'}
+
+    @validate_arguments(config={'extra': Extra.ignore})
+    def test(other: TypedTest):
+        return other
+
+    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b'}
