@@ -956,7 +956,11 @@ class ModelField(Representation):
                         if isinstance(v, field.outer_type_):
                             return v, None
                     except TypeError:
-                        pass
+                        # compound type
+                        if isinstance(v, get_origin(field.outer_type_)):
+                            value, error = field.validate(v, values, loc=loc, cls=cls)
+                            if not error:
+                                return value, None
 
             # 1st pass by default or 3rd pass with `smart_union` enabled:
             # check if the value can be coerced into one of the Union types

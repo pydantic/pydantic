@@ -2936,29 +2936,44 @@ def test_smart_union_subclass():
 
 
 def test_default_union_compound_types():
-    class DefaultModel(BaseModel):
+    class Model(BaseModel):
         values: Union[Dict[str, str], List[str]]
 
-    assert DefaultModel(values={'L': '1'}).dict() == {'values': {'L': '1'}}
-    assert DefaultModel(values=['L1']).dict() == {'values': {'L': '1'}}  # dict(['L1']) == {'L': '1'}
+    assert Model(values={'L': '1'}).dict() == {'values': {'L': '1'}}
+    assert Model(values=['L1']).dict() == {'values': {'L': '1'}}  # dict(['L1']) == {'L': '1'}
 
 
 def test_smart_union_compound_types():
-    """For now, `smart_union` does not support well compound types"""
-
-    class DefaultModel(BaseModel):
-        values: Union[Dict[str, str], List[str]]
+    class Model(BaseModel):
+        values: Union[Dict[str, str], List[str], Dict[str, List[str]]]
 
         class Config:
             smart_union = True
 
-    assert DefaultModel(values={'L': '1'}).dict() == {'values': {'L': '1'}}
-    assert DefaultModel(values=['L1']).dict() == {
-        'values': {'L': '1'}
-    }  # should be `['L1']` once `smart_union` is improved
-    assert DefaultModel(values=('L1',)).dict() == {
-        'values': {'L': '1'}
-    }  # expected! (still coerce as tuple is not a list)
+    assert Model(values={'L': '1'}).dict() == {'values': {'L': '1'}}
+    assert Model(values=['L1']).dict() == {'values': ['L1']}
+    assert Model(values=('L1',)).dict() == {'values': {'L': '1'}}  # expected coercion into first dict if not a list
+    assert Model(values={'x': ['pika']}) == {'values': {'x': ['pika']}}
+    assert Model(values={'x': ('pika',)}).dict() == {'values': {'x': ['pika']}}
+    with pytest.raises(ValidationError) as e:
+        Model(values={'x': {'a': 'b'}})
+    assert e.value.errors() == [
+        {'loc': ('values', 'x'), 'msg': 'str type expected', 'type': 'type_error.str'},
+        {'loc': ('values',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+        {'loc': ('values', 'x'), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+    ]
+
+
+def test_smart_union_compouned_types_edge_case():
+    """For now, `smart_union` does not support well compound types"""
+
+    class Model(BaseModel, smart_union=True):
+        x: Union[List[str], List[int]]
+
+    # should consider [1, 2] valid and not coerce once `smart_union` is improved
+    assert Model(x=[1, 2]).x == ['1', '2']
+    # still coerce if needed
+    assert Model(x=[1, '2']).x == ['1', '2']
 
 
 @pytest.mark.parametrize(
