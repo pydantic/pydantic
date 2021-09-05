@@ -1,8 +1,9 @@
-from collections import defaultdict, deque
+from collections import Counter as CollectionCounter, defaultdict, deque
 from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    Counter,
     DefaultDict,
     Deque,
     Dict,
@@ -292,6 +293,7 @@ SHAPE_GENERIC = 10
 SHAPE_DEQUE = 11
 SHAPE_DICT = 12
 SHAPE_DEFAULTDICT = 13
+SHAPE_COUNTER = 14
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -302,9 +304,10 @@ SHAPE_NAME_LOOKUP = {
     SHAPE_DEQUE: 'Deque[{}]',
     SHAPE_DICT: 'Dict[{}]',
     SHAPE_DEFAULTDICT: 'DefaultDict[{}]',
+    SHAPE_COUNTER: 'Counter[{}]',
 }
 
-MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
+MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING, SHAPE_COUNTER}
 
 
 class ModelField(Representation):
@@ -530,7 +533,7 @@ class ModelField(Representation):
         elif is_new_type(self.type_):
             self.type_ = new_type_supertype(self.type_)
 
-        if self.type_ is Any:
+        if self.type_ is Any or self.type_ is object:
             if self.required is Undefined:
                 self.required = False
             self.allow_none = True
@@ -551,13 +554,13 @@ class ModelField(Representation):
             if isinstance(self.type_, type) and isinstance(None, self.type_):
                 self.allow_none = True
             return
-        if origin is Annotated:
+        elif origin is Annotated:
             self.type_ = get_args(self.type_)[0]
             self._type_analysis()
             return
-        if origin is Callable:
+        elif origin is Callable:
             return
-        if is_union_origin(origin):
+        elif is_union_origin(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if type_ is NoneType:
@@ -577,8 +580,7 @@ class ModelField(Representation):
             else:
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
-
-        if issubclass(origin, Tuple):  # type: ignore
+        elif issubclass(origin, Tuple):  # type: ignore
             # origin == Tuple without item type
             args = get_args(self.type_)
             if not args:  # plain tuple
@@ -596,8 +598,7 @@ class ModelField(Representation):
                 self.shape = SHAPE_TUPLE
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(args)]
             return
-
-        if issubclass(origin, List):
+        elif issubclass(origin, List):
             # Create self validators
             get_validators = getattr(self.type_, '__get_validators__', None)
             if get_validators:
@@ -626,14 +627,19 @@ class ModelField(Representation):
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
-        elif issubclass(origin, DefaultDict):
-            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
-            self.type_ = get_args(self.type_)[1]
-            self.shape = SHAPE_DEFAULTDICT
+        # priority to most common mapping: dict
         elif origin is dict or origin is Dict:
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
             self.shape = SHAPE_DICT
+        elif issubclass(origin, DefaultDict):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DEFAULTDICT
+        elif issubclass(origin, Counter):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = int
+            self.shape = SHAPE_COUNTER
         elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -900,6 +906,8 @@ class ModelField(Representation):
             return result, None
         elif self.shape == SHAPE_DEFAULTDICT:
             return defaultdict(self.type_, result), None
+        elif self.shape == SHAPE_COUNTER:
+            return CollectionCounter(result), None
         else:
             return self._get_mapping_value(v, result), None
 

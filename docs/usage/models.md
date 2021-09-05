@@ -16,6 +16,8 @@ of the resultant model instance will conform to the field types defined on the m
     This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
     how it might affect your usage you should read the section about [Data Conversion](#data-conversion) below.
 
+    Although validation is not the main purpose of *pydantic*, you **can** use this library for custom [validation](validators.md).
+
 ## Basic model usage
 
 ```py
@@ -612,6 +614,8 @@ _(This script is complete, it should run "as is")_
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
 [here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.
+
+Nevertheless, [strict type checking](types.md#strict-types) is partially supported.
 
 ## Model signature
 

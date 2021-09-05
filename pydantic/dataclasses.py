@@ -98,7 +98,7 @@ def _generate_pydantic_post_init(
         d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
         if validation_error:
             raise validation_error
-        object.__setattr__(self, '__dict__', d)
+        object.__setattr__(self, '__dict__', {**getattr(self, '__dict__', {}), **d})
         object.__setattr__(self, '__initialised__', True)
         if post_init_post_parse is not None:
             post_init_post_parse(self, *initvars)

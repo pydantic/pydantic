@@ -1,4 +1,5 @@
 import sys
+from os import PathLike
 from typing import (  # type: ignore
     TYPE_CHECKING,
     AbstractSet,
@@ -206,6 +207,17 @@ else:
     WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)
 
 
+if sys.version_info < (3, 9):
+    StrPath = Union[str, PathLike]
+else:
+    StrPath = Union[str, PathLike]
+    # TODO: Once we switch to Cython 3 to handle generics properly
+    #  (https://github.com/cython/cython/issues/2753), use following lines instead
+    #  of the one above
+    # # os.PathLike only becomes subscriptable from Python 3.9 onwards
+    # StrPath = Union[str, PathLike[str]]
+
+
 if TYPE_CHECKING:
     from .fields import ModelField
 
@@ -256,6 +268,7 @@ __all__ = (
     'typing_base',
     'get_all_type_hints',
     'is_union_origin',
+    'StrPath',
 )
 
 
