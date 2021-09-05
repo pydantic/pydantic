@@ -936,7 +936,7 @@ class ModelField(Representation):
         if self.sub_fields:
             errors = []
 
-            if get_origin(self.type_) is Union and self.model_config.smart_union:
+            if is_union_origin(get_origin(self.type_)) and self.model_config.smart_union:
                 # 1st pass: check if the value is an exact instance of one of the Union types
                 # (e.g. to avoid coercing a bool into an int)
                 for field in self.sub_fields:
