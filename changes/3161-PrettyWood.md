@@ -1,0 +1,1 @@
+`validate_arguments` now supports `extra` customization (used to always be `Extra.forbid`)
