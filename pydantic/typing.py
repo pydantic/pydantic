@@ -189,6 +189,19 @@ else:
         return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
 
 
+if sys.version_info < (3, 10):
+
+    def is_union(tp: Type[Any]) -> bool:
+        return tp is Union
+
+
+else:
+    import types
+
+    def is_union(tp: Type[Any]) -> bool:
+        return tp is Union or tp is types.Union
+
+
 if TYPE_CHECKING:
     from .fields import ModelField
 
@@ -238,6 +251,7 @@ __all__ = (
     'get_origin',
     'typing_base',
     'get_all_type_hints',
+    'is_union',
 )
 
 

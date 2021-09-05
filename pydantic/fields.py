@@ -1,5 +1,5 @@
 from collections import defaultdict, deque
-from collections.abc import Iterable as CollectionsIterable
+from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -41,6 +41,7 @@ from .typing import (
     is_literal_type,
     is_new_type,
     is_typeddict,
+    is_union,
     new_type_supertype,
 )
 from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
@@ -68,11 +69,11 @@ class UndefinedType:
 Undefined = UndefinedType()
 
 if TYPE_CHECKING:
-    from .class_validators import ValidatorsList  # noqa: F401
+    from .class_validators import ValidatorsList
+    from .config import BaseConfig
     from .error_wrappers import ErrorList
-    from .main import BaseConfig, BaseModel  # noqa: F401
-    from .types import ModelOrDc  # noqa: F401
-    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
+    from .types import ModelOrDc
+    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
@@ -543,7 +544,8 @@ class ModelField(Representation):
             return
 
         origin = get_origin(self.type_)
-        if origin is None:
+        # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
+        if origin is None or origin is CollectionsHashable:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable
             if isinstance(self.type_, type) and isinstance(None, self.type_):
@@ -555,7 +557,7 @@ class ModelField(Representation):
             return
         if origin is Callable:
             return
-        if origin is Union:
+        if is_union(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if type_ is NoneType:
@@ -948,7 +950,7 @@ class ModelField(Representation):
         """
         Whether the field is "complex" eg. env variables should be parsed as JSON.
         """
-        from .main import BaseModel  # noqa: F811
+        from .main import BaseModel
 
         return (
             self.shape != SHAPE_SINGLETON
