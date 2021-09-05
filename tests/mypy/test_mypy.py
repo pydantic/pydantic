@@ -37,7 +37,7 @@ cases = [
     ('pyproject-plugin.toml', 'plugin_success.py', None),
     ('pyproject-plugin.toml', 'plugin_fail.py', 'plugin-fail.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_success.py', 'plugin-success-strict.txt'),
-    ('pyproject-plugin-strict.toml', 'plugin_fail.py', 'plugin-fail-strict.txt')
+    ('pyproject-plugin-strict.toml', 'plugin_fail.py', 'plugin-fail-strict.txt'),
 ]
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 

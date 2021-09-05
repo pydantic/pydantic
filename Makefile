@@ -5,7 +5,6 @@ black = black -S -l 120 --target-version py38 pydantic tests
 .PHONY: install-linting
 install-linting:
 	pip install -r tests/requirements-linting.txt
-	mypy --install-types
 
 .PHONY: install-pydantic
 install-pydantic:

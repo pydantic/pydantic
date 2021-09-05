@@ -9,6 +9,7 @@ except ImportError:
         import tomli as toml
     except ImportError:
         import warnings
+
         warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
         toml = None  # type: ignore
 from mypy.errorcodes import ErrorCode
