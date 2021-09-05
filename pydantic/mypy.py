@@ -1,12 +1,12 @@
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
-try:
+try:  # pragma: no cover
     import toml
 except ImportError:
     # future-proofing for upcoming `mypy` releases which will switch dependencies
     try:
-        import tomli as toml
+        import tomli as toml  # type: ignore
     except ImportError:
         import warnings
 
