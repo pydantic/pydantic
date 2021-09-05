@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
@@ -399,3 +400,12 @@ def test_validate(mocker):
         func.validate(['qwe'], 2)
 
     stub.assert_not_called()
+
+
+def test_validate_all():
+    @validate_arguments(config=dict(validate_all=True))
+    def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
+        return dt
+
+    assert foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
