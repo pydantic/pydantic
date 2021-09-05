@@ -170,7 +170,7 @@ class EnvSettingsSource:
 
             if field.is_complex():
                 try:
-                    env_val = settings.__config__.json_loads(env_val)  # type: ignore
+                    env_val = settings.__config__.json_loads(env_val)
                 except ValueError as e:
                     raise SettingsError(f'error parsing JSON for "{env_name}"') from e
             elif (
@@ -179,7 +179,7 @@ class EnvSettingsSource:
                 and any(f.is_complex() for f in field.sub_fields)
             ):
                 try:
-                    env_val = settings.__config__.json_loads(env_val)  # type: ignore
+                    env_val = settings.__config__.json_loads(env_val)
                 except ValueError:
                     pass
             d[field.alias] = env_val
