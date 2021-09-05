@@ -198,6 +198,14 @@ if sys.version_info < (3, 9):
 else:
 
     def normalize_type(tp: Type[Any]) -> Type[Any]:
+        """
+        Wrap GenericAlias args with ForwardRef in case when argument is str.
+
+        Example:
+        normalize_type(list['str']) == list['ForwardRef("str")']
+        normalize_type(list[str]) == list[str]
+        """
+
         if isinstance(tp, GenericAlias):
             args = tuple(ForwardRef(t) if isinstance(t, str) else t for t in get_args(tp))
             tp = GenericAlias(tp.__origin__, args)

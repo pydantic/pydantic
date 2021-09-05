@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field, ValidationError, root_validator, validato
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
-only_39 = pytest.mark.skipif(
+since_39 = pytest.mark.skipif(
     sys.version_info < (3, 9), reason='generic type aliases only supported for python 3.9 and above'
 )
 
@@ -1162,7 +1162,7 @@ def test_generic_annotated():
     SomeGenericModel[str](the_alias='qwe')
 
 
-@only_39
+@since_39
 def test_generic_type_alias_forward_ref():
     class Model(BaseModel):
         a: list['int']
