@@ -232,7 +232,7 @@ By flipping `env_settings` and `init_settings`, environment variables now have p
 
 ### Adding sources
 
-As explained earlier, *pydantic* ships with multiples built-in settings sources. However, you may occationally
+As explained earlier, *pydantic* ships with multiples built-in settings sources. However, you may occasionally
 need to add your own custom sources, `customise_sources` makes this very easy:
 
 ```py

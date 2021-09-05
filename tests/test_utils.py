@@ -5,11 +5,10 @@ import re
 import string
 import sys
 from copy import copy, deepcopy
-from distutils.version import StrictVersion
-from enum import Enum
 from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
 
 import pytest
+from pkg_resources import safe_version
 from typing_extensions import Annotated, Literal
 
 from pydantic import VERSION, BaseModel, ConstrainedList, conlist
@@ -74,33 +73,6 @@ def test_display_as_type(value, expected):
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
 def test_display_as_type_generic_alias():
     assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
-
-
-def test_display_as_type_enum():
-    class SubField(Enum):
-        a = 1
-        b = 'b'
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'enum'
-
-
-def test_display_as_type_enum_int():
-    class SubField(int, Enum):
-        a = 1
-        b = 2
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'int'
-
-
-def test_display_as_type_enum_str():
-    class SubField(str, Enum):
-        a = 'a'
-        b = 'b'
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'str'
 
 
 def test_lenient_issubclass():
@@ -405,8 +377,8 @@ def test_version_info():
     assert s.count('\n') == 5
 
 
-def test_version_strict():
-    assert str(StrictVersion(VERSION)) == VERSION
+def test_standard_version():
+    assert safe_version(VERSION) == VERSION
 
 
 def test_class_attribute():
@@ -548,7 +520,7 @@ def test_all_identical():
     assert all_identical([a], []) is False, 'Expected iterables with different lengths to evaluate to `False`'
     assert (
         all_identical([a, [b], b], [a, [b], b]) is False
-    ), 'New list objects are different objects and should therefor not be identical.'
+    ), 'New list objects are different objects and should therefore not be identical.'
 
 
 def test_undefined_pickle():
