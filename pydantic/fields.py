@@ -1,8 +1,9 @@
-from collections import defaultdict, deque
-from collections.abc import Iterable as CollectionsIterable
+from collections import Counter as CollectionCounter, defaultdict, deque
+from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    Counter,
     DefaultDict,
     Deque,
     Dict,
@@ -32,7 +33,6 @@ from .error_wrappers import ErrorWrapper
 from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
-    NONE_TYPES,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -42,7 +42,9 @@ from .typing import (
     get_origin,
     is_literal_type,
     is_new_type,
+    is_none_type,
     is_typeddict,
+    is_union_origin,
     new_type_supertype,
 )
 from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
@@ -70,11 +72,12 @@ class UndefinedType:
 Undefined = UndefinedType()
 
 if TYPE_CHECKING:
-    from .class_validators import ValidatorsList  # noqa: F401
+    from .class_validators import ValidatorsList
+    from .config import BaseConfig
     from .error_wrappers import ErrorList
-    from .main import BaseConfig, BaseModel  # noqa: F401
-    from .types import ModelOrDc  # noqa: F401
-    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs  # noqa: F401
+    from .main import BaseModel
+    from .types import ModelOrDc
+    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
@@ -253,7 +256,7 @@ def Field(
       schema will have a ``maxLength`` validation keyword
     :param allow_mutation: a boolean which defaults to True. When False, the field raises a TypeError if the field is
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
-    :param regex: only applies to strings, requires the field match agains a regular expression
+    :param regex: only applies to strings, requires the field match against a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
     :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
@@ -299,6 +302,7 @@ SHAPE_GENERIC = 10
 SHAPE_DEQUE = 11
 SHAPE_DICT = 12
 SHAPE_DEFAULTDICT = 13
+SHAPE_COUNTER = 14
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -309,9 +313,10 @@ SHAPE_NAME_LOOKUP = {
     SHAPE_DEQUE: 'Deque[{}]',
     SHAPE_DICT: 'Dict[{}]',
     SHAPE_DEFAULTDICT: 'DefaultDict[{}]',
+    SHAPE_COUNTER: 'Counter[{}]',
 }
 
-MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
+MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING, SHAPE_COUNTER}
 
 
 def _get_descriptor_infos(descriptor: Any) -> Tuple[Any, 'FGet', Optional['FSet']]:
@@ -762,7 +767,7 @@ class ModelField(Representation):
         elif is_new_type(self.type_):
             self.type_ = new_type_supertype(self.type_)
 
-        if self.type_ is Any:
+        if self.type_ is Any or self.type_ is object:
             if self.required is Undefined:
                 self.required = False
             self.allow_none = True
@@ -776,7 +781,8 @@ class ModelField(Representation):
             return
 
         origin = get_origin(self.type_)
-        if origin is None:
+        # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
+        if origin is None or origin is CollectionsHashable:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable
             if isinstance(self.type_, type) and isinstance(None, self.type_):
@@ -788,7 +794,7 @@ class ModelField(Representation):
             return
         if origin is Callable:
             return
-        if origin is Union:
+        if is_union_origin(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if type_ is NoneType:
@@ -861,6 +867,10 @@ class ModelField(Representation):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
             self.shape = SHAPE_DEFAULTDICT
+        elif issubclass(origin, Counter):
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = int
+            self.shape = SHAPE_COUNTER
         elif issubclass(origin, Dict):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -970,7 +980,7 @@ class ModelField(Representation):
                 return v, errors
 
         if v is None:
-            if self.type_ in NONE_TYPES:
+            if is_none_type(self.type_):
                 # keep validating
                 pass
             elif self.allow_none:
@@ -1131,6 +1141,8 @@ class ModelField(Representation):
             return result, None
         elif self.shape == SHAPE_DEFAULTDICT:
             return defaultdict(self.type_, result), None
+        elif self.shape == SHAPE_COUNTER:
+            return CollectionCounter(result), None
         else:
             return self._get_mapping_value(v, result), None
 
@@ -1181,7 +1193,7 @@ class ModelField(Representation):
         """
         Whether the field is "complex" eg. env variables should be parsed as JSON.
         """
-        from .main import BaseModel  # noqa: F811
+        from .main import BaseModel
 
         return (
             self.shape != SHAPE_SINGLETON

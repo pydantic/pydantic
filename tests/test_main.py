@@ -2,7 +2,7 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import Any, Callable, ClassVar, Counter, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
@@ -286,9 +286,15 @@ def test_set_attr_invalid():
 def test_any():
     class AnyModel(BaseModel):
         a: Any = 10
+        b: object = 20
 
-    assert AnyModel().a == 10
-    assert AnyModel(a='foobar').a == 'foobar'
+    m = AnyModel()
+    assert m.a == 10
+    assert m.b == 20
+
+    m = AnyModel(a='foobar', b='barfoo')
+    assert m.a == 'foobar'
+    assert m.b == 'barfoo'
 
 
 def test_alias():
@@ -1987,6 +1993,30 @@ def test_typing_coercion_defaultdict():
     assert repr(m) == "Model(x=defaultdict(<class 'str'>, {1: '', 'a': ''}))"
 
 
+def test_typing_coercion_counter():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    assert Model.__fields__['x'].type_ is int
+    assert repr(Model(x={'a': 10})) == "Model(x=Counter({'a': 10}))"
+
+
+def test_typing_counter_value_validation():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x={'a': 'a'})
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('x', 'a'),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        }
+    ]
+
+
 def test_class_kwargs_config():
     class Base(BaseModel, extra='forbid', alias_generator=str.upper):
         a: int
@@ -2032,3 +2062,21 @@ def test_class_kwargs_custom_config():
         a: int
 
     assert Model.__config__.some_config == 'new_value'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
+def test_new_union_origin():
+    """On 3.10+, origin of `int | str` is `types.Union`, not `typing.Union`"""
+
+    class Model(BaseModel):
+        x: int | str
+
+    assert Model(x=3).x == 3
+    assert Model(x='3').x == 3
+    assert Model(x='pika').x == 'pika'
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['x'],
+    }

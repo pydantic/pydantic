@@ -5,11 +5,22 @@ from .json import pydantic_encoder
 from .utils import Representation
 
 if TYPE_CHECKING:
-    from .main import BaseConfig  # noqa: F401
-    from .types import ModelOrDc  # noqa: F401
+    from typing_extensions import TypedDict
+
+    from .config import BaseConfig
+    from .types import ModelOrDc
     from .typing import ReprArgs
 
     Loc = Tuple[Union[int, str], ...]
+
+    class _ErrorDictRequired(TypedDict):
+        loc: Loc
+        msg: str
+        type: str
+
+    class ErrorDict(_ErrorDictRequired, total=False):
+        ctx: Dict[str, Any]
+
 
 __all__ = 'ErrorWrapper', 'ValidationError'
 
@@ -42,9 +53,9 @@ class ValidationError(Representation, ValueError):
     def __init__(self, errors: Sequence[ErrorList], model: 'ModelOrDc') -> None:
         self.raw_errors = errors
         self.model = model
-        self._error_cache: Optional[List[Dict[str, Any]]] = None
+        self._error_cache: Optional[List['ErrorDict']] = None
 
-    def errors(self) -> List[Dict[str, Any]]:
+    def errors(self) -> List['ErrorDict']:
         if self._error_cache is None:
             try:
                 config = self.model.__config__  # type: ignore
@@ -68,15 +79,15 @@ class ValidationError(Representation, ValueError):
         return [('model', self.model.__name__), ('errors', self.errors())]
 
 
-def display_errors(errors: List[Dict[str, Any]]) -> str:
+def display_errors(errors: List['ErrorDict']) -> str:
     return '\n'.join(f'{_display_error_loc(e)}\n  {e["msg"]} ({_display_error_type_and_ctx(e)})' for e in errors)
 
 
-def _display_error_loc(error: Dict[str, Any]) -> str:
+def _display_error_loc(error: 'ErrorDict') -> str:
     return ' -> '.join(str(e) for e in error['loc'])
 
 
-def _display_error_type_and_ctx(error: Dict[str, Any]) -> str:
+def _display_error_type_and_ctx(error: 'ErrorDict') -> str:
     t = 'type=' + error['type']
     ctx = error.get('ctx')
     if ctx:
@@ -87,7 +98,7 @@ def _display_error_type_and_ctx(error: Dict[str, Any]) -> str:
 
 def flatten_errors(
     errors: Sequence[Any], config: Type['BaseConfig'], loc: Optional['Loc'] = None
-) -> Generator[Dict[str, Any], None, None]:
+) -> Generator['ErrorDict', None, None]:
     for error in errors:
         if isinstance(error, ErrorWrapper):
 
@@ -106,7 +117,7 @@ def flatten_errors(
             raise RuntimeError(f'Unknown error object: {error}')
 
 
-def error_dict(exc: Exception, config: Type['BaseConfig'], loc: 'Loc') -> Dict[str, Any]:
+def error_dict(exc: Exception, config: Type['BaseConfig'], loc: 'Loc') -> 'ErrorDict':
     type_ = get_exc_type(exc.__class__)
     msg_template = config.error_msg_templates.get(type_) or getattr(exc, 'msg_template', None)
     ctx = exc.__dict__
@@ -115,7 +126,7 @@ def error_dict(exc: Exception, config: Type['BaseConfig'], loc: 'Loc') -> Dict[s
     else:
         msg = str(exc)
 
-    d: Dict[str, Any] = {'loc': loc, 'msg': msg, 'type': type_}
+    d: 'ErrorDict' = {'loc': loc, 'msg': msg, 'type': type_}
 
     if ctx:
         d['ctx'] = ctx
