@@ -656,10 +656,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         value = cls._enforce_dict_if_root(value)
 
-        if cls.__config__.orm_mode:
-            return cls.from_orm(value)
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return cls(**value)
+        elif cls.__config__.orm_mode:
+            return cls.from_orm(value)
         else:
             try:
                 value_as_dict = dict(value)
@@ -669,6 +669,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
+        if isinstance(obj, GetterDict):
+            return obj
         return cls.__config__.getter_dict(obj)
 
     @classmethod
