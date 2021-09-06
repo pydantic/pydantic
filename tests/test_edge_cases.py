@@ -15,6 +15,7 @@ from pydantic import (
     StrBytes,
     ValidationError,
     constr,
+    create_partial_model,
     errors,
     validate_model,
     validator,
@@ -1899,7 +1900,7 @@ def test_config_partial():
         a: str = Field(...)
         b: str = Field(...)
 
-    Bar = Foo.partial_model()
+    Bar = create_partial_model(Foo)
 
     assert Foo.Config.partial is False
     assert Bar.Config.partial is True

@@ -3,11 +3,12 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, Optional, Type, TypeVar, Union
 
+from .main import BaseModel
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
 from .typing import display_as_type
 
-__all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as')
+__all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as', 'create_partial_model')
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
 
@@ -77,3 +78,17 @@ def parse_raw_as(
         json_loads=json_loads,
     )
     return parse_obj_as(type_, obj, type_name=type_name)
+
+
+def create_partial_model(model: Type[BaseModel]) -> Type[BaseModel]:
+    """
+    Create a version of the model that is suitable for partial validation.
+    Useful when working with CRUD operations, and you need to use an
+    existing model for a PATCH operation.
+    """
+
+    class PartialModel(model):  # type: ignore
+        class Config(model.Config):  # type: ignore
+            partial = True
+
+    return PartialModel

@@ -63,6 +63,7 @@ __all__ = [
     # parse
     'Protocol',
     # tools
+    'create_partial_model',
     'parse_file_as',
     'parse_obj_as',
     'parse_raw_as',
