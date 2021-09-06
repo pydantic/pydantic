@@ -139,15 +139,13 @@ def dataclass(
     def wrap(cls: Type[Any]) -> 'DataclassClassOrWrapper':
         import dataclasses
 
-        dc_cls_doc = cls.__doc__ or ''
-
         if is_builtin_dataclass(cls):
             should_validate_on_init = False if validate_on_init is None else validate_on_init
             _add_pydantic_validation_attributes(cls, config, should_validate_on_init, '')
             return DataclassProxy(cls)
 
         else:
-
+            dc_cls_doc = cls.__doc__ or ''  # needs to be done before generating dataclass
             dc_cls = dataclasses.dataclass(  # type: ignore
                 cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
             )
