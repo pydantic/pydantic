@@ -110,6 +110,11 @@ When you initialize a dataclass, it is possible to execute code *after* validati
 with the help of `__post_init_post_parse__`. This is not the same as `__post_init__`, which executes
 code *before* validation.
 
+!!! tip
+    If you use a stdlib `dataclass`, you may only have `__post_init__` available and wish the validation to
+    be done before. In this case you can set `Config.post_init_after_validation = True`
+
+
 ```py
 {!.tmp_examples/dataclasses_post_init_post_parse.py!}
 ```

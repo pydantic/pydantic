@@ -36,6 +36,7 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
+from .config import BaseConfig
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
@@ -43,7 +44,6 @@ from .main import create_model, validate_model
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
-    from .config import BaseConfig
     from .main import BaseModel
     from .typing import CallableGenerator, NoArgAnyCallable
 
@@ -95,7 +95,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Type[Any] = None,
+    config: Type[Any] = BaseConfig,
     validate_on_init: Optional[bool] = None,
 ) -> Callable[[Type[Any]], 'DataclassClassOrWrapper']:
     ...
@@ -111,7 +111,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Type[Any] = None,
+    config: Type[Any] = BaseConfig,
     validate_on_init: Optional[bool] = None,
 ) -> 'DataclassClassOrWrapper':
     ...
@@ -126,7 +126,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Optional[Type['BaseConfig']] = None,
+    config: Type[Any] = BaseConfig,
     validate_on_init: Optional[bool] = None,
 ) -> Union[Callable[[Type[Any]], 'DataclassClassOrWrapper'], 'DataclassClassOrWrapper']:
     """
@@ -183,9 +183,9 @@ class DataclassProxy:
         return getattr(self.__dataclass__, name)
 
 
-def _add_pydantic_validation_attributes(
+def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
     dc_cls: Type['Dataclass'],
-    config: Optional[Type['BaseConfig']],
+    config: Type[BaseConfig],
     validate_on_init: bool,
     dc_cls_doc: str,
 ) -> None:
@@ -201,11 +201,16 @@ def _add_pydantic_validation_attributes(
 
         @wraps(post_init)
         def new_post_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
-            post_init(self, *args, **kwargs)
+            if not config.post_init_after_validation:
+                post_init(self, *args, **kwargs)
+
             if self.__class__.__pydantic_run_validation__:
                 self.__pydantic_validate_values__()
                 if hasattr(self, '__post_init_post_parse__'):
                     self.__post_init_post_parse__(*args, **kwargs)
+
+            if config.post_init_after_validation:
+                post_init(self, *args, **kwargs)
 
         setattr(dc_cls, '__post_init__', new_post_init)
 
@@ -267,7 +272,7 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
 
 def create_pydantic_model_from_dataclass(
     dc_cls: Type['Dataclass'],
-    config: Optional[Type['BaseConfig']] = None,
+    config: Type[Any] = BaseConfig,
     dc_cls_doc: Optional[str] = None,
 ) -> Type['BaseModel']:
     import dataclasses
@@ -343,7 +348,7 @@ def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     )
 
 
-def make_dataclass_validator(dc_cls: Type['Dataclass'], config: Type['BaseConfig']) -> 'CallableGenerator':
+def make_dataclass_validator(dc_cls: Type['Dataclass'], config: Type[BaseConfig]) -> 'CallableGenerator':
     """
     Create a pydantic.dataclass from a builtin dataclass to add type validation
     and yield the validators

@@ -3,7 +3,7 @@ import pickle
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional
+from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Set
 
 import pytest
 
@@ -1187,6 +1187,24 @@ def test_issue_3162():
             }
         },
     }
+
+
+def test_post_init_after_validation():
+    @dataclasses.dataclass
+    class SetWrapper:
+        set: Set[int]
+
+        def __post_init__(self):
+            assert isinstance(
+                self.set, set
+            ), f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
+
+    class Model(pydantic.BaseModel, post_init_after_validation=True):
+        set_wrapper: SetWrapper
+
+    model = Model(set_wrapper=SetWrapper({1, 2, 3}))
+    json_text = model.json()
+    assert Model.parse_raw(json_text) == model
 
 
 def test_keeps_custom_properties():

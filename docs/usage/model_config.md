@@ -113,7 +113,10 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)
 
 **`copy_on_model_validation`**
-: whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
+: whether inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
+
+**`post_init_after_validation`**
+: whether stdlib dataclasses `__post_init__` should be run after parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses) (default: `False`)
 
 ## Change behaviour globally
 
