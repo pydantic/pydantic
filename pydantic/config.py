@@ -97,7 +97,8 @@ class BaseConfig:
         """
         Optional hook to check or modify fields during model creation.
         """
-        pass
+        if cls.partial:
+            field.required = False
 
 
 def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':

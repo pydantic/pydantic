@@ -978,9 +978,6 @@ def validate_model(  # noqa: C901 (ignore complexity)
             using_name = True
 
         if value is _missing:
-            if config.partial:
-                continue
-
             if field.required:
                 errors.append(ErrorWrapper(MissingError(), loc=field.alias))
                 continue
