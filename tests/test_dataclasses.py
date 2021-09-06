@@ -1143,6 +1143,32 @@ def test_schema_description_set():
     assert A.__pydantic_model__.schema()['description'] == 'my description'
 
 
+def test_issue_3162():
+    @dataclasses.dataclass
+    class User:
+        id: int
+        name: str
+
+    class Users(BaseModel):
+        user: User
+        other_user: User
+
+    assert Users.schema() == {
+        'title': 'Users',
+        'type': 'object',
+        'properties': {'user': {'$ref': '#/definitions/User'}, 'other_user': {'$ref': '#/definitions/User'}},
+        'required': ['user', 'other_user'],
+        'definitions': {
+            'User': {
+                'title': 'User',
+                'type': 'object',
+                'properties': {'id': {'title': 'Id', 'type': 'integer'}, 'name': {'title': 'Name', 'type': 'string'}},
+                'required': ['id', 'name'],
+            }
+        },
+    }
+
+
 def test_keeps_custom_properties():
     class StandardClass:
         """Class which modifies instance creation."""
