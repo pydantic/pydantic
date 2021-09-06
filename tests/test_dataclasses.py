@@ -1143,6 +1143,26 @@ def test_schema_description_set():
     assert A.__pydantic_model__.schema()['description'] == 'my description'
 
 
+def test_issue_3011():
+    @dataclasses.dataclass
+    class A:
+        thing_a: str
+
+    class B(A):
+        thing_b: str
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @pydantic.dataclasses.dataclass(config=Config)
+    class C:
+        thing: A
+
+    b = B('Thing A')
+    c = C(thing=b)
+    assert c.thing.thing_a == 'Thing A'
+
+
 def test_issue_3162():
     @dataclasses.dataclass
     class User:
