@@ -1899,17 +1899,54 @@ def test_config_partial():
     class Foo(BaseModel):
         a: str = Field(...)
         b: str = Field(...)
+        c: Optional[str] = Field()
 
     Bar = create_partial_model(Foo)
 
+    # Ensure partial is only set on the new class
     assert Foo.Config.partial is False
     assert Bar.Config.partial is True
 
-    b = Bar(a='x')
-    assert b.dict(exclude_unset=True) == {'a': 'x'}
+    # Verify b (a required field) can be omitted on the partial model
+    b = Bar(a='x', c=None)
+    assert b.dict() == {'a': 'x', 'c': None}
+    assert b.dict(exclude_unset=True) == {'a': 'x', 'c': None}
+    assert dict(b) == {'a': 'x', 'c': None}
 
+    # Verify b cannot be passed explicitly as None
     with pytest.raises(ValidationError) as exc_info:
         b = Bar(a='x', b=None)
     assert exc_info.value.errors() == [
         {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}
+    ]
+
+    # Check schema
+    assert Bar.schema() == {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'type': 'string'},
+            'b': {'title': 'B', 'type': 'string'},
+            'c': {'title': 'C', 'type': 'string'},
+        },
+    }
+
+    # Verify what happens when you subclass Bar (to make sure the docs don't lie)
+    class Baz(Bar):
+        pass
+
+    assert Baz.schema()['title'] == 'Baz'
+    assert Bar.schema()['properties'] == Baz.schema()['properties']
+    assert Baz.Config.partial is True
+
+    class Buzz(Bar):
+        d: str
+
+    buzz = Buzz(a='x', c=None)
+    assert buzz.dict() == {'a': 'x', 'c': None}
+    with pytest.raises(ValidationError) as exc_info:
+        buzz = Buzz(a='x', b=None, d=None)
+    assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
+        {'loc': ('d',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
