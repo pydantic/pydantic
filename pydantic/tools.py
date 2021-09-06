@@ -83,8 +83,10 @@ def parse_raw_as(
 
 
 def schema(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'DictStrAny':
+    """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
     return _get_parsing_type(type_, type_name=title).schema(**schema_kwargs)
 
 
 def schema_json(type_: Any, *, title: Optional[NameFactory] = None, **schema_json_kwargs: Any) -> str:
+    """Generate a JSON schema (as JSON) for the passed model or dynamically generated one"""
     return _get_parsing_type(type_, type_name=title).schema_json(**schema_json_kwargs)
