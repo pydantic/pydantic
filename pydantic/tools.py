@@ -91,4 +91,5 @@ def create_partial_model(model: Type[BaseModel]) -> Type[BaseModel]:
         class Config(model.Config):  # type: ignore
             partial = True
 
+    PartialModel.__name__ = model.__name__
     return PartialModel
