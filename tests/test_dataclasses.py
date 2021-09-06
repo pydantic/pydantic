@@ -638,7 +638,7 @@ def test_hashable_required():
     ]
     with pytest.raises(TypeError) as exc_info:
         MyDataclass()
-    assert str(exc_info.value) == "__init__() missing 1 required positional argument: 'v'"
+    assert "__init__() missing 1 required positional argument: 'v'" in str(exc_info.value)
 
 
 @pytest.mark.parametrize('default', [1, None, ...])
@@ -964,3 +964,28 @@ def test_discrimated_union_basemodel_instance_value():
             },
         },
     }
+
+
+def test_keeps_custom_properties():
+    class StandardClass:
+        """Class which modifies instance creation."""
+
+        a: str
+
+        def __new__(cls, *args, **kwargs):
+            instance = super().__new__(cls)
+
+            instance._special_property = 1
+
+            return instance
+
+    StandardLibDataclass = dataclasses.dataclass(StandardClass)
+    PydanticDataclass = pydantic.dataclasses.dataclass(StandardClass)
+
+    clases_to_test = [StandardLibDataclass, PydanticDataclass]
+
+    test_string = 'string'
+    for cls in clases_to_test:
+        instance = cls(a=test_string)
+        assert instance._special_property == 1
+        assert instance.a == test_string
