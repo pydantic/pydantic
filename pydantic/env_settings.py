@@ -114,7 +114,8 @@ class BaseSettings(BaseModel):
         ) -> Tuple[SettingsSourceCallable, ...]:
             return init_settings, env_settings, file_secret_settings
 
-    __config__: ClassVar[Type[Config]]  # type: ignore
+    # populated by the metaclass using the Config class defined above, annotated here to help IDEs only
+    __config__: ClassVar[Type[Config]]
 
 
 class InitSettingsSource:

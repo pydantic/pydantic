@@ -11,6 +11,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    ClassVar,
     Dict,
     List,
     Mapping,
@@ -28,7 +29,7 @@ from .class_validators import ValidatorGroup, extract_root_validators, extract_v
 from .config import BaseConfig, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import MAPPING_LIKE_SHAPES, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import MAPPING_LIKE_SHAPES, Field, FieldInfo, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -90,6 +91,18 @@ else:  # pragma: no cover
 
 __all__ = 'BaseModel', 'compiled', 'create_model', 'validate_model'
 
+_T = TypeVar('_T')
+
+
+def __dataclass_transform__(
+    *,
+    eq_default: bool = True,
+    order_default: bool = False,
+    kw_only_default: bool = False,
+    field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
+) -> Callable[[_T], _T]:
+    return lambda a: a
+
 
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
@@ -114,6 +127,7 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 _is_base_model_class_defined = False
 
 
+@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
@@ -284,21 +298,21 @@ object_setattr = object.__setattr__
 class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
-        __fields__: Dict[str, ModelField] = {}
-        __include_fields__: Optional[Mapping[str, Any]] = None
-        __exclude_fields__: Optional[Mapping[str, Any]] = None
-        __validators__: Dict[str, AnyCallable] = {}
-        __pre_root_validators__: List[AnyCallable]
-        __post_root_validators__: List[Tuple[bool, AnyCallable]]
-        __config__: Type[BaseConfig] = BaseConfig
-        __root__: Any = None
-        __json_encoder__: Callable[[Any], Any] = lambda x: x
-        __schema_cache__: 'DictAny' = {}
-        __custom_root_type__: bool = False
-        __signature__: 'Signature'
-        __private_attributes__: Dict[str, ModelPrivateAttr]
-        __class_vars__: SetStr
-        __fields_set__: SetStr = set()
+        __fields__: ClassVar[Dict[str, ModelField]] = {}
+        __include_fields__: ClassVar[Optional[Mapping[str, Any]]] = None
+        __exclude_fields__: ClassVar[Optional[Mapping[str, Any]]] = None
+        __validators__: ClassVar[Dict[str, AnyCallable]] = {}
+        __pre_root_validators__: ClassVar[List[AnyCallable]]
+        __post_root_validators__: ClassVar[List[Tuple[bool, AnyCallable]]]
+        __config__: ClassVar[Type[BaseConfig]] = BaseConfig
+        __root__: ClassVar[Any] = None
+        __json_encoder__: ClassVar[Callable[[Any], Any]] = lambda x: x
+        __schema_cache__: ClassVar['DictAny'] = {}
+        __custom_root_type__: ClassVar[bool] = False
+        __signature__: ClassVar['Signature']
+        __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]
+        __class_vars__: ClassVar[SetStr]
+        __fields_set__: ClassVar[SetStr] = set()
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
