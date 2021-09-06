@@ -179,6 +179,7 @@ So sometimes you may have unexpected coerced data.
 _(This script is complete, it should run "as is")_
 
 To prevent this, you can enable `Config.smart_union`. _Pydantic_ will then check all allowed types before even trying to coerce.
+Know that this is of course slower, especially if your `Union` is quite big.
 
 ```py
 {!.tmp_examples/model_config_smart_union_on.py!}

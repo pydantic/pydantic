@@ -234,12 +234,14 @@ _(This script is complete, it should run "as is")_
 
 The `Union` type allows a model attribute to accept different types, e.g.:
 
-!!! warning
-    This script is complete, it should run "as is". However, it may not reflect the desired behavior; see below.
+!!! info
+    You may get unexpected coercion with `Union`; see below.<br />
+    Know that you can also make the check slower but stricter by using [Smart Union](model_config.md#smart-union)
 
 ```py
 {!.tmp_examples/types_union_incorrect.py!}
 ```
+_(This script is complete, it should run "as is")_
 
 However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under `Union` and will use
 the first one that matches. In the above example the `id` of `user_03` was defined as a `uuid.UUID` class (which
@@ -257,9 +259,6 @@ chose to match against the `int` type and disregarded the other types.
 
 As such, it is recommended that, when defining `Union` annotations, the most specific type is included first and
 followed by less specific types.
-
-!!! tip
-    You can also make your `Union` stricter by using [Smart Union](model_config.md#smart-union)
 
 In the above example, the `UUID` class should precede the `int` and `str` classes to preclude the unexpected representation as such:
 
