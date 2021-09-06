@@ -70,6 +70,14 @@ except ImportError:
         'http://twitter.com/@handle/',
         'http://11.11.11.11.example.com/action',
         'http://abc.11.11.11.11.example.com/action',
+        'http://example#',
+        'http://example/#',
+        'http://example/#fragment',
+        'http://example/?#',
+        'http://example.org/path#',
+        'http://example.org/path#fragment',
+        'http://example.org/path?query#',
+        'http://example.org/path?query#fragment',
         'file://localhost/foo/bar',
     ],
 )
@@ -115,6 +123,18 @@ def test_any_url_success(value):
         ),
         ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
         ('http://example.com:99999', 'value_error.url.port', 'URL port invalid, port cannot exceed 65535', None),
+        (
+            'http://example##',
+            'value_error.url.extra',
+            "URL invalid, extra characters found after valid URL: '#'",
+            {'extra': '#'},
+        ),
+        (
+            'http://example/##',
+            'value_error.url.extra',
+            "URL invalid, extra characters found after valid URL: '#'",
+            {'extra': '#'},
+        ),
         ('file:///foo/bar', 'value_error.url.host', 'URL host invalid', None),
     ],
 )

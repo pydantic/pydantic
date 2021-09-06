@@ -314,7 +314,7 @@ def _dataclass_validate_values(self: 'Dataclass') -> None:
     d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
     if validation_error:
         raise validation_error
-    object.__setattr__(self, '__dict__', d)
+    object.__setattr__(self, '__dict__', {**getattr(self, '__dict__', {}), **d})
     object.__setattr__(self, '__pydantic_initialised__', True)
 
 

@@ -1141,3 +1141,28 @@ def test_schema_description_set():
         x: int
 
     assert A.__pydantic_model__.schema()['description'] == 'my description'
+
+
+def test_keeps_custom_properties():
+    class StandardClass:
+        """Class which modifies instance creation."""
+
+        a: str
+
+        def __new__(cls, *args, **kwargs):
+            instance = super().__new__(cls)
+
+            instance._special_property = 1
+
+            return instance
+
+    StandardLibDataclass = dataclasses.dataclass(StandardClass)
+    PydanticDataclass = pydantic.dataclasses.dataclass(StandardClass)
+
+    clases_to_test = [StandardLibDataclass, PydanticDataclass]
+
+    test_string = 'string'
+    for cls in clases_to_test:
+        instance = cls(a=test_string)
+        assert instance._special_property == 1
+        assert instance.a == test_string

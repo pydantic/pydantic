@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    Deque,
     Dict,
     FrozenSet,
     Generic,
@@ -483,8 +484,16 @@ def test_optional():
 def test_any():
     class Model(BaseModel):
         a: Any
+        b: object
 
-    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'title': 'A'}}}
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A'},
+            'b': {'title': 'B'},
+        },
+    }
 
 
 def test_set():
@@ -554,6 +563,18 @@ def test_tuple(field_type, expected_schema):
     base_schema['properties']['a']['items'] = expected_schema
 
     assert Model.schema() == base_schema
+
+
+def test_deque():
+    class Model(BaseModel):
+        a: Deque[str]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'string'}}},
+        'required': ['a'],
+    }
 
 
 def test_bool():

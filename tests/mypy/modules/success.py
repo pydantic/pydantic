@@ -11,6 +11,8 @@ from pathlib import Path, PurePath
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from uuid import UUID
 
+from typing_extensions import TypedDict
+
 from pydantic import (
     UUID1,
     BaseConfig,
@@ -38,6 +40,7 @@ from pydantic import (
     StrictInt,
     StrictStr,
     create_model,
+    create_model_from_typeddict,
     root_validator,
     validate_arguments,
     validator,
@@ -245,7 +248,16 @@ validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
 validated.my_dir_path_str.absolute()
 
-DynamicModel = create_model('DynamicModel')
+
+class SomeDict(TypedDict):
+    val: int
+    name: str
+
+
+obj: SomeDict = {
+    'val': 12,
+    'name': 'John',
+}
 
 
 class Config(BaseConfig):
@@ -269,3 +281,7 @@ class CustomPath(PurePath):
 def dont_check_path_existence() -> None:
     Settings(_env_file='a/path', _secrets_dir='a/path')
     Settings(_env_file=CustomPath('a/path'), _secrets_dir=CustomPath('a/path'))
+
+
+create_model_from_typeddict(SomeDict)(**obj)
+DynamicModel = create_model('DynamicModel')

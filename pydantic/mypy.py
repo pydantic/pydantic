@@ -1,6 +1,17 @@
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
+try:
+    import toml
+except ImportError:  # pragma: no cover
+    # future-proofing for upcoming `mypy` releases which will switch dependencies
+    try:
+        import tomli as toml  # type: ignore
+    except ImportError:
+        import warnings
+
+        warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
+        toml = None  # type: ignore
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -110,11 +121,21 @@ class PydanticPluginConfig:
     def __init__(self, options: Options) -> None:
         if options.config_file is None:  # pragma: no cover
             return
-        plugin_config = ConfigParser()
-        plugin_config.read(options.config_file)
-        for key in self.__slots__:
-            setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
-            setattr(self, key, setting)
+
+        if toml and options.config_file.endswith('.toml'):
+            with open(options.config_file, 'r') as rf:
+                config = toml.load(rf).get('tool', {}).get('pydantic-mypy', {})
+            for key in self.__slots__:
+                setting = config.get(key, False)
+                if not isinstance(setting, bool):
+                    raise ValueError(f'Configuration value must be a boolean for key: {key}')
+                setattr(self, key, setting)
+        else:
+            plugin_config = ConfigParser()
+            plugin_config.read(options.config_file)
+            for key in self.__slots__:
+                setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
+                setattr(self, key, setting)
 
 
 def from_orm_callback(ctx: MethodContext) -> Type:
