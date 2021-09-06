@@ -116,7 +116,7 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
 
 **`partial`**
-: whether or not the model should allow required fields to be omitted. Useful when working with CRUD operations, and you need to use an existing model for a PATCH operation. (default: `False`)
+: whether or not the model should allow required fields to be omitted. Useful when working with CRUD operations, and you need to use an existing model for a PATCH operation. Subclassing a partial model will result in any additional fields also not being required. (default: `False`)
 
 ## Change behaviour globally
 
