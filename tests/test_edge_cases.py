@@ -1907,3 +1907,9 @@ def test_config_partial():
 
     b = Bar(a='x')
     assert b.dict(exclude_unset=True) == {'a': 'x'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        b = Bar(a='x', b=None)
+    assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}
+    ]
