@@ -115,6 +115,9 @@ not be included in the model schemas. **Note**: this means that attributes on th
 **`copy_on_model_validation`**
 : whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
 
+**`partial`**
+: whether or not the model should allow required fields to be omitted. Useful when working with CRUD operations, and you need to use an existing model for a PATCH operation. (default: `False`)
+
 ## Change behaviour globally
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`

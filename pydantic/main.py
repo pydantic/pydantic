@@ -756,6 +756,20 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         for f in cls.__fields__.values():
             update_field_forward_refs(f, globalns=globalns, localns=localns)
 
+    @classmethod
+    def partial_model(cls: Type['Model']) -> Type['Model']:
+        """
+        Create a version of the model that is suitable for partial validation.
+        Useful when working with CRUD operations, and you need to use an
+        existing model for a PATCH operation.
+        """
+
+        class PartialModel(cls):  # type: ignore
+            class Config(cls.Config):  # type: ignore
+                partial = True
+
+        return PartialModel
+
     def __iter__(self) -> 'TupleGenerator':
         """
         so `dict(model)` works
@@ -978,6 +992,9 @@ def validate_model(  # noqa: C901 (ignore complexity)
             using_name = True
 
         if value is _missing:
+            if config.partial:
+                continue
+
             if field.required:
                 errors.append(ErrorWrapper(MissingError(), loc=field.alias))
                 continue

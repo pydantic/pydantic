@@ -1892,3 +1892,17 @@ def test_arbitrary_types_allowed_custom_eq():
             arbitrary_types_allowed = True
 
     assert Model().x == Foo()
+
+
+def test_config_partial():
+    class Foo(BaseModel):
+        a: str = Field(...)
+        b: str = Field(...)
+
+    Bar = Foo.partial_model()
+
+    assert Foo.Config.partial is False
+    assert Bar.Config.partial is True
+
+    b = Bar(a='x')
+    assert b.dict(exclude_unset=True) == {'a': 'x'}
