@@ -981,6 +981,8 @@ def validate_model(  # noqa: C901 (ignore complexity)
             if field.required:
                 errors.append(ErrorWrapper(MissingError(), loc=field.alias))
                 continue
+            elif config.partial:
+                continue
 
             value = field.get_default()
 
