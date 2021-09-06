@@ -259,7 +259,7 @@ def field_schema(
 
         for discriminator_value, sub_field in field.sub_fields_mapping.items():
             # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
-            if get_origin(sub_field.type_) is Union:
+            if is_union_origin(get_origin(sub_field.type_)):
                 sub_models = get_sub_types(sub_field.type_)
                 discriminator_models_refs[discriminator_value] = {
                     model_name_map[sub_model]: get_schema_ref(

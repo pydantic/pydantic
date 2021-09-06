@@ -303,12 +303,12 @@ def display_as_type(v: Type[Any]) -> str:
     if not isinstance(v, typing_base) and not isinstance(v, WithArgsTypes) and not isinstance(v, type):
         v = v.__class__
 
+    if is_union_origin(get_origin(v)):
+        return f'Union[{", ".join(map(display_as_type, get_args(v)))}]'
+
     if isinstance(v, WithArgsTypes):
         # Generic alias are constructs like `list[int]`
         return str(v).replace('typing.', '')
-
-    if get_origin(v) is Union:
-        return f'Union[{", ".join(map(display_as_type, get_args(v)))}]'
 
     try:
         return v.__name__
@@ -473,7 +473,7 @@ def get_sub_types(tp: Any) -> List[Any]:
     origin = get_origin(tp)
     if origin is Annotated:
         return get_sub_types(get_args(tp)[0])
-    elif origin is Union:
+    elif is_union_origin(origin):
         return [x for t in get_args(tp) for x in get_sub_types(t)]
     else:
         return [tp]
