@@ -249,8 +249,9 @@ chose to match against the `int` type and disregarded the other types.
 !!! warning
     `typing.Union` also ignores order when [defined](https://docs.python.org/3/library/typing.html#typing.Union),
     so `Union[int, float] == Union[float, int]` which can lead to unexpected behaviour
-    when combined with matching based on the `Union` type order inside other type definitions, such as `List` and `Dict` types (because python treats these definitions as singletons).
- For example, `Dict[str, Union[int, float]] == Dict[str, Union[float, int]]` with the order based on the first time it was defined.
+    when combined with matching based on the `Union` type order inside other type definitions, such as `List` and `Dict`
+    types (because python treats these definitions as singletons).
+    For example, `Dict[str, Union[int, float]] == Dict[str, Union[float, int]]` with the order based on the first time it was defined.
     Please note that this can also be [affected by third party libraries](https://github.com/samuelcolvin/pydantic/issues/2835)
     and their internal type definitions and the import orders.
 
