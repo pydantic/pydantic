@@ -36,7 +36,7 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
-from .config import BaseConfig
+from .config import BaseConfig, ConfigDict, get_config
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
@@ -95,7 +95,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Type[Any] = BaseConfig,
+    config: Union[ConfigDict, Type[Any], None] = None,
     validate_on_init: Optional[bool] = None,
 ) -> Callable[[Type[Any]], 'DataclassClassOrWrapper']:
     ...
@@ -111,7 +111,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Type[Any] = BaseConfig,
+    config: Union[ConfigDict, Type[Any], None] = None,
     validate_on_init: Optional[bool] = None,
 ) -> 'DataclassClassOrWrapper':
     ...
@@ -126,7 +126,7 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Type[Any] = BaseConfig,
+    config: Union[ConfigDict, Type[Any], None] = None,
     validate_on_init: Optional[bool] = None,
 ) -> Union[Callable[[Type[Any]], 'DataclassClassOrWrapper'], 'DataclassClassOrWrapper']:
     """
@@ -135,13 +135,14 @@ def dataclass(
     or a wrapper that will trigger validation around a stdlib dataclass
     to avoid modifying it directly
     """
+    the_config = get_config(config)
 
     def wrap(cls: Type[Any]) -> 'DataclassClassOrWrapper':
         import dataclasses
 
         if is_builtin_dataclass(cls):
             should_validate_on_init = False if validate_on_init is None else validate_on_init
-            _add_pydantic_validation_attributes(cls, config, should_validate_on_init, '')
+            _add_pydantic_validation_attributes(cls, the_config, should_validate_on_init, '')
             return DataclassProxy(cls)
 
         else:
@@ -150,7 +151,7 @@ def dataclass(
                 cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
             )
             should_validate_on_init = True if validate_on_init is None else validate_on_init
-            _add_pydantic_validation_attributes(dc_cls, config, should_validate_on_init, dc_cls_doc)
+            _add_pydantic_validation_attributes(dc_cls, the_config, should_validate_on_init, dc_cls_doc)
             return dc_cls
 
     if _cls is None:

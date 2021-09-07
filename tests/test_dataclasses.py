@@ -78,10 +78,7 @@ def test_validate_assignment():
 
 
 def test_validate_assignment_error():
-    class Config:
-        validate_assignment = True
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True))
     class MyDataclass:
         a: int
 

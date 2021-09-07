@@ -36,6 +36,14 @@ keyword argument `config` which has the same meaning as [Config](model_config.md
 For more information about combining validators with dataclasses, see
 [dataclass validators](validators.md#dataclass-validators).
 
+## Dataclass Config
+
+If you want to modify the `Config` like you would with a `BaseModel`, you have three options:
+
+```py
+{!.tmp_examples/dataclasses_config.py!}
+```
+
 ## Nested dataclasses
 
 Nested dataclasses are supported both in dataclasses and normal models.
