@@ -78,18 +78,7 @@ if TYPE_CHECKING:
 
     Model = TypeVar('Model', bound='BaseModel')
 
-
-try:
-    import cython  # type: ignore
-except ImportError:
-    compiled: bool = False
-else:  # pragma: no cover
-    try:
-        compiled = cython.compiled
-    except AttributeError:
-        compiled = False
-
-__all__ = 'BaseModel', 'compiled', 'create_model', 'validate_model'
+__all__ = 'BaseModel', 'create_model', 'validate_model'
 
 _T = TypeVar('_T')
 

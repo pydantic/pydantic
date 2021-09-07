@@ -2,7 +2,7 @@
 from . import dataclasses
 from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
 from .class_validators import root_validator, validator
-from .config import BaseConfig, ConfigDict, Extra
+from .config import BaseConfig, ConfigDict, Extra, compiled
 from .decorator import validate_arguments
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
@@ -29,6 +29,7 @@ __all__ = [
     'root_validator',
     'validator',
     # config
+    'compiled',
     'BaseConfig',
     'ConfigDict',
     'Extra',
@@ -43,7 +44,6 @@ __all__ = [
     'Required',
     # main
     'BaseModel',
-    'compiled',
     'create_model',
     'validate_model',
     # network

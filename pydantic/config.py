@@ -28,7 +28,17 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'inherit_config', 'prepare_config'
+__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'compiled', 'inherit_config', 'prepare_config'
+
+try:
+    import cython  # type: ignore
+except ImportError:
+    compiled: bool = False
+else:  # pragma: no cover
+    try:
+        compiled = cython.compiled
+    except AttributeError:
+        compiled = False
 
 
 class Extra(str, Enum):
@@ -39,9 +49,7 @@ class Extra(str, Enum):
 
 # https://github.com/cython/cython/issues/4003
 # Will be fixed with Cython 3 but still in alpha right now
-if compiled:
-    ConfigDict = dict
-else:
+if not compiled:
     from typing_extensions import TypedDict
 
     class ConfigDict(TypedDict, total=False):
@@ -74,6 +82,10 @@ else:
         copy_on_model_validation: bool
         # whether dataclass `__post_init__` should be run after validation
         post_init_after_validation: bool
+
+
+else:
+    ConfigDict = dict  # type: ignore
 
 
 class BaseConfig:

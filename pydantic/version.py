@@ -9,7 +9,7 @@ def version_info() -> str:
     from importlib import import_module
     from pathlib import Path
 
-    from .main import compiled
+    from .config import compiled
 
     optional_deps = []
     for p in ('devtools', 'dotenv', 'email-validator', 'typing-extensions'):
