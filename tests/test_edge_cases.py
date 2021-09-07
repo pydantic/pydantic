@@ -1940,7 +1940,7 @@ def test_config_partial():
     assert Baz.Config.partial is True
 
     class Buzz(Bar):
-        d: str
+        d: str = Field(...)
 
     buzz = Buzz(a='x', c=None)
     assert buzz.dict() == {'a': 'x', 'c': None}

@@ -432,7 +432,9 @@ class ModelField(Representation):
 
         field_info, value = cls._get_field_info(name, annotation, value, config)
         required: 'BoolUndefined' = Undefined
-        if value is Required:
+        if config.partial:
+            required = False
+        elif value is Required:
             required = True
             value = None
         elif value is not Undefined:
