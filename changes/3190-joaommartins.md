@@ -1,0 +1,1 @@
+Replace `isinstance` check with strict `type` primitives check in schema `encode_default`.
