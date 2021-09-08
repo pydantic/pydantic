@@ -909,7 +909,7 @@ def multitypes_literal_field_for_schema(values: Tuple[Any, ...], field: ModelFie
 
 
 def encode_default(dft: Any) -> Any:
-    if isinstance(dft, (int, float, str)):
+    if type(dft) in (int, float, str):
         return dft
     elif sequence_like(dft):
         t = dft.__class__
