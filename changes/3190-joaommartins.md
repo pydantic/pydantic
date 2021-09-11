@@ -1,1 +1,1 @@
-Replace `isinstance` check with strict `type` primitives check in schema `encode_default`.
+Always use `Enum` value as default in generated JSON schema.
