@@ -1411,9 +1411,7 @@ def test_enum_str_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    generated_schema_properties = UserModel.schema().get('properties', {})
-
-    assert generated_schema_properties.get('friends', {}).get('default', None) is MyEnum.FOO.value
+    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
 
 
 def test_enum_int_default():
@@ -1423,9 +1421,7 @@ def test_enum_int_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    generated_schema_properties = UserModel.schema().get('properties', {})
-
-    assert generated_schema_properties.get('friends', {}).get('default', None) is MyEnum.FOO.value
+    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
 
 
 def test_dict_default():
