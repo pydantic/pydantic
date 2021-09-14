@@ -75,7 +75,7 @@ def validator(
     elif not all([isinstance(field, str) for field in fields]):
         raise ConfigError(
             "validator fields should be strings only. Do not pass multiple fields in a list, etc. "
-            "E.g. usage should be `@validator('<field_name>', ...)` "
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)` "
             "NOT `@validator(['<field_name_1>', '<field_name_2>', ...], ...)`"
         )
 
