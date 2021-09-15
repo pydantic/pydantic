@@ -672,7 +672,7 @@ def test_validator_bad_fields_throws_configerror():
             def check_fields(cls, v):
                 return v
 
-    assert 'validator fields should be strings only.' in str(exc_info.value)
+    assert 'validator fields should be passed as separate string args.' in str(exc_info.value)
 
 
 def test_datetime_validator():
