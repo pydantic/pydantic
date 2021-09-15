@@ -658,6 +658,21 @@ def test_validator_always_post_optional():
     assert Model().a == 'default value'
 
 
+def test_validator_bad_fields_throws_configerror():
+    """Attempts to create a validator with fields set as a list of strings,
+    rather than just multiple string args. Expects ConfigError to be raised.
+    """
+    with pytest.raises(ConfigError) as exc_info:
+        class Model(BaseModel):
+            a: str
+            b: str
+
+            @validator(['a', 'b'])
+            def check_fields(cls, v):
+                return v
+    assert 'validator fields should be strings only.' in str(exc_info.value)
+
+
 def test_datetime_validator():
     check_calls = 0
 
