@@ -663,6 +663,7 @@ def test_validator_bad_fields_throws_configerror():
     rather than just multiple string args. Expects ConfigError to be raised.
     """
     with pytest.raises(ConfigError) as exc_info:
+
         class Model(BaseModel):
             a: str
             b: str
@@ -670,6 +671,7 @@ def test_validator_bad_fields_throws_configerror():
             @validator(['a', 'b'])
             def check_fields(cls, v):
                 return v
+
     assert 'validator fields should be strings only.' in str(exc_info.value)
 
 
