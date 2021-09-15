@@ -271,7 +271,7 @@ def test_typeddict_schema():
         },
     }
 
-    
+
 def test_typeddict_postponed_annotation():
     class DataTD(TypedDict):
         v: 'PositiveInt'
@@ -281,13 +281,14 @@ def test_typeddict_postponed_annotation():
 
     with pytest.raises(ValidationError):
         Model.parse_obj({'t': {'v': -1}})
-        
-        
+
+
 def test_typeddict_annotated_nonoptional():
     class DataTD(TypedDict):
         a: Optional[int]
         b: Annotated[Optional[int], Field(...)]
-        c: Annotated[Optional[int], Field()]
+        c: Annotated[Optional[int], Field(..., description='Test')]
+        d: Annotated[Optional[int], Field()]
 
     class Model(BaseModel):
         data_td: DataTD
@@ -304,10 +305,10 @@ def test_typeddict_annotated_nonoptional():
                 'properties': {
                     'a': {'title': 'A', 'type': 'integer'},
                     'b': {'title': 'B', 'type': 'integer'},
-                    'c': {'title': 'C', 'type': 'integer'},
+                    'c': {'title': 'C', 'type': 'integer', 'description': 'Test'},
+                    'd': {'title': 'D', 'type': 'integer'},
                 },
-                'required': ['a', 'b'],
+                'required': ['a', 'b', 'c'],
             },
         },
     }
-    
