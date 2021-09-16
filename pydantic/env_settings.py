@@ -165,7 +165,7 @@ class EnvSettingsSource:
         elif isinstance(env_files, (tuple, list)):
             return {k: v for path in reversed(env_files) for k, v in read_dotenv_file(path).items()}
         else:
-            raise TypeError(f"expected str, os.PathLike, list or tuple object, not {type(env_files).__name__}")
+            raise TypeError(f'expected str, os.PathLike, list or tuple object, not {type(env_files).__name__}')
 
     def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
         """

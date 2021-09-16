@@ -863,10 +863,10 @@ def test_multiple_env_file_invalid_type(tmp_path, env):
         ...
 
     with pytest.raises(TypeError):
-        Settings(_env_file=b"")
+        Settings(_env_file=b'')
 
     with pytest.raises(TypeError):
-        Settings(_env_file=[b""])
+        Settings(_env_file=[b''])
 
     with pytest.raises(TypeError):
         Settings(_env_file=[None])
@@ -901,9 +901,7 @@ def test_read_dotenv_vars(tmp_path):
     assert EnvSettingsSource._read_dotenv_vars(env_files=None, env_file_encoding=None, case_sensitive=False) == {}
 
     with pytest.raises(TypeError):
-        EnvSettingsSource._read_dotenv_vars(
-            env_files=b'invalid type', env_file_encoding=None, case_sensitive=False
-        )
+        EnvSettingsSource._read_dotenv_vars(env_files=b'invalid type', env_file_encoding=None, case_sensitive=False)
 
 
 @pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
