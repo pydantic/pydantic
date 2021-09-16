@@ -858,6 +858,21 @@ def test_multiple_env_file_and_process_env_(tmp_path, env):
 
 
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_multiple_env_file_invalid_type(tmp_path, env):
+    class Settings(BaseSettings):
+        ...
+
+    with pytest.raises(TypeError):
+        Settings(_env_file=b"")
+
+    with pytest.raises(TypeError):
+        Settings(_env_file=[b""])
+
+    with pytest.raises(TypeError):
+        Settings(_env_file=[None])
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
 def test_read_process_env_vars(env):
     assert EnvSettingsSource._read_process_env_vars(True) == os.environ
     env.set('CaseSensitiveVariable', '')
@@ -884,12 +899,11 @@ def test_read_dotenv_vars(tmp_path):
         env_files=[prod_env, 'does_not_exist_file'], env_file_encoding='utf8', case_sensitive=False
     ) == {'debug_mode': 'false', 'host': 'https://example.com/services'}
     assert EnvSettingsSource._read_dotenv_vars(env_files=None, env_file_encoding=None, case_sensitive=False) == {}
-    assert (
+
+    with pytest.raises(TypeError):
         EnvSettingsSource._read_dotenv_vars(
-            env_files=b'does not allowe type', env_file_encoding=None, case_sensitive=False
+            env_files=b'invalid type', env_file_encoding=None, case_sensitive=False
         )
-        == {}
-    )
 
 
 @pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
