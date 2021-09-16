@@ -735,7 +735,7 @@ def test_env_file_custom_encoding(tmp_path):
 test_default_env_file = """\
 debug_mode=true
 host=localhost
-port=8000
+Port=8000
 """
 
 test_prod_env_file = """\
@@ -855,6 +855,41 @@ def test_multiple_env_file_and_process_env_(tmp_path, env):
     assert s.debug_mode is False
     assert s.host == 'https://pydantic-docs.helpmanual.io'
     assert s.port == 8000
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_process_env_vars(env):
+    assert EnvSettingsSource._read_process_env_vars(True) == os.environ
+    env.set('CaseSensitiveVariable', '')
+    assert EnvSettingsSource._read_process_env_vars(False) != os.environ
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_dotenv_vars(tmp_path):
+    base_env = tmp_path / '.env'
+    base_env.write_text(test_default_env_file)
+    prod_env = tmp_path / '.env.prod'
+    prod_env.write_text(test_prod_env_file)
+
+    assert EnvSettingsSource._read_dotenv_vars(
+        env_files=[prod_env, base_env], env_file_encoding='utf8', case_sensitive=False
+    ) == {'debug_mode': 'false', 'host': 'https://example.com/services', 'port': '8000'}
+    assert EnvSettingsSource._read_dotenv_vars(
+        env_files=[prod_env, base_env], env_file_encoding='utf8', case_sensitive=True
+    ) == {'debug_mode': 'false', 'host': 'https://example.com/services', 'Port': '8000'}
+    assert EnvSettingsSource._read_dotenv_vars(
+        env_files=[prod_env], env_file_encoding='utf8', case_sensitive=False
+    ) == {'debug_mode': 'false', 'host': 'https://example.com/services'}
+    assert EnvSettingsSource._read_dotenv_vars(
+        env_files=[prod_env, 'does_not_exist_file'], env_file_encoding='utf8', case_sensitive=False
+    ) == {'debug_mode': 'false', 'host': 'https://example.com/services'}
+    assert EnvSettingsSource._read_dotenv_vars(env_files=None, env_file_encoding=None, case_sensitive=False) == {}
+    assert (
+        EnvSettingsSource._read_dotenv_vars(
+            env_files=b'does not allowe type', env_file_encoding=None, case_sensitive=False
+        )
+        == {}
+    )
 
 
 @pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
