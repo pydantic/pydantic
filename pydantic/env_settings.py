@@ -152,9 +152,6 @@ class EnvSettingsSource:
         env_files: Optional[DotenvType], env_file_encoding: Optional[str], case_sensitive: bool
     ) -> Dict[str, Optional[str]]:
         def read_dotenv_file(env_file: StrPath) -> Dict[str, Optional[str]]:
-            if env_file is None:
-                return {}
-
             env_path = Path(env_file).expanduser()
             if not env_path.is_file():
                 return {}
