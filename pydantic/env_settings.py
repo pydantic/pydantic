@@ -1,7 +1,7 @@
 import os
 import warnings
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Tuple, Type, Union
+from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, MutableMapping, Optional, Tuple, Type, Union
 
 from .config import BaseConfig, Extra
 from .fields import ModelField
@@ -12,6 +12,8 @@ from .utils import deep_update, path_type, sequence_like
 env_file_sentinel = str(object())
 
 SettingsSourceCallable = Callable[['BaseSettings'], Dict[str, Any]]
+MultiDotenvType = Union[List[StrPath], Tuple[StrPath, ...]]
+DotenvType = Union[StrPath, MultiDotenvType]
 
 
 class SettingsError(ValueError):
@@ -28,7 +30,7 @@ class BaseSettings(BaseModel):
 
     def __init__(
         __pydantic_self__,
-        _env_file: Optional[StrPath] = env_file_sentinel,
+        _env_file: Optional[DotenvType] = env_file_sentinel,
         _env_file_encoding: Optional[str] = None,
         _secrets_dir: Optional[StrPath] = None,
         **values: Any,
@@ -43,7 +45,7 @@ class BaseSettings(BaseModel):
     def _build_values(
         self,
         init_kwargs: Dict[str, Any],
-        _env_file: Optional[StrPath] = None,
+        _env_file: Optional[DotenvType] = None,
         _env_file_encoding: Optional[str] = None,
         _secrets_dir: Optional[StrPath] = None,
     ) -> Dict[str, Any]:
@@ -134,9 +136,39 @@ class InitSettingsSource:
 class EnvSettingsSource:
     __slots__ = ('env_file', 'env_file_encoding')
 
-    def __init__(self, env_file: Optional[StrPath], env_file_encoding: Optional[str]):
-        self.env_file: Optional[StrPath] = env_file
+    def __init__(self, env_file: Optional[DotenvType], env_file_encoding: Optional[str]):
+        self.env_file: Optional[DotenvType] = env_file
         self.env_file_encoding: Optional[str] = env_file_encoding
+
+    @staticmethod
+    def _read_process_env_vars(case_sensitive: bool) -> MutableMapping[str, str]:
+        if case_sensitive:
+            return os.environ
+        else:
+            return {k.lower(): v for k, v in os.environ.items()}
+
+    @staticmethod
+    def _read_dotenv_vars(
+        env_files: Optional[DotenvType], env_file_encoding: Optional[str], case_sensitive: bool
+    ) -> Dict[str, Optional[str]]:
+        def read_dotenv_file(env_file: StrPath) -> Dict[str, Optional[str]]:
+            if env_file is None:
+                return {}
+
+            env_path = Path(env_file).expanduser()
+            if not env_path.is_file():
+                return {}
+
+            return read_env_file(env_path, encoding=env_file_encoding, case_sensitive=case_sensitive)
+
+        if env_files is None:
+            return {}
+        elif isinstance(env_files, (str, os.PathLike)):
+            return read_dotenv_file(env_files)
+        elif isinstance(env_files, (tuple, list)):
+            return {k: v for path in reversed(env_files) for k, v in read_dotenv_file(path).items()}
+        else:
+            return {}
 
     def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
         """
@@ -144,20 +176,10 @@ class EnvSettingsSource:
         """
         d: Dict[str, Optional[str]] = {}
 
-        if settings.__config__.case_sensitive:
-            env_vars: Mapping[str, Optional[str]] = os.environ
-        else:
-            env_vars = {k.lower(): v for k, v in os.environ.items()}
-
-        if self.env_file is not None:
-            env_path = Path(self.env_file).expanduser()
-            if env_path.is_file():
-                env_vars = {
-                    **read_env_file(
-                        env_path, encoding=self.env_file_encoding, case_sensitive=settings.__config__.case_sensitive
-                    ),
-                    **env_vars,
-                }
+        case_sensitive = settings.__config__.case_sensitive
+        process_env_vars = self._read_process_env_vars(case_sensitive)
+        dotenv_vars = self._read_dotenv_vars(self.env_file, self.env_file_encoding, case_sensitive)
+        env_vars = {**dotenv_vars, **process_env_vars}
 
         for field in settings.__fields__.values():
             env_val: Optional[str] = None
