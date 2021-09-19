@@ -495,6 +495,12 @@ _(This script is complete, it should run "as is")_
 `RedisDsn`
 : a redis DSN style URL; see [URLs](#urls)
 
+`MongoDsn`
+: a MongoDB DSN style URL; see [URLs](#urls)
+
+`KafkaDsn`
+: a kafka DSN style URL; see [URLs](#urls)
+
 `stricturl`
 : a type method for arbitrary URL constraints; see [URLs](#urls)
 
@@ -585,6 +591,7 @@ For URI/URL validation the following types are available:
   - `postgresql+py-postgresql`
   - `postgresql+pygresql`
 - `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
+- `MongoDsn` : scheme `mongodb`, user info not required, database name not required, port not required  
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`: method with the following keyword arguments:
     - `strip_whitespace: bool = True`
