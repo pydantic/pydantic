@@ -70,6 +70,7 @@ __all__ = [
     'IPvAnyNetwork',
     'PostgresDsn',
     'RedisDsn',
+    'MongoDsn',
     'KafkaDsn',
     'validate_email',
 ]

@@ -6,11 +6,11 @@ from pydantic import (
     EmailStr,
     FileUrl,
     HttpUrl,
+    KafkaDsn,
+    MongoDsn,
     NameEmail,
     PostgresDsn,
     RedisDsn,
-    MongoDsn,
-    KafkaDsn,
     ValidationError,
     stricturl,
 )
