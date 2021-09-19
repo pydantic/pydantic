@@ -6,10 +6,11 @@ from pydantic import (
     EmailStr,
     FileUrl,
     HttpUrl,
-    KafkaDsn,
     NameEmail,
     PostgresDsn,
     RedisDsn,
+    MongoDsn,
+    KafkaDsn,
     ValidationError,
     stricturl,
 )
@@ -475,6 +476,33 @@ def test_redis_dsns():
     assert m.a.host == 'localhost'
     assert m.a.port == '6379'
     assert m.a.path == '/0'
+
+
+def test_mongodb_dsns():
+    class Model(BaseModel):
+        a: MongoDsn
+
+    # TODO: Need to unit tests about "Replica Set", "Sharded cluster" and other deployment modes of MongoDB
+    m = Model(a='mongodb://user:pass@localhost:1234/app')
+    assert m.a == 'mongodb://user:pass@localhost:1234/app'
+    assert m.a.user == 'user'
+    assert m.a.password == 'pass'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+    # Password is not required for MongoDB protocol
+    m = Model(a='mongodb://localhost:1234/app')
+    assert m.a == 'mongodb://localhost:1234/app'
+    assert m.a.user is None
+    assert m.a.password is None
+
+    # Only schema and host is required for MongoDB protocol
+    m = Model(a='mongodb://localhost')
+    assert m.a.scheme == 'mongodb'
+    assert m.a.host == 'localhost'
+    assert m.a.port == '27017'
 
 
 def test_kafka_dsns():

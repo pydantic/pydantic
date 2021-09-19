@@ -372,7 +372,6 @@ class MongoDsn(AnyUrl):
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
         return {
-            'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
             'port': '27017',
         }
 
