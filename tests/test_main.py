@@ -200,7 +200,7 @@ def test_allow_extra_repr():
 
         class Config:
             extra = Extra.allow
-    
+
     assert str(Model(a='10.2', b=12)) == f'a={10.2}'
 
 
