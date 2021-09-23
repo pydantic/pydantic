@@ -1,0 +1,1 @@
+Fix `timedelta` validation for small floats

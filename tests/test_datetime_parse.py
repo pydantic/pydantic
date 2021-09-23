@@ -175,6 +175,8 @@ def test_parse_python_format(delta):
         ('30', timedelta(seconds=30)),
         (30, timedelta(seconds=30)),
         (30.1, timedelta(seconds=30, milliseconds=100)),
+        (1e-5, timedelta(microseconds=10)),
+        (3 * 0.1, timedelta(microseconds=300000)),
         # minutes seconds
         ('15:30', timedelta(minutes=15, seconds=30)),
         ('5:30', timedelta(minutes=5, seconds=30)),
