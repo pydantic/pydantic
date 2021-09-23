@@ -353,7 +353,7 @@ class PostgresDsn(AnyUrl):
     user_required = True
 
 
-class RabbitmqDsn(AnyUrl):
+class RabbitMqDsn(AnyUrl):
     allowed_schemes = {'amqp'}
     user_required = True
 

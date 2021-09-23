@@ -9,7 +9,7 @@ from pydantic import (
     KafkaDsn,
     NameEmail,
     PostgresDsn,
-    RabbitmqDsn,
+    RabbitMqDsn,
     RedisDsn,
     ValidationError,
     stricturl,
@@ -533,7 +533,7 @@ def test_postgres_dsns():
 
 def test_rabbitmq_dsns():
     class Model(BaseModel):
-        a: RabbitmqDsn
+        a: RabbitMqDsn
 
     assert (
         Model(a="amqp://user:pass@localhost:5432/app").a
