@@ -493,7 +493,7 @@ _(This script is complete, it should run "as is")_
 : a postgres DSN style URL; see [URLs](#urls)
 
 `RabbitMqDsn`
-: a rabbitmq DSN style URL; see [URLs](#urls)
+: a RabbitMQ DSN style URL; see [URLs](#urls)
 
 `RedisDsn`
 : a redis DSN style URL; see [URLs](#urls)
