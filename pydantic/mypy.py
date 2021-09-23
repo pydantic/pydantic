@@ -1,6 +1,8 @@
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
+from pydantic.utils import is_valid_field
+
 try:
     import toml
 except ImportError:  # pragma: no cover
@@ -248,6 +250,9 @@ class PydanticModelTransformer:
 
             lhs = stmt.lvalues[0]
             if not isinstance(lhs, NameExpr):
+                continue
+
+            if not is_valid_field(lhs.name):
                 continue
 
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
