@@ -1,0 +1,1 @@
+Add RabbitMqDsn class

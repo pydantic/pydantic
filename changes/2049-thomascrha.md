@@ -1,1 +1,0 @@
-Added new Dsn type for Rabbitmq
