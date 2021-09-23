@@ -449,6 +449,7 @@ def test_rabbitmq_dsns():
         a: RabbitMqDsn
 
     assert Model(a='amqp://user:pass@localhost:5432/app').a == 'amqp://user:pass@localhost:5432/app'
+    assert Model(a='amqp://user:pass@localhost:5432//').a == 'amqp://user:pass@localhost:5432//'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
