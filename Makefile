@@ -25,7 +25,7 @@ install-benchmarks: install-pydantic
 	pip install -U -r benchmarks/requirements.txt
 
 .PHONY: install
-install: install-testing install-linting
+install: install-testing install-linting install-docs
 	@echo 'installed development requirements'
 
 .PHONY: build-trace
@@ -78,7 +78,7 @@ test-examples:
 
 .PHONY: test-fastapi
 test-fastapi:
-	git clone https://github.com/tiangolo/fastapi.git
+	git clone https://github.com/tiangolo/fastapi.git --single-branch
 	./tests/test_fastapi.sh
 
 .PHONY: all
@@ -134,5 +134,5 @@ docs-serve:
 .PHONY: publish-docs
 publish-docs:
 	zip -r site.zip site
-	@curl -f -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
+	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
 	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys

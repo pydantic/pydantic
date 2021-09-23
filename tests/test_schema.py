@@ -7,14 +7,32 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Iterable, List, NewType, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Deque,
+    Dict,
+    FrozenSet,
+    Generic,
+    Iterable,
+    List,
+    NamedTuple,
+    NewType,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 from uuid import UUID
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
+from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
     get_flat_models_from_model,
@@ -42,6 +60,10 @@ from pydantic.types import (
     NoneBytes,
     NoneStr,
     NoneStrBytes,
+    NonNegativeFloat,
+    NonNegativeInt,
+    NonPositiveFloat,
+    NonPositiveInt,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -56,12 +78,14 @@ from pydantic.types import (
     conint,
     constr,
 )
-from pydantic.typing import Literal
 
 try:
     import email_validator
 except ImportError:
     email_validator = None
+
+
+T = TypeVar('T')
 
 
 def test_key():
@@ -374,6 +398,33 @@ def test_enum_and_model_have_same_behaviour():
     }
 
 
+def test_list_enum_schema_extras():
+    class FoodChoice(str, Enum):
+        spam = 'spam'
+        egg = 'egg'
+        chips = 'chips'
+
+    class Model(BaseModel):
+        foods: List[FoodChoice] = Field(examples=[['spam', 'egg']])
+
+    assert Model.schema() == {
+        'definitions': {
+            'FoodChoice': {
+                'description': 'An enumeration.',
+                'enum': ['spam', 'egg', 'chips'],
+                'title': 'FoodChoice',
+                'type': 'string',
+            }
+        },
+        'properties': {
+            'foods': {'type': 'array', 'items': {'$ref': '#/definitions/FoodChoice'}, 'examples': [['spam', 'egg']]},
+        },
+        'required': ['foods'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_json_schema():
     class Model(BaseModel):
         a = b'foobar'
@@ -433,8 +484,16 @@ def test_optional():
 def test_any():
     class Model(BaseModel):
         a: Any
+        b: object
 
-    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'title': 'A'}}}
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A'},
+            'b': {'title': 'B'},
+        },
+    }
 
 
 def test_set():
@@ -504,6 +563,18 @@ def test_tuple(field_type, expected_schema):
     base_schema['properties']['a']['items'] = expected_schema
 
     assert Model.schema() == base_schema
+
+
+def test_deque():
+    class Model(BaseModel):
+        a: Deque[str]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'string'}}},
+        'required': ['a'],
+    }
 
 
 def test_bool():
@@ -754,6 +825,8 @@ def test_secret_types(field_type, inner_type):
         (conint(multiple_of=5), {'multipleOf': 5}),
         (PositiveInt, {'exclusiveMinimum': 0}),
         (NegativeInt, {'exclusiveMaximum': 0}),
+        (NonNegativeInt, {'minimum': 0}),
+        (NonPositiveInt, {'maximum': 0}),
     ],
 )
 def test_special_int_types(field_type, expected_schema):
@@ -780,6 +853,8 @@ def test_special_int_types(field_type, expected_schema):
         (confloat(multiple_of=5), {'multipleOf': 5}),
         (PositiveFloat, {'exclusiveMinimum': 0}),
         (NegativeFloat, {'exclusiveMaximum': 0}),
+        (NonNegativeFloat, {'minimum': 0}),
+        (NonPositiveFloat, {'maximum': 0}),
         (ConstrainedDecimal, {}),
         (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
@@ -971,10 +1046,18 @@ def test_ipvanynetwork_type():
     }
 
 
-@pytest.mark.parametrize('annotation', [Callable, Callable[[int], int]])
-def test_callable_type(annotation):
+@pytest.mark.parametrize(
+    'type_,default_value',
+    (
+        (Callable, ...),
+        (Callable, lambda x: x),
+        (Callable[[int], int], ...),
+        (Callable[[int], int], lambda x: x),
+    ),
+)
+def test_callable_type(type_, default_value):
     class Model(BaseModel):
-        callback: annotation
+        callback: type_ = default_value
         foo: int
 
     with pytest.warns(UserWarning):
@@ -1388,6 +1471,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'max_length': 5}, int),
         ({'min_length': 2}, float),
         ({'max_length': 5}, Decimal),
+        ({'allow_mutation': False}, bool),
         ({'regex': '^foo$'}, int),
         ({'gt': 2}, str),
         ({'lt': 5}, bytes),
@@ -1696,22 +1780,45 @@ def test_new_type_schema():
     }
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed and python version < 3.8')
 def test_literal_schema():
     class Model(BaseModel):
         a: Literal[1]
         b: Literal['a']
         c: Literal['a', 1]
+        d: Literal['a', Literal['b'], 1, 2]
 
     assert Model.schema() == {
         'properties': {
-            'a': {'title': 'A', 'type': 'integer', 'const': 1},
-            'b': {'title': 'B', 'type': 'string', 'const': 'a'},
-            'c': {'anyOf': [{'type': 'string', 'const': 'a'}, {'type': 'integer', 'const': 1}], 'title': 'C'},
+            'a': {'title': 'A', 'type': 'integer', 'enum': [1]},
+            'b': {'title': 'B', 'type': 'string', 'enum': ['a']},
+            'c': {'title': 'C', 'anyOf': [{'type': 'string', 'enum': ['a']}, {'type': 'integer', 'enum': [1]}]},
+            'd': {
+                'title': 'D',
+                'anyOf': [
+                    {'type': 'string', 'enum': ['a', 'b']},
+                    {'type': 'integer', 'enum': [1, 2]},
+                ],
+            },
         },
-        'required': ['a', 'b', 'c'],
+        'required': ['a', 'b', 'c', 'd'],
         'title': 'Model',
         'type': 'object',
+    }
+
+
+def test_literal_enum():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+
+    class Model(BaseModel):
+        kind: Literal[MyEnum.FOO]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'kind': {'title': 'Kind', 'enum': ['foo'], 'type': 'string'}},
+        'required': ['kind'],
     }
 
 
@@ -2061,4 +2168,397 @@ def test_new_type():
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
+    }
+
+
+def test_multiple_models_with_same_name(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+
+class ModelOne(BaseModel):
+    class NestedModel(BaseModel):
+        a: float
+
+    nested: NestedModel
+
+
+class ModelTwo(BaseModel):
+    class NestedModel(BaseModel):
+        b: float
+
+    nested: NestedModel
+
+
+class NestedModel(BaseModel):
+    c: float
+        """
+    )
+
+    models = [module.ModelOne, module.ModelTwo, module.NestedModel]
+    model_names = set(schema(models)['definitions'].keys())
+    expected_model_names = {
+        'ModelOne',
+        'ModelTwo',
+        f'{module.__name__}__ModelOne__NestedModel',
+        f'{module.__name__}__ModelTwo__NestedModel',
+        f'{module.__name__}__NestedModel',
+    }
+    assert model_names == expected_model_names
+
+
+def test_multiple_enums_with_same_name(create_module):
+    module_1 = create_module(
+        # language=Python
+        """
+from enum import Enum
+
+from pydantic import BaseModel
+
+
+class MyEnum(str, Enum):
+    a = 'a'
+    b = 'b'
+    c = 'c'
+
+
+class MyModel(BaseModel):
+    my_enum_1: MyEnum
+        """
+    )
+
+    module_2 = create_module(
+        # language=Python
+        """
+from enum import Enum
+
+from pydantic import BaseModel
+
+
+class MyEnum(str, Enum):
+    d = 'd'
+    e = 'e'
+    f = 'f'
+
+
+class MyModel(BaseModel):
+    my_enum_2: MyEnum
+        """
+    )
+
+    class Model(BaseModel):
+        my_model_1: module_1.MyModel
+        my_model_2: module_2.MyModel
+
+    assert len(Model.schema()['definitions']) == 4
+    assert set(Model.schema()['definitions']) == {
+        f'{module_1.__name__}__MyEnum',
+        f'{module_1.__name__}__MyModel',
+        f'{module_2.__name__}__MyEnum',
+        f'{module_2.__name__}__MyModel',
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_schema_for_generic_field():
+    T = TypeVar('T')
+
+    class GenModel(Generic[T]):
+        def __init__(self, data: Any):
+            self.data = data
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return v
+
+    class Model(BaseModel):
+        data: GenModel[str]
+        data1: GenModel
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'data': {'allOf': [{'type': 'string'}], 'title': 'Data'},
+            'data1': {
+                'title': 'Data1',
+            },
+        },
+        'required': ['data', 'data1'],
+    }
+
+    class GenModelModified(GenModel, Generic[T]):
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.pop('allOf', None)
+            field_schema.update(anyOf=[{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}])
+
+    class ModelModified(BaseModel):
+        data: GenModelModified[str]
+        data1: GenModelModified
+
+    assert ModelModified.schema() == {
+        'title': 'ModelModified',
+        'type': 'object',
+        'properties': {
+            'data': {'title': 'Data', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+            'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+        },
+        'required': ['data', 'data1'],
+    }
+
+
+def test_namedtuple_default():
+    class Coordinates(NamedTuple):
+        x: float
+        y: float
+
+    class LocationBase(BaseModel):
+        coords: Coordinates = Coordinates(0, 0)
+
+    assert LocationBase.schema() == {
+        'title': 'LocationBase',
+        'type': 'object',
+        'properties': {
+            'coords': {
+                'title': 'Coords',
+                'default': Coordinates(x=0, y=0),
+                'type': 'array',
+                'items': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
+            }
+        },
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_advanced_generic_schema():
+    T = TypeVar('T')
+    K = TypeVar('K')
+
+    class Gen(Generic[T]):
+        def __init__(self, data: Any):
+            self.data = data
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return v
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            the_type = field_schema.pop('allOf', [{'type': 'string'}])[0]
+            field_schema.update(title='Gen title', anyOf=[the_type, {'type': 'array', 'items': the_type}])
+
+    class GenTwoParams(Generic[T, K]):
+        def __init__(self, x: str, y: Any):
+            self.x = x
+            self.y = y
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return cls(*v)
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.update(examples='examples')
+
+    class CustomType(Enum):
+        A = 'a'
+        B = 'b'
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.update(title='CustomType title', type='string')
+
+    class Model(BaseModel):
+        data0: Gen
+        data1: Gen[CustomType] = Field(title='Data1 title', description='Data 1 description')
+        data2: GenTwoParams[CustomType, UUID4] = Field(title='Data2 title', description='Data 2')
+        # check Tuple because changes in code touch that type
+        data3: Tuple
+        data4: Tuple[CustomType]
+        data5: Tuple[CustomType, str]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'data0': {
+                'anyOf': [{'type': 'string'}, {'items': {'type': 'string'}, 'type': 'array'}],
+                'title': 'Gen title',
+            },
+            'data1': {
+                'title': 'Gen title',
+                'description': 'Data 1 description',
+                'anyOf': [
+                    {'$ref': '#/definitions/CustomType'},
+                    {'type': 'array', 'items': {'$ref': '#/definitions/CustomType'}},
+                ],
+            },
+            'data2': {
+                'allOf': [
+                    {
+                        'items': [{'$ref': '#/definitions/CustomType'}, {'format': 'uuid4', 'type': 'string'}],
+                        'type': 'array',
+                    }
+                ],
+                'title': 'Data2 title',
+                'description': 'Data 2',
+                'examples': 'examples',
+            },
+            'data3': {'title': 'Data3', 'type': 'array', 'items': {}},
+            'data4': {'title': 'Data4', 'type': 'array', 'items': {'$ref': '#/definitions/CustomType'}},
+            'data5': {
+                'title': 'Data5',
+                'type': 'array',
+                'items': [{'$ref': '#/definitions/CustomType'}, {'type': 'string'}],
+            },
+        },
+        'required': ['data0', 'data1', 'data2', 'data3', 'data4', 'data5'],
+        'definitions': {
+            'CustomType': {
+                'title': 'CustomType title',
+                'description': 'An enumeration.',
+                'enum': ['a', 'b'],
+                'type': 'string',
+            }
+        },
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_nested_generic():
+    """
+    Test a nested BaseModel that is also a Generic
+    """
+
+    class Ref(BaseModel, Generic[T]):
+        uuid: str
+
+        def resolve(self) -> T:
+            ...
+
+    class Model(BaseModel):
+        ref: Ref['Model']  # noqa
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'definitions': {
+            'Ref': {
+                'title': 'Ref',
+                'type': 'object',
+                'properties': {
+                    'uuid': {'title': 'Uuid', 'type': 'string'},
+                },
+                'required': ['uuid'],
+            },
+        },
+        'properties': {
+            'ref': {'$ref': '#/definitions/Ref'},
+        },
+        'required': ['ref'],
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_nested_generic_model():
+    """
+    Test a nested GenericModel
+    """
+
+    class Box(GenericModel, Generic[T]):
+        uuid: str
+        data: T
+
+    class Model(BaseModel):
+        box_str: Box[str]
+        box_int: Box[int]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'definitions': {
+            'Box_str_': Box[str].schema(),
+            'Box_int_': Box[int].schema(),
+        },
+        'properties': {
+            'box_str': {'$ref': '#/definitions/Box_str_'},
+            'box_int': {'$ref': '#/definitions/Box_int_'},
+        },
+        'required': ['box_str', 'box_int'],
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
+)
+def test_complex_nested_generic():
+    """
+    Handle a union of a generic.
+    """
+
+    class Ref(BaseModel, Generic[T]):
+        uuid: str
+
+        def resolve(self) -> T:
+            ...
+
+    class Model(BaseModel):
+        uuid: str
+        model: Union[Ref['Model'], 'Model']  # noqa
+
+        def resolve(self) -> 'Model':  # noqa
+            ...
+
+    Model.update_forward_refs()
+
+    assert Model.schema() == {
+        'definitions': {
+            'Model': {
+                'title': 'Model',
+                'type': 'object',
+                'properties': {
+                    'uuid': {'title': 'Uuid', 'type': 'string'},
+                    'model': {
+                        'title': 'Model',
+                        'anyOf': [
+                            {'$ref': '#/definitions/Ref'},
+                            {'$ref': '#/definitions/Model'},
+                        ],
+                    },
+                },
+                'required': ['uuid', 'model'],
+            },
+            'Ref': {
+                'title': 'Ref',
+                'type': 'object',
+                'properties': {
+                    'uuid': {'title': 'Uuid', 'type': 'string'},
+                },
+                'required': ['uuid'],
+            },
+        },
+        '$ref': '#/definitions/Model',
     }

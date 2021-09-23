@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic import BaseModel, Extra, ValidationError, create_model, errors, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, create_model, errors, validator
 
 
 def test_create_model():
@@ -182,3 +182,26 @@ def test_repeat_base_usage():
     assert model.__fields__.keys() == {'a', 'b'}
     assert model2.__fields__.keys() == {'a', 'c'}
     assert model3.__fields__.keys() == {'a', 'b', 'd'}
+
+
+def test_dynamic_and_static():
+    class A(BaseModel):
+        x: int
+        y: float
+        z: str
+
+    DynamicA = create_model('A', x=(int, ...), y=(float, ...), z=(str, ...))
+
+    for field_name in ('x', 'y', 'z'):
+        assert A.__fields__[field_name].default == DynamicA.__fields__[field_name].default
+
+
+def test_config_field_info_create_model():
+    class Config:
+        fields = {'a': {'description': 'descr'}}
+
+    m1 = create_model('M1', __config__=Config, a=(str, ...))
+    assert m1.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+    m2 = create_model('M2', __config__=Config, a=(str, Field(...)))
+    assert m2.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}

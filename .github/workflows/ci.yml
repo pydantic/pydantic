@@ -37,6 +37,28 @@ jobs:
       - name: check dist
         run: make check-dist
 
+  docs-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: install
+      run: make install-docs
+
+    - name: build site
+      run: make docs
+
+    - name: Store docs site
+      uses: actions/upload-artifact@v2
+      with:
+        name: docs
+        path: site
+
   test-linux:
     name: test py${{ matrix.python-version }} on linux
     runs-on: ubuntu-latest
@@ -68,32 +90,22 @@ jobs:
         ls -alh
         ls -alh pydantic/
 
+    - run: mkdir coverage
+
     - name: test compiled and deps
       run: make test
-
-    - run: coverage xml
-    - uses: codecov/codecov-action@v1.0.13
-      with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
       env:
-        COMPILED: yes
-        DEPS: yes
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dY
+        CONTEXT: linux-py${{ matrix.python-version }}-compiled-yes-deps-yes
 
     - name: uninstall deps
-      run: pip uninstall -y cython email-validator typing-extensions devtools python-dotenv
+      run: pip uninstall -y cython email-validator devtools python-dotenv
 
     - name: test compiled without deps
       run: make test
-
-    - run: coverage xml
-    - uses: codecov/codecov-action@v1.0.13
-      with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
       env:
-        COMPILED: yes
-        DEPS: no
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dN
+        CONTEXT: linux-py${{ matrix.python-version }}-compiled-yes-deps-no
 
     - name: remove compiled binaries
       run: |
@@ -103,15 +115,15 @@ jobs:
 
     - name: test uncompiled without deps
       run: make test
-
-    - run: coverage xml
-    - uses: codecov/codecov-action@v1.0.13
-      with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
       env:
-        COMPILED: no
-        DEPS: no
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cN-dN
+        CONTEXT: linux-py${{ matrix.python-version }}-compiled-no-deps-no
+
+    - name: store coverage files
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage
+        path: coverage
 
   test-windows-mac:
     name: test py${{ matrix.python-version }} on ${{ matrix.os }}
@@ -119,7 +131,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos, windows]
-        python-version: ['3.6', '3.7', '3.8', '3.9']
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-rc.2']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
@@ -138,15 +150,49 @@ jobs:
     - name: install
       run: make install-testing
 
+    - run: mkdir coverage
+
     - name: test
       run: make test
+      env:
+        COVERAGE_FILE: coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
+        CONTEXT: ${{ matrix.os }}-py${{ matrix.python-version }}
 
-    - run: coverage xml
-
-    - uses: codecov/codecov-action@v1.0.13
+    - name: store coverage files
+      uses: actions/upload-artifact@v2
       with:
-        file: ./coverage.xml
-        env_vars: COMPILED,DEPS,PYTHON,OS
+        name: coverage
+        path: coverage
+
+  coverage-combine:
+    needs: [test-linux, test-windows-mac]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.8'
+
+      - name: get coverage files
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage
+          path: coverage
+
+      - run: pip install coverage
+
+      - run: ls -la
+      - run: coverage combine coverage
+      - run: coverage report
+      - run: coverage html --show-contexts
+
+      - name: Store coverage html
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-html
+          path: htmlcov
 
   test-fastapi:
     name: test fastAPI
@@ -190,7 +236,7 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux, test-windows-mac, test-fastapi]
+    needs: [lint, test-linux, test-windows-mac, test-fastapi, benchmark]
     if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
@@ -229,7 +275,7 @@ jobs:
         CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
         CIBW_BEFORE_BUILD: 'pip install -U cython'
-        CIBW_TEST_REQUIRES: 'pytest==6.1.1 pytest-mock==3.3.1'
+        CIBW_TEST_REQUIRES: 'pytest==6.2.5 pytest-mock==3.6.1'
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
         CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
@@ -267,6 +313,12 @@ jobs:
           name: pypi_files
           path: dist
 
+      - name: get docs
+        uses: actions/download-artifact@v2
+        with:
+          name: docs
+          path: site
+
       - name: install
         run: |
           make install-docs
@@ -276,9 +328,6 @@ jobs:
         run: |
           twine check dist/*
           ls -lh dist
-
-      - name: build docs
-        run: make docs
 
       - name: check tag
         run: ./tests/check_tag.py

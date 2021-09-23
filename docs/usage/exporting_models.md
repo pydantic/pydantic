@@ -7,8 +7,8 @@ This is the primary way of converting a model to a dictionary. Sub-models will b
 
 Arguments:
 
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-exclude)
+* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
+* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
 * `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
 * `exclude_unset`: whether fields which were not explicitly set when creating the model should
   be excluded from the returned dictionary; default `False`.
@@ -44,8 +44,8 @@ _(This script is complete, it should run "as is")_
 
 Arguments:
 
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-exclude)
+* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
+* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
 * `update`: a dictionary of values to change when creating the copied model
 * `deep`: whether to make a deep copy of the new model; default `False`
 
@@ -64,8 +64,8 @@ only the value for the `__root__` key is serialised)
 
 Arguments:
 
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-exclude)
+* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
+* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
 * `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
 * `exclude_unset`: whether fields which were not set when creating the model and have their default values should
   be excluded from the returned dictionary; default `False`.
@@ -99,11 +99,19 @@ _(This script is complete, it should run "as is")_
 By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
 as an optional alternative which implements ISO 8601 time diff encoding.
 
+The `json_encoders` are also merged during the models inheritance with the child
+encoders taking precedence over the parent one.
+
+```py
+{!.tmp_examples/exporting_models_json_encoders_merge.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ### Serialising subclasses
 
 !!! note
     New in version **v1.5**.
-    
+
     Subclasses of common types were not automatically serialised to JSON before **v1.5**.
 
 Subclasses of common types are automatically encoded like their super-classes:
@@ -154,7 +162,7 @@ sets or dictionaries. This allows nested selection of which fields to export:
 {!.tmp_examples/exporting_models_exclude1.py!}
 ```
 
-The ellipsis (``...``) indicates that we want to exclude or include an entire key, just as if we included it in a set.
+The `True` indicates that we want to exclude or include an entire key, just as if we included it in a set.
 Of course, the same can be done at any depth level.
 
 Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.  In this scenario,
@@ -166,3 +174,30 @@ member of a list or tuple, the dictionary key `'__all__'` can be used as follows
 ```
 
 The same holds for the `json` and `copy` methods.
+
+### Model and field level include and exclude
+
+In addition to the explicit arguments `exclude` and `include` passed to `dict`, `json` and `copy` methods, we can also pass the `include`/`exclude` arguments directly to the `Field` constructor or the equivalent `field` entry in the models `Config` class:
+
+```py
+{!.tmp_examples/exporting_models_exclude3.py!}
+```
+
+In the case where multiple strategies are used, `exclude`/`include` fields are merged according to the following rules:
+
+* First, model config level settings (via `"fields"` entry) are merged per field with the field constructor settings (i.e. `Field(..., exclude=True)`), with the field constructor taking priority.
+* The resulting settings are merged per class with the explicit settings on `dict`, `json`, `copy` calls with the explicit settings taking priority.
+
+Note that while merging settings, `exclude` entries are merged by computing the "union" of keys, while `include` entries are merged by computing the "intersection" of keys.
+
+The resulting merged exclude settings:
+
+```py
+{!.tmp_examples/exporting_models_exclude4.py!}
+```
+
+are the same as using merged include settings as follows:
+
+```py
+{!.tmp_examples/exporting_models_exclude5.py!}
+```

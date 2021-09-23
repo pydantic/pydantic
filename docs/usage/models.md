@@ -14,7 +14,9 @@ of the resultant model instance will conform to the field types defined on the m
     In other words, *pydantic* guarantees the types and constraints of the output model, not the input data.
 
     This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
-    how it might effect your usage you should read the section about [Data Conversion](#data-conversion) below.
+    how it might affect your usage you should read the section about [Data Conversion](#data-conversion) below.
+
+    Although validation is not the main purpose of *pydantic*, you **can** use this library for custom [validation](validators.md).
 
 ## Basic model usage
 
@@ -46,7 +48,7 @@ assert user.name == 'Jane Doe'
 ```py
 assert user.__fields_set__ == {'id'}
 ```
-The fields which were supplied when user was initialised:
+The fields which were supplied when user was initialised.
 ```py
 assert user.dict() == dict(user) == {'id': 123, 'name': 'Jane Doe'}
 ```
@@ -87,10 +89,10 @@ Models possess the following methods and attributes:
 : loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
 
 `schema()`
-: returns a dictionary representing the model as JSON Schema; cf. [Schema](schema.md)
+: returns a dictionary representing the model as JSON Schema; cf. [schema](schema.md)
 
 `schema_json()`
-: returns a JSON string representation of `schema()`; cf. [Schema](schema.md)
+: returns a JSON string representation of `schema()`; cf. [schema](schema.md)
 
 `construct()`
 : a class method for creating models without running validation; 
@@ -157,13 +159,26 @@ Here a vanilla class is used to demonstrate the principle, but any ORM class cou
 ```
 _(This script is complete, it should run "as is")_
 
-Arbitrary classes are processed by *pydantic* using the `GetterDict` class
-(see [utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)), which attempts to
+
+### Data binding
+
+Arbitrary classes are processed by *pydantic* using the `GetterDict` class (see
+[utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)), which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
 sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
 
 You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`. 
 In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
+
+The `GetterDict` instance will be called for each field with a sentinel as a fallback (if no other default
+value is set). Returning this sentinel means that the field is missing. Any other value will
+be interpreted as the value of the field.
+
+```py
+{!.tmp_examples/models_orm_mode_data_binding.py!}
+```
+_(This script is complete, it should run "as is")_
+
 
 ## Error Handling
 
@@ -384,6 +399,18 @@ You can also add validators by passing a dict to the `__validators__` argument.
 {!.tmp_examples/models_dynamic_validators.py!}
 ```
 
+## Model creation from `NamedTuple` or `TypedDict`
+
+Sometimes you already use in your application classes that inherit from `NamedTuple` or `TypedDict`
+and you don't want to duplicate all your information to have a `BaseModel`.
+For this _pydantic_ provides `create_model_from_namedtuple` and `create_model_from_typeddict` methods.
+Those methods have the exact same keyword arguments as `create_model`.
+
+
+```py
+{!.tmp_examples/models_from_typeddict.py!}
+```
+
 ## Custom Root Types
 
 Pydantic models can be defined with a custom root type by declaring the `__root__` field. 
@@ -470,7 +497,7 @@ _(This script is complete, it should run "as is")_
     in the same model can result in surprising field orderings. (This is due to limitations of python)
 
     Therefore, **we recommend adding type annotations to all fields**, even when a default value
-    would determine the type by itself to guarentee field order is preserved.
+    would determine the type by itself to guarantee field order is preserved.
 
 ## Required fields
 
@@ -528,12 +555,16 @@ Where `Field` refers to the [field function](schema.md#field-customisation).
 
 !!! warning
     The `default_factory` expects the field type to be set.
-    Moreover if you want to validate default values with `validate_all`,
-    *pydantic* will need to call the `default_factory`, which could lead to side effects!
+
+## Automatically excluded attributes
+
+Class variables which begin with an underscore and attributes annotated with `typing.ClassVar` will be
+automatically excluded from the model.
 
 ## Private model attributes
 
-If you need to use internal attributes excluded from model fields, you can declare them using `PrivateAttr`:
+If you need to vary or manipulate internal attributes on instances of the model, you can declare them
+using `PrivateAttr`:
 
 ```py
 {!.tmp_examples/private_attributes.py!}
@@ -583,6 +614,8 @@ _(This script is complete, it should run "as is")_
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
 [here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.
+
+Nevertheless, [strict type checking](types.md#strict-types) is partially supported.
 
 ## Model signature
 

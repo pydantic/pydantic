@@ -156,10 +156,10 @@ class Color(Representation):
         """
         if self._rgba.alpha is None:
             h, s, li = self.as_hsl_tuple(alpha=False)  # type: ignore
-            return f'hsl({h * 360:0.0f}, {s * 100:0.0f}%, {li * 100:0.0f}%)'
+            return f'hsl({h * 360:0.0f}, {s:0.0%}, {li:0.0%})'
         else:
             h, s, li, a = self.as_hsl_tuple(alpha=True)  # type: ignore
-            return f'hsl({h * 360:0.0f}, {s * 100:0.0f}%, {li * 100:0.0f}%, {round(a, 2)})'
+            return f'hsl({h * 360:0.0f}, {s:0.0%}, {li:0.0%}, {round(a, 2)})'
 
     def as_hsl_tuple(self, *, alpha: Optional[bool] = None) -> HslColorTuple:
         """

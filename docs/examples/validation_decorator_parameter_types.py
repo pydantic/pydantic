@@ -65,4 +65,4 @@ def armageddon(
 
 
 print(armageddon(1, 2, e=3))
-print(armageddon(1, 2, 3, 4, 5, 6, c=7, e=8, f=9, g=10, spam=11))
+print(armageddon(1, 2, 3, 4, 5, 6, e=8, f=9, g=10, spam=11))

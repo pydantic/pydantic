@@ -9,7 +9,7 @@ import subprocess
 import sys
 import textwrap
 import traceback
-from pathlib import Path
+from pathlib import Path, PosixPath
 from typing import Any, List, Tuple
 from unittest.mock import patch
 
@@ -60,6 +60,17 @@ class MockPrint:
         s = ' '.join(map(to_string, args))
 
         self.statements.append((frame.f_lineno, s))
+
+
+class MockPath(PosixPath):
+    def __new__(cls, name, *args, **kwargs):
+        if name == 'config.json':
+            return cls._from_parts(name, *args, **kwargs)
+        else:
+            return Path.__new__(cls, name, *args, **kwargs)
+
+    def read_text(self, *args, **kwargs) -> str:
+        return '{"foobar": "spam"}'
 
 
 def build_print_lines(s: str, max_len_reduction: int = 0):
@@ -133,7 +144,11 @@ def exec_examples():
     errors = []
     all_md = all_md_contents()
     new_files = {}
-    os.environ.update({'my_auth_key': 'xxx', 'my_api_key': 'xxx'})
+    os.environ.update({
+        'my_auth_key': 'xxx',
+        'my_api_key': 'xxx',
+        'database_dsn': 'postgres://postgres@localhost:5432/env_db',
+    })
 
     sys.path.append(str(EXAMPLES_DIR))
     for file in sorted(EXAMPLES_DIR.iterdir()):
@@ -173,14 +188,15 @@ def exec_examples():
                 del sys.modules[file.stem]
             mp = MockPrint(file)
             mod = None
-            with patch('builtins.print') as mock_print:
-                if print_intercept:
-                    mock_print.side_effect = mp
-                try:
-                    mod = importlib.import_module(file.stem)
-                except Exception:
-                    tb = traceback.format_exception(*sys.exc_info())
-                    error(''.join(e for e in tb if '/pydantic/docs/examples/' in e or not e.startswith('  File ')))
+            with patch('pathlib.Path', MockPath):
+                with patch('builtins.print') as patch_print:
+                    if print_intercept:
+                        patch_print.side_effect = mp
+                    try:
+                        mod = importlib.import_module(file.stem)
+                    except Exception:
+                        tb = traceback.format_exception(*sys.exc_info())
+                        error(''.join(e for e in tb if '/pydantic/docs/examples/' in e or not e.startswith('  File ')))
 
             if mod and not mod.__file__.startswith(str(EXAMPLES_DIR)):
                 error(f'module path "{mod.__file__}" not inside "{EXAMPLES_DIR}", name may shadow another module?')

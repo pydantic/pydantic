@@ -17,6 +17,7 @@ __all__ = (
     'NoneIsNotAllowedError',
     'NoneIsAllowedError',
     'WrongConstantError',
+    'NotNoneError',
     'BoolError',
     'BytesError',
     'DictError',
@@ -65,6 +66,8 @@ __all__ = (
     'DecimalWholeDigitsError',
     'DateTimeError',
     'DateError',
+    'DateNotInThePastError',
+    'DateNotInTheFutureError',
     'TimeError',
     'DurationError',
     'HashableError',
@@ -158,6 +161,11 @@ class WrongConstantError(PydanticValueError):
     def __str__(self) -> str:
         permitted = ', '.join(repr(v) for v in self.permitted)  # type: ignore
         return f'unexpected value; permitted: {permitted}'
+
+
+class NotNoneError(PydanticTypeError):
+    code = 'not_none'
+    msg_template = 'value is not None'
 
 
 class BoolError(PydanticTypeError):
@@ -430,6 +438,16 @@ class DateTimeError(PydanticValueError):
 
 class DateError(PydanticValueError):
     msg_template = 'invalid date format'
+
+
+class DateNotInThePastError(PydanticValueError):
+    code = 'date.not_in_the_past'
+    msg_template = 'date is not in the past'
+
+
+class DateNotInTheFutureError(PydanticValueError):
+    code = 'date.not_in_the_future'
+    msg_template = 'date is not in the future'
 
 
 class TimeError(PydanticValueError):

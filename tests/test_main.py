@@ -1,11 +1,15 @@
 import sys
+from collections import defaultdict
+from copy import deepcopy
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import Any, Callable, ClassVar, Counter, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
+from pytest import param
 
 from pydantic import (
+    BaseConfig,
     BaseModel,
     ConfigError,
     Extra,
@@ -61,8 +65,7 @@ def test_ultra_simple_repr():
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
     assert m.json() == '{"a": 10.2, "b": 10}'
-    with pytest.raises(DeprecationWarning, match=r'`model.to_string\(\)` method is deprecated'):
-        assert m.to_string() == 'a=10.2 b=10'
+    assert str(m) == 'a=10.2 b=10'
 
 
 def test_default_factory_field():
@@ -283,9 +286,15 @@ def test_set_attr_invalid():
 def test_any():
     class AnyModel(BaseModel):
         a: Any = 10
+        b: object = 20
 
-    assert AnyModel().a == 10
-    assert AnyModel(a='foobar').a == 'foobar'
+    m = AnyModel()
+    assert m.a == 10
+    assert m.b == 20
+
+    m = AnyModel(a='foobar', b='barfoo')
+    assert m.a == 'foobar'
+    assert m.b == 'barfoo'
 
 
 def test_alias():
@@ -351,39 +360,119 @@ def test_required():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-def test_not_immutability():
+def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
             allow_mutation = True
             extra = Extra.forbid
+            frozen = False
 
     m = TestModel()
+
     assert m.a == 10
     m.a = 11
     assert m.a == 11
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
 
 
-def test_immutability():
+@pytest.mark.parametrize('allow_mutation_, frozen_', [(False, False), (False, True), (True, True)])
+def test_immutability(allow_mutation_, frozen_):
     class TestModel(BaseModel):
         a: int = 10
 
         class Config:
-            allow_mutation = False
+            allow_mutation = allow_mutation_
             extra = Extra.forbid
+            frozen = frozen_
 
     m = TestModel()
+
     assert m.a == 10
     with pytest.raises(TypeError) as exc_info:
         m.a = 11
     assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
-    with pytest.raises(ValueError) as exc_info:
-        m.b = 11
-    assert '"TestModel" object has no field "b"' in exc_info.value.args[0]
+
+
+def test_not_frozen_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'TestModel'" in exc_info.value.args[0]
+
+
+def test_with_declared_hash():
+    class Foo(BaseModel):
+        x: int
+
+        def __hash__(self):
+            return self.x ** 2
+
+    class Bar(Foo):
+        y: int
+
+        def __hash__(self):
+            return self.y ** 3
+
+    class Buz(Bar):
+        z: int
+
+    assert hash(Foo(x=2)) == 4
+    assert hash(Bar(x=2, y=3)) == 27
+    assert hash(Buz(x=2, y=3, z=4)) == 27
+
+
+def test_frozen_with_hashable_fields_are_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    assert m.__hash__ is not None
+    assert isinstance(hash(m), int)
+
+
+def test_frozen_with_unhashable_fields_are_not_hashable():
+    class TestModel(BaseModel):
+        a: int = 10
+        y: List[int] = [1, 2, 3]
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    with pytest.raises(TypeError) as exc_info:
+        hash(m)
+    assert "unhashable type: 'list'" in exc_info.value.args[0]
+
+
+def test_hash_function_give_different_result_for_different_object():
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m = TestModel()
+    m2 = TestModel()
+    m3 = TestModel(a=11)
+    assert hash(m) == hash(m2)
+    assert hash(m) != hash(m3)
+
+    # Redefined `TestModel`
+    class TestModel(BaseModel):
+        a: int = 10
+
+        class Config:
+            frozen = True
+
+    m4 = TestModel()
+    assert hash(m) != hash(m4)
 
 
 def test_const_validates():
@@ -666,6 +755,28 @@ def test_validating_assignment_post_root_validator_fail():
     ]
 
 
+def test_root_validator_many_values_change():
+    """It should run root_validator on assignment and update ALL concerned fields"""
+
+    class Rectangle(BaseModel):
+        width: float
+        height: float
+        area: float = None
+
+        class Config:
+            validate_assignment = True
+
+        @root_validator
+        def set_area(cls, values):
+            values['area'] = values['width'] * values['height']
+            return values
+
+    r = Rectangle(width=1, height=1)
+    assert r.area == 1
+    r.height = 5
+    assert r.area == 5
+
+
 def test_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
 
@@ -681,7 +792,6 @@ def test_enum_values():
     assert m.foo == 'foo'
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
 
@@ -886,6 +996,12 @@ def test_class_var():
 
     assert list(MyModel.__fields__.keys()) == ['c']
 
+    class MyOtherModel(MyModel):
+        a = ''
+        b = 2
+
+    assert list(MyOtherModel.__fields__.keys()) == ['c']
+
 
 def test_fields_set():
     class MyModel(BaseModel):
@@ -958,6 +1074,35 @@ def test_dict_exclude_unset_populated_by_alias_with_extra():
     assert m.dict(exclude_unset=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
 
 
+def test_exclude_defaults():
+    class Model(BaseModel):
+        mandatory: str
+        nullable_mandatory: Optional[str] = ...
+        facultative: str = 'x'
+        nullable_facultative: Optional[str] = None
+
+    m = Model(mandatory='a', nullable_mandatory=None)
+    assert m.dict(exclude_defaults=True) == {
+        'mandatory': 'a',
+        'nullable_mandatory': None,
+    }
+
+    m = Model(mandatory='a', nullable_mandatory=None, facultative='y', nullable_facultative=None)
+    assert m.dict(exclude_defaults=True) == {
+        'mandatory': 'a',
+        'nullable_mandatory': None,
+        'facultative': 'y',
+    }
+
+    m = Model(mandatory='a', nullable_mandatory=None, facultative='y', nullable_facultative='z')
+    assert m.dict(exclude_defaults=True) == {
+        'mandatory': 'a',
+        'nullable_mandatory': None,
+        'facultative': 'y',
+        'nullable_facultative': 'z',
+    }
+
+
 def test_dir_fields():
     class MyModel(BaseModel):
         attribute_a: int
@@ -999,6 +1144,17 @@ def test_root_list():
     m = MyModel(__root__=['a'])
     assert m.dict() == {'__root__': ['a']}
     assert m.__root__ == ['a']
+
+
+def test_root_nested():
+    class MyList(BaseModel):
+        __root__: List[str]
+
+    class MyModel(BaseModel):
+        my_list: MyList
+
+    my_list = MyList(__root__=['pika'])
+    assert MyModel(my_list=my_list).dict() == {'my_list': ['pika']}
 
 
 def test_encode_nested_root():
@@ -1067,6 +1223,60 @@ def test_parse_obj_non_mapping_root():
     assert exc_info.value.errors() == [
         {'loc': ('__root__',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}
     ]
+
+
+def test_parse_obj_nested_root():
+    class Pokemon(BaseModel):
+        name: str
+        level: int
+
+    class Pokemons(BaseModel):
+        __root__: List[Pokemon]
+
+    class Player(BaseModel):
+        rank: int
+        pokemons: Pokemons
+
+    class Players(BaseModel):
+        __root__: Dict[str, Player]
+
+    class Tournament(BaseModel):
+        players: Players
+        city: str
+
+    payload = {
+        'players': {
+            'Jane': {
+                'rank': 1,
+                'pokemons': [
+                    {
+                        'name': 'Pikachu',
+                        'level': 100,
+                    },
+                    {
+                        'name': 'Bulbasaur',
+                        'level': 13,
+                    },
+                ],
+            },
+            'Tarzan': {
+                'rank': 2,
+                'pokemons': [
+                    {
+                        'name': 'Jigglypuff',
+                        'level': 7,
+                    },
+                ],
+            },
+        },
+        'city': 'Qwerty',
+    }
+
+    tournament = Tournament.parse_obj(payload)
+    assert tournament.city == 'Qwerty'
+    assert len(tournament.players.__root__) == 2
+    assert len(tournament.players.__root__['Jane'].pokemons.__root__) == 2
+    assert tournament.players.__root__['Jane'].pokemons.__root__[0].name == 'Pikachu'
 
 
 def test_untouched_types():
@@ -1147,7 +1357,72 @@ def test_model_iteration():
     assert dict(m) == {'c': 3, 'd': Foo()}
 
 
-def test_model_export_nested_list():
+@pytest.mark.parametrize(
+    'exclude,expected,raises_match',
+    [
+        param(
+            {'foos': {0: {'a'}, 1: {'a'}}},
+            {'c': 3, 'foos': [{'b': 2}, {'b': 4}]},
+            None,
+            id='excluding fields of indexed list items',
+        ),
+        param(
+            {'foos': {'a'}},
+            TypeError,
+            'expected integer keys',
+            id='should fail trying to exclude string keys on list field (1).',
+        ),
+        param(
+            {'foos': {0: ..., 'a': ...}},
+            TypeError,
+            'expected integer keys',
+            id='should fail trying to exclude string keys on list field (2).',
+        ),
+        param(
+            {'foos': {0: 1}},
+            TypeError,
+            'Unexpected type',
+            id='should fail using integer key to specify list item field name (1)',
+        ),
+        param(
+            {'foos': {'__all__': 1}},
+            TypeError,
+            'Unexpected type',
+            id='should fail using integer key to specify list item field name (2)',
+        ),
+        param(
+            {'foos': {'__all__': {'a'}}},
+            {'c': 3, 'foos': [{'b': 2}, {'b': 4}]},
+            None,
+            id='using "__all__" to exclude specific nested field',
+        ),
+        param(
+            {'foos': {0: {'b'}, '__all__': {'a'}}},
+            {'c': 3, 'foos': [{}, {'b': 4}]},
+            None,
+            id='using "__all__" to exclude specific nested field in combination with more specific exclude',
+        ),
+        param(
+            {'foos': {'__all__'}},
+            {'c': 3, 'foos': []},
+            None,
+            id='using "__all__" to exclude all list items',
+        ),
+        param(
+            {'foos': {1, '__all__'}},
+            {'c': 3, 'foos': []},
+            None,
+            id='using "__all__" and other items should get merged together, still excluding all list items',
+        ),
+        param(
+            {'foos': {1: {'a'}, -1: {'b'}}},
+            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {}]},
+            None,
+            id='using negative and positive indexes, referencing the same items should merge excludes',
+        ),
+    ],
+)
+def test_model_export_nested_list(exclude, expected, raises_match):
     class Foo(BaseModel):
         a: int = 1
         b: int = 2
@@ -1158,41 +1433,234 @@ def test_model_export_nested_list():
 
     m = Bar(c=3, foos=[Foo(a=1, b=2), Foo(a=3, b=4)])
 
-    assert m.dict(exclude={'foos': {0: {'a'}, 1: {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
-
-    with pytest.raises(TypeError, match='expected integer keys'):
-        m.dict(exclude={'foos': {'a'}})
-    with pytest.raises(TypeError, match='expected integer keys'):
-        m.dict(exclude={'foos': {0: ..., 'a': ...}})
-    with pytest.raises(TypeError, match='Unexpected type'):
-        m.dict(exclude={'foos': {0: 1}})
-    with pytest.raises(TypeError, match='Unexpected type'):
-        m.dict(exclude={'foos': {'__all__': 1}})
-
-    assert m.dict(exclude={'foos': {0: {'b'}, '__all__': {'a'}}}) == {'c': 3, 'foos': [{}, {'b': 4}]}
-    assert m.dict(exclude={'foos': {'__all__': {'a'}}}) == {'c': 3, 'foos': [{'b': 2}, {'b': 4}]}
-    assert m.dict(exclude={'foos': {'__all__'}}) == {'c': 3, 'foos': []}
-
-    with pytest.raises(ValueError, match='set with keyword "__all__" must not contain other elements'):
-        m.dict(exclude={'foos': {1, '__all__'}})
+    if isinstance(expected, type) and issubclass(expected, Exception):
+        with pytest.raises(expected, match=raises_match):
+            m.dict(exclude=exclude)
+    else:
+        original_exclude = deepcopy(exclude)
+        assert m.dict(exclude=exclude) == expected
+        assert exclude == original_exclude
 
 
-def test_model_export_dict_exclusion():
+@pytest.mark.parametrize(
+    'excludes,expected',
+    [
+        param(
+            {'bars': {0}},
+            {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]},
+            id='excluding first item from list field using index',
+        ),
+        param({'bars': {'__all__'}}, {'a': 1, 'bars': []}, id='using "__all__" to exclude all list items'),
+        param(
+            {'bars': {'__all__': {'w'}}},
+            {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]},
+            id='exclude single dict key from all list items',
+        ),
+    ],
+)
+def test_model_export_dict_exclusion(excludes, expected):
     class Foo(BaseModel):
         a: int = 1
         bars: List[Dict[str, int]]
 
     m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
 
-    excludes = {'bars': {0}}
-    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]}
-    assert excludes == {'bars': {0}}
-    excludes = {'bars': {'__all__'}}
-    assert m.dict(exclude=excludes) == {'a': 1, 'bars': []}
-    assert excludes == {'bars': {'__all__'}}
-    excludes = {'bars': {'__all__': {'w'}}}
-    assert m.dict(exclude=excludes) == {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]}
-    assert excludes == {'bars': {'__all__': {'w'}}}
+    original_excludes = deepcopy(excludes)
+    assert m.dict(exclude=excludes) == expected
+    assert excludes == original_excludes
+
+
+def test_model_exclude_config_field_merging():
+    """Test merging field exclude values from config."""
+
+    class Model(BaseModel):
+        b: int = Field(2, exclude=...)
+
+        class Config:
+            fields = {
+                'b': {'exclude': ...},
+            }
+
+    assert Model.__fields__['b'].field_info.exclude is ...
+
+    class Model(BaseModel):
+        b: int = Field(2, exclude={'a': {'test'}})
+
+        class Config:
+            fields = {
+                'b': {'exclude': ...},
+            }
+
+    assert Model.__fields__['b'].field_info.exclude == {'a': {'test'}}
+
+    class Model(BaseModel):
+        b: int = Field(2, exclude={'foo'})
+
+        class Config:
+            fields = {
+                'b': {'exclude': {'bar'}},
+            }
+
+    assert Model.__fields__['b'].field_info.exclude == {'foo': ..., 'bar': ...}
+
+
+@pytest.mark.parametrize(
+    'kinds',
+    [
+        {'sub_fields', 'model_fields', 'model_config', 'sub_config', 'combined_config'},
+        {'sub_fields', 'model_fields', 'combined_config'},
+        {'sub_fields', 'model_fields'},
+        {'combined_config'},
+        {'model_config', 'sub_config'},
+        {'model_config', 'sub_fields'},
+        {'model_fields', 'sub_config'},
+    ],
+)
+@pytest.mark.parametrize(
+    'exclude,expected',
+    [
+        (None, {'a': 0, 'c': {'a': [3, 5], 'c': 'foobar'}, 'd': {'c': 'foobar'}}),
+        ({'c', 'd'}, {'a': 0}),
+        ({'a': ..., 'c': ..., 'd': {'a': ..., 'c': ...}}, {'d': {}}),
+    ],
+)
+def test_model_export_exclusion_with_fields_and_config(kinds, exclude, expected):
+    """Test that exporting models with fields using the export parameter works."""
+
+    class ChildConfig:
+        pass
+
+    if 'sub_config' in kinds:
+        ChildConfig.fields = {'b': {'exclude': ...}, 'a': {'exclude': {1}}}
+
+    class ParentConfig:
+        pass
+
+    if 'combined_config' in kinds:
+        ParentConfig.fields = {
+            'b': {'exclude': ...},
+            'c': {'exclude': {'b': ..., 'a': {1}}},
+            'd': {'exclude': {'a': ..., 'b': ...}},
+        }
+
+    elif 'model_config' in kinds:
+        ParentConfig.fields = {'b': {'exclude': ...}, 'd': {'exclude': {'a'}}}
+
+    class Sub(BaseModel):
+        a: List[int] = Field([3, 4, 5], exclude={1} if 'sub_fields' in kinds else None)
+        b: int = Field(4, exclude=... if 'sub_fields' in kinds else None)
+        c: str = 'foobar'
+
+        Config = ChildConfig
+
+    class Model(BaseModel):
+        a: int = 0
+        b: int = Field(2, exclude=... if 'model_fields' in kinds else None)
+        c: Sub = Sub()
+        d: Sub = Field(Sub(), exclude={'a'} if 'model_fields' in kinds else None)
+
+        Config = ParentConfig
+
+    m = Model()
+    assert m.dict(exclude=exclude) == expected, 'Unexpected model export result'
+
+
+def test_model_export_exclusion_inheritance():
+    class Sub(BaseModel):
+        s1: str = 'v1'
+        s2: str = 'v2'
+        s3: str = 'v3'
+        s4: str = Field('v4', exclude=...)
+
+    class Parent(BaseModel):
+        a: int
+        b: int = Field(..., exclude=...)
+        c: int
+        d: int
+        s: Sub = Sub()
+
+        class Config:
+            fields = {'a': {'exclude': ...}, 's': {'exclude': {'s1'}}}
+
+    class Child(Parent):
+        class Config:
+            fields = {'c': {'exclude': ...}, 's': {'exclude': {'s2'}}}
+
+    actual = Child(a=0, b=1, c=2, d=3).dict()
+    expected = {'d': 3, 's': {'s3': 'v3'}}
+    assert actual == expected, 'Unexpected model export result'
+
+
+def test_model_export_with_true_instead_of_ellipsis():
+    class Sub(BaseModel):
+        s1: int = 1
+
+    class Model(BaseModel):
+        a: int = 2
+        b: int = Field(3, exclude=True)
+        c: int = Field(4)
+        s: Sub = Sub()
+
+        class Config:
+            fields = {'c': {'exclude': True}}
+
+    m = Model()
+    assert m.dict(exclude={'s': True}) == {'a': 2}
+
+
+def test_model_export_inclusion():
+    class Sub(BaseModel):
+        s1: str = 'v1'
+        s2: str = 'v2'
+        s3: str = 'v3'
+        s4: str = 'v4'
+
+    class Model(BaseModel):
+        a: Sub = Sub()
+        b: Sub = Field(Sub(), include={'s1'})
+        c: Sub = Field(Sub(), include={'s1', 's2'})
+
+        class Config:
+            fields = {'a': {'include': {'s2', 's1', 's3'}}, 'b': {'include': {'s1', 's2', 's3', 's4'}}}
+
+    Model.__fields__['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
+    Model.__fields__['b'].field_info.include == {'s1': ...}
+    Model.__fields__['c'].field_info.include == {'s1': ..., 's2': ...}
+
+    actual = Model().dict(include={'a': {'s3', 's4'}, 'b': ..., 'c': ...})
+    # s1 included via field, s2 via config and s3 via .dict call:
+    expected = {'a': {'s3': 'v3'}, 'b': {'s1': 'v1'}, 'c': {'s1': 'v1', 's2': 'v2'}}
+
+    assert actual == expected, 'Unexpected model export result'
+
+
+def test_model_export_inclusion_inheritance():
+    class Sub(BaseModel):
+        s1: str = Field('v1', include=...)
+        s2: str = Field('v2', include=...)
+        s3: str = Field('v3', include=...)
+        s4: str = 'v4'
+
+    class Parent(BaseModel):
+        a: int
+        b: int
+        c: int
+        s: Sub = Field(Sub(), include={'s1', 's2'})  # overrides includes set in Sub model
+
+        class Config:
+            # b will be included since fields are set idependently
+            fields = {'b': {'include': ...}}
+
+    class Child(Parent):
+        class Config:
+            # b is still included even if it doesn't occur here since fields
+            # are still considered separately.
+            # s however, is merged, resulting in only s1 being included.
+            fields = {'a': {'include': ...}, 's': {'include': {'s1'}}}
+
+    actual = Child(a=0, b=1, c=2).dict()
+    expected = {'a': 0, 'b': 1, 's': {'s1': 'v1'}}
+    assert actual == expected, 'Unexpected model export result'
 
 
 def test_custom_init_subclass_params():
@@ -1374,3 +1842,235 @@ def test_base_config_type_hinting():
         a: int
 
     get_type_hints(M.__config__)
+
+
+def test_allow_mutation_field():
+    """assigning a allow_mutation=False field should raise a TypeError"""
+
+    class Entry(BaseModel):
+        id: float = Field(allow_mutation=False)
+        val: float
+
+        class Config:
+            validate_assignment = True
+
+    r = Entry(id=1, val=100)
+    assert r.val == 100
+    r.val = 101
+    assert r.val == 101
+    assert r.id == 1
+    with pytest.raises(TypeError, match='"id" has allow_mutation set to False and cannot be assigned'):
+        r.id = 2
+
+
+def test_repr_field():
+    class Model(BaseModel):
+        a: int = Field()
+        b: int = Field(repr=True)
+        c: int = Field(repr=False)
+
+    m = Model(a=1, b=2, c=3)
+    assert repr(m) == 'Model(a=1, b=2)'
+    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=PydanticUndefined, repr=False, extra={})'
+
+
+def test_inherited_model_field_copy():
+    """It should copy models used as fields by default"""
+
+    class Image(BaseModel):
+        path: str
+
+        def __hash__(self):
+            return id(self)
+
+    class Item(BaseModel):
+        images: List[Image]
+
+    image_1 = Image(path='my_image1.png')
+    image_2 = Image(path='my_image2.png')
+
+    item = Item(images={image_1, image_2})
+    assert image_1 in item.images
+
+    assert id(image_1) != id(item.images[0])
+    assert id(image_2) != id(item.images[1])
+
+
+def test_inherited_model_field_untouched():
+    """It should not copy models used as fields if explicitly asked"""
+
+    class Image(BaseModel):
+        path: str
+
+        def __hash__(self):
+            return id(self)
+
+        class Config:
+            copy_on_model_validation = False
+
+    class Item(BaseModel):
+        images: List[Image]
+
+    image_1 = Image(path='my_image1.png')
+    image_2 = Image(path='my_image2.png')
+
+    item = Item(images=(image_1, image_2))
+    assert image_1 in item.images
+
+    assert id(image_1) == id(item.images[0])
+    assert id(image_2) == id(item.images[1])
+
+
+def test_mapping_retains_type_subclass():
+    class CustomMap(dict):
+        pass
+
+    class Model(BaseModel):
+        x: Mapping[str, Mapping[str, int]]
+
+    m = Model(x=CustomMap(outer=CustomMap(inner=42)))
+    assert isinstance(m.x, CustomMap)
+    assert isinstance(m.x['outer'], CustomMap)
+    assert m.x['outer']['inner'] == 42
+
+
+def test_mapping_retains_type_defaultdict():
+    class Model(BaseModel):
+        x: Mapping[str, int]
+
+    d = defaultdict(int)
+    d[1] = '2'
+    d['3']
+
+    m = Model(x=d)
+    assert isinstance(m.x, defaultdict)
+    assert m.x['1'] == 2
+    assert m.x['3'] == 0
+
+
+def test_mapping_retains_type_fallback_error():
+    class CustomMap(dict):
+        def __init__(self, *args, **kwargs):
+            if args or kwargs:
+                raise TypeError('test')
+            super().__init__(*args, **kwargs)
+
+    class Model(BaseModel):
+        x: Mapping[str, int]
+
+    d = CustomMap()
+    d['one'] = 1
+    d['two'] = 2
+
+    with pytest.raises(RuntimeError, match="Could not convert dictionary to 'CustomMap'"):
+        Model(x=d)
+
+
+def test_typing_coercion_dict():
+    class Model(BaseModel):
+        x: Dict[str, int]
+
+    m = Model(x={'one': 1, 'two': 2})
+    assert repr(m) == "Model(x={'one': 1, 'two': 2})"
+
+
+def test_typing_coercion_defaultdict():
+    class Model(BaseModel):
+        x: DefaultDict[int, str]
+
+    d = defaultdict(str)
+    d['1']
+    m = Model(x=d)
+    m.x['a']
+    assert repr(m) == "Model(x=defaultdict(<class 'str'>, {1: '', 'a': ''}))"
+
+
+def test_typing_coercion_counter():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    assert Model.__fields__['x'].type_ is int
+    assert repr(Model(x={'a': 10})) == "Model(x=Counter({'a': 10}))"
+
+
+def test_typing_counter_value_validation():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x={'a': 'a'})
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('x', 'a'),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        }
+    ]
+
+
+def test_class_kwargs_config():
+    class Base(BaseModel, extra='forbid', alias_generator=str.upper):
+        a: int
+
+    assert Base.__config__.extra is Extra.forbid
+    assert Base.__config__.alias_generator is str.upper
+    assert Base.__fields__['a'].alias == 'A'
+
+    class Model(Base, extra='allow'):
+        b: int
+
+    assert Model.__config__.extra is Extra.allow  # overwritten as intended
+    assert Model.__config__.alias_generator is str.upper  # inherited as intended
+    assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
+
+
+def test_class_kwargs_config_json_encoders():
+    class Model(BaseModel, json_encoders={int: str}):
+        pass
+
+    assert Model.__config__.json_encoders == {int: str}
+
+
+def test_class_kwargs_config_and_attr_conflict():
+
+    with pytest.raises(
+        TypeError, match='Specifying config in two places is ambiguous, use either Config attribute or class kwargs'
+    ):
+
+        class Model(BaseModel, extra='allow'):
+            b: int
+
+            class Config:
+                extra = 'forbid'
+
+
+def test_class_kwargs_custom_config():
+    class Base(BaseModel):
+        class Config(BaseConfig):
+            some_config = 'value'
+
+    class Model(Base, some_config='new_value'):
+        a: int
+
+    assert Model.__config__.some_config == 'new_value'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
+def test_new_union_origin():
+    """On 3.10+, origin of `int | str` is `types.Union`, not `typing.Union`"""
+
+    class Model(BaseModel):
+        x: int | str
+
+    assert Model(x=3).x == 3
+    assert Model(x='3').x == 3
+    assert Model(x='pika').x == 'pika'
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['x'],
+    }

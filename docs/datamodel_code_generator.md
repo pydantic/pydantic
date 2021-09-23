@@ -1,18 +1,18 @@
-[datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator/) is a command to generate pydantic models from other data types.
+The [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator/) project is a library and command-line utility to generate pydantic models from just about any data source, including:
 
+* OpenAPI 3 (YAML/JSON)
+* JSON Schema
+* JSON/YAML Data (which will converted to JSON Schema)
 
-* Supported source types
-    * OpenAPI 3 (YAML/JSON)
-    * JSON Schema
-    * JSON/YAML Data (It will be converted to JSON Schema)
+Whenever you find yourself with any data convertible JSON but without pydantic models, this tool will allow you to generate type-safe model hierarchies on demand.
 
-## Install
+## Installation
 ```bash
 pip install datamodel-code-generator
 ```
 
 ## Example
-In this case, The datamodel-code-generator creates pydantic models from JSON Schema.
+In this case, datamodel-code-generator creates pydantic models from a JSON Schema file.
 ```bash
 datamodel-codegen  --input person.json --input-file-type jsonschema --output model.py
 ```

@@ -1,13 +1,14 @@
 from collections import deque
 from datetime import datetime
+from enum import Enum
 from itertools import product
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import pytest
+from typing_extensions import Literal
 
-from pydantic import BaseModel, ConfigError, Extra, ValidationError, errors, validator
+from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, errors, validator
 from pydantic.class_validators import make_generic_validator, root_validator
-from pydantic.typing import Literal
 
 
 def test_simple():
@@ -574,6 +575,19 @@ def test_validation_each_item():
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
+def test_validation_each_item_one_sublevel():
+    class Model(BaseModel):
+        foobar: List[Tuple[int, int]]
+
+        @validator('foobar', each_item=True)
+        def check_foobar(cls, v: Tuple[int, int]) -> Tuple[int, int]:
+            v1, v2 = v
+            assert v1 == v2
+            return v
+
+    assert Model(foobar=[(1, 1), (2, 2)]).foobar == [(1, 1), (2, 2)]
+
+
 def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
@@ -970,6 +984,18 @@ def test_root_validator_inheritance():
     assert calls == ["parent validator: {'a': 123}", "child validator: {'extra1': 1, 'a': 123}"]
 
 
+def test_root_validator_returns_none_exception():
+    class Model(BaseModel):
+        a: int = 1
+
+        @root_validator
+        def root_validator_repeated(cls, values):
+            return None
+
+    with pytest.raises(TypeError, match='Model values must be a dict'):
+        Model()
+
+
 def reusable_validator(num):
     return num * 2
 
@@ -1116,7 +1142,6 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1135,7 +1160,27 @@ def test_literal_validator():
     ]
 
 
-@pytest.mark.skipif(not Literal, reason='typing_extensions not installed')
+def test_literal_validator_str_enum():
+    class Bar(str, Enum):
+        FIZ = 'fiz'
+        FUZ = 'fuz'
+
+    class Foo(BaseModel):
+        bar: Bar
+        barfiz: Literal[Bar.FIZ]
+        fizfuz: Literal[Bar.FIZ, Bar.FUZ]
+
+    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fiz'})
+    assert my_foo.bar is Bar.FIZ
+    assert my_foo.barfiz is Bar.FIZ
+    assert my_foo.fizfuz is Bar.FIZ
+
+    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fuz'})
+    assert my_foo.bar is Bar.FIZ
+    assert my_foo.barfiz is Bar.FIZ
+    assert my_foo.fizfuz is Bar.FUZ
+
+
 def test_nested_literal_validator():
     L1 = Literal['foo']
     L2 = Literal['bar']
@@ -1155,3 +1200,104 @@ def test_nested_literal_validator():
             'ctx': {'given': 'nope', 'permitted': ('foo', 'bar')},
         }
     ]
+
+
+def test_union_literal_with_constraints():
+    class Model(BaseModel, validate_assignment=True):
+        x: Union[Literal[42], Literal['pika']] = Field(allow_mutation=False)
+
+    m = Model(x=42)
+    with pytest.raises(TypeError):
+        m.x += 1
+
+
+def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker):
+    check_values = mocker.MagicMock()
+
+    class Model(BaseModel):
+        foo: str
+        bar: str = Field(alias='pika')
+        baz: str
+
+        class Config:
+            validate_assignment = True
+
+        @validator('foo')
+        def validate_foo(cls, v, values):
+            check_values({**values})
+            return v
+
+        @validator('bar')
+        def validate_bar(cls, v, values):
+            check_values({**values})
+            return v
+
+    model = Model(foo='foo_value', pika='bar_value', baz='baz_value')
+    check_values.reset_mock()
+
+    assert list(dict(model).items()) == [('foo', 'foo_value'), ('bar', 'bar_value'), ('baz', 'baz_value')]
+
+    model.foo = 'new_foo_value'
+    check_values.assert_called_once_with({'bar': 'bar_value', 'baz': 'baz_value'})
+    check_values.reset_mock()
+
+    model.bar = 'new_bar_value'
+    check_values.assert_called_once_with({'foo': 'new_foo_value', 'baz': 'baz_value'})
+
+    # ensure field order is the same
+    assert list(dict(model).items()) == [('foo', 'new_foo_value'), ('bar', 'new_bar_value'), ('baz', 'baz_value')]
+
+
+def test_exceptions_in_field_validators_restore_original_field_value():
+    class Model(BaseModel):
+        foo: str
+
+        class Config:
+            validate_assignment = True
+
+        @validator('foo')
+        def validate_foo(cls, v):
+            if v == 'raise_exception':
+                raise RuntimeError('test error')
+            return v
+
+    model = Model(foo='foo')
+    with pytest.raises(RuntimeError, match='test error'):
+        model.foo = 'raise_exception'
+    assert model.foo == 'foo'
+
+
+def test_overridden_root_validators(mocker):
+    validate_stub = mocker.stub(name='validate')
+
+    class A(BaseModel):
+        x: str
+
+        @root_validator(pre=True)
+        def pre_root(cls, values):
+            validate_stub('A', 'pre')
+            return values
+
+        @root_validator(pre=False)
+        def post_root(cls, values):
+            validate_stub('A', 'post')
+            return values
+
+    class B(A):
+        @root_validator(pre=True)
+        def pre_root(cls, values):
+            validate_stub('B', 'pre')
+            return values
+
+        @root_validator(pre=False)
+        def post_root(cls, values):
+            validate_stub('B', 'post')
+            return values
+
+    A(x='pika')
+    assert validate_stub.call_args_list == [mocker.call('A', 'pre'), mocker.call('A', 'post')]
+
+    validate_stub.reset_mock()
+
+    B(x='pika')
+    assert validate_stub.call_args_list == [mocker.call('B', 'pre'), mocker.call('B', 'post')]

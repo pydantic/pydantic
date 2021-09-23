@@ -1,8 +1,9 @@
 import dataclasses
+import pickle
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import ClassVar, Dict, FrozenSet, Optional
+from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional
 
 import pytest
 
@@ -428,7 +429,7 @@ def test_default_factory_field():
     assert fields['id'].default is None
 
     assert fields['aliases'].required is False
-    assert fields['aliases'].default == {'John': 'Joey'}
+    assert fields['aliases'].default_factory() == {'John': 'Joey'}
 
 
 def test_default_factory_singleton_field():
@@ -455,6 +456,10 @@ def test_schema():
         name: str = 'John Doe'
         aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
         signup_ts: datetime = None
+        age: Optional[int] = dataclasses.field(
+            default=None, metadata=dict(title='The age of the user', description='do not lie!')
+        )
+        height: Optional[int] = pydantic.Field(None, title='The height in cm', ge=50, le=300)
 
     user = User(id=123)
     assert user.__pydantic_model__.schema() == {
@@ -465,11 +470,21 @@ def test_schema():
             'name': {'title': 'Name', 'default': 'John Doe', 'type': 'string'},
             'aliases': {
                 'title': 'Aliases',
-                'default': {'John': 'Joey'},
                 'type': 'object',
                 'additionalProperties': {'type': 'string'},
             },
             'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
+            'age': {
+                'title': 'The age of the user',
+                'description': 'do not lie!',
+                'type': 'integer',
+            },
+            'height': {
+                'title': 'The height in cm',
+                'minimum': 50,
+                'maximum': 300,
+                'type': 'integer',
+            },
         },
         'required': ['id'],
     }
@@ -622,7 +637,7 @@ def test_hashable_required():
     ]
     with pytest.raises(TypeError) as exc_info:
         MyDataclass()
-    assert str(exc_info.value) == "__init__() missing 1 required positional argument: 'v'"
+    assert "__init__() missing 1 required positional argument: 'v'" in str(exc_info.value)
 
 
 @pytest.mark.parametrize('default', [1, None, ...])
@@ -733,8 +748,200 @@ def test_override_builtin_dataclass_nested_schema():
                 'type': 'object',
             }
         },
-        'properties': {'filename': {'title': 'Filename', 'type': 'string'}, 'meta': {'$ref': '#/definitions/Meta'}},
+        'properties': {
+            'filename': {'title': 'Filename', 'type': 'string'},
+            'meta': {'$ref': '#/definitions/Meta'},
+        },
         'required': ['filename', 'meta'],
         'title': 'File',
         'type': 'object',
     }
+
+
+def test_inherit_builtin_dataclass():
+    @dataclasses.dataclass
+    class Z:
+        z: int
+
+    @dataclasses.dataclass
+    class Y(Z):
+        y: int
+
+    @pydantic.dataclasses.dataclass
+    class X(Y):
+        x: int
+
+    pika = X(x='2', y='4', z='3')
+    assert pika.x == 2
+    assert pika.y == 4
+    assert pika.z == 3
+
+
+def test_dataclass_arbitrary():
+    class ArbitraryType:
+        def __init__(self):
+            ...
+
+    @dataclasses.dataclass
+    class Test:
+        foo: ArbitraryType
+        bar: List[ArbitraryType]
+
+    class TestModel(BaseModel):
+        a: ArbitraryType
+        b: Test
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    TestModel(a=ArbitraryType(), b=(ArbitraryType(), [ArbitraryType()]))
+
+
+def test_forward_stdlib_dataclass_params():
+    @dataclasses.dataclass(frozen=True)
+    class Item:
+        name: str
+
+    class Example(BaseModel):
+        item: Item
+        other: str
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    e = Example(item=Item(name='pika'), other='bulbi')
+    e.other = 'bulbi2'
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        e.item.name = 'pika2'
+
+
+def test_pydantic_callable_field():
+    """pydantic callable fields behaviour should be the same as stdlib dataclass"""
+
+    def foo(arg1, arg2):
+        return arg1, arg2
+
+    def bar(x: int, y: float, z: str) -> bool:
+        return str(x + y) == z
+
+    class PydanticModel(BaseModel):
+        required_callable: Callable
+        required_callable_2: Callable[[int, float, str], bool]
+
+        default_callable: Callable = foo
+        default_callable_2: Callable[[int, float, str], bool] = bar
+
+    @pydantic.dataclasses.dataclass
+    class PydanticDataclass:
+        required_callable: Callable
+        required_callable_2: Callable[[int, float, str], bool]
+
+        default_callable: Callable = foo
+        default_callable_2: Callable[[int, float, str], bool] = bar
+
+    @dataclasses.dataclass
+    class StdlibDataclass:
+        required_callable: Callable
+        required_callable_2: Callable[[int, float, str], bool]
+
+        default_callable: Callable = foo
+        default_callable_2: Callable[[int, float, str], bool] = bar
+
+    pyd_m = PydanticModel(required_callable=foo, required_callable_2=bar)
+    pyd_dc = PydanticDataclass(required_callable=foo, required_callable_2=bar)
+    std_dc = StdlibDataclass(required_callable=foo, required_callable_2=bar)
+
+    assert (
+        pyd_m.required_callable
+        is pyd_m.default_callable
+        is pyd_dc.required_callable
+        is pyd_dc.default_callable
+        is std_dc.required_callable
+        is std_dc.default_callable
+    )
+    assert (
+        pyd_m.required_callable_2
+        is pyd_m.default_callable_2
+        is pyd_dc.required_callable_2
+        is pyd_dc.default_callable_2
+        is std_dc.required_callable_2
+        is std_dc.default_callable_2
+    )
+
+
+def test_pickle_overriden_builtin_dataclass(create_module):
+    module = create_module(
+        # language=Python
+        """\
+import dataclasses
+import pydantic
+
+
+@dataclasses.dataclass
+class BuiltInDataclassForPickle:
+    value: int
+
+class ModelForPickle(pydantic.BaseModel):
+    # pickle can only work with top level classes as it imports them
+
+    dataclass: BuiltInDataclassForPickle
+
+    class Config:
+        validate_assignment = True
+        """
+    )
+    obj = module.ModelForPickle(dataclass=module.BuiltInDataclassForPickle(value=5))
+
+    pickled_obj = pickle.dumps(obj)
+    restored_obj = pickle.loads(pickled_obj)
+
+    assert restored_obj.dataclass.value == 5
+    assert restored_obj == obj
+
+    # ensure the restored dataclass is still a pydantic dataclass
+    with pytest.raises(ValidationError, match='value\n +value is not a valid integer'):
+        restored_obj.dataclass.value = 'value of a wrong type'
+
+
+def test_config_field_info_create_model():
+    # works
+    class A1(BaseModel):
+        a: str
+
+        class Config:
+            fields = {'a': {'description': 'descr'}}
+
+    assert A1.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+    @pydantic.dataclasses.dataclass(config=A1.Config)
+    class A2:
+        a: str
+
+    assert A2.__pydantic_model__.schema()['properties'] == {
+        'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
+    }
+
+
+def test_keeps_custom_properties():
+    class StandardClass:
+        """Class which modifies instance creation."""
+
+        a: str
+
+        def __new__(cls, *args, **kwargs):
+            instance = super().__new__(cls)
+
+            instance._special_property = 1
+
+            return instance
+
+    StandardLibDataclass = dataclasses.dataclass(StandardClass)
+    PydanticDataclass = pydantic.dataclasses.dataclass(StandardClass)
+
+    clases_to_test = [StandardLibDataclass, PydanticDataclass]
+
+    test_string = 'string'
+    for cls in clases_to_test:
+        instance = cls(a=test_string)
+        assert instance._special_property == 1
+        assert instance.a == test_string

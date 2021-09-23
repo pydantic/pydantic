@@ -7,7 +7,7 @@ from pathlib import Path
 from setuptools import setup
 
 if os.name == 'nt':
-    from distutils.command import build_ext
+    from setuptools.command import build_ext
 
     def get_export_symbols(self, ext):
         """
@@ -82,7 +82,9 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not 
         compiler_directives = {}
         if 'CYTHON_TRACE' in sys.argv:
             compiler_directives['linetrace'] = True
-        os.environ['CFLAGS'] = '-O3'
+        # Set CFLAG to all optimizations (-O3)
+        # Any additional CFLAGS will be appended. Only the last optimization flag will have effect
+        os.environ['CFLAGS'] = '-O3 ' + os.environ.get('CFLAGS', '')
         ext_modules = cythonize(
             'pydantic/*.py',
             exclude=['pydantic/generics.py'],
@@ -106,6 +108,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',
         'Intended Audience :: System Administrators',
@@ -114,6 +117,7 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Environment :: Console',
         'Environment :: MacOS X',
+        'Framework :: Hypothesis',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Internet',
     ],
@@ -123,15 +127,16 @@ setup(
     license='MIT',
     packages=['pydantic'],
     package_data={'pydantic': ['py.typed']},
-    python_requires='>=3.6',
+    python_requires='>=3.6.1',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html
     install_requires=[
-        'dataclasses>=0.6;python_version<"3.7"'
+        'dataclasses>=0.6;python_version<"3.7"',
+        'typing-extensions>=3.7.4.3'
     ],
     extras_require={
         'email': ['email-validator>=1.0.3'],
-        'typing_extensions': ['typing-extensions>=3.7.2'],
         'dotenv': ['python-dotenv>=0.10.4'],
     },
     ext_modules=ext_modules,
+    entry_points={'hypothesis': ['_ = pydantic._hypothesis_plugin']},
 )

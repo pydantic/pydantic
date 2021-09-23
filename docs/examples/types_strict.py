@@ -1,4 +1,21 @@
-from pydantic import BaseModel, StrictBool, StrictInt, ValidationError, confloat
+from pydantic import (
+    BaseModel,
+    StrictBytes,
+    StrictBool,
+    StrictInt,
+    ValidationError,
+    confloat,
+)
+
+
+class StrictBytesModel(BaseModel):
+    strict_bytes: StrictBytes
+
+
+try:
+    StrictBytesModel(strict_bytes='hello world')
+except ValidationError as e:
+    print(e)
 
 
 class StrictIntModel(BaseModel):

@@ -1,6 +1,23 @@
-Behaviour of pydantic can be controlled via the `Config` class on a model.
+Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
 
-Options:
+```py
+{!.tmp_examples/model_config_main.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Also, you can specify config options as model class kwargs:
+```py
+{!.tmp_examples/model_config_class_kwargs.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Similarly, if using the `@dataclass` decorator:
+```py
+{!.tmp_examples/model_config_dataclass.py!}
+```
+_(This script is complete, it should run "as is")_
+
+## Options
 
 **`title`**
 : the title for the generated JSON Schema
@@ -8,11 +25,14 @@ Options:
 **`anystr_strip_whitespace`**
 : whether to strip leading and trailing whitespace for str & byte types (default: `False`)
 
+**`anystr_lower`**
+: whether to make all characters lowercase for str & byte types (default: `False`)
+
 **`min_anystr_length`**
 : the min length for str & byte types (default: `0`)
 
 **`max_anystr_length`**
-: the max length for str & byte types (default: `2 ** 16`)
+: the max length for str & byte types (default: `None`)
 
 **`validate_all`**
 : whether to validate field defaults (default: `False`)
@@ -25,6 +45,14 @@ Options:
 
 **`allow_mutation`**
 : whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed (default: `True`)
+
+**`frozen`**
+
+!!! warning
+    This parameter is in beta
+
+: setting `frozen=True` does everything that `allow_mutation=False` does, and also generates a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the attributes are hashable. (default: `False`)
+
 
 **`use_enum_values`**
 : whether to populate models with the `value` property of enums, rather than the raw enum.
@@ -56,21 +84,21 @@ Options:
   [Field Types](types.md#arbitrary-types-allowed).
 
 **`orm_mode`**
-: whether to allow usage of [ORM mode](models.md#orm-mode)
+: whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances)
 
 **`getter_dict`**
-: a custom class (which should inherit from `GetterDict`) to use when decomposing ORM classes for validation,
-  for use with `orm_mode`
+: a custom class (which should inherit from `GetterDict`) to use when decomposing arbitrary classes
+for validation, for use with `orm_mode`; see [Data binding](models.md#data-binding).
 
 **`alias_generator`**
-: a callable that takes a field name and returns an alias for it
+: a callable that takes a field name and returns an alias for it (see [the dedicated section](#alias-generator))
 
 **`keep_untouched`**
 : a tuple of types (e.g. descriptors) for a model's default values that should not be changed during model creation and will
 not be included in the model schemas. **Note**: this means that attributes on the model with *defaults of this type*, not *annotations of this type*, will be left alone.
 
 **`schema_extra`**
-: a `dict` used to extend/update the generated JSON Schema, or a callable to post-process it; see [Schema customization](schema.md#schema-customization)
+: a `dict` used to extend/update the generated JSON Schema, or a callable to post-process it; see [schema customization](schema.md#schema-customization)
 
 **`json_loads`**
 : a custom function for decoding JSON; see [custom JSON (de)serialisation](exporting_models.md#custom-json-deserialisation)
@@ -81,22 +109,20 @@ not be included in the model schemas. **Note**: this means that attributes on th
 **`json_encoders`**
 : a `dict` used to customise the way types are encoded to JSON; see [JSON Serialisation](exporting_models.md#modeljson)
 
-```py
-{!.tmp_examples/model_config_main.py!}
-```
-_(This script is complete, it should run "as is")_
-
-Similarly, if using the `@dataclass` decorator:
-
-```py
-{!.tmp_examples/model_config_dataclass.py!}
-```
-_(This script is complete, it should run "as is")_
-
-
 **`underscore_attrs_are_private`**
 : whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)
 
+**`copy_on_model_validation`**
+: whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
+
+## Change behaviour globally
+
+If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
+with custom `Config` since the config is inherited
+```py
+{!.tmp_examples/model_config_change_globally_custom.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ## Alias Generator
 

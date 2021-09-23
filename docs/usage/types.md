@@ -11,6 +11,9 @@ with custom properties and validation.
 [Strict Types](#strict-types); if you need to constrain the values allowed (e.g. to require a positive int) see
 [Constrained Types](#constrained-types).
 
+`None`, `type(None)` or `Literal[None]` (equivalent according to [PEP 484](https://www.python.org/dev/peps/pep-0484/#using-none))
+: allows only `None` value
+
 `bool`
 : see [Booleans](#booleans) below for details on how bools are validated and what values are permitted
 
@@ -69,6 +72,11 @@ with custom properties and validation.
 `typing.Any`
 : allows any value include `None`, thus an `Any` field is optional
 
+`typing.Annotated`
+: allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The
+  `Annotated` hint may contain a single call to the [`Field` function](schema.md#typingannotated-fields), but otherwise
+  the additional metadata is ignored and the root type is used.
+
 `typing.TypeVar`
 : constrains the values allowed based on `constraints` or `bound`, see [TypeVar](#typevar)
 
@@ -85,8 +93,19 @@ with custom properties and validation.
 `typing.Tuple`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
+`subclass of typing.NamedTuple`
+: Same as `tuple` but instantiates with the given namedtuple and validates fields since they are annotated.
+  See [Annotated Types](#annotated-types) below for more detail on parsing and validation
+
+`subclass of collections.namedtuple`
+: Same as `subclass of typing.NamedTuple` but all fields will have type `Any` since they are not annotated
+
 `typing.Dict`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`subclass of typing.TypedDict`
+: Same as `dict` but _pydantic_ will validate the dictionary since keys are annotated.
+  See [Annotated Types](#annotated-types) below for more detail on parsing and validation
 
 `typing.Set`
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
@@ -202,7 +221,7 @@ _(This script is complete, it should run "as is")_
     pydantic can't validate the values automatically for you because it would require
     consuming the infinite generator.
 
-## Validating the first value
+#### Validating the first value
 
 You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
 
@@ -260,37 +279,37 @@ types:
 
 * `datetime` fields can be:
 
-    * `datetime`, existing `datetime` object
-    * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
-    * `str`, following formats work:
+  * `datetime`, existing `datetime` object
+  * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
+  * `str`, following formats work:
 
-        * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
-        * `int` or `float` as a string (assumed as Unix time)
+    * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
+    * `int` or `float` as a string (assumed as Unix time)
 
 * `date` fields can be:
 
-    * `date`, existing `date` object
-    * `int` or `float`, see `datetime`
-    * `str`, following formats work:
+  * `date`, existing `date` object
+  * `int` or `float`, see `datetime`
+  * `str`, following formats work:
 
-        * `YYYY-MM-DD`
-        * `int` or `float`, see `datetime`
+    * `YYYY-MM-DD`
+    * `int` or `float`, see `datetime`
 
 * `time` fields can be:
 
-    * `time`, existing `time` object
-    * `str`, following formats work:
+  * `time`, existing `time` object
+  * `str`, following formats work:
 
-        * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
+    * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
 
 * `timedelta` fields can be:
 
-    * `timedelta`, existing `timedelta` object
-    * `int` or `float`, assumed as seconds
-    * `str`, following formats work:
+  * `timedelta`, existing `timedelta` object
+  * `int` or `float`, assumed as seconds
+  * `str`, following formats work:
 
-        * `[-][DD ][HH:MM]SS[.ffffff]`
-        * `[±]P[DD]DT[HH]H[MM]M[SS]S` (ISO 8601 format for timedelta)
+    * `[-][DD ][HH:MM]SS[.ffffff]`
+    * `[±]P[DD]DT[HH]H[MM]M[SS]S` (ISO 8601 format for timedelta)
 
 ```py
 {!.tmp_examples/types_dt.py!}
@@ -392,6 +411,29 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
 ```
 _(This script is complete, it should run "as is")_
 
+## Annotated Types
+
+### NamedTuple
+
+```py
+{!.tmp_examples/annotated_types_named_tuple.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### TypedDict
+
+!!! note
+    This is a new feature of the python standard library as of python 3.8.
+    Prior to python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
+    But required and optional fields are properly differentiated only since python 3.9.
+    We therefore recommend using [typing-extensions](https://pypi.org/project/typing-extensions/) with python 3.8 as well.
+
+
+```py
+{!.tmp_examples/annotated_types_typed_dict.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Pydantic Types
 
 *pydantic* also provides a variety of other useful types:
@@ -401,6 +443,12 @@ _(This script is complete, it should run "as is")_
 
 `DirectoryPath`
 : like `Path`, but the path must exist and be a directory
+
+`PastDate`
+: like `date`, but the date should be in the past
+
+`FutureDate`
+: like `date`, but the date should be in the future
 
 `EmailStr`
 : requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
@@ -437,6 +485,9 @@ _(This script is complete, it should run "as is")_
 
 `HttpUrl`
 : a stricter HTTP URL; see [URLs](#urls)
+
+`FileUrl`
+: a file path URL; see [URLs](#urls)
 
 `PostgresDsn`
 : a postgres DSN style URL; see [URLs](#urls)
@@ -525,18 +576,26 @@ _(This script is complete, it should run "as is")_
 
 For URI/URL validation the following types are available:
 
-- `AnyUrl`: any scheme allowed, TLD not required
-- `AnyHttpUrl`: schema `http` or `https`, TLD not required
-- `HttpUrl`: schema `http` or `https`, TLD required, max length 2083
-- `PostgresDsn`: schema `postgres` or `postgresql`, user info required, TLD not required
+- `AnyUrl`: any scheme allowed, TLD not required, host required
+- `AnyHttpUrl`: scheme `http` or `https`, TLD not required, host required
+- `HttpUrl`: scheme `http` or `https`, TLD required, host required, max length 2083
+- `FileUrl`: scheme `file`, host not required
+- `PostgresDsn`: scheme `postgres`, `postgresql`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
+  - `postgresql+asyncpg`
+  - `postgresql+pg8000`
+  - `postgresql+psycopg2`
+  - `postgresql+psycopg2cffi`
+  - `postgresql+py-postgresql`
+  - `postgresql+pygresql`
 - `RabbitmqDsn`: schema `amqp`, user info required, TLD not required
-- `RedisDsn`: schema `redis`, user info not required, tld not required (CHANGED: user info not required from
-  **v1.6** onwards)
-- `stricturl`, method with the following keyword arguments:
+- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
+  not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
+- `stricturl`: method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`
     - `max_length: int = 2 ** 16`
     - `tld_required: bool = True`
+    - `host_required: bool = True`
     - `allowed_schemes: Optional[Set[str]] = None`
 
 The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are
@@ -554,7 +613,7 @@ If you require a custom URI/URL type, it can be created in a similar way to the 
 Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
 the above types export the following properties:
 
-- `scheme`: always set - the url schema (`http` above)
+- `scheme`: always set - the url scheme (`http` above)
 - `host`: always set - the url host (`example.com` above)
 - `host_type`: always set - describes the type of host, either:
 
@@ -723,16 +782,84 @@ _(This script is complete, it should run "as is")_
 
 Where `Field` refers to the [field function](schema.md#field-customisation).
 
+### Arguments to `conlist`
+The following arguments are available when using the `conlist` type function
+
+- `item_type: Type[T]`: type of the list items
+- `min_items: int = None`: minimum number of items in the list
+- `max_items: int = None`: maximum number of items in the list
+
+### Arguments to `conset`
+The following arguments are available when using the `conset` type function
+
+- `item_type: Type[T]`: type of the set items
+- `min_items: int = None`: minimum number of items in the set
+- `max_items: int = None`: maximum number of items in the set
+
+### Arguments to `conint`
+The following arguments are available when using the `conint` type function
+
+- `strict: bool = False`: controls type coercion
+- `gt: int = None`: enforces integer to be greater than the set value
+- `ge: int = None`: enforces integer to be greater than or equal to the set value
+- `lt: int = None`: enforces integer to be less than the set value
+- `le: int = None`: enforces integer to be less than or equal to the set value
+- `multiple_of: int = None`: enforces integer to be a multiple of the set value
+
+### Arguments to `confloat`
+The following arguments are available when using the `confloat` type function
+
+- `strict: bool = False`: controls type coercion
+- `gt: float = None`: enforces float to be greater than the set value
+- `ge: float = None`: enforces float to be greater than or equal to the set value
+- `lt: float = None`: enforces float to be less than the set value
+- `le: float = None`: enforces float to be less than or equal to the set value
+- `multiple_of: float = None`: enforces float to be a multiple of the set value
+
+### Arguments to `condecimal`
+The following arguments are available when using the `condecimal` type function
+
+- `gt: Decimal = None`: enforces decimal to be greater than the set value
+- `ge: Decimal = None`: enforces decimal to be greater than or equal to the set value
+- `lt: Decimal = None`: enforces decimal to be less than the set value
+- `le: Decimal = None`: enforces decimal to be less than or equal to the set value
+- `max_digits: int = None`: maximum number of digits within the decimal. it does not include a zero before the decimal point or trailing decimal zeroes
+- `decimal_places: int = None`: max number of decimal places allowed. it does not include trailing decimal zeroes
+- `multiple_of: Decimal = None`: enforces decimal to be a multiple of the set value
+
+### Arguments to `constr`
+The following arguments are available when using the `constr` type function
+
+- `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_lower: bool = False`: turns all characters to lowercase
+- `strict: bool = False`: controls type coercion
+- `min_length: int = None`: minimum length of the string
+- `max_length: int = None`: maximum length of the string
+- `curtail_length: int = None`: shrinks the string length to the set value when it is longer than the set value
+- `regex: str = None`: regex to validate the string against
+
+### Arguments to `conbytes`
+The following arguments are available when using the `conbytes` type function
+
+- `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_lower: bool = False`: turns all characters to lowercase
+- `min_length: int = None`: minimum length of the byte string
+- `max_length: int = None`: maximum length of the byte string
+- `strict: bool = False`: controls type coercion
+
+
 ## Strict Types
 
-You can use the `StrictStr`, `StrictInt`, `StrictFloat`, and `StrictBool` types
+You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types
 to prevent coercion from compatible types.
 These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
-This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedFloat` and
-`ConstrainedInt` classes and can be combined with a multitude of complex validation rules.
+This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedBytes`,
+`ConstrainedFloat` and `ConstrainedInt` classes and can be combined with a multitude of complex validation rules.
 
 The following caveats apply:
 
+- `StrictBytes` (and the `strict` option of `ConstrainedBytes`) will accept both `bytes`,
+   and `bytearray` types.
 - `StrictInt` (and the `strict` option of `ConstrainedInt`) will not accept `bool` types,
     even though `bool` is a subclass of `int` in Python. Other subclasses will work.
 - `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.
@@ -776,7 +903,7 @@ _(This script is complete, it should run "as is")_
 Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
 formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
 
-See [Schema](schema.md) for more details on how the model's schema is generated.
+See [schema](schema.md) for more details on how the model's schema is generated.
 
 ### Arbitrary Types Allowed
 

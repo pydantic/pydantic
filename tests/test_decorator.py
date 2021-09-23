@@ -1,12 +1,14 @@
 import asyncio
 import inspect
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
 import pytest
+from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, ValidationError, validate_arguments
+from pydantic import BaseModel, Extra, Field, ValidationError, validate_arguments
 from pydantic.decorator import ValidatedFunction
 from pydantic.errors import ConfigError
 
@@ -52,6 +54,20 @@ def test_args():
         {'loc': ('kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'}
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        foo(1, 2, a=3)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('v__duplicate_kwargs',), 'msg': "multiple values for argument: 'a'", 'type': 'type_error'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        foo(1, 2, a=3, b=4)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('v__duplicate_kwargs',), 'msg': "multiple values for arguments: 'a', 'b'", 'type': 'type_error'}
+    ]
+
 
 def test_wrap():
     @validate_arguments
@@ -68,7 +84,7 @@ def test_wrap():
     assert foo_bar.vd.arg_mapping == {0: 'a', 1: 'b'}
     assert foo_bar.vd.positional_only_args == set()
     assert issubclass(foo_bar.model, BaseModel)
-    assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs'}
+    assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs', 'v__duplicate_kwargs'}
     assert foo_bar.model.__name__ == 'FooBar'
     assert foo_bar.model.schema()['title'] == 'FooBar'
     # signature is slightly different on 3.6
@@ -110,15 +126,41 @@ def test_untyped():
     assert foo(1, {'x': 2}, c='3', d='4') == "1, {'x': 2}, 3, 4"
 
 
-def test_var_args_kwargs():
-    @validate_arguments
+@pytest.mark.parametrize('validated', (True, False))
+def test_var_args_kwargs(validated):
     def foo(a, b, *args, d=3, **kwargs):
         return f'a={a!r}, b={b!r}, args={args!r}, d={d!r}, kwargs={kwargs!r}'
+
+    if validated:
+        foo = validate_arguments(foo)
 
     assert foo(1, 2) == 'a=1, b=2, args=(), d=3, kwargs={}'
     assert foo(1, 2, 3, d=4) == 'a=1, b=2, args=(3,), d=4, kwargs={}'
     assert foo(*[1, 2, 3], d=4) == 'a=1, b=2, args=(3,), d=4, kwargs={}'
+    assert foo(1, 2, args=(10, 11)) == "a=1, b=2, args=(), d=3, kwargs={'args': (10, 11)}"
+    assert foo(1, 2, 3, args=(10, 11)) == "a=1, b=2, args=(3,), d=3, kwargs={'args': (10, 11)}"
     assert foo(1, 2, 3, e=10) == "a=1, b=2, args=(3,), d=3, kwargs={'e': 10}"
+    assert foo(1, 2, kwargs=4) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4}"
+    assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
+
+
+def test_field_can_provide_factory() -> None:
+    @validate_arguments
+    def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:
+        """mypy is happy with this"""
+        return a + b + sum(args)
+
+    assert foo(3) == 102
+    assert foo(1, 2, 3) == 6
+
+
+def test_annotated_field_can_provide_factory() -> None:
+    @validate_arguments
+    def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
+        """mypy reports Incompatible default for argument "b" if we don't supply ANY as default"""
+        return a + b + sum(args)
+
+    assert foo2(1) == 100
 
 
 @skip_pre_38
@@ -161,7 +203,7 @@ def test_args_name():
     def foo(args: int, kwargs: int):
         return f'args={args!r}, kwargs={kwargs!r}'
 
-    assert foo.model.__fields__.keys() == {'args', 'kwargs', 'v__args', 'v__kwargs'}
+    assert foo.model.__fields__.keys() == {'args', 'kwargs', 'v__args', 'v__kwargs', 'v__duplicate_kwargs'}
     assert foo(1, 2) == 'args=1, kwargs=2'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -184,10 +226,36 @@ def test_args_name():
 
 
 def test_v_args():
-    with pytest.raises(ConfigError, match='"v__args", "v__kwargs" and "v__positional_only" are not permitted'):
+    with pytest.raises(
+        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+    ):
 
         @validate_arguments
-        def foo(v__args: int):
+        def foo1(v__args: int):
+            pass
+
+    with pytest.raises(
+        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+    ):
+
+        @validate_arguments
+        def foo2(v__kwargs: int):
+            pass
+
+    with pytest.raises(
+        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+    ):
+
+        @validate_arguments
+        def foo3(v__positional_only: int):
+            pass
+
+    with pytest.raises(
+        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+    ):
+
+        @validate_arguments
+        def foo4(v__duplicate_kwargs: int):
             pass
 
 
@@ -200,7 +268,7 @@ def test_async():
         v = await foo(1, 2)
         assert v == 'a=1 b=2'
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop_policy().get_event_loop()
     loop.run_until_complete(run())
     with pytest.raises(ValidationError) as exc_info:
         loop.run_until_complete(foo('x'))
@@ -318,3 +386,61 @@ def test_config_arbitrary_types_allowed():
             'ctx': {'expected_arbitrary_type': 'EggBox'},
         },
     ]
+
+
+def test_validate(mocker):
+    stub = mocker.stub(name='on_something_stub')
+
+    @validate_arguments
+    def func(s: str, count: int, *, separator: bytes = b''):
+        stub(s, count, separator)
+
+    func.validate('qwe', 2)
+    with pytest.raises(ValidationError):
+        func.validate(['qwe'], 2)
+
+    stub.assert_not_called()
+
+
+def test_validate_all():
+    @validate_arguments(config=dict(validate_all=True))
+    def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
+        return dt
+
+    assert foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+@skip_pre_38
+def test_validate_all_positional(create_module):
+    module = create_module(
+        # language=Python
+        """
+from datetime import datetime
+
+from pydantic import Field, validate_arguments
+
+@validate_arguments(config=dict(validate_all=True))
+def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
+    return dt
+"""
+    )
+    assert module.foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def test_validate_extra():
+    class TypedTest(TypedDict):
+        y: str
+
+    @validate_arguments(config={'extra': Extra.allow})
+    def test(other: TypedTest):
+        return other
+
+    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b', 'z': 'a'}
+
+    @validate_arguments(config={'extra': Extra.ignore})
+    def test(other: TypedTest):
+        return other
+
+    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b'}

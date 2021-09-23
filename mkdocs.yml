@@ -7,8 +7,21 @@ theme:
   name: 'material'
   custom_dir: 'docs/theme'
   palette:
+  - media: "(prefers-color-scheme: light)"
+    scheme: default
     primary: pink
     accent: pink
+    toggle:
+      icon: material/lightbulb-outline
+      name: "Switch to dark mode"
+  - media: "(prefers-color-scheme: dark)"
+    scheme: slate
+    primary: pink
+    accent: pink
+    toggle:
+      icon: material/lightbulb
+      name: "Switch to light mode"
+
   logo: 'logo-white.svg'
   favicon: 'favicon.png'
 
@@ -28,7 +41,6 @@ extra_javascript:
 nav:
 - Overview: index.md
 - install.md
-- 'Version 1 release notes': version_1_release_notes.md
 - Usage:
   - usage/models.md
   - 'Field Types': usage/types.md
@@ -46,20 +58,20 @@ nav:
 - benchmarks.md
 - 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md
+- 'Visual Studio Code': visual_studio_code.md
+- 'Hypothesis plugin': hypothesis_plugin.md
 - 'Code Generation': datamodel_code_generator.md
 - changelog.md
 
 markdown_extensions:
-- markdown.extensions.codehilite:
-    guess_lang: false
 - markdown_include.include:
     base_path: docs
 - toc:
     permalink: 🔗
 - admonition
-- codehilite
-- extra
-- attr_list
+- pymdownx.highlight
+- pymdownx.extra
+- mdx_truly_sane_lists
 
 plugins:
 - search

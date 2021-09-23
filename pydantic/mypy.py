@@ -1,6 +1,17 @@
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
+try:
+    import toml
+except ImportError:  # pragma: no cover
+    # future-proofing for upcoming `mypy` releases which will switch dependencies
+    try:
+        import tomli as toml  # type: ignore
+    except ImportError:
+        import warnings
+
+        warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
+        toml = None  # type: ignore
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -110,11 +121,21 @@ class PydanticPluginConfig:
     def __init__(self, options: Options) -> None:
         if options.config_file is None:  # pragma: no cover
             return
-        plugin_config = ConfigParser()
-        plugin_config.read(options.config_file)
-        for key in self.__slots__:
-            setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
-            setattr(self, key, setting)
+
+        if toml and options.config_file.endswith('.toml'):
+            with open(options.config_file, 'r') as rf:
+                config = toml.load(rf).get('tool', {}).get('pydantic-mypy', {})
+            for key in self.__slots__:
+                setting = config.get(key, False)
+                if not isinstance(setting, bool):
+                    raise ValueError(f'Configuration value must be a boolean for key: {key}')
+                setattr(self, key, setting)
+        else:
+            plugin_config = ConfigParser()
+            plugin_config.read(options.config_file)
+            for key in self.__slots__:
+                setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
+                setattr(self, key, setting)
 
 
 def from_orm_callback(ctx: MethodContext) -> Type:
@@ -143,6 +164,7 @@ class PydanticModelTransformer:
     tracked_config_fields: Set[str] = {
         'extra',
         'allow_mutation',
+        'frozen',
         'orm_mode',
         'allow_population_by_field_name',
         'alias_generator',
@@ -159,7 +181,7 @@ class PydanticModelTransformer:
         In particular:
         * determines the model config and fields,
         * adds a fields-aware signature for the initializer and construct methods
-        * freezes the class if allow_mutation = False
+        * freezes the class if allow_mutation = False or frozen = True
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         ctx = self._ctx
@@ -174,7 +196,7 @@ class PydanticModelTransformer:
         is_settings = any(get_fullname(base) == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings)
         self.add_construct_method(fields)
-        self.set_frozen(fields, frozen=config.allow_mutation is False)
+        self.set_frozen(fields, frozen=config.allow_mutation is False or config.frozen is True)
         info.metadata[METADATA_KEY] = {
             'fields': {field.name: field.serialize() for field in fields},
             'config': config.set_values_dict(),
@@ -529,12 +551,14 @@ class ModelConfigData:
         self,
         forbid_extra: Optional[bool] = None,
         allow_mutation: Optional[bool] = None,
+        frozen: Optional[bool] = None,
         orm_mode: Optional[bool] = None,
         allow_population_by_field_name: Optional[bool] = None,
         has_alias_generator: Optional[bool] = None,
     ):
         self.forbid_extra = forbid_extra
         self.allow_mutation = allow_mutation
+        self.frozen = frozen
         self.orm_mode = orm_mode
         self.allow_population_by_field_name = allow_population_by_field_name
         self.has_alias_generator = has_alias_generator
@@ -616,7 +640,7 @@ def add_method(
     #     first = []
     else:
         self_type = self_type or fill_typevars(info)
-        first = [Argument(Var('self'), self_type, None, ARG_POS)]
+        first = [Argument(Var('__pydantic_self__'), self_type, None, ARG_POS)]
     args = first + args
     arg_types, arg_names, arg_kinds = [], [], []
     for arg in args:

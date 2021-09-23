@@ -4,12 +4,48 @@ Test pydantic's compliance with mypy.
 Do a little skipping about with types to demonstrate its usage.
 """
 import json
+import os
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from pathlib import Path, PurePath
 from typing import Any, Dict, Generic, List, Optional, TypeVar
+from uuid import UUID
 
-from pydantic import BaseModel, NoneStr, PyObject, StrictBool, root_validator, validate_arguments, validator
-from pydantic.fields import Field
+from typing_extensions import TypedDict
+
+from pydantic import (
+    UUID1,
+    BaseConfig,
+    BaseModel,
+    BaseSettings,
+    DirectoryPath,
+    Extra,
+    FilePath,
+    FutureDate,
+    Json,
+    NegativeFloat,
+    NegativeInt,
+    NoneStr,
+    NonNegativeFloat,
+    NonNegativeInt,
+    NonPositiveFloat,
+    NonPositiveInt,
+    PastDate,
+    PositiveFloat,
+    PositiveInt,
+    PyObject,
+    StrictBool,
+    StrictBytes,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+    create_model,
+    create_model_from_typeddict,
+    root_validator,
+    validate_arguments,
+    validator,
+)
+from pydantic.fields import Field, PrivateAttr
 from pydantic.generics import GenericModel
 from pydantic.typing import ForwardRef
 
@@ -121,6 +157,7 @@ class WithField(BaseModel):
     first_name: str = Field('John', const=True)
 
 
+# simple decorator
 @validate_arguments
 def foo(a: int, *, c: str = 'x') -> str:
     return c * a
@@ -128,6 +165,16 @@ def foo(a: int, *, c: str = 'x') -> str:
 
 foo(1, c='thing')
 foo(1)
+
+
+# nested decorator should not produce an error
+@validate_arguments(config={'arbitrary_types_allowed': True})
+def bar(a: int, *, c: str = 'x') -> str:
+    return c * a
+
+
+bar(1, c='thing')
+bar(1)
 
 
 class Foo(BaseModel):
@@ -145,3 +192,96 @@ class MyConf(BaseModel):
 conf = MyConf()
 var1: date = conf.str_pyobject(2020, 12, 20)
 var2: date = conf.callable_pyobject(2111, 1, 1)
+
+
+class MyPrivateAttr(BaseModel):
+    _private_field: str = PrivateAttr()
+
+
+class PydanticTypes(BaseModel):
+    # Boolean
+    my_strict_bool: StrictBool = True
+    # Integer
+    my_positive_int: PositiveInt = 1
+    my_negative_int: NegativeInt = -1
+    my_non_positive_int: NonPositiveInt = -1
+    my_non_negative_int: NonNegativeInt = 1
+    my_strict_int: StrictInt = 1
+    # Float
+    my_positive_float: PositiveFloat = 1.1
+    my_negative_float: NegativeFloat = -1.1
+    my_non_positive_float: NonPositiveFloat = -1.1
+    my_non_negative_float: NonNegativeFloat = 1.1
+    my_strict_float: StrictFloat = 1.1
+    # Bytes
+    my_strict_bytes: StrictBytes = b'pika'
+    # String
+    my_strict_str: StrictStr = 'pika'
+    # PyObject
+    my_pyobject_str: PyObject = 'datetime.date'  # type: ignore
+    my_pyobject_callable: PyObject = date
+    # UUID
+    my_uuid1: UUID1 = UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
+    my_uuid1_str: UUID1 = 'a8098c1a-f86e-11da-bd1a-00112444be1e'  # type: ignore
+    # Path
+    my_file_path: FilePath = Path(__file__)
+    my_file_path_str: FilePath = __file__  # type: ignore
+    my_dir_path: DirectoryPath = Path('.')
+    my_dir_path_str: DirectoryPath = '.'  # type: ignore
+    # Json
+    my_json: Json = '{"hello": "world"}'
+    # Date
+    my_past_date: PastDate = date.today() - timedelta(1)
+    my_future_date: FutureDate = date.today() + timedelta(1)
+
+    class Config:
+        validate_all = True
+
+
+validated = PydanticTypes()
+validated.my_pyobject_str(2021, 1, 1)
+validated.my_pyobject_callable(2021, 1, 1)
+validated.my_uuid1.hex
+validated.my_uuid1_str.hex
+validated.my_file_path.absolute()
+validated.my_file_path_str.absolute()
+validated.my_dir_path.absolute()
+validated.my_dir_path_str.absolute()
+
+
+class SomeDict(TypedDict):
+    val: int
+    name: str
+
+
+obj: SomeDict = {
+    'val': 12,
+    'name': 'John',
+}
+
+
+class Config(BaseConfig):
+    title = 'Record'
+    extra = Extra.ignore
+    max_anystr_length = 1234
+
+
+class Settings(BaseSettings):
+    ...
+
+
+class CustomPath(PurePath):
+    def __init__(self, *args: str):
+        self.path = os.path.join(*args)
+
+    def __fspath__(self) -> str:
+        return f'a/custom/{self.path}'
+
+
+def dont_check_path_existence() -> None:
+    Settings(_env_file='a/path', _secrets_dir='a/path')
+    Settings(_env_file=CustomPath('a/path'), _secrets_dir=CustomPath('a/path'))
+
+
+create_model_from_typeddict(SomeDict)(**obj)
+DynamicModel = create_model('DynamicModel')

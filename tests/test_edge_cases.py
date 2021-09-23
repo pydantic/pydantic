@@ -1,8 +1,9 @@
+import importlib.util
 import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, Generic, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -18,7 +19,12 @@ from pydantic import (
     validate_model,
     validator,
 )
-from pydantic.fields import Field, Schema
+from pydantic.fields import Field
+
+try:
+    import cython
+except ImportError:
+    cython = None
 
 
 def test_str_bytes():
@@ -194,26 +200,45 @@ def test_tuple():
 
 def test_tuple_more():
     class Model(BaseModel):
+        empty_tuple: Tuple[()]
         simple_tuple: tuple = None
         tuple_of_different_types: Tuple[int, float, str, bool] = None
+        tuple_of_single_tuples: Tuple[Tuple[int], ...] = ()
 
-    m = Model(simple_tuple=[1, 2, 3, 4], tuple_of_different_types=[4, 3, 2, 1])
-    assert m.dict() == {'simple_tuple': (1, 2, 3, 4), 'tuple_of_different_types': (4, 3.0, '2', True)}
+    m = Model(
+        empty_tuple=[],
+        simple_tuple=[1, 2, 3, 4],
+        tuple_of_different_types=[4, 3, 2, 1],
+        tuple_of_single_tuples=(('1',), (2,)),
+    )
+    assert m.dict() == {
+        'empty_tuple': (),
+        'simple_tuple': (1, 2, 3, 4),
+        'tuple_of_different_types': (4, 3.0, '2', True),
+        'tuple_of_single_tuples': ((1,), (2,)),
+    }
 
 
 def test_tuple_length_error():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
+        w: Tuple[()]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=[1, 2])
+        Model(v=[1, 2], w=[1])
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
             'msg': 'wrong tuple length 2, expected 3',
             'type': 'value_error.tuple.length',
             'ctx': {'actual_length': 2, 'expected_length': 3},
-        }
+        },
+        {
+            'loc': ('w',),
+            'msg': 'wrong tuple length 1, expected 0',
+            'type': 'value_error.tuple.length',
+            'ctx': {'actual_length': 1, 'expected_length': 0},
+        },
     ]
 
 
@@ -744,6 +769,27 @@ def test_inheritance():
     assert Bar().dict() == {'x': 12.3, 'a': 123.0}
 
 
+def test_inheritance_subclass_default():
+    class MyStr(str):
+        pass
+
+    # Confirm hint supports a subclass default
+    class Simple(BaseModel):
+        x: str = MyStr('test')
+
+    # Confirm hint on a base can be overridden with a subclass default on a subclass
+    class Base(BaseModel):
+        x: str
+        y: str
+
+    class Sub(Base):
+        x = MyStr('test')
+        y: MyStr = MyStr('test')  # force subtype
+
+    assert Sub.__fields__['x'].type_ == str
+    assert Sub.__fields__['y'].type_ == MyStr
+
+
 def test_invalid_type():
     with pytest.raises(RuntimeError) as exc_info:
 
@@ -834,7 +880,10 @@ def test_annotation_inheritance():
     class B(A):
         integer = 2
 
-    assert B.__annotations__['integer'] == int
+    if sys.version_info < (3, 10):
+        assert B.__annotations__['integer'] == int
+    else:
+        assert B.__annotations__ == {}
     assert B.__fields__['integer'].type_ == int
 
     class C(A):
@@ -1089,16 +1138,6 @@ def test_nested_init(model):
     assert m.nest.modified_number == 1
 
 
-def test_values_attr_deprecation():
-    class Model(BaseModel):
-        foo: int
-        bar: str
-
-    m = Model(foo=4, bar='baz')
-    with pytest.warns(DeprecationWarning, match='`__values__` attribute is deprecated, use `__dict__` instead'):
-        assert m.__values__ == m.__dict__
-
-
 def test_init_inspection():
     class Foobar(BaseModel):
         x: int
@@ -1122,8 +1161,11 @@ def test_type_on_annotation():
         d: FooBar = FooBar
         e: Type[FooBar]
         f: Type[FooBar] = FooBar
+        g: Sequence[Type[FooBar]] = [FooBar]
+        h: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
+        i: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
 
-    assert Model.__fields__.keys() == {'b', 'c', 'e', 'f'}
+    assert Model.__fields__.keys() == {'b', 'c', 'e', 'f', 'g', 'h', 'i'}
 
 
 def test_assign_type():
@@ -1196,25 +1238,6 @@ def test_not_optional_subfields():
     assert Model().a is None
     assert Model(a=None).a is None
     assert Model(a=12).a == 12
-
-
-def test_scheme_deprecated():
-
-    with pytest.warns(DeprecationWarning, match='`Schema` is deprecated, use `Field` instead'):
-
-        class Model(BaseModel):
-            foo: int = Schema(4)
-
-
-def test_fields_deprecated():
-    class Model(BaseModel):
-        v: str = 'x'
-
-    with pytest.warns(DeprecationWarning, match='`fields` attribute is deprecated, use `__fields__` instead'):
-        assert Model().fields.keys() == {'v'}
-
-    assert Model().__fields__.keys() == {'v'}
-    assert Model.__fields__.keys() == {'v'}
 
 
 def test_optional_field_constraints():
@@ -1696,12 +1719,12 @@ def test_hashable_optional(default):
     Model()
 
 
-def test_default_factory_side_effect():
-    """It may call `default_factory` more than once when `validate_all` is set"""
+def test_default_factory_called_once():
+    """It should never call `default_factory` more than once even when `validate_all` is set"""
 
     v = 0
 
-    def factory():
+    def factory() -> int:
         nonlocal v
         v += 1
         return v
@@ -1713,7 +1736,20 @@ def test_default_factory_side_effect():
             validate_all = True
 
     m1 = MyModel()
-    assert m1.id == 2  # instead of 1
+    assert m1.id == 1
+
+    class MyBadModel(BaseModel):
+        id: List[str] = Field(default_factory=factory)
+
+        class Config:
+            validate_all = True
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyBadModel()
+    assert v == 2  # `factory` has been called to run validation
+    assert exc_info.value.errors() == [
+        {'loc': ('id',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+    ]
 
 
 def test_default_factory_validator_child():
@@ -1730,3 +1766,129 @@ def test_default_factory_validator_child():
         pass
 
     assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']
+
+
+@pytest.mark.skipif(cython is None, reason='cython not installed')
+def test_cython_function_untouched():
+    Model = cython.inline(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    a = 0.0
+    b = 10
+
+    def get_double_a(self) -> float:
+        return self.a + self.b
+
+return Model
+"""
+    )
+    model = Model(a=10.2)
+    assert model.a == 10.2
+    assert model.b == 10
+    return model.get_double_a() == 20.2
+
+
+def test_resolve_annotations_module_missing(tmp_path):
+    # see https://github.com/samuelcolvin/pydantic/issues/2363
+    file_path = tmp_path / 'module_to_load.py'
+    # language=Python
+    file_path.write_text(
+        """
+from pydantic import BaseModel
+class User(BaseModel):
+    id: int
+    name = 'Jane Doe'
+"""
+    )
+
+    spec = importlib.util.spec_from_file_location('my_test_module', file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.User(id=12).dict() == {'id': 12, 'name': 'Jane Doe'}
+
+
+def test_iter_coverage():
+    class MyModel(BaseModel):
+        x: int = 1
+        y: str = 'a'
+
+    assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
+
+
+def test_config_field_info():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'description': 'descr'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+
+def test_config_field_info_alias():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'alias': 'b'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
+
+
+def test_config_field_info_merge():
+    class Foo(BaseModel):
+        a: str = Field(..., foo='Foo')
+
+        class Config:
+            fields = {'a': {'bar': 'Bar'}}
+
+    assert Foo.schema(by_alias=True)['properties'] == {
+        'a': {'bar': 'Bar', 'foo': 'Foo', 'title': 'A', 'type': 'string'}
+    }
+
+
+def test_config_field_info_allow_mutation():
+    class Foo(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            validate_assignment = True
+
+    assert Foo.__fields__['a'].field_info.allow_mutation is True
+
+    f = Foo(a='x')
+    f.a = 'y'
+    assert f.dict() == {'a': 'y'}
+
+    class Bar(BaseModel):
+        a: str = Field(...)
+
+        class Config:
+            fields = {'a': {'allow_mutation': False}}
+            validate_assignment = True
+
+    assert Bar.__fields__['a'].field_info.allow_mutation is False
+
+    b = Bar(a='x')
+    with pytest.raises(TypeError):
+        b.a = 'y'
+    assert b.dict() == {'a': 'x'}
+
+
+def test_arbitrary_types_allowed_custom_eq():
+    class Foo:
+        def __eq__(self, other):
+            if other.__class__ is not Foo:
+                raise TypeError(f'Cannot interpret {other.__class__.__name__!r} as a valid type')
+            return True
+
+    class Model(BaseModel):
+        x: Foo = Foo()
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    assert Model().x == Foo()
