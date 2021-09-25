@@ -69,6 +69,47 @@ be if passed directly to the initialiser (as a string).
 Complex types like `list`, `set`, `dict`, and sub-models are populated from the environment
 by treating the environment variable's value as a JSON-encoded string.
 
+Another way to populate nested complex variables is to configure your model with the `env_nested_delimiter`
+and define an evn variable with the name regarding this delimiter. 
+What it does is simply explodes yor variable into tested dicts instead of you.
+So if you define a variable `FOO__BAR__BAZ=123` it will convert it into `FOO={"BAR": {"BAZ": 123}}`
+If you have multiple variables with the same structure they will be kindly merged.
+```bash
+# your environment
+TOP='{"v1": "1", "v2": "2"}'
+V0=0
+TOP__V3=3
+TOP__SUB='{"sub_sub": {"v6": "6"}}'
+TOP__SUB__V4=4
+TOP__SUB__V5=5
+```
+
+```py
+class SubSubValue(BaseModel):
+    v6: str
+
+class SubValue(BaseModel):
+    v4: str
+    v5: str
+    sub_sub: SubSubValue
+
+class TopValue(BaseModel):
+    v1: str
+    v2: str
+    v3: str
+    sub: SubValue
+
+class Settings(BaseSettings):
+    v0: str
+    top: TopValue
+
+    class Config:
+        env_nested_delimiter = '__'
+```
+
+You can configure it in you `Config` class as in the example above
+or passing `_env_nested_delimiter` keyword argument on instantiation.
+
 ## Dotenv (.env) support
 
 !!! note

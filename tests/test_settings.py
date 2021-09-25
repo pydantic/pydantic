@@ -90,6 +90,52 @@ def test_nested_env_with_dict(env):
     assert s.top == {'apple': 'value', 'banana': 'secret_value'}
 
 
+def test_nested_env_delimiter(env):
+    class SubSubValue(BaseSettings):
+        v6: str
+
+    class SubValue(BaseSettings):
+        v4: str
+        v5: str
+        sub_sub: SubSubValue
+
+    class TopValue(BaseSettings):
+        v1: str
+        v2: str
+        v3: str
+        sub: SubValue
+
+    class Cfg(BaseSettings):
+        v0: str
+        top: TopValue
+
+        class Config:
+            env_nested_delimiter = '__'
+
+    env.set('top', '{"v1": "1", "v2": "2", "sub": {"v5": "xx"}}')
+    env.set('v0', '0')
+    env.set('top__v3', '3')
+    env.set('top__sub', '{"sub_sub": {"v6": "6"}}')
+    env.set('top__sub__v4', '4')
+    env.set('top__sub__v5', '5')
+    cfg = Cfg()
+    assert cfg.dict() == {
+        'v0': '0',
+        'top': {
+            'v1': '1',
+            'v2': '2',
+            'v3': '3',
+            'sub': {
+                'v4': '4',
+                'v5': '5',
+                'sub_sub': {
+                    'v6': '6'
+                }
+            },
+        },
+    }
+
+
 class DateModel(BaseModel):
     pips: bool = False
 

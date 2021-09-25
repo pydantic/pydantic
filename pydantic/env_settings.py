@@ -30,13 +30,18 @@ class BaseSettings(BaseModel):
         __pydantic_self__,
         _env_file: Optional[StrPath] = env_file_sentinel,
         _env_file_encoding: Optional[str] = None,
+        _env_nested_delimiter: Optional[str] = None,
         _secrets_dir: Optional[StrPath] = None,
         **values: Any,
     ) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
         super().__init__(
             **__pydantic_self__._build_values(
-                values, _env_file=_env_file, _env_file_encoding=_env_file_encoding, _secrets_dir=_secrets_dir
+                values,
+                _env_file=_env_file,
+                _env_file_encoding=_env_file_encoding,
+                _env_nested_delimiter=_env_nested_delimiter,
+                _secrets_dir=_secrets_dir,
             )
         )
 
@@ -45,6 +50,7 @@ class BaseSettings(BaseModel):
         init_kwargs: Dict[str, Any],
         _env_file: Optional[StrPath] = None,
         _env_file_encoding: Optional[str] = None,
+        _env_nested_delimiter: Optional[str] = None,
         _secrets_dir: Optional[StrPath] = None,
     ) -> Dict[str, Any]:
         # Configure built-in sources
@@ -53,6 +59,9 @@ class BaseSettings(BaseModel):
             env_file=(_env_file if _env_file != env_file_sentinel else self.__config__.env_file),
             env_file_encoding=(
                 _env_file_encoding if _env_file_encoding is not None else self.__config__.env_file_encoding
+            ),
+            env_nested_delimiter=(
+                _env_nested_delimiter if _env_nested_delimiter is not None else self.__config__.env_nested_delimiter
             ),
         )
         file_secret_settings = SecretsSettingsSource(secrets_dir=_secrets_dir or self.__config__.secrets_dir)
@@ -71,6 +80,7 @@ class BaseSettings(BaseModel):
         env_prefix = ''
         env_file = None
         env_file_encoding = None
+        env_nested_delimiter = None
         secrets_dir = None
         validate_all = True
         extra = Extra.forbid
@@ -135,7 +145,7 @@ class EnvSettingsSource:
     __slots__ = ('env_file', 'env_file_encoding', 'env_nested_delimiter')
 
     def __init__(
-        self, env_file: Optional[StrPath], env_file_encoding: Optional[str], env_nested_delimiter: Optional[str] = '__'
+        self, env_file: Optional[StrPath], env_file_encoding: Optional[str], env_nested_delimiter: Optional[str] = None
     ):
         self.env_file: Optional[StrPath] = env_file
         self.env_file_encoding: Optional[str] = env_file_encoding
