@@ -132,18 +132,16 @@ class InitSettingsSource:
 
 
 class EnvSettingsSource:
-    __slots__ = ('env_file', 'env_file_encoding')
+    __slots__ = ('env_file', 'env_file_encoding', 'env_nested_delimiter')
 
-    def __init__(self, env_file: Optional[StrPath], env_file_encoding: Optional[str]):
+    def __init__(
+        self, env_file: Optional[StrPath], env_file_encoding: Optional[str], env_nested_delimiter: Optional[str] = '__'
+    ):
         self.env_file: Optional[StrPath] = env_file
         self.env_file_encoding: Optional[str] = env_file_encoding
+        self.env_nested_delimiter: Optional[str] = env_nested_delimiter
 
-    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
-        """
-        Build environment variables suitable for passing to the Model.
-        """
-        d: Dict[str, Optional[str]] = {}
-
+    def get_env_vars(self, settings: BaseSettings) -> Mapping[str, Optional[str]]:
         if settings.__config__.case_sensitive:
             env_vars: Mapping[str, Optional[str]] = os.environ
         else:
@@ -158,6 +156,33 @@ class EnvSettingsSource:
                     ),
                     **env_vars,
                 }
+        return env_vars
+
+    def explode_env_vars(self, settings: BaseSettings, env_vars: Mapping[str, Optional[str]]) -> Dict[str, Any]:
+        result: Dict[str, Any] = {}
+        for env_name, env_val in env_vars.items():
+            keys = env_name.split(self.env_nested_delimiter)
+            env_var = result
+            for idx, key in enumerate(keys):
+                if idx == len(keys) - 1:
+                    try:
+                        env_val = settings.__config__.json_loads(env_val)  # type: ignore
+                    except (ValueError, TypeError):
+                        ...
+                    env_var[key] = env_val
+                else:
+                    env_var = env_var.setdefault(key, {})
+        return result
+
+    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
+        """
+        Build environment variables suitable for passing to the Model.
+        """
+        d: Dict[str, Optional[str]] = {}
+
+        env_vars = self.get_env_vars(settings)
+        if self.env_nested_delimiter is not None:
+            env_vars = self.explode_env_vars(settings, env_vars)
 
         for field in settings.__fields__.values():
             env_val: Optional[str] = None
@@ -170,19 +195,21 @@ class EnvSettingsSource:
                 continue
 
             if field.is_complex():
-                try:
-                    env_val = settings.__config__.json_loads(env_val)
-                except ValueError as e:
-                    raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+                if isinstance(env_val, (str, bytes, bytearray)):
+                    try:
+                        env_val = settings.__config__.json_loads(env_val)
+                    except ValueError as e:
+                        raise SettingsError(f'error parsing JSON for "{env_name}"') from e
             elif (
                 is_union_origin(get_origin(field.type_))
                 and field.sub_fields
                 and any(f.is_complex() for f in field.sub_fields)
             ):
-                try:
-                    env_val = settings.__config__.json_loads(env_val)
-                except ValueError:
-                    pass
+                if isinstance(env_val, (str, bytes, bytearray)):
+                    try:
+                        env_val = settings.__config__.json_loads(env_val)
+                    except ValueError:
+                        pass
             d[field.alias] = env_val
         return d
 
