@@ -755,7 +755,6 @@ MY_VAR='Hello world'
         my_var: str
 
     s = Settings(_env_file=str(p))
-    print(s.dict())
     assert s.dict() == {
         'environment': 'production',
         'redis_address': 'localhost:6379',
