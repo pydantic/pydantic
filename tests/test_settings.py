@@ -15,6 +15,7 @@ from pydantic.env_settings import (
     SettingsError,
     SettingsSourceCallable,
     read_env_file,
+    read_secret_path,
 )
 
 try:
@@ -816,6 +817,20 @@ def test_secrets_path(tmp_path):
     assert Settings().dict() == {'foo': 'foo_secret_value_str'}
 
 
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux tests')
+def test_secrets_relative_path(tmp_path):
+    (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
+
+    class Settings(BaseSettings):
+        SECRET_VAR: str
+
+        class Config:
+            secrets_dir = tmp_path
+
+    settings = Settings().dict()
+    assert settings == {'SECRET_VAR': 'foo_env_value_str'}
+
+
 def test_secrets_path_url(tmp_path):
     (tmp_path / 'foo').write_text('http://www.example.com')
     (tmp_path / 'bar').write_text('snap')
@@ -904,7 +919,9 @@ def test_secrets_file_is_a_directory(tmp_path):
         class Config:
             secrets_dir = tmp_path
 
-    with pytest.warns(UserWarning, match=f'attempted to load secret file "{tmp_path}/foo" but found a directory inste'):
+    with pytest.warns(
+        UserWarning, match=f'attempted to load secret file ' f'"{tmp_path}/foo" but found a directory instead'
+    ):
         Settings()
 
 
@@ -1013,3 +1030,12 @@ def test_builtins_settings_source_repr():
         == "EnvSettingsSource(env_file='.env', env_file_encoding='utf-8')"
     )
     assert repr(SecretsSettingsSource(secrets_dir='/secrets')) == "SecretsSettingsSource(secrets_dir='/secrets')"
+
+
+def test_read_secret_file_case_sentitive(tmp_path):
+    filename = 'SECRET'
+    file = tmp_path / filename
+    file.write_text('test123')
+
+    assert read_secret_path(tmp_path, filename, case_sensitive=True) == 'test123'
+    assert read_secret_path(tmp_path, 'secret', case_sensitive=True) is None

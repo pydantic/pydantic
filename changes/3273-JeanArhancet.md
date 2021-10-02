@@ -1,0 +1,1 @@
+Fix Pydantic error to read content of files in secrets_dir on Linux 

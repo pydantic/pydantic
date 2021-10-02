@@ -229,7 +229,6 @@ class SecretsSettingsSource:
                         f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
                         stacklevel=4,
                     )
-
         return secrets
 
     def __repr__(self) -> str:
@@ -249,3 +248,16 @@ def read_env_file(
         return {k.lower(): v for k, v in file_vars.items()}
     else:
         return file_vars
+
+
+def read_secret_path(secrets_path: Path, env_name: str, case_sensitive: bool = False) -> Optional[str]:
+    paths = [secrets_path / env_name] if case_sensitive else [secrets_path / env_name, secrets_path / env_name.upper()]
+    for path in paths:
+        if path.is_file():
+            return path.read_text().strip()
+        elif path.exists():
+            warnings.warn(
+                f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
+                stacklevel=4,
+            )
+    return None
