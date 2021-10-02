@@ -249,10 +249,7 @@ class PydanticModelTransformer:
                 continue
 
             lhs = stmt.lvalues[0]
-            if not isinstance(lhs, NameExpr):
-                continue
-
-            if not is_valid_field(lhs.name):
+            if not isinstance(lhs, NameExpr) or not is_valid_field(lhs.name):
                 continue
 
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
