@@ -505,6 +505,52 @@ class What(BaseModel):
     assert m.base.literal == 1
 
 
+@skip_pre_37
+def test_postponed_annotations_annotated_alias(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from typing import Annotated
+from pydantic import BaseModel, Field
+
+class What(BaseModel):
+    annotated: Annotated[list[Base], Field(alias="annotated_alias")]
+
+class Base(BaseModel):
+    base: int
+"""
+    )
+    module.What.update_forward_refs()
+
+    json = '{"annotated_alias":[{"base":0}]}'
+
+    parsed = module.What.parse_raw(json)
+    assert parsed == module.What(annotated_alias=[module.Base(base=0)])
+
+
+@skip_pre_37
+def test_postponed_annotations_annotated_description(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from typing import Annotated
+from pydantic import BaseModel, Field
+
+class What(BaseModel):
+    annotated: Annotated[list[Base], Field(description="Description inside Annotated")]
+
+class Base(BaseModel):
+    base: int
+"""
+    )
+    module.What.update_forward_refs()
+
+    schema = module.What.schema()
+    assert schema['properties']['annotated'].get('description') == 'Description inside Annotated'
+
+
 def test_nested_forward_ref():
     class NestedTuple(BaseModel):
         x: Tuple[int, Optional['NestedTuple']]  # noqa: F821

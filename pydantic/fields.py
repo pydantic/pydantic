@@ -393,19 +393,7 @@ class ModelField(Representation):
         """
         field_info_from_config = config.get_field_info(field_name)
 
-        field_info = None
-        if get_origin(annotation) is Annotated:
-            field_infos = [arg for arg in get_args(annotation)[1:] if isinstance(arg, FieldInfo)]
-            if len(field_infos) > 1:
-                raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
-            field_info = next(iter(field_infos), None)
-            if field_info is not None:
-                field_info.update_from_config(field_info_from_config)
-                if field_info.default is not Undefined:
-                    raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
-                if value is not Undefined and value is not Required:
-                    # check also `Required` because of `validate_arguments` that sets `...` as default value
-                    field_info.default = value
+        field_info = ModelField._get_field_info_from_annotation(field_name, annotation, value, field_info_from_config)
 
         if isinstance(value, FieldInfo):
             if field_info is not None:
@@ -417,6 +405,34 @@ class ModelField(Representation):
         value = None if field_info.default_factory is not None else field_info.default
         field_info._validate()
         return field_info, value
+
+    @staticmethod
+    def _get_field_info_from_annotation(
+        field_name: str, annotation: Any, value: Any, config: dict[str, Any]
+    ) -> Optional[FieldInfo]:
+        """
+        Get a FieldInfo from a root typing.Annotated annotation.
+
+        :param field_name: name of the field for use in error messages
+        :param annotation: a type hint such as `str` or `Annotated[str, Field(..., min_length=5)]`
+        :param value: the field's assigned value
+        :param config: the model's config object
+        :return: the FieldInfo contained in the `annotation` if present, None otherwise.
+        """
+        field_info = None
+        if get_origin(annotation) is Annotated:
+            field_infos = [arg for arg in get_args(annotation)[1:] if isinstance(arg, FieldInfo)]
+            if len(field_infos) > 1:
+                raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
+            field_info = next(iter(field_infos), None)
+            if field_info is not None:
+                field_info.update_from_config(config)
+                if field_info.default is not Undefined:
+                    raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
+                if value is not Undefined and value is not Required:
+                    # check also `Required` because of `validate_arguments` that sets `...` as default value
+                    field_info.default = value
+        return field_info
 
     @classmethod
     def infer(
@@ -555,6 +571,16 @@ class ModelField(Representation):
                 self.allow_none = True
             return
         if origin is Annotated:
+            # retrieve missing FieldInfo from the annotation if the outer_type is a ForwardRef
+            if isinstance(self.outer_type_, ForwardRef):
+                field_info = ModelField._get_field_info_from_annotation(
+                    self.name, self.type_, UndefinedType, self.model_config.get_field_info(self.name)
+                )
+                if field_info:
+                    self.alias = field_info.alias or self.name
+                    self.default_factory = field_info.default_factory
+                    self.field_info = field_info
+
             self.type_ = get_args(self.type_)[0]
             self._type_analysis()
             return
