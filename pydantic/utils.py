@@ -15,6 +15,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NoReturn,
     Optional,
     Set,
     Tuple,
@@ -551,7 +552,10 @@ class ValueItems(Representation):
         elif isinstance(items, AbstractSet):
             items = dict.fromkeys(items, ...)
         else:
-            raise TypeError(f'Unexpected type of exclude value {items.__class__}')
+            assert_never(
+                items,
+                f'Unexpected type of exclude value {items.__class__}',  # type: ignore
+            )
         return items
 
     @classmethod
@@ -665,3 +669,8 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
         if left_item is not right_item:
             return False
     return True
+
+
+def assert_never(obj: NoReturn, msg: str) -> NoReturn:
+    """Helper to make sure that we have covered all possible types."""
+    raise TypeError(msg)
