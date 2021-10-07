@@ -4,7 +4,7 @@ import re
 import sys
 from dataclasses import dataclass as vanilla_dataclass
 from decimal import Decimal
-from enum import Enum
+from enum import Enum, auto
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import List
@@ -127,6 +127,19 @@ def test_subclass_custom_encoding():
     m = Model(a=SubDate(2032, 1, 1, 1, 1), b=SubDelta(hours=100))
     assert m.dict() == {'a': SubDate(2032, 1, 1, 1, 1), 'b': SubDelta(days=4, seconds=14400)}
     assert m.json() == '{"a": "Thu, 01 Jan 20 01:01:00", "b": "P4DT4H0M0.000000S"}'
+
+
+def test_enum_with_auto_encoding():
+    class Flavor(Enum):
+        VANILLA = auto()
+        CHOCOLATE = auto()
+
+    class Shake(BaseModel):
+        flavor: Flavor
+
+    s = Shake(flavor=Flavor.VANILLA)
+    assert s.dict() == {'flavor': Flavor.VANILLA}
+    assert s.json() == '{"flavor": 1}'
 
 
 def test_invalid_model():
