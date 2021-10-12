@@ -1,7 +1,7 @@
 black==21.8b0
 flake8==3.9.2
 flake8-quotes==3.3.0
-hypothesis==6.18.0
+hypothesis==6.23.2
 isort==5.9.3
 mypy==0.910
 types-toml==0.1.5
