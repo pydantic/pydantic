@@ -818,17 +818,27 @@ def test_secrets_path(tmp_path):
 
 
 @pytest.mark.skipif(sys.platform != 'linux', reason='Linux tests')
-def test_secrets_relative_path(tmp_path):
+def test_secrets_uppercase_filename(tmp_path):
     (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
 
     class Settings(BaseSettings):
         SECRET_VAR: str
-
+        secret_var: str
+        
         class Config:
             secrets_dir = tmp_path
 
     settings = Settings().dict()
-    assert settings == {'SECRET_VAR': 'foo_env_value_str'}
+    assert settings == {'SECRET_VAR': 'foo_env_value_str', 'secret_var': 'foo_env_value_str'}
+
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux tests')
+def test_read_secret_file_case_sentitive(tmp_path):
+    filename = 'SECRET'
+    file = tmp_path / filename
+    file.write_text('test123')
+
+    assert read_secret_path(tmp_path, filename, case_sensitive=True) == 'test123'
+    assert read_secret_path(tmp_path, 'secret', case_sensitive=True) is None
 
 
 def test_secrets_path_url(tmp_path):
@@ -1031,11 +1041,3 @@ def test_builtins_settings_source_repr():
     )
     assert repr(SecretsSettingsSource(secrets_dir='/secrets')) == "SecretsSettingsSource(secrets_dir='/secrets')"
 
-
-def test_read_secret_file_case_sentitive(tmp_path):
-    filename = 'SECRET'
-    file = tmp_path / filename
-    file.write_text('test123')
-
-    assert read_secret_path(tmp_path, filename, case_sensitive=True) == 'test123'
-    assert read_secret_path(tmp_path, 'secret', case_sensitive=True) is None
