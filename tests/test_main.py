@@ -68,6 +68,18 @@ def test_ultra_simple_repr():
     assert str(m) == 'a=10.2 b=10'
 
 
+def test_repr_skips_extra_fields():
+    class Model(BaseModel):
+        a: int = 0
+
+        class Config:
+            extra = 'allow'
+
+    m = Model(a=1, b=2)
+
+    assert repr(m) == "Model(a=1)"
+
+
 def test_default_factory_field():
     def myfunc():
         return 1
