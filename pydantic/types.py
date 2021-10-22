@@ -97,6 +97,7 @@ __all__ = [
     'ByteSize',
     'PastDate',
     'FutureDate',
+    'NanoTime',
 ]
 
 NoneStr = Optional[str]
@@ -1055,3 +1056,74 @@ else:
                 raise errors.DateNotInTheFutureError()
 
             return value
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ NANO TIME TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TIME_UNITS = {
+    'ns': 1,
+    'ms': 10 ** 6,
+    's': 10 ** 9,
+    'm': 60 * 10 ** 9,
+    'h': 60 * 60 * 10 ** 9,
+    'd': 24 * 60 * 60 * 10 ** 9
+}
+time_string_re = re.compile(r'\s*(\d+\.?\d*)\s*([a-zA-Z]+)?', re.IGNORECASE)
+
+
+class NanoTime(int):
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v: StrIntFloat) -> 'NanoTime':
+
+        result: int = 0
+        pos: int = 0
+        try:
+            return cls(int(v))
+        except ValueError:
+            pass
+
+        while pos < len(str(v)):
+            match = time_string_re.match(str(v), pos=pos)
+            if match is None:
+                raise errors.InvalidNanoTime()
+
+            scalar, unit = match.groups()
+            if unit is None:
+                if match.end() == len(str(v)):
+                    unit = 'ns'
+                else:
+                    raise errors.OmittedNanoTimeUnit()
+
+            try:
+                unit_mult = TIME_UNITS[unit.lower()]
+            except KeyError:
+                raise errors.InvalidNanoTimeUnit(unit=unit)
+
+            result += int(float(scalar) * unit_mult)
+            pos = match.end()
+
+        return cls(result)
+
+    def human_readable(self) -> str:
+
+        result: list = []
+        for unit in reversed(TIME_UNITS):
+            quotient = int(self / TIME_UNITS[unit])
+            if quotient > 0:
+                result.append(f'{quotient}{unit}')
+                self -= quotient * TIME_UNITS[unit]
+
+        return ' '.join(result)
+
+    def to(self, unit: str) -> float:
+
+        try:
+            unit_div = TIME_UNITS[unit.lower()]
+        except KeyError:
+            raise errors.InvalidNanoTimeUnit(unit=unit)
+
+        return self / unit_div

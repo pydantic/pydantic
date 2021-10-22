@@ -43,6 +43,7 @@ from pydantic import (
     FutureDate,
     Json,
     NameEmail,
+    NanoTime,
     NegativeFloat,
     NegativeInt,
     NonNegativeFloat,
@@ -2915,3 +2916,61 @@ def test_future_date_validation_fails(value):
             'type': 'value_error.date.not_in_the_future',
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'input_value,output,human',
+    (
+        ('1', 1, '1ns'),
+        ('1.0', 1, '1ns'),
+        ('1 ns', 1, '1ns'),
+        ('1.5 ms', int(1.5e6), '1ms 500000ns'),
+        ('1.5 s', int(1.5e9), '1s 500ms'),
+        ('1.5 m', int(60 * 1.5e9), '1m 30s'),
+        ('1.5 h', int(60 * 60 * 1.5e9), '1h 30m'),
+        ('1.5 d', int(24 * 60 * 60 * 1.5e9), '1d 12h'),
+        (172895222000001, 172895222000001, '2d 1m 35s 222ms 1ns'),
+        ('2d1m35s 270ms300ns', 172895270000300, '2d 1m 35s 270ms 300ns'),
+        ('2d1m35s 270ms500', 172895270000500, '2d 1m 35s 270ms 500ns'),
+    ),
+)
+def test_nanotime_conversions(input_value, output, human):
+    class Model(BaseModel):
+        time: NanoTime
+
+    m = Model(time=input_value)
+
+    assert m.time == output
+
+    assert m.time.human_readable() == human
+
+
+def test_nanotime_to():
+    class Model(BaseModel):
+        time: NanoTime
+
+    m = Model(time='2d')
+
+    assert m.time.to('d') == pytest.approx(2)
+    assert m.time.to('h') == pytest.approx(48)
+    assert m.time.to('m') == pytest.approx(2880)
+    assert m.time.to('s') == pytest.approx(172800)
+    assert m.time.to('ms') == pytest.approx(1.728e+8)
+
+
+def test_nanotime_raises():
+    class Model(BaseModel):
+        time: NanoTime
+
+    with pytest.raises(ValidationError, match='parse value'):
+        Model(time='d1h')
+
+    with pytest.raises(ValidationError, match='time unit'):
+        Model(time='1y')
+
+    with pytest.raises(ValidationError, match='omitted'):
+        Model(time='2d 12h 13 1ns')
+
+    m = Model(time='1d')
+    with pytest.raises(errors.InvalidNanoTimeUnit, match='time unit'):
+        m.time.to('bad_unit')

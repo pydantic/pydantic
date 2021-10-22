@@ -97,6 +97,9 @@ __all__ = (
     'InvalidLengthForBrand',
     'InvalidByteSize',
     'InvalidByteSizeUnit',
+    'InvalidNanoTime',
+    'InvalidNanoTimeUnit',
+    'OmittedNanoTimeUnit',
 )
 
 
@@ -593,3 +596,15 @@ class InvalidByteSize(PydanticValueError):
 
 class InvalidByteSizeUnit(PydanticValueError):
     msg_template = 'could not interpret byte unit: {unit}'
+
+
+class InvalidNanoTime(PydanticValueError):
+    msg_template = 'could not parse value and unit from time string'
+
+
+class InvalidNanoTimeUnit(PydanticValueError):
+    msg_template = 'could not interpret time unit: {unit}'
+
+
+class OmittedNanoTimeUnit(PydanticValueError):
+    msg_template = 'omitted intermediate unit in multi-value time string'
