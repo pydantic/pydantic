@@ -114,6 +114,7 @@ __all__ = [
     'ByteSize',
     'PastDate',
     'FutureDate',
+    'NanoTime',
     # version
     'VERSION',
 ]

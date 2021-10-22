@@ -183,6 +183,9 @@ with custom properties and validation.
 `ByteSize`
 : converts a bytes string with units to bytes
 
+`NanoTime`
+: converts a time string with units to nanoseconds
+
 ### Typing Iterables
 
 *pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
@@ -875,6 +878,19 @@ raw bytes and print out human readable versions of the bytes as well.
 
 ```py
 {!.tmp_examples/types_bytesize.py!}
+```
+_(This script is complete, it should run "as is")_
+
+## NanoTime
+
+You can use the `NanoTime` data type to convert time string representation to
+nanoseconds and print out human-readable versions of the nanoseconds as well.
+
+!!! info
+    Note that `1ms` will be parsed as "1 millisecond" and not "1 microsecond".
+
+```py
+{!.tmp_examples/types_nanotime.py!}
 ```
 _(This script is complete, it should run "as is")_
 
