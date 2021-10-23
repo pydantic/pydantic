@@ -462,6 +462,34 @@ def test_postgres_dsns():
     assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
 
 
+def test_multihost_postgres_dsns():
+    class Model(BaseModel):
+        a: PostgresDsn
+
+    any_multihost_url = Model(a='postgres://user:pass@host1.db.net:4321,host2.db.net:6432/app').a
+    assert any_multihost_url == 'postgres://user:pass@host1.db.net:4321,host2.db.net:6432/app'
+    assert any_multihost_url.scheme == 'postgres'
+    assert any_multihost_url.host is None
+    assert any_multihost_url.host_type is None
+    assert any_multihost_url.tld is None
+    assert any_multihost_url.port is None
+    assert any_multihost_url.path == '/app'
+    assert any_multihost_url.hosts == [
+        {'host': 'host1.db.net', 'port': '4321', 'tld': 'net', 'host_type': 'domain', 'rebuild': False},
+        {'host': 'host2.db.net', 'port': '6432', 'tld': 'net', 'host_type': 'domain', 'rebuild': False},
+    ]
+
+    any_multihost_url = Model(a='postgres://user:pass@host.db.net:4321/app').a
+    assert any_multihost_url.scheme == 'postgres'
+    assert any_multihost_url == 'postgres://user:pass@host.db.net:4321/app'
+    assert any_multihost_url.host == 'host.db.net'
+    assert any_multihost_url.host_type == 'domain'
+    assert any_multihost_url.tld == 'net'
+    assert any_multihost_url.port == '4321'
+    assert any_multihost_url.path == '/app'
+    assert any_multihost_url.hosts is None
+
+
 def test_redis_dsns():
     class Model(BaseModel):
         a: RedisDsn
