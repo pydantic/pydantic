@@ -76,6 +76,7 @@ __all__ = [
 _url_regex_cache = None
 _ascii_domain_regex_cache = None
 _int_domain_regex_cache = None
+_host_regex_cache = None
 
 _host_regex = (
     r'(?:'
@@ -120,6 +121,16 @@ def int_domain_regex() -> Pattern[str]:
         int_domain_ending = r'(?P<tld>(\.[^\W\d_]{2,63})|(\.(?:xn--)[_0-9a-z-]{2,63}))?\.?'
         _int_domain_regex_cache = re.compile(fr'(?:{int_chunk}\.)*?{int_chunk}{int_domain_ending}', re.IGNORECASE)
     return _int_domain_regex_cache
+
+
+def host_regex() -> Pattern[str]:
+    global _host_regex_cache
+    if _host_regex_cache is None:
+        _host_regex_cache = re.compile(
+            _host_regex,
+            re.IGNORECASE,
+        )
+    return _host_regex_cache
 
 
 class AnyUrl(str):
