@@ -74,6 +74,7 @@ __all__ = [
 ]
 
 _url_regex_cache = None
+_postgres_url_regex_cache = None
 _ascii_domain_regex_cache = None
 _int_domain_regex_cache = None
 _host_regex_cache = None
@@ -101,6 +102,25 @@ def url_regex() -> Pattern[str]:
             re.IGNORECASE,
         )
     return _url_regex_cache
+
+
+def postgres_url_regex() -> Pattern[str]:
+    global _postgres_url_regex_cache
+    if _postgres_url_regex_cache is None:
+        _postgres_url_regex_cache = re.compile(
+            rf'{_scheme_regex}{_user_info_regex}'
+            r'(?:'
+            r'(?P<hosts>('  # hosts, validation occurs later
+            r'([(?:\d{1,3}\.){3}\d{1,3})(?=$|[/:#?])]|'  # ipv4
+            r'([\[[A-F0-9]*:[A-F0-9:]+\])(?=$|[/:#?])]|'  # ipv6
+            r'([^\s+:?#/]+)'  # domain
+            r'(?::(\d+))?'  # port
+            r',?)+)'
+            r')?'
+            rf'{_path_regex}{_query_regex}{_fragment_regex}',
+            re.IGNORECASE,
+        )
+    return _postgres_url_regex_cache
 
 
 def ascii_domain_regex() -> Pattern[str]:
