@@ -86,18 +86,18 @@ _host_regex = (
     r')?'
     r'(?::(?P<port>\d+))?'  # port
 )
+_scheme_regex = r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
+_user_info_regex = r'(?:(?P<user>[^\s:/]*)(?::(?P<password>[^\s/]*))?@)?'
+_path_regex = r'(?P<path>/[^\s?#]*)?'
+_query_regex = r'(?:\?(?P<query>[^\s#]*))?'  # query
+_fragment_regex = r'(?:#(?P<fragment>[^\s#]*))?'  # fragment
 
 
 def url_regex() -> Pattern[str]:
     global _url_regex_cache
     if _url_regex_cache is None:
         _url_regex_cache = re.compile(
-            r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
-            r'(?:(?P<user>[^\s:/]*)(?::(?P<password>[^\s/]*))?@)?'  # user info
-            rf'{_host_regex}'  # hosts
-            r'(?P<path>/[^\s?#]*)?'  # path
-            r'(?:\?(?P<query>[^\s#]*))?'  # query
-            r'(?:#(?P<fragment>[^\s#]*))?',  # fragment
+            rf'{_scheme_regex}{_user_info_regex}{_host_regex}{_path_regex}{_query_regex}{_fragment_regex}',
             re.IGNORECASE,
         )
     return _url_regex_cache
@@ -131,6 +131,7 @@ def host_regex() -> Pattern[str]:
             re.IGNORECASE,
         )
     return _host_regex_cache
+
 
 
 class AnyUrl(str):
