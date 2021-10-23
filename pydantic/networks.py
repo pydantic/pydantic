@@ -51,6 +51,12 @@ if TYPE_CHECKING:
         query: Optional[str]
         fragment: Optional[str]
 
+    class HostParts(TypedDict, total=False):
+        host: str
+        tld: Optional[str]
+        host_type: Optional[str]
+        port: Optional[str]
+
 else:
     email_validator = None
 
@@ -151,7 +157,6 @@ def host_regex() -> Pattern[str]:
             re.IGNORECASE,
         )
     return _host_regex_cache
-
 
 
 class AnyUrl(str):
