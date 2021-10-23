@@ -15,6 +15,7 @@ from typing import (
     Collection,
     Dict,
     Generator,
+    List,
     Optional,
     Pattern,
     Set,
@@ -390,6 +391,12 @@ class PostgresDsn(AnyUrl):
         'postgresql+pygresql',
     }
     user_required = True
+
+    __slots__ = ('hosts',)
+
+    def __init__(self, *args, hosts: Optional[List['HostParts']] = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.hosts = hosts
 
 
 class RedisDsn(AnyUrl):
