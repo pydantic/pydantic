@@ -426,6 +426,25 @@ def test_postgres_dsns():
         Model(a='postgresql+asyncpg://user:pass@localhost:5432/app').a
         == 'postgresql+asyncpg://user:pass@localhost:5432/app'
     )
+    assert (
+        Model(a='postgres://user:pass@host1.db.net,host2.db.net:6432/app').a
+        == 'postgres://user:pass@host1.db.net,host2.db.net:6432/app'
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='postgres://user:pass@host1.db.net,/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
