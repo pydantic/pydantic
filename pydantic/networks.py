@@ -98,8 +98,8 @@ _host_regex = (
 _scheme_regex = r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
 _user_info_regex = r'(?:(?P<user>[^\s:/]*)(?::(?P<password>[^\s/]*))?@)?'
 _path_regex = r'(?P<path>/[^\s?#]*)?'
-_query_regex = r'(?:\?(?P<query>[^\s#]*))?'  # query
-_fragment_regex = r'(?:#(?P<fragment>[^\s#]*))?'  # fragment
+_query_regex = r'(?:\?(?P<query>[^\s#]*))?'
+_fragment_regex = r'(?:#(?P<fragment>[^\s#]*))?'
 
 
 def url_regex() -> Pattern[str]:
