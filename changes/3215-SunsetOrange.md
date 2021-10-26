@@ -1,4 +1,1 @@
-Added additional check to the validator function that throws a descriptive
-ConfigError if the values of the 'fields' parameter is incorrectly set.
-Added test to ensure ConfigError is raised when validator decorator fields
-are incorrectly set.
+Raise an explicit `ConfigError` when multiple fields are incorrectly set for a single validator
