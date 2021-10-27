@@ -672,5 +672,10 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
 
 
 def assert_never(obj: NoReturn, msg: str) -> NoReturn:
-    """Helper to make sure that we have covered all possible types."""
+    """
+    Helper to make sure that we have covered all possible types.
+    
+    This is mostly useful for ``mypy``, docs:
+    https://mypy.readthedocs.io/en/latest/literal_types.html#exhaustive-checks 
+    """
     raise TypeError(msg)
