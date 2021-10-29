@@ -13,6 +13,9 @@ class Person(BaseModel):
         def schema_extra(schema: Dict[str, Any], model: Type['Person']) -> None:
             props = schema.get('properties', {})
             props.pop('title', None)
+            reqs = schema.get('required', [])
+            if 'title' in reqs:
+                reqs.remove('title')
 
 
 print(Person.schema_json(indent=2))
