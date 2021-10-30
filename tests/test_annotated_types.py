@@ -215,7 +215,13 @@ def test_partial_legacy_typeddict():
     class User(OptionalUser):
         id: int
 
-    with pytest.raises(TypeError, match='^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict`'):
+    with pytest.raises(
+        TypeError,
+        match=(
+            '^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` '
+            'or upgrade to Python >= 3.9.2'
+        ),
+    ):
 
         class Model(BaseModel):
             user: User
