@@ -13,7 +13,7 @@ from typing_extensions import TypedDict
 
 from pydantic import BaseModel, PositiveInt, ValidationError
 
-if sys.version_info < (3, 9):
+if sys.version_info < (3, 9, 2):
     try:
         from typing import TypedDict as LegacyTypedDict
     except ImportError:
