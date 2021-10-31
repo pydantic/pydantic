@@ -337,3 +337,27 @@ def test_recursive_parsing():
     # test recursive parsing with dict keys
     obj = dict(bb=dict(aa=1))
     assert ModelB.from_orm(obj) == ModelB(b=ModelA(a=1))
+
+
+def test_orm_mode_with_kwargs():
+    class User(BaseModel):
+        username: str
+        name: str
+
+        class Config:
+            orm_mode = True
+
+    class UserCls:
+        username: str
+        full_name: str
+
+        def __init__(self, username: str, full_name: str) -> None:
+            self.username = username
+            self.full_name = full_name
+
+    user = UserCls('admin', 'john smith')
+
+    converted = User.from_orm(user, name=user.full_name)
+
+    assert user.username == converted.username
+    assert user.full_name == converted.name
