@@ -957,3 +957,18 @@ def test_allow_extra():
         b: str
 
     Foo(**{"a": "bar", "b": "foo", "c": 1})
+
+
+def test_allow_extra_subclass():
+    class C:
+        extra = Extra.ignore
+
+    @pydantic.dataclasses.dataclass(config=C)
+    class Foo:
+        a: str
+
+    @pydantic.dataclasses.dataclass(config=C)
+    class Bar(Foo):
+        b: str
+
+    Bar(**{"a": "bar", "b": "foo", "c": 1})

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, Union, get_type_hints, overload
 
 from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
@@ -190,7 +190,9 @@ def _process_class(
 
     if getattr(config, 'extra', Extra.forbid) is not Extra.forbid:
         def allow_extra_init(self, *args, **kwargs):
-            self.__original_init__(*args, **{k: v for k, v in kwargs.items() if k in self.__annotations__})
+            self.__original_init__(*args, **{
+                k: v for k, v in kwargs.items() if k in get_type_hints(type(self))
+            })
 
         cls.__original_init__ = cls.__init__
         cls.__init__ = allow_extra_init
