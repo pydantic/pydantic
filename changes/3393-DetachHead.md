@@ -1,0 +1,1 @@
+dataclasses now support the `extra` config option
