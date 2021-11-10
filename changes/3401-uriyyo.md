@@ -1,0 +1,1 @@
+Fix issue when pydantic fail to parse `typing.ClassVar` string type annotation.
