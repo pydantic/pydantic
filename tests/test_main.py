@@ -1005,10 +1005,9 @@ def test_class_var():
 
 def test_class_var_as_string():
     class MyModel(BaseModel):
-        a: 'ClassVar'
-        b: 'ClassVar[int]' = 1
+        a: 'ClassVar[int]' = 1
 
-    MyModel.__class_vars__ == {'a', 'b'}
+    MyModel.__class_vars__ == {'a'}
 
 
 def test_fields_set():
