@@ -12,4 +12,4 @@ cattrs
 cerberus
 voluptuous
 schematics
-drf_turbo
+drf-turbo
