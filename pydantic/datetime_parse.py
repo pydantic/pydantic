@@ -40,8 +40,6 @@ standard_duration_re = re.compile(
     r'(?:\.(?P<microseconds>\d{1,6})\d{0,6})?'
     r'$'
 )
-# Support scientific notation for duration
-scientific_notation_duration_re = re.compile(r'^([+\-]?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+\-]?\d+))?$')
 
 # Support the sections of ISO 8601 date representation that are accepted by timedelta
 iso8601_duration_re = re.compile(
@@ -228,10 +226,15 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
         value = str(value)
     elif isinstance(value, bytes):
         value = value.decode()
-
-    try:
-        if scientific_notation_duration_re.match(value):
+    
+    if isinstance(value, (str)):
+        try:
+            #scientific notation
             value = f"{float(value):.6f}"
+        except ValueError:
+            pass
+ 
+    try:
         match = standard_duration_re.match(value) or iso8601_duration_re.match(value)
     except TypeError:
         raise TypeError('invalid type; expected timedelta, string, bytes, int or float')

@@ -212,7 +212,7 @@ def test_parse_python_format(delta):
         ('PT0.000005S', timedelta(microseconds=5)),
         (b'PT0.000005S', timedelta(microseconds=5)),
         # Scientific Notation
-        ('+0003', errors.DurationError),
+        ('+0003', timedelta(seconds=3)),
         (9.9e-05, timedelta(microseconds=99)),
         ('9.9e-05', timedelta(microseconds=99)),
         (9.9e05, timedelta(days=11, seconds=39600)),
