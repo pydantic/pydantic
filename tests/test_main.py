@@ -1003,13 +1003,6 @@ def test_class_var():
     assert list(MyOtherModel.__fields__.keys()) == ['c']
 
 
-def test_class_var_as_string():
-    class MyModel(BaseModel):
-        a: 'ClassVar[int]' = 1
-
-    MyModel.__class_vars__ == {'a'}
-
-
 def test_fields_set():
     class MyModel(BaseModel):
         a: int

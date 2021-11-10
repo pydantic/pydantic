@@ -332,7 +332,7 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
     annotations = {}
     for name, value in raw_annotations.items():
         if isinstance(value, str):
-            if sys.version_info >= (3, 9, 8):
+            if (3, 10) > sys.version_info >= (3, 9, 8) or sys.version_info >= (3, 10, 1):
                 value = ForwardRef(value, is_argument=False, is_class=True)
             elif sys.version_info >= (3, 7):
                 value = ForwardRef(value, is_argument=False)
