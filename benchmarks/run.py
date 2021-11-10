@@ -26,6 +26,13 @@ try:
 except Exception:
     print('WARNING: unable to import TestDRF')
     TestDRF = None
+    
+try:
+    from test_dt import TestDT
+except Exception:
+    print('WARNING: unable to import TestDT')
+    TestDT = None
+
 
 try:
     from test_marshmallow import TestMarshmallow
@@ -79,6 +86,7 @@ other_tests = [
     TestTrafaret,
     TestSchematics,
     TestDRF,
+    TestDT,
     TestCerberus,
 ]
 active_other_tests = [t for t in other_tests if t is not None]
