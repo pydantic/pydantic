@@ -802,6 +802,7 @@ def test_inherit_builtin_dataclass_nested_abstract():
     Ensures the following exception is not raised:
     `Can't instantiate abstract class A with abstract method do_something (type=type_error)`
     """
+
     @dataclasses.dataclass
     class A(ABC):
         a: int
@@ -838,6 +839,7 @@ def test_wrapping_existing_data_classes_with_default_factory_fields():
         > TypeError: non-default argument 'b_1' follows default argument
         > in '3.9/lib/python3.9/dataclasses.py:504'
     """
+
     @dataclasses.dataclass
     class A:
         a_1: int
@@ -858,9 +860,10 @@ def test_wrapping_existing_data_classes_with_default_factory_fields():
 
 def test_nested_dataclass_non_init_attributes():
     """
-     When a dataclass instance is converted from a built-in type to the pydantic type, test that it correctly avoids
-     attempting to copy fields which have `init=False` set.
+    When a dataclass instance is converted from a built-in type to the pydantic type, test that it correctly avoids
+    attempting to copy fields which have `init=False` set.
     """
+
     @dataclasses.dataclass
     class A:
         a_1: int
@@ -957,20 +960,20 @@ def test_pydantic_callable_field():
     std_dc = StdlibDataclass(required_callable=foo, required_callable_2=bar)
 
     assert (
-            pyd_m.required_callable
-            is pyd_m.default_callable
-            is pyd_dc.required_callable
-            is pyd_dc.default_callable
-            is std_dc.required_callable
-            is std_dc.default_callable
+        pyd_m.required_callable
+        is pyd_m.default_callable
+        is pyd_dc.required_callable
+        is pyd_dc.default_callable
+        is std_dc.required_callable
+        is std_dc.default_callable
     )
     assert (
-            pyd_m.required_callable_2
-            is pyd_m.default_callable_2
-            is pyd_dc.required_callable_2
-            is pyd_dc.default_callable_2
-            is std_dc.required_callable_2
-            is std_dc.default_callable_2
+        pyd_m.required_callable_2
+        is pyd_m.default_callable_2
+        is pyd_dc.required_callable_2
+        is pyd_dc.default_callable_2
+        is std_dc.required_callable_2
+        is std_dc.default_callable_2
     )
 
 
