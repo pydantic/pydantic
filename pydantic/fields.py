@@ -314,6 +314,7 @@ class ModelField(Representation):
     __slots__ = (
         'type_',
         'outer_type_',
+        'annotation',
         'sub_fields',
         'key_field',
         'validators',
@@ -351,6 +352,7 @@ class ModelField(Representation):
         self.name: str = name
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
+        self.annotation = type_
         self.type_: Any = type_
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
@@ -508,6 +510,7 @@ class ModelField(Representation):
         if default_value is not None and self.type_ is Undefined:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_
+            self.annotation = self.type_
 
         if self.type_ is Undefined:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
