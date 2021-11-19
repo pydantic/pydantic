@@ -226,3 +226,21 @@ class InheritingModel2(FrozenModel):
 
 inheriting2 = InheritingModel2(x=1, y='c')
 inheriting2.y = 'd'
+
+
+class FieldDefaultTestingModel(BaseModel):
+    # Required
+    a: int
+    b: int = Field()
+    c: int = Field(...)
+
+    # Default
+    d: int = Field(1)
+    e: int = Field('e')
+
+    # Default factory
+    f: list[int] = Field(default_factory=list)
+    g: str = Field(default_factory=set)
+
+    # Default and default factory
+    h: int = Field(default=1, default_factory=list)

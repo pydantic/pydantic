@@ -34,7 +34,14 @@ from mypy.nodes import (
     Var,
 )
 from mypy.options import Options
-from mypy.plugin import CheckerPluginInterface, ClassDefContext, MethodContext, Plugin, SemanticAnalyzerPluginInterface
+from mypy.plugin import (
+    CheckerPluginInterface,
+    ClassDefContext,
+    FunctionContext,
+    MethodContext,
+    Plugin,
+    SemanticAnalyzerPluginInterface,
+)
 from mypy.plugins import dataclasses
 from mypy.semanal import set_callable_name  # type: ignore
 from mypy.server.trigger import make_wildcard_trigger
@@ -94,6 +101,12 @@ class PydanticPlugin(Plugin):
                 return self._pydantic_model_class_maker_callback
         return None
 
+    def get_function_hook(self, fullname: str) -> 'Optional[Callable[[FunctionContext], Type]]':
+        sym = self.lookup_fully_qualified(fullname)
+        if sym and sym.fullname == FIELD_FULLNAME:
+            return self._pydantic_field_callback
+        return None
+
     def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
         if fullname.endswith('.from_orm'):
             return from_orm_callback
@@ -107,6 +120,44 @@ class PydanticPlugin(Plugin):
     def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:
         transformer = PydanticModelTransformer(ctx, self.plugin_config)
         transformer.transform()
+
+    def _pydantic_field_callback(self, ctx: FunctionContext) -> 'Type':
+        """
+        Extract the type of the `default` argument from the Field function, and use it as the return type.
+
+        In particular:
+        * Check whether the default and default_factory argument is specified.
+        * Output an error if both are specified.
+        * Retrieve the type of the argument which is specified, and use it as return type for the function.
+        """
+        default_any_type = ctx.default_return_type
+
+        default_args = ctx.args[0]
+        default_factory_args = ctx.args[1]
+
+        default_specified = bool(default_args)
+        default_factory_specified = bool(default_factory_args)
+
+        if default_specified and default_factory_specified:
+            error_default_and_default_factory_specified(ctx.api, ctx.context)
+            return default_any_type
+
+        if default_specified:
+            default_type = ctx.arg_types[0][0]
+            default_arg = default_args[0]
+
+            if isinstance(default_arg, EllipsisExpr):  # Fallback to default Any type if the field is required
+                default_type = default_any_type
+
+            return default_type
+
+        if default_factory_specified:
+            default_factory_type = ctx.arg_types[1][0]
+
+            if isinstance(default_factory_type, CallableType):
+                return default_factory_type.ret_type
+
+        return default_any_type
 
 
 class PydanticPluginConfig:
@@ -588,6 +639,7 @@ ERROR_CONFIG = ErrorCode('pydantic-config', 'Invalid config value', 'Pydantic')
 ERROR_ALIAS = ErrorCode('pydantic-alias', 'Dynamic alias disallowed', 'Pydantic')
 ERROR_UNEXPECTED = ErrorCode('pydantic-unexpected', 'Unexpected behavior', 'Pydantic')
 ERROR_UNTYPED = ErrorCode('pydantic-field', 'Untyped field disallowed', 'Pydantic')
+ERROR_FIELD_DEFAULTS = ErrorCode('pydantic-field', 'Invalid Field defaults', 'Pydantic')
 
 
 def error_from_orm(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
@@ -612,6 +664,10 @@ def error_unexpected_behavior(detail: str, api: CheckerPluginInterface, context:
 
 def error_untyped_fields(api: SemanticAnalyzerPluginInterface, context: Context) -> None:
     api.fail('Untyped fields disallowed', context, code=ERROR_UNTYPED)
+
+
+def error_default_and_default_factory_specified(api: CheckerPluginInterface, context: Context) -> None:
+    api.fail('Field default and default_factory cannot be specified together', context, code=ERROR_FIELD_DEFAULTS)
 
 
 def add_method(
