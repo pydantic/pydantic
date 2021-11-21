@@ -32,6 +32,7 @@ from typing_extensions import Literal
 from pydantic import BaseModel, Extra, Field, ValidationError, confrozenset, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
+from pydantic.fields import ModelField
 from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
@@ -2625,4 +2626,25 @@ def test_complex_nested_generic():
             },
         },
         '$ref': '#/definitions/Model',
+    }
+
+
+def test_schema_with_field_parameter():
+    class RestrictedAlphabetStr(str):
+        @classmethod
+        def __modify_schema__(cls, field_schema, field: Optional[ModelField]):
+            assert isinstance(field, ModelField)
+            alphabet = field.field_info.extra['alphabet']
+            field_schema['examples'] = [c * 3 for c in alphabet]
+
+    class MyModel(BaseModel):
+        value: RestrictedAlphabetStr = Field(alphabet='ABC')
+
+    assert MyModel.schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {
+            'value': {'title': 'Value', 'alphabet': 'ABC', 'examples': ['AAA', 'BBB', 'CCC'], 'type': 'string'}
+        },
+        'required': ['value'],
     }
