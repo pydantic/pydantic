@@ -60,7 +60,7 @@ for their kind support.
 * Improve field declaration for _pydantic_ `dataclass` by allowing the usage of _pydantic_ `Field` or `'metadata'` kwarg of `dataclasses.field`, #2384 by @PrettyWood
 * Making `typing-extensions` a required dependency, #2368 by @samuelcolvin
 * Make `resolve_annotations` more lenient, allowing for missing modules, #2363 by @samuelcolvin
-* Allow configuring models through class kwargs, #2356 by @MrMrRobat
+* Allow configuring models through class kwargs, #2356 by @Bobronium
 * Prevent `Mapping` subclasses from always being coerced to `dict`, #2325 by @ofek
 * fix: allow `None` for type `Optional[conset / conlist]`, #2320 by @PrettyWood
 * Support empty tuple type, #2318 by @PrettyWood
@@ -142,7 +142,7 @@ Thank you to pydantic's sponsors:
 
 ## v1.7.2 (2020-11-01)
 
-* fix slow `GenericModel` concrete model creation, allow `GenericModel` concrete name reusing in module, #2078 by @MrMrRobat
+* fix slow `GenericModel` concrete model creation, allow `GenericModel` concrete name reusing in module, #2078 by @Bobronium
 * keep the order of the fields when `validate_assignment` is set, #2073 by @PrettyWood
 * forward all the params of the stdlib `dataclass` when converted into _pydantic_ `dataclass`, #2065 by @PrettyWood
 
@@ -168,7 +168,7 @@ for their kind support.
 ### Highlights
 
 * python 3.9 support, thanks @PrettyWood
-* [Private model attributes](https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes), thanks @MrMrRobat
+* [Private model attributes](https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes), thanks @Bobronium
 * ["secrets files" support in `BaseSettings`](https://pydantic-docs.helpmanual.io/usage/settings/#secret-support), thanks @mdgilene
 * [convert stdlib dataclasses to pydantic dataclasses and use stdlib dataclasses in models](https://pydantic-docs.helpmanual.io/usage/dataclasses/#stdlib-dataclasses-and-pydantic-dataclasses), thanks @PrettyWood
 
@@ -205,8 +205,8 @@ for their kind support.
 * add `Enum` and `IntEnum` as valid types for fields, #1735 by @PrettyWood
 * Change default value of `__module__` argument of `create_model` from `None` to `'pydantic.main'`. 
   Set reference of created concrete model to it's module to allow pickling (not applied to models created in 
-  functions), #1686 by @MrMrRobat
-* Add private attributes support, #1679 by @MrMrRobat
+  functions), #1686 by @Bobronium
+* Add private attributes support, #1679 by @Bobronium
 * add `config` to `@validate_arguments`, #1663 by @samuelcolvin
 * Allow descendant Settings models to override env variable names for the fields defined in parent Settings models with 
   `env` in their `Config`. Previously only `env_prefix` configuration option was applicable, #1561 by @ojomio
@@ -257,7 +257,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * Avoid some side effects of `default_factory` by calling it only once
   if possible and by not setting a default value in the schema, #1491 by @PrettyWood
 * Added docs about dumping dataclasses to JSON, #1487 by @mikegrima
-* Make `BaseModel.__signature__` class-only, so getting `__signature__` from model instance will raise `AttributeError`, #1466 by @MrMrRobat
+* Make `BaseModel.__signature__` class-only, so getting `__signature__` from model instance will raise `AttributeError`, #1466 by @Bobronium
 * include `'format': 'password'` in the schema for secret types, #1424 by @atheuz
 * Modify schema constraints on `ConstrainedFloat` so that `exclusiveMinimum` and
   minimum are not included in the schema if they are equal to `-math.inf` and
@@ -306,8 +306,8 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * fix mypy signature for `root_validator`, #1192 by @samuelcolvin
 * Fixed parsing of nested 'custom root type' models, #1190 by @Shados
 * Add `validate_arguments` function decorator which checks the arguments to a function matches type annotations, #1179 by @samuelcolvin
-* Add `__signature__` to models, #1034 by @MrMrRobat
-* Refactor `._iter()` method, 10x speed boost for `dict(model)`, #1017 by @MrMrRobat
+* Add `__signature__` to models, #1034 by @Bobronium
+* Refactor `._iter()` method, 10x speed boost for `dict(model)`, #1017 by @Bobronium
 
 ## v1.4 (2020-01-24)
 
@@ -485,7 +485,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 
 * add model name to `ValidationError` error message, #676 by @dmontagu
 * **breaking change**: remove `__getattr__` and rename `__values__` to `__dict__` on `BaseModel`,
-  deprecation warning on use `__values__` attr, attributes access speed increased up to 14 times, #712 by @MrMrRobat
+  deprecation warning on use `__values__` attr, attributes access speed increased up to 14 times, #712 by @Bobronium
 * support `ForwardRef` (without self-referencing annotations) in Python 3.6, #706 by @koxudaxi
 * implement `schema_extra` in `Config` sub-class, #663 by @tiangolo
 
@@ -498,12 +498,12 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 
 * better support for floating point `multiple_of` values, #652 by @justindujardin
 * fix schema generation for `NewType` and `Literal`, #649 by @dmontagu
-* fix `alias_generator` and field config conflict, #645 by @gmetzker and #658 by @MrMrRobat
+* fix `alias_generator` and field config conflict, #645 by @gmetzker and #658 by @Bobronium
 * more detailed message for `EnumError`, #673 by @dmontagu
-* add advanced exclude support for `dict`, `json` and `copy`, #648 by @MrMrRobat
+* add advanced exclude support for `dict`, `json` and `copy`, #648 by @Bobronium
 * fix bug in `GenericModel` for models with concrete parameterized fields, #672 by @dmontagu
 * add documentation for `Literal` type, #651 by @dmontagu
-* add `Config.keep_untouched` for custom descriptors support, #679 by @MrMrRobat
+* add `Config.keep_untouched` for custom descriptors support, #679 by @Bobronium
 * use `inspect.cleandoc` internally to get model description, #657 by @tiangolo
 * add `Color` to schema generation, by @euri10
 * add documentation for Literal type, #651 by @dmontagu
@@ -520,7 +520,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * fix default values for `GenericModel`, #610 by @dmontagu
 * clarify that self-referencing models require python 3.7+, #616 by @vlcinsky
 * fix truncate for types, #611 by @dmontagu
-* add `alias_generator` support, #622 by @MrMrRobat
+* add `alias_generator` support, #622 by @Bobronium
 * fix unparameterized generic type schema generation, #625 by @dmontagu
 * fix schema generation with multiple/circular references to the same model, #621 by @tiangolo and @wongpat
 * support custom root types, #628 by @koxudaxi
