@@ -563,10 +563,11 @@ class ModelField(Representation):
         if is_union_origin(origin):
             types_ = []
             for type_ in get_args(self.type_):
-                if type_ is NoneType:
+                if type_ is NoneType or type_ is Any or type_ is object:
                     if self.required is Undefined:
                         self.required = False
                     self.allow_none = True
+                if type_ is NoneType:
                     continue
                 types_.append(type_)
 
