@@ -136,7 +136,7 @@ _(This script is complete, it should run "as is")_
 
 Here camel case refers to ["upper camel case"](https://en.wikipedia.org/wiki/Camel_case) aka pascal case
 e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`,
-it should be trivial to modify the `to_camel` function above.
+instead use the `to_lower_camel` function.
 
 ## Alias Precedence
 
