@@ -530,10 +530,10 @@ def test_undefined_pickle():
 
 
 def test_on_lower_camel_zero_length():
-    assert to_lower_camel("") == ""
+    assert to_lower_camel('') == ''
 
 def test_on_lower_camel_one_length():
-    assert to_lower_camel("a") == "a"
+    assert to_lower_camel('a') == 'a'
 
 def test_on_lower_camel_many_length():
-    assert to_lower_camel("i_like_turtles") == "iLikeTurtles"
+    assert to_lower_camel('i_like_turtles') == 'iLikeTurtles'
