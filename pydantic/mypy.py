@@ -135,14 +135,11 @@ class PydanticPlugin(Plugin):
         default_args = ctx.args[0]
         default_factory_args = ctx.args[1]
 
-        default_specified = bool(default_args)
-        default_factory_specified = bool(default_factory_args)
-
-        if default_specified and default_factory_specified:
+        if default_args and default_factory_args:
             error_default_and_default_factory_specified(ctx.api, ctx.context)
             return default_any_type
 
-        if default_specified:
+        if default_args:
             default_type = ctx.arg_types[0][0]
             default_arg = default_args[0]
 
@@ -151,7 +148,7 @@ class PydanticPlugin(Plugin):
 
             return default_type
 
-        if default_factory_specified:
+        if default_factory_args:
             default_factory_type = ctx.arg_types[1][0]
 
             if isinstance(default_factory_type, CallableType):
