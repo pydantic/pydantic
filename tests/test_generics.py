@@ -1,3 +1,4 @@
+import json
 import sys
 from enum import Enum
 from typing import (
@@ -19,7 +20,7 @@ from typing import (
 import pytest
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Field, ValidationError, root_validator, validator
+from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
@@ -1158,6 +1159,7 @@ def test_generic_annotated():
 
     SomeGenericModel[str](the_alias='qwe')
 
+
 @skip_36
 def test_generic_subclass():
     T = TypeVar('T')
@@ -1242,3 +1244,27 @@ def test_multi_inheritance_generic_binding():
     assert not issubclass(C[float], B[int])
     assert issubclass(C[float], A[int])
     assert not issubclass(C[float], A[str])
+
+
+@skip_36
+def test_parse_generic_json():
+    T = TypeVar('T')
+
+    class MessageWrapper(GenericModel, Generic[T]):
+        message: Json[T]
+
+    class Payload(BaseModel):
+        payload_field: str
+
+    raw = json.dumps({'payload_field': 'payload'})
+    record = MessageWrapper[Payload](message=raw)
+    assert isinstance(record.message, Payload)
+
+    schema = record.schema()
+    assert schema['properties'] == {'message': {'$ref': '#/definitions/Payload'}}
+    assert schema['definitions']['Payload'] == {
+        'title': 'Payload',
+        'type': 'object',
+        'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
+        'required': ['payload_field'],
+    }

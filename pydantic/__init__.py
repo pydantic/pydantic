@@ -2,6 +2,7 @@
 from . import dataclasses
 from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
 from .class_validators import root_validator, validator
+from .config import BaseConfig, Extra
 from .decorator import validate_arguments
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
@@ -27,6 +28,9 @@ __all__ = [
     # class_validators
     'root_validator',
     'validator',
+    # config
+    'BaseConfig',
+    'Extra',
     # decorator
     'validate_arguments',
     # env_settings
@@ -37,15 +41,14 @@ __all__ = [
     'Field',
     'Required',
     # main
-    'BaseConfig',
     'BaseModel',
-    'Extra',
     'compiled',
     'create_model',
     'validate_model',
     # network
     'AnyUrl',
     'AnyHttpUrl',
+    'FileUrl',
     'HttpUrl',
     'stricturl',
     'EmailStr',
@@ -55,6 +58,7 @@ __all__ = [
     'IPvAnyNetwork',
     'PostgresDsn',
     'RedisDsn',
+    'KafkaDsn',
     'validate_email',
     # parse
     'Protocol',
@@ -108,6 +112,8 @@ __all__ = [
     'PaymentCardNumber',
     'PrivateAttr',
     'ByteSize',
+    'PastDate',
+    'FutureDate',
     # version
     'VERSION',
 ]

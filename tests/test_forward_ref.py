@@ -519,3 +519,20 @@ def test_nested_forward_ref():
     NestedTuple.update_forward_refs()
     obj = NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
     assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
+
+
+@skip_pre_37
+def test_class_var_as_string(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from typing import ClassVar
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    a: ClassVar[int]
+"""
+    )
+
+    assert module.Model.__class_vars__ == {'a'}
