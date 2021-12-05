@@ -1,4 +1,3 @@
-import sys
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
@@ -42,7 +41,7 @@ from .typing import (
     is_namedtuple,
     is_union_origin,
     resolve_annotations,
-    update_field_forward_refs,
+    update_model_forward_refs,
 )
 from .utils import (
     ROOT_KEY,
@@ -289,6 +288,8 @@ class ModelMetaclass(ABCMeta):
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
         # set __signature__ attr only for model class, but not for its instances
         cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
+        cls.__try_update_forward_refs__()
+
         return cls
 
 
@@ -747,14 +748,19 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return v
 
     @classmethod
+    def __try_update_forward_refs__(cls) -> None:
+        """
+        Same as update_forward_refs but will not raise exception
+        when forward references are not defined.
+        """
+        update_model_forward_refs(cls, cls.__fields__.values(), {}, (NameError,))
+
+    @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
         """
         Try to update ForwardRefs on fields based on this Model, globalns and localns.
         """
-        globalns = sys.modules[cls.__module__].__dict__.copy()
-        globalns.setdefault(cls.__name__, cls)
-        for f in cls.__fields__.values():
-            update_field_forward_refs(f, globalns=globalns, localns=localns)
+        update_model_forward_refs(cls, cls.__fields__.values(), localns)
 
     def __iter__(self) -> 'TupleGenerator':
         """

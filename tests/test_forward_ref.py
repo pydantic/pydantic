@@ -41,6 +41,57 @@ class Model(BaseModel):
     assert module.Model().dict() == {'a': None}
 
 
+@skip_pre_37
+def test_postponed_annotations_auto_update_forward_refs(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    a: Model
+"""
+    )
+
+    assert module.Model.__fields__['a'].type_ is module.Model
+
+
+def test_forward_ref_auto_update_no_model(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+class Foo(BaseModel):
+    a: 'Bar'
+
+class Bar(BaseModel):
+    b: 'Foo'
+"""
+    )
+
+    from pydantic.typing import ForwardRef
+
+    assert module.Foo.__fields__['a'].type_ == ForwardRef('Bar')
+    assert module.Bar.__fields__['b'].type_ is module.Foo
+
+
+def test_forward_ref_one_of_fields_not_defined(create_module):
+    @create_module
+    def module():
+        from pydantic import BaseModel
+
+        class Foo(BaseModel):
+            foo: 'Foo'
+            bar: 'Bar'  # noqa: F821
+
+    from pydantic.typing import ForwardRef
+
+    assert module.Foo.__fields__['bar'].type_ == ForwardRef('Bar')
+    assert module.Foo.__fields__['foo'].type_ is module.Foo
+
+
 def test_basic_forward_ref(create_module):
     @create_module
     def module():
@@ -509,14 +560,6 @@ def test_nested_forward_ref():
     class NestedTuple(BaseModel):
         x: Tuple[int, Optional['NestedTuple']]  # noqa: F821
 
-    with pytest.raises(ConfigError) as exc_info:
-        NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
-    assert str(exc_info.value) == (
-        'field "x_1" not yet prepared so type is still a ForwardRef, '
-        'you might need to call NestedTuple.update_forward_refs().'
-    )
-
-    NestedTuple.update_forward_refs()
     obj = NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
     assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
