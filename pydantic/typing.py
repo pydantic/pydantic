@@ -193,7 +193,7 @@ else:
 
 if sys.version_info < (3, 10):
 
-    def is_union_origin(tp: Type[Any]) -> bool:
+    def is_union(tp: Type[Any]) -> bool:
         return tp is Union
 
     WithArgsTypes = (TypingGenericAlias,)
@@ -202,8 +202,8 @@ else:
     import types
     import typing
 
-    def is_union_origin(origin: Type[Any]) -> bool:
-        return origin is Union or origin is types.UnionType  # noqa: E721
+    def is_union(tp: Type[Any]) -> bool:
+        return tp is Union or tp is types.UnionType  # noqa: E721
 
     WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)
 
@@ -269,7 +269,7 @@ __all__ = (
     'get_origin',
     'typing_base',
     'get_all_type_hints',
-    'is_union_origin',
+    'is_union',
     'StrPath',
 )
 
