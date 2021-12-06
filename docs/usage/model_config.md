@@ -187,9 +187,8 @@ Know that this is of course slower, especially if your `Union` is quite big.
 _(This script is complete, it should run "as is")_
 
 !!! warning
-
-Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
-This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
+    Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
+    This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
 
 ```py
 {!.tmp_examples/model_config_smart_union_on_edge_case.py!}
