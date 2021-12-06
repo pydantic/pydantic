@@ -70,7 +70,7 @@ with custom properties and validation.
 : see [Datetime Types](#datetime-types) below for more detail on parsing and validation
 
 `typing.Any`
-: allows any value include `None`, thus an `Any` field is optional
+: allows any value including `None`, thus an `Any` field is optional
 
 `typing.Annotated`
 : allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The

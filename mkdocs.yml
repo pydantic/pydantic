@@ -27,9 +27,10 @@ theme:
 
 repo_name: samuelcolvin/pydantic
 repo_url: https://github.com/samuelcolvin/pydantic
-google_analytics:
-- 'UA-62733018-4'
-- 'auto'
+extra:
+  analytics:
+    provider: google
+    property: UA-62733018-4
 
 extra_css:
 - 'extra/terminal.css'
@@ -58,6 +59,7 @@ nav:
 - benchmarks.md
 - 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md
+- 'Visual Studio Code': visual_studio_code.md
 - 'Hypothesis plugin': hypothesis_plugin.md
 - 'Code Generation': datamodel_code_generator.md
 - changelog.md
