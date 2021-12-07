@@ -24,7 +24,6 @@ if TYPE_CHECKING:
         def __call__(self, schema: Dict[str, Any], model_class: Type[BaseModel]) -> None:
             pass
 
-
 else:
     SchemaExtraCallable = Callable[..., None]
 

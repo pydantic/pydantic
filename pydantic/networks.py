@@ -51,7 +51,6 @@ if TYPE_CHECKING:
         query: Optional[str]
         fragment: Optional[str]
 
-
 else:
     email_validator = None
 
