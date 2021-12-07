@@ -42,7 +42,7 @@ from .typing import (
     is_new_type,
     is_none_type,
     is_typeddict,
-    is_union_origin,
+    is_union,
     new_type_supertype,
 )
 from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
@@ -560,7 +560,7 @@ class ModelField(Representation):
             return
         if origin is Callable:
             return
-        if is_union_origin(origin):
+        if is_union(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if type_ is NoneType:
@@ -935,6 +935,35 @@ class ModelField(Representation):
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
+
+            if self.model_config.smart_union and is_union(get_origin(self.type_)):
+                # 1st pass: check if the value is an exact instance of one of the Union types
+                # (e.g. to avoid coercing a bool into an int)
+                for field in self.sub_fields:
+                    if v.__class__ is field.outer_type_:
+                        return v, None
+
+                # 2nd pass: check if the value is an instance of any subclass of the Union types
+                for field in self.sub_fields:
+                    # This whole logic will be improved later on to support more complex `isinstance` checks
+                    # It will probably be done once a strict mode is added and be something like:
+                    # ```
+                    #     value, error = field.validate(v, values, strict=True)
+                    #     if error is None:
+                    #         return value, None
+                    # ```
+                    try:
+                        if isinstance(v, field.outer_type_):
+                            return v, None
+                    except TypeError:
+                        # compound type
+                        if isinstance(v, get_origin(field.outer_type_)):
+                            value, error = field.validate(v, values, loc=loc, cls=cls)
+                            if not error:
+                                return value, None
+
+            # 1st pass by default or 3rd pass with `smart_union` enabled:
+            # check if the value can be coerced into one of the Union types
             for field in self.sub_fields:
                 value, error = field.validate(v, values, loc=loc, cls=cls)
                 if error:
