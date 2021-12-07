@@ -293,6 +293,7 @@ def test_custom_decode_encode():
         (float, 0.5, str, '{"field": "0.5"}'),
         (bytes, b'1', lambda v: str(v * 2, 'utf-8'), '{"field": "11"}'),
         (frozenset, frozenset([1, 2, 3]), lambda v: dict(enumerate(v)), '{"field": {"0": 1, "1": 2, "2": 3}}'),
+        (set, {1, 2, 3}, lambda v: dict(enumerate(v)), '{"field": {"0": 1, "1": 2, "2": 3}}'),
     ],
     ids=[
         'dict',
@@ -304,6 +305,7 @@ def test_custom_decode_encode():
         'float',
         'bytes',
         'frozenset',
+        'set',
     ],
 )
 def test_encode_builtin_type(field_type, obj, encoder, json_value):
