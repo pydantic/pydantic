@@ -200,3 +200,58 @@ def test_generic_private_attribute():
     m = Model[int](value=1, _private_attr=3)
     m._private_value = 3
     assert m.dict() == {'value': 1}
+
+
+def test_private_attribute_multiple_inheritance():
+    # We need to test this since PrivateAttr uses __slots__ and that has some restrictions with regards to
+    # multiple inheritance
+    default = {'a': {}}
+
+    class GrandParentModel(BaseModel):
+        __foo__ = PrivateAttr(default)
+
+    class ParentAModel(GrandParentModel):
+        pass
+
+    class ParentBModel(GrandParentModel):
+        __bar__ = PrivateAttr(default)
+
+    class Model(ParentAModel, ParentBModel):
+        __baz__ = PrivateAttr(default)
+
+    assert GrandParentModel.__slots__ == {'__foo__'}
+    assert ParentBModel.__slots__ == {'__bar__'}
+    assert Model.__slots__ == {'__baz__'}
+    assert repr(Model.__foo__) == "<member '__foo__' of 'GrandParentModel' objects>"
+    assert repr(Model.__bar__) == "<member '__bar__' of 'ParentBModel' objects>"
+    assert repr(Model.__baz__) == "<member '__baz__' of 'Model' objects>"
+    assert Model.__private_attributes__ == {
+        '__foo__': PrivateAttr(default),
+        '__bar__': PrivateAttr(default),
+        '__baz__': PrivateAttr(default),
+    }
+
+    m = Model()
+    assert m.__foo__ == default
+    assert m.__foo__ is not default
+    assert m.__foo__['a'] is not default['a']
+
+    assert m.__bar__ == default
+    assert m.__bar__ is not default
+    assert m.__bar__['a'] is not default['a']
+
+    assert m.__baz__ == default
+    assert m.__baz__ is not default
+    assert m.__baz__['a'] is not default['a']
+
+    m.__foo__ = None
+    assert m.__foo__ is None
+
+    m.__bar__ = None
+    assert m.__bar__ is None
+
+    m.__baz__ = None
+    assert m.__baz__ is None
+
+    assert m.dict() == {}
+    assert m.__dict__ == {}

@@ -1,5 +1,5 @@
 import sys
-from enum import Enum
+from os import PathLike
 from typing import (  # type: ignore
     TYPE_CHECKING,
     AbstractSet,
@@ -7,6 +7,7 @@ from typing import (  # type: ignore
     ClassVar,
     Dict,
     Generator,
+    Iterable,
     List,
     Mapping,
     NewType,
@@ -18,6 +19,7 @@ from typing import (  # type: ignore
     Union,
     _eval_type,
     cast,
+    get_type_hints,
 )
 
 from typing_extensions import Annotated, Literal
@@ -28,10 +30,10 @@ except ImportError:
     from typing import _Final as typing_base  # type: ignore
 
 try:
-    from typing import GenericAlias  # type: ignore
+    from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:
     # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
-    GenericAlias = ()
+    TypingGenericAlias = ()
 
 
 if sys.version_info < (3, 7):
@@ -55,12 +57,10 @@ if sys.version_info < (3, 7):
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._eval_type(globalns, localns)
 
-
 elif sys.version_info < (3, 9):
 
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._evaluate(globalns, localns)
-
 
 else:
 
@@ -68,6 +68,18 @@ else:
         # Even though it is the right signature for python 3.9, mypy complains with
         # `error: Too many arguments for "_evaluate" of "ForwardRef"` hence the cast...
         return cast(Any, type_)._evaluate(globalns, localns, set())
+
+
+if sys.version_info < (3, 9):
+    # Ensure we always get all the whole `Annotated` hint, not just the annotated type.
+    # For 3.6 to 3.8, `get_type_hints` doesn't recognize `typing_extensions.Annotated`,
+    # so it already returns the full annotation
+    get_all_type_hints = get_type_hints
+
+else:
+
+    def get_all_type_hints(obj: Any, globalns: Any = None, localns: Any = None) -> Any:
+        return get_type_hints(obj, globalns, localns, include_extras=True)
 
 
 if sys.version_info < (3, 7):
@@ -94,7 +106,6 @@ if sys.version_info < (3, 8):
         if type(t).__name__ in AnnotatedTypeNames:
             return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm in py3.6
         return getattr(t, '__origin__', None)
-
 
 else:
     from typing import get_origin as _typing_get_origin
@@ -126,7 +137,6 @@ if sys.version_info < (3, 7):  # noqa: C901 (ignore complexity)
             return t.__args__ + t.__metadata__
         return getattr(t, '__args__', ())
 
-
 elif sys.version_info < (3, 8):  # noqa: C901
     from typing import _GenericAlias
 
@@ -144,7 +154,6 @@ elif sys.version_info < (3, 8):  # noqa: C901
                 res = (list(res[:-1]), res[-1])
             return res
         return getattr(t, '__args__', ())
-
 
 else:
     from typing import get_args as _typing_get_args
@@ -177,6 +186,34 @@ else:
         return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
 
 
+if sys.version_info < (3, 10):
+
+    def is_union_origin(tp: Type[Any]) -> bool:
+        return tp is Union
+
+    WithArgsTypes = (TypingGenericAlias,)
+
+else:
+    import types
+    import typing
+
+    def is_union_origin(origin: Type[Any]) -> bool:
+        return origin is Union or origin is types.UnionType  # noqa: E721
+
+    WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)
+
+
+if sys.version_info < (3, 9):
+    StrPath = Union[str, PathLike]
+else:
+    StrPath = Union[str, PathLike]
+    # TODO: Once we switch to Cython 3 to handle generics properly
+    #  (https://github.com/cython/cython/issues/2753), use following lines instead
+    #  of the one above
+    # # os.PathLike only becomes subscriptable from Python 3.9 onwards
+    # StrPath = Union[str, PathLike[str]]
+
+
 if TYPE_CHECKING:
     from .fields import ModelField
 
@@ -198,7 +235,7 @@ __all__ = (
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',
-    'NONE_TYPES',
+    'is_none_type',
     'display_as_type',
     'resolve_annotations',
     'is_callable_type',
@@ -210,6 +247,7 @@ __all__ = (
     'new_type_supertype',
     'is_classvar',
     'update_field_forward_refs',
+    'update_model_forward_refs',
     'TupleGenerator',
     'DictStrAny',
     'DictAny',
@@ -221,30 +259,46 @@ __all__ = (
     'CallableGenerator',
     'ReprArgs',
     'CallableGenerator',
-    'GenericAlias',
+    'WithArgsTypes',
     'get_args',
     'get_origin',
     'typing_base',
+    'get_all_type_hints',
+    'is_union_origin',
+    'StrPath',
 )
 
 
 NoneType = None.__class__
-NONE_TYPES: Set[Any] = {None, NoneType, Literal[None]}
+
+
+NONE_TYPES: Tuple[Any, Any, Any] = (None, NoneType, Literal[None])
+
+
+if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
+    # Even though this implementation is slower, we need it for python 3.6/3.7:
+    # In python 3.6/3.7 "Literal" is not a builtin type and uses a different
+    # mechanism.
+    # for this reason `Literal[None] is Literal[None]` evaluates to `False`,
+    # breaking the faster implementation used for the other python versions.
+
+    def is_none_type(type_: Any) -> bool:
+        return type_ in NONE_TYPES
+
+else:
+
+    def is_none_type(type_: Any) -> bool:
+        for none_type in NONE_TYPES:
+            if type_ is none_type:
+                return True
+        return False
 
 
 def display_as_type(v: Type[Any]) -> str:
-    if not isinstance(v, typing_base) and not isinstance(v, GenericAlias) and not isinstance(v, type):
+    if not isinstance(v, typing_base) and not isinstance(v, WithArgsTypes) and not isinstance(v, type):
         v = v.__class__
 
-    if isinstance(v, type) and issubclass(v, Enum):
-        if issubclass(v, int):
-            return 'int'
-        elif issubclass(v, str):
-            return 'str'
-        else:
-            return 'enum'
-
-    if isinstance(v, GenericAlias):
+    if isinstance(v, WithArgsTypes):
         # Generic alias are constructs like `list[int]`
         return str(v).replace('typing.', '')
 
@@ -274,7 +328,9 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
     annotations = {}
     for name, value in raw_annotations.items():
         if isinstance(value, str):
-            if sys.version_info >= (3, 7):
+            if (3, 10) > sys.version_info >= (3, 9, 8) or sys.version_info >= (3, 10, 1):
+                value = ForwardRef(value, is_argument=False, is_class=True)
+            elif sys.version_info >= (3, 7):
                 value = ForwardRef(value, is_argument=False)
             else:
                 value = ForwardRef(value)
@@ -298,7 +354,6 @@ if sys.version_info >= (3, 7):
 
     def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
         return get_args(type_)
-
 
 else:
 
@@ -379,6 +434,29 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
     if field.sub_fields:
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
+
+
+def update_model_forward_refs(
+    model: Type[Any],
+    fields: Iterable['ModelField'],
+    localns: 'DictStrAny',
+    exc_to_suppress: Tuple[Type[BaseException], ...] = (),
+) -> None:
+    """
+    Try to update model fields ForwardRefs based on model and localns.
+    """
+    if model.__module__ in sys.modules:
+        globalns = sys.modules[model.__module__].__dict__.copy()
+    else:
+        globalns = {}
+
+    globalns.setdefault(model.__name__, model)
+
+    for f in fields:
+        try:
+            update_field_forward_refs(f, globalns=globalns, localns=localns)
+        except exc_to_suppress:
+            pass
 
 
 def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:

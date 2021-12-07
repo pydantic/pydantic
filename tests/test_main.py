@@ -2,13 +2,14 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Callable, ClassVar, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import Any, Callable, ClassVar, Counter, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
 from uuid import UUID, uuid4
 
 import pytest
 from pytest import param
 
 from pydantic import (
+    BaseConfig,
     BaseModel,
     ConfigError,
     Extra,
@@ -285,9 +286,15 @@ def test_set_attr_invalid():
 def test_any():
     class AnyModel(BaseModel):
         a: Any = 10
+        b: object = 20
 
-    assert AnyModel().a == 10
-    assert AnyModel(a='foobar').a == 'foobar'
+    m = AnyModel()
+    assert m.a == 10
+    assert m.b == 20
+
+    m = AnyModel(a='foobar', b='barfoo')
+    assert m.a == 'foobar'
+    assert m.b == 'barfoo'
 
 
 def test_alias():
@@ -1856,6 +1863,19 @@ def test_allow_mutation_field():
         r.id = 2
 
 
+def test_repr_field():
+    class Model(BaseModel):
+        a: int = Field()
+        b: int = Field(repr=True)
+        c: int = Field(repr=False)
+
+    m = Model(a=1, b=2, c=3)
+    assert repr(m) == 'Model(a=1, b=2)'
+    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
+    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=PydanticUndefined, repr=False, extra={})'
+
+
 def test_inherited_model_field_copy():
     """It should copy models used as fields by default"""
 
@@ -1967,6 +1987,30 @@ def test_typing_coercion_defaultdict():
     assert repr(m) == "Model(x=defaultdict(<class 'str'>, {1: '', 'a': ''}))"
 
 
+def test_typing_coercion_counter():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    assert Model.__fields__['x'].type_ is int
+    assert repr(Model(x={'a': 10})) == "Model(x=Counter({'a': 10}))"
+
+
+def test_typing_counter_value_validation():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x={'a': 'a'})
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('x', 'a'),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        }
+    ]
+
+
 def test_class_kwargs_config():
     class Base(BaseModel, extra='forbid', alias_generator=str.upper):
         a: int
@@ -1983,6 +2027,13 @@ def test_class_kwargs_config():
     assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
 
 
+def test_class_kwargs_config_json_encoders():
+    class Model(BaseModel, json_encoders={int: str}):
+        pass
+
+    assert Model.__config__.json_encoders == {int: str}
+
+
 def test_class_kwargs_config_and_attr_conflict():
 
     with pytest.raises(
@@ -1994,3 +2045,32 @@ def test_class_kwargs_config_and_attr_conflict():
 
             class Config:
                 extra = 'forbid'
+
+
+def test_class_kwargs_custom_config():
+    class Base(BaseModel):
+        class Config(BaseConfig):
+            some_config = 'value'
+
+    class Model(Base, some_config='new_value'):
+        a: int
+
+    assert Model.__config__.some_config == 'new_value'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
+def test_new_union_origin():
+    """On 3.10+, origin of `int | str` is `types.Union`, not `typing.Union`"""
+
+    class Model(BaseModel):
+        x: int | str
+
+    assert Model(x=3).x == 3
+    assert Model(x='3').x == 3
+    assert Model(x='pika').x == 'pika'
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['x'],
+    }

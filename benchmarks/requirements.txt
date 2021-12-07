@@ -1,5 +1,5 @@
 # no versions since benchmarks should always run with the most recent version of each package
-devtools==0.6.1
+devtools==0.8.0
 
 python-dateutil
 trafaret
