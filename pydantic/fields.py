@@ -621,6 +621,13 @@ class ModelField(Representation):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SET
         elif issubclass(origin, FrozenSet):
+            # Create self validators
+            get_validators = getattr(self.type_, '__get_validators__', None)
+            if get_validators:
+                self.class_validators.update(
+                    {f'frozenset_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
+                )
+
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_FROZENSET
         elif issubclass(origin, Deque):

@@ -577,6 +577,10 @@ _(This script is complete, it should run "as is")_
 : type method for constraining sets;
   see [Constrained Types](#constrained-types)
 
+`confrozenset`
+: type method for constraining frozen sets;
+  see [Constrained Types](#constrained-types)
+
 `constr`
 : type method for constraining strs;
   see [Constrained Types](#constrained-types)
@@ -803,6 +807,13 @@ The following arguments are available when using the `conset` type function
 - `item_type: Type[T]`: type of the set items
 - `min_items: int = None`: minimum number of items in the set
 - `max_items: int = None`: maximum number of items in the set
+
+### Arguments to `confrozenset`
+The following arguments are available when using the `confrozenset` type function
+
+- `item_type: Type[T]`: type of the frozenset items
+- `min_items: int = None`: minimum number of items in the frozenset
+- `max_items: int = None`: maximum number of items in the frozenset
 
 ### Arguments to `conint`
 The following arguments are available when using the `conint` type function

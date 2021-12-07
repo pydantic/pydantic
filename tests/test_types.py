@@ -65,6 +65,7 @@ from pydantic import (
     conbytes,
     condecimal,
     confloat,
+    confrozenset,
     conint,
     conlist,
     conset,
@@ -528,6 +529,97 @@ def test_conset_not_required():
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
+
+
+def test_confrozenset():
+    class Model(BaseModel):
+        foo: FrozenSet[int] = Field(..., min_items=2, max_items=4)
+        bar: confrozenset(str, min_items=1, max_items=4) = None
+
+    m = Model(foo=[1, 2], bar=['spoon'])
+    assert m.dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    assert isinstance(m.foo, frozenset)
+    assert isinstance(m.bar, frozenset)
+
+    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+
+    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+        Model(foo=[1])
+
+    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+        Model(foo=list(range(5)))
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'foo': {
+                'title': 'Foo',
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'uniqueItems': True,
+                'minItems': 2,
+                'maxItems': 4,
+            },
+            'bar': {
+                'title': 'Bar',
+                'type': 'array',
+                'items': {'type': 'string'},
+                'uniqueItems': True,
+                'minItems': 1,
+                'maxItems': 4,
+            },
+        },
+        'required': ['foo'],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=[1, 'x', 'y'])
+    errors = exc_info.value.errors()
+    assert len(errors) == 2
+    assert all(error['msg'] == 'value is not a valid integer' for error in errors)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=1)
+    assert exc_info.value.errors() == [
+        {'loc': ('foo',), 'msg': 'value is not a valid frozenset', 'type': 'type_error.frozenset'}
+    ]
+
+
+def test_confrozenset_not_required():
+    class Model(BaseModel):
+        foo: Optional[FrozenSet[int]] = None
+
+    assert Model(foo=None).foo is None
+    assert Model().foo is None
+
+
+def test_constrained_frozenset_optional():
+    class Model(BaseModel):
+        req: Optional[confrozenset(str, min_items=1)] = ...
+        opt: Optional[confrozenset(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=frozenset(), opt=frozenset())
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.frozenset.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.frozenset.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
 
 
 class ConStringModel(BaseModel):
