@@ -57,12 +57,10 @@ if sys.version_info < (3, 7):
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._eval_type(globalns, localns)
 
-
 elif sys.version_info < (3, 9):
 
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._evaluate(globalns, localns)
-
 
 else:
 
@@ -109,7 +107,6 @@ if sys.version_info < (3, 8):
             return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm in py3.6
         return getattr(t, '__origin__', None)
 
-
 else:
     from typing import get_origin as _typing_get_origin
 
@@ -140,7 +137,6 @@ if sys.version_info < (3, 7):  # noqa: C901 (ignore complexity)
             return t.__args__ + t.__metadata__
         return getattr(t, '__args__', ())
 
-
 elif sys.version_info < (3, 8):  # noqa: C901
     from typing import _GenericAlias
 
@@ -158,7 +154,6 @@ elif sys.version_info < (3, 8):  # noqa: C901
                 res = (list(res[:-1]), res[-1])
             return res
         return getattr(t, '__args__', ())
-
 
 else:
     from typing import get_args as _typing_get_args
@@ -290,7 +285,6 @@ if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
     def is_none_type(type_: Any) -> bool:
         return type_ in NONE_TYPES
 
-
 else:
 
     def is_none_type(type_: Any) -> bool:
@@ -360,7 +354,6 @@ if sys.version_info >= (3, 7):
 
     def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
         return get_args(type_)
-
 
 else:
 
