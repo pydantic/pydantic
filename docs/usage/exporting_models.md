@@ -88,7 +88,7 @@ _(This script is complete, it should run "as is")_
 
 ### `json_encoders`
 
-Serialisation can be customised on a model using the `json_encoders` config property; the keys should be types, and
+Serialisation can be customised on a model using the `json_encoders` config property; the keys should be types (or names of types for forward references), and
 the values should be functions which serialise that type (see the example below):
 
 ```py
@@ -104,6 +104,14 @@ encoders taking precedence over the parent one.
 
 ```py
 {!.tmp_examples/exporting_models_json_encoders_merge.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### Serialising self-reference or other models
+
+In case of forward references, you can use a string with the class name instead of the class itself
+```py
+{!.tmp_examples/exporting_models_json_forward_ref.py!}
 ```
 _(This script is complete, it should run "as is")_
 
