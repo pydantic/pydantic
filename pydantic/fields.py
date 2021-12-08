@@ -554,13 +554,13 @@ class ModelField(Representation):
             if isinstance(self.type_, type) and isinstance(None, self.type_):
                 self.allow_none = True
             return
-        if origin is Annotated:
+        elif origin is Annotated:
             self.type_ = get_args(self.type_)[0]
             self._type_analysis()
             return
-        if origin is Callable:
+        elif origin is Callable:
             return
-        if is_union(origin):
+        elif is_union(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if type_ is NoneType:
@@ -580,8 +580,7 @@ class ModelField(Representation):
             else:
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
-
-        if issubclass(origin, Tuple):  # type: ignore
+        elif issubclass(origin, Tuple):  # type: ignore
             # origin == Tuple without item type
             args = get_args(self.type_)
             if not args:  # plain tuple
@@ -599,8 +598,7 @@ class ModelField(Representation):
                 self.shape = SHAPE_TUPLE
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(args)]
             return
-
-        if issubclass(origin, List):
+        elif issubclass(origin, List):
             # Create self validators
             get_validators = getattr(self.type_, '__get_validators__', None)
             if get_validators:
@@ -636,6 +634,11 @@ class ModelField(Representation):
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
+        # priority to most common mapping: dict
+        elif origin is dict or origin is Dict:
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DICT
         elif issubclass(origin, DefaultDict):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -644,10 +647,6 @@ class ModelField(Representation):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = int
             self.shape = SHAPE_COUNTER
-        elif issubclass(origin, Dict):
-            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
-            self.type_ = get_args(self.type_)[1]
-            self.shape = SHAPE_DICT
         elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
