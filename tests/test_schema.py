@@ -1435,6 +1435,26 @@ def test_list_default():
     }
 
 
+def test_enum_str_default():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+
+    class UserModel(BaseModel):
+        friends: MyEnum = MyEnum.FOO
+
+    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
+
+
+def test_enum_int_default():
+    class MyEnum(IntEnum):
+        FOO = 1
+
+    class UserModel(BaseModel):
+        friends: MyEnum = MyEnum.FOO
+
+    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
+
+
 def test_dict_default():
     class UserModel(BaseModel):
         friends: Dict[str, float] = {'a': 1.1, 'b': 2.2}
