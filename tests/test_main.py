@@ -2001,8 +2001,13 @@ def test_typing_non_coercion_of_dict_subclasses():
     class Model(BaseModel):
         a: MyDict
         b: MyDict[str, int]
+        c: Dict[str, int]
+        d: Mapping[str, int]
 
-    assert repr(Model(a=MyDict({'a': 1}), b=MyDict({'a': '1'}))) == "Model(a=MyDict({'a': 1}), b=MyDict({'a': 1}))"
+    assert (
+        repr(Model(a=MyDict({'a': 1}), b=MyDict({'a': '1'}), c=MyDict({'a': '1'}), d=MyDict({'a': '1'})))
+        == "Model(a=MyDict({'a': 1}), b=MyDict({'a': 1}), c={'a': 1}, d=MyDict({'a': 1}))"
+    )
 
 
 def test_typing_coercion_defaultdict():
