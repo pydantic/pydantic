@@ -188,7 +188,7 @@ else:
 
 if sys.version_info < (3, 10):
 
-    def is_union_origin(tp: Type[Any]) -> bool:
+    def is_union(tp: Type[Any]) -> bool:
         return tp is Union
 
     WithArgsTypes = (TypingGenericAlias,)
@@ -197,8 +197,8 @@ else:
     import types
     import typing
 
-    def is_union_origin(origin: Type[Any]) -> bool:
-        return origin is Union or origin is types.UnionType  # noqa: E721
+    def is_union(tp: Type[Any]) -> bool:
+        return tp is Union or tp is types.UnionType  # noqa: E721
 
     WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)
 
@@ -264,7 +264,7 @@ __all__ = (
     'get_origin',
     'typing_base',
     'get_all_type_hints',
-    'is_union_origin',
+    'is_union',
     'StrPath',
 )
 
@@ -275,7 +275,7 @@ NoneType = None.__class__
 NONE_TYPES: Tuple[Any, Any, Any] = (None, NoneType, Literal[None])
 
 
-if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
+if sys.version_info < (3, 8):
     # Even though this implementation is slower, we need it for python 3.6/3.7:
     # In python 3.6/3.7 "Literal" is not a builtin type and uses a different
     # mechanism.
@@ -284,6 +284,18 @@ if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
 
     def is_none_type(type_: Any) -> bool:
         return type_ in NONE_TYPES
+
+elif sys.version_info[:2] == (3, 8):
+    # We can use the fast implementation for 3.8 but there is a very weird bug
+    # where it can fail for `Literal[None]`.
+    # We just need to redefine a useless `Literal[None]` inside the function body to fix this
+
+    def is_none_type(type_: Any) -> bool:
+        Literal[None]  # fix edge case
+        for none_type in NONE_TYPES:
+            if type_ is none_type:
+                return True
+        return False
 
 else:
 

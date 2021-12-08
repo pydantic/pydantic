@@ -49,6 +49,7 @@ from .networks import AnyUrl, EmailStr
 from .types import (
     ConstrainedDecimal,
     ConstrainedFloat,
+    ConstrainedFrozenSet,
     ConstrainedInt,
     ConstrainedList,
     ConstrainedSet,
@@ -58,6 +59,7 @@ from .types import (
     conbytes,
     condecimal,
     confloat,
+    confrozenset,
     conint,
     conlist,
     conset,
@@ -72,7 +74,7 @@ from .typing import (
     is_literal_type,
     is_namedtuple,
     is_none_type,
-    is_union_origin,
+    is_union,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
@@ -982,7 +984,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
         if (
             is_literal_type(type_)
             or isinstance(type_, ForwardRef)
-            or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet))
+            or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet, ConstrainedFrozenSet))
         ):
             return type_
         origin = get_origin(type_)
@@ -994,7 +996,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if origin is Annotated:
                 return go(args[0])
-            if is_union_origin(origin):
+            if is_union(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
             if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
@@ -1004,6 +1006,10 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
                 used_constraints.update({'min_items', 'max_items'})
                 return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+
+            if issubclass(origin, FrozenSet) and (field_info.min_items is not None or field_info.max_items is not None):
+                used_constraints.update({'min_items', 'max_items'})
+                return confrozenset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
 
             for t in (Tuple, List, Set, FrozenSet, Sequence):
                 if issubclass(origin, t):  # type: ignore
@@ -1028,7 +1034,16 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = conbytes
             elif issubclass(type_, numeric_types) and not issubclass(
-                type_, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, ConstrainedSet, bool)
+                type_,
+                (
+                    ConstrainedInt,
+                    ConstrainedFloat,
+                    ConstrainedDecimal,
+                    ConstrainedList,
+                    ConstrainedSet,
+                    ConstrainedFrozenSet,
+                    bool,
+                ),
             ):
                 # Is numeric type
                 attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
