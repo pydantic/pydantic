@@ -50,7 +50,7 @@ but work with arbitrary pydantic-compatible types.
 _(This script is complete, it should run "as is")_
 
 
-## Field customisation
+## Field customization
 
 Optionally, the `Field` function can be used to provide extra information about the field and validations.
 It has the following arguments:

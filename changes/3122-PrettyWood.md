@@ -1,0 +1,1 @@
+avoid dict coercion when using dict subclasses as field type

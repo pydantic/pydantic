@@ -80,6 +80,8 @@ __all__ = [
     'conlist',
     'ConstrainedSet',
     'conset',
+    'ConstrainedFrozenSet',
+    'confrozenset',
     'ConstrainedStr',
     'constr',
     'PyObject',

@@ -33,7 +33,7 @@ from .typing import (
     get_args,
     get_origin,
     is_literal_type,
-    is_union_origin,
+    is_union,
 )
 from .version import version_info
 
@@ -692,7 +692,7 @@ def get_discriminator_values(tp: Any, discriminator_key: str) -> Tuple[str, ...]
     if hasattr(tp, '__pydantic_model__'):
         tp = tp.__pydantic_model__
 
-    if is_root_model or is_union_origin(get_origin(tp)):
+    if is_root_model or is_union(get_origin(tp)):
         union_type = tp.__fields__[ROOT_KEY].type_ if is_root_model else tp
 
         all_values = [get_discriminator_values(t, discriminator_key) for t in get_args(union_type)]
