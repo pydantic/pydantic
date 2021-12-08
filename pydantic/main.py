@@ -1,4 +1,3 @@
-import sys
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
@@ -11,6 +10,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    ClassVar,
     Dict,
     List,
     Mapping,
@@ -28,7 +28,7 @@ from .class_validators import ValidatorGroup, extract_root_validators, extract_v
 from .config import BaseConfig, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import MAPPING_LIKE_SHAPES, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import MAPPING_LIKE_SHAPES, Field, FieldInfo, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -39,9 +39,9 @@ from .typing import (
     get_origin,
     is_classvar,
     is_namedtuple,
-    is_union_origin,
+    is_union,
     resolve_annotations,
-    update_field_forward_refs,
+    update_model_forward_refs,
 )
 from .utils import (
     ROOT_KEY,
@@ -90,6 +90,18 @@ else:  # pragma: no cover
 
 __all__ = 'BaseModel', 'compiled', 'create_model', 'validate_model'
 
+_T = TypeVar('_T')
+
+
+def __dataclass_transform__(
+    *,
+    eq_default: bool = True,
+    order_default: bool = False,
+    kw_only_default: bool = False,
+    field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
+) -> Callable[[_T], _T]:
+    return lambda a: a
+
 
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
@@ -114,6 +126,7 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 _is_base_model_class_defined = False
 
 
+@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
@@ -178,7 +191,7 @@ class ModelMetaclass(ABCMeta):
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, Undefined)
-                    allowed_types = get_args(ann_type) if is_union_origin(get_origin(ann_type)) else (ann_type,)
+                    allowed_types = get_args(ann_type) if is_union(get_origin(ann_type)) else (ann_type,)
                     if (
                         is_untouched(value)
                         and ann_type != PyObject
@@ -275,6 +288,8 @@ class ModelMetaclass(ABCMeta):
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
         # set __signature__ attr only for model class, but not for its instances
         cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
+        cls.__try_update_forward_refs__()
+
         return cls
 
 
@@ -284,21 +299,21 @@ object_setattr = object.__setattr__
 class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
-        __fields__: Dict[str, ModelField] = {}
-        __include_fields__: Optional[Mapping[str, Any]] = None
-        __exclude_fields__: Optional[Mapping[str, Any]] = None
-        __validators__: Dict[str, AnyCallable] = {}
-        __pre_root_validators__: List[AnyCallable]
-        __post_root_validators__: List[Tuple[bool, AnyCallable]]
-        __config__: Type[BaseConfig] = BaseConfig
-        __root__: Any = None
-        __json_encoder__: Callable[[Any], Any] = lambda x: x
-        __schema_cache__: 'DictAny' = {}
-        __custom_root_type__: bool = False
-        __signature__: 'Signature'
-        __private_attributes__: Dict[str, ModelPrivateAttr]
-        __class_vars__: SetStr
-        __fields_set__: SetStr = set()
+        __fields__: ClassVar[Dict[str, ModelField]] = {}
+        __include_fields__: ClassVar[Optional[Mapping[str, Any]]] = None
+        __exclude_fields__: ClassVar[Optional[Mapping[str, Any]]] = None
+        __validators__: ClassVar[Dict[str, AnyCallable]] = {}
+        __pre_root_validators__: ClassVar[List[AnyCallable]]
+        __post_root_validators__: ClassVar[List[Tuple[bool, AnyCallable]]]
+        __config__: ClassVar[Type[BaseConfig]] = BaseConfig
+        __root__: ClassVar[Any] = None
+        __json_encoder__: ClassVar[Callable[[Any], Any]] = lambda x: x
+        __schema_cache__: ClassVar['DictAny'] = {}
+        __custom_root_type__: ClassVar[bool] = False
+        __signature__: ClassVar['Signature']
+        __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]
+        __class_vars__: ClassVar[SetStr]
+        __fields_set__: ClassVar[SetStr] = set()
 
     Config = BaseConfig
     __slots__ = ('__dict__', '__fields_set__')
@@ -454,13 +469,19 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             )
             exclude_unset = skip_defaults
         encoder = cast(Callable[[Any], Any], encoder or self.__json_encoder__)
-        data = self.dict(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
+
+        # We don't directly call `self.dict()`, which does exactly the same thing but
+        # with `to_dict = True` because we want to keep raw `BaseModel` instances and not as `dict`.
+        # This allows users to write custom JSON encoders for given `BaseModel` classes.
+        data = dict(
+            self._iter(
+                by_alias=by_alias,
+                include=include,
+                exclude=exclude,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+            )
         )
         if self.__custom_root_type__:
             data = data[ROOT_KEY]
@@ -733,14 +754,19 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return v
 
     @classmethod
+    def __try_update_forward_refs__(cls) -> None:
+        """
+        Same as update_forward_refs but will not raise exception
+        when forward references are not defined.
+        """
+        update_model_forward_refs(cls, cls.__fields__.values(), {}, (NameError,))
+
+    @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
         """
         Try to update ForwardRefs on fields based on this Model, globalns and localns.
         """
-        globalns = sys.modules[cls.__module__].__dict__.copy()
-        globalns.setdefault(cls.__name__, cls)
-        for f in cls.__fields__.values():
-            update_field_forward_refs(f, globalns=globalns, localns=localns)
+        update_model_forward_refs(cls, cls.__fields__.values(), localns)
 
     def __iter__(self) -> 'TupleGenerator':
         """
@@ -863,7 +889,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: Optional[Type[BaseConfig]] = None,
-    __base__: Type['Model'],
+    __base__: Union[Type['Model'], Tuple[Type['Model'], ...]],
     __module__: str = __name__,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
@@ -875,7 +901,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: Optional[Type[BaseConfig]] = None,
-    __base__: Optional[Type['Model']] = None,
+    __base__: Union[None, Type['Model'], Tuple[Type['Model'], ...]] = None,
     __module__: str = __name__,
     __validators__: Dict[str, classmethod] = None,
     **field_definitions: Any,
@@ -896,8 +922,10 @@ def create_model(
     if __base__ is not None:
         if __config__ is not None:
             raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
+        if not isinstance(__base__, tuple):
+            __base__ = (__base__,)
     else:
-        __base__ = cast(Type['Model'], BaseModel)
+        __base__ = (cast(Type['Model'], BaseModel),)
 
     fields = {}
     annotations = {}
@@ -928,7 +956,7 @@ def create_model(
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(__model_name, (__base__,), namespace)
+    return type(__model_name, __base__, namespace)
 
 
 _missing = object()
