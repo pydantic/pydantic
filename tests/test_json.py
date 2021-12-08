@@ -17,6 +17,7 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import ConstrainedDecimal, DirectoryPath, FilePath, SecretBytes, SecretStr
+from pydantic.typing import NoneType
 
 
 class MyEnum(Enum):
@@ -294,6 +295,7 @@ def test_custom_decode_encode():
         (bytes, b'1', lambda v: str(v * 2, 'utf-8'), '{"field": "11"}'),
         (frozenset, frozenset([1, 2, 3]), lambda v: dict(enumerate(v)), '{"field": {"0": 1, "1": 2, "2": 3}}'),
         (set, {1, 2, 3}, lambda v: dict(enumerate(v)), '{"field": {"0": 1, "1": 2, "2": 3}}'),
+        (NoneType, None, lambda v: 0, '{"field": 0}'),
     ],
     ids=[
         'dict',
@@ -306,6 +308,7 @@ def test_custom_decode_encode():
         'bytes',
         'frozenset',
         'set',
+        'none',
     ],
 )
 def test_encode_builtin_type(field_type, obj, encoder, json_value):

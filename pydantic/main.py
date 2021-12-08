@@ -35,6 +35,7 @@ from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
 from .typing import (
     AnyCallable,
+    NoneType,
     get_args,
     get_origin,
     is_classvar,
@@ -125,16 +126,15 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 # the `BaseModel` class, since that's defined immediately after the metaclass.
 _is_base_model_class_defined = False
 
-BUILTIN_TYPES: AbstractSet[Type[Any]] = frozenset(
-    (
-        dict,
-        list,
-        tuple,
-        float,
-        bool,
-        int,
-        str,
-    )
+BUILTIN_TYPES: Tuple[Type[Any], ...] = (
+    dict,
+    list,
+    tuple,
+    float,
+    bool,
+    int,
+    str,
+    NoneType,
 )
 
 
@@ -259,10 +259,10 @@ class ModelMetaclass(ABCMeta):
         vg.check_for_unused()
         if config.json_encoders:
             json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
-            json_builtin_types = frozenset(t for t in config.json_encoders if t in BUILTIN_TYPES)
+            json_builtin_types = tuple(t for t in config.json_encoders if lenient_issubclass(t, BUILTIN_TYPES))
         else:
             json_encoder = pydantic_encoder
-            json_builtin_types = frozenset()
+            json_builtin_types = ()
 
         pre_rv_new, post_rv_new = extract_root_validators(namespace)
 
@@ -324,7 +324,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __config__: ClassVar[Type[BaseConfig]] = BaseConfig
         __root__: ClassVar[Any] = None
         __json_encoder__: ClassVar[Callable[[Any], Any]] = lambda x: x
-        __json_builtin_types_to_encode__: AbstractSet[Type[Any]]
+        __json_builtin_types_to_encode__: Tuple[Type[Any], ...]
         __schema_cache__: ClassVar['DictAny'] = {}
         __custom_root_type__: ClassVar[bool] = False
         __signature__: ClassVar['Signature']
