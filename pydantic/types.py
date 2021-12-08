@@ -509,16 +509,10 @@ class ConstrainedList(list):  # type: ignore
         return v
 
     @classmethod
-    def unique_items_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
-        try:
-            if v and len(set(v)) != len(v):
-                raise errors.ListUniqueItemsError(not_unique=len(v) - len(set(v)))
-        except TypeError:
-            # failover for unhashable types
-            unique = list()
-
-            if v and len([unique.append(i) for i in v if i not in unique]) != len(v):  # type: ignore
-                raise errors.ListUniqueItemsError(not_unique=len(v) - len(unique)) from None
+    def unique_items_validator(cls, v: 'List[T]') -> 'List[T]':
+        for i, value in enumerate(v, start=1):
+            if value in v[i:]:
+                raise errors.ListUniqueItemsError()
 
         return v
 
