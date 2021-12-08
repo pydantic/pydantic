@@ -216,7 +216,14 @@ class SecretsSettingsSource:
             for env_name in field.field_info.extra['env_names']:
                 path = secrets_path / env_name
                 if path.is_file():
-                    secrets[field.alias] = path.read_text().strip()
+                    secret_value = path.read_text().strip()
+                    if field.is_complex():
+                        try:
+                            secret_value = settings.__config__.json_loads(secret_value)
+                        except ValueError as e:
+                            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+
+                    secrets[field.alias] = secret_value
                 elif path.exists():
                     warnings.warn(
                         f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
