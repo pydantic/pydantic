@@ -34,7 +34,6 @@ from .typing import (
     Callable,
     ForwardRef,
     NoArgAnyCallable,
-    NoneType,
     display_as_type,
     get_args,
     get_origin,
