@@ -698,7 +698,7 @@ def get_discriminator_values(tp: Any, discriminator_key: str) -> Tuple[str, ...]
 
         all_values = [get_discriminator_values(t, discriminator_key) for t in get_args(union_type)]
         if len(set(all_values)) > 1:
-            raise TypeError(f'Field {discriminator_key!r} is not the same for all submodels of {tp.__name__!r}')
+            raise TypeError(f'Field {discriminator_key!r} is not the same for all submodels of {display_as_type(tp)!r}')
 
         return all_values[0]
 
