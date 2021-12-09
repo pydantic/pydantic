@@ -2108,3 +2108,27 @@ def test_new_union_origin():
         'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
         'required': ['x'],
     }
+
+def test_forbid_extra_additionalproperties():
+    class ForbiddenConfig:
+        extra = Extra.forbid
+
+    class DictModel(BaseModel):
+        __root__: Dict[str, List[int]]
+
+    class ForbiddenDict(DictModel):
+        class Config(ForbiddenConfig):
+            ...
+
+    class Model(BaseModel):
+        some_str: str
+        some_int: int
+
+    class ForbiddenModel(Model):
+        class Config(ForbiddenConfig):
+            ...
+
+    assert DictModel.schema() == ForbiddenDict.schema()
+    assert Model.schema() != ForbiddenModel.schema()
+    assert ForbiddenModel.schema()["additionalProperties"] is False
+    assert Model.schema().get("additionalProperties") is None
