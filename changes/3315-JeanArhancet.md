@@ -1,1 +1,1 @@
-Add scientific notation in timedelta
+Allow scientific notation for numbers in timedelta fields
