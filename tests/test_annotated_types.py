@@ -318,3 +318,11 @@ def test_typeddict_annotated_nonoptional():
             },
         },
     }
+
+    for bad_obj in ({}, {'data_td': []}, {'data_td': {'a': 1, 'b': 2, 'd': 4}}):
+        with pytest.raises(ValidationError):
+            Model.parse_obj(bad_obj)
+
+    valid_data = {'a': 1, 'b': 2, 'c': 3}
+    parsed_model = Model.parse_obj({'data_td': valid_data})
+    assert parsed_model and parsed_model == Model(data_td=valid_data)
