@@ -854,7 +854,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def __repr_args__(self) -> 'ReprArgs':
         return [
-            (k, v) for k, v in self.__dict__.items() if self.__fields__.get(k) and self.__fields__[k].field_info.repr
+            (k, v) for k, v in self.__dict__.items() if k not in self.__fields__ or self.__fields__[k].field_info.repr
         ]
 
 
