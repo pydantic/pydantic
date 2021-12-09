@@ -36,7 +36,6 @@ __all__ = (
     'IntegerError',
     'FloatError',
     'PathError',
-    '_PathValueError',
     'PathNotExistsError',
     'PathNotAFileError',
     'PathNotADirectoryError',
@@ -58,7 +57,6 @@ __all__ = (
     'AnyStrMaxLengthError',
     'StrError',
     'StrRegexError',
-    '_NumberBoundError',
     'NumberNotGtError',
     'NumberNotGeError',
     'NumberNotLtError',
@@ -71,6 +69,8 @@ __all__ = (
     'DecimalWholeDigitsError',
     'DateTimeError',
     'DateError',
+    'DateNotInThePastError',
+    'DateNotInTheFutureError',
     'TimeError',
     'DurationError',
     'HashableError',
@@ -346,6 +346,22 @@ class SetMaxLengthError(PydanticValueError):
         super().__init__(limit_value=limit_value)
 
 
+class FrozenSetMinLengthError(PydanticValueError):
+    code = 'frozenset.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class FrozenSetMaxLengthError(PydanticValueError):
+    code = 'frozenset.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
 class AnyStrMinLengthError(PydanticValueError):
     code = 'any_str.min_length'
     msg_template = 'ensure this value has at least {limit_value} characters'
@@ -446,6 +462,16 @@ class DateTimeError(PydanticValueError):
 
 class DateError(PydanticValueError):
     msg_template = 'invalid date format'
+
+
+class DateNotInThePastError(PydanticValueError):
+    code = 'date.not_in_the_past'
+    msg_template = 'date is not in the past'
+
+
+class DateNotInTheFutureError(PydanticValueError):
+    code = 'date.not_in_the_future'
+    msg_template = 'date is not in the future'
 
 
 class TimeError(PydanticValueError):

@@ -32,7 +32,7 @@ _(This script is complete, it should run "as is")_
 : the min length for str & byte types (default: `0`)
 
 **`max_anystr_length`**
-: the max length for str & byte types (default: `2 ** 16`)
+: the max length for str & byte types (default: `None`)
 
 **`validate_all`**
 : whether to validate field defaults (default: `False`)
@@ -84,11 +84,11 @@ _(This script is complete, it should run "as is")_
   [Field Types](types.md#arbitrary-types-allowed).
 
 **`orm_mode`**
-: whether to allow usage of [ORM mode](models.md#orm-mode)
+: whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances)
 
 **`getter_dict`**
-: a custom class (which should inherit from `GetterDict`) to use when decomposing ORM classes for validation,
-  for use with `orm_mode`
+: a custom class (which should inherit from `GetterDict`) to use when decomposing arbitrary classes
+for validation, for use with `orm_mode`; see [Data binding](models.md#data-binding).
 
 **`alias_generator`**
 : a callable that takes a field name and returns an alias for it (see [the dedicated section](#alias-generator))
@@ -113,7 +113,10 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)
 
 **`copy_on_model_validation`**
-: whether or not inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
+: whether inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
+
+**`smart_union`**
+: whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion (see [the dedicated section](#smart-union)
 
 ## Change behaviour globally
 
@@ -162,5 +165,32 @@ For example:
 
 ```py
 {!.tmp_examples/model_config_alias_precedence.py!}
+```
+_(This script is complete, it should run "as is")_
+
+## Smart Union
+
+By default, as explained [here](types.md#unions), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
+So sometimes you may have unexpected coerced data.
+
+```py
+{!.tmp_examples/model_config_smart_union_off.py!}
+```
+_(This script is complete, it should run "as is")_
+
+To prevent this, you can enable `Config.smart_union`. _Pydantic_ will then check all allowed types before even trying to coerce.
+Know that this is of course slower, especially if your `Union` is quite big.
+
+```py
+{!.tmp_examples/model_config_smart_union_on.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! warning
+    Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
+    This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
+
+```py
+{!.tmp_examples/model_config_smart_union_on_edge_case.py!}
 ```
 _(This script is complete, it should run "as is")_

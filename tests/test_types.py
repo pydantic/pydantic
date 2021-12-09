@@ -22,6 +22,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
 )
 from uuid import UUID
 
@@ -40,6 +41,7 @@ from pydantic import (
     EmailStr,
     Field,
     FilePath,
+    FutureDate,
     Json,
     NameEmail,
     NegativeFloat,
@@ -48,6 +50,7 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    PastDate,
     PositiveFloat,
     PositiveInt,
     PyObject,
@@ -62,6 +65,7 @@ from pydantic import (
     conbytes,
     condecimal,
     confloat,
+    confrozenset,
     conint,
     conlist,
     conset,
@@ -123,6 +127,45 @@ def test_constrained_bytes_lower_disabled():
 
     m = Model(v=b'ABCD')
     assert m.v == b'ABCD'
+
+
+def test_constrained_bytes_strict_true():
+    class Model(BaseModel):
+        v: conbytes(strict=True)
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+
+    with pytest.raises(ValidationError):
+        Model(v='foostring')
+
+    with pytest.raises(ValidationError):
+        Model(v=42)
+
+    with pytest.raises(ValidationError):
+        Model(v=0.42)
+
+
+def test_constrained_bytes_strict_false():
+    class Model(BaseModel):
+        v: conbytes(strict=False)
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+    assert Model(v='foostring').v == b'foostring'
+    assert Model(v=42).v == b'42'
+    assert Model(v=0.42).v == b'0.42'
+
+
+def test_constrained_bytes_strict_default():
+    class Model(BaseModel):
+        v: conbytes()
+
+    assert Model(v=b'foobar').v == b'foobar'
+    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+    assert Model(v='foostring').v == b'foostring'
+    assert Model(v=42).v == b'42'
+    assert Model(v=0.42).v == b'0.42'
 
 
 def test_constrained_list_good():
@@ -538,6 +581,97 @@ def test_conset_not_required():
     assert Model().foo is None
 
 
+def test_confrozenset():
+    class Model(BaseModel):
+        foo: FrozenSet[int] = Field(..., min_items=2, max_items=4)
+        bar: confrozenset(str, min_items=1, max_items=4) = None
+
+    m = Model(foo=[1, 2], bar=['spoon'])
+    assert m.dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    assert isinstance(m.foo, frozenset)
+    assert isinstance(m.bar, frozenset)
+
+    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+
+    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+        Model(foo=[1])
+
+    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+        Model(foo=list(range(5)))
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'foo': {
+                'title': 'Foo',
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'uniqueItems': True,
+                'minItems': 2,
+                'maxItems': 4,
+            },
+            'bar': {
+                'title': 'Bar',
+                'type': 'array',
+                'items': {'type': 'string'},
+                'uniqueItems': True,
+                'minItems': 1,
+                'maxItems': 4,
+            },
+        },
+        'required': ['foo'],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=[1, 'x', 'y'])
+    errors = exc_info.value.errors()
+    assert len(errors) == 2
+    assert all(error['msg'] == 'value is not a valid integer' for error in errors)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=1)
+    assert exc_info.value.errors() == [
+        {'loc': ('foo',), 'msg': 'value is not a valid frozenset', 'type': 'type_error.frozenset'}
+    ]
+
+
+def test_confrozenset_not_required():
+    class Model(BaseModel):
+        foo: Optional[FrozenSet[int]] = None
+
+    assert Model(foo=None).foo is None
+    assert Model().foo is None
+
+
+def test_constrained_frozenset_optional():
+    class Model(BaseModel):
+        req: Optional[confrozenset(str, min_items=1)] = ...
+        opt: Optional[confrozenset(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=frozenset(), opt=frozenset())
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.frozenset.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.frozenset.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
+
+
 class ConStringModel(BaseModel):
     v: constr(max_length=10) = 'foobar'
 
@@ -579,6 +713,24 @@ def test_constrained_str_lower_disabled():
 
     m = Model(v='ABCD')
     assert m.v == 'ABCD'
+
+
+def test_constrained_str_max_length_0():
+    class Model(BaseModel):
+        v: constr(max_length=0)
+
+    m = Model(v='')
+    assert m.v == ''
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='qwe')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'ensure this value has at most 0 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 0},
+        }
+    ]
 
 
 def test_module_import():
@@ -1475,10 +1627,13 @@ def test_strict_str():
 
     assert Model(v='foobar').v == 'foobar'
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='str type expected'):
+        Model(v=FruitEnum.banana)
+
+    with pytest.raises(ValidationError, match='str type expected'):
         Model(v=123)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='str type expected'):
         Model(v=b'foobar')
 
 
@@ -2823,4 +2978,220 @@ def test_none(value_type):
         {'loc': ('my_none_list', 2), 'msg': 'value is not None', 'type': 'type_error.not_none'},
         {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_none'},
         {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+    ]
+
+
+def test_default_union_types():
+    class DefaultModel(BaseModel):
+        v: Union[int, bool, str]
+
+    assert DefaultModel(v=True).dict() == {'v': 1}
+    assert DefaultModel(v=1).dict() == {'v': 1}
+    assert DefaultModel(v='1').dict() == {'v': 1}
+
+    # In 3.6, Union[int, bool, str] == Union[int, str]
+    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
+
+    assert DefaultModel.schema() == {
+        'title': 'DefaultModel',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
+        'required': ['v'],
+    }
+
+
+def test_smart_union_types():
+    class SmartModel(BaseModel):
+        v: Union[int, bool, str]
+
+        class Config:
+            smart_union = True
+
+    assert SmartModel(v=1).dict() == {'v': 1}
+    assert SmartModel(v=True).dict() == {'v': True}
+    assert SmartModel(v='1').dict() == {'v': '1'}
+
+    # In 3.6, Union[int, bool, str] == Union[int, str]
+    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
+
+    assert SmartModel.schema() == {
+        'title': 'SmartModel',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
+        'required': ['v'],
+    }
+
+
+def test_default_union_class():
+    class A(BaseModel):
+        x: str
+
+    class B(BaseModel):
+        x: str
+
+    class Model(BaseModel):
+        y: Union[A, B]
+
+    assert isinstance(Model(y=A(x='a')).y, A)
+    # `B` instance is coerced to `A`
+    assert isinstance(Model(y=B(x='b')).y, A)
+
+
+def test_smart_union_class():
+    class A(BaseModel):
+        x: str
+
+    class B(BaseModel):
+        x: str
+
+    class Model(BaseModel):
+        y: Union[A, B]
+
+        class Config:
+            smart_union = True
+
+    assert isinstance(Model(y=A(x='a')).y, A)
+    assert isinstance(Model(y=B(x='b')).y, B)
+
+
+def test_default_union_subclass():
+    class MyStr(str):
+        ...
+
+    class Model(BaseModel):
+        x: Union[int, str]
+
+    assert Model(x=MyStr('1')).x == 1
+
+
+def test_smart_union_subclass():
+    class MyStr(str):
+        ...
+
+    class Model(BaseModel):
+        x: Union[int, str]
+
+        class Config:
+            smart_union = True
+
+    assert Model(x=MyStr('1')).x == '1'
+
+
+def test_default_union_compound_types():
+    class Model(BaseModel):
+        values: Union[Dict[str, str], List[str]]
+
+    assert Model(values={'L': '1'}).dict() == {'values': {'L': '1'}}
+    assert Model(values=['L1']).dict() == {'values': {'L': '1'}}  # dict(['L1']) == {'L': '1'}
+
+
+def test_smart_union_compound_types():
+    class Model(BaseModel):
+        values: Union[Dict[str, str], List[str], Dict[str, List[str]]]
+
+        class Config:
+            smart_union = True
+
+    assert Model(values={'L': '1'}).dict() == {'values': {'L': '1'}}
+    assert Model(values=['L1']).dict() == {'values': ['L1']}
+    assert Model(values=('L1',)).dict() == {'values': {'L': '1'}}  # expected coercion into first dict if not a list
+    assert Model(values={'x': ['pika']}) == {'values': {'x': ['pika']}}
+    assert Model(values={'x': ('pika',)}).dict() == {'values': {'x': ['pika']}}
+    with pytest.raises(ValidationError) as e:
+        Model(values={'x': {'a': 'b'}})
+    assert e.value.errors() == [
+        {'loc': ('values', 'x'), 'msg': 'str type expected', 'type': 'type_error.str'},
+        {'loc': ('values',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+        {'loc': ('values', 'x'), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+    ]
+
+
+def test_smart_union_compouned_types_edge_case():
+    """For now, `smart_union` does not support well compound types"""
+
+    class Model(BaseModel, smart_union=True):
+        x: Union[List[str], List[int]]
+
+    # should consider [1, 2] valid and not coerce once `smart_union` is improved
+    assert Model(x=[1, 2]).x == ['1', '2']
+    # still coerce if needed
+    assert Model(x=[1, '2']).x == ['1', '2']
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    (
+        ('1996-01-22', date(1996, 1, 22)),
+        (date(1996, 1, 22), date(1996, 1, 22)),
+    ),
+)
+def test_past_date_validation_success(value, result):
+    class Model(BaseModel):
+        foo: PastDate
+
+    assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize(
+    'value',
+    (
+        date.today(),
+        date.today() + timedelta(1),
+        datetime.today(),
+        datetime.today() + timedelta(1),
+        '2064-06-01',
+    ),
+)
+def test_past_date_validation_fails(value):
+    class Model(BaseModel):
+        foo: PastDate
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': 'date is not in the past',
+            'type': 'value_error.date.not_in_the_past',
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    (
+        (date.today() + timedelta(1), date.today() + timedelta(1)),
+        (datetime.today() + timedelta(1), date.today() + timedelta(1)),
+        ('2064-06-01', date(2064, 6, 1)),
+    ),
+)
+def test_future_date_validation_success(value, result):
+    class Model(BaseModel):
+        foo: FutureDate
+
+    assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize(
+    'value',
+    (
+        date.today(),
+        date.today() - timedelta(1),
+        datetime.today(),
+        datetime.today() - timedelta(1),
+        '1996-01-22',
+    ),
+)
+def test_future_date_validation_fails(value):
+    class Model(BaseModel):
+        foo: FutureDate
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('foo',),
+            'msg': 'date is not in the future',
+            'type': 'value_error.date.not_in_the_future',
+        }
     ]

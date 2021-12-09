@@ -88,7 +88,7 @@ _(This script is complete, it should run "as is")_
 
 ### `json_encoders`
 
-Serialisation can be customised on a model using the `json_encoders` config property; the keys should be types, and
+Serialisation can be customised on a model using the `json_encoders` config property; the keys should be types (or names of types for forward references), and
 the values should be functions which serialise that type (see the example below):
 
 ```py
@@ -104,6 +104,14 @@ encoders taking precedence over the parent one.
 
 ```py
 {!.tmp_examples/exporting_models_json_encoders_merge.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### Serialising self-reference or other models
+
+In case of forward references, you can use a string with the class name instead of the class itself
+```py
+{!.tmp_examples/exporting_models_json_forward_ref.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -162,7 +170,7 @@ sets or dictionaries. This allows nested selection of which fields to export:
 {!.tmp_examples/exporting_models_exclude1.py!}
 ```
 
-The ellipsis (``...``) indicates that we want to exclude or include an entire key, just as if we included it in a set.
+The `True` indicates that we want to exclude or include an entire key, just as if we included it in a set.
 Of course, the same can be done at any depth level.
 
 Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.  In this scenario,
@@ -174,3 +182,30 @@ member of a list or tuple, the dictionary key `'__all__'` can be used as follows
 ```
 
 The same holds for the `json` and `copy` methods.
+
+### Model and field level include and exclude
+
+In addition to the explicit arguments `exclude` and `include` passed to `dict`, `json` and `copy` methods, we can also pass the `include`/`exclude` arguments directly to the `Field` constructor or the equivalent `field` entry in the models `Config` class:
+
+```py
+{!.tmp_examples/exporting_models_exclude3.py!}
+```
+
+In the case where multiple strategies are used, `exclude`/`include` fields are merged according to the following rules:
+
+* First, model config level settings (via `"fields"` entry) are merged per field with the field constructor settings (i.e. `Field(..., exclude=True)`), with the field constructor taking priority.
+* The resulting settings are merged per class with the explicit settings on `dict`, `json`, `copy` calls with the explicit settings taking priority.
+
+Note that while merging settings, `exclude` entries are merged by computing the "union" of keys, while `include` entries are merged by computing the "intersection" of keys.
+
+The resulting merged exclude settings:
+
+```py
+{!.tmp_examples/exporting_models_exclude4.py!}
+```
+
+are the same as using merged include settings as follows:
+
+```py
+{!.tmp_examples/exporting_models_exclude5.py!}
+```

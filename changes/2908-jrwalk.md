@@ -1,0 +1,1 @@
+Make `pydantic-mypy` plugin compatible with `pyproject.toml` configuration, consistent with `mypy` changes. See the [doc](https://pydantic-docs.helpmanual.io/mypy_plugin/#configuring-the-plugin) for more information.

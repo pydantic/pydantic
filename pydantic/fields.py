@@ -1,8 +1,9 @@
-from collections import defaultdict, deque
-from collections.abc import Iterable as CollectionsIterable
+from collections import Counter as CollectionCounter, defaultdict, deque
+from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
+    Counter,
     DefaultDict,
     Deque,
     Dict,
@@ -30,7 +31,6 @@ from .error_wrappers import ErrorWrapper
 from .errors import ConfigError, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
-    NONE_TYPES,
     Callable,
     ForwardRef,
     NoArgAnyCallable,
@@ -40,10 +40,12 @@ from .typing import (
     get_origin,
     is_literal_type,
     is_new_type,
+    is_none_type,
     is_typeddict,
+    is_union,
     new_type_supertype,
 )
-from .utils import PyObjectStr, Representation, lenient_issubclass, sequence_like, smart_deepcopy
+from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
@@ -68,11 +70,11 @@ class UndefinedType:
 Undefined = UndefinedType()
 
 if TYPE_CHECKING:
-    from .class_validators import ValidatorsList  # noqa: F401
+    from .class_validators import ValidatorsList
+    from .config import BaseConfig
     from .error_wrappers import ErrorList
-    from .main import BaseConfig, BaseModel  # noqa: F401
-    from .types import ModelOrDc  # noqa: F401
-    from .typing import ReprArgs  # noqa: F401
+    from .types import ModelOrDc
+    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
@@ -91,6 +93,8 @@ class FieldInfo(Representation):
         'alias_priority',
         'title',
         'description',
+        'exclude',
+        'include',
         'const',
         'gt',
         'ge',
@@ -103,6 +107,7 @@ class FieldInfo(Representation):
         'min_length',
         'max_length',
         'allow_mutation',
+        'repr',
         'regex',
         'extra',
     )
@@ -130,6 +135,8 @@ class FieldInfo(Representation):
         self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
+        self.exclude = kwargs.pop('exclude', None)
+        self.include = kwargs.pop('include', None)
         self.const = kwargs.pop('const', None)
         self.gt = kwargs.pop('gt', None)
         self.ge = kwargs.pop('ge', None)
@@ -143,11 +150,18 @@ class FieldInfo(Representation):
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
+        self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
+
+        field_defaults_to_hide: Dict[str, Any] = {
+            'repr': True,
+            **self.__field_constraints__,
+        }
+
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return [(a, v) for a, v in attrs if v != self.__field_constraints__.get(a, None)]
+        return [(a, v) for a, v in attrs if v != field_defaults_to_hide.get(a, None)]
 
     def get_constraints(self) -> Set[str]:
         """
@@ -170,9 +184,13 @@ class FieldInfo(Representation):
             else:
                 if current_value is self.__field_constraints__.get(attr_name, None):
                     setattr(self, attr_name, value)
+                elif attr_name == 'exclude':
+                    self.exclude = ValueItems.merge(value, current_value)
+                elif attr_name == 'include':
+                    self.include = ValueItems.merge(value, current_value, intersect=True)
 
     def _validate(self) -> None:
-        if self.default not in (Undefined, Ellipsis) and self.default_factory is not None:
+        if self.default is not Undefined and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
 
 
@@ -183,6 +201,8 @@ def Field(
     alias: str = None,
     title: str = None,
     description: str = None,
+    exclude: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
+    include: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
     const: bool = None,
     gt: float = None,
     ge: float = None,
@@ -196,6 +216,7 @@ def Field(
     max_length: int = None,
     allow_mutation: bool = True,
     regex: str = None,
+    repr: bool = True,
     **extra: Any,
 ) -> Any:
     """
@@ -209,6 +230,10 @@ def Field(
     :param alias: the public name of the field
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
+    :param exclude: exclude this field while dumping.
+      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
+    :param include: include this field while dumping.
+      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
     :param const: this field is required and *must* take it's default value
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
       will have an ``exclusiveMinimum`` validation keyword
@@ -232,8 +257,9 @@ def Field(
       schema will have a ``maxLength`` validation keyword
     :param allow_mutation: a boolean which defaults to True. When False, the field raises a TypeError if the field is
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
-    :param regex: only applies to strings, requires the field match agains a regular expression
+    :param regex: only applies to strings, requires the field match against a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
+    :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
     field_info = FieldInfo(
@@ -242,6 +268,8 @@ def Field(
         alias=alias,
         title=title,
         description=description,
+        exclude=exclude,
+        include=include,
         const=const,
         gt=gt,
         ge=ge,
@@ -255,6 +283,7 @@ def Field(
         max_length=max_length,
         allow_mutation=allow_mutation,
         regex=regex,
+        repr=repr,
         **extra,
     )
     field_info._validate()
@@ -275,6 +304,7 @@ SHAPE_GENERIC = 10
 SHAPE_DEQUE = 11
 SHAPE_DICT = 12
 SHAPE_DEFAULTDICT = 13
+SHAPE_COUNTER = 14
 SHAPE_NAME_LOOKUP = {
     SHAPE_LIST: 'List[{}]',
     SHAPE_SET: 'Set[{}]',
@@ -285,9 +315,10 @@ SHAPE_NAME_LOOKUP = {
     SHAPE_DEQUE: 'Deque[{}]',
     SHAPE_DICT: 'Dict[{}]',
     SHAPE_DEFAULTDICT: 'DefaultDict[{}]',
+    SHAPE_COUNTER: 'Counter[{}]',
 }
 
-MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING}
+MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING, SHAPE_COUNTER}
 
 
 class ModelField(Representation):
@@ -381,9 +412,10 @@ class ModelField(Representation):
             field_info = next(iter(field_infos), None)
             if field_info is not None:
                 field_info.update_from_config(field_info_from_config)
-                if field_info.default not in (Undefined, Ellipsis):
+                if field_info.default is not Undefined:
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
-                if value not in (Undefined, Ellipsis):
+                if value is not Undefined and value is not Required:
+                    # check also `Required` because of `validate_arguments` that sets `...` as default value
                     field_info.default = value
 
         if isinstance(value, FieldInfo):
@@ -393,7 +425,6 @@ class ModelField(Representation):
             field_info.update_from_config(field_info_from_config)
         elif field_info is None:
             field_info = FieldInfo(value, **field_info_from_config)
-
         value = None if field_info.default_factory is not None else field_info.default
         field_info._validate()
         return field_info, value
@@ -418,6 +449,7 @@ class ModelField(Representation):
         elif value is not Undefined:
             required = False
         annotation = get_annotation_from_field_info(annotation, field_info, name, config.validate_assignment)
+
         return cls(
             name=name,
             type_=annotation,
@@ -440,6 +472,12 @@ class ModelField(Representation):
             self.field_info.alias = new_alias
             self.field_info.alias_priority = new_alias_priority
             self.alias = new_alias
+        new_exclude = info_from_config.get('exclude')
+        if new_exclude is not None:
+            self.field_info.exclude = ValueItems.merge(self.field_info.exclude, new_exclude)
+        new_include = info_from_config.get('include')
+        if new_include is not None:
+            self.field_info.include = ValueItems.merge(self.field_info.include, new_include, intersect=True)
 
     @property
     def alt_alias(self) -> bool:
@@ -461,7 +499,6 @@ class ModelField(Representation):
         self._type_analysis()
         if self.required is Undefined:
             self.required = True
-            self.field_info.default = Required
         if self.default is Undefined and self.default_factory is None:
             self.default = None
         self.populate_validators()
@@ -469,17 +506,13 @@ class ModelField(Representation):
     def _set_default_and_type(self) -> None:
         """
         Set the default value, infer the type if needed and check if `None` value is valid.
-
-        Note: to prevent side effects by calling the `default_factory` for nothing, we only call it
-        when we want to validate the default value i.e. when `validate_all` is set to True.
         """
         if self.default_factory is not None:
             if self.type_ is Undefined:
                 raise errors_.ConfigError(
                     f'you need to set the type of field {self.name!r} when using `default_factory`'
                 )
-            if not self.model_config.validate_all:
-                return
+            return
 
         default_value = self.get_default()
 
@@ -511,7 +544,7 @@ class ModelField(Representation):
         elif is_new_type(self.type_):
             self.type_ = new_type_supertype(self.type_)
 
-        if self.type_ is Any:
+        if self.type_ is Any or self.type_ is object:
             if self.required is Undefined:
                 self.required = False
             self.allow_none = True
@@ -525,19 +558,20 @@ class ModelField(Representation):
             return
 
         origin = get_origin(self.type_)
-        if origin is None:
+        # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
+        if origin is None or origin is CollectionsHashable:
             # field is not "typing" object eg. Union, Dict, List etc.
             # allow None for virtual superclasses of NoneType, e.g. Hashable
             if isinstance(self.type_, type) and isinstance(None, self.type_):
                 self.allow_none = True
             return
-        if origin is Annotated:
+        elif origin is Annotated:
             self.type_ = get_args(self.type_)[0]
             self._type_analysis()
             return
-        if origin is Callable:
+        elif origin is Callable:
             return
-        if origin is Union:
+        elif is_union(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if type_ is NoneType:
@@ -557,8 +591,7 @@ class ModelField(Representation):
             else:
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
-
-        if issubclass(origin, Tuple):  # type: ignore
+        elif issubclass(origin, Tuple):  # type: ignore
             # origin == Tuple without item type
             args = get_args(self.type_)
             if not args:  # plain tuple
@@ -576,8 +609,7 @@ class ModelField(Representation):
                 self.shape = SHAPE_TUPLE
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(args)]
             return
-
-        if issubclass(origin, List):
+        elif issubclass(origin, List):
             # Create self validators
             get_validators = getattr(self.type_, '__get_validators__', None)
             if get_validators:
@@ -598,6 +630,13 @@ class ModelField(Representation):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SET
         elif issubclass(origin, FrozenSet):
+            # Create self validators
+            get_validators = getattr(self.type_, '__get_validators__', None)
+            if get_validators:
+                self.class_validators.update(
+                    {f'frozenset_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
+                )
+
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_FROZENSET
         elif issubclass(origin, Deque):
@@ -606,14 +645,19 @@ class ModelField(Representation):
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
+        # priority to most common mapping: dict
+        elif origin is dict or origin is Dict:
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DICT
         elif issubclass(origin, DefaultDict):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
             self.shape = SHAPE_DEFAULTDICT
-        elif issubclass(origin, Dict):
+        elif issubclass(origin, Counter):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
-            self.type_ = get_args(self.type_)[1]
-            self.shape = SHAPE_DICT
+            self.type_ = int
+            self.shape = SHAPE_COUNTER
         elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -719,7 +763,7 @@ class ModelField(Representation):
                 return v, errors
 
         if v is None:
-            if self.type_ in NONE_TYPES:
+            if is_none_type(self.type_):
                 # keep validating
                 pass
             elif self.allow_none:
@@ -880,6 +924,8 @@ class ModelField(Representation):
             return result, None
         elif self.shape == SHAPE_DEFAULTDICT:
             return defaultdict(self.type_, result), None
+        elif self.shape == SHAPE_COUNTER:
+            return CollectionCounter(result), None
         else:
             return self._get_mapping_value(v, result), None
 
@@ -906,6 +952,35 @@ class ModelField(Representation):
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
+
+            if self.model_config.smart_union and is_union(get_origin(self.type_)):
+                # 1st pass: check if the value is an exact instance of one of the Union types
+                # (e.g. to avoid coercing a bool into an int)
+                for field in self.sub_fields:
+                    if v.__class__ is field.outer_type_:
+                        return v, None
+
+                # 2nd pass: check if the value is an instance of any subclass of the Union types
+                for field in self.sub_fields:
+                    # This whole logic will be improved later on to support more complex `isinstance` checks
+                    # It will probably be done once a strict mode is added and be something like:
+                    # ```
+                    #     value, error = field.validate(v, values, strict=True)
+                    #     if error is None:
+                    #         return value, None
+                    # ```
+                    try:
+                        if isinstance(v, field.outer_type_):
+                            return v, None
+                    except TypeError:
+                        # compound type
+                        if isinstance(v, get_origin(field.outer_type_)):
+                            value, error = field.validate(v, values, loc=loc, cls=cls)
+                            if not error:
+                                return value, None
+
+            # 1st pass by default or 3rd pass with `smart_union` enabled:
+            # check if the value can be coerced into one of the Union types
             for field in self.sub_fields:
                 value, error = field.validate(v, values, loc=loc, cls=cls)
                 if error:
@@ -930,7 +1005,7 @@ class ModelField(Representation):
         """
         Whether the field is "complex" eg. env variables should be parsed as JSON.
         """
-        from .main import BaseModel  # noqa: F811
+        from .main import BaseModel
 
         return (
             self.shape != SHAPE_SINGLETON

@@ -17,6 +17,7 @@ else:
     Pattern = re.compile('a').__class__
 
 from .color import Color
+from .networks import NameEmail
 from .types import SecretBytes, SecretStr
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
@@ -65,6 +66,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     IPv6Address: str,
     IPv6Interface: str,
     IPv6Network: str,
+    NameEmail: str,
     Path: str,
     Pattern: lambda o: o.pattern,
     SecretBytes: str,
@@ -101,7 +103,11 @@ def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]]
         try:
             encoder = type_encoders[base]
         except KeyError:
-            continue
+            try:
+                encoder = type_encoders[base.__name__]
+            except KeyError:
+                continue
+
         return encoder(obj)
     else:  # We have exited the for loop without finding a suitable encoder
         return pydantic_encoder(obj)

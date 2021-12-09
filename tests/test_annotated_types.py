@@ -11,7 +11,7 @@ from typing import List, NamedTuple, Tuple
 import pytest
 from typing_extensions import TypedDict
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, PositiveInt, ValidationError
 
 if sys.version_info < (3, 9):
     try:
@@ -79,6 +79,8 @@ def test_namedtuple_schema():
                     {'title': 'X', 'type': 'integer'},
                     {'title': 'Y', 'type': 'integer'},
                 ],
+                'minItems': 2,
+                'maxItems': 2,
             },
             'pos2': {
                 'title': 'Pos2',
@@ -87,6 +89,8 @@ def test_namedtuple_schema():
                     {'title': 'X'},
                     {'title': 'Y'},
                 ],
+                'minItems': 2,
+                'maxItems': 2,
             },
             'pos3': {
                 'title': 'Pos3',
@@ -95,6 +99,8 @@ def test_namedtuple_schema():
                     {'type': 'integer'},
                     {'type': 'integer'},
                 ],
+                'minItems': 2,
+                'maxItems': 2,
             },
         },
         'required': ['pos1', 'pos2', 'pos3'],
@@ -121,6 +127,23 @@ def test_namedtuple_right_length():
             'ctx': {'limit_value': 2},
         }
     ]
+
+
+def test_namedtuple_postponed_annotation():
+    """
+    https://github.com/samuelcolvin/pydantic/issues/2760
+    """
+
+    class Tup(NamedTuple):
+        v: 'PositiveInt'
+
+    class Model(BaseModel):
+        t: Tup
+
+    # The effect of issue #2760 is that this call raises a `ConfigError` even though the type declared on `Tup.v`
+    # references a binding in this module's global scope.
+    with pytest.raises(ValidationError):
+        Model.parse_obj({'t': [-1]})
 
 
 def test_typeddict():
@@ -253,3 +276,14 @@ def test_typeddict_schema():
             },
         },
     }
+
+
+def test_typeddict_postponed_annotation():
+    class DataTD(TypedDict):
+        v: 'PositiveInt'
+
+    class Model(BaseModel):
+        t: DataTD
+
+    with pytest.raises(ValidationError):
+        Model.parse_obj({'t': {'v': -1}})

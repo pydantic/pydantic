@@ -7,12 +7,12 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, NameEmail, create_model
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
@@ -35,6 +35,7 @@ class MyEnum(Enum):
         (SecretStr(''), '""'),
         (SecretBytes(b'xyz'), '"**********"'),
         (SecretBytes(b''), '""'),
+        (NameEmail('foo bar', 'foobaR@example.com'), '"foo bar <foobaR@example.com>"'),
         (IPv6Address('::1:0:1'), '"::1:0:1"'),
         (IPv4Interface('192.168.0.0/24'), '"192.168.0.0/24"'),
         (IPv6Interface('2001:db00::/120'), '"2001:db00::/120"'),
@@ -278,3 +279,43 @@ def test_custom_decode_encode():
     m = Model.parse_raw('${"a": 1, "b": "foo"}$$')
     assert m.dict() == {'a': 1, 'b': 'foo'}
     assert m.json() == '{\n  "a": 1,\n  "b": "foo"\n}'
+
+
+def test_json_nested_encode():
+    class Phone(BaseModel):
+        manufacturer: str
+        number: int
+
+    class User(BaseModel):
+        name: str
+        SSN: int
+        birthday: datetime.datetime
+        phone: Phone
+        friend: Optional['User'] = None  # noqa: F821  # https://github.com/PyCQA/pyflakes/issues/567
+
+        class Config:
+            json_encoders = {
+                datetime.datetime: lambda v: v.timestamp(),
+                Phone: lambda v: v.number if v else None,
+                'User': lambda v: v.SSN,
+            }
+
+    User.update_forward_refs()
+
+    iphone = Phone(manufacturer='Apple', number=18002752273)
+    galaxy = Phone(manufacturer='Samsung', number=18007267864)
+
+    timon = User(
+        name='Timon', SSN=123, birthday=datetime.datetime(1993, 6, 1, tzinfo=datetime.timezone.utc), phone=iphone
+    )
+    pumbaa = User(
+        name='Pumbaa', SSN=234, birthday=datetime.datetime(1993, 5, 15, tzinfo=datetime.timezone.utc), phone=galaxy
+    )
+
+    timon.friend = pumbaa
+
+    assert iphone.json() == '{"manufacturer": "Apple", "number": 18002752273}'
+    assert (
+        pumbaa.json() == '{"name": "Pumbaa", "SSN": 234, "birthday": 737424000.0, "phone": 18007267864, "friend": null}'
+    )
+    assert timon.json() == '{"name": "Timon", "SSN": 123, "birthday": 738892800.0, "phone": 18002752273, "friend": 234}'
