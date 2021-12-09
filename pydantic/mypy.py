@@ -270,7 +270,9 @@ class PydanticModelTransformer:
                 # Basically, it is an edge case when dealing with complex import logic
                 # This is the same logic used in the dataclasses plugin
                 continue
-            if not isinstance(node, Var):
+            if not isinstance(node, Var):  # pragma: no cover
+                # Don't know if this edge case still happens with the `is_valid_field` check above
+                # but better safe than sorry
                 continue
 
             # x: ClassVar[int] is ignored by dataclasses.
