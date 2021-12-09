@@ -1038,13 +1038,6 @@ class ModelField(Representation):
     ) -> 'ValidateReturn':
         assert self.discriminator_key is not None
 
-        if self.sub_fields_mapping is None:
-            assert cls is not None
-            raise ConfigError(
-                f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
-                f'you might need to call {cls.__name__}.update_forward_refs().'
-            )
-
         try:
             discriminator_value = v[self.discriminator_key]
         except (KeyError, TypeError):
@@ -1056,6 +1049,12 @@ class ModelField(Representation):
 
         try:
             sub_field = self.sub_fields_mapping[discriminator_value]
+        except TypeError:
+            assert cls is not None
+            raise ConfigError(
+                f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
+                f'you might need to call {cls.__name__}.update_forward_refs().'
+            )
         except KeyError:
             return v, ErrorWrapper(
                 InvalidDiscriminator(
