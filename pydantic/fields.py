@@ -1050,7 +1050,7 @@ class ModelField(Representation):
                 return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
 
         try:
-            sub_field = self.sub_fields_mapping[discriminator_value]
+            sub_field = self.sub_fields_mapping[discriminator_value]  # type: ignore[index]
         except TypeError:
             assert cls is not None
             raise ConfigError(
@@ -1058,6 +1058,7 @@ class ModelField(Representation):
                 f'you might need to call {cls.__name__}.update_forward_refs().'
             )
         except KeyError:
+            assert self.sub_fields_mapping is not None
             return v, ErrorWrapper(
                 InvalidDiscriminator(
                     discriminator_key=self.discriminator_key,
