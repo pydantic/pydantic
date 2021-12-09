@@ -512,7 +512,7 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
 def get_sub_types(tp: Any) -> List[Any]:
     """
     Return all the types that are allowed by type `tp`
-    `tp` can indeed be a `Union` of allowed types or an `Annotated` type
+    `tp` can be a `Union` of allowed types or an `Annotated` type
     """
     origin = get_origin(tp)
     if origin is Annotated:
