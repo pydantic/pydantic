@@ -5,6 +5,7 @@ import pytest
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationError
+from pydantic.errors import ConfigError
 
 
 def test_discriminated_union_only_union():
@@ -29,7 +30,7 @@ def test_discriminated_union_defined_discriminator():
         pet_type: Literal['dog']
         d: str
 
-    with pytest.raises(KeyError, match="Model 'Cat' needs a discriminator field for key 'pet_type'"):
+    with pytest.raises(ConfigError, match="Model 'Cat' needs a discriminator field for key 'pet_type'"):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')

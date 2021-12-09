@@ -25,6 +25,7 @@ from typing import (
 
 from typing_extensions import Annotated
 
+from .errors import ConfigError
 from .typing import (
     NoneType,
     WithArgsTypes,
@@ -704,10 +705,10 @@ def get_discriminator_values(tp: Any, discriminator_key: str) -> Tuple[str, ...]
     else:
         try:
             t_discriminator_type = tp.__fields__[discriminator_key].type_
-        except AttributeError:
-            raise TypeError(f'Type {tp.__name__!r} is not a valid `BaseModel` or `dataclass`')
-        except KeyError:
-            raise KeyError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}')
+        except AttributeError as e:
+            raise TypeError(f'Type {tp.__name__!r} is not a valid `BaseModel` or `dataclass`') from e
+        except KeyError as e:
+            raise ConfigError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}') from e
 
         if not is_literal_type(t_discriminator_type):
             raise TypeError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
