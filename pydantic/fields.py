@@ -342,6 +342,7 @@ class ModelField(Representation):
         'alias',
         'has_alias',
         'field_info',
+        'discriminator_key',
         'validate_always',
         'allow_none',
         'shape',
@@ -374,6 +375,7 @@ class ModelField(Representation):
         self.required: 'BoolUndefined' = required
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
+        self.discriminator_key: Optional[str] = self.field_info.discriminator
 
         self.allow_none: bool = False
         self.validate_always: bool = False
@@ -387,10 +389,6 @@ class ModelField(Representation):
         self.shape: int = SHAPE_SINGLETON
         self.model_config.prepare_field(self)
         self.prepare()
-
-    @property
-    def discriminator_key(self) -> Optional[str]:
-        return self.field_info.discriminator
 
     def get_default(self) -> Any:
         return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
