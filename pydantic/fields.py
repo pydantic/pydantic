@@ -1040,7 +1040,9 @@ class ModelField(Representation):
 
         try:
             discriminator_value = v[self.discriminator_key]
-        except (KeyError, TypeError):
+        except KeyError:
+            return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
+        except TypeError:
             try:
                 # BaseModel or dataclass
                 discriminator_value = getattr(v, self.discriminator_key)
