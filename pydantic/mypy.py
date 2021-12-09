@@ -1,6 +1,8 @@
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
+from pydantic.utils import is_valid_field
+
 try:
     import toml
 except ImportError:  # pragma: no cover
@@ -247,7 +249,7 @@ class PydanticModelTransformer:
                 continue
 
             lhs = stmt.lvalues[0]
-            if not isinstance(lhs, NameExpr):
+            if not isinstance(lhs, NameExpr) or not is_valid_field(lhs.name):
                 continue
 
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
@@ -268,7 +270,9 @@ class PydanticModelTransformer:
                 # Basically, it is an edge case when dealing with complex import logic
                 # This is the same logic used in the dataclasses plugin
                 continue
-            if not isinstance(node, Var):
+            if not isinstance(node, Var):  # pragma: no cover
+                # Don't know if this edge case still happens with the `is_valid_field` check above
+                # but better safe than sorry
                 continue
 
             # x: ClassVar[int] is ignored by dataclasses.

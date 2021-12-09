@@ -42,7 +42,7 @@ from .typing import (
     is_new_type,
     is_none_type,
     is_typeddict,
-    is_union_origin,
+    is_union,
     new_type_supertype,
 )
 from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
@@ -554,13 +554,13 @@ class ModelField(Representation):
             if isinstance(self.type_, type) and isinstance(None, self.type_):
                 self.allow_none = True
             return
-        if origin is Annotated:
+        elif origin is Annotated:
             self.type_ = get_args(self.type_)[0]
             self._type_analysis()
             return
-        if origin is Callable:
+        elif origin is Callable:
             return
-        if is_union_origin(origin):
+        elif is_union(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if type_ is NoneType:
@@ -580,8 +580,7 @@ class ModelField(Representation):
             else:
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
             return
-
-        if issubclass(origin, Tuple):  # type: ignore
+        elif issubclass(origin, Tuple):  # type: ignore
             # origin == Tuple without item type
             args = get_args(self.type_)
             if not args:  # plain tuple
@@ -599,8 +598,7 @@ class ModelField(Representation):
                 self.shape = SHAPE_TUPLE
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(args)]
             return
-
-        if issubclass(origin, List):
+        elif issubclass(origin, List):
             # Create self validators
             get_validators = getattr(self.type_, '__get_validators__', None)
             if get_validators:
@@ -621,6 +619,13 @@ class ModelField(Representation):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SET
         elif issubclass(origin, FrozenSet):
+            # Create self validators
+            get_validators = getattr(self.type_, '__get_validators__', None)
+            if get_validators:
+                self.class_validators.update(
+                    {f'frozenset_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
+                )
+
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_FROZENSET
         elif issubclass(origin, Deque):
@@ -629,6 +634,11 @@ class ModelField(Representation):
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
+        # priority to most common mapping: dict
+        elif origin is dict or origin is Dict:
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DICT
         elif issubclass(origin, DefaultDict):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -637,10 +647,6 @@ class ModelField(Representation):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = int
             self.shape = SHAPE_COUNTER
-        elif issubclass(origin, Dict):
-            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
-            self.type_ = get_args(self.type_)[1]
-            self.shape = SHAPE_DICT
         elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -935,6 +941,35 @@ class ModelField(Representation):
     ) -> 'ValidateReturn':
         if self.sub_fields:
             errors = []
+
+            if self.model_config.smart_union and is_union(get_origin(self.type_)):
+                # 1st pass: check if the value is an exact instance of one of the Union types
+                # (e.g. to avoid coercing a bool into an int)
+                for field in self.sub_fields:
+                    if v.__class__ is field.outer_type_:
+                        return v, None
+
+                # 2nd pass: check if the value is an instance of any subclass of the Union types
+                for field in self.sub_fields:
+                    # This whole logic will be improved later on to support more complex `isinstance` checks
+                    # It will probably be done once a strict mode is added and be something like:
+                    # ```
+                    #     value, error = field.validate(v, values, strict=True)
+                    #     if error is None:
+                    #         return value, None
+                    # ```
+                    try:
+                        if isinstance(v, field.outer_type_):
+                            return v, None
+                    except TypeError:
+                        # compound type
+                        if isinstance(v, get_origin(field.outer_type_)):
+                            value, error = field.validate(v, values, loc=loc, cls=cls)
+                            if not error:
+                                return value, None
+
+            # 1st pass by default or 3rd pass with `smart_union` enabled:
+            # check if the value can be coerced into one of the Union types
             for field in self.sub_fields:
                 value, error = field.validate(v, values, loc=loc, cls=cls)
                 if error:

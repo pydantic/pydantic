@@ -37,7 +37,7 @@ The format of `$ref`s (`"#/definitions/FooBar"` above) can be altered by calling
 with the `ref_template` keyword argument, e.g. `ApplePie.schema(ref_template='/schemas/{model}.json#/')`, here `{model}`
 will be replaced with the model naming using `str.format()`.
 
-## Field customisation
+## Field customization
 
 Optionally, the `Field` function can be used to provide extra information about the field and validations.
 It has the following arguments:

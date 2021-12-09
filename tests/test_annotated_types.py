@@ -79,6 +79,8 @@ def test_namedtuple_schema():
                     {'title': 'X', 'type': 'integer'},
                     {'title': 'Y', 'type': 'integer'},
                 ],
+                'minItems': 2,
+                'maxItems': 2,
             },
             'pos2': {
                 'title': 'Pos2',
@@ -87,6 +89,8 @@ def test_namedtuple_schema():
                     {'title': 'X'},
                     {'title': 'Y'},
                 ],
+                'minItems': 2,
+                'maxItems': 2,
             },
             'pos3': {
                 'title': 'Pos3',
@@ -95,6 +99,8 @@ def test_namedtuple_schema():
                     {'type': 'integer'},
                     {'type': 'integer'},
                 ],
+                'minItems': 2,
+                'maxItems': 2,
             },
         },
         'required': ['pos1', 'pos2', 'pos3'],

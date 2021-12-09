@@ -7,6 +7,7 @@ from typing import (  # type: ignore
     ClassVar,
     Dict,
     Generator,
+    Iterable,
     List,
     Mapping,
     NewType,
@@ -56,12 +57,10 @@ if sys.version_info < (3, 7):
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._eval_type(globalns, localns)
 
-
 elif sys.version_info < (3, 9):
 
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._evaluate(globalns, localns)
-
 
 else:
 
@@ -108,7 +107,6 @@ if sys.version_info < (3, 8):
             return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm in py3.6
         return getattr(t, '__origin__', None)
 
-
 else:
     from typing import get_origin as _typing_get_origin
 
@@ -139,7 +137,6 @@ if sys.version_info < (3, 7):  # noqa: C901 (ignore complexity)
             return t.__args__ + t.__metadata__
         return getattr(t, '__args__', ())
 
-
 elif sys.version_info < (3, 8):  # noqa: C901
     from typing import _GenericAlias
 
@@ -157,7 +154,6 @@ elif sys.version_info < (3, 8):  # noqa: C901
                 res = (list(res[:-1]), res[-1])
             return res
         return getattr(t, '__args__', ())
-
 
 else:
     from typing import get_args as _typing_get_args
@@ -192,7 +188,7 @@ else:
 
 if sys.version_info < (3, 10):
 
-    def is_union_origin(tp: Type[Any]) -> bool:
+    def is_union(tp: Type[Any]) -> bool:
         return tp is Union
 
     WithArgsTypes = (TypingGenericAlias,)
@@ -201,8 +197,8 @@ else:
     import types
     import typing
 
-    def is_union_origin(origin: Type[Any]) -> bool:
-        return origin is Union or origin is types.UnionType  # noqa: E721
+    def is_union(tp: Type[Any]) -> bool:
+        return tp is Union or tp is types.UnionType  # noqa: E721
 
     WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)
 
@@ -251,6 +247,7 @@ __all__ = (
     'new_type_supertype',
     'is_classvar',
     'update_field_forward_refs',
+    'update_model_forward_refs',
     'TupleGenerator',
     'DictStrAny',
     'DictAny',
@@ -267,7 +264,7 @@ __all__ = (
     'get_origin',
     'typing_base',
     'get_all_type_hints',
-    'is_union_origin',
+    'is_union',
     'StrPath',
 )
 
@@ -278,7 +275,7 @@ NoneType = None.__class__
 NONE_TYPES: Tuple[Any, Any, Any] = (None, NoneType, Literal[None])
 
 
-if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
+if sys.version_info < (3, 8):
     # Even though this implementation is slower, we need it for python 3.6/3.7:
     # In python 3.6/3.7 "Literal" is not a builtin type and uses a different
     # mechanism.
@@ -288,6 +285,17 @@ if sys.version_info < (3, 8):  # noqa: C901 (ignore complexity)
     def is_none_type(type_: Any) -> bool:
         return type_ in NONE_TYPES
 
+elif sys.version_info[:2] == (3, 8):
+    # We can use the fast implementation for 3.8 but there is a very weird bug
+    # where it can fail for `Literal[None]`.
+    # We just need to redefine a useless `Literal[None]` inside the function body to fix this
+
+    def is_none_type(type_: Any) -> bool:
+        Literal[None]  # fix edge case
+        for none_type in NONE_TYPES:
+            if type_ is none_type:
+                return True
+        return False
 
 else:
 
@@ -332,7 +340,9 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
     annotations = {}
     for name, value in raw_annotations.items():
         if isinstance(value, str):
-            if sys.version_info >= (3, 7):
+            if (3, 10) > sys.version_info >= (3, 9, 8) or sys.version_info >= (3, 10, 1):
+                value = ForwardRef(value, is_argument=False, is_class=True)
+            elif sys.version_info >= (3, 7):
                 value = ForwardRef(value, is_argument=False)
             else:
                 value = ForwardRef(value)
@@ -356,7 +366,6 @@ if sys.version_info >= (3, 7):
 
     def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
         return get_args(type_)
-
 
 else:
 
@@ -437,6 +446,29 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
     if field.sub_fields:
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
+
+
+def update_model_forward_refs(
+    model: Type[Any],
+    fields: Iterable['ModelField'],
+    localns: 'DictStrAny',
+    exc_to_suppress: Tuple[Type[BaseException], ...] = (),
+) -> None:
+    """
+    Try to update model fields ForwardRefs based on model and localns.
+    """
+    if model.__module__ in sys.modules:
+        globalns = sys.modules[model.__module__].__dict__.copy()
+    else:
+        globalns = {}
+
+    globalns.setdefault(model.__name__, model)
+
+    for f in fields:
+        try:
+            update_field_forward_refs(f, globalns=globalns, localns=localns)
+        except exc_to_suppress:
+            pass
 
 
 def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
