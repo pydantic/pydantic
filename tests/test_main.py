@@ -2109,6 +2109,7 @@ def test_new_union_origin():
         'required': ['x'],
     }
 
+
 def test_forbid_extra_additionalproperties():
     class ForbiddenConfig:
         extra = Extra.forbid
@@ -2128,7 +2129,7 @@ def test_forbid_extra_additionalproperties():
         class Config(ForbiddenConfig):
             ...
 
-    assert DictModel.schema() == ForbiddenDict.schema()
-    assert Model.schema() != ForbiddenModel.schema()
-    assert ForbiddenModel.schema()["additionalProperties"] is False
-    assert Model.schema().get("additionalProperties") is None
+    assert DictModel.schema()['additionalProperties'] == ForbiddenDict.schema()['additionalProperties']
+    assert Model.schema().get('additionalProperties') != ForbiddenModel.schema()['additionalProperties']
+    assert ForbiddenModel.schema()['additionalProperties'] is False
+    assert Model.schema().get('additionalProperties') is None
