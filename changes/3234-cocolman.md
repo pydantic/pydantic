@@ -1,1 +1,1 @@
- exclude unpredictable "extra" fields from "repr"
+Fix display of `extra` fields with model `__repr__`
