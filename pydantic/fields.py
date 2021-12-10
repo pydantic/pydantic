@@ -103,6 +103,7 @@ class FieldInfo(Representation):
         'multiple_of',
         'min_items',
         'max_items',
+        'unique_items',
         'min_length',
         'max_length',
         'allow_mutation',
@@ -123,6 +124,7 @@ class FieldInfo(Representation):
         'multiple_of': None,
         'min_items': None,
         'max_items': None,
+        'unique_items': None,
         'allow_mutation': True,
     }
 
@@ -143,6 +145,7 @@ class FieldInfo(Representation):
         self.multiple_of = kwargs.pop('multiple_of', None)
         self.min_items = kwargs.pop('min_items', None)
         self.max_items = kwargs.pop('max_items', None)
+        self.unique_items = kwargs.pop('unique_items', None)
         self.min_length = kwargs.pop('min_length', None)
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
@@ -208,6 +211,7 @@ def Field(
     multiple_of: float = None,
     min_items: int = None,
     max_items: int = None,
+    unique_items: bool = None,
     min_length: int = None,
     max_length: int = None,
     allow_mutation: bool = True,
@@ -241,6 +245,12 @@ def Field(
       schema will have a ``maximum`` validation keyword
     :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
       schema will have a ``multipleOf`` validation keyword
+    :param min_items: only applies to lists, requires the field to have a minimum number of
+      elements. The schema will have a ``minItems`` validation keyword
+    :param max_items: only applies to lists, requires the field to have a maximum number of
+      elements. The schema will have a ``maxItems`` validation keyword
+    :param max_items: only applies to lists, requires the field not to have duplicated
+      elements. The schema will have a ``uniqueItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``maximum`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
@@ -268,6 +278,7 @@ def Field(
         multiple_of=multiple_of,
         min_items=min_items,
         max_items=max_items,
+        unique_items=unique_items,
         min_length=min_length,
         max_length=max_length,
         allow_mutation=allow_mutation,

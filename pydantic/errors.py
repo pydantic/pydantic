@@ -48,6 +48,7 @@ __all__ = (
     'TupleLengthError',
     'ListMinLengthError',
     'ListMaxLengthError',
+    'ListUniqueItemsError',
     'SetMinLengthError',
     'SetMaxLengthError',
     'FrozenSetMinLengthError',
@@ -322,6 +323,11 @@ class ListMaxLengthError(PydanticValueError):
 
     def __init__(self, *, limit_value: int) -> None:
         super().__init__(limit_value=limit_value)
+
+
+class ListUniqueItemsError(PydanticValueError):
+    code = 'list.unique_items'
+    msg_template = 'the list has duplicated items'
 
 
 class SetMinLengthError(PydanticValueError):

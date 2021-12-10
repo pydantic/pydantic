@@ -216,6 +216,39 @@ def test_constrained_list_too_short():
     ]
 
 
+def test_constrained_list_not_unique_hashable_items():
+    class ConListModelUnique(BaseModel):
+        v: conlist(int, unique_items=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelUnique(v=[1, 1, 2, 2, 2, 3])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'the list has duplicated items',
+            'type': 'value_error.list.unique_items',
+        }
+    ]
+
+
+def test_constrained_list_not_unique_unhashable_items():
+    class ConListModelUnique(BaseModel):
+        v: conlist(Set[int], unique_items=True)
+
+    m = ConListModelUnique(v=[{1}, {2}, {3}])
+    assert m.v == [{1}, {2}, {3}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelUnique(v=[{1}, {1}, {2}, {2}, {2}, {3}])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'the list has duplicated items',
+            'type': 'value_error.list.unique_items',
+        }
+    ]
+
+
 def test_constrained_list_optional():
     class Model(BaseModel):
         req: Optional[conlist(str, min_items=1)] = ...
@@ -296,8 +329,8 @@ def test_constrained_list_item_type_fails():
 
 def test_conlist():
     class Model(BaseModel):
-        foo: List[int] = Field(..., min_items=2, max_items=4)
-        bar: conlist(str, min_items=1, max_items=4) = None
+        foo: List[int] = Field(..., min_items=2, max_items=4, unique_items=True)
+        bar: conlist(str, min_items=1, max_items=4, unique_items=False) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
 
@@ -307,12 +340,29 @@ def test_conlist():
     with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
         Model(foo=list(range(5)))
 
+    with pytest.raises(ValidationError, match='the list has duplicated items'):
+        Model(foo=[1, 1, 2, 2])
+
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4},
-            'bar': {'title': 'Bar', 'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4},
+            'foo': {
+                'title': 'Foo',
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'minItems': 2,
+                'maxItems': 4,
+                'uniqueItems': True,
+            },
+            'bar': {
+                'title': 'Bar',
+                'type': 'array',
+                'items': {'type': 'string'},
+                'minItems': 1,
+                'maxItems': 4,
+                'uniqueItems': False,
+            },
         },
         'required': ['foo'],
     }

@@ -540,15 +540,18 @@ class ConstrainedList(list):  # type: ignore
 
     min_items: Optional[int] = None
     max_items: Optional[int] = None
+    unique_items: Optional[bool] = None
     item_type: Type[T]  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.list_length_validator
+        if cls.unique_items:
+            yield cls.unique_items_validator
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
+        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items, uniqueItems=cls.unique_items)
 
     @classmethod
     def list_length_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
@@ -566,10 +569,22 @@ class ConstrainedList(list):  # type: ignore
 
         return v
 
+    @classmethod
+    def unique_items_validator(cls, v: 'List[T]') -> 'List[T]':
+        for i, value in enumerate(v, start=1):
+            if value in v[i:]:
+                raise errors.ListUniqueItemsError()
 
-def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[List[T]]:
+        return v
+
+
+def conlist(
+    item_type: Type[T], *, min_items: int = None, max_items: int = None, unique_items: bool = None
+) -> Type[List[T]]:
     # __args__ is needed to conform to typing generics api
-    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': (item_type,)}
+    namespace = dict(
+        min_items=min_items, max_items=max_items, unique_items=unique_items, item_type=item_type, __args__=(item_type,)
+    )
     # We use new_class to be able to deal with Generic types
     return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
 
