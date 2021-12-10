@@ -1056,6 +1056,8 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             ):
                 # Is numeric type
                 attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
+                if issubclass(type_, Decimal):
+                    attrs += ('max_digits', 'decimal_places')
                 numeric_type = next(t for t in numeric_types if issubclass(type_, t))  # pragma: no branch
                 constraint_func = _map_types_constraint[numeric_type]
 

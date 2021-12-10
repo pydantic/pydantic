@@ -101,6 +101,8 @@ class FieldInfo(Representation):
         'lt',
         'le',
         'multiple_of',
+        'max_digits',
+        'decimal_places',
         'min_items',
         'max_items',
         'unique_items',
@@ -122,6 +124,8 @@ class FieldInfo(Representation):
         'ge': None,
         'le': None,
         'multiple_of': None,
+        'max_digits': None,
+        'decimal_places': None,
         'min_items': None,
         'max_items': None,
         'unique_items': None,
@@ -143,6 +147,8 @@ class FieldInfo(Representation):
         self.lt = kwargs.pop('lt', None)
         self.le = kwargs.pop('le', None)
         self.multiple_of = kwargs.pop('multiple_of', None)
+        self.max_digits = kwargs.pop('max_digits', None)
+        self.decimal_places = kwargs.pop('decimal_places', None)
         self.min_items = kwargs.pop('min_items', None)
         self.max_items = kwargs.pop('max_items', None)
         self.unique_items = kwargs.pop('unique_items', None)
@@ -209,6 +215,8 @@ def Field(
     lt: float = None,
     le: float = None,
     multiple_of: float = None,
+    max_digits: int = None,
+    decimal_places: int = None,
     min_items: int = None,
     max_items: int = None,
     unique_items: bool = None,
@@ -245,6 +253,10 @@ def Field(
       schema will have a ``maximum`` validation keyword
     :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
       schema will have a ``multipleOf`` validation keyword
+    :param max_digits: only applies to Decimals, requires the field to have a maximum number
+      of digits within the decimal. It does not include a zero before the decimal point or trailing decimal zeroes.
+    :param decimal_places: only applies to Decimals, requires the field to have at most a number of decimal places
+      allowed. It does not include trailing decimal zeroes.
     :param min_items: only applies to lists, requires the field to have a minimum number of
       elements. The schema will have a ``minItems`` validation keyword
     :param max_items: only applies to lists, requires the field to have a maximum number of
@@ -276,6 +288,8 @@ def Field(
         lt=lt,
         le=le,
         multiple_of=multiple_of,
+        max_digits=max_digits,
+        decimal_places=decimal_places,
         min_items=min_items,
         max_items=max_items,
         unique_items=unique_items,
