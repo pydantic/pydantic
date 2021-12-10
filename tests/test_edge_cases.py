@@ -83,6 +83,23 @@ def test_union_int_str():
     ]
 
 
+def test_union_int_any():
+    class Model(BaseModel):
+        v: Union[int, Any]
+
+    m = Model(v=123)
+    assert m.v == 123
+
+    m = Model(v='123')
+    assert m.v == 123
+
+    m = Model(v='foobar')
+    assert m.v == 'foobar'
+
+    m = Model(v=None)
+    assert m.v is None
+
+
 def test_union_priority():
     class ModelOne(BaseModel):
         v: Union[int, str] = ...

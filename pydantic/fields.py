@@ -34,7 +34,6 @@ from .typing import (
     Callable,
     ForwardRef,
     NoArgAnyCallable,
-    NoneType,
     display_as_type,
     get_args,
     get_origin,
@@ -574,10 +573,11 @@ class ModelField(Representation):
         elif is_union(origin):
             types_ = []
             for type_ in get_args(self.type_):
-                if type_ is NoneType:
+                if is_none_type(type_) or type_ is Any or type_ is object:
                     if self.required is Undefined:
                         self.required = False
                     self.allow_none = True
+                if is_none_type(type_):
                     continue
                 types_.append(type_)
 
