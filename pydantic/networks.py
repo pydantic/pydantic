@@ -113,6 +113,12 @@ def url_regex() -> Pattern[str]:
 
 
 def postgres_url_regex() -> Pattern[str]:
+    """
+    Compiled postgres regex to match database urls.
+
+    Additionally to `url_regex` it allows to match multiple hosts.
+    E.g. host1.db.net,host2.db.net
+    """
     global _postgres_url_regex_cache
     if _postgres_url_regex_cache is None:
         _postgres_url_regex_cache = re.compile(
