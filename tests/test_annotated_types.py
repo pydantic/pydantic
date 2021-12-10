@@ -219,7 +219,7 @@ def test_partial_legacy_typeddict():
         TypeError,
         match=(
             '^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` '
-            'or upgrade to Python >= 3.9.2'
+            'with Python < 3.9.2.'
         ),
     ):
 
