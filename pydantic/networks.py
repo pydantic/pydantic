@@ -287,7 +287,7 @@ class AnyUrl(str):
         )
 
     @classmethod
-    def validate_parts(cls, parts: 'Parts') -> 'Parts':
+    def validate_parts(cls, parts: 'Parts', validate_port: bool = True) -> 'Parts':
         """
         A method used to validate parts of an URL.
         Could be overridden to set default values for parts if missing
@@ -299,9 +299,10 @@ class AnyUrl(str):
         if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
             raise errors.UrlSchemePermittedError(set(cls.allowed_schemes))
 
-        port = parts['port']
-        if port is not None and int(port) > 65_535:
-            raise errors.UrlPortError()
+        if validate_port:
+            port = parts['port']
+            if port is not None and int(port) > 65_535:
+                raise errors.UrlPortError()
 
         user = parts['user']
         if cls.user_required and user is None:
@@ -406,25 +407,9 @@ class PostgresDsn(AnyUrl):
         self.hosts = hosts
 
     @classmethod
-    def validate_parts(cls, parts: 'Parts') -> 'Parts':
-        scheme = parts['scheme']
-        if scheme is None:
-            raise errors.UrlSchemeError()
-
-        if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
-            raise errors.UrlSchemePermittedError(cls.allowed_schemes)
-
-        user = parts['user']
-        if cls.user_required and user is None:
-            raise errors.UrlUserInfoError()
-
-        return parts
-
-    @classmethod
     def validate_host_parts(cls, parts: 'HostParts') -> 'HostParts':
         """
-        A method used to validate parts of an URL.
-        Could be overridden to set default values for parts if missing
+        A method used to validate host parts of an URL.
         """
         port = parts['port']
         if port is not None and int(port) > 65_535:
@@ -467,7 +452,7 @@ class PostgresDsn(AnyUrl):
         assert m, 'URL regex failed unexpectedly'
 
         original_parts = cast('Parts', m.groupdict())
-        parts = cls.validate_parts(original_parts)
+        parts = cls.validate_parts(original_parts, validate_port=False)
 
         hosts = m.groupdict()['hosts']
         if hosts is None and cls.host_required:
