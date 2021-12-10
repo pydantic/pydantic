@@ -125,10 +125,7 @@ def postgres_url_regex() -> Pattern[str]:
             rf'{_scheme_regex}{_user_info_regex}'
             r'(?:'
             r'(?P<hosts>('  # hosts, validation occurs later
-            r'([(?:\d{1,3}\.){3}\d{1,3})(?=$|[/:#?])]|'  # ipv4
-            r'([\[[A-F0-9]*:[A-F0-9:]+\])(?=$|[/:#?])]|'  # ipv6
-            r'([^\s+:?#/]+)'  # domain
-            r'(?::(\d+))?'  # port
+            rf'{_host_regex}'
             r',?)+)'
             r')?'
             rf'{_path_regex}{_query_regex}{_fragment_regex}',
