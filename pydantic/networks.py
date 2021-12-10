@@ -399,7 +399,7 @@ class PostgresDsn(AnyUrl):
     }
     user_required = True
 
-    __slots__ = ('hosts',)
+    __slots__ = AnyUrl.__slots__ + ('hosts',)
 
     def __init__(self, *args, hosts: Optional[List['HostParts']] = None, **kwargs):
         super().__init__(*args, **kwargs)
