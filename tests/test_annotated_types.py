@@ -217,10 +217,7 @@ def test_partial_legacy_typeddict():
 
     with pytest.raises(
         TypeError,
-        match=(
-            '^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` '
-            'with Python < 3.9.2.'
-        ),
+        match='^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.9.2.',
     ):
 
         class Model(BaseModel):
