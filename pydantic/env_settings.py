@@ -215,7 +215,9 @@ class SecretsSettingsSource:
         for field in settings.__fields__.values():
             for env_name in field.field_info.extra['env_names']:
                 path = secrets_path / env_name
-                if path.is_file():
+                if settings.__config__.case_sensitive and not path.exists():
+                    path = find_case_insensitive_path(path)
+                elif path.is_file():
                     secret_value = path.read_text().strip()
                     if field.is_complex():
                         try:
@@ -250,14 +252,14 @@ def read_env_file(
         return file_vars
 
 
-def read_secret_path(secrets_path: Path, env_name: str, case_sensitive: bool = False) -> Optional[str]:
-    paths = [secrets_path / env_name] if case_sensitive else [secrets_path / env_name, secrets_path / env_name.upper()]
-    for path in paths:
-        if path.is_file():
-            return path.read_text().strip()
-        elif path.exists():
-            warnings.warn(
-                f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
-                stacklevel=4,
-            )
-    return None
+def find_case_insensitive_path(path: Path) -> Path:
+    """
+    Find a file within path's directory with a case-insensitive matching filename.
+
+    Note: this won't if the rest of the path has a case mismatch.
+    """
+    expected_name = path.name.lower()
+    for f in path.parent.iterdir():
+        if f.name.lower() == expected_name:
+            return f
+    return path
