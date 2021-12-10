@@ -22,7 +22,7 @@ def create_model_from_typeddict(
     # Best case scenario: with python 3.9+ or when `TypedDict` is imported from `typing_extensions`
     if not hasattr(typeddict_cls, '__required_keys__'):
         raise TypeError(
-            'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` or Python >= 3.9.2. '
+            'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.9.2. '
             'Without it, there is no way to differentiate required and optional fields when subclassed.'
         )
 
