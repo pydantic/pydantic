@@ -2826,3 +2826,54 @@ def test_discriminated_annotated_union():
             },
         },
     }
+
+
+def test_alias_same():
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(alias='typeOfPet')
+        c: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(alias='typeOfPet')
+        d: str
+
+    class Model(BaseModel):
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+        number: int
+
+    assert Model.schema() == {
+        'type': 'object',
+        'title': 'Model',
+        'properties': {
+            'number': {'title': 'Number', 'type': 'integer'},
+            'pet': {
+                'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+                'discriminator': {
+                    'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
+                    'propertyName': 'typeOfPet',
+                },
+                'title': 'Pet',
+            },
+        },
+        'required': ['pet', 'number'],
+        'definitions': {
+            'Cat': {
+                'properties': {
+                    'c': {'title': 'C', 'type': 'string'},
+                    'typeOfPet': {'enum': ['cat'], 'title': 'Typeofpet', 'type': 'string'},
+                },
+                'required': ['typeOfPet', 'c'],
+                'title': 'Cat',
+                'type': 'object',
+            },
+            'Dog': {
+                'properties': {
+                    'd': {'title': 'D', 'type': 'string'},
+                    'typeOfPet': {'enum': ['dog'], 'title': 'Typeofpet', 'type': 'string'},
+                },
+                'required': ['typeOfPet', 'd'],
+                'title': 'Dog',
+                'type': 'object',
+            },
+        },
+    }

@@ -49,7 +49,8 @@ from .utils import (
     PyObjectStr,
     Representation,
     ValueItems,
-    get_discriminator_values,
+    get_discriminator_alias_and_values,
+    get_unique_discriminator_alias,
     lenient_issubclass,
     sequence_like,
     smart_deepcopy,
@@ -343,6 +344,7 @@ class ModelField(Representation):
         'has_alias',
         'field_info',
         'discriminator_key',
+        'discriminator_alias',
         'validate_always',
         'allow_none',
         'shape',
@@ -376,6 +378,7 @@ class ModelField(Representation):
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
         self.discriminator_key: Optional[str] = self.field_info.discriminator
+        self.discriminator_alias: Optional[str] = self.discriminator_key
 
         self.allow_none: bool = False
         self.validate_always: bool = False
@@ -706,6 +709,7 @@ class ModelField(Representation):
         assert self.discriminator_key is not None
         assert self.sub_fields is not None
         sub_fields_mapping: Dict[str, 'ModelField'] = {}
+        all_aliases: Set[str] = set()
 
         for sub_field in self.sub_fields:
             t = sub_field.type_
@@ -713,10 +717,13 @@ class ModelField(Representation):
                 # Stopping everything...will need to call `update_forward_refs`
                 return
 
-            for discriminator_value in get_discriminator_values(t, self.discriminator_key):
+            alias, discriminator_values = get_discriminator_alias_and_values(t, self.discriminator_key)
+            all_aliases.add(alias)
+            for discriminator_value in discriminator_values:
                 sub_fields_mapping[discriminator_value] = sub_field
 
         self.sub_fields_mapping = sub_fields_mapping
+        self.discriminator_alias = get_unique_discriminator_alias(all_aliases, self.discriminator_key)
 
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
         if for_keys:
@@ -1037,15 +1044,16 @@ class ModelField(Representation):
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         assert self.discriminator_key is not None
+        assert self.discriminator_alias is not None
 
         try:
-            discriminator_value = v[self.discriminator_key]
+            discriminator_value = v[self.discriminator_alias]
         except KeyError:
             return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
         except TypeError:
             try:
                 # BaseModel or dataclass
-                discriminator_value = getattr(v, self.discriminator_key)
+                discriminator_value = getattr(v, self.discriminator_alias)
             except (AttributeError, TypeError):
                 return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
 

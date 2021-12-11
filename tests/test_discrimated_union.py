@@ -1,3 +1,4 @@
+import re
 from enum import Enum
 from typing import Union
 
@@ -46,7 +47,7 @@ def test_discriminated_union_literal_discriminator():
         pet_type: Literal['dog']
         d: str
 
-    with pytest.raises(TypeError, match="Field 'pet_type' of model 'Cat' needs to be a `Literal`"):
+    with pytest.raises(ConfigError, match="Field 'pet_type' of model 'Cat' needs to be a `Literal`"):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
@@ -66,7 +67,7 @@ def test_discriminated_union_root_same_discriminator():
     class Dog(BaseModel):
         pet_type: Literal['dog']
 
-    with pytest.raises(TypeError, match="Field 'pet_type' is not the same for all submodels of 'Cat'"):
+    with pytest.raises(ConfigError, match="Field 'pet_type' is not the same for all submodels of 'Cat'"):
 
         class Pet(BaseModel):
             __root__: Union[Cat, Dog] = Field(..., discriminator='pet_type')
@@ -306,3 +307,35 @@ def test_discriminated_union_enum():
             },
         }
     ]
+
+
+def test_alias_different():
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(alias='U')
+        c: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(alias='T')
+        d: str
+
+    with pytest.raises(
+        ConfigError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")
+    ):
+
+        class Model(BaseModel):
+            pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+
+
+def test_alias_same():
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(alias='typeOfPet')
+        c: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(alias='typeOfPet')
+        d: str
+
+    class Model(BaseModel):
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+
+    assert Model(**{'pet': {'typeOfPet': 'dog', 'd': 'milou'}}).pet.pet_type == 'dog'

@@ -9,6 +9,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Collection,
     Dict,
     Generator,
     Iterable,
@@ -69,7 +70,8 @@ __all__ = (
     'ClassAttribute',
     'path_type',
     'ROOT_KEY',
-    'get_discriminator_values',
+    'get_unique_discriminator_alias',
+    'get_discriminator_alias_and_values',
 )
 
 ROOT_KEY = '__root__'
@@ -680,9 +682,19 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
     return True
 
 
-def get_discriminator_values(tp: Any, discriminator_key: str) -> Tuple[str, ...]:
+def get_unique_discriminator_alias(all_aliases: Collection[str], discriminator_key: str) -> str:
+    """Validate that all aliases are the same and if that's the case return the alias"""
+    unique_aliases = set(all_aliases)
+    if len(unique_aliases) > 1:
+        raise ConfigError(
+            f'Aliases for discriminator {discriminator_key!r} must be the same (got {", ".join(sorted(all_aliases))})'
+        )
+    return unique_aliases.pop()
+
+
+def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple[str, Tuple[str, ...]]:
     """
-    Get all valid values in the `Literal` type of the discriminator field
+    Get alias and all valid values in the `Literal` type of the discriminator field
     `tp` can be a `BaseModel` class or directly an `Annotated` `Union` of many.
     """
     is_root_model = getattr(tp, '__custom_root_type__', False)
@@ -696,11 +708,16 @@ def get_discriminator_values(tp: Any, discriminator_key: str) -> Tuple[str, ...]
     if is_root_model or is_union(get_origin(tp)):
         union_type = tp.__fields__[ROOT_KEY].type_ if is_root_model else tp
 
-        all_values = [get_discriminator_values(t, discriminator_key) for t in get_args(union_type)]
-        if len(set(all_values)) > 1:
-            raise TypeError(f'Field {discriminator_key!r} is not the same for all submodels of {display_as_type(tp)!r}')
+        zipped_aliases_values = [get_discriminator_alias_and_values(t, discriminator_key) for t in get_args(union_type)]
+        # unzip: [('alias_a',('v1', 'v2)), ('alias_b', ('v3',))] => [('alias_a', 'alias_b'), (('v1', 'v2'), ('v3',))]
+        all_aliases, all_values = zip(*zipped_aliases_values)
 
-        return all_values[0]
+        if len(set(all_values)) > 1:
+            raise ConfigError(
+                f'Field {discriminator_key!r} is not the same for all submodels of {display_as_type(tp)!r}'
+            )
+
+        return get_unique_discriminator_alias(all_aliases, discriminator_key), all_values[0]
 
     else:
         try:
@@ -711,6 +728,6 @@ def get_discriminator_values(tp: Any, discriminator_key: str) -> Tuple[str, ...]
             raise ConfigError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}') from e
 
         if not is_literal_type(t_discriminator_type):
-            raise TypeError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
+            raise ConfigError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
 
-        return all_literal_values(t_discriminator_type)
+        return tp.__fields__[discriminator_key].alias, all_literal_values(t_discriminator_type)

@@ -278,7 +278,7 @@ def field_schema(
                 discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
 
         s['discriminator'] = {
-            'propertyName': field.discriminator_key,
+            'propertyName': field.discriminator_alias,
             'mapping': discriminator_models_refs,
         }
 
