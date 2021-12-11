@@ -131,7 +131,7 @@ def dataclass(
 ) -> Union[Callable[[Type[Any]], 'DataclassClassOrWrapper'], 'DataclassClassOrWrapper']:
     """
     Like the python standard lib dataclasses but with type validation.
-    The result is either pydantic dataclass that will validate input data
+    The result is either a pydantic dataclass that will validate input data
     or a wrapper that will trigger validation around a stdlib dataclass
     to avoid modifying it directly
     """
