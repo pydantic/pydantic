@@ -24,7 +24,6 @@ if TYPE_CHECKING:
         def __call__(self, schema: Dict[str, Any], model_class: Type[BaseModel]) -> None:
             pass
 
-
 else:
     SchemaExtraCallable = Callable[..., None]
 
@@ -83,7 +82,6 @@ if not compiled:
         # whether dataclass `__post_init__` should be run after validation
         post_init_after_validation: bool
 
-
 else:
     ConfigDict = dict  # type: ignore
 
@@ -114,8 +112,10 @@ class BaseConfig:
     json_encoders: Dict[Type[Any], AnyCallable] = {}
     underscore_attrs_are_private: bool = False
 
-    # whether or not inherited models as fields should be reconstructed as base model
+    # whether inherited models as fields should be reconstructed as base model
     copy_on_model_validation: bool = True
+    # whether `Union` should check all allowed types before even trying to coerce
+    smart_union: bool = False
     # whether dataclass `__post_init__` should be run after validation
     post_init_after_validation: bool = False
 

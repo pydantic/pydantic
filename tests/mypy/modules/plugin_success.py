@@ -1,6 +1,6 @@
 from typing import ClassVar, Optional, Union
 
-from pydantic import BaseModel, BaseSettings, Field, create_model
+from pydantic import BaseModel, BaseSettings, Field, create_model, validator
 from pydantic.dataclasses import dataclass
 
 
@@ -169,3 +169,15 @@ class SettingsModel(BaseSettings):
 
 
 settings = SettingsModel.construct()
+
+
+def f(name: str) -> str:
+    return name
+
+
+class ModelWithAllowReuseValidator(BaseModel):
+    name: str
+    _normalize_name = validator('name', allow_reuse=True)(f)
+
+
+model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
