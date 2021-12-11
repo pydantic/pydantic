@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, Un
 
 from .typing import AnyCallable
 from .utils import GetterDict
+from .version import compiled
 
 if TYPE_CHECKING:
     from typing import overload
@@ -27,17 +28,7 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'compiled', 'inherit_config', 'prepare_config'
-
-try:
-    import cython  # type: ignore
-except ImportError:
-    compiled: bool = False
-else:  # pragma: no cover
-    try:
-        compiled = cython.compiled
-    except AttributeError:
-        compiled = False
+__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'inherit_config', 'prepare_config'
 
 
 class Extra(str, Enum):
