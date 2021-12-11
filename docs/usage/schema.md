@@ -65,6 +65,10 @@ It has the following arguments:
   JSON Schema
 * `multiple_of`: for numeric values, this adds a validation of "a multiple of" and an annotation of `multipleOf` to the
   JSON Schema
+* `max_digits`: for `Decimal` values, this adds a validation to have a maximum number of digits within the decimal. It
+  does not include a zero before the decimal point or trailing decimal zeroes.
+* `decimal_places`: for `Decimal` values, this adds a validation to have at most a number of decimal places allowed. It
+  does not include trailing decimal zeroes.
 * `min_items`: for list values, this adds a corresponding validation and an annotation of `minItems` to the
   JSON Schema
 * `max_items`: for list values, this adds a corresponding validation and an annotation of `maxItems` to the
