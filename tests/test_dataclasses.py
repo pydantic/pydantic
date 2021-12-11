@@ -1,5 +1,6 @@
 import dataclasses
 import pickle
+import re
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
@@ -8,7 +9,7 @@ from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Set
 import pytest
 
 import pydantic
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, Extra, ValidationError, validator
 
 
 def test_simple():
@@ -1228,3 +1229,56 @@ def test_keeps_custom_properties():
         instance = cls(a=test_string)
         assert instance._special_property == 1
         assert instance.a == test_string
+
+
+def test_ignore_extra():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.ignore))
+    class Foo:
+        x: int
+
+    foo = Foo(**{'x': '1', 'y': '2'})
+    assert foo.__dict__ == {'x': 1, '__pydantic_initialised__': True}
+
+
+def test_ignore_extra_subclass():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.ignore))
+    class Foo:
+        x: int
+
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.ignore))
+    class Bar(Foo):
+        y: int
+
+    bar = Bar(**{'x': '1', 'y': '2', 'z': '3'})
+    assert bar.__dict__ == {'x': 1, 'y': 2, '__pydantic_initialised__': True}
+
+
+def test_allow_extra():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
+    class Foo:
+        x: int
+
+    foo = Foo(**{'x': '1', 'y': '2'})
+    assert foo.__dict__ == {'x': 1, 'y': '2', '__pydantic_initialised__': True}
+
+
+def test_allow_extra_subclass():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
+    class Foo:
+        x: int
+
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
+    class Bar(Foo):
+        y: int
+
+    bar = Bar(**{'x': '1', 'y': '2', 'z': '3'})
+    assert bar.__dict__ == {'x': 1, 'y': 2, 'z': '3', '__pydantic_initialised__': True}
+
+
+def test_forbid_extra():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
+    class Foo:
+        x: int
+
+    with pytest.raises(TypeError, match=re.escape("__init__() got an unexpected keyword argument 'y'")):
+        Foo(**{'x': '1', 'y': '2'})

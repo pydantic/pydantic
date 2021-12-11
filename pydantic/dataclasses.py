@@ -36,7 +36,7 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
-from .config import BaseConfig, ConfigDict, get_config
+from .config import BaseConfig, ConfigDict, Extra, get_config
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
@@ -222,9 +222,28 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
 
         @wraps(init)
         def new_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
-            init(self, *args, **kwargs)
+            if config.extra == Extra.ignore:  # default behaviour
+
+                def ignore_extra_init(self: 'Dataclass', *a: Any, **kw: Any) -> None:
+                    init(self, *a, **{k: v for k, v in kw.items() if k in self.__dataclass_fields__})
+
+                ignore_extra_init(self, *args, **kwargs)
+
+            elif config.extra == Extra.allow:
+
+                def allow_extra_init(self: 'Dataclass', *a: Any, **kw: Any) -> None:
+                    self.__dict__ = kw
+                    init(self, *a, **{k: v for k, v in kw.items() if k in self.__dataclass_fields__})
+
+                allow_extra_init(self, *args, **kwargs)
+
+            else:  # Extra.forbid
+
+                init(self, *args, **kwargs)
+
             if self.__class__.__pydantic_run_validation__:
                 self.__pydantic_validate_values__()
+
             if hasattr(self, '__post_init_post_parse__'):
                 # We need to find again the initvars. To do that we use `__dataclass_fields__` instead of
                 # public method `dataclasses.fields`
