@@ -671,21 +671,22 @@ def test_override_builtin_dataclass():
         size: int
         content: Optional[bytes] = None
 
-    FileChecked = pydantic.dataclasses.dataclass(File)
+    ValidFile = pydantic.dataclasses.dataclass(File)
 
-    f1 = File(hash='xxx', name=b'whatever.txt', size='456')
-    f2 = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
+    file = File(hash='xxx', name=b'whatever.txt', size='456')
+    valid_file = ValidFile(hash='xxx', name=b'whatever.txt', size='456')
 
-    assert f1.name == b'whatever.txt'
-    assert f1.size == '456'
+    assert file.name == b'whatever.txt'
+    assert file.size == '456'
 
-    assert f2.name == 'whatever.txt'
-    assert f2.size == 456
+    assert valid_file.name == 'whatever.txt'
+    assert valid_file.size == 456
 
-    assert isinstance(f2, File)
+    assert isinstance(valid_file, File)
+    assert isinstance(valid_file, ValidFile)
 
     with pytest.raises(ValidationError) as e:
-        FileChecked(hash=[1], name='name', size=3)
+        ValidFile(hash=[1], name='name', size=3)
     assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 
 

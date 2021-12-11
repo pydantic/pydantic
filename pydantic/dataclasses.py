@@ -183,6 +183,9 @@ class DataclassProxy:
     def __getattr__(self, name: str) -> Any:
         return getattr(self.__dataclass__, name)
 
+    def __instancecheck__(self, instance: Any) -> bool:
+        return isinstance(instance, self.__dataclass__)
+
 
 def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
     dc_cls: Type['Dataclass'],
