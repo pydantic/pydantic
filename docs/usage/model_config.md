@@ -116,10 +116,11 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : whether inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
 
 **`smart_union`**
-: whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion (see [the dedicated section](#smart-union)
+: whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion; see [the dedicated section](#smart-union)
 
-**`post_init_after_validation`**
-: whether stdlib dataclasses `__post_init__` should be run after parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses) (default: `False`)
+**`post_init_call`**
+: whether stdlib dataclasses `__post_init__` should be run before (default behaviour with value `'before_validation'`)
+  or after (value `'after_validation'`) parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses).
 
 ## Change behaviour globally
 

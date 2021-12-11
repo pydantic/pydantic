@@ -202,7 +202,7 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
 
         @wraps(post_init)
         def new_post_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
-            if not config.post_init_after_validation:
+            if config.post_init_call == 'before_validation':
                 post_init(self, *args, **kwargs)
 
             if self.__class__.__pydantic_run_validation__:
@@ -210,7 +210,7 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
                 if hasattr(self, '__post_init_post_parse__'):
                     self.__post_init_post_parse__(*args, **kwargs)
 
-            if config.post_init_after_validation:
+            if config.post_init_call == 'after_validation':
                 post_init(self, *args, **kwargs)
 
         setattr(dc_cls, '__post_init__', new_post_init)

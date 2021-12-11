@@ -120,7 +120,7 @@ code *before* validation.
 
 !!! tip
     If you use a stdlib `dataclass`, you may only have `__post_init__` available and wish the validation to
-    be done before. In this case you can set `Config.post_init_after_validation = True`
+    be done before. In this case you can set `Config.post_init_call = 'after_validation'`
 
 
 ```py

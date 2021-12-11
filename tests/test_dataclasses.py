@@ -1196,7 +1196,7 @@ def test_post_init_after_validation():
                 self.set, set
             ), f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
 
-    class Model(pydantic.BaseModel, post_init_after_validation=True):
+    class Model(pydantic.BaseModel, post_init_call='after_validation'):
         set_wrapper: SetWrapper
 
     model = Model(set_wrapper=SetWrapper({1, 2, 3}))

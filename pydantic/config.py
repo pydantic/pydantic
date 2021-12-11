@@ -40,7 +40,7 @@ class Extra(str, Enum):
 # https://github.com/cython/cython/issues/4003
 # Will be fixed with Cython 3 but still in alpha right now
 if not compiled:
-    from typing_extensions import TypedDict
+    from typing_extensions import Literal, TypedDict
 
     class ConfigDict(TypedDict, total=False):
         title: Optional[str]
@@ -71,7 +71,7 @@ if not compiled:
         # whether or not inherited models as fields should be reconstructed as base model
         copy_on_model_validation: bool
         # whether dataclass `__post_init__` should be run after validation
-        post_init_after_validation: bool
+        post_init_call: Literal['before_validation', 'after_validation']
 
 else:
     ConfigDict = dict  # type: ignore
@@ -107,8 +107,8 @@ class BaseConfig:
     copy_on_model_validation: bool = True
     # whether `Union` should check all allowed types before even trying to coerce
     smart_union: bool = False
-    # whether dataclass `__post_init__` should be run after validation
-    post_init_after_validation: bool = False
+    # whether dataclass `__post_init__` should be run before or after validation
+    post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
