@@ -1,0 +1,19 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.0.1
+  hooks:
+  - id: check-yaml
+  - id: end-of-file-fixer
+
+- repo: local
+  hooks:
+  - id: lint
+    name: Lint
+    entry: make lint
+    types: [python]
+    language: system
+  - id: mypy
+    name: Mypy
+    entry: make mypy
+    types: [python]
+    language: system
