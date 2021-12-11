@@ -71,11 +71,11 @@ by treating the environment variable's value as a JSON-encoded string.
 
 Another way to populate nested complex variables is to configure your model with the `env_nested_delimiter`
 config setting, then use an env variable with a name pointing to the nested module fields.
-What it does is simply explodes yor variable into tested models or dicts.
+What it does is simply explodes yor variable into nested models or dicts.
 So if you define a variable `FOO__BAR__BAZ=123` it will convert it into `FOO={'BAR': {'BAZ': 123}}`
 If you have multiple variables with the same structure they will be merged.
-With the following environment variables:
 
+With the following environment variables:
 ```bash
 # your environment
 export TOP='{"v1": "1", "v2": "2"}'
@@ -84,32 +84,15 @@ export TOP__V3=3
 export TOP__SUB='{"sub_sub": {"v6": "6"}}'
 export TOP__SUB__V4=4
 export TOP__SUB__V5=5
-
-```py
-class SubSubValue(BaseModel):
-    v6: str
-
-class SubValue(BaseModel):
-    v4: str
-    v5: str
-    sub_sub: SubSubValue
-
-class TopValue(BaseModel):
-    v1: str
-    v2: str
-    v3: str
-    sub: SubValue
-
-class Settings(BaseSettings):
-    v0: str
-    top: TopValue
-
-    class Config:
-        env_nested_delimiter = '__'
 ```
 
-You can configure it in you `Config` class as in the example above
-or passing `_env_nested_delimiter` keyword argument on instantiation.
+You could load a settings module thus:
+```py
+{!.tmp_examples/settings_nested_env.py!}
+```
+
+`env_nested_delimiter` can be configured via the `Config` class as shown above, or via the 
+`_env_nested_delimiter` keyword argument on instantiation.
 
 ## Dotenv (.env) support
 
