@@ -13,7 +13,7 @@ from typing_extensions import TypedDict
 
 from pydantic import BaseModel, PositiveInt, ValidationError
 
-if sys.version_info < (3, 9):
+if sys.version_info < (3, 9, 2):
     try:
         from typing import TypedDict as LegacyTypedDict
     except ImportError:
@@ -221,7 +221,10 @@ def test_partial_legacy_typeddict():
     class User(OptionalUser):
         id: int
 
-    with pytest.raises(TypeError, match='^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict`'):
+    with pytest.raises(
+        TypeError,
+        match='^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.9.2.',
+    ):
 
         class Model(BaseModel):
             user: User
