@@ -705,19 +705,19 @@ def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple
     if hasattr(tp, '__pydantic_model__'):
         tp = tp.__pydantic_model__
 
-    if is_root_model or is_union(get_origin(tp)):
-        union_type = tp.__fields__[ROOT_KEY].type_ if is_root_model else tp
-
-        zipped_aliases_values = [get_discriminator_alias_and_values(t, discriminator_key) for t in get_args(union_type)]
-        # unzip: [('alias_a',('v1', 'v2)), ('alias_b', ('v3',))] => [('alias_a', 'alias_b'), (('v1', 'v2'), ('v3',))]
-        all_aliases, all_values = zip(*zipped_aliases_values)
+    if is_union(get_origin(tp)):
+        alias, all_values = _get_union_alias_and_all_values(tp, discriminator_key)
+        return alias, tuple(v for values in all_values for v in values)
+    elif is_root_model:
+        union_type = tp.__fields__[ROOT_KEY].type_
+        alias, all_values = _get_union_alias_and_all_values(union_type, discriminator_key)
 
         if len(set(all_values)) > 1:
             raise ConfigError(
                 f'Field {discriminator_key!r} is not the same for all submodels of {display_as_type(tp)!r}'
             )
 
-        return get_unique_discriminator_alias(all_aliases, discriminator_key), all_values[0]
+        return alias, all_values[0]
 
     else:
         try:
@@ -731,3 +731,12 @@ def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple
             raise ConfigError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
 
         return tp.__fields__[discriminator_key].alias, all_literal_values(t_discriminator_type)
+
+
+def _get_union_alias_and_all_values(
+    union_type: Type[Any], discriminator_key: str
+) -> Tuple[str, Tuple[Tuple[str, ...], ...]]:
+    zipped_aliases_values = [get_discriminator_alias_and_values(t, discriminator_key) for t in get_args(union_type)]
+    # unzip: [('alias_a',('v1', 'v2)), ('alias_b', ('v3',))] => [('alias_a', 'alias_b'), (('v1', 'v2'), ('v3',))]
+    all_aliases, all_values = zip(*zipped_aliases_values)
+    return get_unique_discriminator_alias(all_aliases, discriminator_key), all_values

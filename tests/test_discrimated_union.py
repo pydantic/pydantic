@@ -339,3 +339,25 @@ def test_alias_same():
         pet: Union[Cat, Dog] = Field(discriminator='pet_type')
 
     assert Model(**{'pet': {'typeOfPet': 'dog', 'd': 'milou'}}).pet.pet_type == 'dog'
+
+
+def test_nested():
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+        name: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        name: str
+
+    CommonPet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+        name: str
+
+    class Model(BaseModel):
+        pet: Union[CommonPet, Lizard] = Field(..., discriminator='pet_type')
+        n: int
+
+    assert isinstance(Model(**{'pet': {'pet_type': 'dog', 'name': 'Milou'}, 'n': 5}).pet, Dog)
