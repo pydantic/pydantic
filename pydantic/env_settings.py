@@ -1,7 +1,7 @@
 import os
 import warnings
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, MutableMapping, Optional, Tuple, Type, Union
+from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type, Union
 
 from .config import BaseConfig, Extra
 from .fields import ModelField
@@ -141,13 +141,6 @@ class EnvSettingsSource:
         self.env_file_encoding: Optional[str] = env_file_encoding
 
     @staticmethod
-    def _read_process_env_vars(case_sensitive: bool) -> MutableMapping[str, str]:
-        if case_sensitive:
-            return os.environ
-        else:
-            return {k.lower(): v for k, v in os.environ.items()}
-
-    @staticmethod
     def _read_dotenv_vars(
         env_files: Optional[DotenvType], env_file_encoding: Optional[str], case_sensitive: bool
     ) -> Dict[str, Optional[str]]:
@@ -174,7 +167,7 @@ class EnvSettingsSource:
         d: Dict[str, Optional[str]] = {}
 
         case_sensitive = settings.__config__.case_sensitive
-        process_env_vars = self._read_process_env_vars(case_sensitive)
+        process_env_vars = os.environ if case_sensitive else {k.lower(): v for k, v in os.environ.items()}
         dotenv_vars = self._read_dotenv_vars(self.env_file, self.env_file_encoding, case_sensitive)
         env_vars = {**dotenv_vars, **process_env_vars}
 

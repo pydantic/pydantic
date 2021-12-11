@@ -873,13 +873,6 @@ def test_multiple_env_file_invalid_type(tmp_path, env):
 
 
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
-def test_read_process_env_vars(env):
-    assert EnvSettingsSource._read_process_env_vars(True) == os.environ
-    env.set('CaseSensitiveVariable', '')
-    assert EnvSettingsSource._read_process_env_vars(False) != os.environ
-
-
-@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
 def test_read_dotenv_vars(tmp_path):
     base_env = tmp_path / '.env'
     base_env.write_text(test_default_env_file)
