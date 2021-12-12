@@ -148,6 +148,12 @@ def exec_examples():
         'my_auth_key': 'xxx',
         'my_api_key': 'xxx',
         'database_dsn': 'postgres://postgres@localhost:5432/env_db',
+        'top': '{"v1": "1", "v2": "2"}',
+        'v0': '0',
+        'top__v3': '3',
+        'top__sub': '{"sub_sub": {"v6": "6"}}',
+        'top__sub__v4': '4',
+        'top__sub__v5': '5',
     })
 
     sys.path.append(str(EXAMPLES_DIR))

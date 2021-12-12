@@ -96,7 +96,7 @@ def test_nested_env_delimiter(env):
 
     class SubValue(BaseSettings):
         v4: str
-        v5: str
+        v5: int
         sub_sub: SubSubValue
 
     class TopValue(BaseSettings):
@@ -107,25 +107,28 @@ def test_nested_env_delimiter(env):
 
     class Cfg(BaseSettings):
         v0: str
+        v0_union: Union[SubValue, int]
         top: TopValue
 
         class Config:
             env_nested_delimiter = '__'
 
     env.set('top', '{"v1": "1", "v2": "2", "sub": {"v5": "xx"}}')
+    env.set('top__sub__v5', '5')
     env.set('v0', '0')
     env.set('top__v3', '3')
+    env.set('v0_union', '0')
     env.set('top__sub', '{"sub_sub": {"v6": "6"}}')
     env.set('top__sub__v4', '4')
-    env.set('top__sub__v5', '5')
     cfg = Cfg()
     assert cfg.dict() == {
         'v0': '0',
+        'v0_union': 0,
         'top': {
             'v1': '1',
             'v2': '2',
             'v3': '3',
-            'sub': {'v4': '4', 'v5': '5', 'sub_sub': {'v6': '6'}},
+            'sub': {'v4': '4', 'v5': 5, 'sub_sub': {'v6': '6'}},
         },
     }
 

@@ -151,13 +151,27 @@ class EnvSettingsSource:
         self.env_file_encoding: Optional[str] = env_file_encoding
         self.env_nested_delimiter: Optional[str] = env_nested_delimiter
 
-    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
+    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:  # noqa: C901
         """
         Build environment variables suitable for passing to the Model.
         """
         d: Dict[str, Optional[str]] = {}
 
-        env_vars = self.get_env_vars(settings)
+        if settings.__config__.case_sensitive:
+            env_vars: Mapping[str, Optional[str]] = os.environ
+        else:
+            env_vars = {k.lower(): v for k, v in os.environ.items()}
+
+        if self.env_file is not None:
+            env_path = Path(self.env_file).expanduser()
+            if env_path.is_file():
+                env_vars = {
+                    **read_env_file(
+                        env_path, encoding=self.env_file_encoding, case_sensitive=settings.__config__.case_sensitive
+                    ),
+                    **env_vars,
+                }
+
         if self.env_nested_delimiter is not None:
             env_vars = self.explode_env_vars(settings, env_vars)
 
@@ -193,45 +207,21 @@ class EnvSettingsSource:
     def __repr__(self) -> str:
         return f'EnvSettingsSource(env_file={self.env_file!r}, env_file_encoding={self.env_file_encoding!r})'
 
-    def get_env_vars(self, settings: BaseSettings) -> Mapping[str, Optional[str]]:
-        if settings.__config__.case_sensitive:
-            env_vars: Mapping[str, Optional[str]] = os.environ
-        else:
-            env_vars = {k.lower(): v for k, v in os.environ.items()}
-
-        if self.env_file is not None:
-            env_path = Path(self.env_file).expanduser()
-            if env_path.is_file():
-                env_vars = {
-                    **read_env_file(
-                        env_path, encoding=self.env_file_encoding, case_sensitive=settings.__config__.case_sensitive
-                    ),
-                    **env_vars,
-                }
-        return env_vars
-
     def explode_env_vars(self, settings: BaseSettings, env_vars: Mapping[str, Optional[str]]) -> Dict[str, Any]:
         """
-        Go trough environment variables.
-        Within the each key-value pair:
-            - Split key with the env_nested_delimiter
-            - Before going through each key define env_var as a root (same as the final result)
-            - Go trough each key, add a new dict item to the env_var and redefine env_var within this item
-            - At the last iteration:
-                - Silently try to parse value with the json, leave it as it is if it fails
-                - Assign the value to the deepest key
+        Process env_vars and extract the values of keys containing env_nested_delimiter into nested dictionaries.
         """
         result: Dict[str, Any] = {}
         for env_name, env_val in env_vars.items():
+            try:
+                env_val = settings.__config__.json_loads(env_val)  # type: ignore
+            except ValueError:
+                ...
             keys = env_name.split(self.env_nested_delimiter)
             env_var = result
             for idx, key in enumerate(keys):
                 if idx == len(keys) - 1:
-                    try:
-                        env_val = settings.__config__.json_loads(env_val)  # type: ignore
-                    except (ValueError, TypeError):
-                        ...
-                    env_var[key] = env_val
+                    env_var.update(deep_update(env_var, {key: env_val}))
                 else:
                     env_var = env_var.setdefault(key, {})
         return result
