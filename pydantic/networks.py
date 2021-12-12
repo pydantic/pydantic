@@ -244,27 +244,13 @@ class AnyUrl(str):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
 
+    @staticmethod
+    def match_url(url: str) -> Optional[re.Match[str]]:
+        return url_regex().match(url)
+
     @classmethod
-    def validate(cls, value: Any, field: 'ModelField', config: 'BaseConfig') -> 'AnyUrl':
-        if value.__class__ == cls:
-            return value
-        value = str_validator(value)
-        if cls.strip_whitespace:
-            value = value.strip()
-        url: str = cast(str, constr_length_validator(value, field, config))
-
-        m = url_regex().match(url)
-        # the regex should always match, if it doesn't please report with details of the URL tried
-        assert m, 'URL regex failed unexpectedly'
-
-        original_parts = cast('Parts', m.groupdict())
-        parts = cls.apply_default_parts(original_parts)
-        parts = cls.validate_parts(parts)
-
+    def build_url(cls, m: re.Match[str], url: str, parts: 'Parts') -> 'AnyUrl':
         host, tld, host_type, rebuild = cls.validate_host(parts)
-
-        if m.end() != len(url):
-            raise errors.UrlExtraError(extra=url[m.end() :])
 
         return cls(
             None if rebuild else url,
@@ -281,6 +267,38 @@ class AnyUrl(str):
         )
 
     @classmethod
+    def get_parts(cls, original_parts: 'Parts') -> 'Parts':
+        parts = cls.apply_default_parts(original_parts)
+        return cls.validate_parts(parts)
+
+    @classmethod
+    def validate(cls, value: Any, field: 'ModelField', config: 'BaseConfig') -> 'AnyUrl':
+        if value.__class__ == cls:
+            return value
+        value = str_validator(value)
+        if cls.strip_whitespace:
+            value = value.strip()
+        url: str = cast(str, constr_length_validator(value, field, config))
+
+        m = cls.match_url(url)
+        # the regex should always match, if it doesn't please report with details of the URL tried
+        assert m, 'URL regex failed unexpectedly'
+
+        original_parts = cast('Parts', m.groupdict())
+        parts = cls.get_parts(original_parts)
+
+        if m.end() != len(url):
+            raise errors.UrlExtraError(extra=url[m.end() :])
+
+        return cls.build_url(m, url, parts)
+
+    @staticmethod
+    def _valiadate_port(port: Any) -> str:
+        if port is not None and int(port) > 65_535:
+            raise errors.UrlPortError()
+        return port
+
+    @classmethod
     def validate_parts(cls, parts: 'Parts', validate_port: bool = True) -> 'Parts':
         """
         A method used to validate parts of an URL.
@@ -294,14 +312,20 @@ class AnyUrl(str):
             raise errors.UrlSchemePermittedError(set(cls.allowed_schemes))
 
         if validate_port:
-            port = parts['port']
-            if port is not None and int(port) > 65_535:
-                raise errors.UrlPortError()
+            cls._valiadate_port(parts['port'])
 
         user = parts['user']
         if cls.user_required and user is None:
             raise errors.UrlUserInfoError()
 
+        return parts
+
+    @classmethod
+    def validate_host_parts(cls, parts: 'HostParts') -> 'HostParts':
+        """
+        A method used to validate host parts of an URL.
+        """
+        cls._valiadate_port(parts['port'])
         return parts
 
     @classmethod
@@ -401,17 +425,6 @@ class PostgresDsn(AnyUrl):
         self.hosts = hosts
 
     @classmethod
-    def validate_host_parts(cls, parts: 'HostParts') -> 'HostParts':
-        """
-        A method used to validate host parts of an URL.
-        """
-        port = parts['port']
-        if port is not None and int(port) > 65_535:
-            raise errors.UrlPortError()
-
-        return parts
-
-    @classmethod
     def validate_multi_host(cls, hosts: List[str]) -> List['HostParts']:
         hosts_parts: List['HostParts'] = []
         for host in hosts:
@@ -432,30 +445,21 @@ class PostgresDsn(AnyUrl):
             hosts_parts.append(host_parts)
         return hosts_parts
 
+    @staticmethod
+    def match_url(url: str) -> Optional[re.Match[str]]:
+        return postgres_url_regex().match(url)
+
     @classmethod
-    def validate(cls, value: Any, field: 'ModelField', config: 'BaseConfig') -> 'PostgresDsn':
-        if value.__class__ == cls:
-            return value
-        value = str_validator(value)
-        if cls.strip_whitespace:
-            value = value.strip()
-        url: str = cast(str, constr_length_validator(value, field, config))
+    def get_parts(cls, original_parts: 'Parts') -> 'Parts':
+        return cls.validate_parts(original_parts, validate_port=False)
 
-        m = postgres_url_regex().match(url)
-        # the regex should always match, if it doesn't please report with details of the URL tried
-        assert m, 'URL regex failed unexpectedly'
-
-        original_parts = cast('Parts', m.groupdict())
-        parts = cls.validate_parts(original_parts, validate_port=False)
-
+    @classmethod
+    def build_url(cls, m: re.Match[str], url: str, parts: 'Parts') -> 'PostgresDsn':
         hosts = m.groupdict()['hosts']
         if hosts is None and cls.host_required:
             raise errors.UrlHostError()
 
         hosts_parts = cls.validate_multi_host(hosts.split(','))
-
-        if m.end() != len(url):
-            raise errors.UrlExtraError(extra=url[m.end() :])
 
         if len(hosts_parts) > 1:
             return cls(
