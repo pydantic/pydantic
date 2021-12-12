@@ -792,19 +792,6 @@ def test_read_dotenv_vars(tmp_path):
         'host': 'https://example.com/services',
         'port': '8000',
     }
-    assert _read_env_files(env_files=[prod_env, base_env], encoding='utf8', case_sensitive=True) == {
-        'debug_mode': 'false',
-        'host': 'https://example.com/services',
-        'Port': '8000',
-    }
-    assert _read_env_files(env_files=[prod_env], encoding='utf8', case_sensitive=False) == {
-        'debug_mode': 'false',
-        'host': 'https://example.com/services',
-    }
-    assert _read_env_files(env_files=[prod_env, 'does_not_exist_file'], encoding='utf8', case_sensitive=False) == {
-        'debug_mode': 'false',
-        'host': 'https://example.com/services',
-    }
 
     with pytest.raises(TypeError):
         _read_env_files(env_files=[None], encoding=None, case_sensitive=False)
