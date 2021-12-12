@@ -448,18 +448,31 @@ def test_amqp_dsns():
     class Model(BaseModel):
         a: AmqpDsn
 
-    assert Model(a='amqp://user:pass@localhost:5432/app').a == 'amqp://user:pass@localhost:5432/app'
-    assert Model(a='amqp://user:pass@localhost:5432//').a == 'amqp://user:pass@localhost:5432//'
+    m = Model(a='amqp://user:pass@localhost:1234/app')
+    assert m.a == 'amqp://user:pass@localhost:1234/app'
+    assert m.a.user == 'user'
+    assert m.a.password == 'pass'
+
+    m = Model(a='amqps://user:pass@localhost:5432//')
+    assert m.a == 'amqps://user:pass@localhost:5432//'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
     assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
-    assert exc_info.value.json().startswith('[')
 
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a='amqp://localhost:5432/app')
-    error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
+    # Password is not required for AMQP protocol
+    m = Model(a='amqp://localhost:1234/app')
+    assert m.a == 'amqp://localhost:1234/app'
+    assert m.a.user is None
+    assert m.a.password is None
+
+    # Only schema is required for AMQP protocol.
+    # https://www.rabbitmq.com/uri-spec.html
+    m = Model(a='amqps://')
+    assert m.a.scheme == 'amqps'
+    assert m.a.host is None
+    assert m.a.port is None
+    assert m.a.path is None
 
 
 def test_redis_dsns():

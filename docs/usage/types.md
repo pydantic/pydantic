@@ -603,7 +603,7 @@ For URI/URL validation the following types are available:
   - `postgresql+psycopg2cffi`
   - `postgresql+py-postgresql`
   - `postgresql+pygresql`
-- `AmqpDsn`: schema `amqp`, user info not required, TLD not required, host required.
+- `AmqpDsn`: schema `amqp` or `amqps`, user info not required, TLD not required, host not required
 - `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`: method with the following keyword arguments:

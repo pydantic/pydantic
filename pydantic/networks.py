@@ -354,7 +354,7 @@ class PostgresDsn(AnyUrl):
 
 class AmqpDsn(AnyUrl):
     allowed_schemes = {'amqp', 'amqps'}
-    host_required = True
+    host_required = False
 
 
 class RedisDsn(AnyUrl):
