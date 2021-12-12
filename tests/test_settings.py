@@ -830,6 +830,33 @@ def test_secrets_path_url(tmp_path):
     assert Settings().dict() == {'foo': 'http://www.example.com', 'bar': SecretStr('snap')}
 
 
+def test_secrets_path_json(tmp_path):
+    p = tmp_path / 'foo'
+    p.write_text('{"a": "b"}')
+
+    class Settings(BaseSettings):
+        foo: Dict[str, str]
+
+        class Config:
+            secrets_dir = tmp_path
+
+    assert Settings().dict() == {'foo': {'a': 'b'}}
+
+
+def test_secrets_path_invalid_json(tmp_path):
+    p = tmp_path / 'foo'
+    p.write_text('{"a": "b"')
+
+    class Settings(BaseSettings):
+        foo: Dict[str, str]
+
+        class Config:
+            secrets_dir = tmp_path
+
+    with pytest.raises(SettingsError, match='error parsing JSON for "foo"'):
+        Settings()
+
+
 def test_secrets_missing(tmp_path):
     class Settings(BaseSettings):
         foo: str

@@ -2,7 +2,20 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Callable, ClassVar, Counter, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Counter,
+    DefaultDict,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    get_type_hints,
+)
 from uuid import UUID, uuid4
 
 import pytest
@@ -1974,6 +1987,27 @@ def test_typing_coercion_dict():
 
     m = Model(x={'one': 1, 'two': 2})
     assert repr(m) == "Model(x={'one': 1, 'two': 2})"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='generic classes need 3.7')
+def test_typing_non_coercion_of_dict_subclasses():
+    KT = TypeVar('KT')
+    VT = TypeVar('VT')
+
+    class MyDict(Dict[KT, VT]):
+        def __repr__(self):
+            return f'MyDict({super().__repr__()})'
+
+    class Model(BaseModel):
+        a: MyDict
+        b: MyDict[str, int]
+        c: Dict[str, int]
+        d: Mapping[str, int]
+
+    assert (
+        repr(Model(a=MyDict({'a': 1}), b=MyDict({'a': '1'}), c=MyDict({'a': '1'}), d=MyDict({'a': '1'})))
+        == "Model(a=MyDict({'a': 1}), b=MyDict({'a': 1}), c={'a': 1}, d=MyDict({'a': 1}))"
+    )
 
 
 def test_typing_coercion_defaultdict():

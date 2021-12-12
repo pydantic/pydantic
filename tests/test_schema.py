@@ -29,7 +29,7 @@ from uuid import UUID
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, confrozenset, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
@@ -398,6 +398,35 @@ def test_enum_and_model_have_same_behaviour():
     }
 
 
+def test_enum_includes_extra_without_other_params():
+    class Names(str, Enum):
+        rick = 'Rick'
+        morty = 'Morty'
+        summer = 'Summer'
+
+    class Foo(BaseModel):
+        enum: Names
+        extra_enum: Names = Field(..., extra='Extra field')
+
+    assert Foo.schema() == {
+        'definitions': {
+            'Names': {
+                'description': 'An enumeration.',
+                'enum': ['Rick', 'Morty', 'Summer'],
+                'title': 'Names',
+                'type': 'string',
+            },
+        },
+        'properties': {
+            'enum': {'$ref': '#/definitions/Names'},
+            'extra_enum': {'allOf': [{'$ref': '#/definitions/Names'}], 'extra': 'Extra field'},
+        },
+        'required': ['enum', 'extra_enum'],
+        'title': 'Foo',
+        'type': 'object',
+    }
+
+
 def test_list_enum_schema_extras():
     class FoodChoice(str, Enum):
         spam = 'spam'
@@ -535,34 +564,36 @@ def test_const_false():
 
 
 @pytest.mark.parametrize(
-    'field_type,expected_schema',
+    'field_type,extra_props',
     [
-        (tuple, {}),
+        (tuple, {'items': {}}),
         (
             Tuple[str, int, Union[str, int, float], float],
-            [
-                {'type': 'string'},
-                {'type': 'integer'},
-                {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
-                {'type': 'number'},
-            ],
+            {
+                'items': [
+                    {'type': 'string'},
+                    {'type': 'integer'},
+                    {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
+                    {'type': 'number'},
+                ],
+                'minItems': 4,
+                'maxItems': 4,
+            },
         ),
-        (Tuple[str], {'type': 'string'}),
+        (Tuple[str], {'items': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}),
+        (Tuple[()], {'maxItems': 0, 'minItems': 0}),
     ],
 )
-def test_tuple(field_type, expected_schema):
+def test_tuple(field_type, extra_props):
     class Model(BaseModel):
         a: field_type
 
-    base_schema = {
+    assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'array'}},
+        'properties': {'a': {'title': 'A', 'type': 'array', **extra_props}},
         'required': ['a'],
     }
-    base_schema['properties']['a']['items'] = expected_schema
-
-    assert Model.schema() == base_schema
 
 
 def test_deque():
@@ -1404,6 +1435,26 @@ def test_list_default():
     }
 
 
+def test_enum_str_default():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+
+    class UserModel(BaseModel):
+        friends: MyEnum = MyEnum.FOO
+
+    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
+
+
+def test_enum_int_default():
+    class MyEnum(IntEnum):
+        FOO = 1
+
+    class UserModel(BaseModel):
+        friends: MyEnum = MyEnum.FOO
+
+    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
+
+
 def test_dict_default():
     class UserModel(BaseModel):
         friends: Dict[str, float] = {'a': 1.1, 'b': 2.2}
@@ -1481,6 +1532,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'gt': 0}, Callable[[int], int]),
         ({'gt': 0}, conlist(int, min_items=4)),
         ({'gt': 0}, conset(int, min_items=4)),
+        ({'gt': 0}, confrozenset(int, min_items=4)),
     ],
 )
 def test_unenforced_constraints_schema(kwargs, type_):
@@ -1944,6 +1996,8 @@ def test_model_with_extra_forbidden():
                     {'exclusiveMinimum': 0, 'type': 'integer'},
                     {'exclusiveMinimum': 0, 'type': 'integer'},
                 ],
+                'minItems': 3,
+                'maxItems': 3,
             },
         ),
         (
@@ -2333,6 +2387,8 @@ def test_namedtuple_default():
                 'default': Coordinates(x=0, y=0),
                 'type': 'array',
                 'items': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
+                'minItems': 2,
+                'maxItems': 2,
             }
         },
     }
@@ -2424,11 +2480,19 @@ def test_advanced_generic_schema():
                 'examples': 'examples',
             },
             'data3': {'title': 'Data3', 'type': 'array', 'items': {}},
-            'data4': {'title': 'Data4', 'type': 'array', 'items': {'$ref': '#/definitions/CustomType'}},
+            'data4': {
+                'title': 'Data4',
+                'type': 'array',
+                'items': [{'$ref': '#/definitions/CustomType'}],
+                'minItems': 1,
+                'maxItems': 1,
+            },
             'data5': {
                 'title': 'Data5',
                 'type': 'array',
                 'items': [{'$ref': '#/definitions/CustomType'}, {'type': 'string'}],
+                'minItems': 2,
+                'maxItems': 2,
             },
         },
         'required': ['data0', 'data1', 'data2', 'data3', 'data4', 'data5'],

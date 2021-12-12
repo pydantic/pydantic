@@ -1,0 +1,1 @@
+Changed the validator method name in the [Custom Errors example](https://pydantic-docs.helpmanual.io/usage/models/#custom-errors) to more accurately describe what the validator is doing; changed from `name_must_contain_space` to ` value_must_equal_bar`.

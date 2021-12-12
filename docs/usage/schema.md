@@ -37,7 +37,7 @@ The format of `$ref`s (`"#/definitions/FooBar"` above) can be altered by calling
 with the `ref_template` keyword argument, e.g. `ApplePie.schema(ref_template='/schemas/{model}.json#/')`, here `{model}`
 will be replaced with the model naming using `str.format()`.
 
-## Field customisation
+## Field customization
 
 Optionally, the `Field` function can be used to provide extra information about the field and validations.
 It has the following arguments:
@@ -65,9 +65,15 @@ It has the following arguments:
   JSON Schema
 * `multiple_of`: for numeric values, this adds a validation of "a multiple of" and an annotation of `multipleOf` to the
   JSON Schema
+* `max_digits`: for `Decimal` values, this adds a validation to have a maximum number of digits within the decimal. It
+  does not include a zero before the decimal point or trailing decimal zeroes.
+* `decimal_places`: for `Decimal` values, this adds a validation to have at most a number of decimal places allowed. It
+  does not include trailing decimal zeroes.
 * `min_items`: for list values, this adds a corresponding validation and an annotation of `minItems` to the
   JSON Schema
 * `max_items`: for list values, this adds a corresponding validation and an annotation of `maxItems` to the
+  JSON Schema
+* `unique_items`: for list values, this adds a corresponding validation and an annotation of `uniqueItems` to the
   JSON Schema
 * `min_length`: for string values, this adds a corresponding validation and an annotation of `minLength` to the
   JSON Schema
