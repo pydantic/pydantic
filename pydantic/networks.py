@@ -83,7 +83,7 @@ __all__ = [
 ]
 
 _url_regex_cache = None
-_postgres_url_regex_cache = None
+_multi_host_url_regex_cache = None
 _ascii_domain_regex_cache = None
 _int_domain_regex_cache = None
 _host_regex_cache = None
@@ -113,22 +113,22 @@ def url_regex() -> Pattern[str]:
     return _url_regex_cache
 
 
-def postgres_url_regex() -> Pattern[str]:
+def multi_host_url_regex() -> Pattern[str]:
     """
-    Compiled postgres regex to match database urls.
+    Compiled multi host url regex.
 
     Additionally to `url_regex` it allows to match multiple hosts.
     E.g. host1.db.net,host2.db.net
     """
-    global _postgres_url_regex_cache
-    if _postgres_url_regex_cache is None:
-        _postgres_url_regex_cache = re.compile(
+    global _multi_host_url_regex_cache
+    if _multi_host_url_regex_cache is None:
+        _multi_host_url_regex_cache = re.compile(
             rf'{_scheme_regex}{_user_info_regex}'
             r'(?P<hosts>([^/]*))'  # validation occurs later
             rf'{_path_regex}{_query_regex}{_fragment_regex}',
             re.IGNORECASE,
         )
-    return _postgres_url_regex_cache
+    return _multi_host_url_regex_cache
 
 
 def ascii_domain_regex() -> Pattern[str]:
@@ -249,7 +249,7 @@ class AnyUrl(str):
         return url_regex().match(url)
 
     @classmethod
-    def build_url(cls, m: re.Match[str], url: str, parts: 'Parts') -> 'AnyUrl':
+    def validate_with_host(cls, m: re.Match[str], url: str, parts: 'Parts') -> 'AnyUrl':
         host, tld, host_type, rebuild = cls.validate_host(parts)
 
         return cls(
@@ -267,11 +267,6 @@ class AnyUrl(str):
         )
 
     @classmethod
-    def get_parts(cls, original_parts: 'Parts') -> 'Parts':
-        parts = cls.apply_default_parts(original_parts)
-        return cls.validate_parts(parts)
-
-    @classmethod
     def validate(cls, value: Any, field: 'ModelField', config: 'BaseConfig') -> 'AnyUrl':
         if value.__class__ == cls:
             return value
@@ -285,12 +280,13 @@ class AnyUrl(str):
         assert m, 'URL regex failed unexpectedly'
 
         original_parts = cast('Parts', m.groupdict())
-        parts = cls.get_parts(original_parts)
+        parts = cls.apply_default_parts(original_parts)
+        parts = cls.validate_parts(parts)
 
         if m.end() != len(url):
             raise errors.UrlExtraError(extra=url[m.end() :])
 
-        return cls.build_url(m, url, parts)
+        return cls.validate_with_host(m, url, parts)
 
     @staticmethod
     def _valiadate_port(port: Any) -> str:
@@ -405,19 +401,7 @@ class FileUrl(AnyUrl):
     host_required = False
 
 
-class PostgresDsn(AnyUrl):
-    allowed_schemes = {
-        'postgres',
-        'postgresql',
-        'postgresql+asyncpg',
-        'postgresql+pg8000',
-        'postgresql+psycopg2',
-        'postgresql+psycopg2cffi',
-        'postgresql+py-postgresql',
-        'postgresql+pygresql',
-    }
-    user_required = True
-
+class MultiHostDsn(AnyUrl):
     __slots__ = AnyUrl.__slots__ + ('hosts',)
 
     def __init__(self, *args: Any, hosts: Optional[List['HostParts']] = None, **kwargs: Any):
@@ -447,14 +431,14 @@ class PostgresDsn(AnyUrl):
 
     @staticmethod
     def match_url(url: str) -> Optional[re.Match[str]]:
-        return postgres_url_regex().match(url)
+        return multi_host_url_regex().match(url)
 
     @classmethod
-    def get_parts(cls, original_parts: 'Parts') -> 'Parts':
-        return cls.validate_parts(original_parts, validate_port=False)
+    def validate_parts(cls, parts: 'Parts') -> 'Parts':  # type: ignore
+        return super().validate_parts(parts, validate_port=False)
 
     @classmethod
-    def build_url(cls, m: re.Match[str], url: str, parts: 'Parts') -> 'PostgresDsn':
+    def validate_with_host(cls, m: re.Match[str], url: str, parts: 'Parts') -> 'PostgresDsn':
         hosts = m.groupdict()['hosts']
         if hosts is None and cls.host_required:
             raise errors.UrlHostError()
@@ -489,6 +473,20 @@ class PostgresDsn(AnyUrl):
             query=parts['query'],
             fragment=parts['fragment'],
         )
+
+
+class PostgresDsn(MultiHostDsn):
+    allowed_schemes = {
+        'postgres',
+        'postgresql',
+        'postgresql+asyncpg',
+        'postgresql+pg8000',
+        'postgresql+psycopg2',
+        'postgresql+psycopg2cffi',
+        'postgresql+py-postgresql',
+        'postgresql+pygresql',
+    }
+    user_required = True
 
 
 class RedisDsn(AnyUrl):
