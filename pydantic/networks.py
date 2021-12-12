@@ -124,11 +124,9 @@ def postgres_url_regex() -> Pattern[str]:
     if _postgres_url_regex_cache is None:
         _postgres_url_regex_cache = re.compile(
             rf'{_scheme_regex}{_user_info_regex}'
-            r'(?:'
             r'(?P<hosts>('  # hosts, validation occurs later
             rf'{_host_regex}'
             r',?)+)'
-            r')?'
             rf'{_path_regex}{_query_regex}{_fragment_regex}',
             re.IGNORECASE,
         )
