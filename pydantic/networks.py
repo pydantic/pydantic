@@ -57,6 +57,7 @@ if TYPE_CHECKING:
         tld: Optional[str]
         host_type: Optional[str]
         port: Optional[str]
+        rebuild: Optional[str]
 
 
 else:
@@ -399,7 +400,7 @@ class PostgresDsn(AnyUrl):
 
     __slots__ = AnyUrl.__slots__ + ('hosts',)
 
-    def __init__(self, *args, hosts: Optional[List['HostParts']] = None, **kwargs):
+    def __init__(self, *args: Any, hosts: Optional[List['HostParts']] = None, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.hosts = hosts
 
@@ -419,7 +420,7 @@ class PostgresDsn(AnyUrl):
         hosts_parts: List['HostParts'] = []
         for host in hosts:
             hm = host_regex().match(host)
-            original_parts = cast('Parts', hm.groupdict())
+            original_parts = cast('Parts', hm.groupdict())  # type: ignore
             host, tld, host_type, rebuild = cls.validate_host(original_parts)
             host_parts = cast(
                 'HostParts',
