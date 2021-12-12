@@ -1,6 +1,7 @@
 import pytest
 
 from pydantic import (
+    AmqpDsn,
     AnyUrl,
     BaseModel,
     EmailStr,
@@ -9,7 +10,6 @@ from pydantic import (
     KafkaDsn,
     NameEmail,
     PostgresDsn,
-    RabbitMqDsn,
     RedisDsn,
     ValidationError,
     stricturl,
@@ -444,9 +444,9 @@ def test_postgres_dsns():
     assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
 
 
-def test_rabbitmq_dsns():
+def test_amqp_dsns():
     class Model(BaseModel):
-        a: RabbitMqDsn
+        a: AmqpDsn
 
     assert Model(a='amqp://user:pass@localhost:5432/app').a == 'amqp://user:pass@localhost:5432/app'
     assert Model(a='amqp://user:pass@localhost:5432//').a == 'amqp://user:pass@localhost:5432//'

@@ -6,7 +6,7 @@ from pydantic import (
     PyObject,
     RedisDsn,
     PostgresDsn,
-    RabbitMqDsn,
+    AmqpDsn,
     Field,
 )
 
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     redis_dsn: RedisDsn = 'redis://user:pass@localhost:6379/1'
     pg_dsn: PostgresDsn = 'postgres://user:pass@localhost:5432/foobar'
-    rabbitmq_dsn: RabbitMqDsn = 'amqp://guest:guest@rabbitmq:5672//'
+    amqp_dsn: AmqpDsn = 'amqp://guest:guest@rabbitmq:5672//'
 
     special_function: PyObject = 'math.cos'
 

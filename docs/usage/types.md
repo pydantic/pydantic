@@ -505,7 +505,7 @@ _(This script is complete, it should run "as is")_
 : a postgres DSN style URL; see [URLs](#urls)
 
 `RabbitMqDsn`
-: a RabbitMQ DSN style URL; see [URLs](#urls)
+: an `AMQP` DSN style URL as used by RabbitMQ, StormMQ, ActiveMQ etc.; see [URLs](#urls)
 
 `RedisDsn`
 : a redis DSN style URL; see [URLs](#urls)
@@ -603,7 +603,7 @@ For URI/URL validation the following types are available:
   - `postgresql+psycopg2cffi`
   - `postgresql+py-postgresql`
   - `postgresql+pygresql`
-- `RabbitMqDsn`: schema `amqp`, user info required, TLD not required
+- `AmqpDsn`: schema `amqp`, user info not required, TLD not required, host required.
 - `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`: method with the following keyword arguments:

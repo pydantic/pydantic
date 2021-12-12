@@ -1,1 +1,1 @@
-Add RabbitMqDsn class
+Add AmqpDsn class
