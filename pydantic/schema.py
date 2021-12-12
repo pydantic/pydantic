@@ -49,6 +49,7 @@ from .networks import AnyUrl, EmailStr
 from .types import (
     ConstrainedDecimal,
     ConstrainedFloat,
+    ConstrainedFrozenSet,
     ConstrainedInt,
     ConstrainedList,
     ConstrainedSet,
@@ -58,6 +59,7 @@ from .types import (
     conbytes,
     condecimal,
     confloat,
+    confrozenset,
     conint,
     conlist,
     conset,
@@ -72,7 +74,7 @@ from .typing import (
     is_literal_type,
     is_namedtuple,
     is_none_type,
-    is_union_origin,
+    is_union,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
 
@@ -178,8 +180,7 @@ def model_schema(
     return m_schema
 
 
-def get_field_info_schema(field: ModelField) -> Tuple[Dict[str, Any], bool]:
-    schema_overrides = False
+def get_field_info_schema(field: ModelField, schema_overrides: bool = False) -> Tuple[Dict[str, Any], bool]:
 
     # If no title is explicitly set, we don't set title in the schema for enums.
     # The behaviour is the same as `BaseModel` reference, where the default title
@@ -499,15 +500,19 @@ def field_type_schema(
             definitions.update(sf_definitions)
             nested_models.update(sf_nested_models)
             sub_schema.append(sf_schema)
-        if len(sub_schema) == 1:
-            if field.shape == SHAPE_GENERIC:
-                f_schema = sub_schema[0]
-            else:
-                f_schema = {'type': 'array', 'items': sub_schema[0]}
-        else:
-            f_schema = {'type': 'array', 'items': sub_schema}
+
+        sub_fields_len = len(sub_fields)
         if field.shape == SHAPE_GENERIC:
-            f_schema = {'allOf': [f_schema]}
+            all_of_schemas = sub_schema[0] if sub_fields_len == 1 else {'type': 'array', 'items': sub_schema}
+            f_schema = {'allOf': [all_of_schemas]}
+        else:
+            f_schema = {
+                'type': 'array',
+                'minItems': sub_fields_len,
+                'maxItems': sub_fields_len,
+            }
+            if sub_fields_len >= 1:
+                f_schema['items'] = sub_schema
     else:
         assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
@@ -832,7 +837,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         add_field_type_to_schema(field_type, f_schema)
     elif lenient_issubclass(field_type, Enum):
         enum_name = model_name_map[field_type]
-        f_schema, schema_overrides = get_field_info_schema(field)
+        f_schema, schema_overrides = get_field_info_schema(field, schema_overrides)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
         definitions[enum_name] = enum_process_schema(field_type)
     elif is_namedtuple(field_type):
@@ -844,7 +849,15 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_template=ref_template,
             known_models=known_models,
         )
-        f_schema.update({'type': 'array', 'items': list(sub_schema['properties'].values())})
+        items_schemas = list(sub_schema['properties'].values())
+        f_schema.update(
+            {
+                'type': 'array',
+                'items': items_schemas,
+                'minItems': len(items_schemas),
+                'maxItems': len(items_schemas),
+            }
+        )
     elif not hasattr(field_type, '__pydantic_model__'):
         add_field_type_to_schema(field_type, f_schema)
 
@@ -909,7 +922,9 @@ def multitypes_literal_field_for_schema(values: Tuple[Any, ...], field: ModelFie
 
 
 def encode_default(dft: Any) -> Any:
-    if isinstance(dft, (int, float, str)):
+    if isinstance(dft, Enum):
+        return dft.value
+    elif isinstance(dft, (int, float, str)):
         return dft
     elif sequence_like(dft):
         t = dft.__class__
@@ -938,11 +953,9 @@ def get_annotation_from_field_info(
     :return: the same ``annotation`` if unmodified or a new annotation with validation in place
     """
     constraints = field_info.get_constraints()
-
     used_constraints: Set[str] = set()
     if constraints:
         annotation, used_constraints = get_annotation_with_constraints(annotation, field_info)
-
     if validate_assignment:
         used_constraints.add('allow_mutation')
 
@@ -971,7 +984,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
         if (
             is_literal_type(type_)
             or isinstance(type_, ForwardRef)
-            or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet))
+            or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet, ConstrainedFrozenSet))
         ):
             return type_
         origin = get_origin(type_)
@@ -983,16 +996,29 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if origin is Annotated:
                 return go(args[0])
-            if is_union_origin(origin):
+            if is_union(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
-            if issubclass(origin, List) and (field_info.min_items is not None or field_info.max_items is not None):
-                used_constraints.update({'min_items', 'max_items'})
-                return conlist(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+            if issubclass(origin, List) and (
+                field_info.min_items is not None
+                or field_info.max_items is not None
+                or field_info.unique_items is not None
+            ):
+                used_constraints.update({'min_items', 'max_items', 'unique_items'})
+                return conlist(
+                    go(args[0]),
+                    min_items=field_info.min_items,
+                    max_items=field_info.max_items,
+                    unique_items=field_info.unique_items,
+                )
 
             if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
                 used_constraints.update({'min_items', 'max_items'})
                 return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+
+            if issubclass(origin, FrozenSet) and (field_info.min_items is not None or field_info.max_items is not None):
+                used_constraints.update({'min_items', 'max_items'})
+                return confrozenset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
 
             for t in (Tuple, List, Set, FrozenSet, Sequence):
                 if issubclass(origin, t):  # type: ignore
@@ -1017,10 +1043,21 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 attrs = ('max_length', 'min_length', 'regex')
                 constraint_func = conbytes
             elif issubclass(type_, numeric_types) and not issubclass(
-                type_, (ConstrainedInt, ConstrainedFloat, ConstrainedDecimal, ConstrainedList, ConstrainedSet, bool)
+                type_,
+                (
+                    ConstrainedInt,
+                    ConstrainedFloat,
+                    ConstrainedDecimal,
+                    ConstrainedList,
+                    ConstrainedSet,
+                    ConstrainedFrozenSet,
+                    bool,
+                ),
             ):
                 # Is numeric type
                 attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
+                if issubclass(type_, Decimal):
+                    attrs += ('max_digits', 'decimal_places')
                 numeric_type = next(t for t in numeric_types if issubclass(type_, t))  # pragma: no branch
                 constraint_func = _map_types_constraint[numeric_type]
 

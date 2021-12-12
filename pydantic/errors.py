@@ -36,7 +36,6 @@ __all__ = (
     'IntegerError',
     'FloatError',
     'PathError',
-    '_PathValueError',
     'PathNotExistsError',
     'PathNotAFileError',
     'PathNotADirectoryError',
@@ -49,11 +48,15 @@ __all__ = (
     'TupleLengthError',
     'ListMinLengthError',
     'ListMaxLengthError',
+    'ListUniqueItemsError',
+    'SetMinLengthError',
+    'SetMaxLengthError',
+    'FrozenSetMinLengthError',
+    'FrozenSetMaxLengthError',
     'AnyStrMinLengthError',
     'AnyStrMaxLengthError',
     'StrError',
     'StrRegexError',
-    '_NumberBoundError',
     'NumberNotGtError',
     'NumberNotGeError',
     'NumberNotLtError',
@@ -322,6 +325,11 @@ class ListMaxLengthError(PydanticValueError):
         super().__init__(limit_value=limit_value)
 
 
+class ListUniqueItemsError(PydanticValueError):
+    code = 'list.unique_items'
+    msg_template = 'the list has duplicated items'
+
+
 class SetMinLengthError(PydanticValueError):
     code = 'set.min_items'
     msg_template = 'ensure this value has at least {limit_value} items'
@@ -332,6 +340,22 @@ class SetMinLengthError(PydanticValueError):
 
 class SetMaxLengthError(PydanticValueError):
     code = 'set.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class FrozenSetMinLengthError(PydanticValueError):
+    code = 'frozenset.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class FrozenSetMaxLengthError(PydanticValueError):
+    code = 'frozenset.max_items'
     msg_template = 'ensure this value has at most {limit_value} items'
 
     def __init__(self, *, limit_value: int) -> None:
