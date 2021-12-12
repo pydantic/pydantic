@@ -14,6 +14,7 @@ from pydantic.env_settings import (
     SecretsSettingsSource,
     SettingsError,
     SettingsSourceCallable,
+    _read_env_files,
     read_env_file,
 )
 
@@ -745,26 +746,7 @@ host=https://example.com/services
 
 
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
-def test_multiple_env_file_one(tmp_path):
-    base_env = tmp_path / '.env'
-    base_env.write_text(test_default_env_file)
-
-    class Settings(BaseSettings):
-        debug_mode: bool
-        host: str
-        port: int
-
-        class Config:
-            env_file = [base_env]
-
-    s = Settings()
-    assert s.debug_mode is True
-    assert s.host == 'localhost'
-    assert s.port == 8000
-
-
-@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
-def test_multiple_env_file_two(tmp_path):
+def test_multiple_env_file(tmp_path):
     base_env = tmp_path / '.env'
     base_env.write_text(test_default_env_file)
     prod_env = tmp_path / '.env.prod'
@@ -779,24 +761,6 @@ def test_multiple_env_file_two(tmp_path):
             env_file = [prod_env, base_env]
 
     s = Settings()
-    assert s.debug_mode is False
-    assert s.host == 'https://example.com/services'
-    assert s.port == 8000
-
-
-@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
-def test_multiple_env_file_parameter_passing(tmp_path):
-    base_env = tmp_path / '.env'
-    base_env.write_text(test_default_env_file)
-    prod_env = tmp_path / '.env.prod'
-    prod_env.write_text(test_prod_env_file)
-
-    class Settings(BaseSettings):
-        debug_mode: bool
-        host: str
-        port: int
-
-    s = Settings(_env_file=[prod_env, base_env])
     assert s.debug_mode is False
     assert s.host == 'https://example.com/services'
     assert s.port == 8000
@@ -817,84 +781,33 @@ def test_multiple_env_file_encoding(tmp_path):
 
 
 @pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
-def test_multiple_env_file_and_process_env_priority(tmp_path, env):
-    base_env = tmp_path / '.env'
-    base_env.write_text(test_default_env_file)
-    prod_env = tmp_path / '.env.prod'
-    prod_env.write_text(test_prod_env_file)
-
-    class Settings(BaseSettings):
-        debug_mode: bool
-        host: str
-        port: int
-
-        class Config:
-            env_file = [prod_env, base_env]
-
-    env.set('host', 'https://pydantic-docs.helpmanual.io')
-    s = Settings()
-    assert s.debug_mode is False
-    assert s.host == 'https://pydantic-docs.helpmanual.io'
-    assert s.port == 8000
-
-
-@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
-def test_multiple_env_file_and_process_env_(tmp_path, env):
-    base_env = tmp_path / '.env'
-    base_env.write_text(test_default_env_file)
-    prod_env = tmp_path / '.env.prod'
-    prod_env.write_text(test_prod_env_file)
-
-    class Settings(BaseSettings):
-        debug_mode: bool
-        host: str
-        port: int
-
-    env.set('host', 'https://pydantic-docs.helpmanual.io')
-    s = Settings(_env_file=[prod_env, base_env])
-    assert s.debug_mode is False
-    assert s.host == 'https://pydantic-docs.helpmanual.io'
-    assert s.port == 8000
-
-
-@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
-def test_multiple_env_file_invalid_type(tmp_path, env):
-    class Settings(BaseSettings):
-        ...
-
-    with pytest.raises(TypeError):
-        Settings(_env_file=b'')
-
-    with pytest.raises(TypeError):
-        Settings(_env_file=[b''])
-
-    with pytest.raises(TypeError):
-        Settings(_env_file=[None])
-
-
-@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
 def test_read_dotenv_vars(tmp_path):
     base_env = tmp_path / '.env'
     base_env.write_text(test_default_env_file)
     prod_env = tmp_path / '.env.prod'
     prod_env.write_text(test_prod_env_file)
 
-    assert EnvSettingsSource._read_dotenv_vars(
-        env_files=[prod_env, base_env], env_file_encoding='utf8', case_sensitive=False
-    ) == {'debug_mode': 'false', 'host': 'https://example.com/services', 'port': '8000'}
-    assert EnvSettingsSource._read_dotenv_vars(
-        env_files=[prod_env, base_env], env_file_encoding='utf8', case_sensitive=True
-    ) == {'debug_mode': 'false', 'host': 'https://example.com/services', 'Port': '8000'}
-    assert EnvSettingsSource._read_dotenv_vars(
-        env_files=[prod_env], env_file_encoding='utf8', case_sensitive=False
-    ) == {'debug_mode': 'false', 'host': 'https://example.com/services'}
-    assert EnvSettingsSource._read_dotenv_vars(
-        env_files=[prod_env, 'does_not_exist_file'], env_file_encoding='utf8', case_sensitive=False
-    ) == {'debug_mode': 'false', 'host': 'https://example.com/services'}
-    assert EnvSettingsSource._read_dotenv_vars(env_files=None, env_file_encoding=None, case_sensitive=False) == {}
+    assert _read_env_files(env_files=[prod_env, base_env], encoding='utf8', case_sensitive=False) == {
+        'debug_mode': 'false',
+        'host': 'https://example.com/services',
+        'port': '8000',
+    }
+    assert _read_env_files(env_files=[prod_env, base_env], encoding='utf8', case_sensitive=True) == {
+        'debug_mode': 'false',
+        'host': 'https://example.com/services',
+        'Port': '8000',
+    }
+    assert _read_env_files(env_files=[prod_env], encoding='utf8', case_sensitive=False) == {
+        'debug_mode': 'false',
+        'host': 'https://example.com/services',
+    }
+    assert _read_env_files(env_files=[prod_env, 'does_not_exist_file'], encoding='utf8', case_sensitive=False) == {
+        'debug_mode': 'false',
+        'host': 'https://example.com/services',
+    }
 
     with pytest.raises(TypeError):
-        EnvSettingsSource._read_dotenv_vars(env_files=b'invalid type', env_file_encoding=None, case_sensitive=False)
+        _read_env_files(env_files=[None], encoding=None, case_sensitive=False)
 
 
 @pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
