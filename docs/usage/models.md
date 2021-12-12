@@ -148,6 +148,14 @@ _(This script is complete, it should run "as is")_
     The example above works because aliases have priority over field names for
     field population. Accessing `SQLModel`'s `metadata` attribute would lead to a `ValidationError`.
 
+You can also achieve the same thing by passing keyword arguments to `from_orm`, instead of
+using Field aliases:
+
+```py
+{!.tmp_examples/models_orm_mode_kwargs.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ### Recursive ORM models
 
 ORM instances will be parsed with `from_orm` recursively as well as at the top level.
