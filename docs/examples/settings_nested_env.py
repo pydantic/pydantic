@@ -30,11 +30,11 @@ class Settings(BaseSettings):
 
 os.environ.update({
     'top': '{"v1": "1", "v2": "2"}',
-    'v0': 0,
-    'top__v3': 3,
+    'v0': '0',
+    'top__v3': '3',
     'top__sub': '{"sub_sub": {"v6": "6"}}',
-    'top__sub__v4': 4,
-    'top__sub__v5': 5,
+    'top__sub__v4': '4',
+    'top__sub__v5': '5',
 })
 
 
