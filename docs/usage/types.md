@@ -800,6 +800,7 @@ The following arguments are available when using the `conlist` type function
 - `item_type: Type[T]`: type of the list items
 - `min_items: int = None`: minimum number of items in the list
 - `max_items: int = None`: maximum number of items in the list
+- `unique_items: bool = None`: enforces list elements to be unique
 
 ### Arguments to `conset`
 The following arguments are available when using the `conset` type function

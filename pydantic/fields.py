@@ -34,7 +34,6 @@ from .typing import (
     Callable,
     ForwardRef,
     NoArgAnyCallable,
-    NoneType,
     display_as_type,
     get_args,
     get_origin,
@@ -101,8 +100,11 @@ class FieldInfo(Representation):
         'lt',
         'le',
         'multiple_of',
+        'max_digits',
+        'decimal_places',
         'min_items',
         'max_items',
+        'unique_items',
         'min_length',
         'max_length',
         'allow_mutation',
@@ -121,8 +123,11 @@ class FieldInfo(Representation):
         'ge': None,
         'le': None,
         'multiple_of': None,
+        'max_digits': None,
+        'decimal_places': None,
         'min_items': None,
         'max_items': None,
+        'unique_items': None,
         'allow_mutation': True,
     }
 
@@ -141,8 +146,11 @@ class FieldInfo(Representation):
         self.lt = kwargs.pop('lt', None)
         self.le = kwargs.pop('le', None)
         self.multiple_of = kwargs.pop('multiple_of', None)
+        self.max_digits = kwargs.pop('max_digits', None)
+        self.decimal_places = kwargs.pop('decimal_places', None)
         self.min_items = kwargs.pop('min_items', None)
         self.max_items = kwargs.pop('max_items', None)
+        self.unique_items = kwargs.pop('unique_items', None)
         self.min_length = kwargs.pop('min_length', None)
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
@@ -206,8 +214,11 @@ def Field(
     lt: float = None,
     le: float = None,
     multiple_of: float = None,
+    max_digits: int = None,
+    decimal_places: int = None,
     min_items: int = None,
     max_items: int = None,
+    unique_items: bool = None,
     min_length: int = None,
     max_length: int = None,
     allow_mutation: bool = True,
@@ -241,6 +252,16 @@ def Field(
       schema will have a ``maximum`` validation keyword
     :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
       schema will have a ``multipleOf`` validation keyword
+    :param max_digits: only applies to Decimals, requires the field to have a maximum number
+      of digits within the decimal. It does not include a zero before the decimal point or trailing decimal zeroes.
+    :param decimal_places: only applies to Decimals, requires the field to have at most a number of decimal places
+      allowed. It does not include trailing decimal zeroes.
+    :param min_items: only applies to lists, requires the field to have a minimum number of
+      elements. The schema will have a ``minItems`` validation keyword
+    :param max_items: only applies to lists, requires the field to have a maximum number of
+      elements. The schema will have a ``maxItems`` validation keyword
+    :param max_items: only applies to lists, requires the field not to have duplicated
+      elements. The schema will have a ``uniqueItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``maximum`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
@@ -266,8 +287,11 @@ def Field(
         lt=lt,
         le=le,
         multiple_of=multiple_of,
+        max_digits=max_digits,
+        decimal_places=decimal_places,
         min_items=min_items,
         max_items=max_items,
+        unique_items=unique_items,
         min_length=min_length,
         max_length=max_length,
         allow_mutation=allow_mutation,
@@ -563,10 +587,11 @@ class ModelField(Representation):
         elif is_union(origin):
             types_ = []
             for type_ in get_args(self.type_):
-                if type_ is NoneType:
+                if is_none_type(type_) or type_ is Any or type_ is object:
                     if self.required is Undefined:
                         self.required = False
                     self.allow_none = True
+                if is_none_type(type_):
                     continue
                 types_.append(type_)
 
