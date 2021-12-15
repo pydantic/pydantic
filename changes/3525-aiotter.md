@@ -1,0 +1,1 @@
+When Decimal('infinity') or Decimal('NaN') is being serialized, raise `TypeError: Decimal('Infinity') is not JSON serializable` instead of `TypeError: '>=' not supported between instances of 'str' and 'int'`.
