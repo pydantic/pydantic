@@ -1,1 +1,0 @@
-Fix issue where `None` was considered invalid when using a `Union` type containing `Any` or `object`

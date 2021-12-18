@@ -1,1 +1,0 @@
-Add a discriminated union. See [the doc](https://pydantic-docs.helpmanual.io/usage/types/#discriminated-unions) for more information.

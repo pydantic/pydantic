@@ -1,1 +1,0 @@
-Add `uniqueItems` option to `ConstrainedList`.
