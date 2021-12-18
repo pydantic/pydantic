@@ -1,1 +1,1 @@
-Add AmqpDsn class
+Add `AmqpDsn` class

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     redis_dsn: RedisDsn = 'redis://user:pass@localhost:6379/1'
     pg_dsn: PostgresDsn = 'postgres://user:pass@localhost:5432/foobar'
-    amqp_dsn: AmqpDsn = 'amqp://user:pass@localhost:5672//'
+    amqp_dsn: AmqpDsn = 'amqp://user:pass@localhost:5672/'
 
     special_function: PyObject = 'math.cos'
 
