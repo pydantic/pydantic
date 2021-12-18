@@ -19,7 +19,6 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from pytest import param
 
 from pydantic import (
     BaseConfig,
@@ -1373,61 +1372,61 @@ def test_model_iteration():
 @pytest.mark.parametrize(
     'exclude,expected,raises_match',
     [
-        param(
+        pytest.param(
             {'foos': {0: {'a'}, 1: {'a'}}},
             {'c': 3, 'foos': [{'b': 2}, {'b': 4}]},
             None,
             id='excluding fields of indexed list items',
         ),
-        param(
+        pytest.param(
             {'foos': {'a'}},
             TypeError,
             'expected integer keys',
             id='should fail trying to exclude string keys on list field (1).',
         ),
-        param(
+        pytest.param(
             {'foos': {0: ..., 'a': ...}},
             TypeError,
             'expected integer keys',
             id='should fail trying to exclude string keys on list field (2).',
         ),
-        param(
+        pytest.param(
             {'foos': {0: 1}},
             TypeError,
             'Unexpected type',
             id='should fail using integer key to specify list item field name (1)',
         ),
-        param(
+        pytest.param(
             {'foos': {'__all__': 1}},
             TypeError,
             'Unexpected type',
             id='should fail using integer key to specify list item field name (2)',
         ),
-        param(
+        pytest.param(
             {'foos': {'__all__': {'a'}}},
             {'c': 3, 'foos': [{'b': 2}, {'b': 4}]},
             None,
             id='using "__all__" to exclude specific nested field',
         ),
-        param(
+        pytest.param(
             {'foos': {0: {'b'}, '__all__': {'a'}}},
             {'c': 3, 'foos': [{}, {'b': 4}]},
             None,
             id='using "__all__" to exclude specific nested field in combination with more specific exclude',
         ),
-        param(
+        pytest.param(
             {'foos': {'__all__'}},
             {'c': 3, 'foos': []},
             None,
             id='using "__all__" to exclude all list items',
         ),
-        param(
+        pytest.param(
             {'foos': {1, '__all__'}},
             {'c': 3, 'foos': []},
             None,
             id='using "__all__" and other items should get merged together, still excluding all list items',
         ),
-        param(
+        pytest.param(
             {'foos': {1: {'a'}, -1: {'b'}}},
             {'c': 3, 'foos': [{'a': 1, 'b': 2}, {}]},
             None,
@@ -1458,13 +1457,13 @@ def test_model_export_nested_list(exclude, expected, raises_match):
 @pytest.mark.parametrize(
     'excludes,expected',
     [
-        param(
+        pytest.param(
             {'bars': {0}},
             {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]},
             id='excluding first item from list field using index',
         ),
-        param({'bars': {'__all__'}}, {'a': 1, 'bars': []}, id='using "__all__" to exclude all list items'),
-        param(
+        pytest.param({'bars': {'__all__'}}, {'a': 1, 'bars': []}, id='using "__all__" to exclude all list items'),
+        pytest.param(
             {'bars': {'__all__': {'w'}}},
             {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]},
             id='exclude single dict key from all list items',
@@ -2094,7 +2093,7 @@ def test_class_kwargs_custom_config():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
 def test_new_union_origin():
-    """On 3.10+, origin of `int | str` is `types.Union`, not `typing.Union`"""
+    """On 3.10+, origin of `int | str` is `types.UnionType`, not `typing.Union`"""
 
     class Model(BaseModel):
         x: int | str

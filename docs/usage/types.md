@@ -274,6 +274,39 @@ _(This script is complete, it should run "as is")_
 
     See more details in [Required Fields](models.md#required-fields).
 
+#### Discriminated Unions (a.k.a. Tagged Unions)
+
+When `Union` is used with multiple submodels, you sometimes know exactly which submodel needs to
+be checked and validated and want to enforce this.
+To do that you can set the same field - let's call it `my_discriminator` - in each of the submodels
+with a discriminated value, which is one (or many) `Literal` value(s).
+For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
+
+Setting a discriminated union has many benefits:
+
+- validation is faster since it is only attempted against one model
+- only one explicit error is raised in case of failure
+- the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminatorObject)
+
+```py
+{!.tmp_examples/types_union_discriminated.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! note
+    Using the [Annotated Fields syntax](../schema/#typingannotated-fields) can be handy to regroup
+    the `Union` and `discriminator` information. See below for an example!
+
+#### Nested Discriminated Unions
+
+Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
+In this case you can always create "intermediate" models with `__root__` and add your discriminator.
+
+```py
+{!.tmp_examples/types_union_discriminated_nested.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ### Enums and Choices
 
 *pydantic* uses python's standard `enum` classes to define choices.
@@ -504,6 +537,9 @@ _(This script is complete, it should run "as is")_
 `PostgresDsn`
 : a postgres DSN style URL; see [URLs](#urls)
 
+`RabbitMqDsn`
+: an `AMQP` DSN style URL as used by RabbitMQ, StormMQ, ActiveMQ etc.; see [URLs](#urls)
+
 `RedisDsn`
 : a redis DSN style URL; see [URLs](#urls)
 
@@ -600,6 +636,7 @@ For URI/URL validation the following types are available:
   - `postgresql+psycopg2cffi`
   - `postgresql+py-postgresql`
   - `postgresql+pygresql`
+- `AmqpDsn`: schema `amqp` or `amqps`, user info not required, TLD not required, host not required
 - `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`: method with the following keyword arguments:

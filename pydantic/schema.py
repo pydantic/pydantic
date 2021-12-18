@@ -70,6 +70,7 @@ from .typing import (
     all_literal_values,
     get_args,
     get_origin,
+    get_sub_types,
     is_callable_type,
     is_literal_type,
     is_namedtuple,
@@ -263,6 +264,37 @@ def field_schema(
         ref_template=ref_template,
         known_models=known_models or set(),
     )
+
+    # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminator-object
+    if field.discriminator_key is not None:
+        assert field.sub_fields_mapping is not None
+
+        discriminator_models_refs: Dict[str, Union[str, Dict[str, Any]]] = {}
+
+        for discriminator_value, sub_field in field.sub_fields_mapping.items():
+            # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
+            if is_union(get_origin(sub_field.type_)):
+                sub_models = get_sub_types(sub_field.type_)
+                discriminator_models_refs[discriminator_value] = {
+                    model_name_map[sub_model]: get_schema_ref(
+                        model_name_map[sub_model], ref_prefix, ref_template, False
+                    )
+                    for sub_model in sub_models
+                }
+            else:
+                sub_field_type = sub_field.type_
+                if hasattr(sub_field_type, '__pydantic_model__'):
+                    sub_field_type = sub_field_type.__pydantic_model__
+
+                discriminator_model_name = model_name_map[sub_field_type]
+                discriminator_model_ref = get_schema_ref(discriminator_model_name, ref_prefix, ref_template, False)
+                discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
+
+        s['discriminator'] = {
+            'propertyName': field.discriminator_alias,
+            'mapping': discriminator_models_refs,
+        }
+
     # $ref will only be returned when there are no schema_overrides
     if '$ref' in f_schema:
         return f_schema, f_definitions, f_nested_models

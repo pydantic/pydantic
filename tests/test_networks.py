@@ -1,6 +1,7 @@
 import pytest
 
 from pydantic import (
+    AmqpDsn,
     AnyUrl,
     BaseModel,
     EmailStr,
@@ -441,6 +442,37 @@ def test_postgres_dsns():
         Model(a='postgres://user@/foo/bar:5432/app')
     error = exc_info.value.errors()[0]
     assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
+
+
+def test_amqp_dsns():
+    class Model(BaseModel):
+        a: AmqpDsn
+
+    m = Model(a='amqp://user:pass@localhost:1234/app')
+    assert m.a == 'amqp://user:pass@localhost:1234/app'
+    assert m.a.user == 'user'
+    assert m.a.password == 'pass'
+
+    m = Model(a='amqps://user:pass@localhost:5432//')
+    assert m.a == 'amqps://user:pass@localhost:5432//'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+    # Password is not required for AMQP protocol
+    m = Model(a='amqp://localhost:1234/app')
+    assert m.a == 'amqp://localhost:1234/app'
+    assert m.a.user is None
+    assert m.a.password is None
+
+    # Only schema is required for AMQP protocol.
+    # https://www.rabbitmq.com/uri-spec.html
+    m = Model(a='amqps://')
+    assert m.a.scheme == 'amqps'
+    assert m.a.host is None
+    assert m.a.port is None
+    assert m.a.path is None
 
 
 def test_redis_dsns():

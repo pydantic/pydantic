@@ -564,6 +564,53 @@ def test_nested_forward_ref():
     assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
+def test_discriminated_union_forward_ref(create_module):
+    @create_module
+    def module():
+        from typing import Union
+
+        from typing_extensions import Literal
+
+        from pydantic import BaseModel, Field
+
+        class Pet(BaseModel):
+            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')  # noqa: F821
+
+        class Cat(BaseModel):
+            type: Literal['cat']
+
+        class Dog(BaseModel):
+            type: Literal['dog']
+
+    with pytest.raises(ConfigError, match='you might need to call Pet.update_forward_refs()'):
+        module.Pet.parse_obj({'type': 'pika'})
+
+    module.Pet.update_forward_refs()
+
+    with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
+        module.Pet.parse_obj({'type': 'pika'})
+
+    assert module.Pet.schema() == {
+        'title': 'Pet',
+        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
+        'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+        'definitions': {
+            'Cat': {
+                'title': 'Cat',
+                'type': 'object',
+                'properties': {'type': {'title': 'Type', 'enum': ['cat'], 'type': 'string'}},
+                'required': ['type'],
+            },
+            'Dog': {
+                'title': 'Dog',
+                'type': 'object',
+                'properties': {'type': {'title': 'Type', 'enum': ['dog'], 'type': 'string'}},
+                'required': ['type'],
+            },
+        },
+    }
+
+
 @skip_pre_37
 def test_class_var_as_string(create_module):
     module = create_module(
