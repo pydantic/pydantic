@@ -151,7 +151,7 @@ class EnvSettingsSource:
         self.env_file_encoding: Optional[str] = env_file_encoding
         self.env_nested_delimiter: Optional[str] = env_nested_delimiter
 
-    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
+    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:  # noqa C901
         """
         Build environment variables suitable for passing to the Model.
         """
@@ -210,9 +210,7 @@ class EnvSettingsSource:
         """
         if field.is_complex():
             allow_json_failure = False
-        elif (
-            is_union(get_origin(field.type_)) and field.sub_fields and any(f.is_complex() for f in field.sub_fields)
-        ):
+        elif is_union(get_origin(field.type_)) and field.sub_fields and any(f.is_complex() for f in field.sub_fields):
             allow_json_failure = True
         else:
             return False, False
