@@ -151,11 +151,11 @@ class EnvSettingsSource:
         self.env_file_encoding: Optional[str] = env_file_encoding
         self.env_nested_delimiter: Optional[str] = env_nested_delimiter
 
-    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:  # noqa: C901
+    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:
         """
         Build environment variables suitable for passing to the Model.
         """
-        d: Dict[str, Optional[str]] = {}
+        d: Dict[str, Any] = {}
 
         if settings.__config__.case_sensitive:
             env_vars: Mapping[str, Optional[str]] = os.environ
@@ -172,9 +172,6 @@ class EnvSettingsSource:
                     **env_vars,
                 }
 
-        if self.env_nested_delimiter is not None:
-            env_vars = self.explode_env_vars(settings, env_vars)
-
         for field in settings.__fields__.values():
             env_val: Optional[str] = None
             for env_name in field.field_info.extra['env_names']:
@@ -182,49 +179,72 @@ class EnvSettingsSource:
                 if env_val is not None:
                     break
 
-            if env_val is None:
-                continue
-
-            if field.is_complex():
-                if isinstance(env_val, (str, bytes, bytearray)):
+            is_complex, allow_json_failure = self.field_is_complex(field)
+            if is_complex:
+                if env_val is None:
+                    # field is complex but no value found so far, try explode_env_vars
+                    env_val_built = self.explode_env_vars(field, env_vars)
+                    if env_val_built:
+                        d[field.alias] = env_val_built
+                else:
+                    # field is complex and there's a value, decode that as JSON, then add explode_env_vars
                     try:
                         env_val = settings.__config__.json_loads(env_val)
                     except ValueError as e:
-                        raise SettingsError(f'error parsing JSON for "{env_name}"') from e
-            elif (
-                is_union_origin(get_origin(field.type_))
-                and field.sub_fields
-                and any(f.is_complex() for f in field.sub_fields)
-            ):
-                if isinstance(env_val, (str, bytes, bytearray)):
-                    try:
-                        env_val = settings.__config__.json_loads(env_val)
-                    except ValueError:
-                        pass
-            d[field.alias] = env_val
+                        if not allow_json_failure:
+                            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+
+                    if isinstance(env_val, dict):
+                        d[field.alias] = deep_update(env_val, self.explode_env_vars(field, env_vars))
+                    else:
+                        d[field.alias] = env_val
+            elif env_val is not None:
+                # simplest case, field is not complex, we only need to add the value if it was found
+                d[field.alias] = env_val
+
         return d
 
-    def __repr__(self) -> str:
-        return f'EnvSettingsSource(env_file={self.env_file!r}, env_file_encoding={self.env_file_encoding!r})'
+    def field_is_complex(self, field: ModelField) -> Tuple[bool, bool]:
+        """
+        Find out if a field is complex, and if so whether JSON errors should be ignored
+        """
+        if field.is_complex():
+            allow_json_failure = False
+        elif (
+            is_union_origin(get_origin(field.type_))
+            and field.sub_fields
+            and any(f.is_complex() for f in field.sub_fields)
+        ):
+            allow_json_failure = True
+        else:
+            return False, False
 
-    def explode_env_vars(self, settings: BaseSettings, env_vars: Mapping[str, Optional[str]]) -> Dict[str, Any]:
+        return True, allow_json_failure
+
+    def explode_env_vars(self, field: ModelField, env_vars: Mapping[str, Optional[str]]) -> Dict[str, Any]:
         """
         Process env_vars and extract the values of keys containing env_nested_delimiter into nested dictionaries.
+
+        This is applied to a single field, hence filtering by env_var prefix.
         """
+        prefixes = [f'{env_name}{self.env_nested_delimiter}' for env_name in field.field_info.extra['env_names']]
         result: Dict[str, Any] = {}
         for env_name, env_val in env_vars.items():
-            try:
-                env_val = settings.__config__.json_loads(env_val)  # type: ignore
-            except ValueError:
-                ...
-            keys = env_name.split(self.env_nested_delimiter)
+            if not any(env_name.startswith(prefix) for prefix in prefixes):
+                continue
+            _, *keys, last_key = env_name.split(self.env_nested_delimiter)
             env_var = result
-            for idx, key in enumerate(keys):
-                if idx == len(keys) - 1:
-                    env_var.update(deep_update(env_var, {key: env_val}))
-                else:
-                    env_var = env_var.setdefault(key, {})
+            for key in keys:
+                env_var = env_var.setdefault(key, {})
+            env_var[last_key] = env_val
+
         return result
+
+    def __repr__(self) -> str:
+        return (
+            f'EnvSettingsSource(env_file={self.env_file!r}, env_file_encoding={self.env_file_encoding!r}, '
+            f'env_nested_delimiter={self.env_nested_delimiter!r})'
+        )
 
 
 class SecretsSettingsSource:

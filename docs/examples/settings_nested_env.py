@@ -1,29 +1,23 @@
 from pydantic import BaseModel, BaseSettings
 
 
-class SubSubValue(BaseModel):
-    v6: str
-
-
-class SubValue(BaseModel):
+class DeepSubModel(BaseModel):
     v4: str
-    v5: str
-    sub_sub: SubSubValue
 
 
-class TopValue(BaseModel):
+class SubModel(BaseModel):
     v1: str
-    v2: str
-    v3: str
-    sub: SubValue
+    v2: bytes
+    v3: int
+    deep: DeepSubModel
 
 
 class Settings(BaseSettings):
     v0: str
-    top: TopValue
+    sub_model: SubModel
 
     class Config:
         env_nested_delimiter = '__'
 
 
-print(Settings())
+print(Settings().dict())

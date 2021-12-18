@@ -78,12 +78,11 @@ If you have multiple variables with the same structure they will be merged.
 With the following environment variables:
 ```bash
 # your environment
-export TOP='{"v1": "1", "v2": "2"}'
 export V0=0
-export TOP__V3=3
-export TOP__SUB='{"sub_sub": {"v6": "6"}}'
-export TOP__SUB__V4=4
-export TOP__SUB__V5=5
+export SUB_MODEL='{"v1": "json-1", "v2": "json-2"}'
+export SUB_MODEL__V2=nested-2
+export SUB_MODEL__V3=3
+export SUB_MODEL__DEEP__V4=v4
 ```
 
 You could load a settings module thus:
@@ -93,6 +92,12 @@ You could load a settings module thus:
 
 `env_nested_delimiter` can be configured via the `Config` class as shown above, or via the 
 `_env_nested_delimiter` keyword argument on instantiation.
+
+JSON is only parsed in top-level fields, if you need to parse JSON in sub-models, you will need to implement
+validators on those models.
+
+Nested environment variables take precedence over the top-level environment variable JSON
+(e.g. in the example above, `SUB_MODEL__V2` trumps `SUB_MODEL`).
 
 ## Dotenv (.env) support
 
