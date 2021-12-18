@@ -150,6 +150,21 @@ For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 Custom field types can customise the schema generated for them using the `__modify_schema__` class method;
 see [Custom Data Types](types.md#custom-data-types) for more details.
 
+`__modify_schema__` can also take a `field` argument which will have type `Optional[ModelField]`.
+*pydantic* will inspect the signature of `__modify_schema__` to determine whether the `field` argument should be
+included.
+
+```py
+{!.tmp_examples/schema_with_field.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Outputs:
+
+```json
+{!.tmp_examples/schema_with_field.json!}
+```
+
 ## JSON Schema Types
 
 Types, custom field types, and constraints (like `max_length`) are mapped to the corresponding spec formats in the
