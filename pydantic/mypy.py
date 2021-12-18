@@ -17,7 +17,7 @@ except ImportError:  # pragma: no cover
 
 try:
     from mypy.types import TypeVarDef
-except ImportError:  # type: ignore
+except ImportError:  # pragma: no cover
     # Backward-compatible with TypeVarDef from Mypy 0.910.
     from mypy.types import TypeVarType as TypeVarDef  # type: ignore[misc]
 
