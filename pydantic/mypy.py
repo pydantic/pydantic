@@ -14,6 +14,14 @@ except ImportError:  # pragma: no cover
 
         warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
         toml = None  # type: ignore
+
+try:
+    from mypy.types import TypeVarDef
+except ImportError:  # pragma: no cover
+    # Backward-compatible with TypeVarDef from Mypy 0.910.
+    from mypy.types import TypeVarType as TypeVarDef  # type: ignore[misc]
+
+
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -59,7 +67,6 @@ from mypy.types import (
     Type,
     TypeOfAny,
     TypeType,
-    TypeVarDef,
     TypeVarType,
     UnionType,
     get_proper_type,
@@ -359,7 +366,13 @@ class PydanticModelTransformer:
         tvd = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
         self_tvar_expr = TypeVarExpr(self_tvar_name, tvar_fullname, [], obj_type)
         ctx.cls.info.names[self_tvar_name] = SymbolTableNode(MDEF, self_tvar_expr)
-        self_type = TypeVarType(tvd)
+
+        # Backward-compatible with TypeVarDef from Mypy 0.910.
+        if isinstance(tvd, TypeVarType):  # pragma: no cover
+            self_type = tvd
+        else:
+            self_type = TypeVarType(tvd)
+
         add_method(
             ctx,
             'construct',
