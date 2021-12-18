@@ -1,11 +1,11 @@
 import json
-from typing import Dict, List, Mapping
+from typing import Dict, List, Mapping, Union
 
 import pytest
 
 from pydantic import BaseModel, ValidationError
 from pydantic.dataclasses import dataclass
-from pydantic.tools import parse_file_as, parse_obj_as, parse_raw_as
+from pydantic.tools import parse_file_as, parse_obj_as, parse_raw_as, schema, schema_json
 
 
 @pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1])])
@@ -98,3 +98,23 @@ def test_raw_as():
     item_data = '[{"id": 1, "name": "My Item"}]'
     items = parse_raw_as(List[Item], item_data)
     assert items == [Item(id=1, name='My Item')]
+
+
+def test_schema():
+    assert schema(Union[int, str], title='IntOrStr') == {
+        'title': 'IntOrStr',
+        'anyOf': [{'type': 'integer'}, {'type': 'string'}],
+    }
+    assert schema_json(Union[int, str], title='IntOrStr', indent=2) == (
+        '{\n'
+        '  "title": "IntOrStr",\n'
+        '  "anyOf": [\n'
+        '    {\n'
+        '      "type": "integer"\n'
+        '    },\n'
+        '    {\n'
+        '      "type": "string"\n'
+        '    }\n'
+        '  ]\n'
+        '}'
+    )
