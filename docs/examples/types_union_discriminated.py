@@ -5,17 +5,17 @@ from pydantic import BaseModel, Field, ValidationError
 
 class Cat(BaseModel):
     pet_type: Literal['cat']
-    name: str
+    meows: int
 
 
 class Dog(BaseModel):
     pet_type: Literal['dog']
-    name: str
+    barks: float
 
 
 class Lizard(BaseModel):
     pet_type: Literal['reptile', 'lizard']
-    name: str
+    scales: bool
 
 
 class Model(BaseModel):
@@ -23,8 +23,8 @@ class Model(BaseModel):
     n: int
 
 
-print(Model(pet={'pet_type': 'dog', 'name': 'woof'}, n='1'))
+print(Model(pet={'pet_type': 'dog', 'barks': 3.14}, n=1))
 try:
-    Model(pet={'pet_type': 'dog'}, n='1')
+    Model(pet={'pet_type': 'dog'}, n=1)
 except ValidationError as e:
     print(e)
