@@ -131,7 +131,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos, windows]
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-rc.2']
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
@@ -279,6 +279,8 @@ jobs:
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
         CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
+        CIBW_ARCHS_MACOS: 'x86_64 arm64'
+        CIBW_TEST_SKIP: '*-macosx_arm64'  # see https://cibuildwheel.readthedocs.io/en/stable/faq/#universal2
 
     # TODO build windows 32bit binaries
 

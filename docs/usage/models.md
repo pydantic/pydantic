@@ -381,8 +381,8 @@ the `create_model` method to allow models to be created on the fly.
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 
 !!! warning
-    See the note in [Required Optional Fields](#required-optional-fields) for the distinct between an ellipsis as a
-    field default and annotation only fields. 
+    See the note in [Required Optional Fields](#required-optional-fields) for the distinction between an ellipsis as a
+    field default and annotation-only fields. 
     See [samuelcolvin/pydantic#1047](https://github.com/samuelcolvin/pydantic/issues/1047) for more details.
 
 Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The

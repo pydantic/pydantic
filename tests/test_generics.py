@@ -1161,6 +1161,92 @@ def test_generic_annotated():
 
 
 @skip_36
+def test_generic_subclass():
+    T = TypeVar('T')
+
+    class A(GenericModel, Generic[T]):
+        ...
+
+    class B(A[T], Generic[T]):
+        ...
+
+    assert B[int].__name__ == 'B[int]'
+    assert issubclass(B[int], B)
+    assert issubclass(B[int], A[int])
+    assert not issubclass(B[int], A[str])
+
+
+@skip_36
+def test_generic_subclass_with_partial_application():
+    T = TypeVar('T')
+    S = TypeVar('S')
+
+    class A(GenericModel, Generic[T]):
+        ...
+
+    class B(A[S], Generic[T, S]):
+        ...
+
+    PartiallyAppliedB = B[str, T]
+    assert issubclass(PartiallyAppliedB[int], A[int])
+    assert not issubclass(PartiallyAppliedB[int], A[str])
+    assert not issubclass(PartiallyAppliedB[str], A[int])
+
+
+@skip_36
+def test_multilevel_generic_binding():
+    T = TypeVar('T')
+    S = TypeVar('S')
+
+    class A(GenericModel, Generic[T, S]):
+        ...
+
+    class B(A[str, T], Generic[T]):
+        ...
+
+    assert B[int].__name__ == 'B[int]'
+    assert issubclass(B[int], A[str, int])
+    assert not issubclass(B[str], A[str, int])
+
+
+@skip_36
+def test_generic_subclass_with_extra_type():
+    T = TypeVar('T')
+    S = TypeVar('S')
+
+    class A(GenericModel, Generic[T]):
+        ...
+
+    class B(A[S], Generic[T, S]):
+        ...
+
+    assert B[int, str].__name__ == 'B[int, str]', B[int, str].__name__
+    assert issubclass(B[str, int], B)
+    assert issubclass(B[str, int], A[int])
+    assert not issubclass(B[int, str], A[int])
+
+
+@skip_36
+def test_multi_inheritance_generic_binding():
+    T = TypeVar('T')
+
+    class A(GenericModel, Generic[T]):
+        ...
+
+    class B(A[int], Generic[T]):
+        ...
+
+    class C(B[str], Generic[T]):
+        ...
+
+    assert C[float].__name__ == 'C[float]'
+    assert issubclass(C[float], B[str])
+    assert not issubclass(C[float], B[int])
+    assert issubclass(C[float], A[int])
+    assert not issubclass(C[float], A[str])
+
+
+@skip_36
 def test_parse_generic_json():
     T = TypeVar('T')
 

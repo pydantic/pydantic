@@ -6,7 +6,7 @@ from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Mapping, Op
 from .config import BaseConfig, Extra
 from .fields import ModelField
 from .main import BaseModel
-from .typing import StrPath, display_as_type, get_origin, is_union_origin
+from .typing import StrPath, display_as_type, get_origin, is_union
 from .utils import deep_update, path_type, sequence_like
 
 env_file_sentinel = str(object())
@@ -211,9 +211,7 @@ class EnvSettingsSource:
         if field.is_complex():
             allow_json_failure = False
         elif (
-            is_union_origin(get_origin(field.type_))
-            and field.sub_fields
-            and any(f.is_complex() for f in field.sub_fields)
+            is_union(get_origin(field.type_)) and field.sub_fields and any(f.is_complex() for f in field.sub_fields)
         ):
             allow_json_failure = True
         else:
@@ -275,7 +273,14 @@ class SecretsSettingsSource:
             for env_name in field.field_info.extra['env_names']:
                 path = secrets_path / env_name
                 if path.is_file():
-                    secrets[field.alias] = path.read_text().strip()
+                    secret_value = path.read_text().strip()
+                    if field.is_complex():
+                        try:
+                            secret_value = settings.__config__.json_loads(secret_value)
+                        except ValueError as e:
+                            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+
+                    secrets[field.alias] = secret_value
                 elif path.exists():
                     warnings.warn(
                         f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
