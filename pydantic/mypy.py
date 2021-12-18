@@ -368,7 +368,7 @@ class PydanticModelTransformer:
         ctx.cls.info.names[self_tvar_name] = SymbolTableNode(MDEF, self_tvar_expr)
 
         # Backward-compatible with TypeVarDef from Mypy 0.910.
-        if isinstance(tvd, TypeVarType):
+        if isinstance(tvd, TypeVarType):  # pragma: no cover
             self_type = tvd
         else:
             self_type = TypeVarType(tvd)
