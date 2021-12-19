@@ -208,6 +208,16 @@ def test_allow_extra():
     assert Model(a='10.2', b=12).dict() == {'a': 10.2, 'b': 12}
 
 
+def test_allow_extra_repr():
+    class Model(BaseModel):
+        a: float = ...
+
+        class Config:
+            extra = Extra.allow
+
+    assert str(Model(a='10.2', b=12)) == 'a=10.2 b=12'
+
+
 def test_forbidden_extra_success():
     class ForbiddenExtra(BaseModel):
         foo = 'whatever'

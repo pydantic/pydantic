@@ -873,7 +873,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return self.dict() == other
 
     def __repr_args__(self) -> 'ReprArgs':
-        return [(k, v) for k, v in self.__dict__.items() if self.__fields__[k].field_info.repr]
+        return [
+            (k, v) for k, v in self.__dict__.items() if k not in self.__fields__ or self.__fields__[k].field_info.repr
+        ]
 
 
 _is_base_model_class_defined = True
