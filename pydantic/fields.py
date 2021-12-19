@@ -50,6 +50,7 @@ from .utils import (
     ValueItems,
     get_discriminator_alias_and_values,
     get_unique_discriminator_alias,
+    lenient_isinstance,
     lenient_issubclass,
     sequence_like,
     smart_deepcopy,
@@ -1048,7 +1049,7 @@ class ModelField(Representation):
                             return v, None
                     except TypeError:
                         # compound type
-                        if isinstance(v, get_origin(field.outer_type_)):
+                        if lenient_isinstance(v, get_origin(field.outer_type_)):
                             value, error = field.validate(v, values, loc=loc, cls=cls)
                             if not error:
                                 return value, None

@@ -53,6 +53,7 @@ __all__ = (
     'import_string',
     'sequence_like',
     'validate_field_name',
+    'lenient_isinstance',
     'lenient_issubclass',
     'in_ipython',
     'deep_update',
@@ -161,6 +162,13 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
                 f'Field name "{field_name}" shadows a BaseModel attribute; '
                 f'use a different field name with "alias=\'{field_name}\'".'
             )
+
+
+def lenient_isinstance(o: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...]]) -> bool:
+    try:
+        return isinstance(o, class_or_tuple)
+    except TypeError:
+        return False
 
 
 def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...]]) -> bool:
