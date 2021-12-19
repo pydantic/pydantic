@@ -9,7 +9,7 @@ for their kind support.
 ### Highlights
 
 * add python 3.10 support, #2885 by @PrettyWood
-* [Discriminated unions](https://pydantic-docs.helpmanual.io/usage/types/#discriminated-unions), #619 by @PrettyWood
+* [Discriminated unions](https://pydantic-docs.helpmanual.io/usage/types/#discriminated-unions-aka-tagged-unions), #619 by @PrettyWood
 * [`Config.smart_union` for better union logic](https://pydantic-docs.helpmanual.io/usage/model_config/#smart-union), #2092 by @PrettyWood
 * Binaries for Macos M1 CPUs, #3498 by @samuelcolvin
 * Complex types can be set via [nested environment variables](https://pydantic-docs.helpmanual.io/usage/settings/#parsing-environment-variable-values), e.g. `foo___bar`, #3159 by @Air-Mark
