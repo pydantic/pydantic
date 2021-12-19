@@ -43,7 +43,7 @@ def decimal_encoder(dec_value: Decimal) -> Union[int, float]:
     1
     """
     if not dec_value.is_finite():
-        raise TypeError(f"{dec_value!r} is not JSON serializable")
+        raise TypeError(f'{dec_value!r} is not JSON serializable')
 
     if dec_value.as_tuple().exponent >= 0:
         return int(dec_value)
