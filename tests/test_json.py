@@ -319,3 +319,41 @@ def test_json_nested_encode():
         pumbaa.json() == '{"name": "Pumbaa", "SSN": 234, "birthday": 737424000.0, "phone": 18007267864, "friend": null}'
     )
     assert timon.json() == '{"name": "Timon", "SSN": 123, "birthday": 738892800.0, "phone": 18002752273, "friend": 234}'
+
+
+def test_custom_encode_fallback_basemodel():
+    class MyExoticType:
+        pass
+
+    def custom_encoder(o):
+        if isinstance(o, MyExoticType):
+            return 'exo'
+        raise TypeError('not serialisable')
+
+    class Foo(BaseModel):
+        x: MyExoticType
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    class Bar(BaseModel):
+        foo: Foo
+
+    assert Bar(foo=Foo(x=MyExoticType())).json(encoder=custom_encoder) == '{"foo": {"x": "exo"}}'
+
+
+def test_custom_encode_error():
+    class MyExoticType:
+        pass
+
+    def custom_encoder(o):
+        raise TypeError('not serialisable')
+
+    class Foo(BaseModel):
+        x: MyExoticType
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    with pytest.raises(TypeError, match='not serialisable'):
+        Foo(x=MyExoticType()).json(encoder=custom_encoder)
