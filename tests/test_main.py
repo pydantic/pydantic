@@ -28,7 +28,9 @@ from pydantic import (
     Field,
     NoneBytes,
     NoneStr,
+    PrivateAttr,
     Required,
+    SecretStr,
     ValidationError,
     constr,
     root_validator,
@@ -1514,6 +1516,45 @@ def test_model_exclude_config_field_merging():
             }
 
     assert Model.__fields__['b'].field_info.exclude == {'foo': ..., 'bar': ...}
+
+
+def test_model_exclude_copy_on_model_validation():
+    """When `Config.copy_on_model_validation` is set, it should keep private attributes and excluded fields"""
+
+    class User(BaseModel):
+        _priv: int = PrivateAttr()
+        id: int
+        username: str
+        password: SecretStr = Field(exclude=True)
+        hobbies: List[str]
+
+    my_user = User(id=42, username='JohnDoe', password='hashedpassword', hobbies=['scuba diving'])
+
+    my_user._priv = 13
+    assert my_user.id == 42
+    assert my_user.password.get_secret_value() == 'hashedpassword'
+    assert my_user.dict() == {'id': 42, 'username': 'JohnDoe', 'hobbies': ['scuba diving']}
+
+    class Transaction(BaseModel):
+        id: str
+        user: User = Field(..., exclude={'username'})
+        value: int
+
+        class Config:
+            fields = {'value': {'exclude': True}}
+
+    t = Transaction(
+        id='1234567890',
+        user=my_user,
+        value=9876543210,
+    )
+
+    assert t.user is not my_user
+    assert t.user.hobbies == ['scuba diving']
+    assert t.user.hobbies is my_user.hobbies  # `Config.copy_on_model_validation` only does a shallow copy
+    assert t.user._priv == 13
+    assert t.user.password.get_secret_value() == 'hashedpassword'
+    assert t.dict() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
 
 
 @pytest.mark.parametrize(
