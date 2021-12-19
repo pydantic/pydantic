@@ -306,7 +306,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __pre_root_validators__: ClassVar[List[AnyCallable]]
         __post_root_validators__: ClassVar[List[Tuple[bool, AnyCallable]]]
         __config__: ClassVar[Type[BaseConfig]] = BaseConfig
-        __root__: ClassVar[Any] = None
         __json_encoder__: ClassVar[Callable[[Any], Any]] = lambda x: x
         __schema_cache__: ClassVar['DictAny'] = {}
         __custom_root_type__: ClassVar[bool] = False
