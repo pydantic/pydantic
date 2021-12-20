@@ -281,7 +281,7 @@ def test_custom_decode_encode():
     assert m.json() == '{\n  "a": 1,\n  "b": "foo"\n}'
 
 
-def test_json_nested_encode():
+def test_json_nested_encode_models():
     class Phone(BaseModel):
         manufacturer: str
         number: int
@@ -314,11 +314,15 @@ def test_json_nested_encode():
 
     timon.friend = pumbaa
 
-    assert iphone.json() == '{"manufacturer": "Apple", "number": 18002752273}'
+    assert iphone.json(models_as_dict=False) == '{"manufacturer": "Apple", "number": 18002752273}'
     assert (
-        pumbaa.json() == '{"name": "Pumbaa", "SSN": 234, "birthday": 737424000.0, "phone": 18007267864, "friend": null}'
+        pumbaa.json(models_as_dict=False)
+        == '{"name": "Pumbaa", "SSN": 234, "birthday": 737424000.0, "phone": 18007267864, "friend": null}'
     )
-    assert timon.json() == '{"name": "Timon", "SSN": 123, "birthday": 738892800.0, "phone": 18002752273, "friend": 234}'
+    assert (
+        timon.json(models_as_dict=False)
+        == '{"name": "Timon", "SSN": 123, "birthday": 738892800.0, "phone": 18002752273, "friend": 234}'
+    )
 
 
 def test_custom_encode_fallback_basemodel():
@@ -357,3 +361,11 @@ def test_custom_encode_error():
 
     with pytest.raises(TypeError, match='not serialisable'):
         Foo(x=MyExoticType()).json(encoder=custom_encoder)
+
+
+def test_recursive():
+    class Model(BaseModel):
+        value: Optional[str]
+        nested: Optional[BaseModel]
+
+    assert Model(value=None, nested=Model(value=None)).json(exclude_none=True) == '{"nested": {}}'

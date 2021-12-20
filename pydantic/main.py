@@ -454,7 +454,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
-        to_dict: bool = True,
+        models_as_dict: bool = True,
         **dumps_kwargs: Any,
     ) -> str:
         """
@@ -475,7 +475,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         # This allows users to write custom JSON encoders for given `BaseModel` classes.
         data = dict(
             self._iter(
-                to_dict=to_dict,
+                to_dict=models_as_dict,
                 by_alias=by_alias,
                 include=include,
                 exclude=exclude,
