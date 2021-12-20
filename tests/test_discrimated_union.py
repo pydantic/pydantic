@@ -1,12 +1,14 @@
 import re
+import sys
 from enum import Enum
-from typing import Union
+from typing import Generic, TypeVar, Union
 
 import pytest
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.errors import ConfigError
+from pydantic.generics import GenericModel
 
 
 def test_discriminated_union_only_union():
@@ -361,3 +363,36 @@ def test_nested():
         n: int
 
     assert isinstance(Model(**{'pet': {'pet_type': 'dog', 'name': 'Milou'}, 'n': 5}).pet, Dog)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
+def test_generic():
+    T = TypeVar('T')
+
+    class Success(GenericModel, Generic[T]):
+        type: Literal['Success'] = 'Success'
+        data: T
+
+    class Failure(BaseModel):
+        type: Literal['Failure'] = 'Failure'
+        error_message: str
+
+    class Container(GenericModel, Generic[T]):
+        result: Union[Success[T], Failure] = Field(discriminator='type')
+
+    with pytest.raises(ValidationError, match="Discriminator 'type' is missing in value"):
+        Container[str].parse_obj({'result': {}})
+
+    with pytest.raises(
+        ValidationError,
+        match=re.escape("No match for discriminator 'type' and value 'Other' (allowed values: 'Success', 'Failure')"),
+    ):
+        Container[str].parse_obj({'result': {'type': 'Other'}})
+
+    with pytest.raises(
+        ValidationError, match=re.escape('Container[str]\nresult -> Success[str] -> data\n  field required')
+    ):
+        Container[str].parse_obj({'result': {'type': 'Success'}})
+
+    # coercion is done properly
+    assert Container[str].parse_obj({'result': {'type': 'Success', 'data': 1}}).result.data == '1'
