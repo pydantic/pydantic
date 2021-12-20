@@ -224,22 +224,13 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
         @wraps(init)
         def new_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
             if config.extra == Extra.ignore:  # default behaviour
-
-                def ignore_extra_init(self: 'Dataclass', *a: Any, **kw: Any) -> None:
-                    init(self, *a, **{k: v for k, v in kw.items() if k in self.__dataclass_fields__})
-
-                ignore_extra_init(self, *args, **kwargs)
+                init(self, *args, **{k: v for k, v in kwargs.items() if k in self.__dataclass_fields__})
 
             elif config.extra == Extra.allow:
-
-                def allow_extra_init(self: 'Dataclass', *a: Any, **kw: Any) -> None:
-                    self.__dict__ = kw
-                    init(self, *a, **{k: v for k, v in kw.items() if k in self.__dataclass_fields__})
-
-                allow_extra_init(self, *args, **kwargs)
+                self.__dict__ = kwargs
+                init(self, *args, **{k: v for k, v in kwargs.items() if k in self.__dataclass_fields__})
 
             else:  # Extra.forbid
-
                 init(self, *args, **kwargs)
 
             if self.__class__.__pydantic_run_validation__:
