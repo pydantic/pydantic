@@ -1326,3 +1326,15 @@ def test_forbid_extra():
 
     with pytest.raises(TypeError, match=re.escape("__init__() got an unexpected keyword argument 'y'")):
         Foo(**{'x': '1', 'y': '2'})
+
+
+def test_post_init_allow_extra():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
+    class Foobar:
+        a: int
+        b: str
+
+        def __post_init__(self):
+            self.a *= 2
+
+    assert Foobar(a=1, b='a', c=4).__dict__ == {'a': 2, 'b': 'a', 'c': 4, '__pydantic_initialised__': True}

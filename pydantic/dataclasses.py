@@ -201,6 +201,19 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
     """
     init = dc_cls.__init__
 
+    @wraps(init)
+    def handle_extra_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
+        if config.extra == Extra.ignore:
+            init(self, *args, **{k: v for k, v in kwargs.items() if k in self.__dataclass_fields__})
+
+        elif config.extra == Extra.allow:
+            for k, v in kwargs.items():
+                self.__dict__.setdefault(k, v)
+            init(self, *args, **{k: v for k, v in kwargs.items() if k in self.__dataclass_fields__})
+
+        else:
+            init(self, *args, **kwargs)
+
     if hasattr(dc_cls, '__post_init__'):
         post_init = dc_cls.__post_init__
 
@@ -217,21 +230,14 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
             if config.post_init_call == 'after_validation':
                 post_init(self, *args, **kwargs)
 
+        setattr(dc_cls, '__init__', handle_extra_init)
         setattr(dc_cls, '__post_init__', new_post_init)
 
     else:
 
         @wraps(init)
         def new_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
-            if config.extra == Extra.ignore:  # default behaviour
-                init(self, *args, **{k: v for k, v in kwargs.items() if k in self.__dataclass_fields__})
-
-            elif config.extra == Extra.allow:
-                self.__dict__ = kwargs
-                init(self, *args, **{k: v for k, v in kwargs.items() if k in self.__dataclass_fields__})
-
-            else:  # Extra.forbid
-                init(self, *args, **kwargs)
+            handle_extra_init(self, *args, **kwargs)
 
             if self.__class__.__pydantic_run_validation__:
                 self.__pydantic_validate_values__()
