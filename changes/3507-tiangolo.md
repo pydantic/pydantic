@@ -1,1 +1,0 @@
-Add support for `Decimal`-specific validation configurations in `Field()`, additionally to using `condecimal()`, to allow better suppport from editors and tooling

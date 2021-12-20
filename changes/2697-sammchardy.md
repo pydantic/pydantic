@@ -1,1 +1,0 @@
-`Enum` fields now properly support extra kwargs in schema generation

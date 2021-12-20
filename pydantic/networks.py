@@ -68,6 +68,7 @@ __all__ = [
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
+    'AmqpDsn',
     'RedisDsn',
     'KafkaDsn',
     'validate_email',
@@ -349,6 +350,11 @@ class PostgresDsn(AnyUrl):
         'postgresql+pygresql',
     }
     user_required = True
+
+
+class AmqpDsn(AnyUrl):
+    allowed_schemes = {'amqp', 'amqps'}
+    host_required = False
 
 
 class RedisDsn(AnyUrl):
