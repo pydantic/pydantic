@@ -15,7 +15,6 @@ from pydantic.env_settings import (
     SettingsError,
     SettingsSourceCallable,
     read_env_file,
-    read_secret_path,
 )
 
 try:
@@ -817,28 +816,35 @@ def test_secrets_path(tmp_path):
     assert Settings().dict() == {'foo': 'foo_secret_value_str'}
 
 
-@pytest.mark.skipif(sys.platform != 'linux', reason='Linux tests')
-def test_secrets_uppercase_filename(tmp_path):
+def test_secrets_uppercase_with_case_sensitive(tmp_path):
+    (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
+
+    class Settings(BaseSettings):
+        SECRET_VAR: str
+        secret_var: Optional[str]
+
+        class Config:
+            secrets_dir = tmp_path
+            case_sensitive = True
+
+    with pytest.warns(UserWarning) as record:
+        settings = Settings().dict()
+        assert str(record[0].message) == f'Path "{tmp_path}/secret_var" does not exit'
+        assert settings == {'SECRET_VAR': 'foo_env_value_str', 'secret_var': None}
+
+
+def test_secrets_uppercase_without_case_sensitive(tmp_path):
     (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
 
     class Settings(BaseSettings):
         SECRET_VAR: str
         secret_var: str
-        
+
         class Config:
             secrets_dir = tmp_path
 
     settings = Settings().dict()
     assert settings == {'SECRET_VAR': 'foo_env_value_str', 'secret_var': 'foo_env_value_str'}
-
-@pytest.mark.skipif(sys.platform != 'linux', reason='Linux tests')
-def test_read_secret_file_case_sentitive(tmp_path):
-    filename = 'SECRET'
-    file = tmp_path / filename
-    file.write_text('test123')
-
-    assert read_secret_path(tmp_path, filename, case_sensitive=True) == 'test123'
-    assert read_secret_path(tmp_path, 'secret', case_sensitive=True) is None
 
 
 def test_secrets_path_url(tmp_path):
@@ -889,9 +895,10 @@ def test_secrets_missing(tmp_path):
         class Config:
             secrets_dir = tmp_path
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.warns(UserWarning) as record, pytest.raises(ValidationError) as exc_info:
         Settings()
-    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
+        assert str(record[0].message) == f'Path "{tmp_path}/foo" does not exit'
+        assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 def test_secrets_invalid_secrets_dir(tmp_path):
@@ -929,9 +936,7 @@ def test_secrets_file_is_a_directory(tmp_path):
         class Config:
             secrets_dir = tmp_path
 
-    with pytest.warns(
-        UserWarning, match=f'attempted to load secret file ' f'"{tmp_path}/foo" but found a directory instead'
-    ):
+    with pytest.warns(UserWarning, match=f'attempted to load secret file "{tmp_path}/foo" but found a directory inste'):
         Settings()
 
 
@@ -1040,4 +1045,3 @@ def test_builtins_settings_source_repr():
         == "EnvSettingsSource(env_file='.env', env_file_encoding='utf-8')"
     )
     assert repr(SecretsSettingsSource(secrets_dir='/secrets')) == "SecretsSettingsSource(secrets_dir='/secrets')"
-

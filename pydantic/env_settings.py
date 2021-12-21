@@ -214,23 +214,24 @@ class SecretsSettingsSource:
 
         for field in settings.__fields__.values():
             for env_name in field.field_info.extra['env_names']:
-                path = secrets_path / env_name
-                if settings.__config__.case_sensitive and not path.exists():
-                    path = find_case_insensitive_path(path)
-                elif path.is_file():
-                    secret_value = path.read_text().strip()
-                    if field.is_complex():
-                        try:
-                            secret_value = settings.__config__.json_loads(secret_value)
-                        except ValueError as e:
-                            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+                path = find_case_path(secrets_path / env_name, settings.__config__.case_sensitive)
+                if path:
+                    if path.is_file():
+                        secret_value = path.read_text().strip()
+                        if field.is_complex():
+                            try:
+                                secret_value = settings.__config__.json_loads(secret_value)
+                            except ValueError as e:
+                                raise SettingsError(f'error parsing JSON for "{env_name}"') from e
 
-                    secrets[field.alias] = secret_value
-                elif path.exists():
-                    warnings.warn(
-                        f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
-                        stacklevel=4,
-                    )
+                        secrets[field.alias] = secret_value
+                    elif path.exists():
+                        warnings.warn(
+                            f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
+                            stacklevel=4,
+                        )
+                else:
+                    warnings.warn(f'Path "{secrets_path / env_name}" does not exit')
         return secrets
 
     def __repr__(self) -> str:
@@ -252,14 +253,17 @@ def read_env_file(
         return file_vars
 
 
-def find_case_insensitive_path(path: Path) -> Path:
+def find_case_path(path: Path, case_sensitive: bool) -> Optional[Path]:
     """
-    Find a file within path's directory with a case-insensitive matching filename.
+    Find a file within path's directory matching filename.
 
-    Note: this won't if the rest of the path has a case mismatch.
+    If filename is case-sensitive returns the file which has the same syntax.
+
+    If filename is case-insensitive returns the file which matching.
     """
-    expected_name = path.name.lower()
     for f in path.parent.iterdir():
-        if f.name.lower() == expected_name:
+        if f.name.lower() == path.name.lower() and not case_sensitive:
             return f
-    return path
+        elif f.name == path.name and case_sensitive:
+            return f
+    return None

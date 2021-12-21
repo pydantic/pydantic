@@ -1,1 +1,1 @@
-Fix Pydantic error to read content of files in secrets_dir on Linux 
+Update `SecretsSettingsSource` to respect `config.case_sensitive`
