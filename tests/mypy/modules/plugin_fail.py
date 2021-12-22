@@ -229,18 +229,11 @@ inheriting2.y = 'd'
 
 
 class FieldDefaultTestingModel(BaseModel):
-    # Required
-    a: int
-    b: int = Field()
-    c: int = Field(...)
-
     # Default
-    d: int = Field(1)
     e: int = Field(None)
     f: int = None
 
     # Default factory
-    g: list[int] = Field(default_factory=list)
     h: str = Field(default_factory=set)
 
     # Default and default factory

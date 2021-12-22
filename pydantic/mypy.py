@@ -132,6 +132,8 @@ class PydanticPlugin(Plugin):
         """
         default_any_type = ctx.default_return_type
 
+        assert ctx.callee_arg_names[0] == 'default', '"default" is no longer first argument in Field()'
+        assert ctx.callee_arg_names[1] == 'default_factory', '"default_factory" is no longer second argument in Field()'
         default_args = ctx.args[0]
         default_factory_args = ctx.args[1]
 
@@ -143,12 +145,11 @@ class PydanticPlugin(Plugin):
             default_type = ctx.arg_types[0][0]
             default_arg = default_args[0]
 
-            if isinstance(default_arg, EllipsisExpr):  # Fallback to default Any type if the field is required
-                default_type = default_any_type
+            # Fallback to default Any type if the field is required
+            if not isinstance(default_arg, EllipsisExpr):
+                return default_type
 
-            return default_type
-
-        if default_factory_args:
+        elif default_factory_args:
             default_factory_type = ctx.arg_types[1][0]
 
             if isinstance(default_factory_type, CallableType):

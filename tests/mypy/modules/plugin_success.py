@@ -1,4 +1,4 @@
-from typing import ClassVar, Generic, Optional, TypeVar, Union
+from typing import ClassVar, Generic, Optional, TypeVar, Union, List
 
 from pydantic import BaseModel, BaseSettings, Field, create_model, validator
 from pydantic.dataclasses import dataclass
@@ -193,3 +193,16 @@ class Response(GenericModel, Generic[T]):
 
 
 response = Response[Model](data=model, error=None)
+
+
+class FieldDefaultTestingModel(BaseModel):
+    # Required
+    a: int
+    b: int = Field()
+    c: int = Field(...)
+
+    # Default
+    d: int = Field(1)
+
+    # Default factory
+    g: List[int] = Field(default_factory=list)
