@@ -27,7 +27,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
-from typing_extensions import Literal
+from typing_extensions import Literal, TypedDict
 
 from pydantic import (
     UUID1,
@@ -3118,6 +3118,22 @@ def test_smart_union_compouned_types_edge_case():
     assert Model(x=[1, 2]).x == ['1', '2']
     # still coerce if needed
     assert Model(x=[1, '2']).x == ['1', '2']
+
+
+def test_smart_union_typeddict():
+    class Dict1(TypedDict):
+        foo: str
+
+    class Dict2(TypedDict):
+        bar: str
+
+    class M(BaseModel):
+        d: Union[Dict2, Dict1]
+
+        class Config:
+            smart_union = True
+
+    assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 
 
 @pytest.mark.parametrize(
