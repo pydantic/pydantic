@@ -262,6 +262,7 @@ __all__ = (
     'WithArgsTypes',
     'get_args',
     'get_origin',
+    'get_sub_types',
     'typing_base',
     'get_all_type_hints',
     'is_union',
@@ -309,6 +310,9 @@ else:
 def display_as_type(v: Type[Any]) -> str:
     if not isinstance(v, typing_base) and not isinstance(v, WithArgsTypes) and not isinstance(v, type):
         v = v.__class__
+
+    if is_union(get_origin(v)):
+        return f'Union[{", ".join(map(display_as_type, get_args(v)))}]'
 
     if isinstance(v, WithArgsTypes):
         # Generic alias are constructs like `list[int]`
@@ -443,9 +447,13 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
     if field.type_.__class__ == ForwardRef:
         field.type_ = evaluate_forwardref(field.type_, globalns, localns or None)
         field.prepare()
+
     if field.sub_fields:
         for sub_f in field.sub_fields:
             update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
+
+    if field.discriminator_key is not None:
+        field.prepare_discriminated_union_sub_fields()
 
 
 def update_model_forward_refs(
@@ -487,3 +495,17 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
     except (AttributeError, TypeError):
         pass
     return None
+
+
+def get_sub_types(tp: Any) -> List[Any]:
+    """
+    Return all the types that are allowed by type `tp`
+    `tp` can be a `Union` of allowed types or an `Annotated` type
+    """
+    origin = get_origin(tp)
+    if origin is Annotated:
+        return get_sub_types(get_args(tp)[0])
+    elif is_union(origin):
+        return [x for t in get_args(tp) for x in get_sub_types(t)]
+    else:
+        return [tp]

@@ -306,7 +306,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __pre_root_validators__: ClassVar[List[AnyCallable]]
         __post_root_validators__: ClassVar[List[Tuple[bool, AnyCallable]]]
         __config__: ClassVar[Type[BaseConfig]] = BaseConfig
-        __root__: ClassVar[Any] = None
         __json_encoder__: ClassVar[Callable[[Any], Any]] = lambda x: x
         __schema_cache__: ClassVar['DictAny'] = {}
         __custom_root_type__: ClassVar[bool] = False
@@ -589,6 +588,24 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         m._init_private_attributes()
         return m
 
+    def _copy_and_set_values(self: 'Model', values: 'DictStrAny', fields_set: 'SetStr', *, deep: bool) -> 'Model':
+        if deep:
+            # chances of having empty dict here are quite low for using smart_deepcopy
+            values = deepcopy(values)
+
+        cls = self.__class__
+        m = cls.__new__(cls)
+        object_setattr(m, '__dict__', values)
+        object_setattr(m, '__fields_set__', fields_set)
+        for name in self.__private_attributes__:
+            value = getattr(self, name, Undefined)
+            if value is not Undefined:
+                if deep:
+                    value = deepcopy(value)
+                object_setattr(m, name, value)
+
+        return m
+
     def copy(
         self: 'Model',
         *,
@@ -608,32 +625,18 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         :return: new model instance
         """
 
-        v = dict(
+        values = dict(
             self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False),
             **(update or {}),
         )
 
-        if deep:
-            # chances of having empty dict here are quite low for using smart_deepcopy
-            v = deepcopy(v)
-
-        cls = self.__class__
-        m = cls.__new__(cls)
-        object_setattr(m, '__dict__', v)
         # new `__fields_set__` can have unset optional fields with a set value in `update` kwarg
         if update:
             fields_set = self.__fields_set__ | update.keys()
         else:
             fields_set = set(self.__fields_set__)
-        object_setattr(m, '__fields_set__', fields_set)
-        for name in self.__private_attributes__:
-            value = getattr(self, name, Undefined)
-            if value is not Undefined:
-                if deep:
-                    value = deepcopy(value)
-                object_setattr(m, name, value)
 
-        return m
+        return self._copy_and_set_values(values, fields_set, deep=deep)
 
     @classmethod
     def schema(cls, by_alias: bool = True, ref_template: str = default_ref_template) -> 'DictStrAny':
@@ -661,14 +664,17 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, cls):
-            return value.copy() if cls.__config__.copy_on_model_validation else value
+            if cls.__config__.copy_on_model_validation:
+                return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=False)
+            else:
+                return value
 
         value = cls._enforce_dict_if_root(value)
 
-        if cls.__config__.orm_mode:
-            return cls.from_orm(value)
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return cls(**value)
+        elif cls.__config__.orm_mode:
+            return cls.from_orm(value)
         else:
             try:
                 value_as_dict = dict(value)
@@ -678,6 +684,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
+        if isinstance(obj, GetterDict):
+            return obj
         return cls.__config__.getter_dict(obj)
 
     @classmethod
@@ -867,7 +875,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return self.dict() == other
 
     def __repr_args__(self) -> 'ReprArgs':
-        return [(k, v) for k, v in self.__dict__.items() if self.__fields__[k].field_info.repr]
+        return [
+            (k, v) for k, v in self.__dict__.items() if k not in self.__fields__ or self.__fields__[k].field_info.repr
+        ]
 
 
 _is_base_model_class_defined = True

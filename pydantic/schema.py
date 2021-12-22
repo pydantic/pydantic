@@ -70,6 +70,7 @@ from .typing import (
     all_literal_values,
     get_args,
     get_origin,
+    get_sub_types,
     is_callable_type,
     is_literal_type,
     is_namedtuple,
@@ -87,6 +88,19 @@ default_ref_template = '#/definitions/{model}'
 
 TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
 TypeModelSet = Set[TypeModelOrEnum]
+
+
+def _apply_modify_schema(
+    modify_schema: Callable[..., None], field: Optional[ModelField], field_schema: Dict[str, Any]
+) -> None:
+    from inspect import signature
+
+    sig = signature(modify_schema)
+    args = set(sig.parameters.keys())
+    if 'field' in args or 'kwargs' in args:
+        modify_schema(field_schema, field=field)
+    else:
+        modify_schema(field_schema)
 
 
 def schema(
@@ -250,6 +264,37 @@ def field_schema(
         ref_template=ref_template,
         known_models=known_models or set(),
     )
+
+    # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminator-object
+    if field.discriminator_key is not None:
+        assert field.sub_fields_mapping is not None
+
+        discriminator_models_refs: Dict[str, Union[str, Dict[str, Any]]] = {}
+
+        for discriminator_value, sub_field in field.sub_fields_mapping.items():
+            # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
+            if is_union(get_origin(sub_field.type_)):
+                sub_models = get_sub_types(sub_field.type_)
+                discriminator_models_refs[discriminator_value] = {
+                    model_name_map[sub_model]: get_schema_ref(
+                        model_name_map[sub_model], ref_prefix, ref_template, False
+                    )
+                    for sub_model in sub_models
+                }
+            else:
+                sub_field_type = sub_field.type_
+                if hasattr(sub_field_type, '__pydantic_model__'):
+                    sub_field_type = sub_field_type.__pydantic_model__
+
+                discriminator_model_name = model_name_map[sub_field_type]
+                discriminator_model_ref = get_schema_ref(discriminator_model_name, ref_prefix, ref_template, False)
+                discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
+
+        s['discriminator'] = {
+            'propertyName': field.discriminator_alias,
+            'mapping': discriminator_models_refs,
+        }
+
     # $ref will only be returned when there are no schema_overrides
     if '$ref' in f_schema:
         return f_schema, f_definitions, f_nested_models
@@ -303,7 +348,7 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
         f_schema.update(field.field_info.extra)
     modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
     if modify_schema:
-        modify_schema(f_schema)
+        _apply_modify_schema(modify_schema, field, f_schema)
     return f_schema
 
 
@@ -535,7 +580,7 @@ def field_type_schema(
             field_type = field.outer_type_
         modify_schema = getattr(field_type, '__modify_schema__', None)
         if modify_schema:
-            modify_schema(f_schema)
+            _apply_modify_schema(modify_schema, field, f_schema)
     return f_schema, definitions, nested_models
 
 
@@ -547,6 +592,7 @@ def model_process_schema(
     ref_prefix: Optional[str] = None,
     ref_template: str = default_ref_template,
     known_models: TypeModelSet = None,
+    field: Optional[ModelField] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     Used by ``model_schema()``, you probably should be using that function.
@@ -560,7 +606,7 @@ def model_process_schema(
     known_models = known_models or set()
     if lenient_issubclass(model, Enum):
         model = cast(Type[Enum], model)
-        s = enum_process_schema(model)
+        s = enum_process_schema(model, field=field)
         return s, {}, set()
     model = cast(Type['BaseModel'], model)
     s = {'title': model.__config__.title or model.__name__}
@@ -642,7 +688,7 @@ def model_type_schema(
     return out_schema, definitions, nested_models
 
 
-def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
+def enum_process_schema(enum: Type[Enum], *, field: Optional[ModelField] = None) -> Dict[str, Any]:
     """
     Take a single `enum` and generate its schema.
 
@@ -663,7 +709,7 @@ def enum_process_schema(enum: Type[Enum]) -> Dict[str, Any]:
 
     modify_schema = getattr(enum, '__modify_schema__', None)
     if modify_schema:
-        modify_schema(schema_)
+        _apply_modify_schema(modify_schema, field, schema_)
 
     return schema_
 
@@ -839,7 +885,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         enum_name = model_name_map[field_type]
         f_schema, schema_overrides = get_field_info_schema(field, schema_overrides)
         f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
-        definitions[enum_name] = enum_process_schema(field_type)
+        definitions[enum_name] = enum_process_schema(field_type, field=field)
     elif is_namedtuple(field_type):
         sub_schema, *_ = model_process_schema(
             field_type.__pydantic_model__,
@@ -848,6 +894,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_prefix=ref_prefix,
             ref_template=ref_template,
             known_models=known_models,
+            field=field,
         )
         items_schemas = list(sub_schema['properties'].values())
         f_schema.update(
@@ -863,7 +910,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
 
         modify_schema = getattr(field_type, '__modify_schema__', None)
         if modify_schema:
-            modify_schema(f_schema)
+            _apply_modify_schema(modify_schema, field, f_schema)
 
     if f_schema:
         return f_schema, definitions, nested_models
@@ -882,6 +929,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
                 ref_prefix=ref_prefix,
                 ref_template=ref_template,
                 known_models=known_models,
+                field=field,
             )
             definitions.update(sub_definitions)
             definitions[model_name] = sub_schema
