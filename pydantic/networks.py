@@ -285,6 +285,7 @@ class AnyUrl(str):
             tld = d.group('tld')
             if tld is None and not is_international:
                 d = int_domain_regex().fullmatch(host)
+                assert d is not None
                 tld = d.group('tld')
                 is_international = True
 
