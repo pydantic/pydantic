@@ -54,6 +54,9 @@ iso8601_duration_re = re.compile(
     r'$'
 )
 
+# Support scientific notation
+scientific_notation = re.compile(r'^(?P<sign>[-+]?)' r'(?P<scientific_notation>\d+(.\d+)?[eE][+\-]?\d+)?' r'$')
+
 EPOCH = datetime(1970, 1, 1)
 # if greater than this, the number is in ms, if less than or equal it's in seconds
 # (in seconds this is 11th October 2603, in ms it's 20th August 1970)
@@ -226,16 +229,11 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
         value = str(value)
     elif isinstance(value, bytes):
         value = value.decode()
-    
-    if isinstance(value, (str)):
-        try:
-            #scientific notation
-            value = f"{float(value):.6f}"
-        except ValueError:
-            pass
- 
+
     try:
-        match = standard_duration_re.match(value) or iso8601_duration_re.match(value)
+        match = (
+            standard_duration_re.match(value) or iso8601_duration_re.match(value) or scientific_notation.match(value)
+        )
     except TypeError:
         raise TypeError('invalid type; expected timedelta, string, bytes, int or float')
 
@@ -249,6 +247,9 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
 
     if kw.get('seconds') and kw.get('microseconds') and kw['seconds'].startswith('-'):
         kw['microseconds'] = '-' + kw['microseconds']
+
+    if kw.get('scientific_notation'):
+        kw['seconds'] = ("%.17s" % kw.pop('scientific_notation')).rstrip('0').rstrip('.')
 
     kw_ = {k: float(v) for k, v in kw.items() if v is not None}
 

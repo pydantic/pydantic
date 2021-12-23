@@ -160,7 +160,7 @@ def test_datetime_parsing(value, result):
         timedelta(days=-4, minutes=15, seconds=30),  # negative durations
         timedelta(minutes=15, seconds=30),  # minute & seconds
         timedelta(seconds=30),  # seconds
-        timedelta(microseconds=99)  # microseconds
+        timedelta(microseconds=99),  # microseconds
     ],
 )
 def test_parse_python_format(delta):
@@ -212,14 +212,14 @@ def test_parse_python_format(delta):
         ('PT0.000005S', timedelta(microseconds=5)),
         (b'PT0.000005S', timedelta(microseconds=5)),
         # Scientific Notation
-        ('+0003', timedelta(seconds=3)),
+        ('+0003', errors.DurationError),
         (9.9e-05, timedelta(microseconds=99)),
         ('9.9e-05', timedelta(microseconds=99)),
         (9.9e05, timedelta(days=11, seconds=39600)),
         (+3, timedelta(seconds=3)),
-        (-4.70e+9, timedelta(days=-54399, seconds=73600)),
-        (-.2E-4, timedelta(days=-1, seconds=86399, microseconds=999980)),
-        (-7.6603, timedelta(days=-1, seconds=86392, microseconds=339700))
+        (-4.70e9, timedelta(days=-54399, seconds=73600)),
+        (-0.2e-4, timedelta(days=-1, seconds=86399, microseconds=999980)),
+        (-7.6603, timedelta(days=-1, seconds=86392, microseconds=339700)),
     ],
 )
 def test_parse_durations(value, result):
