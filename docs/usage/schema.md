@@ -39,7 +39,7 @@ will be replaced with the model naming using `str.format()`.
 
 ## Getting schema of a specified type
 
-_Pydantic_ includes two standalone utility functions `schema` and `schema_json` that can be used to
+_Pydantic_ includes two standalone utility functions `schema_of` and `schema_json_of` that can be used to
 apply the schema generation logic used for _pydantic_ models in a more ad-hoc way.
 These functions behave similarly to `BaseModel.schema` and `BaseModel.schema_json`,
 but work with arbitrary pydantic-compatible types.

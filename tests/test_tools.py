@@ -5,7 +5,7 @@ import pytest
 
 from pydantic import BaseModel, ValidationError
 from pydantic.dataclasses import dataclass
-from pydantic.tools import parse_file_as, parse_obj_as, parse_raw_as, schema, schema_json
+from pydantic.tools import parse_file_as, parse_obj_as, parse_raw_as, schema_json_of, schema_of
 
 
 @pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1])])
@@ -101,11 +101,11 @@ def test_raw_as():
 
 
 def test_schema():
-    assert schema(Union[int, str], title='IntOrStr') == {
+    assert schema_of(Union[int, str], title='IntOrStr') == {
         'title': 'IntOrStr',
         'anyOf': [{'type': 'integer'}, {'type': 'string'}],
     }
-    assert schema_json(Union[int, str], title='IntOrStr', indent=2) == (
+    assert schema_json_of(Union[int, str], title='IntOrStr', indent=2) == (
         '{\n'
         '  "title": "IntOrStr",\n'
         '  "anyOf": [\n'
