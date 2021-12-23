@@ -154,6 +154,9 @@ def _process_class(
             },
         )
         globals()[uniq_class_name] = _cls
+        # https://github.com/samuelcolvin/pydantic/issues/3566
+        for field_name, field  in _cls.__dataclass_fields__.items():
+            setattr(_cls, field_name, field)
     else:
         _cls.__post_init__ = _pydantic_post_init
     cls: Type['Dataclass'] = dataclasses.dataclass(  # type: ignore
