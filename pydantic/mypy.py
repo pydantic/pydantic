@@ -348,13 +348,13 @@ class PydanticModelTransformer:
         and does not treat settings fields as optional.
         """
         ctx = self._ctx
-        set_str = ctx.api.named_type('__builtins__.set', [ctx.api.named_type('__builtins__.str')])
+        set_str = ctx.api.named_type('builtins.set', [ctx.api.named_type('builtins.str')])
         optional_set_str = UnionType([set_str, NoneType()])
         fields_set_argument = Argument(Var('_fields_set', optional_set_str), optional_set_str, None, ARG_OPT)
         construct_arguments = self.get_field_arguments(fields, typed=True, force_all_optional=False, use_alias=False)
         construct_arguments = [fields_set_argument] + construct_arguments
 
-        obj_type = ctx.api.named_type('__builtins__.object')
+        obj_type = ctx.api.named_type('builtins.object')
         self_tvar_name = '_PydanticBaseModel'  # Make sure it does not conflict with other names in the class
         tvar_fullname = ctx.cls.fullname + '.' + self_tvar_name
         self_type = TypeVarType(self_tvar_name, tvar_fullname, -1, [], obj_type)
@@ -654,7 +654,7 @@ def add_method(
         arg_names.append(get_name(arg.variable))
         arg_kinds.append(arg.kind)
 
-    function_type = ctx.api.named_type('__builtins__.function')
+    function_type = ctx.api.named_type('builtins.function')
     signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
     if tvar_like_type:
         signature.variables = [tvar_like_type]
