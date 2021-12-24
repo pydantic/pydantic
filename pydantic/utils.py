@@ -574,7 +574,7 @@ class ValueItems(Representation):
         elif isinstance(items, AbstractSet):
             items = dict.fromkeys(items, ...)
         else:
-            raise TypeError(f'Unexpected type of exclude value {items.__class__}')
+            raise TypeError(f'Unexpected type of exclude value {items.__class__}')  # type: ignore[attr-defined]
         return items
 
     @classmethod
