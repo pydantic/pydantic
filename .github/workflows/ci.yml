@@ -60,7 +60,7 @@ jobs:
         path: site
 
   test-linux:
-    name: test py${{ matrix.python-version }} on linux
+    name: test py${{ matrix.python-version }} on linux with mypy ${{ matrix.mypy-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -129,7 +129,7 @@ jobs:
         path: coverage
 
   test-windows-mac:
-    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    name: test py${{ matrix.python-version }} on ${{ matrix.os }} with mypy ${{ matrix.mypy-version }}
     strategy:
       fail-fast: false
       matrix:
