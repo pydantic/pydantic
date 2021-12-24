@@ -1,11 +1,11 @@
 .DEFAULT_GOAL := all
-MYPY_VERSION ?= 0.910
+MYPY_VERSION ?= 0.921
 isort = isort pydantic tests
 black = black -S -l 120 --target-version py38 pydantic tests
 
 .PHONY: install-linting
 install-linting:
-	pip install -r tests/requirements-linting.txt
+	pip install -r tests/requirements-linting.txt mypy=='$(MYPY_VERSION)'
 	pre-commit install
 
 .PHONY: install-pydantic

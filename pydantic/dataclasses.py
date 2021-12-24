@@ -169,6 +169,7 @@ def _process_class(
 
         if field.default is not dataclasses.MISSING:
             default = field.default
+        # mypy issue 7020 and 708
         elif field.default_factory is not dataclasses.MISSING:
             default_factory = field.default_factory
         else:
