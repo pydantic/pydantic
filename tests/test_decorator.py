@@ -145,8 +145,10 @@ def test_var_args_kwargs(validated):
 
 
 def test_field_can_provide_factory() -> None:
+    field = Field(default_factory=lambda: 99)
+
     @validate_arguments
-    def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:
+    def foo(a: int, b: int = field, *args: int) -> int:
         """mypy is happy with this"""
         return a + b + sum(args)
 
@@ -403,8 +405,10 @@ def test_validate(mocker):
 
 
 def test_validate_all():
+    field = Field(default_factory=lambda: 946684800)
+
     @validate_arguments(config=dict(validate_all=True))
-    def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
+    def foo(dt: datetime = field):
         return dt
 
     assert foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)

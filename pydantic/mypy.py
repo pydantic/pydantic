@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as Typi
 from pydantic.utils import is_valid_field
 
 try:
-    import toml  # type: ignore[import]
+    import toml
 except ImportError:  # pragma: no cover
     # future-proofing for upcoming `mypy` releases which will switch dependencies
     try:
@@ -13,7 +13,7 @@ except ImportError:  # pragma: no cover
         import warnings
 
         warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
-        toml = None
+        toml = None  # type: ignore[assignment]
 
 try:
     from mypy.types import TypeVarDef  # type: ignore[attr-defined]
