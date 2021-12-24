@@ -110,7 +110,7 @@ if sys.version_info < (3, 8):
 else:
     from typing import get_origin as _typing_get_origin
 
-    def get_origin(tp: Type[Any]) -> Type[Any]:
+    def get_origin(tp: Type[Any]) -> Optional[Type[Any]]:
         """
         We can't directly use `typing.get_origin` since we need a fallback to support
         custom generic classes like `ConstrainedList`
@@ -188,7 +188,7 @@ else:
 
 if sys.version_info < (3, 10):
 
-    def is_union(tp: Type[Any]) -> bool:
+    def is_union(tp: Optional[Type[Any]]) -> bool:
         return tp is Union
 
     WithArgsTypes = (TypingGenericAlias,)
@@ -197,7 +197,7 @@ else:
     import types
     import typing
 
-    def is_union(tp: Type[Any]) -> bool:
+    def is_union(tp: Optional[Type[Any]]) -> bool:
         return tp is Union or tp is types.UnionType  # noqa: E721
 
     WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)

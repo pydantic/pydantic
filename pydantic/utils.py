@@ -164,16 +164,16 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-def lenient_isinstance(o: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...]]) -> bool:
+def lenient_isinstance(o: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]) -> bool:
     try:
-        return isinstance(o, class_or_tuple)
+        return isinstance(o, class_or_tuple)  # type: ignore[arg-type]
     except TypeError:
         return False
 
 
-def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...]]) -> bool:
+def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]) -> bool:
     try:
-        return isinstance(cls, type) and issubclass(cls, class_or_tuple)
+        return isinstance(cls, type) and issubclass(cls, class_or_tuple)  # type: ignore[arg-type]
     except TypeError:
         if isinstance(cls, WithArgsTypes):
             return False
