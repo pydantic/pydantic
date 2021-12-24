@@ -991,7 +991,7 @@ def test_deep_generic_with_multiple_inheritance():
     assert ConcreteInnerModel.__fields__['stuff'].outer_type_ == List[str]
     assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
 
-    assert ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5).dict() == {
+    ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5).dict() == {
         'data': {1: 5},
         'stuff': ['123'],
         'extra': 5,
@@ -1037,8 +1037,8 @@ def test_generic_with_callable():
         # Callable is a test for any type that accepts a list as an argument
         some_callable: Callable[[Optional[int], T], None]
 
-    assert Model[str].__concrete__ is True
-    assert Model.__concrete__ is False
+    Model[str].__concrete__ is True
+    Model.__concrete__ is False
 
 
 @skip_36
@@ -1052,9 +1052,9 @@ def test_generic_with_partial_callable():
         # Callable is a test for any type that accepts a list as an argument
         some_callable: Callable[[Optional[int], str], None]
 
-    assert Model[str, U].__concrete__ is False
-    assert Model[str, U].__parameters__ == [U]
-    assert Model[str, int].__concrete__ is False
+    Model[str, U].__concrete__ is False
+    Model[str, U].__parameters__ == [U]
+    Model[str, int].__concrete__ is False
 
 
 @skip_36

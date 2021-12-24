@@ -1686,9 +1686,9 @@ def test_model_export_inclusion():
         class Config:
             fields = {'a': {'include': {'s2', 's1', 's3'}}, 'b': {'include': {'s1', 's2', 's3', 's4'}}}
 
-    assert Model.__fields__['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
-    assert Model.__fields__['b'].field_info.include == {'s1': ...}
-    assert Model.__fields__['c'].field_info.include == {'s1': ..., 's2': ...}
+    Model.__fields__['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
+    Model.__fields__['b'].field_info.include == {'s1': ...}
+    Model.__fields__['c'].field_info.include == {'s1': ..., 's2': ...}
 
     actual = Model().dict(include={'a': {'s3', 's4'}, 'b': ..., 'c': ...})
     # s1 included via field, s2 via config and s3 via .dict call:
