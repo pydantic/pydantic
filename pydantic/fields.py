@@ -733,6 +733,10 @@ class ModelField(Representation):
         Note that this process can be aborted if a `ForwardRef` is encountered
         """
         assert self.discriminator_key is not None
+
+        if self.type_.__class__ is DeferredType:
+            return
+
         assert self.sub_fields is not None
         sub_fields_mapping: Dict[str, 'ModelField'] = {}
         all_aliases: Set[str] = set()
