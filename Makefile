@@ -1,4 +1,5 @@
 .DEFAULT_GOAL := all
+MYPY_VERSION ?= 0.910
 isort = isort pydantic tests
 black = black -S -l 120 --target-version py38 pydantic tests
 
@@ -15,7 +16,7 @@ install-pydantic:
 
 .PHONY: install-testing
 install-testing: install-pydantic
-	pip install -r tests/requirements-testing.txt
+	pip install -r tests/requirements-testing.txt mypy=='$(MYPY_VERSION)'
 
 .PHONY: install-docs
 install-docs: install-pydantic
