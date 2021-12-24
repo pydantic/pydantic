@@ -100,9 +100,9 @@ benchmark-json:
 .PHONY: clean
 clean:
 	rm -rf `find . -name __pycache__`
-	rm -f `find . -type f -name '*.py[co]' `
-	rm -f `find . -type f -name '*~' `
-	rm -f `find . -type f -name '.*~' `
+	rm -f `find . -type f -name '*.py[co]'`
+	rm -f `find . -type f -name '*~'`
+	rm -f `find . -type f -name '.*~'`
 	rm -rf .cache
 	rm -rf .pytest_cache
 	rm -rf .mypy_cache
@@ -118,7 +118,6 @@ clean:
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
 	rm -rf fastapi/test.db
-	rm -rf codecov.sh
 	rm -rf coverage.xml
 
 .PHONY: docs

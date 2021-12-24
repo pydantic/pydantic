@@ -1,3 +1,14 @@
+## v1.9.0a2 (2021-12-24)
+
+* support generic models with discriminated union, #3551 by @PrettyWood
+* keep old behaviour of `json()` by default, #3542 by @PrettyWood
+* Removed typing-only `__root__` attribute from `BaseModel`, #3540 by @layday
+* Build Python 3.10 wheels, #3539 by @mbachry
+* Fix display of `extra` fields with model `__repr__`, #3234 by @cocolman
+* models copied via `Config.copy_on_model_validation` always have all fields, #3201 by @PrettyWood
+* nested ORM from nested dictionaries, #3182 by @PrettyWood
+* fix link to discriminated union section by @PrettyWood
+
 ## v1.9.0a1 (2021-12-18)
 
 Thank you to pydantic's sponsors:
@@ -15,6 +26,7 @@ for their kind support.
 * Complex types can be set via [nested environment variables](https://pydantic-docs.helpmanual.io/usage/settings/#parsing-environment-variable-values), e.g. `foo___bar`, #3159 by @Air-Mark
 * add a dark mode to _pydantic_ documentation, #2913 by @gbdlin
 * Add support for autocomplete in VS Code via `__dataclass_transform__`, #2721 by @tiangolo
+* Add "exclude" as a field parameter so that it can be configured using model config, #660 by @daviskirk
 
 ### Changes
 
@@ -102,7 +114,6 @@ for their kind support.
 * stop calling parent class `root_validator` if overridden, #1895 by @PrettyWood
 * Add `repr` (defaults to `True`) parameter to `Field`, to hide it from the default representation of the `BaseModel`, #1831 by @fnep
 * Accept empty query/fragment URL parts, #1807 by @xavier
-* Add "exclude" as a field parameter so that it can be configured using model config instead of purely at `.dict` / `.json` export time, #660 by @daviskirk
 
 ## v1.8.2 (2021-05-11)
 
