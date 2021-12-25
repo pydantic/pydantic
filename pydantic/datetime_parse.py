@@ -55,7 +55,7 @@ iso8601_duration_re = re.compile(
 )
 
 # Support scientific notation
-scientific_notation = re.compile(r'^(?P<sign>[-+]?)' r'(?P<scientific_notation>\d+(.\d+)?[eE][+\-]?\d+)?' r'$')
+scientific_notation = re.compile(r'^(?P<sign>[-+]?)(?P<scientific_notation>\d+(.\d+)?[eE][+\-]?\d+)?$')
 
 EPOCH = datetime(1970, 1, 1)
 # if greater than this, the number is in ms, if less than or equal it's in seconds
@@ -249,7 +249,8 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
         kw['microseconds'] = '-' + kw['microseconds']
 
     if kw.get('scientific_notation'):
-        kw['seconds'] = ("%.17s" % kw.pop('scientific_notation')).rstrip('0').rstrip('.')
+        # convert scientific notation to decimals
+        kw['seconds'] = '{:.8s}'.format(kw.pop('scientific_notation'))
 
     kw_ = {k: float(v) for k, v in kw.items() if v is not None}
 
