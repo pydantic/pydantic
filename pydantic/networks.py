@@ -12,8 +12,8 @@ from ipaddress import (
 from typing import (
     TYPE_CHECKING,
     Any,
+    Collection,
     Dict,
-    FrozenSet,
     Generator,
     Optional,
     Pattern,
@@ -51,7 +51,6 @@ if TYPE_CHECKING:
         query: Optional[str]
         fragment: Optional[str]
 
-
 else:
     email_validator = None
 
@@ -69,6 +68,7 @@ __all__ = [
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
+    'AmqpDsn',
     'RedisDsn',
     'KafkaDsn',
     'validate_email',
@@ -123,7 +123,7 @@ class AnyUrl(str):
     strip_whitespace = True
     min_length = 1
     max_length = 2 ** 16
-    allowed_schemes: Optional[Set[str]] = None
+    allowed_schemes: Optional[Collection[str]] = None
     tld_required: bool = False
     user_required: bool = False
     host_required: bool = True
@@ -249,7 +249,7 @@ class AnyUrl(str):
             raise errors.UrlSchemeError()
 
         if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
-            raise errors.UrlSchemePermittedError(cls.allowed_schemes)
+            raise errors.UrlSchemePermittedError(set(cls.allowed_schemes))
 
         port = parts['port']
         if port is not None and int(port) > 65_535:
@@ -285,6 +285,7 @@ class AnyUrl(str):
             tld = d.group('tld')
             if tld is None and not is_international:
                 d = int_domain_regex().fullmatch(host)
+                assert d is not None
                 tld = d.group('tld')
                 is_international = True
 
@@ -352,6 +353,11 @@ class PostgresDsn(AnyUrl):
     user_required = True
 
 
+class AmqpDsn(AnyUrl):
+    allowed_schemes = {'amqp', 'amqps'}
+    host_required = False
+
+
 class RedisDsn(AnyUrl):
     allowed_schemes = {'redis', 'rediss'}
     host_required = False
@@ -383,7 +389,7 @@ def stricturl(
     max_length: int = 2 ** 16,
     tld_required: bool = True,
     host_required: bool = True,
-    allowed_schemes: Optional[Union[FrozenSet[str], Set[str]]] = None,
+    allowed_schemes: Optional[Collection[str]] = None,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(

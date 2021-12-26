@@ -69,6 +69,36 @@ be if passed directly to the initialiser (as a string).
 Complex types like `list`, `set`, `dict`, and sub-models are populated from the environment
 by treating the environment variable's value as a JSON-encoded string.
 
+Another way to populate nested complex variables is to configure your model with the `env_nested_delimiter`
+config setting, then use an env variable with a name pointing to the nested module fields.
+What it does is simply explodes yor variable into nested models or dicts.
+So if you define a variable `FOO__BAR__BAZ=123` it will convert it into `FOO={'BAR': {'BAZ': 123}}`
+If you have multiple variables with the same structure they will be merged.
+
+With the following environment variables:
+```bash
+# your environment
+export V0=0
+export SUB_MODEL='{"v1": "json-1", "v2": "json-2"}'
+export SUB_MODEL__V2=nested-2
+export SUB_MODEL__V3=3
+export SUB_MODEL__DEEP__V4=v4
+```
+
+You could load a settings module thus:
+```py
+{!.tmp_examples/settings_nested_env.py!}
+```
+
+`env_nested_delimiter` can be configured via the `Config` class as shown above, or via the 
+`_env_nested_delimiter` keyword argument on instantiation.
+
+JSON is only parsed in top-level fields, if you need to parse JSON in sub-models, you will need to implement
+validators on those models.
+
+Nested environment variables take precedence over the top-level environment variable JSON
+(e.g. in the example above, `SUB_MODEL__V2` trumps `SUB_MODEL`).
+
 ## Dotenv (.env) support
 
 !!! note

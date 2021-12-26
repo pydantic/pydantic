@@ -10,7 +10,7 @@ class Model(BaseModel):
     foo: str
 
     @validator('foo')
-    def name_must_contain_space(cls, v):
+    def value_must_equal_bar(cls, v):
         if v != 'bar':
             raise NotABarError(wrong_value=v)
         return v

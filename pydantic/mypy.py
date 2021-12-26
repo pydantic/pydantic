@@ -1,6 +1,8 @@
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
+from pydantic.utils import is_valid_field
+
 try:
     import toml
 except ImportError:  # pragma: no cover
@@ -12,6 +14,7 @@ except ImportError:  # pragma: no cover
 
         warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
         toml = None  # type: ignore
+
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -57,7 +60,7 @@ from mypy.types import (
     Type,
     TypeOfAny,
     TypeType,
-    TypeVarDef,
+    TypeVarLikeType,
     TypeVarType,
     UnionType,
     get_proper_type,
@@ -247,7 +250,7 @@ class PydanticModelTransformer:
                 continue
 
             lhs = stmt.lvalues[0]
-            if not isinstance(lhs, NameExpr):
+            if not isinstance(lhs, NameExpr) or not is_valid_field(lhs.name):
                 continue
 
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
@@ -268,7 +271,9 @@ class PydanticModelTransformer:
                 # Basically, it is an edge case when dealing with complex import logic
                 # This is the same logic used in the dataclasses plugin
                 continue
-            if not isinstance(node, Var):
+            if not isinstance(node, Var):  # pragma: no cover
+                # Don't know if this edge case still happens with the `is_valid_field` check above
+                # but better safe than sorry
                 continue
 
             # x: ClassVar[int] is ignored by dataclasses.
@@ -352,17 +357,17 @@ class PydanticModelTransformer:
         obj_type = ctx.api.named_type('__builtins__.object')
         self_tvar_name = '_PydanticBaseModel'  # Make sure it does not conflict with other names in the class
         tvar_fullname = ctx.cls.fullname + '.' + self_tvar_name
-        tvd = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
+        self_type = TypeVarType(self_tvar_name, tvar_fullname, -1, [], obj_type)
         self_tvar_expr = TypeVarExpr(self_tvar_name, tvar_fullname, [], obj_type)
         ctx.cls.info.names[self_tvar_name] = SymbolTableNode(MDEF, self_tvar_expr)
-        self_type = TypeVarType(tvd)
+
         add_method(
             ctx,
             'construct',
             construct_arguments,
             return_type=self_type,
             self_type=self_type,
-            tvar_def=tvd,
+            tvar_like_type=self_type,
             is_classmethod=True,
         )
 
@@ -614,7 +619,7 @@ def add_method(
     args: List[Argument],
     return_type: Type,
     self_type: Optional[Type] = None,
-    tvar_def: Optional[TypeVarDef] = None,
+    tvar_like_type: Optional[TypeVarLikeType] = None,
     is_classmethod: bool = False,
     is_new: bool = False,
     # is_staticmethod: bool = False,
@@ -651,8 +656,8 @@ def add_method(
 
     function_type = ctx.api.named_type('__builtins__.function')
     signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
-    if tvar_def:
-        signature.variables = [tvar_def]
+    if tvar_like_type:
+        signature.variables = [tvar_like_type]
 
     func = FuncDef(name, args, Block([PassStmt()]))
     func.info = info

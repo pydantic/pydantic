@@ -7,7 +7,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 import pytest
@@ -279,3 +279,93 @@ def test_custom_decode_encode():
     m = Model.parse_raw('${"a": 1, "b": "foo"}$$')
     assert m.dict() == {'a': 1, 'b': 'foo'}
     assert m.json() == '{\n  "a": 1,\n  "b": "foo"\n}'
+
+
+def test_json_nested_encode_models():
+    class Phone(BaseModel):
+        manufacturer: str
+        number: int
+
+    class User(BaseModel):
+        name: str
+        SSN: int
+        birthday: datetime.datetime
+        phone: Phone
+        friend: Optional['User'] = None  # noqa: F821  # https://github.com/PyCQA/pyflakes/issues/567
+
+        class Config:
+            json_encoders = {
+                datetime.datetime: lambda v: v.timestamp(),
+                Phone: lambda v: v.number if v else None,
+                'User': lambda v: v.SSN,
+            }
+
+    User.update_forward_refs()
+
+    iphone = Phone(manufacturer='Apple', number=18002752273)
+    galaxy = Phone(manufacturer='Samsung', number=18007267864)
+
+    timon = User(
+        name='Timon', SSN=123, birthday=datetime.datetime(1993, 6, 1, tzinfo=datetime.timezone.utc), phone=iphone
+    )
+    pumbaa = User(
+        name='Pumbaa', SSN=234, birthday=datetime.datetime(1993, 5, 15, tzinfo=datetime.timezone.utc), phone=galaxy
+    )
+
+    timon.friend = pumbaa
+
+    assert iphone.json(models_as_dict=False) == '{"manufacturer": "Apple", "number": 18002752273}'
+    assert (
+        pumbaa.json(models_as_dict=False)
+        == '{"name": "Pumbaa", "SSN": 234, "birthday": 737424000.0, "phone": 18007267864, "friend": null}'
+    )
+    assert (
+        timon.json(models_as_dict=False)
+        == '{"name": "Timon", "SSN": 123, "birthday": 738892800.0, "phone": 18002752273, "friend": 234}'
+    )
+
+
+def test_custom_encode_fallback_basemodel():
+    class MyExoticType:
+        pass
+
+    def custom_encoder(o):
+        if isinstance(o, MyExoticType):
+            return 'exo'
+        raise TypeError('not serialisable')
+
+    class Foo(BaseModel):
+        x: MyExoticType
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    class Bar(BaseModel):
+        foo: Foo
+
+    assert Bar(foo=Foo(x=MyExoticType())).json(encoder=custom_encoder) == '{"foo": {"x": "exo"}}'
+
+
+def test_custom_encode_error():
+    class MyExoticType:
+        pass
+
+    def custom_encoder(o):
+        raise TypeError('not serialisable')
+
+    class Foo(BaseModel):
+        x: MyExoticType
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    with pytest.raises(TypeError, match='not serialisable'):
+        Foo(x=MyExoticType()).json(encoder=custom_encoder)
+
+
+def test_recursive():
+    class Model(BaseModel):
+        value: Optional[str]
+        nested: Optional[BaseModel]
+
+    assert Model(value=None, nested=Model(value=None)).json(exclude_none=True) == '{"nested": {}}'
