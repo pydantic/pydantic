@@ -1,7 +1,7 @@
 import os
 import warnings
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type, Union
+from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, MutableMapping, Optional, Tuple, Type, Union
 
 from .config import BaseConfig, Extra
 from .fields import ModelField
@@ -147,12 +147,12 @@ class EnvSettingsSource:
         d: Dict[str, Optional[str]] = {}
 
         case_sensitive = settings.__config__.case_sensitive
-        process_env_vars = os.environ if case_sensitive else {k.lower(): v for k, v in os.environ.items()}
-        dotenv_vars = (
-            {}
-            if self.env_file is None
-            else _read_env_files(self.env_file, encoding=self.env_file_encoding, case_sensitive=case_sensitive)
-        )
+        process_env_vars: MutableMapping[str, str]
+        if case_sensitive:
+            process_env_vars = os.environ
+        else:
+            process_env_vars = {k.lower(): v for k, v in os.environ.items()}
+        dotenv_vars = self._read_env_files(case_sensitive)
         env_vars = {**dotenv_vars, **process_env_vars}
 
         for field in settings.__fields__.values():
@@ -181,6 +181,24 @@ class EnvSettingsSource:
                     pass
             d[field.alias] = env_val
         return d
+
+    def _read_env_files(self, case_sensitive: bool) -> Dict[str, Optional[str]]:
+        env_files = self.env_file
+        if env_files is None:
+            return {}
+
+        if isinstance(env_files, (str, os.PathLike)):
+            env_files = [env_files]
+
+        dotenv_vars = {}
+        for env_file in reversed(env_files):
+            env_path = Path(env_file).expanduser()
+            if env_path.is_file():
+                dotenv_vars.update(
+                    read_env_file(env_path, encoding=self.env_file_encoding, case_sensitive=case_sensitive)
+                )
+
+        return dotenv_vars
 
     def __repr__(self) -> str:
         return f'EnvSettingsSource(env_file={self.env_file!r}, env_file_encoding={self.env_file_encoding!r})'
@@ -240,21 +258,3 @@ def read_env_file(
         return {k.lower(): v for k, v in file_vars.items()}
     else:
         return file_vars
-
-
-def _read_env_files(
-    env_files: DotenvType, *, encoding: Optional[str], case_sensitive: bool
-) -> Dict[str, Optional[str]]:
-    if isinstance(env_files, (str, os.PathLike)):
-        env_files = [env_files]
-
-    dotenv_vars = {}
-    for env_file in reversed(env_files):
-        env_path = Path(env_file).expanduser()
-        if not env_path.is_file():
-            continue
-
-        for k, v in read_env_file(env_path, encoding=encoding, case_sensitive=case_sensitive).items():
-            dotenv_vars[k] = v
-
-    return dotenv_vars

@@ -14,7 +14,6 @@ from pydantic.env_settings import (
     SecretsSettingsSource,
     SettingsError,
     SettingsSourceCallable,
-    _read_env_files,
     read_env_file,
 )
 
@@ -787,14 +786,23 @@ def test_read_dotenv_vars(tmp_path):
     prod_env = tmp_path / '.env.prod'
     prod_env.write_text(test_prod_env_file)
 
-    assert _read_env_files(env_files=[prod_env, base_env], encoding='utf8', case_sensitive=False) == {
+    source = EnvSettingsSource(env_file=[prod_env, base_env], env_file_encoding='utf8')
+    assert source._read_env_files(case_sensitive=False) == {
         'debug_mode': 'false',
         'host': 'https://example.com/services',
         'port': '8000',
     }
 
-    with pytest.raises(TypeError):
-        _read_env_files(env_files=[None], encoding=None, case_sensitive=False)
+    assert source._read_env_files(case_sensitive=True) == {
+        'debug_mode': 'false',
+        'host': 'https://example.com/services',
+        'Port': '8000',
+    }
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_dotenv_vars_when_env_file_is_none():
+    assert EnvSettingsSource(env_file=None, env_file_encoding=None)._read_env_files(case_sensitive=False) == {}
 
 
 @pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
