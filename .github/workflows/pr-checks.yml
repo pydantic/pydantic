@@ -1,0 +1,16 @@
+name: PR Guideline Checks
+
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: docker://amirkdv/pydantic-pr-checks:v1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repo: ${{ github.repository }}
+          number: ${{ github.event.number }}
