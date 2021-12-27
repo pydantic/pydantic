@@ -225,7 +225,7 @@ class SecretsSettingsSource:
                                 raise SettingsError(f'error parsing JSON for "{env_name}"') from e
 
                         secrets[field.alias] = secret_value
-                    elif path.exists():
+                    else:
                         warnings.warn(
                             f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
                             stacklevel=4,

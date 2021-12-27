@@ -829,7 +829,8 @@ def test_secrets_uppercase_with_case_sensitive(tmp_path):
 
     with pytest.warns(UserWarning) as record:
         settings = Settings().dict()
-        assert str(record[0].message) == f'Path "{tmp_path}/secret_var" does not exit'
+        path = Path(f'{tmp_path}/secret_var')
+        assert str(record[0].message) == f'Path "{str(path)}" does not exit'
         assert settings == {'SECRET_VAR': 'foo_env_value_str', 'secret_var': None}
 
 
@@ -897,7 +898,8 @@ def test_secrets_missing(tmp_path):
 
     with pytest.warns(UserWarning) as record, pytest.raises(ValidationError) as exc_info:
         Settings()
-        assert str(record[0].message) == f'Path "{tmp_path}/foo" does not exit'
+        path = Path(f'{tmp_path}/secret_var')
+        assert str(record[0].message) == f'Path "{str(path)}" does not exit'
         assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
