@@ -41,6 +41,7 @@ from .fields import (
     SHAPE_SINGLETON,
     SHAPE_TUPLE,
     SHAPE_TUPLE_ELLIPSIS,
+    DeferredType,
     FieldInfo,
     ModelField,
 )
@@ -1029,6 +1030,9 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
     used_constraints: Set[str] = set()
 
     def go(type_: Any) -> Type[Any]:
+        if type_ is DeferredType:
+            used_constraints.update(field_info.get_constraints())
+            return type_
         if (
             is_literal_type(type_)
             or isinstance(type_, ForwardRef)
@@ -1074,6 +1078,9 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if issubclass(origin, Dict):
                 return Dict[args[0], go(args[1])]  # type: ignore
+        elif isinstance(type_, TypeVar):
+            used_constraints.update(field_info.get_constraints())
+            return type_  # type: ignore
 
         attrs: Optional[Tuple[str, ...]] = None
         constraint_func: Optional[Callable[..., type]] = None

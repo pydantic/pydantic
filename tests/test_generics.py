@@ -20,7 +20,7 @@ from typing import (
 import pytest
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
+from pydantic import BaseModel, Field, Json, PositiveInt, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
 
 skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
@@ -1268,3 +1268,49 @@ def test_parse_generic_json():
         'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
         'required': ['payload_field'],
     }
+
+
+@skip_36
+def test_construct_generic_model_with_validation_and_unenforced_constraint():
+    T = TypeVar('T')
+
+    with pytest.raises(ValueError) as exc_info:
+
+        class Page(GenericModel, Generic[T]):
+            page: int = Field(ge=42)
+            items: Sequence[T]
+            unenforced: PositiveInt = Field(..., lt=10)
+
+    assert exc_info.value.args == (
+        'On field "unenforced" the following field constraints are set but not enforced: lt. \n'
+        'For more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints',
+    )
+
+
+@skip_36
+def test_construct_generic_model_with_validation():
+    # based on the test-case from https://github.com/samuelcolvin/pydantic/issues/2581
+    T = TypeVar('T')
+
+    class Page(GenericModel, Generic[T]):
+        page: int = Field(ge=42)
+        items: Sequence[T]
+
+    # Check we can perform this assignment, this is the actual test
+    concrete_model = Page[str]
+    assert concrete_model.__name__ == 'Page[str]'
+
+    # Sanity check the resulting type works as expected
+    valid = concrete_model(page=42, items=[])
+    assert valid.page == 42
+
+    with pytest.raises(ValidationError) as exc_info:
+        concrete_model(page=41, items=[])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('page',),
+            'msg': 'ensure this value is greater than or equal to 42',
+            'type': 'value_error.number.not_ge',
+            'ctx': {'limit_value': 42},
+        }
+    ]

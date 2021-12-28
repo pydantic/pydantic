@@ -526,7 +526,7 @@ class ModelField(Representation):
         e.g. calling it it multiple times may modify the field and configure it incorrectly.
         """
         self._set_default_and_type()
-        if self.type_.__class__ is ForwardRef or self.type_.__class__ is DeferredType:
+        if self.type_.__class__ is ForwardRef or self.type_ is DeferredType:
             # self.type_ is currently a ForwardRef and there's nothing we can do now,
             # user will need to call model.update_forward_refs()
             return
@@ -734,7 +734,7 @@ class ModelField(Representation):
         """
         assert self.discriminator_key is not None
 
-        if self.type_.__class__ is DeferredType:
+        if self.type_ is DeferredType:
             return
 
         assert self.sub_fields is not None
@@ -823,7 +823,7 @@ class ModelField(Representation):
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
 
-        assert self.type_.__class__ is not DeferredType
+        assert self.type_ is not DeferredType
 
         if self.type_.__class__ is ForwardRef:
             assert cls is not None
