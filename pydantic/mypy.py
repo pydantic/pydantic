@@ -8,12 +8,18 @@ try:
 except ImportError:  # pragma: no cover
     # future-proofing for upcoming `mypy` releases which will switch dependencies
     try:
-        import tomli as toml  # type: ignore
+        import tomli as toml  # type: ignore[no-redef]
     except ImportError:
         import warnings
 
         warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
-        toml = None  # type: ignore
+        toml = None  # type: ignore[assignment]
+
+try:
+    from mypy.types import TypeVarDef  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover
+    # Backward-compatible with TypeVarDef from Mypy 0.910.
+    from mypy.types import TypeVarType as TypeVarDef
 
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
@@ -60,7 +66,6 @@ from mypy.types import (
     Type,
     TypeOfAny,
     TypeType,
-    TypeVarLikeType,
     TypeVarType,
     UnionType,
     get_proper_type,
@@ -357,9 +362,15 @@ class PydanticModelTransformer:
         obj_type = ctx.api.named_type('builtins.object')
         self_tvar_name = '_PydanticBaseModel'  # Make sure it does not conflict with other names in the class
         tvar_fullname = ctx.cls.fullname + '.' + self_tvar_name
-        self_type = TypeVarType(self_tvar_name, tvar_fullname, -1, [], obj_type)
+        tvd = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
         self_tvar_expr = TypeVarExpr(self_tvar_name, tvar_fullname, [], obj_type)
         ctx.cls.info.names[self_tvar_name] = SymbolTableNode(MDEF, self_tvar_expr)
+
+        # Backward-compatible with TypeVarDef from Mypy 0.910.
+        if isinstance(tvd, TypeVarType):
+            self_type = tvd
+        else:
+            self_type = TypeVarType(tvd)  # type: ignore[call-arg]
 
         add_method(
             ctx,
@@ -367,7 +378,7 @@ class PydanticModelTransformer:
             construct_arguments,
             return_type=self_type,
             self_type=self_type,
-            tvar_like_type=self_type,
+            tvar_def=tvd,
             is_classmethod=True,
         )
 
@@ -619,7 +630,7 @@ def add_method(
     args: List[Argument],
     return_type: Type,
     self_type: Optional[Type] = None,
-    tvar_like_type: Optional[TypeVarLikeType] = None,
+    tvar_def: Optional[TypeVarDef] = None,
     is_classmethod: bool = False,
     is_new: bool = False,
     # is_staticmethod: bool = False,
@@ -656,8 +667,8 @@ def add_method(
 
     function_type = ctx.api.named_type('builtins.function')
     signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
-    if tvar_like_type:
-        signature.variables = [tvar_like_type]
+    if tvar_def:
+        signature.variables = [tvar_def]
 
     func = FuncDef(name, args, Block([PassStmt()]))
     func.info = info

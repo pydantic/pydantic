@@ -191,7 +191,7 @@ jobs:
     - run: mkdir coverage
 
     - name: run tests
-      run: make test
+      run: pytest --cov=pydantic tests/mypy
       env:
         COVERAGE_FILE: coverage/.coverage.linux-py3.10-mypy${{ matrix.mypy-version }}
         CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
