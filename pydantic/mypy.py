@@ -15,12 +15,6 @@ except ImportError:  # pragma: no cover
         warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
         toml = None  # type: ignore[assignment]
 
-try:
-    from mypy.types import TypeVarDef  # type: ignore[attr-defined]
-except ImportError:  # pragma: no cover
-    # Backward-compatible with TypeVarDef from Mypy 0.910.
-    from mypy.types import TypeVarType as TypeVarDef
-
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -72,6 +66,13 @@ from mypy.types import (
 )
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
+from mypy.version import __version__ as mypy_version
+
+try:
+    from mypy.types import TypeVarDef  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover
+    # Backward-compatible with TypeVarDef from Mypy 0.910.
+    from mypy.types import TypeVarType as TypeVarDef
 
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
@@ -79,6 +80,7 @@ BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
+BUILTINS_NAME = 'builtins' if float(mypy_version) >= 0.930 else '__builtins__'
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
@@ -353,13 +355,13 @@ class PydanticModelTransformer:
         and does not treat settings fields as optional.
         """
         ctx = self._ctx
-        set_str = ctx.api.named_type('builtins.set', [ctx.api.named_type('builtins.str')])
+        set_str = ctx.api.named_type(f'{BUILTINS_NAME}.set', [ctx.api.named_type(f'{BUILTINS_NAME}.str')])
         optional_set_str = UnionType([set_str, NoneType()])
         fields_set_argument = Argument(Var('_fields_set', optional_set_str), optional_set_str, None, ARG_OPT)
         construct_arguments = self.get_field_arguments(fields, typed=True, force_all_optional=False, use_alias=False)
         construct_arguments = [fields_set_argument] + construct_arguments
 
-        obj_type = ctx.api.named_type('builtins.object')
+        obj_type = ctx.api.named_type(f'{BUILTINS_NAME}.object')
         self_tvar_name = '_PydanticBaseModel'  # Make sure it does not conflict with other names in the class
         tvar_fullname = ctx.cls.fullname + '.' + self_tvar_name
         tvd = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
@@ -665,7 +667,7 @@ def add_method(
         arg_names.append(get_name(arg.variable))
         arg_kinds.append(arg.kind)
 
-    function_type = ctx.api.named_type('builtins.function')
+    function_type = ctx.api.named_type(f'{BUILTINS_NAME}.function')
     signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
     if tvar_def:
         signature.variables = [tvar_def]
