@@ -459,7 +459,7 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
 def update_model_forward_refs(
     model: Type[Any],
     fields: Iterable['ModelField'],
-    json_encoders: Dict[Union[Type[Any], str, ForwardRef], AnyCallable],
+    json_encoders: Dict[Union[Type[Any], str], AnyCallable],
     localns: 'DictStrAny',
     exc_to_suppress: Tuple[Type[BaseException], ...] = (),
 ) -> None:

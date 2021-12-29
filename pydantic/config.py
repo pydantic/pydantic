@@ -2,6 +2,7 @@ import json
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, Union
 
+from .typing import AnyCallable
 from .utils import GetterDict
 
 if TYPE_CHECKING:
@@ -11,7 +12,6 @@ if TYPE_CHECKING:
 
     from .fields import ModelField
     from .main import BaseModel
-    from .typing import AnyCallable, ForwardRef
 
     ConfigType = Type['BaseConfig']
 
@@ -59,8 +59,8 @@ class BaseConfig:
     schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
-    # type hint has to be a comment until we drop support for py3.6 due to ForwardRef
-    json_encoders: 'Dict[Union[Type[Any], str, ForwardRef], AnyCallable]' = {}
+    # key type should include ForwardRef, but that breaks with python3.6
+    json_encoders: Dict[Union[Type[Any], str], AnyCallable] = {}
     underscore_attrs_are_private: bool = False
 
     # whether inherited models as fields should be reconstructed as base model
