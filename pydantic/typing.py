@@ -489,7 +489,7 @@ def update_model_forward_refs(
 
         try:
             new_key = evaluate_forwardref(fr, globalns, localns or None)
-        except exc_to_suppress:
+        except exc_to_suppress:  # pragma: no cover
             continue
 
         json_encoders[new_key] = json_encoders.pop(key)
