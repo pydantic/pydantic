@@ -626,3 +626,60 @@ class Model(BaseModel):
     )
 
     assert module.Model.__class_vars__ == {'a'}
+
+
+@skip_pre_37
+def test_json_encoder_str(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    x: str
+
+
+FooUser = User
+
+
+class User(BaseModel):
+    y: str
+
+
+class Model(BaseModel):
+    foo_user: FooUser
+    user: User
+    
+    class Config:
+        json_encoders = {
+            'User': lambda v: f'User({v.y})',
+        }
+"""
+    )
+
+    m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
+    assert m.json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
+
+
+@skip_pre_37
+def test_json_encoder_forward_ref(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+from typing import ForwardRef, List, Optional
+
+class User(BaseModel):
+    name: str
+    friends: Optional[List['User']] = None
+
+    class Config:
+        json_encoders = {
+            ForwardRef('User'): lambda v: f'User({v.name})',
+        }
+"""
+    )
+
+    m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
+    assert m.json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
