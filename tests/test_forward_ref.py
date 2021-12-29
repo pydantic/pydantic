@@ -650,7 +650,7 @@ class User(BaseModel):
 class Model(BaseModel):
     foo_user: FooUser
     user: User
-    
+
     class Config:
         json_encoders = {
             'User': lambda v: f'User({v.y})',
