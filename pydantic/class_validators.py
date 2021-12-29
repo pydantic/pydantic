@@ -54,7 +54,7 @@ def validator(
     check_fields: bool = True,
     whole: bool = None,
     allow_reuse: bool = False,
-) -> Callable[[AnyCallable], classmethod]:
+) -> Callable[[AnyCallable], classmethod]:  # type: ignore[type-arg]
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
@@ -81,7 +81,7 @@ def validator(
         assert each_item is False, '"each_item" and "whole" conflict, remove "whole"'
         each_item = not whole
 
-    def dec(f: AnyCallable) -> classmethod:
+    def dec(f: AnyCallable) -> classmethod:  # type: ignore[type-arg]
         f_cls = _prepare_validator(f, allow_reuse)
         setattr(
             f_cls,
@@ -97,20 +97,20 @@ def validator(
 
 
 @overload
-def root_validator(_func: AnyCallable) -> classmethod:
+def root_validator(_func: AnyCallable) -> classmethod:  # type: ignore[type-arg]
     ...
 
 
 @overload
 def root_validator(
     *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
-) -> Callable[[AnyCallable], classmethod]:
+) -> Callable[[AnyCallable], classmethod]:  # type: ignore[type-arg]
     ...
 
 
 def root_validator(
     _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
-) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
+) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:  # type: ignore[type-arg]
     """
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
     before or after standard model parsing/validation is performed.
@@ -122,7 +122,7 @@ def root_validator(
         )
         return f_cls
 
-    def dec(f: AnyCallable) -> classmethod:
+    def dec(f: AnyCallable) -> classmethod:  # type: ignore[type-arg]
         f_cls = _prepare_validator(f, allow_reuse)
         setattr(
             f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
@@ -132,7 +132,7 @@ def root_validator(
     return dec
 
 
-def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> classmethod:
+def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> classmethod:  # type: ignore[type-arg]
     """
     Avoid validators with duplicated names since without this, validators can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if allow_reuse is False.
@@ -325,7 +325,7 @@ def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set
         return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
 
 
-def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:
+def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:  # type: ignore[type-arg]
     all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])
     return {
         k: v
