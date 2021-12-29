@@ -3,18 +3,6 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as Typi
 
 from pydantic.utils import is_valid_field
 
-try:
-    import toml
-except ImportError:  # pragma: no cover
-    # future-proofing for upcoming `mypy` releases which will switch dependencies
-    try:
-        import tomli as toml  # type: ignore[no-redef]
-    except ImportError:
-        import warnings
-
-        warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
-        toml = None  # type: ignore[assignment]
-
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -132,9 +120,9 @@ class PydanticPluginConfig:
         if options.config_file is None:  # pragma: no cover
             return
 
-        if toml and options.config_file.endswith('.toml'):
-            with open(options.config_file, 'r') as rf:
-                config = toml.load(rf).get('tool', {}).get('pydantic-mypy', {})
+        toml_config = parse_toml(options.config_file)
+        if toml_config is not None:
+            config = toml_config.get('tool', {}).get('pydantic-mypy', {})
             for key in self.__slots__:
                 setting = config.get(key, False)
                 if not isinstance(setting, bool):
@@ -727,3 +715,24 @@ def get_name(x: Union[FuncBase, SymbolNode]) -> str:
     if callable(fn):  # pragma: no cover
         return fn()
     return fn
+
+
+def parse_toml(config_file: str) -> Optional[Dict[str, Any]]:
+    if not config_file.endswith('.toml'):
+        return None
+
+    read_mode = 'rb'
+    try:
+        import tomli as toml_
+    except ImportError:  # pragma: no cover
+        # older versions of mypy have toml as a dependency, not tomli
+        read_mode = 'r'
+        try:
+            import toml as toml_  # type: ignore[no-redef]
+        except ImportError:
+            import warnings
+            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
+            return None
+
+    with open(config_file, read_mode) as rf:
+        return toml_.load(rf)  # type: ignore[arg-type]
