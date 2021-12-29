@@ -724,12 +724,12 @@ def parse_toml(config_file: str) -> Optional[Dict[str, Any]]:
     read_mode = 'rb'
     try:
         import tomli as toml_
-    except ImportError:  # pragma: no cover
+    except ImportError:
         # older versions of mypy have toml as a dependency, not tomli
         read_mode = 'r'
         try:
             import toml as toml_  # type: ignore[no-redef]
-        except ImportError:
+        except ImportError:  # pragma: no cover
             import warnings
 
             warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
