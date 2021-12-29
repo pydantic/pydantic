@@ -228,6 +228,7 @@ if TYPE_CHECKING:
     MappingIntStrAny = Mapping[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
     ReprArgs = Sequence[Tuple[Optional[str], Any]]
+    AnyClassMethod = classmethod[Any]
 
 __all__ = (
     'ForwardRef',
@@ -258,6 +259,7 @@ __all__ = (
     'DictIntStrAny',
     'CallableGenerator',
     'ReprArgs',
+    'AnyClassMethod',
     'CallableGenerator',
     'WithArgsTypes',
     'get_args',

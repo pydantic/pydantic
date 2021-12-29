@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     from .types import ModelOrDc
     from .typing import (
         AbstractSetIntStr,
+        AnyClassMethod,
         CallableGenerator,
         DictAny,
         DictStrAny,
@@ -890,7 +891,7 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: Dict[str, classmethod] = None,  # type: ignore[type-arg]
+    __validators__: Dict[str, 'AnyClassMethod'] = None,
     **field_definitions: Any,
 ) -> Type['BaseModel']:
     ...
@@ -903,7 +904,7 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: Union[Type['Model'], Tuple[Type['Model'], ...]],
     __module__: str = __name__,
-    __validators__: Dict[str, classmethod] = None,  # type: ignore[type-arg]
+    __validators__: Dict[str, 'AnyClassMethod'] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     ...
@@ -915,7 +916,7 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: Union[None, Type['Model'], Tuple[Type['Model'], ...]] = None,
     __module__: str = __name__,
-    __validators__: Dict[str, classmethod] = None,  # type: ignore[type-arg]
+    __validators__: Dict[str, 'AnyClassMethod'] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     """
