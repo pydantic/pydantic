@@ -185,6 +185,9 @@ jobs:
         make install-testing
         pip freeze
 
+    - name: uninstall deps
+      run: pip uninstall -y mypy tomli toml
+
     - name: install specific mypy version
       run: pip install mypy==${{ matrix.mypy-version }}
 
