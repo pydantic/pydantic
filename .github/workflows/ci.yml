@@ -164,8 +164,52 @@ jobs:
         name: coverage
         path: coverage
 
+  test-old-mypy:
+    name: test mypy v${{ matrix.mypy-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mypy-version: ['0.910', '0.920', '0.921']
+    env:
+      PYTHON: '3.10'
+      OS: linux
+      COMPILED: no
+      DEPS: yes
+      MYPY: ${{ matrix.mypy-version }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - name: install
+      run: |
+        make install-testing
+        pip freeze
+
+    - name: install specific mypy version
+      run: pip install mypy==${{ matrix.mypy-version }}
+
+    - run: mkdir coverage
+
+    - name: run tests
+      run: make test
+      env:
+        COVERAGE_FILE: coverage/.coverage.linux-py3.10-mypy${{ matrix.mypy-version }}
+        CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
+
+    - name: store coverage files
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage
+        path: coverage
+
   coverage-combine:
-    needs: [test-linux, test-windows-mac]
+    needs: [test-linux, test-windows-mac, test-old-mypy]
     runs-on: ubuntu-latest
 
     steps:
@@ -236,7 +280,7 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux, test-windows-mac, test-fastapi, benchmark]
+    needs: [lint, test-linux, test-windows-mac, test-old-mypy, test-fastapi, benchmark]
     if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
