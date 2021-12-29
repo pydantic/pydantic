@@ -61,6 +61,7 @@ MS_WATERSHED = int(2e10)
 # slightly more than datetime.max in ns - (datetime.max - EPOCH).total_seconds() * 1e9
 MAX_NUMBER = int(3e20)
 StrBytesIntFloat = Union[str, bytes, int, float]
+INF = float('infinity')
 
 
 def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[None, int, float]:
@@ -117,6 +118,10 @@ def parse_date(value: Union[date, StrBytesIntFloat]) -> date:
 
     number = get_numeric(value, 'date')
     if number is not None:
+        if number == INF:
+            return date.max
+        elif number == -INF:
+            return date.min
         return from_unix_seconds(number).date()
 
     if isinstance(value, bytes):
@@ -187,6 +192,10 @@ def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
 
     number = get_numeric(value, 'datetime')
     if number is not None:
+        if number == INF:
+            return datetime.max
+        elif number == -INF:
+            return datetime.min
         return from_unix_seconds(number)
 
     if isinstance(value, bytes):
