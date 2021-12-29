@@ -1,8 +1,6 @@
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
-from pydantic.utils import is_valid_field
-
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -55,6 +53,8 @@ from mypy.types import (
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 from mypy.version import __version__ as mypy_version
+
+from pydantic.utils import is_valid_field
 
 try:
     from mypy.types import TypeVarDef  # type: ignore[attr-defined]
@@ -731,6 +731,7 @@ def parse_toml(config_file: str) -> Optional[Dict[str, Any]]:
             import toml as toml_  # type: ignore[no-redef]
         except ImportError:
             import warnings
+
             warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
             return None
 
