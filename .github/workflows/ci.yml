@@ -138,7 +138,7 @@ jobs:
       COMPILED: no
       DEPS: yes
 
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
     - uses: actions/checkout@v2
 
@@ -171,12 +171,6 @@ jobs:
       fail-fast: false
       matrix:
         mypy-version: ['0.910', '0.920', '0.921']
-    env:
-      PYTHON: '3.10'
-      OS: linux
-      COMPILED: no
-      DEPS: yes
-      MYPY: ${{ matrix.mypy-version }}
 
     steps:
     - uses: actions/checkout@v2
@@ -293,7 +287,7 @@ jobs:
         - os: windows
           ls: dir
 
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
     - uses: actions/checkout@v2
 
