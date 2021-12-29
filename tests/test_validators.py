@@ -1,6 +1,7 @@
 from collections import deque
 from datetime import datetime
 from enum import Enum
+from inspect import Parameter, signature
 from itertools import product
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -1021,6 +1022,12 @@ def test_reuse_global_validators():
         double_y = validator('y', allow_reuse=True)(reusable_validator)
 
     assert dict(Model(x=1, y=1)) == {'x': 2, 'y': 2}
+
+
+def test_signature_with_reused_validators():
+    assert list(signature(reusable_validator).parameters.values())[0] == Parameter(
+        'num', Parameter.POSITIONAL_OR_KEYWORD
+    )
 
 
 def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):

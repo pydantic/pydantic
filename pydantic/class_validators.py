@@ -57,7 +57,7 @@ def validator(
     check_fields: bool = True,
     whole: bool = None,
     allow_reuse: bool = False,
-) -> Callable[[AnyCallable], 'AnyClassMethod']:
+) -> Union[AnyCallable, 'AnyClassMethod']:
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
@@ -84,14 +84,14 @@ def validator(
         assert each_item is False, '"each_item" and "whole" conflict, remove "whole"'
         each_item = not whole
 
-    def dec(f: AnyCallable) -> 'AnyClassMethod':
-        f_cls = _prepare_validator(f, allow_reuse)
+    def dec(f: AnyCallable) -> Union[AnyCallable, 'AnyClassMethod']:
+        f_cls, function = _prepare_validator(f, allow_reuse)
         setattr(
             f_cls,
             VALIDATOR_CONFIG_KEY,
             (
                 fields,
-                Validator(func=f_cls.__func__, pre=pre, each_item=each_item, always=always, check_fields=check_fields),
+                Validator(func=function, pre=pre, each_item=each_item, always=always, check_fields=check_fields),
             ),
         )
         return f_cls
@@ -113,40 +113,38 @@ def root_validator(
 
 def root_validator(
     _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
-) -> Union['AnyClassMethod', Callable[[AnyCallable], 'AnyClassMethod']]:
+) -> Union[AnyCallable, 'AnyClassMethod']:
     """
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
     before or after standard model parsing/validation is performed.
     """
     if _func:
-        f_cls = _prepare_validator(_func, allow_reuse)
-        setattr(
-            f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
-        )
+        f_cls, function = _prepare_validator(_func, allow_reuse)
+        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=function, pre=pre, skip_on_failure=skip_on_failure))
         return f_cls
 
-    def dec(f: AnyCallable) -> 'AnyClassMethod':
-        f_cls = _prepare_validator(f, allow_reuse)
-        setattr(
-            f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
-        )
+    def dec(f: AnyCallable) -> Union[AnyCallable, 'AnyClassMethod']:
+        f_cls, function = _prepare_validator(f, allow_reuse)
+        setattr(f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=function, pre=pre, skip_on_failure=skip_on_failure))
         return f_cls
 
     return dec
 
 
-def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> 'AnyClassMethod':
+def _prepare_validator(
+    function: AnyCallable, allow_reuse: bool
+) -> Tuple[Union[AnyCallable, 'AnyClassMethod'], AnyCallable]:
     """
     Avoid validators with duplicated names since without this, validators can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if allow_reuse is False.
     """
-    f_cls = function if isinstance(function, classmethod) else classmethod(function)
+    f_cls, func = _prepare_function(function)
     if not in_ipython() and not allow_reuse:
-        ref = f_cls.__func__.__module__ + '.' + f_cls.__func__.__qualname__
+        ref = func.__module__ + '.' + func.__qualname__
         if ref in _FUNCS:
             raise ConfigError(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
-    return f_cls
+    return f_cls, func
 
 
 class ValidatorGroup:
@@ -335,3 +333,17 @@ def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, 'AnyClassMethod']:
         for k, v in all_attributes.items()
         if hasattr(v, VALIDATOR_CONFIG_KEY) or hasattr(v, ROOT_VALIDATOR_CONFIG_KEY)
     }
+
+
+def _prepare_function(function: AnyCallable) -> Tuple[Union[AnyCallable, 'AnyClassMethod'], AnyCallable]:
+    from inspect import getmodule, isfunction
+
+    f_cls = function
+    if isfunction(function):
+        # retrieve class with qualname of the function
+        cls = getattr(getmodule(function), function.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0], None)
+        if cls:
+            f_cls = classmethod(function)
+    if isinstance(function, classmethod):
+        function = function.__func__
+    return f_cls, function
