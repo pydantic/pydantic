@@ -8,4 +8,3 @@ pre-commit==2.16.0
 pycodestyle==2.8.0
 pyflakes==2.4.0
 twine==3.7.1
-types-toml==0.10.1
