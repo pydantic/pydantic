@@ -451,6 +451,8 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
     """
     try:
         origin = get_origin(type_)
+        if origin is None:  # Python 3.6
+            origin = type_
         if issubclass(origin, Type):  # type: ignore
             if not get_args(type_) or not isinstance(get_args(type_)[0], type):
                 return True
