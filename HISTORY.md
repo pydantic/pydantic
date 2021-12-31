@@ -1,20 +1,9 @@
-## v1.9.0a2 (2021-12-24)
-
-* support generic models with discriminated union, #3551 by @PrettyWood
-* keep old behaviour of `json()` by default, #3542 by @PrettyWood
-* Removed typing-only `__root__` attribute from `BaseModel`, #3540 by @layday
-* Build Python 3.10 wheels, #3539 by @mbachry
-* Fix display of `extra` fields with model `__repr__`, #3234 by @cocolman
-* models copied via `Config.copy_on_model_validation` always have all fields, #3201 by @PrettyWood
-* nested ORM from nested dictionaries, #3182 by @PrettyWood
-* fix link to discriminated union section by @PrettyWood
-
-## v1.9.0a1 (2021-12-18)
+## v1.9.0 (2021-12-31)
 
 Thank you to pydantic's sponsors:
-@timdrijvers, @toinbis, @koxudaxi, @ginomempin, @primer-io, @and-semakin, @westonsteimel, @reillysiemens, @es3n1n, 
-@jokull, @JonasKs, @Rehket, @corleyma, @daddycocoaman, @hardbyte, @datarootsio, @jodal, @aminalaee, @rafsaf, 
-@jqueguiner, @chdsbd, @kevinalh, @Mazyod, @grillazz, @JonasKs
+@sthagen, @timdrijvers, @toinbis, @koxudaxi, @ginomempin, @primer-io, @and-semakin, @westonsteimel, @reillysiemens,
+@es3n1n, @jokull, @JonasKs, @Rehket, @corleyma, @daddycocoaman, @hardbyte, @datarootsio, @jodal, @aminalaee, @rafsaf, 
+@jqueguiner, @chdsbd, @kevinalh, @Mazyod, @grillazz, @JonasKs, @simw, @leynier, @xfenix
 for their kind support.
 
 ### Highlights
@@ -28,7 +17,22 @@ for their kind support.
 * Add support for autocomplete in VS Code via `__dataclass_transform__`, #2721 by @tiangolo
 * Add "exclude" as a field parameter so that it can be configured using model config, #660 by @daviskirk
 
-### Changes
+### v1.9.0 (2021-12-31) Changes
+
+* Apply `update_forward_refs` to `Config.json_encodes` prevent name clashes in types defined via strings, #3583 by @samuelcolvin
+
+### v1.9.0a2 (2021-12-24) Changes
+
+* support generic models with discriminated union, #3551 by @PrettyWood
+* keep old behaviour of `json()` by default, #3542 by @PrettyWood
+* Removed typing-only `__root__` attribute from `BaseModel`, #3540 by @layday
+* Build Python 3.10 wheels, #3539 by @mbachry
+* Fix display of `extra` fields with model `__repr__`, #3234 by @cocolman
+* models copied via `Config.copy_on_model_validation` always have all fields, #3201 by @PrettyWood
+* nested ORM from nested dictionaries, #3182 by @PrettyWood
+* fix link to discriminated union section by @PrettyWood
+
+### v1.9.0a1 (2021-12-18) Changes
 
 * Add support for `Decimal`-specific validation configurations in `Field()`, additionally to using `condecimal()`, 
   to allow better support from editors and tooling, #3507 by @tiangolo
