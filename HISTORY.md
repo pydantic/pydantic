@@ -20,6 +20,7 @@ for their kind support.
 ### v1.9.0 (2021-12-31) Changes
 
 * Apply `update_forward_refs` to `Config.json_encodes` prevent name clashes in types defined via strings, #3583 by @samuelcolvin
+* Extend pydantic's mypy plugin to support mypy versions `0.910`, `0.920`, `0.921` & `0.930`, #3573 & #3594 by @PrettyWood, @christianbundy, @samuelcolvin
 
 ### v1.9.0a2 (2021-12-24) Changes
 
