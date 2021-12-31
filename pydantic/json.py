@@ -103,10 +103,7 @@ def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]]
         try:
             encoder = type_encoders[base]
         except KeyError:
-            try:
-                encoder = type_encoders[base.__name__]
-            except KeyError:
-                continue
+            continue
 
         return encoder(obj)
     else:  # We have exited the for loop without finding a suitable encoder

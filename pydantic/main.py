@@ -770,14 +770,14 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         Same as update_forward_refs but will not raise exception
         when forward references are not defined.
         """
-        update_model_forward_refs(cls, cls.__fields__.values(), {}, (NameError,))
+        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, {}, (NameError,))
 
     @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
         """
         Try to update ForwardRefs on fields based on this Model, globalns and localns.
         """
-        update_model_forward_refs(cls, cls.__fields__.values(), localns)
+        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, localns)
 
     def __iter__(self) -> 'TupleGenerator':
         """
