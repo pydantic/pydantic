@@ -72,7 +72,6 @@ def test_interval_validation_error():
     ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason='output slightly different for 3.6')
 def test_error_on_optional():
     class Foobar(BaseModel):
         foo: Optional[str] = None

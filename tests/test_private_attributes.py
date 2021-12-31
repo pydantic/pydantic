@@ -7,8 +7,6 @@ from pydantic import BaseModel, Extra, PrivateAttr
 from pydantic.fields import Undefined
 from pydantic.generics import GenericModel
 
-skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
-
 
 def test_private_attribute():
     default = {'a': {}}
@@ -186,7 +184,6 @@ def test_config_override_init():
     assert m._private_attr == 123
 
 
-@skip_36
 def test_generic_private_attribute():
     T = TypeVar('T')
 

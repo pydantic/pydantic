@@ -2316,9 +2316,6 @@ class MyModel(BaseModel):
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
 def test_schema_for_generic_field():
     T = TypeVar('T')
 
@@ -2395,9 +2392,6 @@ def test_namedtuple_default():
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
 def test_advanced_generic_schema():
     T = TypeVar('T')
     K = TypeVar('K')
@@ -2508,9 +2502,6 @@ def test_advanced_generic_schema():
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
 def test_nested_generic():
     """
     Test a nested BaseModel that is also a Generic
@@ -2545,9 +2536,6 @@ def test_nested_generic():
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
 def test_nested_generic_model():
     """
     Test a nested GenericModel
@@ -2576,9 +2564,6 @@ def test_nested_generic_model():
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
 def test_complex_nested_generic():
     """
     Handle a union of a generic.
