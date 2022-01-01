@@ -1,12 +1,14 @@
 import sys
+from collections.abc import Callable
 from os import PathLike
-from collections.abc import Callable as Callable
 from typing import (  # type: ignore
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable as TypingCallable,
     ClassVar,
     Dict,
+    ForwardRef,
     Generator,
     Iterable,
     List,
@@ -21,8 +23,6 @@ from typing import (  # type: ignore
     _eval_type,
     cast,
     get_type_hints,
-    ForwardRef,
-    Callable as TypingCallable
 )
 
 from typing_extensions import Annotated, Literal
@@ -77,7 +77,8 @@ if sys.version_info < (3, 8):
 
     def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
         if type(t).__name__ in AnnotatedTypeNames:
-            return Type[Any]
+            # weirdly this is a runtime requirement, as well as for mypy
+            return cast(Type[Any], Annotated)
         return getattr(t, '__origin__', None)
 
 else:
@@ -451,8 +452,6 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
     """
     try:
         origin = get_origin(type_)
-        if origin is None:  # Python 3.6
-            origin = type_
         if issubclass(origin, Type):  # type: ignore
             if not get_args(type_) or not isinstance(get_args(type_)[0], type):
                 return True

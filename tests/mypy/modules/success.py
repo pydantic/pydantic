@@ -5,7 +5,6 @@ Do a little skipping about with types to demonstrate its usage.
 """
 import json
 import os
-import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path, PurePath
 from typing import Any, Dict, Generic, List, Optional, TypeVar
@@ -136,8 +135,10 @@ assert m_copy.list_of_ints == m_from_obj.list_of_ints
 
 T = TypeVar('T')
 
+
 class WrapperModel(GenericModel, Generic[T]):
     payload: T
+
 
 int_instance = WrapperModel[int](payload=1)
 int_instance.payload += 1
