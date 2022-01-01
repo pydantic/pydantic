@@ -409,7 +409,7 @@ def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) 
 def update_model_forward_refs(
     model: Type[Any],
     fields: Iterable['ModelField'],
-    json_encoders: Dict[Union[Type[Any], str], AnyCallable],
+    json_encoders: Dict[Union[Type[Any], str, ForwardRef], AnyCallable],
     localns: 'DictStrAny',
     exc_to_suppress: Tuple[Type[BaseException], ...] = (),
 ) -> None:
@@ -450,15 +450,14 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
     Tries to get the class of a Type[T] annotation. Returns True if Type is used
     without brackets. Otherwise returns None.
     """
-    try:
-        origin = get_origin(type_)
-        if issubclass(origin, Type):  # type: ignore
-            if not get_args(type_) or not isinstance(get_args(type_)[0], type):
-                return True
-            return get_args(type_)[0]
-    except (AttributeError, TypeError):
-        pass
-    return None
+    if get_origin(type_) is None:
+        return None
+
+    args = get_args(type_)
+    if not args or not isinstance(args[0], type):
+        return True
+    else:
+        return args[0]
 
 
 def get_sub_types(tp: Any) -> List[Any]:
