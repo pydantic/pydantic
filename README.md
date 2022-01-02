@@ -8,10 +8,10 @@
 [![versions](https://img.shields.io/pypi/pyversions/pydantic.svg)](https://github.com/samuelcolvin/pydantic)
 [![license](https://img.shields.io/github/license/samuelcolvin/pydantic.svg)](https://github.com/samuelcolvin/pydantic/blob/master/LICENSE)
 
-Data validation and settings management using Python type hinting.
+Data validation and settings management using Python type hints.
 
 Fast and extensible, *pydantic* plays nicely with your linters/IDE/brain.
-Define how data should be in pure, canonical Python 3.6+; validate it with *pydantic*.
+Define how data should be in pure, canonical Python 3.7+; validate it with *pydantic*.
 
 ## Help
 
