@@ -103,6 +103,9 @@ def __dataclass_transform__(
 ) -> Callable[[_T], _T]:
     return lambda a: a
 
+def _guard_list_of_dicts(obj: Any) -> bool:
+    if obj and isinstance(obj, (list, tuple)) and isinstance(obj[0], dict):
+        raise ValueError('List of dictionaries as an input will return invalid results')
 
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
@@ -504,6 +507,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         obj = cls._enforce_dict_if_root(obj)
         if not isinstance(obj, dict):
             try:
+                _guard_list_of_dicts(obj)
                 obj = dict(obj)
             except (TypeError, ValueError) as e:
                 exc = TypeError(f'{cls.__name__} expected dict not {obj.__class__.__name__}')
@@ -678,6 +682,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return cls.from_orm(value)
         else:
             try:
+                _guard_list_of_dicts(value)
                 value_as_dict = dict(value)
             except (TypeError, ValueError) as e:
                 raise DictError() from e
