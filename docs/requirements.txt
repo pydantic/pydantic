@@ -6,7 +6,7 @@ markdown-include==0.6.0
 mdx-truly-sane-lists==1.2
 mkdocs==1.2.3
 mkdocs-exclude==1.0.2
-mkdocs-material==8.1.3
+mkdocs-material==8.1.4
 sqlalchemy
 orjson
 ujson
