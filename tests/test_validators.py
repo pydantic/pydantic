@@ -2,7 +2,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from itertools import product
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytest
 from typing_extensions import Literal
@@ -1301,3 +1301,23 @@ def test_overridden_root_validators(mocker):
 
     B(x='pika')
     assert validate_stub.call_args_list == [mocker.call('B', 'pre'), mocker.call('B', 'post')]
+
+
+def test_union_list_of_dicts():
+    class KV(BaseModel):
+        key: str
+        type: Optional[str]
+        value: Any
+    
+    class TestModel(BaseModel):
+        input_1: Union[KV, List[KV]]
+        input_2: Union[List[KV], KV]
+    
+    data = [
+        {"key": "key_a", "value": "value_a"},
+        {"key": "key_b", "value": "value_b"},
+    ]
+
+    tm = TestModel(input_1 = data, input_2 = data)
+
+    assert tm.input_1 == tm.input_2
