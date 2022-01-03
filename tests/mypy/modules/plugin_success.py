@@ -1,4 +1,4 @@
-from typing import ClassVar, Generic, Optional, TypeVar, Union, List
+from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, BaseSettings, Field, create_model, validator
 from pydantic.dataclasses import dataclass
