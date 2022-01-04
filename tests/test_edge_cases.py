@@ -896,7 +896,9 @@ def test_inheritance_subclass_default():
         y: MyStr = MyStr('test')  # force subtype
 
     assert Sub.__fields__['x'].type_ == str
+    assert Sub.__fields__['x'].outer_type_ == str
     assert Sub.__fields__['y'].type_ == MyStr
+    assert Sub.__fields__['y'].outer_type_ == MyStr
 
 
 def test_invalid_type():

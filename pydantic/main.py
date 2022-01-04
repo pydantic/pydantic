@@ -229,6 +229,7 @@ class ModelMetaclass(ABCMeta):
                     if var_name in fields:
                         if lenient_issubclass(inferred.type_, fields[var_name].type_):
                             inferred.type_ = fields[var_name].type_
+                            inferred.outer_type_ = fields[var_name].outer_type_
                         else:
                             raise TypeError(
                                 f'The type of {name}.{var_name} differs from the new default value; '
