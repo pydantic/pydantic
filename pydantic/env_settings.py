@@ -1,5 +1,6 @@
 import os
 import warnings
+from json import JSONDecodeError
 from pathlib import Path
 from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Tuple, Type, Union
 
@@ -183,7 +184,7 @@ class EnvSettingsSource:
             if is_complex:
                 if env_val is None:
                     # field is complex but no value found so far, try explode_env_vars
-                    env_val_built = self.explode_env_vars(field, env_vars)
+                    env_val_built = self.explode_env_vars(field, env_vars, settings)
                     if env_val_built:
                         d[field.alias] = env_val_built
                 else:
@@ -195,7 +196,7 @@ class EnvSettingsSource:
                             raise SettingsError(f'error parsing JSON for "{env_name}"') from e
 
                     if isinstance(env_val, dict):
-                        d[field.alias] = deep_update(env_val, self.explode_env_vars(field, env_vars))
+                        d[field.alias] = deep_update(env_val, self.explode_env_vars(field, env_vars, settings))
                     else:
                         d[field.alias] = env_val
             elif env_val is not None:
@@ -217,7 +218,9 @@ class EnvSettingsSource:
 
         return True, allow_json_failure
 
-    def explode_env_vars(self, field: ModelField, env_vars: Mapping[str, Optional[str]]) -> Dict[str, Any]:
+    def explode_env_vars(
+        self, field: ModelField, env_vars: Mapping[str, Optional[str]], settings: BaseSettings
+    ) -> Dict[str, Any]:
         """
         Process env_vars and extract the values of keys containing env_nested_delimiter into nested dictionaries.
 
@@ -232,7 +235,16 @@ class EnvSettingsSource:
             env_var = result
             for key in keys:
                 env_var = env_var.setdefault(key, {})
-            env_var[last_key] = env_val
+
+            if env_val:
+                try:
+                    env_val = settings.__config__.json_loads(env_val)
+                except JSONDecodeError:
+                    ...
+            if isinstance(env_val, dict):
+                env_var[last_key] = deep_update(env_var.get(last_key, {}), env_val)
+            else:
+                env_var[last_key] = env_val
 
         return result
 

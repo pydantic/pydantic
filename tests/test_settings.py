@@ -93,6 +93,8 @@ def test_merge_dict(env):
 def test_nested_env_delimiter(env):
     class SubSubValue(BaseSettings):
         v6: str
+        v7: str
+        v8: int
 
     class SubValue(BaseSettings):
         v4: str
@@ -113,6 +115,7 @@ def test_nested_env_delimiter(env):
         class Config:
             env_nested_delimiter = '__'
 
+    env.set('top__sub', '{"sub_sub": {"v7": 7}}')
     env.set('top', '{"v1": "json-1", "v2": "json-2", "sub": {"v5": "xx"}}')
     env.set('top__sub__v5', '5')
     env.set('v0', '0')
@@ -120,6 +123,7 @@ def test_nested_env_delimiter(env):
     env.set('top__v3', '3')
     env.set('v0_union', '0')
     env.set('top__sub__sub_sub__v6', '6')
+    env.set('top__sub__sub_sub', '{"v8": 8}')
     env.set('top__sub__v4', '4')
     cfg = Cfg()
     assert cfg.dict() == {
@@ -129,7 +133,7 @@ def test_nested_env_delimiter(env):
             'v1': 'json-1',
             'v2': '2',
             'v3': '3',
-            'sub': {'v4': '4', 'v5': 5, 'sub_sub': {'v6': '6'}},
+            'sub': {'v4': '4', 'v5': 5, 'sub_sub': {'v6': '6', 'v7': '7', 'v8': 8}},
         },
     }
 
