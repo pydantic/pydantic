@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     from .types import ModelOrDc
     from .typing import (
         AbstractSetIntStr,
+        AnyClassMethod,
         CallableGenerator,
         DictAny,
         DictStrAny,
@@ -454,6 +455,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
+        models_as_dict: bool = True,
         **dumps_kwargs: Any,
     ) -> str:
         """
@@ -469,11 +471,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             exclude_unset = skip_defaults
         encoder = cast(Callable[[Any], Any], encoder or self.__json_encoder__)
 
-        # We don't directly call `self.dict()`, which does exactly the same thing but
-        # with `to_dict = True` because we want to keep raw `BaseModel` instances and not as `dict`.
+        # We don't directly call `self.dict()`, which does exactly this with `to_dict=True`
+        # because we want to be able to keep raw `BaseModel` instances and not as `dict`.
         # This allows users to write custom JSON encoders for given `BaseModel` classes.
         data = dict(
             self._iter(
+                to_dict=models_as_dict,
                 by_alias=by_alias,
                 include=include,
                 exclude=exclude,
@@ -769,14 +772,14 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         Same as update_forward_refs but will not raise exception
         when forward references are not defined.
         """
-        update_model_forward_refs(cls, cls.__fields__.values(), {}, (NameError,))
+        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, {}, (NameError,))
 
     @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
         """
         Try to update ForwardRefs on fields based on this Model, globalns and localns.
         """
-        update_model_forward_refs(cls, cls.__fields__.values(), localns)
+        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, localns)
 
     def __iter__(self) -> 'TupleGenerator':
         """
@@ -890,7 +893,7 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: Dict[str, classmethod] = None,
+    __validators__: Dict[str, 'AnyClassMethod'] = None,
     **field_definitions: Any,
 ) -> Type['BaseModel']:
     ...
@@ -903,7 +906,7 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: Union[Type['Model'], Tuple[Type['Model'], ...]],
     __module__: str = __name__,
-    __validators__: Dict[str, classmethod] = None,
+    __validators__: Dict[str, 'AnyClassMethod'] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     ...
@@ -915,7 +918,7 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: Union[None, Type['Model'], Tuple[Type['Model'], ...]] = None,
     __module__: str = __name__,
-    __validators__: Dict[str, classmethod] = None,
+    __validators__: Dict[str, 'AnyClassMethod'] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     """

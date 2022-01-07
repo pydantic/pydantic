@@ -109,6 +109,9 @@ _(This script is complete, it should run "as is")_
 
 ### Serialising self-reference or other models
 
+By default, models are serialised as dictionaries.
+If you want to serialise them differently, you can add `models_as_dict=False` when calling `json()` method
+and add the classes of the model in `json_encoders`.
 In case of forward references, you can use a string with the class name instead of the class itself
 ```py
 {!.tmp_examples/exporting_models_json_forward_ref.py!}

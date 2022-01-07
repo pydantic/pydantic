@@ -50,6 +50,7 @@ from .utils import (
     ValueItems,
     get_discriminator_alias_and_values,
     get_unique_discriminator_alias,
+    lenient_isinstance,
     lenient_issubclass,
     sequence_like,
     smart_deepcopy,
@@ -732,6 +733,10 @@ class ModelField(Representation):
         Note that this process can be aborted if a `ForwardRef` is encountered
         """
         assert self.discriminator_key is not None
+
+        if self.type_.__class__ is DeferredType:
+            return
+
         assert self.sub_fields is not None
         sub_fields_mapping: Dict[str, 'ModelField'] = {}
         all_aliases: Set[str] = set()
@@ -1048,7 +1053,7 @@ class ModelField(Representation):
                             return v, None
                     except TypeError:
                         # compound type
-                        if isinstance(v, get_origin(field.outer_type_)):
+                        if lenient_isinstance(v, get_origin(field.outer_type_)):
                             value, error = field.validate(v, values, loc=loc, cls=cls)
                             if not error:
                                 return value, None
@@ -1130,7 +1135,6 @@ class ModelField(Representation):
     def _type_display(self) -> PyObjectStr:
         t = display_as_type(self.type_)
 
-        # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
         if self.shape in MAPPING_LIKE_SHAPES:
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:

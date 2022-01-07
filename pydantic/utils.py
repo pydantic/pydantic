@@ -53,6 +53,7 @@ __all__ = (
     'import_string',
     'sequence_like',
     'validate_field_name',
+    'lenient_isinstance',
     'lenient_issubclass',
     'in_ipython',
     'deep_update',
@@ -163,9 +164,16 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...]]) -> bool:
+def lenient_isinstance(o: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]) -> bool:
     try:
-        return isinstance(cls, type) and issubclass(cls, class_or_tuple)
+        return isinstance(o, class_or_tuple)  # type: ignore[arg-type]
+    except TypeError:
+        return False
+
+
+def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]) -> bool:
+    try:
+        return isinstance(cls, type) and issubclass(cls, class_or_tuple)  # type: ignore[arg-type]
     except TypeError:
         if isinstance(cls, WithArgsTypes):
             return False
@@ -566,7 +574,8 @@ class ValueItems(Representation):
         elif isinstance(items, AbstractSet):
             items = dict.fromkeys(items, ...)
         else:
-            raise TypeError(f'Unexpected type of exclude value {items.__class__}')
+            class_name = getattr(items, '__class__', '???')
+            raise TypeError(f'Unexpected type of exclude value {class_name}')
         return items
 
     @classmethod
