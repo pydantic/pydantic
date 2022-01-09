@@ -199,7 +199,7 @@ class Color(Representation):
         return [(None, self.as_named(fallback=True))] + [('rgb', self.as_rgb_tuple())]  # type: ignore
 
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Color) and self._original == other._original
+        return isinstance(other, Color) and self.original() == other.original()
 
 
 def parse_tuple(value: Tuple[Any, ...]) -> RGBA:

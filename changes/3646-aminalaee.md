@@ -1,1 +1,1 @@
-Add comparison method for `Color` objects.
+Add comparison method for `Color` class.
