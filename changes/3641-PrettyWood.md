@@ -1,1 +1,1 @@
-`Config.copy_on_model_validation\` does a deep copy and not a shallow one
+`Config.copy_on_model_validation` does a deep copy and not a shallow one
