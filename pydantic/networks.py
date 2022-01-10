@@ -25,13 +25,14 @@ from typing import (
     no_type_check,
 )
 
+from typing_extensions import TypedDict
+
 from . import errors
 from .utils import Representation, update_not_none
 from .validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:
     import email_validator
-    from typing_extensions import TypedDict
 
     from .config import BaseConfig
     from .fields import ModelField
@@ -53,6 +54,10 @@ if TYPE_CHECKING:
 
 else:
     email_validator = None
+
+    class Parts(dict):
+        pass
+
 
 NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, int]]]
 
@@ -176,6 +181,18 @@ class AnyUrl(str):
         fragment: Optional[str] = None,
         **_kwargs: str,
     ) -> str:
+        parts = Parts(
+            scheme=scheme,
+            user=user,
+            password=password,
+            host=host,
+            port=port,
+            path=path,
+            query=query,
+            fragment=fragment,
+            **_kwargs,  # type: ignore[misc]
+        )
+
         url = scheme + '://'
         if user:
             url += user
@@ -184,7 +201,7 @@ class AnyUrl(str):
         if user or password:
             url += '@'
         url += host
-        if port and 'port' not in cls.hidden_parts:
+        if port and ('port' not in cls.hidden_parts or cls.get_default_parts(parts).get('port') != port):
             url += ':' + port
         if path:
             url += path

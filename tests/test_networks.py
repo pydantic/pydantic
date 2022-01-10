@@ -2,6 +2,7 @@ import pytest
 
 from pydantic import (
     AmqpDsn,
+    AnyHttpUrl,
     AnyUrl,
     BaseModel,
     EmailStr,
@@ -562,6 +563,34 @@ def test_custom_schemes():
 )
 def test_build_url(kwargs, expected):
     assert AnyUrl(None, **kwargs) == expected
+
+
+@pytest.mark.parametrize(
+    'kwargs,expected',
+    [
+        (dict(scheme='http', host='example.net'), 'http://example.net'),
+        (dict(scheme='https', host='example.net'), 'https://example.net'),
+        (dict(scheme='http', user='foo', host='example.net'), 'http://foo@example.net'),
+        (dict(scheme='https', user='foo', host='example.net'), 'https://foo@example.net'),
+        (dict(scheme='http', user='foo', host='example.net', port='123'), 'http://foo@example.net:123'),
+        (dict(scheme='https', user='foo', host='example.net', port='123'), 'https://foo@example.net:123'),
+        (dict(scheme='http', user='foo', password='x', host='example.net'), 'http://foo:x@example.net'),
+        (dict(scheme='http2', user='foo', password='x', host='example.net'), 'http2://foo:x@example.net'),
+        (dict(scheme='http', host='example.net', query='a=b', fragment='c=d'), 'http://example.net?a=b#c=d'),
+        (dict(scheme='http2', host='example.net', query='a=b', fragment='c=d'), 'http2://example.net?a=b#c=d'),
+        (dict(scheme='http', host='example.net', port='1234'), 'http://example.net:1234'),
+        (dict(scheme='https', host='example.net', port='1234'), 'https://example.net:1234'),
+    ],
+)
+@pytest.mark.parametrize(
+    'klass',
+    [
+        AnyHttpUrl,
+        HttpUrl,
+    ],
+)
+def test_build_http_url(klass, kwargs, expected):
+    assert klass(None, **kwargs) == expected
 
 
 def test_son():
