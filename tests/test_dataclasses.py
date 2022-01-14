@@ -1,6 +1,7 @@
 import dataclasses
 import pickle
 import re
+import sys
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
@@ -1346,3 +1347,16 @@ def test_self_reference_dataclass():
         self_reference: 'MyDataclass'
 
     assert MyDataclass.__pydantic_model__.__fields__['self_reference'].type_ is MyDataclass
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
+def test_kw_only():
+    @pydantic.dataclasses.dataclass(kw_only=True)
+    class A:
+        a: int | None = None
+        b: str
+
+    with pytest.raises(TypeError):
+        A(1, '')
+
+    assert A(b='hi').b == 'hi'
