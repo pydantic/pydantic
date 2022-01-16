@@ -61,7 +61,12 @@ It has the following arguments:
 * `default_factory`: a zero-argument callable that will be called when a default value is needed for this field.
     Among other purposes, this can be used to set dynamic default values.
     It is forbidden to set both `default` and `default_factory`.
-* `alias`: the public name of the field
+* `alias`: the public name of the field. The name maps to a field during initialization.
+
+```py
+{!.tmp_examples/schema_field_customization_alias.py!}
+```
+
 * `title`: if omitted, `field_name.title()` is used
 * `description`: if omitted and the annotation is a sub-model,
     the docstring of the sub-model will be used
