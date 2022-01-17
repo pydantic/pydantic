@@ -25,7 +25,7 @@ from typing import (  # type: ignore
     get_type_hints,
 )
 
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, NotRequired as TypedDictNotRequired, Required as TypedDictRequired
 
 try:
     from typing import _TypingBase as typing_base  # type: ignore
@@ -174,6 +174,8 @@ else:
 
 
 if TYPE_CHECKING:
+    from typing_extensions import TypedDict
+
     from .fields import ModelField
 
     TupleGenerator = Generator[Tuple[str, Any], None, None]
@@ -189,6 +191,7 @@ if TYPE_CHECKING:
     ReprArgs = Sequence[Tuple[Optional[str], Any]]
     AnyClassMethod = classmethod[Any]
 
+
 __all__ = (
     'ForwardRef',
     'Callable',
@@ -203,6 +206,8 @@ __all__ = (
     'all_literal_values',
     'is_namedtuple',
     'is_typeddict',
+    'is_typeddict_special',
+    'update_typeddict_keys',
     'is_new_type',
     'new_type_supertype',
     'is_classvar',
@@ -361,6 +366,38 @@ def is_typeddict(type_: Type[Any]) -> bool:
     from .utils import lenient_issubclass
 
     return lenient_issubclass(type_, dict) and hasattr(type_, '__total__')
+
+
+def is_typeddict_special(type_: Type[Any]) -> bool:
+    """
+    Check if type is a TypedDict special form (Required or NotRequired).
+    """
+    return type_ is TypedDictRequired or type_ is TypedDictNotRequired
+
+
+def update_typeddict_keys(
+    typeddict_cls: Type['TypedDict'],  # type: ignore[valid-type]
+) -> None:
+    """
+    Populates keys annotated with TypedDict Required/NotRequired to __required_keys__.
+    """
+    anns = get_type_hints(typeddict_cls)
+
+    required_keys = {*typeddict_cls.__required_keys__}  # type: ignore[attr-defined]
+    optional_keys = {*typeddict_cls.__optional_keys__}  # type: ignore[attr-defined]
+
+    for field, ann in anns.items():
+        origin = get_origin(ann)
+
+        if origin is TypedDictRequired:
+            required_keys.add(field)
+            optional_keys.discard(field)
+        elif origin is TypedDictNotRequired:
+            required_keys.discard(field)
+            optional_keys.add(field)
+
+    typeddict_cls.__required_keys__ = frozenset(required_keys)  # type: ignore[attr-defined]
+    typeddict_cls.__optional_keys__ = frozenset(optional_keys)  # type: ignore[attr-defined]
 
 
 test_type = NewType('test_type', str)

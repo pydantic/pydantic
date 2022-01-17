@@ -39,6 +39,7 @@ from .typing import (
     is_namedtuple,
     is_none_type,
     is_typeddict,
+    update_typeddict_keys,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
@@ -580,7 +581,10 @@ def make_namedtuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tu
 def make_typeddict_validator(
     typeddict_cls: Type['TypedDict'], config: Type['BaseConfig']  # type: ignore[valid-type]
 ) -> Callable[[Any], Dict[str, Any]]:
-    from .annotated_types import create_model_from_typeddict
+    from .annotated_types import create_model_from_typeddict, validate_typeddict
+
+    validate_typeddict(typeddict_cls)
+    update_typeddict_keys(typeddict_cls)
 
     TypedDictModel = create_model_from_typeddict(
         typeddict_cls,

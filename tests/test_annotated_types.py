@@ -9,7 +9,7 @@ from collections import namedtuple
 from typing import List, NamedTuple, Tuple
 
 import pytest
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, Required, TypedDict
 
 from pydantic import BaseModel, PositiveInt, ValidationError
 
@@ -290,3 +290,54 @@ def test_typeddict_postponed_annotation():
 
     with pytest.raises(ValidationError):
         Model.parse_obj({'t': {'v': -1}})
+
+
+def test_typeddict_required_not_required():
+    class DataTD1(TypedDict, total=False):
+        a: int
+        b: Required[str]
+
+    class Model1(BaseModel):
+        t: DataTD1
+
+    class DataTD2(TypedDict, total=True):
+        a: NotRequired[int]
+        b: str
+
+    class Model2(BaseModel):
+        t: DataTD2
+
+    assert Model1.schema() == {
+        'title': 'Model1',
+        'type': 'object',
+        'properties': {'t': {'$ref': '#/definitions/DataTD1'}},
+        'required': ['t'],
+        'definitions': {
+            'DataTD1': {
+                'title': 'DataTD1',
+                'type': 'object',
+                'properties': {
+                    'a': {'title': 'A', 'type': 'integer'},
+                    'b': {'title': 'B', 'type': 'string'},
+                },
+                'required': ['b'],
+            }
+        },
+    }
+    assert Model2.schema() == {
+        'title': 'Model2',
+        'type': 'object',
+        'properties': {'t': {'$ref': '#/definitions/DataTD2'}},
+        'required': ['t'],
+        'definitions': {
+            'DataTD2': {
+                'title': 'DataTD2',
+                'type': 'object',
+                'properties': {
+                    'a': {'title': 'A', 'type': 'integer'},
+                    'b': {'title': 'B', 'type': 'string'},
+                },
+                'required': ['b'],
+            }
+        },
+    }

@@ -7,6 +7,17 @@ if TYPE_CHECKING:
     from typing_extensions import TypedDict
 
 
+def validate_typeddict(
+    typeddict_cls: Type['TypedDict'],  # type: ignore[valid-type]
+) -> None:
+    # Best case scenario: with python 3.9+ or when `TypedDict` is imported from `typing_extensions`
+    if not hasattr(typeddict_cls, '__required_keys__'):
+        raise TypeError(
+            'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.9.2. '
+            'Without it, there is no way to differentiate required and optional fields when subclassed.'
+        )
+
+
 def create_model_from_typeddict(
     # Mypy bug: `Type[TypedDict]` is resolved as `Any` https://github.com/python/mypy/issues/11030
     typeddict_cls: Type['TypedDict'],  # type: ignore[valid-type]
@@ -19,12 +30,7 @@ def create_model_from_typeddict(
     """
     field_definitions: Dict[str, Any]
 
-    # Best case scenario: with python 3.9+ or when `TypedDict` is imported from `typing_extensions`
-    if not hasattr(typeddict_cls, '__required_keys__'):
-        raise TypeError(
-            'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.9.2. '
-            'Without it, there is no way to differentiate required and optional fields when subclassed.'
-        )
+    validate_typeddict(typeddict_cls)
 
     required_keys: FrozenSet[str] = typeddict_cls.__required_keys__  # type: ignore[attr-defined]
     field_definitions = {
