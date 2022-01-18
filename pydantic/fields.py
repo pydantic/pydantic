@@ -34,6 +34,7 @@ from .typing import (
     Callable,
     ForwardRef,
     NoArgAnyCallable,
+    convert_generics,
     display_as_type,
     get_args,
     get_origin,
@@ -394,7 +395,7 @@ class ModelField(Representation):
         self.name: str = name
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
-        self.type_: Any = type_
+        self.type_: Any = convert_generics(type_)
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default

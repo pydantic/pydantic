@@ -1,9 +1,10 @@
+import sys
 from collections import namedtuple
-from typing import Callable as TypingCallable, NamedTuple
+from typing import Callable as TypingCallable, Dict, ForwardRef, List, NamedTuple, Union
 
 import pytest
 
-from pydantic.typing import Literal, is_namedtuple, is_none_type, is_typeddict
+from pydantic.typing import Literal, convert_generics, is_namedtuple, is_none_type, is_typeddict
 
 try:
     from typing import TypedDict as typing_TypedDict
@@ -66,3 +67,29 @@ def test_is_none_type():
     # `collections.abc.Callable` (even with python >= 3.9) as they behave
     # differently
     assert is_none_type(TypingCallable) is False
+
+
+class Hero:
+    pass
+
+
+class Team:
+    pass
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above')
+def test_convert_generics():
+    assert convert_generics(int) == int
+    assert convert_generics(Union[list['Hero'], int]) == Union[list[ForwardRef('Hero')], int]
+    assert convert_generics(list['Hero']) == list[ForwardRef('Hero')]
+    assert convert_generics(dict['Hero', 'Team']) == dict[ForwardRef('Hero'), ForwardRef('Team')]
+    assert convert_generics(dict['Hero', list['Team']]) == dict[ForwardRef('Hero'), list[ForwardRef('Team')]]
+    assert convert_generics(dict['Hero', List['Team']]) == dict[ForwardRef('Hero'), List[ForwardRef('Team')]]
+    assert convert_generics(Dict['Hero', list['Team']]) == Dict[ForwardRef('Hero'), list[ForwardRef('Team')]]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='PEP604 unions only supported for python 3.10 and above')
+def test_convert_generics_with_pep604():
+    assert (
+        convert_generics(dict['Hero', list['Team']] | int) == dict[ForwardRef('Hero'), list[ForwardRef('Team')]] | int
+    )

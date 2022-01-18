@@ -145,6 +145,61 @@ else:
         return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
 
 
+if sys.version_info < (3, 9):
+
+    def convert_generics(tp: Type[Any]) -> Type[Any]:
+        return tp
+
+else:
+
+    def is_pydantic_type(tp: Type[Any]) -> bool:
+        return tp.__module__.startswith('pydantic.') or (
+            hasattr(tp, '__name__')
+            and tp.__name__
+            in [
+                'ConstrainedListValue',
+                'ConstrainedSetValue',
+                'ConstrainedFrozenSetValue',
+            ]
+        )
+
+    from types import GenericAlias
+
+    def convert_generics(tp: Type[Any]) -> Type[Any]:
+        """Recursively searches for `str` type hints and replaces them with ForwardRef.
+
+        Examples::
+            convert_generics(list['Hero']) == list[ForwardRef('Hero')]
+            convert_generics(dict['Hero', 'Team']) == dict[ForwardRef('Hero'), ForwardRef('Team')]
+            convert_generics(typing.Dict['Hero', 'Team']) == typing.Dict[ForwardRef('Hero'), ForwardRef('Team')]
+            convert_generics(list[str | 'Hero'] | int) == list[str | ForwardRef('Hero')] | int
+        """
+        origin = get_origin(tp)
+        if (not origin) or (not hasattr(tp, '__args__')) or is_pydantic_type(tp):
+            return tp
+
+        args = list(get_args(tp))
+        for count, arg in enumerate(args):
+            if isinstance(arg, str) and isinstance(tp, GenericAlias):
+                args[count] = ForwardRef(arg)
+            else:
+                args[count] = convert_generics(arg)
+
+        if tp.__module__ == 'typing':
+            # Literal and Annotated __args__ shoudn't be replaced with ForwardRef
+            if tp.__name__ == 'Literal' or tp.__name__ == 'Annotated':
+                return tp
+
+            # `origin[tuple(args)]` will convert typing.List into types.list
+            # this is a workaround
+            setattr(tp, '__args__', tuple(args))
+            return tp
+        else:
+            if origin.__name__ == 'UnionType':  # Recreates types.UnionType (PEP604) with typing.Union
+                origin = Union  # type: ignore
+            return origin[tuple(args) if len(args) > 1 else args[0]]
+
+
 if sys.version_info < (3, 10):
 
     def is_union(tp: Optional[Type[Any]]) -> bool:
@@ -304,6 +359,7 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
 
     annotations = {}
     for name, value in raw_annotations.items():
+        # value = convert_generics(value)
         if isinstance(value, str):
             if (3, 10) > sys.version_info >= (3, 9, 8) or sys.version_info >= (3, 10, 1):
                 value = ForwardRef(value, is_argument=False, is_class=True)
