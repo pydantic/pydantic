@@ -1,3 +1,4 @@
+import sys
 from typing import Optional, Tuple
 
 import pytest
@@ -669,3 +670,35 @@ class User(BaseModel):
 
     m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
     assert m.json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+
+
+skip_until_39 = pytest.mark.skipif(
+    sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above'
+)
+
+
+@skip_until_39
+def test_pep585_self_referencing_generics():
+    class SelfRefencing(BaseModel):
+        names: list['SelfRefencing']  # noqa: F821
+
+    SelfRefencing.update_forward_refs()
+
+
+@skip_until_39
+def test_pep585_recursive_generics(create_module):
+    @create_module
+    def module():
+        from pydantic import BaseModel
+
+        class Team(BaseModel):
+            name: str
+            heroes: list['Hero']  # noqa: F821
+
+        class Hero(BaseModel):
+            name: str
+            teams: list[Team]
+
+        Team.update_forward_refs()
+
+    module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
