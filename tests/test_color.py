@@ -190,3 +190,6 @@ def test_eq():
     assert Color('red') == Color('red')
     assert Color('red') != Color('blue')
     assert Color('red') != 'red'
+
+    assert Color('red') == Color((255, 0, 0))
+    assert Color('red') != Color((0, 0, 255))
