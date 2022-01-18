@@ -38,6 +38,12 @@ except ImportError:
     # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
     TypingGenericAlias = ()
 
+try:
+    from types import UnionType as TypesUnionType  # type: ignore
+except ImportError:
+    # python < 3.10 does not have UnionType (str | int, byte | bool and so on)
+    TypesUnionType = ()
+
 
 if sys.version_info < (3, 9):
 
@@ -148,19 +154,15 @@ else:
 if sys.version_info < (3, 9):
 
     def convert_generics(tp: Type[Any]) -> Type[Any]:
+        """Python 3.9 and older only supports generics from `typing` module.
+        They convert strings to ForwardRef automatically.
+
+        Examples::
+            typing.List['Hero'] == typing.List[ForwardRef('Hero')]
+        """
         return tp
 
 else:
-
-    def is_pydantic_type(tp: Type[Any]) -> bool:
-        return getattr(tp, '__module__', 'NoModule').startswith('pydantic.') or (
-            getattr(tp, '__name__', 'NoName')
-            in [
-                'ConstrainedListValue',
-                'ConstrainedSetValue',
-                'ConstrainedFrozenSetValue',
-            ]
-        )
 
     def convert_generics(tp: Type[Any]) -> Type[Any]:
         """Recursively searches for `str` type hints and replaces them with ForwardRef.
@@ -172,29 +174,34 @@ else:
             convert_generics(list[str | 'Hero'] | int) == list[str | ForwardRef('Hero')] | int
         """
         origin = get_origin(tp)
-        if (not origin) or (not hasattr(tp, '__args__')) or is_pydantic_type(tp):
+        if (not origin) or (not hasattr(tp, '__args__')):
             return tp
+
+        args = get_args(tp)
+
+        # typing.Annotated needs special treatment
+        if origin is Annotated:
+            return Annotated[(convert_generics(args[0]), *args[1:])]
 
         # recursively replace `str` isntances inside of `GenericAlias` with `ForwardRef(arg)`
-        args = tuple(
+        converted = tuple(
             ForwardRef(arg) if isinstance(arg, str) and isinstance(tp, TypingGenericAlias) else convert_generics(arg)
-            for arg in get_args(tp)
+            for arg in args
         )
 
-        if getattr(tp, '__module__', 'NoModule') == 'typing':
-            # typing.Literal and typing.Annotated should be returned as is
-            if origin is Literal or origin is Annotated:
-                return tp
-
-            # `origin[args]` will convert typing.List into types.list
-            # setting __args__ manually is a workaround
-            setattr(tp, '__args__', args)
+        if converted == args:
             return tp
-        else:
+        elif isinstance(tp, TypingGenericAlias):
+            return origin[converted]
+        elif isinstance(tp, TypesUnionType):
             # recreate types.UnionType (PEP604) with typing.Union
-            if getattr(origin, '__name__', 'NoName') == 'UnionType':
-                origin = Union  # type: ignore
-            return origin[args]
+            return Union[converted]  # type: ignore
+        else:
+            try:
+                setattr(tp, '__args__', converted)
+                return tp
+            except AttributeError:
+                return tp
 
 
 if sys.version_info < (3, 10):
