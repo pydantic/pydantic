@@ -153,17 +153,14 @@ if sys.version_info < (3, 9):
 else:
 
     def is_pydantic_type(tp: Type[Any]) -> bool:
-        return tp.__module__.startswith('pydantic.') or (
-            hasattr(tp, '__name__')
-            and tp.__name__
+        return getattr(tp, '__module__', 'NoModule').startswith('pydantic.') or (
+            getattr(tp, '__name__', 'NoName')
             in [
                 'ConstrainedListValue',
                 'ConstrainedSetValue',
                 'ConstrainedFrozenSetValue',
             ]
         )
-
-    from types import GenericAlias
 
     def convert_generics(tp: Type[Any]) -> Type[Any]:
         """Recursively searches for `str` type hints and replaces them with ForwardRef.
@@ -178,26 +175,26 @@ else:
         if (not origin) or (not hasattr(tp, '__args__')) or is_pydantic_type(tp):
             return tp
 
-        args = list(get_args(tp))
-        for count, arg in enumerate(args):
-            if isinstance(arg, str) and isinstance(tp, GenericAlias):
-                args[count] = ForwardRef(arg)
-            else:
-                args[count] = convert_generics(arg)
+        # recursively replace `str` isntances inside of `GenericAlias` with `ForwardRef(arg)`
+        args = tuple(
+            ForwardRef(arg) if isinstance(arg, str) and isinstance(tp, TypingGenericAlias) else convert_generics(arg)
+            for arg in get_args(tp)
+        )
 
-        if tp.__module__ == 'typing':
-            # Literal and Annotated __args__ shoudn't be replaced with ForwardRef
-            if tp.__name__ == 'Literal' or tp.__name__ == 'Annotated':
+        if getattr(tp, '__module__', 'NoModule') == 'typing':
+            # typing.Literal and typing.Annotated should be returned as is
+            if origin is Literal or origin is Annotated:
                 return tp
 
-            # `origin[tuple(args)]` will convert typing.List into types.list
-            # this is a workaround
-            setattr(tp, '__args__', tuple(args))
+            # `origin[args]` will convert typing.List into types.list
+            # setting __args__ manually is a workaround
+            setattr(tp, '__args__', args)
             return tp
         else:
-            if origin.__name__ == 'UnionType':  # Recreates types.UnionType (PEP604) with typing.Union
+            # recreate types.UnionType (PEP604) with typing.Union
+            if getattr(origin, '__name__', 'NoName') == 'UnionType':
                 origin = Union  # type: ignore
-            return origin[tuple(args) if len(args) > 1 else args[0]]
+            return origin[args]
 
 
 if sys.version_info < (3, 10):
@@ -359,7 +356,6 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
 
     annotations = {}
     for name, value in raw_annotations.items():
-        # value = convert_generics(value)
         if isinstance(value, str):
             if (3, 10) > sys.version_info >= (3, 9, 8) or sys.version_info >= (3, 10, 1):
                 value = ForwardRef(value, is_argument=False, is_class=True)
