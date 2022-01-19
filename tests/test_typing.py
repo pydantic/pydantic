@@ -3,7 +3,9 @@ from collections import namedtuple
 from typing import Callable as TypingCallable, Dict, ForwardRef, List, NamedTuple, Union
 
 import pytest
+from typing_extensions import Annotated
 
+from pydantic import Field
 from pydantic.typing import Literal, convert_generics, is_namedtuple, is_none_type, is_typeddict
 
 try:
@@ -86,6 +88,9 @@ def test_convert_generics():
     assert convert_generics(dict['Hero', list['Team']]) == dict[ForwardRef('Hero'), list[ForwardRef('Team')]]
     assert convert_generics(dict['Hero', List['Team']]) == dict[ForwardRef('Hero'), List[ForwardRef('Team')]]
     assert convert_generics(Dict['Hero', list['Team']]) == Dict[ForwardRef('Hero'), list[ForwardRef('Team')]]
+    assert str(convert_generics(Annotated[list['Hero'], Field(min_length=2)])) == str(
+        Annotated[list[ForwardRef('Hero')], Field(min_length=2)]
+    )
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='PEP604 unions only supported for python 3.10 and above')

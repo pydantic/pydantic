@@ -163,6 +163,9 @@ if sys.version_info < (3, 9):
         return tp
 
 else:
+    from typing import _UnionGenericAlias  # type: ignore
+
+    from typing_extensions import _AnnotatedAlias
 
     def convert_generics(tp: Type[Any]) -> Type[Any]:
         """Recursively searches for `str` type hints and replaces them with ForwardRef.
@@ -181,7 +184,7 @@ else:
 
         # typing.Annotated needs special treatment
         if origin is Annotated:
-            return Annotated[(convert_generics(args[0]), *args[1:])]
+            return _AnnotatedAlias(convert_generics(args[0]), args[1:])
 
         # recursively replace `str` isntances inside of `GenericAlias` with `ForwardRef(arg)`
         converted = tuple(
@@ -192,10 +195,10 @@ else:
         if converted == args:
             return tp
         elif isinstance(tp, TypingGenericAlias):
-            return origin[converted]
+            return TypingGenericAlias(origin, converted)
         elif isinstance(tp, TypesUnionType):
-            # recreate types.UnionType (PEP604) with typing.Union
-            return Union[converted]  # type: ignore
+            # recreate types.UnionType (PEP604, Python >= 3.10)
+            return _UnionGenericAlias(origin, converted)
         else:
             try:
                 setattr(tp, '__args__', converted)
