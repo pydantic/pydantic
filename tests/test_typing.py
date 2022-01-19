@@ -1,6 +1,6 @@
 import sys
 from collections import namedtuple
-from typing import Callable as TypingCallable, Dict, ForwardRef, List, NamedTuple, Union
+from typing import Any, Callable as TypingCallable, Dict, ForwardRef, List, NamedTuple, NewType, Union
 
 import pytest
 from typing_extensions import Annotated
@@ -79,7 +79,7 @@ class Team:
     pass
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above')
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above.')
 def test_convert_generics():
     assert convert_generics(int) == int
     assert convert_generics(Union[list['Hero'], int]) == Union[list[ForwardRef('Hero')], int]
@@ -93,8 +93,26 @@ def test_convert_generics():
     )
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='PEP604 unions only supported for python 3.10 and above')
-def test_convert_generics_with_pep604():
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='NewType class was added in python 3.10.')
+def test_convert_generics_custom_type():
+    class User(NewType):
+
+        __origin__ = type(list[str])
+        __args__ = (list['Hero'],)
+
+        def __init__(self, name: str, tp: type) -> None:
+            super().__init__(name, tp)
+
+        def __setattr__(self, __name: str, __value: Any) -> None:
+            if __name == '__args__':
+                raise AttributeError
+            return super().__setattr__(__name, __value)
+
+    convert_generics(User('MyUser', str))
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='PEP604 unions only supported for python 3.10 and above.')
+def test_convert_generics_pep604():
     assert (
         convert_generics(dict['Hero', list['Team']] | int) == dict[ForwardRef('Hero'), list[ForwardRef('Team')]] | int
     )
