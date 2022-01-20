@@ -450,6 +450,7 @@ class ModelField(Representation):
             if field_info is not None:
                 field_info.update_from_config(field_info_from_config)
                 if field_info.default not in (Undefined, None):
+                    print('field info default is invalid', field_info.default, type(field_info.default))
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
                 if value is not Undefined and value is not Required:
                     # check also `Required` because of `validate_arguments` that sets `...` as default value
