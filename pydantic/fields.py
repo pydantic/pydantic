@@ -401,6 +401,8 @@ class ModelField(Representation):
         self.default_factory: Optional[NoArgAnyCallable] = default_factory
         self.required: 'BoolUndefined' = required
         self.model_config = model_config
+        if field_info is not None:
+            field_info = smart_deepcopy(field_info)
         self.field_info: FieldInfo = field_info or FieldInfo(default)
         self.discriminator_key: Optional[str] = self.field_info.discriminator
         self.discriminator_alias: Optional[str] = self.discriminator_key
