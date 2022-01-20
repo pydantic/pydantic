@@ -71,6 +71,27 @@ class Bar(BaseModel):
     assert module.Bar.__fields__['b'].type_ is module.Foo
 
 
+def test_postponed_annotations_local(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from pydantic import BaseModel
+
+def main():
+    from pydantic import PositiveInt
+
+    class Model(BaseModel):
+        a: PositiveInt
+
+    return Model
+
+Model = main()
+"""
+    )
+    assert module.Model(a='123').dict() == {'a': 123}
+
+
 def test_forward_ref_one_of_fields_not_defined(create_module):
     @create_module
     def module():

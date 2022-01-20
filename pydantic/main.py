@@ -1,4 +1,5 @@
 import warnings
+import sys
 from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
@@ -289,7 +290,19 @@ class ModelMetaclass(ABCMeta):
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
         # set __signature__ attr only for model class, but not for its instances
         cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
-        cls.__try_update_forward_refs__()
+
+        localns = {}
+
+        # Pull in the currently defined local namespace and any namespaces above 
+        if hasattr(sys, "_getframe"):
+            frame = sys._getframe(1)
+            while frame is not None:
+                for k, v in frame.f_locals.items():
+                    if k not in localns:
+                        localns[k] = v
+                frame = frame.f_back
+
+        cls.__try_update_forward_refs__(**localns)
 
         return cls
 
@@ -765,12 +778,14 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return v
 
     @classmethod
-    def __try_update_forward_refs__(cls) -> None:
+    def __try_update_forward_refs__(__pydantic_cls__, **localns: Any) -> None:
         """
         Same as update_forward_refs but will not raise exception
         when forward references are not defined.
         """
-        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, {}, (NameError,))
+        # Can change sigature to cls, /, **localns when Python 3.7 is dropped)
+        cls = __pydantic_cls__
+        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, localns, (NameError,))
 
     @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
