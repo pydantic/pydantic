@@ -115,8 +115,8 @@ Hundreds of organisations and packages are using *pydantic*, including:
   asynchronous task queue) to reliably power multiple mission-critical microservices.
 
 [Robusta.dev](https://robusta.dev/)
-: are using *pydantic* for their Kubernetes troubleshooting and automation platform. For example, their open source
-  [tools to instanatly debug and profile Python applications on Kubernetes](https://home.robusta.dev/python/) use
+: are using *pydantic* to automate Kubernetes troubleshooting and maintenance. For example, their open source
+  [tools to debug and profile Python applications on Kubernetes](https://home.robusta.dev/python/) use
   *pydantic* models.
 
 For a more comprehensive list of open-source projects using *pydantic* see the 
