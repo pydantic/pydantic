@@ -74,6 +74,7 @@ from pydantic import (
     errors,
     validator,
 )
+from pydantic.types import SecretField
 from pydantic.typing import NoneType
 
 try:
@@ -2488,6 +2489,16 @@ def test_pattern_error():
     ]
 
 
+def test_secretfield():
+    class Foobar(SecretField):
+        ...
+
+    message = "Can't instantiate abstract class Foobar with abstract methods? get_secret_value"
+
+    with pytest.raises(TypeError, match=message):
+        Foobar()
+
+
 def test_secretstr():
     class Foobar(BaseModel):
         password: SecretStr
@@ -2518,6 +2529,10 @@ def test_secretstr():
     # Assert that SecretStr is equal to SecretStr if the secret is the same.
     assert f == f.copy()
     assert f != f.copy(update=dict(password='4321'))
+
+
+def test_secretstr_is_secret_field():
+    assert issubclass(SecretStr, SecretField)
 
 
 def test_secretstr_equality():
@@ -2607,6 +2622,10 @@ def test_secretbytes():
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
     assert f == f.copy()
     assert f != f.copy(update=dict(password=b'4321'))
+
+
+def test_secretbytes_is_secret_field():
+    assert issubclass(SecretBytes, SecretField)
 
 
 def test_secretbytes_equality():
