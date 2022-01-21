@@ -989,3 +989,11 @@ def test_keeps_custom_properties():
         instance = cls(a=test_string)
         assert instance._special_property == 1
         assert instance.a == test_string
+
+
+def test_self_reference_dataclass():
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        self_reference: 'MyDataclass'
+
+    assert MyDataclass.__pydantic_model__.__fields__['self_reference'].type_ is MyDataclass
