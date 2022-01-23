@@ -73,6 +73,7 @@ __all__ = [
     'NoneStr',
     'NoneBytes',
     'StrBytes',
+    'StrLimited',
     'NoneStrBytes',
     'StrictStr',
     'ConstrainedBytes',

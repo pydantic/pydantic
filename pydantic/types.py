@@ -97,6 +97,7 @@ __all__ = [
     'StrictBytes',
     'StrictInt',
     'StrictFloat',
+    'StrLimited',
     'PaymentCardNumber',
     'ByteSize',
     'PastDate',
@@ -434,6 +435,12 @@ def constr(
         regex=regex and re.compile(regex),
     )
     return _registered(type('ConstrainedStrValue', (ConstrainedStr,), namespace))
+
+
+class StrLimited:
+    @classmethod
+    def __class_getitem__(cls, max_length: int) -> Type[str]:
+        return constr(max_length=max_length, strip_whitespace=True)
 
 
 if TYPE_CHECKING:

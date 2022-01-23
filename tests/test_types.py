@@ -61,6 +61,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    StrLimited,
     ValidationError,
     conbytes,
     condecimal,
@@ -729,6 +730,34 @@ def test_constrained_str_max_length_0():
             'msg': 'ensure this value has at most 0 characters',
             'type': 'value_error.any_str.max_length',
             'ctx': {'limit_value': 0},
+        }
+    ]
+
+
+def test_str_limited_good():
+    max_length = 5
+
+    class Model(BaseModel):
+        v: StrLimited[max_length]
+
+    m = Model(v='abcde')
+    assert m.v == 'abcde'
+
+
+def test_str_limited_too_long():
+    max_length = 5
+
+    class Model(BaseModel):
+        v: StrLimited[max_length]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='abcdef')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': f'ensure this value has at most {max_length} characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': max_length},
         }
     ]
 
