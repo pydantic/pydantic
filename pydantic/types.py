@@ -112,6 +112,7 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
+OptionalDate = Optional[datetime.date]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
@@ -1091,6 +1092,7 @@ class ByteSize(int):
 if TYPE_CHECKING:
     PastDate = datetime.date
     FutureDate = datetime.date
+    ConstrainedDate = datetime.date
 else:
 
     class PastDate(datetime.date):
@@ -1118,8 +1120,6 @@ else:
                 raise errors.DateNotInTheFutureError()
 
             return value
-
-    OptionalDate = Optional[datetime.date]
 
     class ConstrainedDate(datetime.date, metaclass = ConstrainedNumberMeta):
         strict_formats: Optional[List[str]] = None
