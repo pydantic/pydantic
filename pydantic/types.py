@@ -1,7 +1,7 @@
 import math
 import re
 import warnings
-from datetime import date
+import datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -101,6 +101,8 @@ __all__ = [
     'ByteSize',
     'PastDate',
     'FutureDate',
+    'ConstrainedDate',
+    'condate'
 ]
 
 NoneStr = Optional[str]
@@ -1087,32 +1089,83 @@ class ByteSize(int):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATE TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    PastDate = date
-    FutureDate = date
+    PastDate = datetime.date
+    FutureDate = datetime.date
 else:
 
-    class PastDate(date):
+    class PastDate(datetime.date):
         @classmethod
         def __get_validators__(cls) -> 'CallableGenerator':
             yield parse_date
             yield cls.validate
 
         @classmethod
-        def validate(cls, value: date) -> date:
-            if value >= date.today():
+        def validate(cls, value: datetime.date) -> datetime.date:
+            if value >= datetime.date.today():
                 raise errors.DateNotInThePastError()
 
             return value
 
-    class FutureDate(date):
+    class FutureDate(datetime.date):
         @classmethod
         def __get_validators__(cls) -> 'CallableGenerator':
             yield parse_date
             yield cls.validate
 
         @classmethod
-        def validate(cls, value: date) -> date:
-            if value <= date.today():
+        def validate(cls, value: datetime.date) -> datetime.date:
+            if value <= datetime.date.today():
                 raise errors.DateNotInTheFutureError()
 
             return value
+
+    OptionalDate = Optional[datetime.date]
+
+    class ConstrainedDate(datetime.date, metaclass = ConstrainedNumberMeta):
+        strict_formats: Optional[List[str]] = None
+        gt: OptionalDate = None
+        ge: OptionalDate = None
+        lt: OptionalDate = None
+        le: OptionalDate = None
+
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            update_not_none(
+                field_schema,
+                exclusiveMinimum = cls.gt,
+                exclusiveMaximum = cls.lt,
+                minimum = cls.ge,
+                maximum = cls.le
+            )
+
+        @classmethod
+        def strict_date_validator(cls, value: Any) -> datetime.date:
+            if isinstance(value, datetime.datetime):
+                return value.date()  # convert datetimes to date
+            if isinstance(value, datetime.date):
+                return value
+            elif isinstance(value, str):
+                for fmt in cls.strict_formats:
+                    try:
+                        return datetime.datetime.strptime(value, fmt).date()
+                    except ValueError:
+                        continue
+
+            raise errors.DateError()
+
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield cls.strict_date_validator if cls.strict_formats else parse_date
+            yield number_size_validator
+
+    def condate(
+            *,
+            strict_formats: Optional[List[str]] = None,
+            gt: datetime.date = None,
+            ge: datetime.date = None,
+            lt: datetime.date = None,
+            le: datetime.date = None,
+    ) -> Type[datetime.date]:
+        # use kwargs then define conf in a dict to aid with IDE type hinting
+        namespace = dict(strict_formats = strict_formats, gt = gt, ge = ge, lt = lt, le = le)
+        return type('ConstrainedDateValue', (ConstrainedDate,), namespace)
