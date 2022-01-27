@@ -340,7 +340,6 @@ def resolve_condate(cls):  # type: ignore[no-untyped-def]
         s = s.filter(lambda d: d < cls.lt)
     if cls.gt is not None:
         s = s.filter(lambda d: cls.gt < d)
-    breakpoint()
     return s
 
 
