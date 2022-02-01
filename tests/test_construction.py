@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 import pytest
 
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Extra, Field, PrivateAttr
 from pydantic.fields import Undefined
 
 
@@ -220,6 +220,25 @@ def test_copy_update_unset():
         bar: Optional[str]
 
     assert Foo(foo='hello').copy(update={'bar': 'world'}).json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
+
+
+def test_copy_update_extra_ignore():
+    class Model(BaseModel):
+        a: float
+        b: float
+
+        class Config:
+            extra = Extra.ignore
+
+    model = Model(a=0.2, b=0.3)
+
+    copied_model = model.copy(update={'b': 3.5, 'c': 2.5})
+    assert model.a == model.a == 0.2
+    assert copied_model.b == 3.5
+    assert not hasattr(copied_model, 'c')
+
+    with pytest.raises(ValueError, match='"Model" object has no field "c"'):
+        copied_model.c = 1
 
 
 def test_copy_set_fields():

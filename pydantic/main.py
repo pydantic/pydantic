@@ -632,7 +632,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         )
 
         # new `__fields_set__` can have unset optional fields with a set value in `update` kwarg
-        if update:
+        extra_ignore = self.__config__.extra == Extra.ignore
+        if update and extra_ignore:
+            fields_set = set(self.__fields__.keys())
+            pop_values = update.keys() - self.__fields__.keys()
+            list(map(values.pop, pop_values))
+        elif update:
             fields_set = self.__fields_set__ | update.keys()
         else:
             fields_set = set(self.__fields_set__)
