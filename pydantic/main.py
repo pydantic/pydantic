@@ -28,7 +28,7 @@ from typing_extensions import dataclass_transform
 
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .config import BaseConfig, Extra, inherit_config, prepare_config
-from .error_wrappers import ErrorWrapper, ValidationError
+from .error_wrappers import CopyError, ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import (
     MAPPING_LIKE_SHAPES,
@@ -631,6 +631,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
         update: Optional['DictStrAny'] = None,
         deep: bool = False,
+        extra: Extra = Extra.allow,
     ) -> 'Model':
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
@@ -640,19 +641,26 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         :param update: values to change/add in the new model. Note: the data is not validated before creating
             the new model: you should trust this data
         :param deep: set to `True` to make a deep copy of the model
+        :param extra: Causes `update` to behavior similarly to `__init__` with respect
+            to extra keys. Accepts the values allowed for `BaseConfig.extra` and
+            defaults to `Extra.allow`.
         :return: new model instance
         """
+        # new `__fields_set__` can have unset optional fields with a set value in `update` kwarg
+        if update:
+            extra_keys = update.keys() - self.__fields__.keys()
+            if extra == Extra.forbid and extra_keys:
+                raise CopyError([ErrorWrapper(ExtraError(), loc=f) for f in sorted(extra_keys)], self.__class__)
+            if extra == Extra.ignore:
+                update = {k: v for k, v in update.items() if k not in extra_keys}
+            fields_set = self.__fields_set__ | update.keys()
+        else:
+            fields_set = set(self.__fields_set__)
 
         values = dict(
             self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False),
             **(update or {}),
         )
-
-        # new `__fields_set__` can have unset optional fields with a set value in `update` kwarg
-        if update:
-            fields_set = self.__fields_set__ | update.keys()
-        else:
-            fields_set = set(self.__fields_set__)
 
         return self._copy_and_set_values(values, fields_set, deep=deep)
 

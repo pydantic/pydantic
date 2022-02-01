@@ -79,6 +79,11 @@ class ValidationError(Representation, ValueError):
         return [('model', self.model.__name__), ('errors', self.errors())]
 
 
+class CopyError(ValidationError):
+    def __str__(self) -> str:
+        return super().__str__().replace("validation error", "copy error")
+
+
 def display_errors(errors: List['ErrorDict']) -> str:
     return '\n'.join(f'{_display_error_loc(e)}\n  {e["msg"]} ({_display_error_type_and_ctx(e)})' for e in errors)
 
