@@ -1,9 +1,11 @@
 import pickle
+import re
 from typing import Any, List, Optional
 
 import pytest
 
 from pydantic import BaseModel, Extra, Field, PrivateAttr
+from pydantic.error_wrappers import CopyError
 from pydantic.fields import Undefined
 
 
@@ -222,23 +224,54 @@ def test_copy_update_unset():
     assert Foo(foo='hello').copy(update={'bar': 'world'}).json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
 
 
+def test_copy_update_extra_allow():
+    class Model(BaseModel):
+        a: int
+        b: int
+
+    model = Model(a=2, b=3)
+    copied_model = model.copy(update={'b': 1, 'c': 2})
+    assert copied_model.dict() == {'a': 2, 'b': 1, 'c': 2}
+
+    with pytest.raises(ValueError, match='"Model" object has no field "c"'):
+        copied_model.c = 1
+
+    copied_model2 = model.copy(update={'b': 1, 'd': 3}, extra=Extra.allow)
+    assert copied_model2.dict() == {'a': 2, 'b': 1, 'd': 3}
+
+    with pytest.raises(ValueError, match='"Model" object has no field "d"'):
+        copied_model.d = 1
+
+
 def test_copy_update_extra_ignore():
     class Model(BaseModel):
         a: float
         b: float
 
-        class Config:
-            extra = Extra.ignore
-
     model = Model(a=0.2, b=0.3)
 
-    copied_model = model.copy(update={'b': 3.5, 'c': 2.5})
+    copied_model = model.copy(update={'b': 3.5, 'c': 2.5}, extra=Extra.ignore)
     assert model.a == model.a == 0.2
     assert copied_model.b == 3.5
     assert not hasattr(copied_model, 'c')
 
     with pytest.raises(ValueError, match='"Model" object has no field "c"'):
         copied_model.c = 1
+
+
+def test_copy_update_extra_forbid():
+    class Model(BaseModel):
+        a: float
+        b: float
+
+    model = Model(a=0.2, b=0.3)
+
+    with pytest.raises(CopyError, match=re.escape("""2 copy errors for Model
+c
+  extra fields not permitted (type=value_error.extra)
+d
+  extra fields not permitted (type=value_error.extra)""")):
+        model.copy(update={'b': 3.5, 'c': 2.5, 'd': 0.5}, extra=Extra.forbid)
 
 
 def test_copy_set_fields():
