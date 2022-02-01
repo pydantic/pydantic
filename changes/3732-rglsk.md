@@ -1,0 +1,1 @@
+Do not ignore Extra.ignore configuration in BaseModel.copy().
