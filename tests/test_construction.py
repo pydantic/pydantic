@@ -222,6 +222,19 @@ def test_copy_update_unset():
     assert Foo(foo='hello').copy(update={'bar': 'world'}).json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
 
 
+def test_copy_update_extra_allow():
+    class Model(BaseModel):
+        a: int
+        b: int
+
+        class Config:
+            extra = Extra.allow
+
+    model = Model(a=2, b=3)
+    copied_model = model.copy(update={'b': 1, 'c': 2})
+    assert copied_model.dict() == {'a': 2, 'b': 1, 'c': 2}
+
+
 def test_copy_update_extra_ignore():
     class Model(BaseModel):
         a: float
