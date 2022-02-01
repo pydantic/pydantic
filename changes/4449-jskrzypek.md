@@ -1,0 +1,1 @@
+Add support for `Extra.ignore`- and `Extra.forbid`-like behavior in `BaseModel.copy`.
