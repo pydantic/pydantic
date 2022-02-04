@@ -71,7 +71,7 @@ by treating the environment variable's value as a JSON-encoded string.
 
 Another way to populate nested complex variables is to configure your model with the `env_nested_delimiter`
 config setting, then use an env variable with a name pointing to the nested module fields.
-What it does is simply explodes yor variable into nested models or dicts.
+What it does is simply explodes your variable into nested models or dicts.
 So if you define a variable `FOO__BAR__BAZ=123` it will convert it into `FOO={'BAR': {'BAZ': 123}}`
 If you have multiple variables with the same structure they will be merged.
 
