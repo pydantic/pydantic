@@ -1,5 +1,5 @@
-import warnings
 import sys
+import warnings
 from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
@@ -291,17 +291,7 @@ class ModelMetaclass(ABCMeta):
         # set __signature__ attr only for model class, but not for its instances
         cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
 
-        localns = {}
-
-        # Pull in the currently defined local namespace and any namespaces above 
-        if hasattr(sys, "_getframe"):
-            frame = sys._getframe(1)
-            while frame is not None:
-                for k, v in frame.f_locals.items():
-                    if k not in localns:
-                        localns[k] = v
-                frame = frame.f_back
-
+        localns = sys._getframe(1).f_locals if hasattr(sys, '_getframe') else {}
         cls.__try_update_forward_refs__(**localns)
 
         return cls
