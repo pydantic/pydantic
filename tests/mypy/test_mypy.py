@@ -7,10 +7,11 @@ import pytest
 
 try:
     from mypy import api as mypy_api
-    from mypy.version import __version__ as mypy_version
+
+    from pydantic.mypy import MYPY_VERSION
 except ImportError:
     mypy_api = None  # type: ignore
-    mypy_version = '0'
+    MYPY_VERSION = (0,)
 
 try:
     import dotenv
@@ -78,7 +79,7 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     expected_out = Path(output_path).read_text().rstrip('\n') if output_path else ''
 
     # fix for compatibility between mypy versions: (this can be dropped once we drop support for mypy<0.930)
-    if actual_out and float(mypy_version) < 0.930:
+    if actual_out and MYPY_VERSION < (0, 930):
         actual_out = actual_out.lower()
         expected_out = expected_out.lower()
         actual_out = actual_out.replace('variant:', 'variants:')
