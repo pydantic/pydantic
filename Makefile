@@ -4,7 +4,7 @@ black = black -S -l 120 --target-version py38 pydantic tests
 
 .PHONY: help
 help: ## List all make commands available
-	@grep -E '^[\.a-zA-Z_%-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk -F ":" '{print $1}' | sed 's/\\//g' | sort | awk 'BEGIN {FS = ":[^:]*?##"}; {printf "\033[0;92m%-50s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[\.a-zA-Z_%-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk -F ":" '{print $1}' | sed 's/\\//g' | sort | awk 'BEGIN {FS = ":[^:]*?##"}; {printf "\033[0;94m%-50s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: install-linting
 install-linting: ## Install linting tools
@@ -87,7 +87,7 @@ test-fastapi: ## Run fastapi tests
 	./tests/test_fastapi.sh
 
 .PHONY: all
-all: lint mypy testcov ## Run all tests
+all: lint mypy testcov ## Run linter, type checker, and tests with coverage
 
 .PHONY: benchmark-all
 benchmark-all: ## Run all benchmarks
