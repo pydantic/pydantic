@@ -278,6 +278,3 @@ You might also want to disable a source:
 {!.tmp_examples/settings_disable_source.py!}
 ```
 _(This script is complete, it should run "as is", here you might need to set the `my_api_key` environment variable)_
-
-Because of the callables approach of `customise_sources`, evaluation of sources is lazy so unused sources don't
-have an adverse effect on performance.
