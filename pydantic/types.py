@@ -1158,7 +1158,7 @@ class NanoTime(int):
 
             scalar, unit = match.groups()
             if unit is None:
-                if match.end() == len(str(v)):
+                if match.end() == len(v_str):
                     unit = 'ns'
                 else:
                     raise errors.OmittedNanoTimeUnit()
