@@ -1083,9 +1083,11 @@ class NanoTime(int):
         result: int = 0
         pos: int = 0
         try:
-            return cls(int(v))
+            v_int = int(v)
         except ValueError:
             pass
+        else:
+            return cls(v_int)
 
         while pos < len(str(v)):
             match = time_string_re.match(str(v), pos=pos)
