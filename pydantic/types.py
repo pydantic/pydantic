@@ -1175,7 +1175,7 @@ class NanoTime(int):
 
     def human_readable(self) -> str:
 
-        result: list = []
+        result: List[str] = []
         for unit in reversed(TIME_UNITS):
             quotient = int(self / TIME_UNITS[unit])
             if quotient > 0:
