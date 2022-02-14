@@ -1089,8 +1089,9 @@ class NanoTime(int):
         else:
             return cls(v_int)
 
-        while pos < len(str(v)):
-            match = time_string_re.match(str(v), pos=pos)
+        v_str = str_validator(v)
+        while pos < len(v_str):
+            match = time_string_re.match(v_str, pos=pos)
             if match is None:
                 raise errors.InvalidNanoTime()
 
