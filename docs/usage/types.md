@@ -184,7 +184,7 @@ with custom properties and validation.
 : converts a bytes string with units to bytes
 
 `NanoTime`
-: converts a time string with units to nanoseconds
+: converts a time string with units to nanoseconds, `NanoTime` is a subclass of `int`
 
 ### Typing Iterables
 
