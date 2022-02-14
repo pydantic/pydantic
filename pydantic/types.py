@@ -1130,7 +1130,7 @@ TIME_UNITS = {
     'h': 60 * 60 * 10 ** 9,
     'd': 24 * 60 * 60 * 10 ** 9
 }
-time_string_re = re.compile(r'\s*(\d+\.?\d*)\s*([a-zA-Z]+)?', re.IGNORECASE)
+time_string_re = re.compile(r'\s*(\d+(?:\.\d+)?)\s*([a-z]{1,2})?', re.IGNORECASE)
 
 
 class NanoTime(int):
