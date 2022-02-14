@@ -83,6 +83,23 @@ def test_union_int_str():
     ]
 
 
+def test_union_int_any():
+    class Model(BaseModel):
+        v: Union[int, Any]
+
+    m = Model(v=123)
+    assert m.v == 123
+
+    m = Model(v='123')
+    assert m.v == 123
+
+    m = Model(v='foobar')
+    assert m.v == 'foobar'
+
+    m = Model(v=None)
+    assert m.v is None
+
+
 def test_union_priority():
     class ModelOne(BaseModel):
         v: Union[int, str] = ...
@@ -1281,7 +1298,6 @@ class DisplayGen(Generic[T1, T2]):
         yield validator
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason='output slightly different for 3.6')
 @pytest.mark.parametrize(
     'type_,expected',
     [
@@ -1402,10 +1418,8 @@ def test_modify_fields():
     class Bar(Foo):
         pass
 
-    # output is slightly different for 3.6
-    if sys.version_info >= (3, 7):
-        assert repr(Foo.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
-        assert repr(Bar.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+    assert repr(Foo.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+    assert repr(Bar.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
     assert Foo(foo=[[0, 1]]).foo == [[0, 1]]
     assert Bar(foo=[[0, 1]]).foo == [[0, 1]]
 

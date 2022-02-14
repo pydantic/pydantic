@@ -18,11 +18,11 @@
 101: error: Missing named argument "y" for "construct" of "Model"  [call-arg]
 103: error: Argument "x" to "construct" of "Model" has incompatible type "str"; expected "int"  [arg-type]
 156: error: Missing named argument "x" for "DynamicAliasModel2"  [call-arg]
-175: error: unused "type: ignore" comment
-182: error: unused "type: ignore" comment
+175: error: Unused "type: ignore" comment
+182: error: Unused "type: ignore" comment
 189: error: Name "Missing" is not defined  [name-defined]
 197: error: No overload variant of "dataclass" matches argument type "Dict[<nothing>, <nothing>]"  [call-overload]
-197: note: Possible overload variant:
+197: note: Possible overload variants:
 197: note:     def dataclass(*, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Callable[[Type[Any]], Type[Dataclass]]
-197: note:     <1 more non-matching overload not shown>
+197: note:     def dataclass(_cls: Type[Any], *, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Type[Dataclass]
 219: error: Property "y" defined in "FrozenModel" is read-only  [misc]

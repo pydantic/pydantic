@@ -2,11 +2,23 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Callable, ClassVar, Counter, DefaultDict, Dict, List, Mapping, Optional, Type, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Counter,
+    DefaultDict,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    get_type_hints,
+)
 from uuid import UUID, uuid4
 
 import pytest
-from pytest import param
 
 from pydantic import (
     BaseConfig,
@@ -16,7 +28,9 @@ from pydantic import (
     Field,
     NoneBytes,
     NoneStr,
+    PrivateAttr,
     Required,
+    SecretStr,
     ValidationError,
     constr,
     root_validator,
@@ -192,6 +206,16 @@ def test_allow_extra():
             extra = Extra.allow
 
     assert Model(a='10.2', b=12).dict() == {'a': 10.2, 'b': 12}
+
+
+def test_allow_extra_repr():
+    class Model(BaseModel):
+        a: float = ...
+
+        class Config:
+            extra = Extra.allow
+
+    assert str(Model(a='10.2', b=12)) == 'a=10.2 b=12'
 
 
 def test_forbidden_extra_success():
@@ -1360,61 +1384,61 @@ def test_model_iteration():
 @pytest.mark.parametrize(
     'exclude,expected,raises_match',
     [
-        param(
+        pytest.param(
             {'foos': {0: {'a'}, 1: {'a'}}},
             {'c': 3, 'foos': [{'b': 2}, {'b': 4}]},
             None,
             id='excluding fields of indexed list items',
         ),
-        param(
+        pytest.param(
             {'foos': {'a'}},
             TypeError,
             'expected integer keys',
             id='should fail trying to exclude string keys on list field (1).',
         ),
-        param(
+        pytest.param(
             {'foos': {0: ..., 'a': ...}},
             TypeError,
             'expected integer keys',
             id='should fail trying to exclude string keys on list field (2).',
         ),
-        param(
+        pytest.param(
             {'foos': {0: 1}},
             TypeError,
             'Unexpected type',
             id='should fail using integer key to specify list item field name (1)',
         ),
-        param(
+        pytest.param(
             {'foos': {'__all__': 1}},
             TypeError,
             'Unexpected type',
             id='should fail using integer key to specify list item field name (2)',
         ),
-        param(
+        pytest.param(
             {'foos': {'__all__': {'a'}}},
             {'c': 3, 'foos': [{'b': 2}, {'b': 4}]},
             None,
             id='using "__all__" to exclude specific nested field',
         ),
-        param(
+        pytest.param(
             {'foos': {0: {'b'}, '__all__': {'a'}}},
             {'c': 3, 'foos': [{}, {'b': 4}]},
             None,
             id='using "__all__" to exclude specific nested field in combination with more specific exclude',
         ),
-        param(
+        pytest.param(
             {'foos': {'__all__'}},
             {'c': 3, 'foos': []},
             None,
             id='using "__all__" to exclude all list items',
         ),
-        param(
+        pytest.param(
             {'foos': {1, '__all__'}},
             {'c': 3, 'foos': []},
             None,
             id='using "__all__" and other items should get merged together, still excluding all list items',
         ),
-        param(
+        pytest.param(
             {'foos': {1: {'a'}, -1: {'b'}}},
             {'c': 3, 'foos': [{'a': 1, 'b': 2}, {}]},
             None,
@@ -1445,13 +1469,13 @@ def test_model_export_nested_list(exclude, expected, raises_match):
 @pytest.mark.parametrize(
     'excludes,expected',
     [
-        param(
+        pytest.param(
             {'bars': {0}},
             {'a': 1, 'bars': [{'y': 2}, {'w': -1, 'z': 3}]},
             id='excluding first item from list field using index',
         ),
-        param({'bars': {'__all__'}}, {'a': 1, 'bars': []}, id='using "__all__" to exclude all list items'),
-        param(
+        pytest.param({'bars': {'__all__'}}, {'a': 1, 'bars': []}, id='using "__all__" to exclude all list items'),
+        pytest.param(
             {'bars': {'__all__': {'w'}}},
             {'a': 1, 'bars': [{'x': 1}, {'y': 2}, {'z': 3}]},
             id='exclude single dict key from all list items',
@@ -1502,6 +1526,45 @@ def test_model_exclude_config_field_merging():
             }
 
     assert Model.__fields__['b'].field_info.exclude == {'foo': ..., 'bar': ...}
+
+
+def test_model_exclude_copy_on_model_validation():
+    """When `Config.copy_on_model_validation` is set, it should keep private attributes and excluded fields"""
+
+    class User(BaseModel):
+        _priv: int = PrivateAttr()
+        id: int
+        username: str
+        password: SecretStr = Field(exclude=True)
+        hobbies: List[str]
+
+    my_user = User(id=42, username='JohnDoe', password='hashedpassword', hobbies=['scuba diving'])
+
+    my_user._priv = 13
+    assert my_user.id == 42
+    assert my_user.password.get_secret_value() == 'hashedpassword'
+    assert my_user.dict() == {'id': 42, 'username': 'JohnDoe', 'hobbies': ['scuba diving']}
+
+    class Transaction(BaseModel):
+        id: str
+        user: User = Field(..., exclude={'username'})
+        value: int
+
+        class Config:
+            fields = {'value': {'exclude': True}}
+
+    t = Transaction(
+        id='1234567890',
+        user=my_user,
+        value=9876543210,
+    )
+
+    assert t.user is not my_user
+    assert t.user.hobbies == ['scuba diving']
+    assert t.user.hobbies is my_user.hobbies  # `Config.copy_on_model_validation` only does a shallow copy
+    assert t.user._priv == 13
+    assert t.user.password.get_secret_value() == 'hashedpassword'
+    assert t.dict() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
 
 
 @pytest.mark.parametrize(
@@ -1804,7 +1867,6 @@ def test_default_factory_parse():
     assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
 def test_none_min_max_items():
     # None default
     class Foo(BaseModel):
@@ -1976,6 +2038,26 @@ def test_typing_coercion_dict():
     assert repr(m) == "Model(x={'one': 1, 'two': 2})"
 
 
+def test_typing_non_coercion_of_dict_subclasses():
+    KT = TypeVar('KT')
+    VT = TypeVar('VT')
+
+    class MyDict(Dict[KT, VT]):
+        def __repr__(self):
+            return f'MyDict({super().__repr__()})'
+
+    class Model(BaseModel):
+        a: MyDict
+        b: MyDict[str, int]
+        c: Dict[str, int]
+        d: Mapping[str, int]
+
+    assert (
+        repr(Model(a=MyDict({'a': 1}), b=MyDict({'a': '1'}), c=MyDict({'a': '1'}), d=MyDict({'a': '1'})))
+        == "Model(a=MyDict({'a': 1}), b=MyDict({'a': 1}), c={'a': 1}, d=MyDict({'a': 1}))"
+    )
+
+
 def test_typing_coercion_defaultdict():
     class Model(BaseModel):
         x: DefaultDict[int, str]
@@ -2060,7 +2142,7 @@ def test_class_kwargs_custom_config():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
 def test_new_union_origin():
-    """On 3.10+, origin of `int | str` is `types.Union`, not `typing.Union`"""
+    """On 3.10+, origin of `int | str` is `types.UnionType`, not `typing.Union`"""
 
     class Model(BaseModel):
         x: int | str

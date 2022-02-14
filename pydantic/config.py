@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tuple, Type, Union
 
 from .typing import AnyCallable
 from .utils import GetterDict
@@ -23,7 +23,6 @@ if TYPE_CHECKING:
         @overload
         def __call__(self, schema: Dict[str, Any], model_class: Type[BaseModel]) -> None:
             pass
-
 
 else:
     SchemaExtraCallable = Callable[..., None]
@@ -60,11 +59,13 @@ class BaseConfig:
     schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}
     json_loads: Callable[[str], Any] = json.loads
     json_dumps: Callable[..., str] = json.dumps
-    json_encoders: Dict[Type[Any], AnyCallable] = {}
+    json_encoders: Dict[Union[Type[Any], str, ForwardRef], AnyCallable] = {}
     underscore_attrs_are_private: bool = False
 
-    # Whether or not inherited models as fields should be reconstructed as base model
+    # whether inherited models as fields should be reconstructed as base model
     copy_on_model_validation: bool = True
+    # whether `Union` should check all allowed types before even trying to coerce
+    smart_union: bool = False
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:

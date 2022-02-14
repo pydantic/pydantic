@@ -1,12 +1,12 @@
 ansi2html==1.6.0
-flake8==3.9.2
-flake8-quotes==3.3.0
-hypothesis==6.18.0
+flake8==4.0.1
+flake8-quotes==3.3.1
+hypothesis==6.31.6
 markdown-include==0.6.0
 mdx-truly-sane-lists==1.2
-mkdocs==1.2.2
+mkdocs==1.2.3
 mkdocs-exclude==1.0.2
-mkdocs-material==7.2.6
+mkdocs-material==8.1.3
 sqlalchemy
 orjson
 ujson
