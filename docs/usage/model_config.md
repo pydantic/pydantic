@@ -64,7 +64,7 @@ _(This script is complete, it should run "as is")_
   defined trough annotation or the Field class, in which case only
   include, excude, min_length, max_length, regex, gt, lt, gt, le,
   multiple_of, max_digits, decimal_places, min_items, max_items, unique_items
-  and allow_mutation, (for example you cannot set default of default_factory)
+  and allow_mutation can be set (for example you cannot set default of default_factory)
    (default: `None`)
 
 **`validate_assignment`**
