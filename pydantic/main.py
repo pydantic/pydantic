@@ -870,6 +870,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return keys
 
     def __eq__(self, other: Any) -> bool:
+        if self is other:
+            return True
+
         if isinstance(other, BaseModel):
             return self.dict() == other.dict()
         else:
