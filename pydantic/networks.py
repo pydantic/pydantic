@@ -68,6 +68,7 @@ __all__ = [
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
+    'CockroachDsn',
     'AmqpDsn',
     'RedisDsn',
     'KafkaDsn',
@@ -349,6 +350,15 @@ class PostgresDsn(AnyUrl):
         'postgresql+psycopg2cffi',
         'postgresql+py-postgresql',
         'postgresql+pygresql',
+    }
+    user_required = True
+
+
+class CockroachDsn(AnyUrl):
+    allowed_schemes = {
+        'cockroachdb',
+        'cockroachdb+psycopg2',
+        'cockroachdb+asyncpg',
     }
     user_required = True
 

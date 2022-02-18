@@ -537,6 +537,9 @@ _(This script is complete, it should run "as is")_
 `PostgresDsn`
 : a postgres DSN style URL; see [URLs](#urls)
 
+`CockroachDsn`
+: a cockroachdb DSN style URL; see [URLs](#urls)
+
 `RabbitMqDsn`
 : an `AMQP` DSN style URL as used by RabbitMQ, StormMQ, ActiveMQ etc.; see [URLs](#urls)
 
@@ -636,6 +639,9 @@ For URI/URL validation the following types are available:
   - `postgresql+psycopg2cffi`
   - `postgresql+py-postgresql`
   - `postgresql+pygresql`
+- `CockroachDsn`: scheme `cockroachdb`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
+  - `cockroachdb+asyncpg`
+  - `cockroachdb+psycopg2`
 - `AmqpDsn`: schema `amqp` or `amqps`, user info not required, TLD not required, host not required
 - `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
